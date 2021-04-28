@@ -908,7 +908,7 @@ class CtrlInterface(object):
         })
         
         ## self.Bind(wx.EVT_CHAR, self.on_char) # for TextCtrl only
-        ## self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
+        
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -1043,7 +1043,7 @@ class KeyCtrlInterfaceMixin(object):
         if map not in self.handler: # make key map automatically
             self.make_keymap(map)
         
-        self.handler[map][key+' pressed'] = transaction = [0] # overwrite as nil transaction
+        self.handler[map][key+' pressed'] = transaction = [0] # overwrite transaction
         self.handler.validate(map)
         if action:
             transaction.append(funcall(action, doc, alias, **kwargs))
@@ -1532,6 +1532,7 @@ Global bindings:
         
         ## self.Log.ViewEOL = True
         self.Log.ViewWhiteSpace = True
+        self.Log.set_style(Nautilus.PALETTE_STYLE)
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
@@ -1614,9 +1615,8 @@ Global bindings:
             win = self.current_editor
             text = win.SelectedText or win.pyrepr_at_caret
             if text:
-                ## self.shell.clearCommand()
-                self.shell.goto_char(-1)
-                self.shell.write(text)
+                self.shell.clearCommand()
+                self.shell.write(text, -1)
                 self.shell.SetFocus()
         
         f = os.path.expanduser("~/.deb/deb-logging.log")
@@ -1805,6 +1805,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'M-a pressed' : (0, _P(self.back_to_indentation)),
                   'M-e pressed' : (0, _P(self.end_of_line)),
                   'C-k pressed' : (0, _P(self.kill_line)),
+              'C-space pressed' : (0, _P(self.set_mark)),
           'S-backspace pressed' : (0, _P(self.backward_kill_line)),
                  #'C-d pressed' : (0, ),
                  #'C-/ pressed' : (0, ), # cf. C-a home
@@ -1847,8 +1848,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.SetCaretLineVisible(1)
         
         ## default no magin for line number
-        ## self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-        ## self.SetMarginWidth(1, 0)
         self.SetMarginLeft(2)
         
         ## default style of control-char
@@ -1858,16 +1857,34 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.WrapMode = 0
         self.WrapIndentMode = 1
         
-        ## self.default_style = {}
-        
         ## custom constants to be embedded in stc
         stc.STC_P_WORD3 = 16
+        
+        self.MarkerDefine(0, wx.stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
+        self.MarkerDefine(1, wx.stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
+        self.MarkerDefine(2, wx.stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
+        
+        self.MarkerSetAlpha(0, 0x80)
+        ## m = 0
+        ## self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
+        ## self.SetMarginMask(0, 0xffff^(1<<m)) # marker display mask
+        ## self.SetMarginMask(1, 1<<m)
+        ## self.SetMarginWidth(0, 10)
+        ## self.SetMarginSensitive(0,True)
+        ## self.SetMarginSensitive(1,True)
+        ## 
+        ## @connect(self, wx.stc.EVT_STC_MARGINCLICK)
+        ## def on_margin_click(v):
+        ##     self.handler("margin_clicked", v)
+        ##     v.Skip()
+    
+    def set_mark(self):
+        self.MarkerDeleteAll(0)
+        self.MarkerAdd(self.CurrentLine, 0)
     
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
         spec.update(kwargs)
-        
-        ## self.default_style.update(spec)
         
         if "STC_STYLE_DEFAULT" in spec:
             self.StyleSetSpec(stc.STC_STYLE_DEFAULT, spec.pop("STC_STYLE_DEFAULT"))
@@ -1876,9 +1893,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if "STC_STYLE_LINENUMBER" in spec:
             lxc = spec["STC_STYLE_LINENUMBER"]
             
-            ## [0] for numbers, 0 pixels wide, mask=0
+            ## [0] for numbers, 0 pixels wide, mask=0 (default?)
             ## [1] for symbols, 16 pixels wide, mask=0x1ffffff
-            ## [2] for folding, 0 pixels wide, mask=0
+            ## [2] for folding, 1 pixels wide, mask=0
             self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
             self.SetMarginType(2, stc.STC_MARGIN_SYMBOL) # margin(2) for symbols
             self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # set up mask for folding symbols
@@ -2316,7 +2333,7 @@ Flaky nutshell:
             pass
     
     ## Default classvar string to Execute when starting the shell was deprecated.
-    ## You should better use the startup script specified by ($PYTHONSTARTUP:~/.py)
+    ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
     ## SHELLSTARTUP = ""
     
     PALETTE_STYLE = { #<Shell>
@@ -2347,7 +2364,7 @@ Flaky nutshell:
         "STC_P_NUMBER"          : "fore:#ffc080",
     }
     
-    def __init__(self, parent, target, locals=None, startup=None,
+    def __init__(self, parent, target, locals=None,
                         introText = None,
                     startupScript = None,
                 execStartupScript = True):
@@ -2365,19 +2382,6 @@ Flaky nutshell:
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
-        
-        if startup:
-            try:
-                try:
-                    startup(self)
-                except Exception:
-                    self.execute(startup)
-            except Exception:
-                print("- shell got an unexpected argument startup={!r}".format(startup))
-                print("- stratup must be callable or string.")
-                startup = None
-        
-        self.__startup = startup # used when cloned
         
         def magic(cmd): # wx.py.magic is called when USE_MAGIC
             if cmd:
@@ -2734,6 +2738,8 @@ Flaky nutshell:
         self.__eolc_marks.append(self.eolc)
         self.historyIndex = -1
         
+        self.MarkerAdd(self.CurrentLine, 1)
+        
         if ln[0] in '!?': # casts wx.py.magic: begins with !(sx), ?(info), and ??(help)
             evt.Skip()
             return
@@ -3062,8 +3068,7 @@ Flaky nutshell:
     
     def clone(self, target=None):
         frame = deb(target or self.target,
-            startup = self.__startup, # tell how to startup life
-             locals = self.interp.locals, # tell the locals environ
+             locals = self.interp.locals,
                size = self.parent.Size,
               title = "Clone of Nautilus - {!r}".format(target))
         
@@ -3269,7 +3274,7 @@ Flaky nutshell:
             
             if isinstance(root, (bool,int,float,type(None))):
                 self.handler('quit', evt)
-                self.message("- Completed: {!r} is an atom".format(root))
+                self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
@@ -3307,7 +3312,7 @@ Flaky nutshell:
             
             if isinstance(root, (bool,int,float,type(None))):
                 self.handler('quit', evt)
-                self.message("- Completed: {!r} is an atom".format(root))
+                self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
@@ -3336,18 +3341,21 @@ Flaky nutshell:
             self.message("{} : {!r}".format(e, text))
 
 
-def deb(target=None, app=None, **kwargs):
+def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
     
     target : object or module. Default None sets target as __main__.
-       app : an instance of App. Default None may create a local App and the mainloop.
-             If app is given and if not started yet, the app will enter the mainloop herein.
+       app : an instance of App.
+                Default None may create a local App and the mainloop.
+                If app is given and not started the mainloop yet,
+                the app will enter the mainloop herein.
+   startup : called after started up (not before)
   **kwargs : Nautilus arguments
     locals : additional context (localvars:dict) to the shell
-   startup : lambda or str to be called or executed when starting up
-execStartupScript : True, to execute startup script (typ. $PYTHONSTARTUP:~/.py)
-  Note:
+    execStartupScript : First, execute your script ($PYTHONSTARTUP:~/.py)
+
+Note:
     PyNoAppError will be raised when the App is missing in pocess.
     When this may cause bad traceback, please restart.
     """
@@ -3358,11 +3366,13 @@ execStartupScript : True, to execute startup script (typ. $PYTHONSTARTUP:~/.py)
     frame.Show()
     frame.shell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window
-    
+    if startup:
+        startup(frame.shell)
+        frame.shell.handler.bind("shell_cloned", startup)
     if app is not None:
         if not isinstance(app, wx.App):
-            print("- Argument app has unexpected type {!r}".format(typename(app)))
             ## raise Warning("Given app is not an instance of wx.App")
+            print("- Argument app has unexpected type {!r}".format(typename(app)))
         elif not app.GetMainLoop():
             app.MainLoop()
             return
@@ -3426,7 +3436,7 @@ if 1:
     frm.handler.debug = 4
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.shell.handler.debug = 0
+    frm.inspector.shell.handler.debug = 4
     frm.inspector.shell.execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
     frm.inspector.shell.wrap(0)
