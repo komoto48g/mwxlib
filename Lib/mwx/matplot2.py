@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 import numpy as np
 import wx
-import mwx.framework as mwx
+from . import framework as mwx
 import matplotlib
 matplotlib.use('wxagg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas

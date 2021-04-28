@@ -22,11 +22,11 @@ import wx
 from wx import aui
 ## import wx.lib.agw.aui as aui
 import numpy as np
-import mwx.framework as mwx
-import mwx.images as images
-from mwx.mplt2 import ControlPanel
-from mwx.matplot2g import GraphPlot
-from mwx.matplot2lg import Histogram
+from . import framework as mwx
+from . import images as images
+from .mplt2 import ControlPanel
+from .matplot2g import GraphPlot
+from .matplot2lg import Histogram
 ## from matplotlib import pyplot as plt
 ## from matplotlib import colors
 ## from matplotlib import cm

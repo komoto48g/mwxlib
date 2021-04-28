@@ -12,9 +12,9 @@ import numpy as np
 from scipy import signal
 ## from scipy import ndimage as ndi
 import wx
-import mwx.framework as mwx
-from mwx.matplot2 import MatplotPanel
-from mwx.matplot2 import NORMAL, DRAGGING, MARK, LINE, REGION
+from . import framework as mwx
+from .matplot2 import MatplotPanel
+from .matplot2 import NORMAL, DRAGGING, MARK, LINE, REGION
 from matplotlib import patches
 
 

@@ -13,8 +13,8 @@ import sys
 import os
 import numpy as np
 import wx
-import mwx.framework as mwx
-from mwx.mplt2 import ControlPanel
+from . import framework as mwx
+from .mplt2 import ControlPanel
 
 if sys.version_info < (3,0):
     input = raw_input

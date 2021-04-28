@@ -13,7 +13,7 @@ import wx
 import numpy as np
 from numpy import pi
 from numpy import nan,inf
-import mwx.framework as mwx
+from . import framework as mwx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 

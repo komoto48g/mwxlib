@@ -11,9 +11,9 @@ import traceback
 import sys
 import os
 import wx
-import mwx.framework as mwx
-from mwx.matplot2 import MatplotPanel
-from mwx.matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
+from . import framework as mwx
+from .matplot2 import MatplotPanel
+from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 from matplotlib import patches
 from matplotlib import cm
 from PIL import Image
