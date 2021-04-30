@@ -1204,15 +1204,14 @@ class Frame(mwx.Frame):
         res, mis = self.read_attributes(f)
         
         paths = [attr['pathname'] for attr in res.values()]
-        frames = self.load_buffer(paths, target)
-        if frames:
-            for frame in frames:
-                frame.update_attributes(res.get(frame.name))
-            
-            self.statusbar(
-                "{} frames were imported, "
-                "{} files are missing.".format(len(res), len(mis)))
-            return True
+        frames = self.load_buffer(paths, target) or []
+        for frame in frames:
+            frame.update_attributes(res.get(frame.name))
+        
+        self.statusbar(
+            "{} frames were imported, "
+            "{} files are missing.".format(len(res), len(mis)))
+        return True
     
     def export_index(self, f=None, frames=None):
         """Save frames :ref to the Attributes file
@@ -1621,7 +1620,7 @@ class Frame(mwx.Frame):
         return True
 
 
-Plugin = Layer
+## Plugin = Layer
 
 
 if __name__ == '__main__':
@@ -1644,32 +1643,12 @@ if __name__ == '__main__':
     ## frm.graph.load(z)
     ## frm.graph.load(np.randn(1024,1024))
     
-    frm.load_plug(__file__, show=0, docking=4)
-    
     ## 次の二つは別モジュール
     ## frm.load_plug('templates.template.py', show=1)
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
     
     frm.load_plug('C:/usr/home/workspace/tem13/sample/template1.py', show=1)
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
-    
-    from mwx.graphman import Layer
-    if 1:
-        plug = frm.require("graphman")
-        
-        ## NOTE: this.Layer is not imported graphman.Layer
-        import __main__ as this
-        print("isinstance(plug, this.Layer) =", isinstance(plug, this.Layer)) #= False
-        
-        ## NOTE: this.Layer is neither imported mwx.graphman.Layer
-        from mwx import graphman
-        print("isinstance(plug, mwx.graphman.Layer) =", isinstance(plug, graphman.Layer)) #= False
-        
-        import graphman
-        print("isinstance(plug, graphman.Layer) =", isinstance(plug, graphman.Layer)) #= True
-        
-        pprint(this.Layer.mro())
-        pprint(graphman.Layer.mro())
     
     frm.Show()
     app.MainLoop()

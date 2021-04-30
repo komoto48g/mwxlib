@@ -147,20 +147,21 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None):
     name = alias or typename(root)
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  # \a: identifier chars (custom rule)
                   .replace('\\A','[A-Z0-9]')) # \A: (start of the string) から変更
-    try:
+    
+    if isinstance(pred, LITERAL_TYPE):
         pred = predicate(pred)
-    except Exception:
-        pass
     
     if pred is not None: # check TypeError
         if not callable(pred):
-            print("- {} object is not callable".format(typename(pred)))
-            return
+            ## print("- {} is not callable".format(typename(pred)))
+            ## return
+            raise TypeError("{} is not callable".format(typename(pred)))
         if not inspect.isbuiltin(pred):
             args, _varargs, _keywords, defaults = getargspec(pred)
             if not args or len(args) - len(defaults or ()) > 1:
-                print("- {} must take exactly one argument".format(typename(pred)))
-                return
+                ## print("- {} must take exactly one argument".format(typename(pred)))
+                ## return
+                raise TypeError("{} must take exactly one argument".format(typename(pred)))
     
     print("matching to {!r} in {} {} :{}".format(rexpr, name, type(root), typename(pred)))
     try:
@@ -519,14 +520,12 @@ class FSM(dict):
         f = os.path.expanduser("~/.deb/deb-dump.log")
         with open(f, 'a') as o:
             exc = traceback.format_exc().strip()
-            lex = re.findall("File \"(.*)\", line (\w*), in .*", exc)
+            lex = re.findall("File \"(.*)\", line ([0-9]+), in (.*)", exc)
             
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
-            for x in lex[-1:]:
-                print("{0}:{1}:".format(*x), file=o) # in grep format
-            print(*args, file=o, **kwargs)
-            print('\n'.join("  # " + x for x in exc.splitlines()), file=o)
-            print('\n', file=o)
+            print(':'.join(lex[-1]), file=o) # grep error format
+            print(*args, file=o, **kwargs) # fsm dump message
+            print('\n'.join("  # " + x for x in exc.splitlines())+'\n', file=o)
     
     def validate(self, state):
         """Sort and move to end items with key which includes `*?[]`"""
@@ -1863,6 +1862,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(0, wx.stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
         self.MarkerDefine(1, wx.stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
         self.MarkerDefine(2, wx.stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
+        self.MarkerDefine(3, wx.stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
+        self.MarkerDefine(4, wx.stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
         
         self.MarkerSetAlpha(0, 0x80)
         ## m = 0
@@ -2244,6 +2245,19 @@ class Editor(EditWindow, EditorInterface):
 class Nautilus(Shell, EditorInterface):
     """Shell of the Nautilus with Editor interface
 --------------------------------------------------
+Features:
+    All objects in the process can be accessed
+    using
+        self : the target of the shell,
+        this : the module which includes target.
+    
+    So as you are diving into the sea of python process,
+    watch, change, and break everything in the target.
+    
+    Nautilus supports you to dive confortably with
+    special syntax, several utilities, five autocomp modes, etc.
+    See below.
+
 Magic syntax:
    backquote : x`y --> y=x  | x`y`z --> z=y=x
     pullback : x@y --> y(x) | x@y@z --> z(y(x))
@@ -2272,7 +2286,7 @@ Shell built-in utility:
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
-    @edit       call your editor (undefined)
+    @edit       open with your editor (undefined)
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
@@ -2294,8 +2308,6 @@ Autocomp key bindings:
 Enter key bindings:
      C-enter : insert-line-break
      S-enter : execute-command
-     M-enter : insert @print (deprecated)
-   M-S-enter : insert @pprint (deprecated)
 
 This module is based on the implementation of wx.py.shell.
     Some of the original key bindings are overrided in the FSM framework.
@@ -2383,14 +2395,8 @@ Flaky nutshell:
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
         
-        def magic(cmd): # wx.py.magic is called when USE_MAGIC
-            if cmd:
-                if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
-                elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
-                elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
-            return cmd
-        wx.py.shell.magic = magic
-        ## wx.py.shell.USE_MAGIC = False
+        wx.py.shell.USE_MAGIC = True
+        wx.py.shell.magic = self.magic # called when USE_MAGIC
         
         ## このシェルはプロセス内で何度もコールされることが想定されます．
         ## デバッグポイントとして使用される場合，また，クローンされる場合がそうです．
@@ -2407,39 +2413,9 @@ Flaky nutshell:
             self.handler('shell_activated' if v.Active else 'shell_inactivated', self)
             v.Skip()
         
-        def activate(shell): # cf. target.setter
-            target = shell.target # new target (not locals)
-            target.self = target
-            try:
-                target.this = sys.modules[target.__module__]
-            except Exception:
-                target.this = __import__('__main__')
-            target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-            
-            builtins.help = self.help # utilities functions to builtins (not locals)
-            builtins.info = self.info # if locals could have the same name functions.
-            builtins.dive = self.clone
-            builtins.timeit = self.timeit
-            builtins.execute = self.execute
-            builtins.puts = postcall(lambda v: self.write(str(v)))
+        self.on_activated(self)
         
-        activate(self)
-        
-        ## some useful global abbreviations to builtins
-        ## cf. wx.py.shell:setBuiltinKeywords
-        builtins.typename = typename
-        builtins.apropos = apropos
-        builtins.reload = reload
-        builtins.pprint = pprint
-        builtins.pp = pprint
-        builtins.p = print
-        builtins.watch = dev
-        builtins.filling = filling
-        builtins.file = inspect.getfile
-        builtins.code = inspect.getsource
-        builtins.module = inspect.getmodule
-        
-        ## Keyword(2) setting
+        ## Keywords(2) setting for *STC_P_WORD*
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
         self.SetKeyWords(1, ' '.join(builtins.__dict__)
                           + ' self this help info dive timeit execute puts')
@@ -2467,7 +2443,7 @@ Flaky nutshell:
         self.handler.update({ #<Shell handler>
             None : {
                 'shell_cloned' : [ None, ],
-             'shell_activated' : [ None, activate ],
+             'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, ],
             },
             -1 : { # original action of the wx.py.shell
@@ -2659,8 +2635,8 @@ Flaky nutshell:
         
         self.__cur = 0
         self.__start = 0
-        self.__bolc_marks = []
-        self.__eolc_marks = []
+        self.__bolc_marks = [self.bolc]
+        self.__eolc_marks = [self.eolc]
     
     def OnUpdate(self, evt):
         ln = self.CurrentLine
@@ -2727,18 +2703,12 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        ## ln = self.cmdln
         ln = self.GetTextRange(self.bolc, self.eolc)
         if not ln:
             evt.Skip()
             return
         
-        ## save anchor points
-        self.__bolc_marks.append(self.bolc)
-        self.__eolc_marks.append(self.eolc)
-        self.historyIndex = -1
-        
-        self.MarkerAdd(self.CurrentLine, 1)
+        self.on_text_input(ln)
         
         if ln[0] in '!?': # casts wx.py.magic: begins with !(sx), ?(info), and ??(help)
             evt.Skip()
@@ -2751,7 +2721,7 @@ Flaky nutshell:
             if '@' in tokens or '`' in tokens:
                 cmd = self.interpret_magic(tokens)
                 if '\n' in cmd:
-                    self.execute(cmd) # for multi-line commands
+                    self.Execute(cmd) # for multi-line commands
                 else:
                     self.run(cmd, verbose=0, prompt=0)
                     self.history[0] = ln # overwrite the latest history
@@ -2765,12 +2735,16 @@ Flaky nutshell:
                 rest = ''.join(tokens[j:])
                 head, sep, hint = org.rpartition('.')
                 c, pred = re.search("(\?+)\s*(.*)", rest).groups()
+                try:
+                    pred = self.eval(pred)
+                except Exception:
+                    pass
                 
                 alias = head or 'this'
-                ## apropos(hint.strip(), self.eval(alias), len(c)<2, alias, pred and eval(pred))
-                
-                cmd = "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3!r})".format(
-                        hint.strip(), alias, len(c)<2, pred)
+                ## apropos(hint.strip(), self.eval(alias),
+                ##         len(c)<2, alias, pred and self.eval(pred))
+                cmd = "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3})".format(
+                        hint.strip(), alias, len(c)<2, typename(pred))
                 
                 self.run(cmd, verbose=0, prompt=0)
                 self.history[0] = ln # overwrite the latest history
@@ -2782,7 +2756,7 @@ Flaky nutshell:
             pass
         
         if '\n' in ln:
-            self.execute(ln) # for multi-line commands, no skip
+            self.Execute(ln) # for multi-line commands, no skip
             return
         
         evt.Skip()
@@ -2803,6 +2777,10 @@ Flaky nutshell:
         
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
+    
+    ## --------------------------------
+    ## Magic suite of the shell
+    ## --------------------------------
     
     def interpret_magic(self, tokens):
         """Yet another magic `@ interpreter
@@ -2848,45 +2826,122 @@ Flaky nutshell:
             
         return ''.join(tokens)
     
+    def magic(self, cmd):
+        """Called before command pushed (override)
+        
+        Note: the shell push command when run, [enter], execute => processLine
+        """
+        if cmd:
+            if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
+            elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
+            elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
+        return cmd
+    
+    def setBuiltinKeywords(self):
+        """Create pseudo keywords as part of builtins (override)"""
+        Shell.setBuiltinKeywords(self)
+        
+        ## Add some useful global abbreviations to builtins
+        builtins.typename = typename
+        builtins.apropos = apropos
+        builtins.reload = reload
+        builtins.pprint = pprint
+        builtins.pp = pprint
+        builtins.p = print
+        builtins.watch = dev
+        builtins.filling = filling
+        builtins.file = inspect.getfile
+        builtins.code = inspect.getsource
+        builtins.module = inspect.getmodule
+    
+    def on_activated(self, shell):
+        """Called when activated"""
+        target = shell.target # cf. target.setter, new target (not locals)
+        target.self = target
+        try:
+            target.this = sys.modules[target.__module__]
+        except Exception:
+            target.this = __import__('__main__')
+        target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        
+        builtins.help = self.help # utilities functions to builtins (not locals)
+        builtins.info = self.info # if locals could have the same name functions.
+        builtins.dive = self.clone
+        builtins.timeit = self.timeit
+        builtins.execute = postcall(self.Execute)
+        builtins.puts = postcall(lambda v: self.write(str(v)))
+    
+    def on_text_input(self, text):
+        """Called when [Enter] text (called before push)
+        Note: The text is raw input:str, no magic cast
+        """
+        self.MarkerAdd(self.CurrentLine, 1) # input-Marker
+        
+        self.__bolc_marks.append(self.bolc)
+        self.__eolc_marks.append(self.eolc)
+        self.historyIndex = -1
+    
+    def on_text_output(self, text):
+        """Called when [Enter] text (called after push)
+        Note: The text includes input:str & output:str, no magic cast
+        """
+        lex = re.findall("File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
+        if lex:
+            self.MarkerAdd(self.LineFromPosition(self.__bolc_marks[-1]), 3) # error-marker
+            return False
+        
+        ## Check if input starts with the definition of a function or a class.
+        ## If so, we set the `_' variables to the function or class.
+        m = re.match("(def|class)\s+(\w+)", text.strip())
+        if m:
+            self.target._ = self.eval(m.group(2))
+        return True
+    
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
     fragmwords = set(keyword.kwlist + dir(builtins)) # set()
     
     def addHistory(self, command):
-        """Add history (override) at the beggining of History
-        Build fragment words for text-comp mode
+        """Add command to the command history
+        (override) if the command is new (i.e., not found in the head of the list)
+        (override) then, write the command to History buffer
         """
         if self.history and self.history[0] == command:
             return
         
         Shell.addHistory(self, command)
+        
+        ## この段階では push された直後で，次のようになっている
+        ## bolc : begginning of command-line
+        ## eolc : end of the output-buffer
+        substr = self.GetTextRange(self.bolc, self.eolc)
+        self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # update for text-comp
+        
         try:
             ed = self.parent.History
             ed.ReadOnly = 0
             ed.write(command + os.linesep)
             ed.ReadOnly = 1
+            ln = ed.LineFromPosition(ed.TextLength - len(command)) # pos to mark
+            if self.on_text_output(substr):
+                ed.MarkerAdd(ln, 1)
+            else:
+                ed.MarkerAdd(ln, 3)
         except Exception:
-            ## execStartupScript 実行時は出力先 (owner) が存在しないのでパスる
+            ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             pass
-        
-        ## この段階では push された直後で，次のようになっている
-        ## bolc : begginning of command-line
-        ## eolc : end of the output-buffer
-        
-        substr = self.GetTextRange(self.bolc, self.eolc)
-        self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr))
     
     def CallTipShow(self, pos, tip):
-        """Call standard ToolTip (override) and write tips to scratch"""
+        """Call standard ToolTip (override) and write the tips to scratch"""
         Shell.CallTipShow(self, pos, tip)
         if tip:
             ## pt = self.ClientToScreen(self.PointFromPosition(pos))
             self.parent.scratch.SetValue(tip)
     
     def _clip(self, data):
-        """Transfer data to clipboard (override) when copy and paste invokes
-        Here also transfers the data to the Log board
+        """Transfer data to clipboard when copy and paste
+        (override) and transfer the data to the Log board
         """
         self.parent.Log.write(data.Text + os.linesep)
         Shell._clip(self, data)
@@ -2916,19 +2971,23 @@ Flaky nutshell:
         """Clear all text in the shell (override) and put new prompt"""
         self.ClearAll()
         self.prompt()
-        self.prompt() # i dont know why needs twice
+        self.prompt() # i dont know why twice
         self.Refresh()
         self.__bolc_marks = []
         self.__eolc_marks = []
     
     def write(self, text, pos=None):
+        """Display text in the shell (override) with :option pos"""
         if pos is not None:
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text)
     
     def wrap(self, mode=1):
-        EditorInterface.wrap(self, mode) # instead of parent Shell.wrap
+        """Sets whether text is word wrapped (override) with
+        mode in {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
+        """
+        EditorInterface.wrap(self, mode)
     
     bolc = property(lambda self: self.promptPosEnd, doc="begginning of command-line")
     eolc = property(lambda self: self.TextLength, doc="end of command-line")
@@ -3013,9 +3072,8 @@ Flaky nutshell:
             ## return eval(text, self.__target.__dict__)
             return eval(text, self.interp.locals)
     
-    @postcall
-    def execute(self, text):
-        """Replace selection with text and post commands to run.
+    def Execute(self, text):
+        """Replace selection with text and post commands to run (override) and check clock
         
     *** This code is the modified version of original wx.py.shell.Shell.Execute.
         We override (and simplified) it to make up for missing `finally`.
@@ -3052,6 +3110,7 @@ Flaky nutshell:
             self.processLine()
     
     def run(self, *args, **kwargs):
+        """Execute command as if it was typed in directly (override) and check clock"""
         self.__start = self.clock()
         
         return Shell.run(self, *args, **kwargs)
@@ -3436,8 +3495,8 @@ if 1:
     frm.handler.debug = 4
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.shell.handler.debug = 4
-    frm.inspector.shell.execute(SHELLSTARTUP)
+    frm.inspector.shell.handler.debug = 2
+    frm.inspector.shell.Execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
     frm.inspector.shell.wrap(0)
     frm.inspector.Show()
