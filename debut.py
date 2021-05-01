@@ -42,6 +42,17 @@ def init_spec(self):
             else:
                 break
     
+    @self.define_key('M-w')
+    def copy_region():
+        with self.Excursion(self):
+            self.SetCurrentPos(self.mark)
+            self.Copy()
+    
+    @self.define_key('M-S-,', pos=0, doc="beginning-of-buffer")
+    @self.define_key('M-S-.', pos=-1, doc="end-of-buffer")
+    def goto(pos):
+        self.goto_char(pos)
+    
     self.set_style({
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#012456,size:2",

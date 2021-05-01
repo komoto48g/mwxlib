@@ -848,7 +848,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
                 @wraps(f)
                 def _Act3(*v):
                     return f(**kwargs) # function with no explicit args
-            action = _Act3
+                action = _Act3
         except TypeError:
             raise
         except Exception:
@@ -935,9 +935,6 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: self.mouse_handler('Mbutton dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
-    
-    ## def connect(self, event, synonym, f=lambda v:v):
-    ##     self.Bind(event, lambda v: self.handler(synonym, f(v)))
     
     def on_char(self, evt): #<wx._core.KeyEvent>
         """Called when char inputs (in TextCtrl)
@@ -1531,7 +1528,7 @@ Global bindings:
         
         ## self.Log.ViewEOL = True
         self.Log.ViewWhiteSpace = True
-        self.Log.set_style(Nautilus.PALETTE_STYLE)
+        ## self.Log.set_style(Nautilus.PALETTE_STYLE)
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
@@ -1589,15 +1586,6 @@ Global bindings:
             if loop:
                 j %= self.ghost.PageCount
             self.ghost.SetSelection(j)
-        
-        ## @self.define_key('M-right')
-        ## @self.define_key('M-left')
-        ## def other_window(v):
-        ##     "focus moves to other window"
-        ##     if self.shell.HasFocus() and self.ghost.IsShown():
-        ##         self.ghost.CurrentPage.SetFocus()
-        ##     else:
-        ##         self.shell.SetFocus()
         
         @self.define_key('M-right', p=1)
         @self.define_key('M-left', p=-1)
@@ -1805,12 +1793,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'M-e pressed' : (0, _P(self.end_of_line)),
                   'C-k pressed' : (0, _P(self.kill_line)),
               'C-space pressed' : (0, _P(self.set_mark)),
+              'S-space pressed' : (0, skip),
+          'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _P(self.backward_kill_line)),
-                 #'C-d pressed' : (0, ),
-                 #'C-/ pressed' : (0, ), # cf. C-a home
-                 #'C-\ pressed' : (0, ), # cf. C-e end
-                'M-S-, pressed' : (0, _P(lambda v: self.goto_char(0), "beginning-of-buffer")),
-                'M-S-. pressed' : (0, _P(lambda v: self.goto_char(-1), "end-of-buffer")),
+                  ## 'C-d pressed' : (0, ),
+                  ## 'C-/ pressed' : (0, ), # cf. C-a home
+                  ## 'C-\ pressed' : (0, ), # cf. C-e end
+                ## 'M-S-, pressed' : (0, _P(self.goto_char, pos=0, doc="beginning-of-buffer")),
+                ## 'M-S-. pressed' : (0, _P(self.goto_char, pos=-1, doc="end-of-buffer")),
             },
         })
         
@@ -1878,10 +1868,26 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## def on_margin_click(v):
         ##     self.handler("margin_clicked", v)
         ##     v.Skip()
+        
+        self.__mark = None
     
-    def set_mark(self):
+    mark = property(
+        lambda self: self.get_mark(),
+        lambda self,v: self.set_mark(v),
+        lambda self: self.del_mark())
+    
+    def get_mark(self):
+        return self.__mark
+    
+    def set_mark(self, ln=None):
+        if ln is None:
+            ln = self.CurrentLine
         self.MarkerDeleteAll(0)
-        self.MarkerAdd(self.CurrentLine, 0)
+        self.MarkerAdd(ln, 0)
+        self.__mark = self.cur
+    
+    def del_mark(self):
+        self.__mark = None
     
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
@@ -1962,13 +1968,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
-    def recenter(self, n=None):
-        """Scroll the cursor line to the center of screen (n default None)
-        if n=0, the cursor goes top of the screen. n=-1 the bottom
+    def recenter(self, ln=None):
+        """Scroll the cursor line to the center of screen (ln default None)
+        if ln=0, the cursor goes top of the screen. ln=-1 the bottom
         """
-        lv = self.LinesOnScreen() # lines completely visible
-        n = self.CurrentLine - (lv/2 if n is None else n%lv if n < lv else lv)
-        self.ScrollToLine(n)
+        n = self.LinesOnScreen() # lines completely visible
+        ln = self.CurrentLine - (n/2 if ln is None else ln%n if ln < n else n)
+        self.ScrollToLine(ln)
     
     ## --------------------------------
     ## Attributes of the editor
@@ -2872,7 +2878,8 @@ Flaky nutshell:
         builtins.puts = postcall(lambda v: self.write(str(v)))
     
     def on_text_input(self, text):
-        """Called when [Enter] text (called before push)
+        """Called when [Enter] text (before push)
+        
         Note: The text is raw input:str, no magic cast
         """
         self.MarkerAdd(self.CurrentLine, 1) # input-Marker
@@ -2882,7 +2889,8 @@ Flaky nutshell:
         self.historyIndex = -1
     
     def on_text_output(self, text):
-        """Called when [Enter] text (called after push)
+        """Called when [Enter] text (after push)
+        
         Note: The text includes input:str & output:str, no magic cast
         """
         lex = re.findall("File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
@@ -2904,30 +2912,30 @@ Flaky nutshell:
     
     def addHistory(self, command):
         """Add command to the command history
-        (override) if the command is new (i.e., not found in the head of the list)
-        (override) then, write the command to History buffer
+        (override) if the command is new (i.e., not found in the head of the list),
+        and if no error. Then, write the command to History buffer.
         """
         if self.history and self.history[0] == command:
             return
-        
-        Shell.addHistory(self, command)
         
         ## この段階では push された直後で，次のようになっている
         ## bolc : begginning of command-line
         ## eolc : end of the output-buffer
         substr = self.GetTextRange(self.bolc, self.eolc)
         self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # update for text-comp
-        
+        noerr = self.on_text_output(substr)
+        if noerr:
+            Shell.addHistory(self, command)
         try:
             ed = self.parent.History
             ed.ReadOnly = 0
             ed.write(command + os.linesep)
-            ed.ReadOnly = 1
             ln = ed.LineFromPosition(ed.TextLength - len(command)) # pos to mark
-            if self.on_text_output(substr):
+            if noerr:
                 ed.MarkerAdd(ln, 1)
             else:
                 ed.MarkerAdd(ln, 3)
+            ed.ReadOnly = 1
         except Exception:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             pass
@@ -3246,6 +3254,12 @@ Flaky nutshell:
             return
         try:
             hint = self.cmdlc
+            if hint.isspace() or not hint and self.cur != self.bolc:
+                self.handler('quit', evt)
+                evt.Skip()
+                return
+            
+            hint = hint.strip()
             ls = [x for x in self.history if x.startswith(hint)] # case-sensitive match
             words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
             
@@ -3426,8 +3440,14 @@ Note:
     frame.shell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window
     if startup:
-        startup(frame.shell)
-        frame.shell.handler.bind("shell_cloned", startup)
+        try:
+            startup(frame.shell)
+            frame.shell.handler.bind("shell_cloned", startup)
+        except Exception as e:
+            traceback.print_exc()
+            frame.shell.write(traceback.format_exc())
+            frame.shell.prompt()
+            pass
     if app is not None:
         if not isinstance(app, wx.App):
             ## raise Warning("Given app is not an instance of wx.App")
