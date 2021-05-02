@@ -1513,7 +1513,9 @@ Global bindings:
             size=(1000,500), style=wx.DEFAULT_FRAME_STYLE, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
-        target = target or __import__('__main__')
+        if target is None:
+            target = __import__('__main__')
+        
         self.SetTitle(title or "Nautilus - {!r}".format(target))
         
         self.statusbar.resize((-1,200))
@@ -2641,6 +2643,7 @@ Flaky nutshell:
         
         self.__cur = 0
         self.__start = 0
+        self.__history = []
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
     
@@ -2742,15 +2745,15 @@ Flaky nutshell:
                 head, sep, hint = org.rpartition('.')
                 c, pred = re.search("(\?+)\s*(.*)", rest).groups()
                 try:
-                    pred = self.eval(pred)
+                    pred = self.eval(pred).__name__
                 except Exception:
-                    pass
+                    pred = repr(pred)
                 
                 alias = head or 'this'
                 ## apropos(hint.strip(), self.eval(alias),
                 ##         len(c)<2, alias, pred and self.eval(pred))
                 cmd = "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3})".format(
-                        hint.strip(), alias, len(c)<2, typename(pred))
+                        hint.strip(), alias, len(c)<2, pred)
                 
                 self.run(cmd, verbose=0, prompt=0)
                 self.history[0] = ln # overwrite the latest history
@@ -2909,6 +2912,18 @@ Flaky nutshell:
     ## Attributes of the shell
     ## --------------------------------
     fragmwords = set(keyword.kwlist + dir(builtins)) # set()
+    
+    @property
+    def history(self):
+        return self.__history
+    
+    @history.setter
+    def history(self, v):
+        self.__history = v
+    
+    @history.deleter
+    def history(self):
+        self.__history = []
     
     def addHistory(self, command):
         """Add command to the command history
@@ -3134,7 +3149,12 @@ Flaky nutshell:
         print("... duration time: {:g} s".format(t-self.__start), file=self)
     
     def clone(self, target=None):
-        frame = deb(target or self.target,
+        if target is None:
+            target = self.target
+        elif not hasattr(target, '__dict__'):
+            raise TypeError("You cannot dive into an primitive object")
+        
+        frame = deb(target,
              locals = self.interp.locals,
                size = self.parent.Size,
               title = "Clone of Nautilus - {!r}".format(target))
@@ -3250,7 +3270,7 @@ Flaky nutshell:
     def call_history_comp(self, evt):
         """Called when history-comp mode"""
         if not self.CanEdit():
-            self.handler('quit', evt)
+            self.handler('<quit', evt)
             return
         try:
             hint = self.cmdlc
@@ -3477,9 +3497,8 @@ def filling(target=None, **kwargs):
     """
     from wx.py.filling import FillingFrame
     frame = FillingFrame(rootObject=target, rootLabel=typename(target), **kwargs)
-    frame.Show(True)
     frame.filling.text.WrapMode = 0
-    ## EditorInterface.set_style(frame.filling.text, Editor.PALETTE_STYLE)
+    frame.Show()
     return frame
 
 
