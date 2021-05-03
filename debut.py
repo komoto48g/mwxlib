@@ -2,14 +2,33 @@
 # -*- coding: utf-8 -*-
 """deb utility
 
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+Snippet of code, new syntax, new idea, anything new one can imagine.
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
-import mwx
+from six.moves import builtins
 import numpy as np
+import mwx
 
 np.set_printoptions(linewidth=256) # default 75
+
+
+def builtin(f):
+    setattr(builtins, f.__name__, f)
+    return f
+
+@builtin
+def maps(f, *iterables):
+    if not iterables:
+        return lambda *it: maps(f, *it)
+    return map(f, *iterables)
+
+
+@builtin
+def apply(f, argv=None, **kwargs):
+    if argv is None:
+        return lambda v: apply(f, v, **kwargs)
+    return f(*argv, **kwargs)
 
 
 def init_spec(self):
@@ -53,6 +72,7 @@ def init_spec(self):
     def goto(pos):
         self.goto_char(pos)
     
+    ## Theme: 'Dive into the night'
     self.set_style({
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#012456,size:2",

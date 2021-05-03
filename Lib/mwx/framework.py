@@ -109,7 +109,8 @@ def predicate(text):
 
 def Dir(obj):
     """As the standard dir, but also listup filelds of COM object
-    you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
+    
+    Note:you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
     """
     ## keys = [k for k,v in inspect.getmembers(obj)]
     keys = dir(obj)
@@ -2712,7 +2713,7 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        ln = self.GetTextRange(self.bolc, self.eolc)
+        ln = self.GetTextRange(self.bolc, self.eolc).rstrip()
         if not ln:
             evt.Skip()
             return
@@ -2791,18 +2792,6 @@ Flaky nutshell:
     ## Magic suite of the shell
     ## --------------------------------
     
-    def interpret_magic(self, tokens):
-        """Yet another magic `@ interpreter
-        tokens: list of token (retval from split_tokens)
-        """
-        cmd = self._integrate_magic(tokens)
-        
-        ## `import(*)` to expression
-        ## cmd = re.sub("import\(\s*(.+?)\s*\)", "__import__('\\1'); \\1=_;", cmd)
-        cmd = re.sub("import\(\s*(.+?)\s*\)", "\\1=__import__('\\1')", cmd)
-        
-        return cmd
-    
     def _integrate_magic(self, tokens):
         sep1 = "`@=+-/*%<>&|^~;\t\r\n"  # ` OPS + SEPARATOR_CHARS; nospace, nocomma
         sep2 = "`@=+-/*%<>&|^~,;\t\r\n" # @ OPS + SEPARATOR_CHARS; nospace
@@ -2835,10 +2824,25 @@ Flaky nutshell:
             
         return ''.join(tokens)
     
+    def interpret_magic(self, tokens):
+        """Called when [Enter] command, or eval-time for tooltip
+        and interpret `@ magic and '@import' statement.
+        
+        tokens: list of token (retval from split_tokens)
+        Note: This is called before run and execute.
+        """
+        cmd = self._integrate_magic(tokens)
+        
+        ## `import(*)` to expression
+        ## cmd = re.sub("import\(\s*(.+?)\s*\)", "__import__('\\1'); \\1=_;", cmd)
+        cmd = re.sub("import\(\s*(.+?)\s*\)", "\\1=__import__('\\1')", cmd)
+        
+        return cmd
+    
     def magic(self, cmd):
         """Called before command pushed (override)
         
-        Note: the shell push command when run, [enter], execute => processLine
+        Note: This is called after interpret_magic.
         """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
@@ -2905,13 +2909,13 @@ Flaky nutshell:
         ## If so, we set the `_' variables to the function or class.
         m = re.match("(def|class)\s+(\w+)", text.strip())
         if m:
-            self.target._ = self.eval(m.group(2))
+            builtins._ = self.eval(m.group(2))
         return True
     
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    fragmwords = set(keyword.kwlist + dir(builtins)) # set()
+    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-autocomp
     
     @property
     def history(self):
@@ -2927,11 +2931,14 @@ Flaky nutshell:
     
     def addHistory(self, command):
         """Add command to the command history
-        (override) if the command is new (i.e., not found in the head of the list),
-        and if no error. Then, write the command to History buffer.
+        (override) if the command is new (i.e., not found in the head of the list).
+        Then, write the command to History buffer.
         """
-        if self.history and self.history[0] == command:
+        if self.history and self.history[0] == command\
+          or not command:
             return
+        
+        Shell.addHistory(self, command)
         
         ## この段階では push された直後で，次のようになっている
         ## bolc : begginning of command-line
@@ -2939,8 +2946,6 @@ Flaky nutshell:
         substr = self.GetTextRange(self.bolc, self.eolc)
         self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # update for text-comp
         noerr = self.on_text_output(substr)
-        if noerr:
-            Shell.addHistory(self, command)
         try:
             ed = self.parent.History
             ed.ReadOnly = 0
@@ -3500,6 +3505,7 @@ def filling(target=None, **kwargs):
     frame.filling.text.WrapMode = 0
     frame.Show()
     return frame
+
 
 
 if __name__ == '__main__':
