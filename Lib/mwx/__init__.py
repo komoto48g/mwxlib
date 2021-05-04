@@ -16,11 +16,10 @@ from .framework import Frame, MiniFrame, MinidebFrame, Editor, Nautilus
 from .framework import funcall, postcall, connect, disconnect # curry spices
 from .framework import deb
 
-## from . import mplt2 as mplt
-from .mplt2 import Param
-from .mplt2 import LParam
-from .mplt2 import ParamCtrl
-from .mplt2 import ControlPanel
+## widgets
+from .controls import Param
+from .controls import LParam
+from .controls import ControlPanel
 
 ## matplot
 from .matplot2 import MatplotPanel

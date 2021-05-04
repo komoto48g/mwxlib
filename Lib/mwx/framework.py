@@ -521,12 +521,13 @@ class FSM(dict):
         f = os.path.expanduser("~/.deb/deb-dump.log")
         with open(f, 'a') as o:
             exc = traceback.format_exc().strip()
-            lex = re.findall("File \"(.*)\", line ([0-9]+), in (.*)", exc)
+            lex = re.findall("File \"(.*)\", line ([0-9]+), in (.*)\n+(.*)", exc)
             
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
             print(':'.join(lex[-1]), file=o) # grep error format
             print(*args, file=o, **kwargs) # fsm dump message
-            print('\n'.join("  # " + x for x in exc.splitlines())+'\n', file=o)
+            print('\n'.join("  # " + x for x in exc.splitlines()), file=o)
+            print('\n', file=o)
     
     def validate(self, state):
         """Sort and move to end items with key which includes `*?[]`"""
@@ -1531,7 +1532,6 @@ Global bindings:
         
         ## self.Log.ViewEOL = True
         self.Log.ViewWhiteSpace = True
-        ## self.Log.set_style(Nautilus.PALETTE_STYLE)
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
@@ -1795,6 +1795,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'M-a pressed' : (0, _P(self.back_to_indentation)),
                   'M-e pressed' : (0, _P(self.end_of_line)),
                   'C-k pressed' : (0, _P(self.kill_line)),
+                'C-S-f pressed' : (0, _P(self.set_mark)), # override key
               'C-space pressed' : (0, _P(self.set_mark)),
               'S-space pressed' : (0, skip),
           'C-backspace pressed' : (0, skip),
@@ -2713,7 +2714,7 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        ln = self.GetTextRange(self.bolc, self.eolc).rstrip()
+        ln = self.GetTextRange(self.bolc, self.eolc)
         if not ln:
             evt.Skip()
             return
@@ -2889,11 +2890,12 @@ Flaky nutshell:
         
         Note: The text is raw input:str, no magic cast
         """
-        self.MarkerAdd(self.CurrentLine, 1) # input-Marker
-        
-        self.__bolc_marks.append(self.bolc)
-        self.__eolc_marks.append(self.eolc)
-        self.historyIndex = -1
+        if text.rstrip():
+            self.MarkerAdd(self.CurrentLine, 1) # input-Marker
+            
+            self.__bolc_marks.append(self.bolc)
+            self.__eolc_marks.append(self.eolc)
+            self.historyIndex = -1
     
     def on_text_output(self, text):
         """Called when [Enter] text (after push)

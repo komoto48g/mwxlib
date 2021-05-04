@@ -23,8 +23,8 @@ from wx import aui
 ## import wx.lib.agw.aui as aui
 import numpy as np
 from . import framework as mwx
-from . import images as images
-from .mplt2 import ControlPanel
+from .controls import Icon
+from .controls import ControlPanel
 from .matplot2g import GraphPlot
 from .matplot2lg import Histogram
 ## from matplotlib import pyplot as plt
@@ -41,63 +41,6 @@ except ImportError:
 
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
-if 1:
-    provided_arts = {
-            'cut' : wx.ART_CUT,
-           'copy' : wx.ART_COPY,
-          'paste' : wx.ART_PASTE,
-           'book' : wx.ART_HELP_BOOK,
-           'page' : wx.ART_HELP_PAGE,
-            'exe' : wx.ART_EXECUTABLE_FILE,
-           'file' : wx.ART_NORMAL_FILE,
-       'file_new' : wx.ART_NEW,
-    'file_delete' : wx.ART_DELETE,
-   'file_missing' : wx.ART_MISSING_IMAGE,
-           'find' : wx.ART_FIND,
-           'open' : wx.ART_FILE_OPEN,
-           'save' : wx.ART_FILE_SAVE,
-         'saveas' : wx.ART_FILE_SAVE_AS,
-         'folder' : wx.ART_FOLDER,
-    'folder_open' : wx.ART_FOLDER_OPEN,
-             #'x' : wx.ART_CLOSE,
-             #'v' : wx.ART_TICK_MARK,
-              '?' : wx.ART_QUESTION,
-              '!' : wx.ART_INFORMATION,
-             '!!' : wx.ART_WARNING,
-            '!!!' : wx.ART_ERROR,
-              '+' : wx.ART_PLUS,
-              '-' : wx.ART_MINUS,
-              '~' : wx.ART_GO_HOME,
-             'up' : wx.ART_GO_UP,
-             'dn' : wx.ART_GO_DOWN,
-             '<-' : wx.ART_GO_BACK,
-             '->' : wx.ART_GO_FORWARD,
-            '|<-' : wx.ART_GOTO_FIRST,
-            '->|' : wx.ART_GOTO_LAST,
-    }
-
-def getBmp(key, size=None):
-    if key:
-        try:
-            bmp = getattr(images, key).GetBitmap()
-            if size:
-                img = bmp.ConvertToImage()
-                img = img.Scale(*size)
-                bmp = img.ConvertToBitmap()
-            return bmp
-        except Exception:
-            return wx.ArtProvider.GetBitmap(
-                provided_arts.get(key) or key, size=size or (14,14)) #<wx._core.Bitmap> IsOk ?
-    
-    return wx.NullBitmap # The standard wx control seems to accept this,
-    ## return wx.Bitmap(0,0) # but some wx.lib.controls require this.
-
-Icon = getBmp
-
-getBmp.provided_arts = provided_arts
-
-getBmp.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
-                            if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
 
 
 class Thread(object):
