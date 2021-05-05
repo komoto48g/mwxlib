@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """deb utility
 
-Snippet of code, new syntax, new idea, anything new one can imagine.
+Snippets of code, new syntax, and anything new one can imagine.
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
@@ -13,14 +13,17 @@ import mwx
 
 np.set_printoptions(linewidth=256) # default 75
 
-if 1:
+if 1: # for PY2-backward-comaptible
+    
     def maps(f, *iterables):
+        ## it @maps(f) => (f(*x) for x in zip(*it))
         if not iterables:
             return lambda *it: maps(f, *it)
         return map(f, *iterables)
     builtins.maps = maps
     
     def apply(f, argv=None, **kwargs):
+        ## x @apply(f,**kw) => f(*x,**kw)
         if argv is None:
             return lambda v: apply(f, v, **kwargs)
         return f(*argv, **kwargs)
@@ -73,9 +76,7 @@ def init_spec(self):
     
     @self.define_key('C-c j')
     def evaln():
-        self.Execute(
-            self.GetTextRange(
-                self.bolc, self.eolc))
+        self.Execute(self.GetTextRange(self.bolc, self.eolc))
     
     ## Theme: 'Dive into the night'
     self.set_style({

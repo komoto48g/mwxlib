@@ -2720,10 +2720,13 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        text = self.GetTextRange(self.bolc, self.eolc)
+        text = self.GetTextRange(self.bolc, self.eolc).lstrip()
         if not text:
             evt.Skip()
             return
+        
+        if self.CallTipActive():
+            self.CallTipCancel()
         
         ## set marks, reset history point, etc.
         self.on_text_input(text)
@@ -2741,9 +2744,6 @@ Flaky nutshell:
             self.run(cmd, verbose=0, prompt=0)
             self.history[0] = text # overwrite the latest history
             self.message(cmd)
-        
-        if self.CallTipActive():
-            self.CallTipCancel()
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -2780,10 +2780,14 @@ Flaky nutshell:
                 return self._integrate_magic([cmd] + r)
             
             if c == '@':
-                if r and any(r[0].startswith(x) for x in '.['):
-                    f = "({lhs}){rhs}"
-                else:
-                    f = "{rhs}({lhs})"
+                f = "{rhs}({lhs})"
+                if r:
+                    ## Add special rule of conversion of @. @[ @* ...
+                    if r[0] in '.[':
+                        f = "({lhs}){rhs}" # x@.y => (x).y calls own method
+                    elif r[0] in '*':
+                        f = "{rhs}(*{lhs})" # x@*y => y(*x) expands args
+                        r = r[1:] # skip *
                 cmd = f.format(
                     lhs = ''.join(l) or '_',
                     rhs = ''.join(extract_words_from_tokens(r, sep2)).strip())
@@ -2857,6 +2861,10 @@ Flaky nutshell:
         builtins.file = inspect.getfile
         builtins.code = inspect.getsource
         builtins.module = inspect.getmodule
+        
+        def getsourcefileno(object):
+            return (inspect.getsourcefile(object), inspect.getsourcelines(object)[1])
+        builtins.fileno = getsourcefileno
     
     def on_activated(self, shell):
         """Called when activated"""
