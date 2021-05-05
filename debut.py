@@ -7,28 +7,24 @@ Snippet of code, new syntax, new idea, anything new one can imagine.
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 from six.moves import builtins
+import inspect
 import numpy as np
 import mwx
 
 np.set_printoptions(linewidth=256) # default 75
 
-
-def builtin(f):
-    setattr(builtins, f.__name__, f)
-    return f
-
-@builtin
-def maps(f, *iterables):
-    if not iterables:
-        return lambda *it: maps(f, *it)
-    return map(f, *iterables)
-
-
-@builtin
-def apply(f, argv=None, **kwargs):
-    if argv is None:
-        return lambda v: apply(f, v, **kwargs)
-    return f(*argv, **kwargs)
+if 1:
+    def maps(f, *iterables):
+        if not iterables:
+            return lambda *it: maps(f, *it)
+        return map(f, *iterables)
+    builtins.maps = maps
+    
+    def apply(f, argv=None, **kwargs):
+        if argv is None:
+            return lambda v: apply(f, v, **kwargs)
+        return f(*argv, **kwargs)
+    builtins.apply = apply
 
 
 def init_spec(self):
@@ -72,6 +68,15 @@ def init_spec(self):
     def goto(pos):
         self.goto_char(pos)
     
+    ## self.define_key('C-c j', lambda v:
+    ##     (self.Execute (self.GetTextRange (self.bolc, self.eolc))), 'evaln')
+    
+    @self.define_key('C-c j')
+    def evaln():
+        self.Execute(
+            self.GetTextRange(
+                self.bolc, self.eolc))
+    
     ## Theme: 'Dive into the night'
     self.set_style({
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
@@ -91,6 +96,7 @@ def init_spec(self):
         "STC_P_STRINGEOL"       : "fore:#808080",
         "STC_P_WORD"            : "fore:#80a0ff",
         "STC_P_WORD2"           : "fore:#ff80ff",
+        "STC_P_WORD3"           : "fore:#ff0000,back:#ffff00", # custom style for search word
         "STC_P_DEFNAME"         : "fore:#e0c080,bold",
         "STC_P_CLASSNAME"       : "fore:#e0c080,bold",
         "STC_P_DECORATOR"       : "fore:#e08040",
