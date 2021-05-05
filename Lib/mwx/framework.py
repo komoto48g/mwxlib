@@ -124,7 +124,7 @@ def docp(f):
     if not atom(f):
         doc = inspect.getdoc(f)
         if doc:
-            print("  --{}".format("-" * 120))
+            print("  --{}".format("-" * 40))
             print("  + {}".format(typename(f)))
             head ="     |"
             for ln in doc.splitlines():
@@ -150,7 +150,7 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None):
                   .replace('\\A','[A-Z0-9]')) # \A: (start of the string) から変更
     
     if isinstance(pred, LITERAL_TYPE):
-        pred = predicate(pred)
+        pred = predicate(pred) # eval in global namespace
     
     if pred is not None: # check TypeError
         if not callable(pred):
@@ -2680,7 +2680,7 @@ Flaky nutshell:
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-        if self.eolc < self.bolc: # check if prompt is invalid state
+        if self.eolc < self.bolc: # check if prompt is in valid state
             self.prompt()
         self.message("ESC-")
     
@@ -2720,63 +2720,30 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        ln = self.GetTextRange(self.bolc, self.eolc)
-        if not ln:
+        text = self.GetTextRange(self.bolc, self.eolc)
+        if not text:
             evt.Skip()
             return
         
-        self.on_text_input(ln)
+        ## set marks, reset history point, etc.
+        self.on_text_input(text)
         
-        if ln[0] in '!?': # casts wx.py.magic: begins with !(sx), ?(info), and ??(help)
+        ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
+        if text[0] in '!?':
             evt.Skip()
             return
         
-        ## check magic syntax for `@?
-        try:
-            tokens = split_tokens(ln)
-            
-            if '@' in tokens or '`' in tokens:
-                cmd = self.interpret_magic(tokens)
-                if '\n' in cmd:
-                    self.Execute(cmd) # for multi-line commands
-                else:
-                    self.run(cmd, verbose=0, prompt=0)
-                    self.history[0] = ln # overwrite the latest history
-                    self.message(cmd)
-                    self.goto_char(-1)
-                return
-            
-            if '?' in tokens:
-                j = tokens.index('?')
-                org = ''.join(tokens[:j])
-                rest = ''.join(tokens[j:])
-                head, sep, hint = org.rpartition('.')
-                c, pred = re.search("(\?+)\s*(.*)", rest).groups()
-                try:
-                    pred = self.eval(pred).__name__
-                except Exception:
-                    pred = repr(pred)
-                
-                alias = head or 'this'
-                ## apropos(hint.strip(), self.eval(alias),
-                ##         len(c)<2, alias, pred and self.eval(pred))
-                cmd = "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3})".format(
-                        hint.strip(), alias, len(c)<2, pred)
-                
-                self.run(cmd, verbose=0, prompt=0)
-                self.history[0] = ln # overwrite the latest history
-                self.write(ln)       # show last command again
-                self.message(cmd)
-                return
-            
-        except ValueError:
-            pass
+        ## cast magic extended for `@?
+        cmd = self.interpret_magic(text)
+        if '\n' in cmd:
+            self.Execute(cmd) # for multi-line commands
+        else:
+            self.run(cmd, verbose=0, prompt=0)
+            self.history[0] = text # overwrite the latest history
+            self.message(cmd)
         
-        if '\n' in ln:
-            self.Execute(ln) # for multi-line commands, no skip
-            return
-        
-        evt.Skip()
+        if self.CallTipActive():
+            self.CallTipCancel()
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -2822,6 +2789,19 @@ Flaky nutshell:
                     rhs = ''.join(extract_words_from_tokens(r, sep2)).strip())
                 return self._integrate_magic([cmd] + r)
             
+            if c == '?':
+                lhs = ''.join(l)
+                rhs = ''.join(r)
+                head, sep, hint = lhs.rpartition('.')
+                c, pred = re.search("(\?+)\s*(.*)", c+rhs).groups()
+                try:
+                    self.eval(pred) # check if pred in self namespace
+                except Exception:
+                    pred = repr(pred) # or it would be in this namespace
+                
+                return "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3})".format(
+                        hint.strip(), head or 'this', len(c)<2, pred or None)
+            
             if c in ';\r\n': # os.linesep
                 return ''.join(l) + c + self._integrate_magic(r)
             
@@ -2831,26 +2811,30 @@ Flaky nutshell:
             
         return ''.join(tokens)
     
-    def interpret_magic(self, tokens):
+    def interpret_magic(self, cmd):
         """Called when [Enter] command, or eval-time for tooltip
-        and interpret `@ magic and '@import' statement.
+        Interpret magic syntax
+           backquote : x`y --> y=x
+            pullback : x@y --> y(x)
+             apropos : x.y?p --> apropos(y,x,...,p)
+              import : x@import --> x=__import__('x')
         
-        tokens: list of token (retval from split_tokens)
-        Note: This is called before run and execute.
+        Note: This is called before run and execute, (and magic).
         """
-        cmd = self._integrate_magic(tokens)
+        try:
+            tokens = split_tokens(cmd)
+            if any(x in tokens for x in '`@?'):
+                cmd = self._integrate_magic(tokens)
+        except ValueError:
+            pass
         
         ## `import(*)` to expression
-        ## cmd = re.sub("import\(\s*(.+?)\s*\)", "__import__('\\1'); \\1=_;", cmd)
         cmd = re.sub("import\(\s*(.+?)\s*\)", "\\1=__import__('\\1')", cmd)
         
         return cmd
     
     def magic(self, cmd):
-        """Called before command pushed (override)
-        
-        Note: This is called after interpret_magic.
-        """
+        """Called before command pushed (override)"""
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
             elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
@@ -3208,8 +3192,7 @@ Flaky nutshell:
         if self.CallTipActive():
             self.CallTipCancel()
         try:
-            tokens = split_tokens(text)
-            text = self.interpret_magic(tokens)
+            text = self.interpret_magic(text)
             self.CallTipShow(self.cur, pformat(self.eval(text)))
             self.message(text)
         except Exception as e:
