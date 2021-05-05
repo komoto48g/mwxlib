@@ -1717,7 +1717,7 @@ Global bindings:
             self.findData.FindString = word
             self.message("{}: {} found".format(word.decode(), n))
     
-    ## *** The following code is a modification of 'wx.py.frame.Frame' ***
+    ## *** The following code is a modification of <wx.py.frame.Frame> ***
     
     def OnFindText(self, evt):
         if self.findDlg is not None:
@@ -2075,6 +2075,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoPos(pos)
         return self.cur
     
+    def select_char(self, pos):
+        if pos < 0:
+            pos += self.TextLength + 1 # end-of-buffer
+        self.SetCurrentPos(pos)
+        return self.cur
+    
     def goto_line(self, pos):
         if pos < 0:
             pos += self.LineCount + 1
@@ -2130,22 +2136,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def selection_forward_word_or_paren(self):
         p = self.right_paren
         if p != -1:
-            self.SetCurrentPos(p+1) # forward selection parenthesized words
+            self.SetCurrentPos(p+1) # forward selection to parenthesized words
             return
         q = self.right_quotation
         if q != -1:
-            self.SetCurrentPos(q) # forward selection quoted words
+            self.SetCurrentPos(q) # forward selection to quoted words
             return
         self.WordRightEndExtend()  # othewise, extend selection forward word
     
     def selection_backward_word_or_paren(self):
         p = self.left_paren
         if p != -1:
-            self.SetCurrentPos(p) # backward selection parenthesized words
+            self.SetCurrentPos(p) # backward selection to parenthesized words
             return
         q = self.left_quotation
         if q != -1:
-            self.SetCurrentPos(q) # forward selection quoted words
+            self.SetCurrentPos(q) # forward selection to quoted words
             return
         self.WordLeftExtend() # otherwise, extend selection backward word
     
@@ -2862,7 +2868,7 @@ Flaky nutshell:
         builtins.pprint = pprint
         builtins.pp = pprint
         builtins.p = print
-        builtins.watch = dev
+        builtins.watch = watch
         builtins.filling = filling
         builtins.file = inspect.getfile
         builtins.code = inspect.getsource
@@ -2962,20 +2968,6 @@ Flaky nutshell:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             pass
     
-    def CallTipShow(self, pos, tip):
-        """Call standard ToolTip (override) and write the tips to scratch"""
-        Shell.CallTipShow(self, pos, tip)
-        if tip:
-            ## pt = self.ClientToScreen(self.PointFromPosition(pos))
-            self.parent.scratch.SetValue(tip)
-    
-    def _clip(self, data):
-        """Transfer data to clipboard when copy and paste
-        (override) and transfer the data to the Log board
-        """
-        self.parent.Log.write(data.Text + os.linesep)
-        Shell._clip(self, data)
-    
     def In(self, j):
         """Input command:str"""
         return self.GetTextRange(self.__bolc_marks[j], self.__eolc_marks[j])
@@ -3026,10 +3018,10 @@ Flaky nutshell:
     def bol(self):
         """beginning of line (override) excluding prompt"""
         text, lp = self.CurLine
-        if text.startswith(sys.ps1):
-            lp -= len(sys.ps1)
-        elif text.startswith(sys.ps2):
-            lp -= len(sys.ps2)
+        for p in (sys.ps1, sys.ps2, sys.ps3):
+            if text.startswith(p):
+                lp -= len(p)
+                break
         return (self.cur - lp)
     
     ## cf. getCommand(), getMultilineCommand() ... caret-line-text that has a prompt (>>>)
@@ -3044,21 +3036,41 @@ Flaky nutshell:
     ##     """full command-(multi-)line (with prompts)"""
     ##     return self.GetTextRange(self.bolc, self.eolc)
     
-    ## @property
-    ## def cmdlnc(self):
-    ##     """culled full command-(multi-)line (with no prompts)"""
-    ##     lf = '\n'
-    ##     return (self.GetTextRange(self.bolc, self.eolc)
-    ##                 .replace(os.linesep + sys.ps1, lf)
-    ##                 .replace(os.linesep + sys.ps2, lf)
-    ##                 .replace(os.linesep, lf))
-    
     def beggining_of_command_line(self):
         self.goto_char(self.bolc)
         self.ScrollToColumn(0)
     
     def end_of_command_line(self):
         self.goto_char(self.eolc)
+    
+    def indent_line(self):
+        """Auto-indent the current line"""
+        line = self.GetTextRange(self.bol, self.eol) # no-prompt
+        lstrip = line.strip()
+        indent = self.calc_indent()
+        pos = max(self.bol + len(indent),
+                  self.cur + len(indent) - (len(line) - len(lstrip)))
+        self.goto_char(self.eol)
+        self.select_char(self.bol)
+        self.ReplaceSelection(indent + lstrip)
+        self.goto_char(pos)
+    
+    def calc_indent(self):
+        """Calculate indent spaces from prefious line"""
+        ## cf. wx.py.shell.Shell.prompt
+        line = self.GetLine(self.CurrentLine-1)
+        for p in (sys.ps1, sys.ps2, sys.ps3):
+            if line.startswith(p):
+                line = line[len(p):]
+                break
+        lstrip = line.lstrip()
+        if not lstrip:
+            indent = line.strip(os.linesep)
+        else:
+            indent = line[:(len(line)-len(lstrip))]
+            if line.strip()[-1] == ':':
+                indent += ' '*4
+        return indent
     
     ## --------------------------------
     ## Utility functions of the Shell 
@@ -3073,6 +3085,13 @@ Flaky nutshell:
             '',
             "#{!r}".format(wx.py.shell), sep='\n', file=self)
         return Shell.about(self)
+    
+    def _clip(self, data):
+        """Transfer data to clipboard when copy and paste
+        (override) and transfer the data to the Log board
+        """
+        self.parent.Log.write(data.Text + os.linesep)
+        Shell._clip(self, data)
     
     def info(self, root=None):
         """Short information"""
@@ -3103,20 +3122,17 @@ Flaky nutshell:
             return eval(text, self.interp.locals)
     
     def Execute(self, text):
-        """Replace selection with text and post commands to run (override) and check clock
-        
-    *** This code is the modified version of original wx.py.shell.Shell.Execute.
-        We override (and simplified) it to make up for missing `finally`.
+        """Replace selection with text, run commands,
+        (override) and check clock
         """
         self.__start = self.clock()
         
-        ## Emulate the following code, but for multi-line commands, push each line/block.
-        ## >>> self.Replace(self.bolc, self.eolc, cmd)
-        ## >>> self.processLine()
+        ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
+        ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
         text = (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
-                    .replace(os.linesep, lf)).lstrip()
+                    .replace(os.linesep, lf))
         commands = []
         c = ''
         for line in text.split(lf):
@@ -3140,7 +3156,9 @@ Flaky nutshell:
             self.processLine()
     
     def run(self, *args, **kwargs):
-        """Execute command as if it was typed in directly (override) and check clock"""
+        """Execute command as if it was typed in directly
+        (override) and check clock
+        """
         self.__start = self.clock()
         
         return Shell.run(self, *args, **kwargs)
@@ -3175,6 +3193,13 @@ Flaky nutshell:
     ## --------------------------------
     ## Auto-comp actions of the shell
     ## --------------------------------
+    
+    def CallTipShow(self, pos, tip):
+        """Call standard ToolTip (override) and write the tips to scratch"""
+        Shell.CallTipShow(self, pos, tip)
+        if tip:
+            ## pt = self.ClientToScreen(self.PointFromPosition(pos))
+            self.parent.scratch.SetValue(tip)
     
     def gen_tooltip(self, text):
         """Call ToolTip of the selected word or focused line"""
@@ -3277,12 +3302,13 @@ Flaky nutshell:
     def call_history_comp(self, evt):
         """Called when history-comp mode"""
         if not self.CanEdit():
-            self.handler('<quit', evt)
+            self.handler('quit', evt)
             return
         try:
             hint = self.cmdlc
-            if hint.isspace() or not hint and self.cur != self.bolc:
+            if hint.isspace():
                 self.handler('quit', evt)
+                ## self.indent_line()
                 evt.Skip()
                 return
             
@@ -3444,6 +3470,7 @@ Flaky nutshell:
 def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
+    --- Put me at breakpoint.
     
     target : object or module. Default None sets target as __main__.
        app : an instance of App.
@@ -3485,7 +3512,7 @@ Note:
     return frame
 
 
-def dev(target=None, **kwargs):
+def watch(target=None, **kwargs):
     """Diver's watch to go deep into the wx process to inspect the target
     Wx.py tool for watching tree structure and events across the wx.Objects
     
@@ -3515,7 +3542,7 @@ if __name__ == '__main__':
 if 1:
     self
     self.inspector
-    self.inspector.shell
+    root = self.inspector.shell
     """
     np.set_printoptions(linewidth=256) # default 75
     if 0:
