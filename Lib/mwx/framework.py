@@ -2479,7 +2479,6 @@ Flaky nutshell:
                 'enter pressed' : (0, self.OnEnter),
               'S-enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _P(self.insertLineBreak)),
-                  'C-. pressed' : (0, _P(lambda v: self.write('@.'), alias="@dot")),
                  ## 'C-up pressed' : (0, _P(lambda v: self.OnHistoryReplace(+1), "prev-command")),
                ## 'C-down pressed' : (0, _P(lambda v: self.OnHistoryReplace(-1), "next-command")),
                ## 'C-S-up pressed' : (0, ), # --> Shell.OnHistoryInsert(+1) 無効
@@ -2767,8 +2766,8 @@ Flaky nutshell:
     ## --------------------------------
     
     def _integrate_magic(self, tokens):
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n"  # ` OPS + SEPARATOR_CHARS; nospace, nocomma
-        sep2 = "`@=+-/*%<>&|^~,;\t\r\n" # @ OPS + SEPARATOR_CHARS; nospace
+        sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # ` OPS + SEPARATOR_CHARS; nospace, nocomma
+        sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # @ OPS + SEPARATOR_CHARS;
         for j,c in enumerate(tokens):
             l, r = tokens[:j], tokens[j+1:]
             
@@ -2781,13 +2780,11 @@ Flaky nutshell:
             
             if c == '@':
                 f = "{rhs}({lhs})"
-                if r:
-                    ## Add special rule of conversion of @. @[ @* ...
-                    if r[0] in '.[':
-                        f = "({lhs}){rhs}" # x@.y => (x).y calls own method
-                    elif r[0] in '*':
-                        f = "{rhs}(*{lhs})" # x@*y => y(*x) expands args
-                        r = r[1:] # skip *
+                if r and r[0] == '*':
+                    f = "{rhs}(*{lhs})" # x@*y => y(*x)
+                    r = r[1:] # skip * right after @
+                while r and r[0].isspace():
+                    r = r[1:] # skip whites following @
                 cmd = f.format(
                     lhs = ''.join(l) or '_',
                     rhs = ''.join(extract_words_from_tokens(r, sep2)).strip())
