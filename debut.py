@@ -7,6 +7,7 @@ Snippets of code, new syntax, and anything new one can imagine.
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 from six.moves import builtins
+import functools
 import inspect
 import numpy as np
 import mwx
@@ -28,6 +29,23 @@ if 1: # for PY2-backward-comaptible
             return lambda v: apply(f, v, **kwargs)
         return f(*argv, **kwargs)
     builtins.apply = apply
+    
+    def filter(f, iterable=None):
+        ## x @filt(f) => filter(f,x)
+        if iterable is None:
+            return lambda it: filter(f, it)
+        return (x for x in iterable if f(x))
+    
+    def reduce(f, iterable=None, initial=0):
+        ## x @reduce(f) => reduce(f,x)
+        ## cf. np.ufunc.reduce
+        ## equiv.
+        ## >>> r = initial
+        ## >>> for x in iterable:
+        ## ...     r = f(x, r)
+        if iterable is None:
+            return lambda it: reduce(f, it, initial)
+        return functools.reduce(f, iterable, initial)
 
 
 def init_spec(self):

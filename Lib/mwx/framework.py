@@ -1883,12 +1883,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def get_mark(self):
         return self.__mark
     
-    def set_mark(self, ln=None):
-        if ln is None:
-            ln = self.CurrentLine
-        self.MarkerDeleteAll(0)
-        self.MarkerAdd(ln, 0)
-        self.__mark = self.cur
+    def set_mark(self, pos=None, marker=0):
+        if pos is None:
+            pos = self.cur
+        elif pos < 0:
+            pos += self.TextLength + 1
+        if marker == 0:
+            self.__mark = pos
+            self.MarkerDeleteAll(0)
+        self.MarkerAdd(self.LineFromPosition(pos), marker)
     
     def del_mark(self):
         self.__mark = None
@@ -2071,20 +2074,20 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def goto_char(self, pos):
         if pos < 0:
-            pos += self.TextLength + 1 # end-of-buffer
+            pos += self.TextLength + 1 # end-of-buffer (+1:\0)
         self.GotoPos(pos)
         return self.cur
     
     def select_char(self, pos):
         if pos < 0:
-            pos += self.TextLength + 1 # end-of-buffer
+            pos += self.TextLength + 1 # end-of-buffer (+1:\0)
         self.SetCurrentPos(pos)
         return self.cur
     
-    def goto_line(self, pos):
-        if pos < 0:
-            pos += self.LineCount + 1
-        self.GotoLine(pos)
+    def goto_line(self, ln):
+        if ln < 0:
+            ln += self.LineCount
+        self.GotoLine(ln)
         return self.cur
     
     def skip_chars_forward(self, rexpr='\s'):
@@ -3079,7 +3082,12 @@ Flaky nutshell:
         """Transfer data to clipboard when copy and paste
         (override) and transfer the data to the Log board
         """
-        self.parent.Log.write(data.Text + os.linesep)
+        ed = self.parent.Log
+        pos = ed.TextLength
+        ed.write(data.Text + os.linesep)
+        ed.set_mark(pos, 0)
+        ed.set_mark(pos, 1)
+        ed.goto_char(-1)
         Shell._clip(self, data)
     
     def info(self, root=None):
