@@ -2258,6 +2258,10 @@ class Editor(EditWindow, EditorInterface):
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
+        ## To prevent @filling from *HARD-CRASH*
+        ## We never allow DnD of text, file, etc.
+        self.SetDropTarget(None)
+        
         self.set_style(self.PALETTE_STYLE)
 
 

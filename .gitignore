@@ -3,6 +3,8 @@
 *.db
 *.l
 *.txt
+*.lnk
+
 Makefile
 exclude_files
 c/
