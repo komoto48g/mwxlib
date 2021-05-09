@@ -2737,7 +2737,7 @@ Flaky nutshell:
             return
         
         text = self.GetTextRange(self.bolc, self.eolc).lstrip()
-        if not text:
+        if not text or self.reader.isreading:
             evt.Skip()
             return
         
@@ -3016,7 +3016,7 @@ Flaky nutshell:
         """
         EditorInterface.wrap(self, mode)
     
-    input = classmethod(Shell.ask)
+    ## input = classmethod(Shell.ask)
     
     bolc = property(lambda self: self.promptPosEnd, doc="begginning of command-line")
     eolc = property(lambda self: self.TextLength, doc="end of command-line")
