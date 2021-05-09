@@ -30,8 +30,8 @@ from wx.py.editwindow import EditWindow
 import numpy as np
 import fnmatch
 import pydoc
+import warnings
 import inspect
-from inspect import isclass, ismodule, ismethod, isbuiltin, isfunction, isgenerator
 from pprint import pprint, pformat
 from six.moves import builtins
 
@@ -80,6 +80,8 @@ def Or(p, q):
 
 
 def predicate(text):
+    from inspect import (isclass, ismodule, ismethod, isbuiltin,
+                         isfunction, isgenerator)
     text = text.strip()
     if not text:
         return
@@ -112,7 +114,6 @@ def Dir(obj):
     
     Note:you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
     """
-    ## keys = [k for k,v in inspect.getmembers(obj)]
     keys = dir(obj)
     if hasattr(obj, '_prop_map_get_'):
         keys += obj._prop_map_get_.keys()
@@ -134,10 +135,10 @@ def docp(f):
 
 
 def getargspec(f):
-    if sys.version_info >= (3,0):
+    try:
         args, _varargs, _keywords, defaults,\
           _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) #>= PY3
-    else:
+    except TypeError:
         args, _varargs, _keywords, defaults = inspect.getargspec(f) #<= PY2
     return args, _varargs, _keywords, defaults
 
@@ -152,7 +153,7 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None):
     if isinstance(pred, LITERAL_TYPE):
         pred = predicate(pred) # eval in global namespace
     
-    if pred is not None: # check TypeError
+    if pred is not None:
         if not callable(pred):
             ## print("- {} is not callable".format(typename(pred)))
             ## return
@@ -304,16 +305,25 @@ def find_modules(force=0):
         print("Please wait a moment "
               "while Py{} gathers a list of all available modules...".format(sys.winver))
         
-        def _listup(path, modname, desc):
-            lm.append(modname + desc)
+        def callback(path, modname, desc):
+            ## lm.append((modname, desc))
+            lm.append(modname)
         
-        pydoc.ModuleScanner().run(_listup, onerror=lambda x: _listup('', x, '*'))
-        lm.sort(key=lambda s:s.upper())
+        def error(modname):
+            ## lm.append((modname + '*', None))
+            lm.append(modname + '*')
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore') # ignore problems during import
+            pydoc.ModuleScanner().run(callback, key='', onerror=error)
+        
+        lm.sort(key=str.upper)
+        ## lm = OrderedDict(sorted(lm, key=lambda v:v[0].upper()))
         with open(f, 'w') as o:
-            pprint(lm, stream=o) # write moduels in py-format
+            pprint(lm, width=256, stream=o) # write moduels
     else:
         with open(f, 'r') as o:
-            lm = eval(o.read()) # a list of moduels reads and evaluates
+            lm = eval(o.read()) # read and eval a list of moduels
     return lm
 
 
@@ -414,7 +424,7 @@ class FSM(dict):
     def fork(self, *args):
         """Invoke the current event"""
         if self.__state == self.__prev_state: # possibly results in an infinite loop
-            self.dump("- FSM:logic error {!r}".format('fork'),
+            self.dump("- FSM:logic error in {!r}".format('fork'),
                       "   event : {}".format(self.__event),
                       "    from : {}".format(self.__prev_state),
                       "   state : {}".format(self.__state), sep='\n')
@@ -2781,7 +2791,7 @@ Flaky nutshell:
             if c == '`':
                 f = "{rhs}={lhs}"
                 cmd = f.format(
-                    lhs = ''.join(l) or '_',
+                    lhs = ''.join(l).strip() or '_',
                     rhs = ''.join(extract_words_from_tokens(r, sep1)).strip())
                 return self._integrate_magic([cmd] + r)
             
@@ -2790,18 +2800,17 @@ Flaky nutshell:
                 if r and r[0] == '*':
                     f = "{rhs}(*{lhs})" # x@*y => y(*x)
                     r = r[1:] # skip * right after @
-                while r and r[0].isspace():
-                    r = r[1:] # skip whites following @
+                
+                i = next((i for i,a in enumerate(r) if not a.isspace()), len(r))
+                r = r[i:]
                 cmd = f.format(
-                    lhs = ''.join(l) or '_',
+                    lhs = ''.join(l).strip() or '_',
                     rhs = ''.join(extract_words_from_tokens(r, sep2)).strip())
                 return self._integrate_magic([cmd] + r)
             
             if c == '?':
-                lhs = ''.join(l)
-                rhs = ''.join(r)
-                head, sep, hint = lhs.rpartition('.')
-                c, pred = re.search("(\?+)\s*(.*)", c+rhs).groups()
+                head, sep, hint = ''.join(l).rpartition('.')
+                c, pred = re.search("(\?+)\s*(.*)", c+''.join(r)).groups()
                 try:
                     self.eval(pred) # check if pred in self namespace
                 except Exception:
@@ -2825,7 +2834,6 @@ Flaky nutshell:
            backquote : x`y --> y=x
             pullback : x@y --> y(x)
              apropos : x.y?p --> apropos(y,x,...,p)
-              import : x@import --> x=__import__('x')
         
         Note: This is called before run and execute, (and magic).
         """
@@ -2836,8 +2844,8 @@ Flaky nutshell:
         except ValueError:
             pass
         
-        ## `import(*)` to expression
-        cmd = re.sub("import\(\s*(.+?)\s*\)", "\\1=__import__('\\1')", cmd)
+        ## import(*) => import *
+        cmd = re.sub("import\(\s*(.+?)\s*\)", "import \\1", cmd)
         
         return cmd
     
@@ -2866,9 +2874,10 @@ Flaky nutshell:
         builtins.code = inspect.getsource
         builtins.module = inspect.getmodule
         
-        def getsourcefileno(object):
-            return (inspect.getsourcefile(object), inspect.getsourcelines(object)[1])
-        builtins.fileno = getsourcefileno
+        def fileno(object):
+            return (inspect.getsourcefile(object),
+                    inspect.getsourcelines(object)[1])
+        builtins.fileno = fileno
     
     def on_activated(self, shell):
         """Called when activated"""
@@ -3006,6 +3015,8 @@ Flaky nutshell:
         mode in {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
         """
         EditorInterface.wrap(self, mode)
+    
+    input = classmethod(Shell.ask)
     
     bolc = property(lambda self: self.promptPosEnd, doc="begginning of command-line")
     eolc = property(lambda self: self.TextLength, doc="end of command-line")
@@ -3166,9 +3177,10 @@ Flaky nutshell:
     
     @staticmethod
     def clock():
-        if sys.version_info >= (3,0):
+        try:
             return time.perf_counter()
-        return time.clock()
+        except AttributeError:
+            return time.clock()
     
     def timeit(self, *args, **kwargs):
         t = self.clock()
@@ -3297,7 +3309,6 @@ Flaky nutshell:
             self.__comp_ind = j
         except Exception:
             self.message("no completion words")
-            pass
     
     def call_history_comp(self, evt):
         """Called when history-comp mode"""
@@ -3359,14 +3370,16 @@ Flaky nutshell:
                 modules = [x[len(text)+1:] for x in self.modules if x.startswith(text)]
                 modules = [x for x in modules if x and '.' not in x]
             else:
-                if re.match("(import|from)\s+(.*)", self.cmdlc):
+                m = re.match("(import|from)\s+(.*)", self.cmdlc)
+                if m:
+                    if not hint: # return (not quit)
+                        return
                     text = '.'
                     modules = self.modules
                 else:
                     text, sep, hint = get_words_hint(self.cmdlc)
                     root = self.eval(text or 'self')
                     modules = [k for k,v in inspect.getmembers(root, inspect.ismodule)]
-                    ## modules = [k for k,v in root.__dict__.items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -3566,10 +3579,10 @@ if 1:
     frm.editor = Editor(frm)
     frm.Show()
     
-    frm.handler.debug = 4
+    frm.handler.debug = 0
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.shell.handler.debug = 2
+    frm.inspector.shell.handler.debug = 0
     frm.inspector.shell.Execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
     frm.inspector.shell.wrap(0)

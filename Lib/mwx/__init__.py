@@ -20,6 +20,7 @@ from .framework import deb
 from .controls import Param
 from .controls import LParam
 from .controls import ControlPanel
+from .controls import Icon, Button, ToggleButton, TextCtrl, Choice
 
 ## matplot
 from .matplot2 import MatplotPanel

@@ -7,45 +7,49 @@ Snippets of code, new syntax, and anything new one can imagine.
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 from six.moves import builtins
+from itertools import chain
 import functools
 import inspect
+import operator as op
 import numpy as np
 import mwx
 
 np.set_printoptions(linewidth=256) # default 75
 
-if 1: # for PY2-backward-comaptible
+if 1: # some for PY2-backward-comaptible
     
-    def maps(f, *iterables):
-        ## it @maps(f) => (f(*x) for x in zip(*it))
+    def do(f, *iterables, **kwargs):
         if not iterables:
-            return lambda *it: maps(f, *it)
-        return map(f, *iterables)
-    builtins.maps = maps
+            return partial(do, f, **kwargs)
+        do.result = tuple(map(f, *iterables, **kwargs))
+    
+    def map(f, *iterables, **kwargs):
+        return (f(*it, **kwargs) for it in zip(*iterables)) if iterables\
+          else partial(map, f, **kwargs)
     
     def apply(f, argv=None, **kwargs):
-        ## x @apply(f,**kw) => f(*x,**kw)
-        if argv is None:
-            return lambda v: apply(f, v, **kwargs)
-        return f(*argv, **kwargs)
-    builtins.apply = apply
+        return f(*argv, **kwargs) if argv is not None\
+          else partial(apply, f, **kwargs)
+    
+    def reduce(f, iterable=None, **kwargs):
+        return functools.reduce(f, iterable, **kwargs) if iterable is not None\
+          else partial(reduce, f, **kwargs)
     
     def filter(f, iterable=None):
-        ## x @filt(f) => filter(f,x)
-        if iterable is None:
-            return lambda it: filter(f, it)
-        return (x for x in iterable if f(x))
+        return (x for x in iterable if (f or bool)(x)) if iterable is not None\
+          else partial(filter, f)
     
-    def reduce(f, iterable=None, initial=0):
-        ## x @reduce(f) => reduce(f,x)
-        ## cf. np.ufunc.reduce
-        ## equiv.
-        ## >>> r = initial
-        ## >>> for x in iterable:
-        ## ...     r = f(x, r)
-        if iterable is None:
-            return lambda it: reduce(f, it, initial)
-        return functools.reduce(f, iterable, initial)
+    def find(f, iterable=None, default=None):
+        return next(filter(f, iterable), default) if iterable is not None\
+          else partial(find, f, default=default)
+    
+    builtins.do = do
+    builtins.map = map
+    builtins.apply = apply
+    builtins.reduce = reduce
+    builtins.filter = filter
+    builtins.find = find
+    builtins.partial = functools.partial
 
 
 def init_spec(self):
@@ -131,11 +135,13 @@ To Divers:
     This executes your startup script ($PYTHONSTARTUP:~/.py).
     Then, call spec (post-startup function defined above),
     """
-    mwx.deb(*args, startup=init_spec, execStartupScript=True,
+    mwx.deb(*args, startup=init_spec,
+        execStartupScript=True,
         introText = """
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
-        """)
+        """,
+        size=(854,360))
 
 
 if __name__ == '__main__':
