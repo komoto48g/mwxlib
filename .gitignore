@@ -12,8 +12,8 @@ doc/
 etc/
 bin/
 Scripts/
+demo-test/
 icon*/
-demo*/
 test*/
 
 # Byte-compiled / optimized / DLL files

@@ -2,6 +2,8 @@
 
 My python package based on matplotlib/wx
 
+See [Demo Script and Gallery](./demo/index.md).
+
 
 ## Getting Started
 
@@ -14,7 +16,7 @@ These instructions will get you a copy of the project up and running on your loc
     - numpy
     - pillow
     - matplotlib
-    - wxpython==4.0.7
+    - wxpython >= 4.0.7
 
 ### Installing
 
