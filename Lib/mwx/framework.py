@@ -1357,10 +1357,7 @@ class StatusBar(wx.StatusBar):
     def write(self, text, pane=0):
         if text and text[0] == '\b':
             text = self.read(pane) + text[1:]
-        try:
-            self.SetStatusText(text, pane % self.GetFieldsCount())
-        except Exception as e:
-            print(e)
+        self.SetStatusText(text, pane % self.GetFieldsCount())
         return text
     
     def read(self, pane=0):
@@ -2758,7 +2755,6 @@ Flaky nutshell:
             self.Execute(cmd) # for multi-line commands
         else:
             self.run(cmd, verbose=0, prompt=0)
-            self.history[0] = text # overwrite the latest history
             self.message(cmd)
     
     def OnEnterDot(self, evt):
@@ -2906,12 +2902,11 @@ Flaky nutshell:
             
             self.__bolc_marks.append(self.bolc)
             self.__eolc_marks.append(self.eolc)
-            self.historyIndex = -1
     
     def on_text_output(self, text):
         """Called when [Enter] text (after push)
         
-        Note: The text includes input:str & output:str, no magic cast
+        Note: The text is raw output:str, no magic cast
         """
         lex = re.findall("File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
         if lex:
@@ -2920,9 +2915,9 @@ Flaky nutshell:
         
         ## Check if input starts with the definition of a function or a class.
         ## If so, we set the `_' variables to the function or class.
-        m = re.match("(def|class)\s+(\w+)", text.strip())
-        if m:
-            builtins._ = self.eval(m.group(2))
+        ## m = re.match("(def|class)\s+(\w+)", text.strip())
+        ## if m:
+        ##     builtins._ = self.eval(m.group(2))
         return True
     
     ## --------------------------------
@@ -2956,10 +2951,20 @@ Flaky nutshell:
         ## この段階では push された直後で，次のようになっている
         ## bolc : begginning of command-line
         ## eolc : end of the output-buffer
-        substr = self.GetTextRange(self.bolc, self.eolc)
-        self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # update for text-comp
-        noerr = self.on_text_output(substr)
         try:
+            input = self.GetTextRange(self.bolc, self.__eolc_marks[-1])
+            output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
+            substr = self.GetTextRange(self.bolc, self.eolc)
+            lf = '\n'
+            input = (input.replace(os.linesep + sys.ps1, lf)
+                          .replace(os.linesep + sys.ps2, lf)
+                          .replace(os.linesep, lf)
+                          .lstrip())
+            if input:
+                self.history[0] = input
+            
+            self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # for text-comp
+            noerr = self.on_text_output(output.strip(os.linesep))
             ed = self.parent.History
             ed.ReadOnly = 0
             ed.write(command + os.linesep)
@@ -2969,15 +2974,15 @@ Flaky nutshell:
             else:
                 ed.MarkerAdd(ln, 3)
             ed.ReadOnly = 1
-        except Exception:
+        except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             pass
     
-    def In(self, j):
+    def _In(self, j):
         """Input command:str"""
         return self.GetTextRange(self.__bolc_marks[j], self.__eolc_marks[j])
     
-    def Out(self, j):
+    def _Out(self, j):
         """Output result:str"""
         marks = self.__bolc_marks[1:] + [self.bolc]
         return self.GetTextRange(self.__eolc_marks[j]+len(os.linesep), marks[j]-len(sys.ps1))
@@ -3076,8 +3081,45 @@ Flaky nutshell:
         else:
             indent = line[:(len(line)-len(lstrip))]
             if line.strip()[-1] == ':':
-                indent += ' '*4
+                m = re.match("[a-z]+", lstrip)
+                if m and m.group(0) in (
+                    'if','else','elif','for','while','with',
+                    'def','class','try','except','finally'):
+                    indent += ' '*4
         return indent
+    
+    def prompt(self):
+        """Display proper prompt for the context: ps1, ps2 or ps3.
+        (override) fix with block indent
+        
+        If this is a continuation line, autoindent as necessary.
+        """
+        isreading = self.reader.isreading
+        skip = False
+        if isreading:
+            prompt = str(sys.ps3)
+        elif self.more:
+            prompt = str(sys.ps2)
+        else:
+            prompt = str(sys.ps1)
+        pos = self.GetCurLine()[1]
+        if pos > 0:
+            if isreading:
+                skip = True
+            else:
+                self.write(os.linesep)
+        if not self.more:
+            self.promptPosStart = self.GetCurrentPos()
+        if not skip:
+            self.write(prompt)
+        if not self.more:
+            self.promptPosEnd = self.GetCurrentPos()
+            # Keep the undo feature from undoing previous responses.
+            self.EmptyUndoBuffer()
+        else:
+            self.write(self.calc_indent())
+        self.EnsureCaretVisible()
+        self.ScrollToColumn(0)
     
     ## --------------------------------
     ## Utility functions of the Shell 
@@ -3135,7 +3177,7 @@ Flaky nutshell:
     
     def Execute(self, text):
         """Replace selection with text, run commands,
-        (override) and check clock
+        (override) and check clock +fix finally block indent
         """
         self.__start = self.clock()
         
@@ -3317,14 +3359,15 @@ Flaky nutshell:
             return
         try:
             hint = self.cmdlc
-            if hint.isspace():
+            if hint.isspace() or self.bol != self.bolc:
                 self.handler('quit', evt)
-                ## self.indent_line()
-                evt.Skip()
+                self.indent_line()
+                ## evt.Skip()
                 return
             
             hint = hint.strip()
-            ls = [x for x in self.history if x.startswith(hint)] # case-sensitive match
+            ls = [x.replace('\n', os.linesep + sys.ps2)
+                    for x in self.history if x.startswith(hint)] # case-sensitive match
             words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
             
             self.__comp_ind = 0
