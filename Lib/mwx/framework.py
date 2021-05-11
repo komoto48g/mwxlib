@@ -12,6 +12,7 @@ __version__ = "0.40"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
+from functools import partial
 from functools import wraps
 import traceback
 import datetime
@@ -2786,36 +2787,43 @@ Flaky nutshell:
             
             if c == '`':
                 f = "{rhs}={lhs}"
-                cmd = f.format(
-                    lhs = ''.join(l).strip() or '_',
-                    rhs = ''.join(extract_words_from_tokens(r, sep1)).strip())
-                return self._integrate_magic([cmd] + r)
+                lhs = ''.join(l).strip() or '_'
+                rhs = ''.join(extract_words_from_tokens(r, sep1)).strip()
+                return self._integrate_magic([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '@':
                 f = "{rhs}({lhs})"
-                if r and r[0] == '*':
-                    f = "{rhs}(*{lhs})" # x@*y => y(*x)
-                    r = r[1:] # skip * right after @
+                if r and r[0] == '*': # x@*y => y(*x)
+                    f = "{rhs}(*{lhs})"
+                    r = r[1:]
                 
-                i = next((i for i,a in enumerate(r) if not a.isspace()), len(r))
+                i = next((k for k,a in enumerate(r) if not a.isspace()), len(r))
                 r = r[i:]
-                cmd = f.format(
-                    lhs = ''.join(l).strip() or '_',
-                    rhs = ''.join(extract_words_from_tokens(r, sep2)).strip())
-                return self._integrate_magic([cmd] + r)
+                lhs = ''.join(l).strip() or '_'
+                rhs = ''.join(extract_words_from_tokens(r, sep2)).strip()
+                
+                m = re.match("\(.*\)$", rhs) # x@(y,...) => partial(y,...)(x)
+                if m:
+                    try:
+                        p = "partial{}".format(m.group(0))
+                        self.eval(p)
+                        rhs = p
+                    except Exception:
+                        pass
+                return self._integrate_magic([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '?':
                 head, sep, hint = ''.join(l).rpartition('.')
-                c, pred = re.search("(\?+)\s*(.*)", c+''.join(r)).groups()
+                cc, pred = re.search("(\?+)\s*(.*)", c+''.join(r)).groups()
                 try:
                     self.eval(pred) # check if pred in self namespace
                 except Exception:
                     pred = repr(pred) # or it would be in this namespace
                 
                 return "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3})".format(
-                        hint.strip(), head or 'this', len(c)<2, pred or None)
+                        hint.strip(), head or 'this', len(cc)<2, pred or None)
             
-            if c in ';\r\n': # os.linesep
+            if c in ';\r\n':
                 return ''.join(l) + c + self._integrate_magic(r)
             
             if c == sys.ps2.strip(): # ...
@@ -2861,7 +2869,7 @@ Flaky nutshell:
         builtins.typename = typename
         builtins.apropos = apropos
         builtins.reload = reload
-        builtins.pprint = pprint
+        builtins.partial = partial
         builtins.pp = pprint
         builtins.p = print
         builtins.watch = watch
