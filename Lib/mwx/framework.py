@@ -116,9 +116,11 @@ def Dir(obj):
     Note:you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
     """
     keys = dir(obj)
-    if hasattr(obj, '_prop_map_get_'):
-        keys += obj._prop_map_get_.keys()
-    return keys
+    try:
+        if hasattr(obj, '_prop_map_get_'):
+            keys += obj._prop_map_get_.keys()
+    finally:
+        return keys
 
 
 def docp(f):
