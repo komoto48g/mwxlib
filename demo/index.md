@@ -1,13 +1,14 @@
 # Demo Script and Gallery
 
 
-## FSM
+## mwx.FSM
 
+The theory of Finite State Machine (FSM), developed in mid 20th century, is one of the most useful models in system design. The catalog of techniques that are simplified by FSM is astonishing: text processing, compilers, hardware design, language, AI, and much more. 
+The FSM is also the most important framework of mwxlib and used for the key-mouse-event binder, inter-object communication, notify handler, thread-sentinel, and so on.
+As with most mathematical and physical ideas which are truly fundamental, the concept of the Finite State Machine (FSM) is very simple.
 
-Though the idea of the Finite State Machine (FSM) is truly fundamental, is the most important framework of mwxlib. The catalogue of programming techniques that are simplified by FSM is astonishing: the key&mouse-event binder, inter-object communication, notify handler, thread-sentinel, and much more.
-
-Check how the FSM works by running the test code:
-[test-script](./test_fsm.py).
+Check how the mwx.FSM works by running the test code:
+[test-script of gate keeper](./test_fsm.py).
 
 
 ## mwx.Frame
@@ -45,7 +46,7 @@ Designed as WYSiWYG (see demo-code).
 The mwx.controls including,
 - Knob
     - Param
-    - LParam (linear version of Param)
+    - LParam (linear Param)
 - Button
 - ToggleButton
 - TextCtrl (text and button complex)
