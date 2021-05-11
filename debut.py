@@ -7,7 +7,6 @@ Snippets of code, new syntax, and anything new one can imagine.
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 from six.moves import builtins
-from itertools import chain
 import functools
 import inspect
 import operator as op
@@ -16,41 +15,13 @@ import mwx
 
 np.set_printoptions(linewidth=256) # default 75
 
-if 1: # some for PY2-backward-comaptible
-    
+if 1:
     def do(f, *iterables, **kwargs):
         if not iterables:
             return partial(do, f, **kwargs)
         do.result = tuple(map(f, *iterables, **kwargs))
-        
-    ## --------------------------------
-    ## #2021_0511: @parital が追加されました．
-    ## --------------------------------
-    ## def map(f, *iterables, **kwargs):
-    ##     return (f(*it, **kwargs) for it in zip(*iterables)) if iterables\
-    ##       else partial(map, f, **kwargs)
-    ## 
-    ## def apply(f, argv=None, **kwargs):
-    ##     return f(*argv, **kwargs) if argv is not None\
-    ##       else partial(apply, f, **kwargs)
-    ## 
-    ## def reduce(f, iterable=None, **kwargs):
-    ##     return functools.reduce(f, iterable, **kwargs) if iterable is not None\
-    ##       else partial(reduce, f, **kwargs)
-    ## 
-    ## def filter(f, iterable=None):
-    ##     return (x for x in iterable if (f or bool)(x)) if iterable is not None\
-    ##       else partial(filter, f)
-    ## 
-    ## def find(f, iterable=None, default=None):
-    ##     return next(filter(f, iterable), default) if iterable is not None\
-    ##       else partial(find, f, default=default)
     
     builtins.do = do
-    ## builtins.map = map
-    ## builtins.apply = apply
-    ## builtins.reduce = reduce
-    ## builtins.filter = filter
     builtins.reduce = functools.reduce
     builtins.partial = functools.partial
 
