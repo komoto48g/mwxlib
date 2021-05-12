@@ -169,6 +169,7 @@ class Thread(object):
         self.result = None
         self.__keepGoing = self.__isRunning = 1
         self.worker = threading.Thread(target=_f, args=args, kwargs=kwargs)
+        ## self.worker.setDaemon(True)
         self.worker.start()
         return self
     
@@ -179,6 +180,7 @@ class Thread(object):
             busy = wx.BusyInfo("One moment please, now waiting for threads to die...")
             self.owner.handler('thread_quit', self)
             self.worker.join(1)
+            ## sys.exit(1)
 
 
 class Layer(ControlPanel):
@@ -1116,8 +1118,8 @@ class Frame(mwx.Frame):
         for name in self.plugins:
             plug = self.get_plug(name)
             if plug.thread and plug.thread.is_active:
-                plug.thread.Stop() # @postcall なのですぐに止まらない．そこで↓
                 plug.thread._Thread__keepGoing = 0 # is_active=False 直接切り替える
+                plug.thread.Stop() # @postcall なのですぐに止まらない
     
     ## --------------------------------
     ## load/save index file

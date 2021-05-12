@@ -2752,13 +2752,25 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        ## cast magic extended for `@?
-        cmd = self.interpret_magic(text)
-        if '\n' in cmd:
-            self.Execute(cmd) # for multi-line commands
+        ## cast magic for `@?
+        try:
+            tokens = split_tokens(text)
+            if any(x in tokens for x in '`@?'):
+                cmd = self.magic_interpret(tokens)
+                if '\n' in cmd:
+                    self.Execute(cmd) # for multi-line commands
+                else:
+                    self.run(cmd, verbose=0, prompt=0)
+                    self.message(cmd)
+                return
+        except ValueError:
+            pass
+        
+        ## normal execute/run
+        if '\n' in text:
+            self.Execute(text) # for multi-line commands, no skip
         else:
-            self.run(cmd, verbose=0, prompt=0)
-            self.message(cmd)
+            evt.Skip()
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -2781,7 +2793,16 @@ Flaky nutshell:
     ## Magic suite of the shell
     ## --------------------------------
     
-    def _integrate_magic(self, tokens):
+    def magic_interpret(self, tokens):
+        """Called when [Enter] command, or eval-time for tooltip
+        Interpret magic syntax
+           backquote : x`y --> y=x
+            pullback : x@y --> y(x)
+             partial : x@(y1,..,yn) --> partial(y1,..,yn,x)
+             apropos : x.y?p --> apropos(y,x,...,p)
+        
+        Note: This is called before run, execute, and original magic.
+        """
         sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # ` OPS + SEPARATOR_CHARS; nospace, nocomma
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # @ OPS + SEPARATOR_CHARS;
         for j,c in enumerate(tokens):
@@ -2791,7 +2812,7 @@ Flaky nutshell:
                 f = "{rhs}={lhs}"
                 lhs = ''.join(l).strip() or '_'
                 rhs = ''.join(extract_words_from_tokens(r, sep1)).strip()
-                return self._integrate_magic([f.format(lhs=lhs, rhs=rhs)] + r)
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '@':
                 f = "{rhs}({lhs})"
@@ -2812,7 +2833,7 @@ Flaky nutshell:
                         rhs = p
                     except Exception:
                         pass
-                return self._integrate_magic([f.format(lhs=lhs, rhs=rhs)] + r)
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '?':
                 head, sep, hint = ''.join(l).rpartition('.')
@@ -2826,37 +2847,18 @@ Flaky nutshell:
                         hint.strip(), head or 'this', len(cc)<2, pred or None)
             
             if c in ';\r\n':
-                return ''.join(l) + c + self._integrate_magic(r)
+                return ''.join(l) + c + self.magic_interpret(r)
             
             if c == sys.ps2.strip(): # ...
                 i = next((k for k,a in enumerate(r) if not a.isspace()), len(r))
-                return ''.join(l) + c + ''.join(r[:i]) + self._integrate_magic(r[i:])
+                return ''.join(l) + c + ''.join(r[:i]) + self.magic_interpret(r[i:])
             
         return ''.join(tokens)
     
-    def interpret_magic(self, cmd):
-        """Called when [Enter] command, or eval-time for tooltip
-        Interpret magic syntax
-           backquote : x`y --> y=x
-            pullback : x@y --> y(x)
-             apropos : x.y?p --> apropos(y,x,...,p)
-        
-        Note: This is called before run and execute, (and magic).
-        """
-        try:
-            tokens = split_tokens(cmd)
-            if any(x in tokens for x in '`@?'):
-                cmd = self._integrate_magic(tokens)
-        except ValueError:
-            pass
-        
-        ## import(*) => import *
-        cmd = re.sub("import\(\s*(.+?)\s*\)", "import \\1", cmd)
-        
-        return cmd
-    
     def magic(self, cmd):
-        """Called before command pushed (override)"""
+        """Called before command pushed
+        (override) with magic: f x => f(x) disabled
+        """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
             elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
@@ -3098,39 +3100,6 @@ Flaky nutshell:
                     indent += ' '*4
         return indent
     
-    def prompt(self):
-        """Display proper prompt for the context: ps1, ps2 or ps3.
-        (override) fix with block indent
-        
-        If this is a continuation line, autoindent as necessary.
-        """
-        isreading = self.reader.isreading
-        skip = False
-        if isreading:
-            prompt = str(sys.ps3)
-        elif self.more:
-            prompt = str(sys.ps2)
-        else:
-            prompt = str(sys.ps1)
-        pos = self.GetCurLine()[1]
-        if pos > 0:
-            if isreading:
-                skip = True
-            else:
-                self.write(os.linesep)
-        if not self.more:
-            self.promptPosStart = self.GetCurrentPos()
-        if not skip:
-            self.write(prompt)
-        if not self.more:
-            self.promptPosEnd = self.GetCurrentPos()
-            # Keep the undo feature from undoing previous responses.
-            self.EmptyUndoBuffer()
-        else:
-            self.write(self.calc_indent())
-        self.EnsureCaretVisible()
-        self.ScrollToColumn(0)
-    
     ## --------------------------------
     ## Utility functions of the Shell 
     ## --------------------------------
@@ -3273,7 +3242,8 @@ Flaky nutshell:
         if self.CallTipActive():
             self.CallTipCancel()
         try:
-            text = self.interpret_magic(text)
+            tokens = split_tokens(text)
+            text = self.magic_interpret(tokens)
             self.CallTipShow(self.cur, pformat(self.eval(text)))
             self.message(text)
         except Exception as e:
