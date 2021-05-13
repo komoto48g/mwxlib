@@ -366,7 +366,7 @@ class MatplotPanel(wx.Panel):
         
         #<matplotlib.lines.Line2D>
         (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75,
-                                          markeredgecolor='y', visible=0, picker=None)
+                                          markeredgecolor='y', visible=0, picker=False)
         self.selected.set_data([], [])
         
         #<matplotlib.widgets.Cursor>
@@ -940,7 +940,7 @@ if __name__ == '__main__':
         
         #<matplotlib.collections.Collection>
         art = axes.scatter(x, y, c=c, s=r, marker='o',
-            alpha=0.5, cmap=cm.rainbow, edgecolors='blue', picker=4)
+            alpha=0.5, cmap=cm.rainbow, edgecolors='blue', picker=True, pickradius=4)
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
         art.get_zdata = art.get_array
