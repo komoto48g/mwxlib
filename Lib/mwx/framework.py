@@ -2977,6 +2977,7 @@ Flaky nutshell:
             
             self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # for text-comp
             noerr = self.on_text_output(output.strip(os.linesep))
+            
             ed = self.parent.History
             ed.ReadOnly = 0
             ed.write(command + os.linesep)
@@ -3118,23 +3119,29 @@ Flaky nutshell:
         """Transfer data to clipboard when copy and paste
         (override) and transfer the data to the Log board
         """
-        ed = self.parent.Log
-        pos = ed.TextLength
-        ed.write(data.Text + os.linesep)
-        ed.set_mark(pos, 0)
-        ed.set_mark(pos, 1)
-        ed.goto_char(-1)
+        try:
+            ed = self.parent.Log
+            pos = ed.TextLength
+            ed.write(data.Text + os.linesep)
+            ed.set_mark(pos, 0)
+            ed.set_mark(pos, 1)
+            ed.goto_char(-1)
+        except AttributeError:
+            pass
         Shell._clip(self, data)
     
     def info(self, root=None):
         """Short information"""
         if root is None:
             root = self
-        doc = inspect.getdoc(root)
-        if doc:
+        doc = inspect.getdoc(root) or "No information about {}".format(root)
+        try:
             ed = self.parent.Help
             ed.SetValue(doc)
             self.parent.PopupWindow(ed)
+        except AttributeError:
+            print(doc)
+            pass
     
     def help(self, root=None):
         """Full description"""
@@ -3142,12 +3149,15 @@ Flaky nutshell:
             self.message("The stream is currently piped to stdout (see command porompt).")
             wx.CallAfter(pydoc.help)
             return
-        doc = pydoc.plain(pydoc.render_doc(root))
-        if doc:
+        doc = pydoc.plain(pydoc.render_doc(root)) or "No description about {}".format(root)
+        try:
             self.message("help({})".format(typename(root)))
             ed = self.parent.Help
             ed.SetValue(doc)
             self.parent.PopupWindow(ed)
+        except AttributeError:
+            print(doc)
+            pass
     
     def eval(self, text):
         if text:
@@ -3231,9 +3241,12 @@ Flaky nutshell:
     def CallTipShow(self, pos, tip):
         """Call standard ToolTip (override) and write the tips to scratch"""
         Shell.CallTipShow(self, pos, tip)
-        if tip:
-            ## pt = self.ClientToScreen(self.PointFromPosition(pos))
-            self.parent.scratch.SetValue(tip)
+        try:
+            if tip:
+                ## pt = self.ClientToScreen(self.PointFromPosition(pos))
+                self.parent.scratch.SetValue(tip)
+        except AttributeError:
+            pass
     
     def gen_tooltip(self, text):
         """Call ToolTip of the selected word or focused line"""

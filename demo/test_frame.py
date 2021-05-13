@@ -13,5 +13,6 @@ if __name__ == "__main__":
     frm = mwx.Frame(None, pos=(0,0))
     frm.Title = repr(frm)
     frm.panel = mwx.Editor(frm)
+    ## frm.panel = mwx.Nautilus(frm, target=frm)
     frm.Show()
     app.MainLoop()
