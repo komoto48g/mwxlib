@@ -1571,9 +1571,9 @@ class Frame(mwx.Frame):
 if __name__ == '__main__':
     app = wx.App()
     frm = Frame(None)
-    frm.handler.debug = 4
-    frm.graph.handler.debug = 2
-    frm.output.handler.debug = 2
+    frm.handler.debug = 0
+    frm.graph.handler.debug = 0
+    frm.output.handler.debug = 0
     
     frm.load_buffer(u"C:/usr/home/workspace/images/sample.bmp")
     frm.load_buffer(u"C:/usr/home/workspace/images/サンプル.bmp")

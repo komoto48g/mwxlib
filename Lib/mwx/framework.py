@@ -1381,7 +1381,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
-        self.inspector = MinidebFrame(None, target=self)
+        self.inspector = InspectorFrame(None, target=self)
         
         ## statusbar/menubar などのカスタマイズを行う
         ## レイアウト系コマンドは statusbar/menubar の作成後
@@ -1502,7 +1502,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
 
 
-class MinidebFrame(MiniFrame):
+class InspectorFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break `target
 -------------------------------------------------------------------
      target : Inspection target `self, any wx.Object, otherwise __main__
@@ -1568,7 +1568,7 @@ Global bindings:
         
         _P = funcall
         
-        self.handler.update({ #<MinidebFrame handler>
+        self.handler.update({ #<InspectorFrame handler>
             0 : {
                    'f1 pressed' : (0, self.About),
                   'M-c pressed' : (0, self.OnFilterSetStyling),
@@ -3538,7 +3538,7 @@ Note:
     if not wx.GetApp() and app is None: # The wx.App object must be created first!
         app = wx.App()
     
-    frame = MinidebFrame(None, target, **kwargs)
+    frame = InspectorFrame(None, target, **kwargs)
     frame.Show()
     frame.shell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window

@@ -12,7 +12,7 @@ from .framework import apropos, typename
 from .framework import SSM, FSM
 from .framework import pack
 from .framework import Menu, Menubar, StatusBar
-from .framework import Frame, MiniFrame, MinidebFrame, Editor, Nautilus
+from .framework import Frame, MiniFrame, InspectorFrame, Editor, Nautilus
 from .framework import funcall, postcall, connect, disconnect # curry spices
 from .framework import deb
 

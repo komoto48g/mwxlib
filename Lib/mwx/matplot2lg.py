@@ -728,7 +728,8 @@ if __name__ == '__main__':
     app = wx.App()
     frm = mwx.Frame(None, title="Graph", size=(300,300))
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=None)
-    frm.graph.handler.debug = 3
+    frm.graph.handler.debug = 0
+    
     frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
     ## frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample_circ.bmp"), "circ")
     frm.graph.unit = 0.1
@@ -752,7 +753,7 @@ if __name__ == '__main__':
         lpf = mwx.Frame(None, title="Line profile")
         lpf.graph = LineProfile(lpf, log=lpf.statusbar, size=(200,100))
         lpf.graph.attach(frm.graph)
-        lpf.graph.handler.debug = 3
+        lpf.graph.handler.debug = 0
         lpf.Show()
     
     app.MainLoop()
