@@ -27,14 +27,14 @@ class Plugin(Layer):
             (),
             mwx.TextCtrl(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.String, "enter"),
-                updater=lambda v: self.statusline(v.value, "update"),
+                updater=lambda v: self.statusline(v.Value, "update"),
                     tip="this is a textctrl",
                     icon=wx.ART_NEW,
                     size=(200,-1)),
             (),
             mwx.Choice(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.String, "selected"),
-                updater=lambda v: self.statusline(v.value, "update"),
+                updater=lambda v: self.statusline(v.Value, "update"),
                 choices=['1','2','3'],
                 selection=1,
                     tip="this is a choice",
@@ -60,17 +60,21 @@ class Plugin(Layer):
             row=1, expand=1, show=1, 
             type='slider', lw=20, tw=40, cw=100, h=22,
         )
-        self.statusline = mwx.StatusBar(self, style=wx.STB_DEFAULT_STYLE)
-        self.layout(None, (
-            mwx.TextCtrl(self, '',
+        
+        self.textctrl = mwx.TextCtrl(self, '',
                 handler=lambda v: self.statusline(v.String, "enter"),
-                updater=lambda v: self.statusline(v.value, "update"),
+                updater=lambda v: self.statusline(v.Value, "update"),
                 value = mwx.TextCtrl.__doc__,
                     tip="this is a textctrl",
                     icon='v',
                     size=(210,100),
-                    style=wx.TE_MULTILINE),
-            
+                    style=wx.TE_MULTILINE|wx.TE_PROCESS_TAB
+                         |wx.TE_RICH|wx.TE_AUTO_URL)
+        
+        self.statusline = mwx.StatusBar(self, style=wx.STB_DEFAULT_STYLE)
+        
+        self.layout(None, (
+            self.textctrl,
             self.statusline,
             ),
             row=1, expand=2, border=0,

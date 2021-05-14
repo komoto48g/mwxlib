@@ -70,28 +70,37 @@ def wx_hotkey(evt):
 
 
 def mpl_hotkey(evt):
-    """key = `A+B+C+K` where A,B,C prefix and K the last pressed/released key
-    *pressed*           *released*          *modifiled_key*
-    -------------------------------------------------------
-    ctrl+control        control         ->  ctrl
-    alt+alt             alt             ->  alt
-    shift               shift           ->  shift
-    ctrl+alt+alt        ctrl+alt        ->  ctrl+alt
-    ctrl+shift          ctrl+shift      ->  ctrl+shift
-    ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
-    ctrl+alt+control    alt+control     ->  alt+ctrl
-    alt+shift           alt+shift       ->  alt+shift
-    -------------------------------------------------------
-    Note: key = A+shift+M (M:modifier) => A+M
+    """key = A+B+C+K where A,B,C prefix and K the last pressed/released key
+    The modifier key is in [LR]win+C-M-S order (matplotlib)
+        *pressed*           *released*          *mod*
+        -------------------------------------------------------
+    C   ctrl+control        control         ->  ctrl
+    M   alt+alt             alt             ->  alt
+    S   shift               shift           ->  shift
+  C-M   ctrl+alt+alt        ctrl+alt        ->  ctrl+alt
+  M-C   ctrl+alt+control    alt+control     ->  alt+ctrl
+  C-S   ctrl+shift          ctrl+shift      ->  ctrl+shift
+  M-S   alt+shift           alt+shift       ->  alt+shift
+C-M-S   ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
+        -------------------------------------------------------
+    Note: key = shift+M (M:modifier) => M
+    Note: matplotlib (>= 3.4.x) changed the mod order to S-M-C.
     """
     key = evt.key
+    
+    if key is not None:
+        ## matplot 3.2.x --> 3.4.x 対応
+        if key.startswith('shift+'):
+            key = key[6:]
+        if key == 'alt+ctrl+alt':   key = 'ctrl+alt'
     if   key == 'control':          key = 'ctrl'
     elif key == 'ctrl+control':     key = 'ctrl'
     elif key == 'alt+alt':          key = 'alt'
     elif key == 'ctrl+alt+alt':     key = 'ctrl+alt'
     elif key == 'ctrl+alt+control': key = 'alt+ctrl'
     elif key == 'alt+control':      key = 'alt+ctrl'
-    elif key is not None:
+    
+    if key is not None:
         if key[-1:] == '\0': return None
         if key[-1:] == '\t': key = key[:-1] + 'tab'
         if key[-1:] == ' ' : key = key[:-1] + 'space'
@@ -112,6 +121,9 @@ def mpl_hotkey(evt):
         
         if wx.GetKeyState(wx.WXK_WINDOWS_LEFT) and 'Lwin' not in key:
             key = 'Lwin-' + key
+        
+        ## matplot 3.2.x --> 3.4.x 対応
+        key = key.replace("alt+ctrl+", "ctrl+alt+")
         
     if key:
         head, sep, tail = key.rpartition('+')
@@ -366,7 +378,7 @@ class MatplotPanel(wx.Panel):
         
         #<matplotlib.lines.Line2D>
         (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75,
-                                          markeredgecolor='y', visible=0, picker=False)
+                                          markeredgecolor='y', visible=0)
         self.selected.set_data([], [])
         
         #<matplotlib.widgets.Cursor>
@@ -584,11 +596,9 @@ class MatplotPanel(wx.Panel):
             indices = evt.ind
             x = evt.mouseevent.xdata
             y = evt.mouseevent.ydata
-            ## xs, ys = evt.artist.get_data()
             xs = evt.artist.get_xdata()
             ys = evt.artist.get_ydata()
             distances = np.hypot(x-xs[indices], y-ys[indices])
-            
             evt.index = k = indices[distances.argmin()] # index of the nearest point
             evt.xdata = x = xs[k]
             evt.ydata = y = ys[k]

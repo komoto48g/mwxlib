@@ -1771,7 +1771,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         CtrlInterface.__init__(self)
         
         def fork_parent(v):
-            self.parent.handler(self.handler.current_event, v)
+            try:
+                self.parent.handler(self.handler.current_event, v)
+            except AttributeError:
+                pass
         
         _P = funcall
         

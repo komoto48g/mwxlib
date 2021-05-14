@@ -275,7 +275,7 @@ annotation : optional. annotation of the buffer
                 aspect = 'equal',
          interpolation = 'nearest',
                visible = show,
-                picker = 0,
+                picker = True,
         )
         self.update_extent() # this determines the aspect ratio
     
@@ -1176,13 +1176,13 @@ Constants:
         if len(xs) > 1:
             self.handler('line_removed', self.frame)
     
-    def zoomlim(self, lim, M, c=None): # virtual call from OnZoom, OnScrollZoom
-        if c is None:
-            c = (lim[1] + lim[0]) / 2
-        y = c - M * (c - lim)
-        if self.frame:
-            if abs(y[1] - y[0]) > 10 * self.frame.unit or M > 1:
-                return y
+    ## def zoomlim(self, lim, M, c=None): # virtual call from OnZoom, OnScrollZoom
+    ##     if c is None:
+    ##         c = (lim[1] + lim[0]) / 2
+    ##     y = c - M * (c - lim)
+    ##     if self.frame:
+    ##         if abs(y[1] - y[0]) > self.frame.unit or M > 1:
+    ##             return y
     
     def OnXAxisPanZoom(self, evt, c=None):
         org = self.p_event
@@ -1768,7 +1768,7 @@ if __name__ == '__main__':
         t = np.arange(0,4,0.01) * pi
         x = r * ux * np.cos(t)
         y = r * uy * np.sin(t)
-        graph.axes.plot(x, y, 'r-', lw=0.5, picker=0)
+        graph.axes.plot(x, y, 'r-', lw=0.5)
     
     ## _plot(frm.graph)
     frm.Fit()
