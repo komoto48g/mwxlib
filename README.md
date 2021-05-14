@@ -129,7 +129,7 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
   * info :  ?x (x@?) --> info(x) shows short information
   * help : ??x (x@??) --> help(x) shows full description
   * sx   :  !x (x@!) --> sx(x) executes command in external shell
-	
+    
     Note: The last three (*) are original syntax defined in wx.py.shell,
     at present version, enabled with USE_MAGIC switch being on
 
@@ -138,6 +138,7 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
 ## Shell built-in utility:
     @p          synonym of print
     @pp         synonym of pprint
+    @puts       same as p but put it into the prompt
     @info   @?  short info
     @help   @?? full description
     @dive       clone the shell with new target
@@ -149,6 +150,7 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
+    @fileno     (file, line-number)
 
 ![utils-mod](doc/image/utils-mod.gif)
 

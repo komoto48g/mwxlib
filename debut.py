@@ -8,7 +8,6 @@ from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 from six.moves import builtins
 import functools
-import inspect
 import operator as op
 import numpy as np
 import mwx
@@ -16,10 +15,10 @@ import mwx
 np.set_printoptions(linewidth=256) # default 75
 
 if 1:
-    def do(f, *iterables, **kwargs):
+    def do(f, *iterables):
         if not iterables:
-            return partial(do, f, **kwargs)
-        do.result = tuple(map(f, *iterables, **kwargs))
+            return lambda *args: do(f, *args)
+        do.result = tuple(map(f, *iterables))
     
     builtins.do = do
     builtins.reduce = functools.reduce
@@ -103,7 +102,7 @@ def init_spec(self):
         "STC_P_OPERATOR"        : "",
         "STC_P_NUMBER"          : "fore:#ffc080",
     })
-    self.wrap(0)
+    self.wrap(1)
 
 
 def dive(*args):
