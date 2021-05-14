@@ -2176,7 +2176,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         topic = self.SelectedText
         if topic:
             return topic
-        with self.Excursion(self):
+        with self.save_excursion():
             ## org = self.cur # save-excursion
             p = q = self.cur
             if not self.preceding_char.isspace():
@@ -2187,6 +2187,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 q = self.cur
             ## self.GotoPos(org) # restore-excursion
             return self.GetTextRange(p, q)
+    
+    def save_excursion(self):
+        return self.Excursion(self)
     
     class Excursion(object):
         def __init__(self, target):

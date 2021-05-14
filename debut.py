@@ -58,9 +58,12 @@ def init_spec(self):
     
     @self.define_key('M-w')
     def copy_region():
-        with self.Excursion(self):
-            self.SetCurrentPos(self.mark)
-            self.Copy()
+        if self.mark is not None:
+            with self.save_excursion():
+                self.SetCurrentPos(self.mark)
+                self.Copy()
+        else:
+            self.message("no mark")
     
     @self.define_key('M-S-,', pos=0, doc="beginning-of-buffer")
     @self.define_key('M-S-.', pos=-1, doc="end-of-buffer")

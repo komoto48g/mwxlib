@@ -21,16 +21,14 @@ These instructions will get you a copy of the project up and running on your loc
 ### Installing
 
 Beofre installing, you can check how mwxlib works.
-Enter the src directory (mwxlib/Lib/mwx), and type
+Enter the src directory (mwxlib/Lib), and type (cf. framework is the mastar source of mwxlib)
 ```
-$ py -3 -m framework (cf. framework is the mastar source of mwxlib)
+$ py -3 -m framework 
 ```
-
 To install, enter the root directory (./mwxlib), then type
 ```
 $ py -3 setup.py install
 ```
-
 To install from GitHub, type
 ```
 $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
@@ -61,9 +59,10 @@ $ pip uninstall mwxlib
 
 # Features
 
-## Fearture of mwx.Nautilus
+## Fearture of mwx.framework
 
-**Nautilus is the extended class based on wx.py.shell.Shell.**
+The framework has an extended class based on wx.py.shell.Shell named Nautilus,
+which has the following features:
 
 1. Auto-completion and apropos functions are reinfoced.
     - [1] history-comp-mode
@@ -78,7 +77,6 @@ $ pip uninstall mwxlib
     - Filling
     - InspectionTool
     - Ghost in the shell
-    - and some more
 
 **All objects in the process can be accessed using,**
 ```
@@ -86,10 +84,9 @@ $ pip uninstall mwxlib
     this : the module which includes target.
 ```
 
-**It is very easy to include the Nautilus shell in your wxPython application.**
+**It is very easy to include the shell in your wxPython application.**
 ```python
->>> import mwx
->>> self.shell = mwx.Nautilus(self, target, **kwargs)
+>>> self.inspector = mwx.InspectorFrame(self, target=self)
 ```
 As you are diving into the python process,
 you can watch, inspect, and change everything in the target.
@@ -114,6 +111,7 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
 
 ![autocomp](doc/image/autocomp.gif)
 
+
 ## Magic syntax:
 
   - backquote : ```x`y --> y=x  | x`y`z --> z=y=x```
@@ -131,7 +129,7 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
   * info :  ?x (x@?) --> info(x) shows short information
   * help : ??x (x@??) --> help(x) shows full description
   * sx   :  !x (x@!) --> sx(x) executes command in external shell
-
+	
     Note: The last three (*) are original syntax defined in wx.py.shell,
     at present version, enabled with USE_MAGIC switch being on
 
