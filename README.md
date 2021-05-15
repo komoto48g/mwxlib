@@ -40,9 +40,22 @@ $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 >>> from mwx import deb
 >>> deb()
 ```
-
 The more pragmatic sample is 'debut.py'.
 Enjoy diving!
+
+<!--
+:memo:
+mwxlib はホームディレクトリに ~/.deb/ を作成します．ここには，ヒストリ，ログ，エラーが起きた時の報告に使用するダンプファイル等が含まれます．
+:memo:
+最初の起動時は，モジュール情報を収集し辞書を作成するため少し時間がかかります．収集したモジュール名はシェルで入力時の補完に使用します．[C-S-] を押しながらシェルを起動すると，辞書は再作成されます．
+-->
+:memo:
+mwxlib creates ~/.deb/ in your home directory.
+This includes history, logs, dump files used to report when an error occurs.
+:memo:
+At the first startup, it takes some time to collect module information and create a dictionary.
+The collected module name is used for completion at the time of input in the shell.
+If you start the shell while pressing [C-S-], the dictionary will be recreated.
 
 ### Uninstalling
 <!--
@@ -59,7 +72,7 @@ $ pip uninstall mwxlib
 
 # Features
 
-## Fearture of mwx.framework
+## Fearture of mwx.framework.Nautilus
 
 The framework has an extended class based on wx.py.shell.Shell named Nautilus,
 which has the following features:
@@ -107,7 +120,8 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
          M-/ : [3] apropos-comp-mode
          M-, : [4] text-comp-mode
          M-m : [5] module-comp-mode
-  * All completions [1--5] are incremental when pressed any alnums, and decremental when backspace.
+  * All completions [1--5] are incremental when pressed any alnums, and decremental when backspace.  
+See [key bindings](key-bindings.md) for more information.
 
 ![autocomp](doc/image/autocomp.gif)
 

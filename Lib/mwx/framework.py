@@ -1594,7 +1594,8 @@ Global bindings:
         @self.define_key('S-f11', loop=True)
         @self.define_key('Xbutton1', p=-1)
         @self.define_key('Xbutton2', p=+1)
-        def next_editor(v, p=1, loop=False):
+        def other_editor(v, p=1, loop=False):
+            "Focus moves to other editor"
             j = self.ghost.Selection + p
             if loop:
                 j %= self.ghost.PageCount
@@ -1603,7 +1604,7 @@ Global bindings:
         @self.define_key('M-right', p=1)
         @self.define_key('M-left', p=-1)
         def other_window(v, p=1):
-            "focus moves to other window"
+            "Focus moves to other window"
             pages = (self.ghost.GetPage(i) for i in range(self.ghost.PageCount))
             pages = [self.shell] + [w for w in pages if w.IsShownOnScreen()]
             j = (pages.index(self.current_editor) + p) % len(pages)

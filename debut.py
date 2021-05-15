@@ -2,12 +2,17 @@
 # -*- coding: utf-8 -*-
 """deb utility
 
-Snippets of code, new syntax, and anything new one can imagine.
+Snippets of code, syntax, semantics, theme, interface,
+    and anything new
+        one
+        can
+      imagine
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 from six.moves import builtins
-import functools
+from functools import partial
+from functools import reduce
 import operator as op
 import numpy as np
 import mwx
@@ -15,14 +20,21 @@ import mwx
 np.set_printoptions(linewidth=256) # default 75
 
 if 1:
-    def do(f, *iterables):
+    """Shell built-in utility:
+  Usage:
+    >>> 1,5 @range @(reduce, op.mul) => reduce(op.mul, range(1,5))
+    24
+    >>> x@(do,f,**kw) => do.result = [f(v,**kw) for v in fx]
+    
+    """
+    def do(f, *iterables, **kwargs):
         if not iterables:
-            return lambda *args: do(f, *args)
-        do.result = tuple(map(f, *iterables))
+            return partial(do, f, **kwargs)
+        do.result = tuple(map(partial(f, **kwargs), *iterables))
     
     builtins.do = do
-    builtins.reduce = functools.reduce
-    builtins.partial = functools.partial
+    builtins.reduce = reduce
+    builtins.partial = partial
 
 
 def init_spec(self):
