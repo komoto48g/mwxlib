@@ -2561,6 +2561,7 @@ Flaky nutshell:
               'shift* released' : (2, self.call_word_autocomp),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
+               'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
              'S-[a-z\] pressed' : (2, skip),
@@ -2568,7 +2569,6 @@ Flaky nutshell:
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, self.skipback_autocomp, skip),
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
-         '*S-backspace pressed' : (0, self.clear_autocomp, skip),
                   'M-j pressed' : (2, self.call_tooltip2),
                   'C-j pressed' : (2, self.call_tooltip),
                   'M-h pressed' : (2, self.call_ghost),
@@ -2592,6 +2592,7 @@ Flaky nutshell:
               'shift* released' : (3, self.call_apropos_autocomp),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
+               'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
           '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
              'S-[a-z\] pressed' : (3, skip),
@@ -2599,7 +2600,6 @@ Flaky nutshell:
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, self.skipback_autocomp, skip),
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
-         '*S-backspace pressed' : (0, self.clear_autocomp, skip),
                   'M-j pressed' : (3, self.call_tooltip2),
                   'C-j pressed' : (3, self.call_tooltip),
                   'M-h pressed' : (3, self.call_ghost),
@@ -2631,7 +2631,6 @@ Flaky nutshell:
               '*delete pressed' : (4, skip),
            '*backspace pressed' : (4, self.skipback_autocomp, skip),
           '*backspace released' : (4, self.call_text_autocomp),
-         '*S-backspace pressed' : (0, self.clear_autocomp, skip),
                   'M-j pressed' : (4, self.call_tooltip2),
                   'C-j pressed' : (4, self.call_tooltip),
                   'M-h pressed' : (4, self.call_ghost),
@@ -3255,6 +3254,15 @@ Flaky nutshell:
         except AttributeError:
             pass
     
+    def AutoCompShow(self, *args, **kwargs):
+        """Display an auto-completion list.
+        (override) catch AssertionError (phoenix >= 4.1.1)
+        """
+        try:
+            Shell.AutoCompShow(self, *args, **kwargs)
+        except AssertionError:
+            pass
+        
     def gen_tooltip(self, text):
         """Call ToolTip of the selected word or focused line"""
         if self.AutoCompActive():
@@ -3349,7 +3357,7 @@ Flaky nutshell:
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
             self.SetCurrentPos(pos) # backward selection to anchor point
             self.__comp_ind = j
-        except Exception:
+        except IndexError:
             self.message("no completion words")
     
     def call_history_comp(self, evt):
@@ -3387,6 +3395,7 @@ Flaky nutshell:
             return
         try:
             hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
+            
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
             
@@ -3441,9 +3450,6 @@ Flaky nutshell:
             
         except (AttributeError, NameError) as e:
             self.message("{} : {!r}".format(e, text))
-            
-        except Exception as e:
-            self.message("{} : {!r}".format(e, text))
     
     def call_word_autocomp(self, evt):
         """Called when word-comp mode"""
@@ -3478,9 +3484,6 @@ Flaky nutshell:
             self.message("re:miss compilation {!r} : {!r}".format(e, hint))
             
         except (AttributeError, NameError) as e:
-            self.message("{} : {!r}".format(e, text))
-            
-        except Exception as e:
             self.message("{} : {!r}".format(e, text))
     
     def call_apropos_autocomp(self, evt):
@@ -3518,9 +3521,6 @@ Flaky nutshell:
             
         except (AttributeError, NameError) as e:
             self.message("{} : {!r}".format(e, text))
-            
-        except Exception as e:
-            self.message("{} : {!r}".format(e, text))
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
@@ -3553,7 +3553,7 @@ Note:
         try:
             startup(frame.shell)
             frame.shell.handler.bind("shell_cloned", startup)
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             frame.shell.write(traceback.format_exc())
             frame.shell.prompt()
