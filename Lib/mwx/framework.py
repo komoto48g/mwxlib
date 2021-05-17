@@ -3542,8 +3542,8 @@ Note:
     PyNoAppError will be raised when the App is missing in pocess.
     When this may cause bad traceback, please restart.
     """
-    if not wx.GetApp() and app is None: # The wx.App object must be created first!
-        app = wx.App()
+    if app is None:
+        app = wx.GetApp() or wx.App()
     
     frame = InspectorFrame(None, target, **kwargs)
     frame.Show()
@@ -3557,14 +3557,12 @@ Note:
             traceback.print_exc()
             frame.shell.write(traceback.format_exc())
             frame.shell.prompt()
-            pass
-    if app is not None:
-        if not isinstance(app, wx.App):
-            ## raise Warning("Given app is not an instance of wx.App")
-            print("- Argument app has unexpected type {!r}".format(typename(app)))
-        elif not app.GetMainLoop():
-            app.MainLoop()
-            return
+            
+    if not isinstance(app, wx.App):
+        ## print("- Argument app has unexpected type {!r}".format(typename(app)))
+        pass
+    elif not app.GetMainLoop():
+        app.MainLoop()
     return frame
 
 
