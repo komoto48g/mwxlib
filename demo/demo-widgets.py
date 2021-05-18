@@ -3,6 +3,8 @@
 import wx
 import mwx
 from numpy import inf
+from mwx.controls import Param, LParam
+from mwx.controls import Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame
 
 
@@ -11,13 +13,13 @@ class Plugin(Layer):
     
     def Init(self):
         self.layout('Custom controls', (
-            mwx.Button(self, label="button",
+            Button(self, label="button",
                 handler=lambda v: self.statusline(v.String, "pressed"),
                     tip="this is a button",
                     icon='v',
                     size=(100,-1)),
             
-            mwx.ToggleButton(self, label="toggle-button",
+            ToggleButton(self, label="toggle-button",
                 handler=lambda v: self.statusline(v.IsChecked(), "checked"),
                     tip="this is a toggle-button",
                     icon=None,
@@ -25,14 +27,14 @@ class Plugin(Layer):
             
             ## wx.StaticLine(self, size=(200,-1)),
             (),
-            mwx.TextCtrl(self, label="ctrl label",
+            TextCtrl(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.String, "enter"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                     tip="this is a textctrl",
                     icon=wx.ART_NEW,
                     size=(200,-1)),
             (),
-            mwx.Choice(self, label="ctrl label",
+            Choice(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.String, "selected"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                 choices=['1','2','3'],
@@ -44,14 +46,14 @@ class Plugin(Layer):
             ),
             row=2, expand=0,
         )
-        self.LP =  mwx.LParam('L', (-1,1,0.01), 0, handler=print,
+        self.LP =  LParam('L', (-1,1,0.01), 0, handler=print,
             doc="Linear param"
                 "\n In addition to direct key input to the textctrl,"
                 "\n [up][down][wheelup][wheeldown] keys can be used,"
                 "\n with modifiers S- 2x, C- 16x, and M- 256x steps."
                 "\n [Mbutton] resets to the std. value if it exists.")
         
-        self.P = mwx.Param('U', (1,2,3,inf), handler=print)
+        self.P = Param('U', (1,2,3,inf), handler=print)
         
         self.layout('Custom param controls', (
             self.LP,
@@ -61,10 +63,10 @@ class Plugin(Layer):
             type='slider', lw=20, tw=40, cw=100, h=22,
         )
         
-        self.textctrl = mwx.TextCtrl(self, '',
+        self.textctrl = TextCtrl(self, '',
                 handler=lambda v: self.statusline(v.String, "enter"),
                 updater=lambda v: self.statusline(v.Value, "update"),
-                value = mwx.TextCtrl.__doc__,
+                value = TextCtrl.__doc__,
                     tip="this is a textctrl",
                     icon='v',
                     size=(210,100),

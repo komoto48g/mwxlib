@@ -910,8 +910,8 @@ class Choice(wx.Panel):
         if v is not None:
             self.value = v
     
-    def __getattr__(self, attr): #! to be deprecated (Note: Panel interface is prior)
-        return getattr(self.ctrl, attr)
+    ## def __getattr__(self, attr): #! to be deprecated (Note: Panel interface is prior)
+    ##     return getattr(self.ctrl, attr)
     
     def __init__(self, parent, label='',
         handler=None, updater=None, icon=None, tip=None, readonly=0, selection=None, **kwargs):
@@ -948,6 +948,62 @@ class Choice(wx.Panel):
             self.ctrl.Append(s)
             self.ctrl.SetStringSelection(s)
         evt.Skip()
+
+
+class Gauge(wx.Panel):
+    """Rainbow gauge panel
+    """
+    @property
+    def Value(self):
+        return self.__value
+    
+    @Value.setter
+    def Value(self, v):
+        self.__value = v
+        self.Draw()
+    
+    value = Value
+    
+    def __init__(self, parent, range=24, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        
+        self.__range = range
+        self.__value = 1
+        self.canvas = wx.Bitmap(self.GetClientSize())
+        
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+    
+    def OnSize(self, evt):
+        self.canvas = wx.Bitmap(self.GetClientSize())
+        self.Draw()
+    
+    def OnPaint(self, evt):
+        dc = wx.BufferedPaintDC(self, self.canvas)
+    
+    def Draw(self):
+        dc = wx.BufferedDC(wx.ClientDC(self), self.canvas)
+        ## dc = wx.ClientDC(self)
+        dc.Clear()
+        dc.SetDeviceOrigin(2, 2)
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        
+        def color(x):
+            y = 4*x
+            if   x < 0.25: rgb = (0, y, 1)
+            elif x < 0.50: rgb = (0, 1, 2-y)
+            elif x < 0.75: rgb = (y-2, 1, 0)
+            else:          rgb = (1, 4-y, 0)
+            return [255 * x for x in rgb]
+        
+        w, h = self.Size - (4,6)
+        N = self.__range
+        for i in range(N):
+            if i < self.value:
+                dc.SetBrush(wx.Brush(wx.Colour(color(i/N))))
+            else:
+                dc.SetBrush(wx.Brush('white'))
+            dc.DrawRectangle(i*w/N, 0, w/N-1, h)
 
 
 if __name__ == '__main__':

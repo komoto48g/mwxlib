@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Template of Layer
 
-Last updated: <2021-05-10 23:20:31 +0900>
+Last updated: <2021-05-18 14:22:35 +0900>
      Version: 0.0
       Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
@@ -11,7 +11,7 @@ from __future__ import (division, print_function,
 import wx
 import mwx
 import cv2
-from mwx import LParam
+from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 
 
