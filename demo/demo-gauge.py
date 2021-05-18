@@ -7,6 +7,8 @@ from mwx.graphman import Layer, Frame, Thread
 
 
 class Plugin(Layer):
+    menu = "Plugins/&Demo"
+    
     def Init(self):
         self.g1 = wx.Gauge(self, range=100, size=(100,24))
         self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE)

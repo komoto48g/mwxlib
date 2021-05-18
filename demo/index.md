@@ -57,6 +57,12 @@ Those wx controls (not only shown above) are laid out by only one method `layout
 [demo-script](./demo-widgets.py)
 ![screenshot](./image/demo-widgets.png)
 
+[demo-gauge](./demo-gauge.py)
+![screenshot](./image/demo-gauge.png)
+
+[demo-plot](./demo-plot.py)
+![screenshot](./image/demo-plot.png)
+
 
 ## mwx.graphman.Layer
 
