@@ -6,6 +6,7 @@ import wx
 import mwx
 import numpy as np
 from numpy import pi,exp,sin,cos
+from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 
 
@@ -22,8 +23,8 @@ class Plugin(Layer):
         axes.axis((-2, 2, -2, 2))
         axes.set_aspect(1)
         
-        self.A =  mwx.LParam('A', (0, 1, 0.01), 0.5, handler=self.run)
-        self.B =  mwx.LParam('B', (0, 0.1, 0.001), 0.05, handler=self.run)
+        self.A =  LParam('A', (0, 1, 0.01), 0.5, handler=self.run)
+        self.B =  LParam('B', (0, 0.1, 0.001), 0.05, handler=self.run)
         self.layout('Params', (
             self.A,
             self.B,
