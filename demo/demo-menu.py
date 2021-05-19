@@ -2,7 +2,7 @@
 # -*- coding: shift-jis -*-
 import wx
 import mwx
-from mwx import Icon
+from mwx.controls import Icon
 
 
 class TestFrame(mwx.Frame):
