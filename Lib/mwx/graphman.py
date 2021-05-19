@@ -1098,10 +1098,7 @@ class Frame(mwx.Frame):
         
         @shell.handler.bind("shell_activated")
         def init(shell):
-            ## target = self.get_plug(name)
-            ## target.this = self.plugins.get(name)
-            ## shell.target = target # update shell.interp.locals
-            shell.target = self.get_plug(name) # update shell.interp.locals
+            shell.target = self.get_plug(name)
         init(shell)
     
     def OnLoadPlugins(self, evt):

@@ -3166,9 +3166,8 @@ Flaky nutshell:
             pass
     
     def eval(self, text):
-        if text:
-            ## return eval(text, self.__target.__dict__)
-            return eval(text, self.interp.locals)
+        ## return eval(text, self.__target.__dict__)
+        return eval(text, self.interp.locals)
     
     def Execute(self, text):
         """Replace selection with text, run commands,
@@ -3230,9 +3229,9 @@ Flaky nutshell:
             raise TypeError("You cannot dive into an primitive object")
         
         frame = deb(target,
-             locals = self.interp.locals,
-               size = self.parent.Size,
-              title = "Clone of Nautilus - {!r}".format(target))
+             # locals=self.interp.locals,
+             size=self.parent.Size,
+             title="Clone of Nautilus - {!r}".format(target))
         
         ## frame.shell.__root = self
         ## frame.shell.__class__.root = property(lambda _: self)
