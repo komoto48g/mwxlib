@@ -3448,7 +3448,7 @@ Flaky nutshell:
             self.message("[module] {} candidates"
                          " matched with {!r} in {}".format(len(words), hint, text))
             
-        except (AttributeError, NameError) as e:
+        except (AttributeError, NameError, SyntaxError) as e:
             self.message("{} : {!r}".format(e, text))
     
     def call_word_autocomp(self, evt):
@@ -3483,7 +3483,7 @@ Flaky nutshell:
         except re.error as e:
             self.message("re:miss compilation {!r} : {!r}".format(e, hint))
             
-        except (AttributeError, NameError) as e:
+        except (AttributeError, NameError, SyntaxError) as e:
             self.message("{} : {!r}".format(e, text))
     
     def call_apropos_autocomp(self, evt):
@@ -3519,7 +3519,7 @@ Flaky nutshell:
         except re.error as e:
             self.message("re:miss compilation {!r} : {!r}".format(e, hint))
             
-        except (AttributeError, NameError) as e:
+        except (AttributeError, NameError, SyntaxError) as e:
             self.message("{} : {!r}".format(e, text))
 
 
