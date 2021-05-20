@@ -19,16 +19,8 @@ class Plugin(Layer):
             ),
             expand=1,
         )
-        self.thread = Thread(self)
-        self.thread.Start(self.count)
-    
-    def count(self):
-        while 1:
-            for x in range(0,24):
-                self.g2.Value = x
-                time.sleep(0.1)
-                if not self.thread.is_active:
-                    return
+        self.g1.Value = 24
+        self.g2.Value = 24
 
 
 if __name__ == '__main__':

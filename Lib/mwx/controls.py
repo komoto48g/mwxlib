@@ -303,9 +303,9 @@ class Knob(wx.Panel):
          par : Param <object>
         type : control type (slider[*], [hv]spin, choice, and default None)
        style : style of label
-               None - static text
-                chk - checkbox (previous style of label with wx.CheckBox)
-                btn - button
+               None -> static text
+               chkbox (previous style of label with wx.CheckBox)
+               button flat button
     editable : textCtrl is editable or readonly
   lw, tw, cw : width of label, textbox, and control (default height `h=22 of widgets)
         """
@@ -325,13 +325,13 @@ class Knob(wx.Panel):
         
         label = self.__par.name + ('  ' if lw else '')
         
-        if style == 'chk': # or style == 'checkbox':
+        if style == 'chkbox':
             if lw > 0:
                 lw += 16
             self.label = wx.CheckBox(self, label=label, size=(lw,-1))
             self.label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
             
-        elif style == 'btn': # or style == 'button':
+        elif style == 'button':
             if lw > 0:
                 lw += 16
             self.label = pb.PlateButton(self, label=label, size=(lw,-1),
@@ -953,22 +953,23 @@ class Choice(wx.Panel):
 class Gauge(wx.Panel):
     """Rainbow gauge panel
     """
-    @property
-    def Value(self):
+    Value = property(
+        lambda self: self.GetValue(),
+        lambda self,v: self.SetValue(v))
+    value = Value
+    
+    def GetValue(self):
         return self.__value
     
-    @Value.setter
-    def Value(self, v):
+    def SetValue(self, v):
         self.__value = v
         self.Draw()
-    
-    value = Value
     
     def __init__(self, parent, range=24, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
         self.__range = range
-        self.__value = 1
+        self.__value = 0
         self.canvas = wx.Bitmap(self.GetClientSize())
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -1041,12 +1042,12 @@ if __name__ == '__main__':
             self.layout("V1",
                 self.params,
                 row=1, expand=1, hspacing=1, vspacing=1, show=1, visible=1,
-                type='slider', style='chk', lw=-1, tw=-1, cw=-1, h=22, editable=1
+                type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22, editable=1
             )
             self.layout("V2",
                 self.params,
                 row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-                type='spin', style='btn', lw=-1, tw=60, cw=-1,
+                type='spin', style='button', lw=-1, tw=60, cw=-1,
             )
             self.layout("types", (
                 Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
