@@ -220,6 +220,16 @@ class Histogram(LinePlot):
             }
         }
         self.modeline.Show(0)
+        
+        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
+        def destroy(evt):
+            for graph in self.__graphs:
+                self.detach(graph)
+    
+##     def Destroy(self):
+##         for graph in self.__graphs:
+##             self.detach(graph)
+##         return LinePlot.Destroy(self)
     
     def clear(self):
         LinePlot.clear(self)
@@ -233,11 +243,6 @@ class Histogram(LinePlot):
         #<matplotlib.patches.Polygon>
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
         self.axes.add_patch(self.__fil)
-    
-    def Destroy(self):
-        for graph in self.__graphs:
-            self.detach(graph)
-        return LinePlot.Destroy(self)
     
     def attach(self, *graphs):
         for graph in graphs:
@@ -436,6 +441,16 @@ class LineProfile(LinePlot):
                 lambda v: self.set_logic(0),
                 lambda v: v.Check(not self.__logicp)),
         ]
+        
+        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
+        def destroy(evt):
+            for graph in self.__graphs:
+                self.detach(graph)
+    
+##     def Destroy(self):
+##         for graph in self.__graphs:
+##             self.detach(graph)
+##         return LinePlot.Destroy(self)
     
     def clear(self):
         LinePlot.clear(self)
@@ -457,11 +472,6 @@ class LineProfile(LinePlot):
         self.__logicp = True
         
         self.selected.set_linestyle('')
-    
-    def Destroy(self):
-        for graph in self.__graphs:
-            self.detach(graph)
-        return LinePlot.Destroy(self)
     
     def attach(self, *graphs):
         for graph in graphs:

@@ -356,7 +356,6 @@ class Knob(wx.Panel):
             self.text.Bind(wx.EVT_SET_FOCUS, self.OnTextFocus)
             self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextFocusKill)
             
-            ## self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
             if type[-1] == '*':
                 self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
             else:
@@ -413,11 +412,15 @@ class Knob(wx.Panel):
         )
         self.update_range()
         self.update_ctrl()
+        
+        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
+        def detach(evt):
+            self.__par.knobs.remove(self)
     
-    def Destroy(self):
-        ## パラメータの関連付けを解除する
-        self.__par.knobs.remove(self)
-        return wx.Panel.Destroy(self)
+##     def Destroy(self):
+##         ## パラメータの関連付けを解除する
+##         self.__par.knobs.remove(self)
+##         return wx.Panel.Destroy(self)
     
     def update_range(self):
         v = self.__par
@@ -583,11 +586,11 @@ class ControlPanel(scrolled.ScrolledPanel):
             self.Layout()
             evt.Skip()
     
-    def Destroy(self):
-        for k in chain(*self.__groups):
-            if isinstance(k, Knob):# パラメータの関連付けを解除する
-                k.Destroy()
-        return scrolled.ScrolledPanel.Destroy(self)
+##     def Destroy(self):
+##         for k in chain(*self.__groups):
+##             if isinstance(k, Knob):# パラメータの関連付けを解除する
+##                 k.Destroy()
+##         return scrolled.ScrolledPanel.Destroy(self)
     
     def OnToggleFold(self, evt): #<wx._core.MouseEvent>
         x, y = evt.Position
