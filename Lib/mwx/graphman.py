@@ -922,8 +922,6 @@ class Frame(mwx.Frame):
             prop = pane.dock_proportion
             floating_pos = floating_pos or pane.floating_pos[:] # copy (!pane is to be unloaded)
             floating_size = floating_size or pane.floating_size[:] # copy
-            
-            ## self.unload_plug(name) # 引数を保存したら一旦アンロードする
         
         if os.path.isdir(dirname):
             if dirname in sys.path:
@@ -935,9 +933,13 @@ class Frame(mwx.Frame):
             if name in sys.modules:
                 module = reload(sys.modules[name])
             else:
-                ## module = __import__(name, fromlist=True)
                 module = __import__(name, fromlist=[''])
             
+        except ImportError as e:
+            print(self.statusbar("\b failed to import: {}".format(e)))
+            return False
+        
+        try:
             if pane.IsOk() and force:
                 self.unload_plug(name) # 一旦アンロードする
             
@@ -1030,10 +1032,6 @@ class Frame(mwx.Frame):
             
             self.statusbar("\b done.")
             
-        except ImportError as e:
-            print(self.statusbar("\b failed: {}".format(e)))
-            return False
-        
         except Exception as e:
             self.statusbar("\b failed: {!r}".format(e))
             wx.CallAfter(wx.MessageBox, traceback.format_exc(),
