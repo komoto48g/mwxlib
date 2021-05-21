@@ -293,6 +293,13 @@ unloadable : flag to set the layer to be unloadable
             (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "deb", Icon('core'),
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
+        
+        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
+        def destroy(evt):
+            if self.thread and self.thread.is_active:
+                self.thread.Stop()
+            del self.Arts
+        
         try:
             self.Init()
             
@@ -358,9 +365,6 @@ unloadable : flag to set the layer to be unloadable
     
     def Destroy(self):
         """Kill me softly (to be overrided)"""
-        del self.Arts
-        if self.thread and self.thread.is_active:
-            self.thread.Stop()
         return ControlPanel.Destroy(self)
 
 

@@ -414,13 +414,8 @@ class Knob(wx.Panel):
         self.update_ctrl()
         
         @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
-        def detach(evt):
-            self.__par.knobs.remove(self)
-    
-##     def Destroy(self):
-##         ## パラメータの関連付けを解除する
-##         self.__par.knobs.remove(self)
-##         return wx.Panel.Destroy(self)
+        def destroy(evt):
+            self.__par.knobs.remove(self) # パラメータの関連付けを解除する
     
     def update_range(self):
         v = self.__par
@@ -585,12 +580,6 @@ class ControlPanel(scrolled.ScrolledPanel):
         def recalc_layout(evt):
             self.Layout()
             evt.Skip()
-    
-##     def Destroy(self):
-##         for k in chain(*self.__groups):
-##             if isinstance(k, Knob):# パラメータの関連付けを解除する
-##                 k.Destroy()
-##         return scrolled.ScrolledPanel.Destroy(self)
     
     def OnToggleFold(self, evt): #<wx._core.MouseEvent>
         x, y = evt.Position

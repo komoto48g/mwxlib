@@ -226,11 +226,6 @@ class Histogram(LinePlot):
             for graph in self.__graphs:
                 self.detach(graph)
     
-##     def Destroy(self):
-##         for graph in self.__graphs:
-##             self.detach(graph)
-##         return LinePlot.Destroy(self)
-    
     def clear(self):
         LinePlot.clear(self)
         
@@ -446,11 +441,6 @@ class LineProfile(LinePlot):
         def destroy(evt):
             for graph in self.__graphs:
                 self.detach(graph)
-    
-##     def Destroy(self):
-##         for graph in self.__graphs:
-##             self.detach(graph)
-##         return LinePlot.Destroy(self)
     
     def clear(self):
         LinePlot.clear(self)

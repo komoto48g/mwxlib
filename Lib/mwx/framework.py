@@ -158,14 +158,10 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None):
     
     if pred is not None:
         if not callable(pred):
-            ## print("- {} is not callable".format(typename(pred)))
-            ## return
             raise TypeError("{} is not callable".format(typename(pred)))
         if not inspect.isbuiltin(pred):
             args, _varargs, _keywords, defaults = getargspec(pred)
             if not args or len(args) - len(defaults or ()) > 1:
-                ## print("- {} must take exactly one argument".format(typename(pred)))
-                ## return
                 raise TypeError("{} must take exactly one argument".format(typename(pred)))
     
     print("matching to {!r} in {} {} :{}".format(rexpr, name, type(root), typename(pred)))
