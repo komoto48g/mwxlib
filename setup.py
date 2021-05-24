@@ -4,7 +4,7 @@ from setuptools import setup
 from Lib.mwx import __version__, __author__
 
 try:
-    with open('README.md', encoding='utf-8') as f:
+    with open('README.rst', encoding='utf-8') as f:
         readme = f.read()
 except IOError:
     readme = ''
@@ -14,10 +14,10 @@ setup(
     version = __version__,
     author = __author__,
     author_email = "komoto@jeol.co.jp",
-    description = "An wrapper of matplotlib and wxPython (phoenix)",
+    description = "A wrapper of matplotlib and wxPython (phoenix)",
     
     long_description = readme,
-    long_description_content_type = "text/markdown",
+    ## long_description_content_type = "text/markdown",
     
     ## Description of the package in the distribution
     package_dir = {
