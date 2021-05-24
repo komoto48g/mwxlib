@@ -1,6 +1,7 @@
 # mwxlib
 
-My python package based on matplotlib/wx
+Python package based on matplotlib/wx
+and wxPython shell extension library
 
 See [Demo Script and Gallery](./demo/index.md).
 

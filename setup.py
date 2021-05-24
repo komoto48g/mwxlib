@@ -3,6 +3,7 @@
 from setuptools import setup 
 from Lib.mwx import __version__, __author__
 
+
 setup(
     name = "mwxlib",
     version = __version__,
@@ -20,12 +21,37 @@ setup(
         'mwx',
     ],
     
-    ## install_requires = [
-    ##     'numpy',
-    ##     'pillow',
-    ##     'matplotlib',
-    ##     'wxpython==4.0.7',
-    ## ],
+    install_requires = [
+        'numpy',
+        'scipy',
+        'pillow',
+        'matplotlib',
+        'wxpython',
+        'opencv-python',
+    ],
+    
+    ## This is necessary for egg distribution to include *.txt files
+    package_data={
+    },
     
     include_package_data = True,
+    
+    license = 'MIT',
+    
+    classifiers=[
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Scientific/Engineering :: Image Processing',
+        'Topic :: System :: Shells',
+    ],
+    ## entry_points = {
+    ##     'console_scripts': ['mwxlib = mwx.framework:deb']
+    ## },
 )
