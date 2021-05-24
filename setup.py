@@ -15,6 +15,7 @@ setup(
     author = __author__,
     author_email = "komoto@jeol.co.jp",
     description = "An wrapper of matplotlib and wxPython (phoenix)",
+    
     long_description = readme,
     long_description_content_type = 'text/markdown',
     
