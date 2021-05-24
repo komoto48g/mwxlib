@@ -17,7 +17,7 @@ setup(
     description = "An wrapper of matplotlib and wxPython (phoenix)",
     
     long_description = readme,
-    long_description_content_type = 'text/markdown',
+    long_description_content_type = "text/markdown",
     
     ## Description of the package in the distribution
     package_dir = {
