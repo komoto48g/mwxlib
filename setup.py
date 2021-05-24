@@ -3,6 +3,11 @@
 from setuptools import setup 
 from Lib.mwx import __version__, __author__
 
+try:
+    with open('README.md', encoding='utf-8') as f:
+        readme = f.read()
+except IOError:
+    readme = ''
 
 setup(
     name = "mwxlib",
@@ -10,6 +15,8 @@ setup(
     author = __author__,
     author_email = "komoto@jeol.co.jp",
     description = "An wrapper of matplotlib and wxPython (phoenix)",
+    long_description = readme,
+    long_description_content_type = 'text/markdown',
     
     ## Description of the package in the distribution
     package_dir = {
@@ -32,6 +39,8 @@ setup(
     
     ## This is necessary for egg distribution to include *.txt files
     package_data={
+        "mwx": [
+        ],
     },
     
     include_package_data = True,

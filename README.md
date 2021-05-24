@@ -37,22 +37,17 @@ $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 
 ### How to use
 
-```python
+```
 >>> from mwx import deb
 >>> deb()
 ```
 The more pragmatic sample is 'debut.py'.
 Enjoy diving!
 
-<!--
-:memo:
-mwxlib はホームディレクトリに ~/.deb/ を作成します．ここには，ヒストリ，ログ，エラーが起きた時の報告に使用するダンプファイル等が含まれます．
-:memo:
-最初の起動時は，モジュール情報を収集し辞書を作成するため少し時間がかかります．収集したモジュール名はシェルで入力時の補完に使用します．[C-S-] を押しながらシェルを起動すると，辞書は再作成されます．
--->
 :memo:
 mwxlib creates ~/.deb/ in your home directory.
 This includes history, logs, dump files used to report when an error occurs.
+
 :memo:
 At the first startup, it takes some time to collect module information and create a dictionary.
 The collected module name is used for completion at the time of input in the shell.
@@ -64,9 +59,8 @@ If you start the shell while pressing [C-S-], the dictionary will be recreated.
 $ py -3 setup.py install --record files.txt
 $ cat files.txt | xargs rm -rf
 ```
-次のやつでＯＫぽい
 -->
-```sh
+```
 $ pip uninstall mwxlib
 ```
 
@@ -99,7 +93,7 @@ which has the following features:
 ```
 
 **It is very easy to include the shell in your wxPython application.**
-```python
+```
 >>> self.inspector = mwx.InspectorFrame(self, target=self)
 ```
 As you are diving into the python process,
