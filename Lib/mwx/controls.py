@@ -957,6 +957,17 @@ class Gauge(wx.Panel):
         self.__value = v
         self.Draw()
     
+    Range = property(
+        lambda self: self.GetRange(),
+        lambda self,v: self.SetRange(v))
+    
+    def GetRange(self):
+        return self.__range
+    
+    def SetRange(self, v):
+        self.__range = v
+        self.Draw()
+    
     def __init__(self, parent, range=24, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
