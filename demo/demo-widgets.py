@@ -1,8 +1,8 @@
 #! python
 # -*- coding: utf-8 -*-
+from numpy import inf
 import wx
 import mwx
-from numpy import inf
 from mwx.controls import Param, LParam
 from mwx.controls import Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame

@@ -974,13 +974,13 @@ class Gauge(wx.Panel):
         
         self.__range = range
         self.__value = 0
-        self.canvas = wx.Bitmap(self.GetClientSize())
+        self.canvas = wx.Bitmap(self.ClientSize)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def OnSize(self, evt):
-        self.canvas = wx.Bitmap(self.GetClientSize())
+        self.canvas = wx.Bitmap(self.ClientSize)
         self.Draw()
     
     def OnPaint(self, evt):
@@ -1001,7 +1001,7 @@ class Gauge(wx.Panel):
             else:          rgb = (1, 4-y, 0)
             return [255 * x for x in rgb]
         
-        w, h = self.Size - (2, 2)
+        w, h = self.ClientSize
         N = self.__range
         for i in range(N):
             if i < self.value:

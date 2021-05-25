@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import time
 import wx
+import mwx
 from mwx.controls import Gauge, LParam
 from mwx.graphman import Layer, Frame, Thread
 
