@@ -299,6 +299,7 @@ unloadable : flag to set the layer to be unloadable
             if self.thread and self.thread.is_active:
                 self.thread.Stop()
             del self.Arts
+            evt.Skip()
         
         try:
             self.Init()

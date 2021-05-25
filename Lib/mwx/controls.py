@@ -416,6 +416,7 @@ class Knob(wx.Panel):
         @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
             self.__par.knobs.remove(self) # パラメータの関連付けを解除する
+            evt.Skip()
     
     def update_range(self):
         v = self.__par
