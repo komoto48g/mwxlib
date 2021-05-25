@@ -990,7 +990,7 @@ class Gauge(wx.Panel):
         dc = wx.BufferedDC(wx.ClientDC(self), self.canvas)
         ## dc = wx.ClientDC(self)
         dc.Clear()
-        dc.SetDeviceOrigin(2, 2)
+        ## dc.SetDeviceOrigin(2, 2)
         dc.SetPen(wx.TRANSPARENT_PEN)
         
         def color(x):
@@ -1001,7 +1001,7 @@ class Gauge(wx.Panel):
             else:          rgb = (1, 4-y, 0)
             return [255 * x for x in rgb]
         
-        w, h = self.Size - (4,6)
+        w, h = self.Size - (2, 2)
         N = self.__range
         for i in range(N):
             if i < self.value:
