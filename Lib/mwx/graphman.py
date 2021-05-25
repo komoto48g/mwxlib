@@ -924,10 +924,15 @@ class Frame(mwx.Frame):
             floating_pos = floating_pos or pane.floating_pos[:] # copy (!pane is to be unloaded)
             floating_size = floating_size or pane.floating_size[:] # copy
         
-        if os.path.isdir(dirname):
+        if os.path.isdir(dirname): # to import name
             if dirname in sys.path:
                 sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
             sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
+        
+        if os.path.isdir(root): # when if root:module is a package
+            if root in sys.path:
+                sys.path.remove(root)
+            sys.path.insert(0, root)
         
         try:
             self.statusbar("Loading plugin {!r}...".format(name))
@@ -952,6 +957,9 @@ class Frame(mwx.Frame):
             
             ## set reference of a plug (one module, one plugin)
             module.__plug__ = plug
+            
+            ## rename when if root:module is a package
+            name = plug.__module__
             
             ## when the plug is created successfully, add to the list
             self.plugins[name] = module
@@ -1523,7 +1531,7 @@ class Frame(mwx.Frame):
                 path = os.path.abspath(module.__file__).replace('\\','/')
                 if path.endswith('.pyc'): # PY2 may return '*.pyc'
                     path = path[:-1]
-                if path.endswith("/__init__.py"): # when module is a package
+                if path.endswith("/__init__.py"): # when root:module is a package
                     path = path[:-12]
                 o.write("self.load_plug('{name}', show={show}, docking={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
