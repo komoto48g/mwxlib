@@ -589,12 +589,13 @@ class ControlPanel(scrolled.ScrolledPanel):
                 continue
             cx, cy = child.Position
             if cx < x < cx + child.Size[0] and cy < y < cy+22:
-                if isinstance(child.Sizer, wx.StaticBoxSizer):
-                    for cc in child.Sizer.Children: # child of child <wx._core.SizerItem>
+                obj = child.Sizer or child.Window
+                if isinstance(obj, (wx.StaticBoxSizer, wx.StaticBox)):
+                    for cc in obj.Children: # child of child <wx._core.SizerItem>
                         cc.Show(not cc.IsShown())   # toggle show
                     self.Layout()
                     self.SendSizeEvent()
-                    self.Refresh() # redraw widgets
+                    self.Refresh()
                 break
         evt.Skip()
     
