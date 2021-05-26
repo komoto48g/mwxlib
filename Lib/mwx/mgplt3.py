@@ -254,8 +254,8 @@ if __name__ == "__main__":
 
 
 if __name__ == "__main__":
-    from mwx import LParam
     from scipy import pi,sin,cos
+    from mwx.controls import LParam
     
     class TestFrame(GplotFrame):
         def __init__(self, *args, **kwargs):

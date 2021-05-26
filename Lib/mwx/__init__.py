@@ -17,9 +17,7 @@ from .framework import funcall, postcall, connect, disconnect # curry spices
 from .framework import deb
 
 ## widgets
-from .controls import Param
-from .controls import LParam
-from .controls import ControlPanel
+## from .controls import Param, LParam, ControlPanel
 ## from .controls import Icon, Button, ToggleButton, TextCtrl, Choice
 
 ## matplot
