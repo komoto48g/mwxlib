@@ -33,6 +33,8 @@ import fnmatch
 import pydoc
 import warnings
 import inspect
+from inspect import (isclass, ismodule, ismethod, isbuiltin,
+                     isfunction, isgenerator)
 from pprint import pprint, pformat
 from six.moves import builtins
 
@@ -81,12 +83,7 @@ def Or(p, q):
 
 
 def predicate(text):
-    from inspect import (isclass, ismodule, ismethod, isbuiltin,
-                         isfunction, isgenerator)
-    text = text.strip()
-    if not text:
-        return
-    tokens = [x for x in split_into_words(text) if not x.isspace()]
+    tokens = [x for x in split_into_words(text.strip()) if not x.isspace()]
     j = 0
     while j < len(tokens):
         c = tokens[j]
@@ -107,7 +104,7 @@ def predicate(text):
             tokens[j-1:j+2] = ["Or({},{})".format(tokens[j-1], tokens[j+1])]
             continue
         j += 1
-    return eval(' '.join(tokens))
+    return ' '.join(tokens)
 
 
 def Dir(obj):
@@ -141,12 +138,12 @@ def getargspec(f):
     try:
         args, _varargs, _keywords, defaults,\
           _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) #>= PY3
-    except TypeError:
+    except AttributeError:
         args, _varargs, _keywords, defaults = inspect.getargspec(f) #<= PY2
     return args, _varargs, _keywords, defaults
 
 
-def apropos(rexpr, root, ignorecase=True, alias=None, pred=None):
+def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
     """Put a list of objects having expression `rexpr in `root
     """
     name = alias or typename(root)
@@ -154,9 +151,9 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None):
                   .replace('\\A','[A-Z0-9]')) # \A: (start of the string) から変更
     
     if isinstance(pred, LITERAL_TYPE):
-        pred = predicate(pred) # eval in global namespace
+        pred = eval(predicate(pred) or 'None', None, locals)
     
-    if pred is not None:
+    if pred:
         if not callable(pred):
             raise TypeError("{} is not callable".format(typename(pred)))
         if not inspect.isbuiltin(pred):
@@ -2840,13 +2837,10 @@ Flaky nutshell:
             if c == '?':
                 head, sep, hint = ''.join(l).rpartition('.')
                 cc, pred = re.search("(\?+)\s*(.*)", c+''.join(r)).groups()
-                try:
-                    self.eval(pred) # check if pred in self namespace
-                except Exception:
-                    pred = repr(pred) # or it would be in this namespace
                 
-                return "apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, pred={3})".format(
-                        hint.strip(), head or 'this', len(cc)<2, pred or None)
+                return ("apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, "
+                        "pred={3!r}, locals=self.shell.interp.locals)".format(
+                        hint.strip(), head or 'this', len(cc) < 2, pred or None))
             
             if c in ';\r\n':
                 return ''.join(l) + c + self.magic_interpret(r)
