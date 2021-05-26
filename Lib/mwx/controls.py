@@ -875,7 +875,7 @@ class TextCtrl(wx.Panel):
         self.SetSizer(
             mwx.pack(self,
                 (self.btn, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 0),
-                (self.ctrl, 1, wx.EXPAND|wx.RIGHT, 0),
+                (self.ctrl, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 0),
                 orient=wx.HORIZONTAL,
             )
         )
@@ -920,7 +920,7 @@ class Choice(wx.Panel):
         self.SetSizer(
             mwx.pack(self,
                 (self.btn, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 0),
-                (self.ctrl, 1, wx.EXPAND|wx.RIGHT, 0),
+                (self.ctrl, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 0),
                 orient=wx.HORIZONTAL,
             )
         )
@@ -946,26 +946,23 @@ class Choice(wx.Panel):
 class Gauge(wx.Panel):
     """Rainbow gauge panel
     """
-    Value = property(
-        lambda self: self.GetValue(),
-        lambda self,v: self.SetValue(v))
-    value = Value
-    
-    def GetValue(self):
+    @property
+    def Value(self):
         return self.__value
     
-    def SetValue(self, v):
+    @Value.setter
+    def Value(self, v):
         self.__value = v
         self.Draw()
     
-    Range = property(
-        lambda self: self.GetRange(),
-        lambda self,v: self.SetRange(v))
+    value = Value
     
-    def GetRange(self):
+    @property
+    def Range(self):
         return self.__range
     
-    def SetRange(self, v):
+    @Range.setter
+    def Range(self, v):
         self.__range = v
         self.Draw()
     

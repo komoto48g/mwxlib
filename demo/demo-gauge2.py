@@ -27,8 +27,8 @@ class Plugin(Layer):
         
         @self.par.bind
         def set(p):
-            self.g1.SetValue(p.value)
-            self.g2.SetValue(p.value)
+            self.g1.Value = p.value
+            self.g2.Value = p.value
         
         @self.par.bind(target='check')
         def check(p):
