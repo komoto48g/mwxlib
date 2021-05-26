@@ -944,6 +944,40 @@ class Choice(wx.Panel):
         evt.Skip()
 
 
+class Indicator(wx.Panel):
+    """Traffic light indicator tricolor mode
+    """
+    @property
+    def Value(self):
+        return self.__value
+    
+    @Value.setter
+    def Value(self, v):
+        self.__value = v
+        self.Refresh()
+    
+    value = Value
+    
+    def __init__(self, parent, **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
+        
+        self.__value = 0
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+    
+    def OnPaint(self, evt):
+        dc = wx.PaintDC(self)
+        dc.Clear()
+        s = 8 # spacing
+        r = 6 # radius
+        dc.SetBrush(wx.Brush("black"))
+        dc.DrawRoundedRectangle(0, 0, s*6+1, s*2+1, s)
+        for j,name in enumerate(('red','yellow','green')):
+            if not self.__value & 1 << (2-j):
+                name = 'gray'
+            dc.SetBrush(wx.Brush(name))
+            dc.DrawCircle(s*(2*j+1), s, r)
+
+
 class Gauge(wx.Panel):
     """Rainbow gauge panel
     """
@@ -988,7 +1022,6 @@ class Gauge(wx.Panel):
         dc = wx.BufferedDC(wx.ClientDC(self), self.canvas)
         ## dc = wx.ClientDC(self)
         dc.Clear()
-        ## dc.SetDeviceOrigin(2, 2)
         dc.SetPen(wx.TRANSPARENT_PEN)
         
         def color(x):
@@ -1002,7 +1035,7 @@ class Gauge(wx.Panel):
         w, h = self.ClientSize
         N = self.__range
         for i in range(N):
-            if i < self.value:
+            if i < self.__value:
                 dc.SetBrush(wx.Brush(wx.Colour(color(i/N))))
             else:
                 dc.SetBrush(wx.Brush('white'))
