@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.40"
+__version__ = "0.40.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2818,9 +2818,8 @@ Flaky nutshell:
                 if r and r[0] == '*': # x@*y => y(*x)
                     f = "{rhs}(*{lhs})"
                     r = r[1:]
-                
-                i = next((k for k,a in enumerate(r) if not a.isspace()), len(r))
-                r = r[i:]
+                while r and r[0].isspace(): # skip whites
+                    r = r[1:]
                 lhs = ''.join(l).strip() or '_'
                 rhs = ''.join(extract_words_from_tokens(r, sep2)).strip()
                 
