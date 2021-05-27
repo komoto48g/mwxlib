@@ -26,11 +26,11 @@ Enter the src directory (mwxlib/Lib), and type (cf. framework is the mastar sour
 ```
 $ py -3 -m framework 
 ```
-To install, enter the root directory (./mwxlib), then type
+To install, type
 ```
-$ py -3 setup.py install
+$ py -3 -m pip install mwxlib
 ```
-To install from GitHub, type
+To install latest version from GitHub, type
 ```
 $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 ```
@@ -44,10 +44,10 @@ $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 The more pragmatic sample is 'debut.py'.
 Enjoy diving!
 
-mwxlib creates ~/.deb/ in your home directory.
+:memo: mwxlib creates ~/.deb/ in your home directory.
 This includes history, logs, dump files used to report when an error occurs.
 
-At the first startup, it takes some time to collect module information and create a dictionary.
+:memo: At the first startup, it takes some time to collect module information and create a dictionary.
 The collected module name is used for completion at the time of input in the shell.
 If you start the shell while pressing [C-S-], the dictionary will be recreated.
 

@@ -2842,12 +2842,12 @@ Flaky nutshell:
                         "pred={3!r}, locals=self.shell.interp.locals)".format(
                         hint.strip(), head or 'this', len(cc) < 2, pred or None))
             
-            if c in ';\r\n':
-                return ''.join(l) + c + self.magic_interpret(r)
-            
             if c == sys.ps2.strip(): # ...
                 i = next((k for k,a in enumerate(r) if not a.isspace()), len(r))
                 return ''.join(l) + c + ''.join(r[:i]) + self.magic_interpret(r[i:])
+            
+            if c in ';\r\n':
+                return ''.join(l) + c + self.magic_interpret(r)
             
         return ''.join(tokens)
     
