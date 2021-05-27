@@ -969,13 +969,14 @@ class Indicator(wx.Panel):
         dc.Clear()
         s = 8 # spacing
         r = 6 # radius
+        w, h = self.ClientSize
         dc.SetBrush(wx.Brush("black"))
-        dc.DrawRoundedRectangle(0, 0, s*6+1, s*2+1, s)
+        dc.DrawRoundedRectangle(0, h/2-s, s*6+1, s*2+1, s)
         for j,name in enumerate(('red','yellow','green')):
             if not self.__value & 1 << (2-j):
                 name = 'gray'
             dc.SetBrush(wx.Brush(name))
-            dc.DrawCircle(s*(2*j+1), s, r)
+            dc.DrawCircle(s*(2*j+1), h/2, r)
 
 
 class Gauge(wx.Panel):
