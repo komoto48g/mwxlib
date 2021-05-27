@@ -929,10 +929,10 @@ class Frame(mwx.Frame):
                 sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
             sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
         
-        if os.path.isdir(root): # when if root:module is a package
-            if root in sys.path:
-                sys.path.remove(root)
-            sys.path.insert(0, root)
+        ## if os.path.isdir(root): # when if root:module is a package
+        ##     if root in sys.path:
+        ##         sys.path.remove(root)
+        ##     sys.path.insert(0, root)
         
         try:
             self.statusbar("Loading plugin {!r}...".format(name))
