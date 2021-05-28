@@ -914,25 +914,11 @@ class Frame(mwx.Frame):
                     plug = self.get_plug(name)
                     plug.set_current_session(session)
                 return
-            
-            show = show or pane.IsShown()
-            docking = pane.IsDocked() and pane.dock_direction
-            layer = pane.dock_layer
-            pos = pane.dock_pos
-            row = pane.dock_row
-            prop = pane.dock_proportion
-            floating_pos = floating_pos or pane.floating_pos[:] # copy (!pane is to be unloaded)
-            floating_size = floating_size or pane.floating_size[:] # copy
         
         if os.path.isdir(dirname): # to import name
             if dirname in sys.path:
                 sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
             sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
-        
-        ## if os.path.isdir(root): # when if root:module is a package
-        ##     if root in sys.path:
-        ##         sys.path.remove(root)
-        ##     sys.path.insert(0, root)
         
         try:
             self.statusbar("Loading plugin {!r}...".format(name))
@@ -940,26 +926,49 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = __import__(name, fromlist=[''])
+                
+            name = module.Plugin.__module__ # module must have class Plugin
+            pane = self.get_pane(name)
+            
+            if pane.IsOk():
+                show = show or pane.IsShown()
+                docking = pane.IsDocked() and pane.dock_direction
+                layer = pane.dock_layer
+                pos = pane.dock_pos
+                row = pane.dock_row
+                prop = pane.dock_proportion
+                floating_pos = floating_pos or pane.floating_pos[:] # copy (!pane is to be unloaded)
+                floating_size = floating_size or pane.floating_size[:] # copy
             
         except ImportError as e:
             print(self.statusbar("\b failed to import: {}".format(e)))
             return False
         
+        except AttributeError as e:
+            wx.CallAfter(wx.MessageBox, traceback.format_exc(),
+                caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
+            traceback.print_exc()
+            return False
+        
         try:
-            if pane.IsOk() and force:
-                self.unload_plug(name) # 一旦アンロードする
+            if pane.IsOk():
+                self.unload_plug(name) # unload once right here
             
-            ## To refer the module in Plugin.Init, add to the list in advance with the constructor
+            ## Add to the list in advance with the constructor to refer the module in Plugin.Init.
+            ## However, it's uncertain that the Init will run successfully.
             ## self.plugins[name] = module
             
             ## Create a plug and register to plugins list プラグインのロード開始
             plug = module.Plugin(self, **kwargs)
             
-            ## set reference of a plug (one module, one plugin)
-            module.__plug__ = plug
+            plug.__notebook = None
+            plug.__Menu_item = None
             
             ## rename when if root:module is a package
-            name = plug.__module__
+            ## name = plug.__module__
+            
+            ## set reference of a plug (one module, one plugin)
+            module.__plug__ = plug
             
             ## when the plug is created successfully, add to the list
             self.plugins[name] = module
@@ -1042,7 +1051,7 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             
         except Exception as e:
-            self.statusbar("\b failed: {!r}".format(e))
+            ## self.statusbar("\b failed: {!r}".format(e))
             wx.CallAfter(wx.MessageBox, traceback.format_exc(),
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
             traceback.print_exc()
@@ -1053,8 +1062,11 @@ class Frame(mwx.Frame):
         try:
             ## self.statusbar("Unloading plugin {!r}...".format(name))
             plug = self.get_plug(name)
+            
             if name in self.plugins:
                 del self.plugins[name]
+            else:
+                return False
             
             nb = plug.__notebook
             if nb:
@@ -1062,7 +1074,7 @@ class Frame(mwx.Frame):
                 nb.RemovePage(j) # just remove page
                 ## nb.DeletePage(j) # cf. destroy plug object too
             
-            if plug.menu:
+            if plug.__Menu_item:
                 self.menubar[plug.menu].remove(plug.__Menu_item)
                 self.menubar.update(plug.menu)
             
@@ -1081,6 +1093,7 @@ class Frame(mwx.Frame):
         except Exception as e:
             ## self.statusbar("\b failed: {!r}".format(e))
             traceback.print_exc()
+            return False
     
     def edit_plug(self, name):
         self.edit(self.plugins[name])
