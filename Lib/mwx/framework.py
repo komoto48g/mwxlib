@@ -295,6 +295,12 @@ def find_modules(force=False, verbose=True):
     Similar to pydoc.help, it scans packages, but also the submodules.
     This creates a log file in ~/.deb and save the list.
     """
+    try:
+        reload(sys)
+        sys.setdefaultencoding('utf-8') # <= PY2
+    except AttributeError as e:
+        pass
+    
     if verbose:
         princ = print
     else:
