@@ -289,12 +289,17 @@ def extract_words_from_tokens(tokens, sep=None, reverse=False):
     return words   # 取り出したトークンリスト (to be ''.joined to make a pyrepr)
 
 
-def find_modules(force=0):
+def find_modules(force=False, verbose=True):
     """Find all modules available and write to log file.
     
     Similar to pydoc.help, it scans packages, but also the submodules.
     This creates a log file in ~/.deb and save the list.
     """
+    if verbose:
+        princ = print
+    else:
+        def princ(*args, **kwargs):
+            pass
     lm = []
     f = os.path.expanduser("~/.deb/deb-modules-{}.log".format(sys.winver))
     if force or not os.path.exists(f):
@@ -302,21 +307,22 @@ def find_modules(force=0):
               "while Py{} gathers a list of all available modules...".format(sys.winver))
         
         def callback(path, modname, desc):
-            ## lm.append((modname, desc))
             lm.append(modname)
+            princ('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='')
         
         def error(modname):
-            ## lm.append((modname + '*', None))
-            lm.append(modname + '*')
+            ## lm.append(modname + '*') # do not append to the list
+            princ('\b'*80 + "- failed: {}".format(modname[:70]))
         
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore') # ignore problems during import
             pydoc.ModuleScanner().run(callback, key='', onerror=error)
+            princ('\b'*80 + "The results were written in {!r}.".format(f))
         
         lm.sort(key=str.upper)
-        ## lm = OrderedDict(sorted(lm, key=lambda v:v[0].upper()))
         with open(f, 'w') as o:
             pprint(lm, width=256, stream=o) # write moduels
+        print("done.")
     else:
         with open(f, 'r') as o:
             lm = eval(o.read()) # read and eval a list of moduels
@@ -2807,12 +2813,6 @@ Flaky nutshell:
         for j,c in enumerate(tokens):
             l, r = tokens[:j], tokens[j+1:]
             
-            if c == '`':
-                f = "{rhs}={lhs}"
-                lhs = ''.join(l).strip() or '_'
-                rhs = ''.join(extract_words_from_tokens(r, sep1)).strip()
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
-            
             if c == '@':
                 f = "{rhs}({lhs})"
                 if r and r[0] == '*': # x@*y => y(*x)
@@ -2831,6 +2831,12 @@ Flaky nutshell:
                         rhs = p
                     except Exception:
                         pass
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
+            
+            if c == '`':
+                f = "{rhs}={lhs}"
+                lhs = ''.join(l).strip() or '_'
+                rhs = ''.join(extract_words_from_tokens(r, sep1)).strip()
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '?':
