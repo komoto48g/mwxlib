@@ -14,23 +14,23 @@ class Plugin(Layer):
         self.g1 = wx.Gauge(self, range=24, size=(100,24))
         self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE)
         
-        self.par = LParam("value", (0,24,1), 0)
+        self.param = LParam("value", (0,24,1), 0)
         
         self.layout(None, (
             self.g1,
             self.g2,
-            self.par,
+            self.param,
             ),
             row=1, expand=1, hspacing=1, vspacing=1, show=1, visible=1,
             type='slider*', style='button', lw=-1, tw=0, cw=-1, h=22
         )
         
-        @self.par.bind
+        @self.param.bind
         def set(p):
             self.g1.Value = p.value
             self.g2.Value = p.value
         
-        @self.par.bind(target='check')
+        @self.param.bind(target='check')
         def check(p):
             def start():
                 while 1:

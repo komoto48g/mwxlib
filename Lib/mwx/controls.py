@@ -958,17 +958,24 @@ class Indicator(wx.Panel):
     
     value = Value
     
-    def __init__(self, parent, **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
+    spacing = 8
+    radius = 6
+    
+    def __init__(self, parent, tip=None, size=(-1,-1), **kwargs):
+        s = self.spacing
+        size = (max(s*6+2, size[0]), # set minimum size:(6s,2s)
+                max(s*2+2, size[1]))
+        wx.Panel.__init__(self, parent, size=size, **kwargs)
         
+        self.SetToolTip(tip)
         self.__value = 0
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
         dc.Clear()
-        s = 8 # spacing
-        r = 6 # radius
+        r = self.radius
+        s = self.spacing
         w, h = self.ClientSize
         dc.SetBrush(wx.Brush("black"))
         dc.DrawRoundedRectangle(0, h/2-s, s*6+1, s*2+1, s)
@@ -1021,7 +1028,6 @@ class Gauge(wx.Panel):
     
     def Draw(self):
         dc = wx.BufferedDC(wx.ClientDC(self), self.canvas)
-        ## dc = wx.ClientDC(self)
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
