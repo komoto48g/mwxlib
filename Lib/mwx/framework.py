@@ -552,15 +552,15 @@ class FSM(dict):
         context = self[state]
         ast = []
         bra = []
-        save = []
         for event in list(context): #? OrderedDict mutated during iteration
             if re.search("\[.+\]", event):
                 bra.append((event, context.pop(event))) # event key has '[]'
             elif '*' in event or '?' in event:
                 ast.append((event, context.pop(event))) # event key has '*?'
-            else:
-                save.append((event, context.pop(event))) # any others normal
-        context.update(sorted(save))
+        
+        temp = sorted(context.items()) # normal event key
+        context.clear()
+        context.update(temp)
         context.update(sorted(bra, reverse=1))
         context.update(sorted(ast, reverse=1, key=lambda v:len(v[0])))
     
@@ -3394,7 +3394,8 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
+            ## hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
+            hint = re.search("[\w.]*$", self.cmdlc).group(0)
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
@@ -3414,7 +3415,8 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
+            ## hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
+            hint = re.search("[\w.]*$", self.cmdlc).group(0)
             
             m = re.match("from\s+([\w.]+)\s+import\s+(.*)", self.cmdlc)
             if m:
