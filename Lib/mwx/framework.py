@@ -1102,7 +1102,7 @@ def pack(self, *args, **kwargs):
     label : label of StaticBox
     """
     label = kwargs.get("label")
-    orient = kwargs.get("orient") or wx.VERTICAL
+    orient = kwargs.get("orient") or wx.HORIZONTAL
     style = kwargs.get("style") or (0, wx.EXPAND|wx.ALL, 0)
     
     if label is not None:

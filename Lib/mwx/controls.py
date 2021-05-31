@@ -788,8 +788,8 @@ def getBmp(key, size=None):
             return wx.ArtProvider.GetBitmap(
                 provided_arts.get(key) or key, size=size or (14,14)) #<wx._core.Bitmap> IsOk ?
     
-    return wx.NullBitmap # The standard wx control seems to accept this,
-    ## return wx.Bitmap(0,0) # but some wx.lib.controls require this.
+    return wx.NullBitmap # The standard wx controls accept this,
+    ## return wx.Bitmap(0,0) # but some wx.lib.controls require this.? 4.1.1 からエラーになる▲
 
 Icon = getBmp
 

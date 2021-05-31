@@ -1116,7 +1116,6 @@ class Frame(mwx.Frame):
             "<-- self.l : {!r}\n"
             "<-- self.lm : {!r}\n".format(name, self.l, self.lm))
         shell.prompt()
-        ## self.inspector.Show()
         
         shell = self.inspector.shell.clone(self.l)
         
@@ -1135,7 +1134,6 @@ class Frame(mwx.Frame):
     
     def Quit(self, evt):
         """Stop all Layer.thread"""
-        ## threads = [t for t in threading.enumerate() if t.name != 'MainThread']
         for name in self.plugins:
             plug = self.get_plug(name)
             if plug.thread and plug.thread.is_active:
