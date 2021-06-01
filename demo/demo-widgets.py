@@ -4,7 +4,7 @@ from numpy import inf
 import wx
 import mwx
 from mwx.controls import Param, LParam
-from mwx.controls import Button, ToggleButton, TextCtrl, Choice
+from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame
 
 

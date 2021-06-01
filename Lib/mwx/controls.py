@@ -813,12 +813,16 @@ class Button(pb.PlateButton):
             tip = tip or handler.__doc__
         tip = (tip or '').strip()
         self.SetToolTip(tip)
+        self.SetBitmap(Icon(icon))
+    
+    def SetBitmap(self, bmp):
+        """Set the bitmap displayed in the button
+        (override) If it fails, it clears the bitmap.
+        """
         try:
-            if icon:
-                self.SetBitmap(Icon(icon))
+            pb.PlateButton.SetBitmap(self, bmp)
         except Exception:
-            self._bmp = dict(enable=None, disable=None) # clear the icon
-            pass
+            self._bmp = dict(enable=None, disable=None)
 
 
 class ToggleButton(wx.ToggleButton):
