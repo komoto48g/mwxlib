@@ -961,7 +961,7 @@ class Indicator(wx.Panel):
     
     @Value.setter
     def Value(self, v):
-        self.__value = v
+        self.__value = int(v)
         self.Refresh()
     
     value = Value
@@ -1003,7 +1003,7 @@ class Gauge(wx.Panel):
     
     @Value.setter
     def Value(self, v):
-        self.__value = v
+        self.__value = int(v)
         self.Draw()
     
     value = Value
@@ -1014,7 +1014,7 @@ class Gauge(wx.Panel):
     
     @Range.setter
     def Range(self, v):
-        self.__range = v
+        self.__range = int(v)
         self.Draw()
     
     def __init__(self, parent, range=24, **kwargs):
