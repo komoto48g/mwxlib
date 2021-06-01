@@ -789,7 +789,10 @@ def getBmp(key, size=None):
                 provided_arts.get(key) or key, size=size or (14,14)) #<wx._core.Bitmap> IsOk ?
     
     return wx.NullBitmap # The standard wx controls accept this,
-    ## return wx.Bitmap(0,0) # but some wx.lib.controls require this.? 4.1.1 からエラーになる▲
+    ## return wx.Bitmap(0,0) # some wx.lib.controls require this?
+    ## bmp = wx.Bitmap(1,1)        # null bitmap fails with AssertionError from 4.1.1▲
+    ## bmp.SetMaskColour('black')  # ret, one dot dummy bitmap
+    ## return bmp
 
 Icon = getBmp
 
@@ -814,6 +817,7 @@ class Button(pb.PlateButton):
             if icon:
                 self.SetBitmap(Icon(icon))
         except Exception:
+            self._bmp = dict(enable=None, disable=None) # clear the icon
             pass
 
 
