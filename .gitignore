@@ -10,11 +10,9 @@ exclude_files
 c/
 doc/
 etc/
-bin/
-Scripts/
-demo-test/
 icon*/
 test*/
+wiki/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

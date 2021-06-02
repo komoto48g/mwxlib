@@ -786,7 +786,7 @@ def speckey_state(key):
 def hotkey(evt):
     """Interpret evt.KeyCode as Hotkey string and overwrite evt.key.
     The modifiers are aranged in the same order as matplotlib as
-      [LR]win + ctrl + alt(meta) + shift.
+    [LR]win + ctrl + alt(meta) + shift.
     """
     key = evt.GetKeyCode()
     mod = ""
@@ -1439,9 +1439,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
-        if isinstance(wx.Window.FindFocus(), wx.TextEntry):
-            evt.Skip()
-            return
+        ## if isinstance(wx.Window.FindFocus(), wx.TextEntry):
+        ##     evt.Skip()
+        ##     return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def About(self):
@@ -1497,9 +1497,9 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
-        if isinstance(wx.Window.FindFocus(), wx.TextEntry):
-            evt.Skip()
-            return
+        ## if isinstance(wx.Window.FindFocus(), wx.TextEntry):
+        ##     evt.Skip()
+        ##     return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def Destroy(self):

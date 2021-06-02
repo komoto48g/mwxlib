@@ -585,18 +585,17 @@ class ControlPanel(scrolled.ScrolledPanel):
     def OnToggleFold(self, evt): #<wx._core.MouseEvent>
         x, y = evt.Position
         for child in self.Sizer.Children: # child <wx._core.SizerItem>
-            if not child.IsShown(): # skip invisible sizer (position is overlapping)
-                continue
-            cx, cy = child.Position
-            if cx < x < cx + child.Size[0] and cy < y < cy+22:
+            if child.IsShown():
                 obj = child.Sizer or child.Window
                 if isinstance(obj, (wx.StaticBoxSizer, wx.StaticBox)):
-                    for cc in obj.Children: # child of child <wx._core.SizerItem>
-                        cc.Show(not cc.IsShown())   # toggle show
-                    self.Layout()
-                    self.SendSizeEvent()
-                    self.Refresh()
-                break
+                    cx, cy = obj.Position
+                    if cx < x < cx + obj.Size[0] and cy < y < cy+22:
+                        for cc in obj.Children: # child of child <wx._core.SizerItem>
+                            cc.Show(not cc.IsShown())
+                        self.Layout()
+                        self.SendSizeEvent()
+                        self.Refresh()
+                        break
         evt.Skip()
     
     ## --------------------------------
@@ -1111,9 +1110,9 @@ if __name__ == '__main__':
                 row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
             )
             
-            for win in self.groups[1]:
-                print(win)
-            
+            ## for win in self.groups[1]:
+            ##     print(win)
+            ## 
             self.groups[1][1].Disable()
     
     app = wx.App()

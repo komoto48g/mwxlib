@@ -24,13 +24,13 @@ if 1:
   Usage:
     >>> 1,5 @range @(reduce, op.mul) => reduce(op.mul, range(1,5))
     24
-    >>> x@(do,f,**kw) => do.result = [f(v,**kw) for v in fx]
+    >>> x@(do,f,**kw) => do.results = [f(v,**kw) for v in fx]
     
     """
     def do(f, *iterables, **kwargs):
         if not iterables:
             return partial(do, f, **kwargs)
-        do.result = tuple(map(partial(f, **kwargs), *iterables))
+        do.results = tuple(map(partial(f, **kwargs), *iterables))
     
     builtins.do = do
     builtins.reduce = reduce
