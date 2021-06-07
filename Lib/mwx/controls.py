@@ -837,8 +837,21 @@ class Button(pb.PlateButton):
 
 class ToggleButton(wx.ToggleButton):
     """Togglable button
-    check `Value property to get the status
+     btn : button label
+    ctrl : textctrl
+Note:
+    To get the status, check `Value property.
     """
+    @property
+    def icon(self):
+        return self.__icon
+    
+    @icon.setter
+    def icon(self, v):
+        self.__icon = v
+        self.SetBitmap(Icon(v))
+        self.Refresh()
+    
     def __init__(self, parent, label='', handler=None, icon=None, tip=None, **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         if handler:
@@ -846,10 +859,11 @@ class ToggleButton(wx.ToggleButton):
             tip = tip or handler.__doc__
         tip = (tip or '').strip()
         self.SetToolTip(tip)
-        self.SetBitmap(Icon(icon))
+        ## self.SetBitmap(Icon(icon))
+        self.icon = icon
 
 
-## class TextLabel(wx.Panel):
+## class Label(wx.Panel):
 ##     """Label (widget complex of bitmap and label) readonly.
 ##     """
 ##     def __init__(self, parent, label, icon=None, tip=None, **kwargs):
@@ -868,7 +882,8 @@ class ToggleButton(wx.ToggleButton):
 
 class TextCtrl(wx.Panel):
     """Text control panel
-    widget complex of bitmap, label, and textctrl
+     btn : button label
+    ctrl : textctrl
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
