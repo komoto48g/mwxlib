@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from collections import OrderedDict
-from pprint import pprint, pformat
+from functools import wraps
 import subprocess
 import threading
 import traceback
@@ -33,6 +33,7 @@ from .matplot2lg import Histogram
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
+from pprint import pprint, pformat
 
 try:
     from importlib import reload
@@ -70,6 +71,7 @@ class Thread(object):
                 raise KeyboardInterrupt("timeout")
             if not self.is_active:
                 raise KeyboardInterrupt("terminated by user")
+            return True
         finally:
             self.__flag.set()
     
@@ -106,8 +108,9 @@ class Thread(object):
     def __enter__(self):
         f = inspect.currentframe().f_back
         m = inspect.getmodule(f)
+        
         if not self.is_active:
-            raise Warning("The thread is not running (cannot enter {})".format(f.f_code.co_name))
+            raise AssertionError("The thread is not running (cannot enter {})".format(f.f_code.co_name))
         
         event = "{}:{}:enter".format(m.__name__, f.f_code.co_name)
         self.owner.handler(event, self)
@@ -116,9 +119,6 @@ class Thread(object):
         f = inspect.currentframe().f_back
         m = inspect.getmodule(f)
         if t:
-            ## print("Thread:exception: {!r}".format(v))
-            ## print("Traceback:\n{}".format(''.join(traceback.format_tb(tb))))
-            ## 
             event = "{}:{}:error".format(m.__name__, f.f_code.co_name)
             self.owner.handler(event, self)
         
@@ -129,6 +129,7 @@ class Thread(object):
         """Decorator of thread starter function
         Note: event args *v are ignored when decorated by this call
         """
+        @wraps(f)
         def _f(*v):
             return self.Start(f, *(v+args), **kwargs)
         _f.__name__ = f.__name__
@@ -139,13 +140,14 @@ class Thread(object):
         if not f:
             return lambda f: self.Start(f, *args, **kwargs)
         
+        @wraps(f)
         def _f(*args, **kwargs):
             try:
                 self.owner.handler('thread_begin', self)
                 self.result = f(*args, **kwargs)
                 
-            except Warning as e:
-                print("- Thread:execution stoped: {}".format(e))
+            except AssertionError as e:
+                print("- Thread:execution failed: {}".format(e))
                 
             except KeyboardInterrupt as e:
                 print("- Thread:execution stoped: {}".format(e))

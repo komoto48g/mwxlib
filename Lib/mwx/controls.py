@@ -789,8 +789,8 @@ def getBmp(key, size=None):
     
     return wx.NullBitmap # The standard wx controls accept this,
     ## return wx.Bitmap(0,0) # some wx.lib.controls require this?
-    ## bmp = wx.Bitmap(1,1)        # null bitmap fails with AssertionError from 4.1.1▲
-    ## bmp.SetMaskColour('black')  # ret, one dot dummy bitmap
+    ## bmp = wx.Bitmap(size) # null bitmap fails with AssertionError from 4.1.1▲
+    ## bmp.SetMaskColour('black') # return dummy-sized blank bitmap
     ## return bmp
 
 Icon = getBmp
