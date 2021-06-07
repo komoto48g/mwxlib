@@ -804,6 +804,16 @@ getBmp.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
 class Button(pb.PlateButton):
     """Flat button
     """
+    @property
+    def icon(self):
+        return self.__icon
+    
+    @icon.setter
+    def icon(self, v):
+        self.__icon = v
+        self.SetBitmap(Icon(v))
+        self.Refresh()
+    
     def __init__(self, parent, label='', handler=None, icon=None, tip=None, **kwargs):
         pb.PlateButton.__init__(self, parent, -1, label,
             style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE, **kwargs)
@@ -812,7 +822,8 @@ class Button(pb.PlateButton):
             tip = tip or handler.__doc__
         tip = (tip or '').strip()
         self.SetToolTip(tip)
-        self.SetBitmap(Icon(icon))
+        ## self.SetBitmap(Icon(icon))
+        self.icon = icon
     
     def SetBitmap(self, bmp):
         """Set the bitmap displayed in the button
@@ -965,17 +976,17 @@ class Indicator(wx.Panel):
     
     value = Value
     
-    spacing = 8
-    radius = 6
+    spacing = 7
+    radius = 5
     
-    def __init__(self, parent, tip=None, size=(-1,-1), **kwargs):
+    def __init__(self, parent, tip=None, size=(-1,-1), value=0, **kwargs):
         s = self.spacing
         size = (max(s*6+2, size[0]), # set minimum size:(6s,2s)
                 max(s*2+2, size[1]))
         wx.Panel.__init__(self, parent, size=size, **kwargs)
         
         self.SetToolTip(tip)
-        self.__value = 0
+        self.__value = value
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def OnPaint(self, evt):
@@ -1016,11 +1027,11 @@ class Gauge(wx.Panel):
         self.__range = int(v)
         self.Draw()
     
-    def __init__(self, parent, range=24, **kwargs):
+    def __init__(self, parent, range=24, value=0, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
         self.__range = range
-        self.__value = 0
+        self.__value = value
         self.canvas = wx.Bitmap(self.ClientSize)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
