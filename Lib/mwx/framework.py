@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.40.2"
+__version__ = "0.40.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -24,7 +24,6 @@ import os
 import re
 import wx
 from wx import aui
-## from wx.lib.agw import aui
 from wx import stc
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
@@ -525,8 +524,8 @@ class FSM(dict):
                       " pattern : {}".format(pattern), sep='\n')
             traceback.print_exc()
     
-    STDERR = sys.stderr
-    STDOUT = sys.stdout
+    STDERR = sys.__stderr__
+    STDOUT = sys.__stdout__
     
     @staticmethod
     def log(*args, **kwargs):
@@ -833,7 +832,10 @@ def funcall(f, doc=None, alias=None, **kwargs):
     
     ## event 引数などが省略できるかどうかチェックし，
     ## 省略できる場合 (kwargs で必要な引数が与えられる場合) その関数を返す
-    
+    ## 
+    ## Check if the event argument etc. can be omitted,
+    ## If it can be (if required arguments are given by kwargs) return the function.
+    ## 
     def explicit_args(args, defaults):
         ## k = len(args) - n - len(kwargs) # NG
         ## defaults と kwargs がかぶることがある．次のようにして引数を数える
@@ -1038,7 +1040,7 @@ class KeyCtrlInterfaceMixin(object):
     def prefix_command_hook(self, evt):
         win = wx.Window.FindFocus()
         if isinstance(win, wx.TextEntry) and win.StringSelection\
-        or isinstance(win, wx.stc.StyledTextCtrl) and win.SelectedText:
+        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
           # or any other of pre-selection-p?
             self.handler('quit', evt)
             evt.Skip()
@@ -1439,9 +1441,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
-        ## if isinstance(wx.Window.FindFocus(), wx.TextEntry):
-        ##     evt.Skip()
-        ##     return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def About(self):
@@ -1497,9 +1496,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
-        ## if isinstance(wx.Window.FindFocus(), wx.TextEntry):
-        ##     evt.Skip()
-        ##     return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def Destroy(self):
@@ -1847,7 +1843,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ##    weight : NORMAL, LIGHT, BOLD
         ## underline : False
         ## font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, "MS Gothic")
-        ## self.StyleSetFont(wx.stc.STC_STYLE_DEFAULT, font)
+        ## self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
         
         ## self.StyleClearAll()
         ## self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
@@ -1872,11 +1868,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## custom constants to be embedded in stc
         stc.STC_P_WORD3 = 16
         
-        self.MarkerDefine(0, wx.stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
-        self.MarkerDefine(1, wx.stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
-        self.MarkerDefine(2, wx.stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
-        self.MarkerDefine(3, wx.stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
-        self.MarkerDefine(4, wx.stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
+        self.MarkerDefine(0, stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
+        self.MarkerDefine(1, stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
+        self.MarkerDefine(2, stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
+        self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
+        self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
         
         self.MarkerSetAlpha(0, 0x80)
         ## m = 0
@@ -1887,7 +1883,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.SetMarginSensitive(0,True)
         ## self.SetMarginSensitive(1,True)
         ## 
-        ## @connect(self, wx.stc.EVT_STC_MARGINCLICK)
+        ## @connect(self, stc.EVT_STC_MARGINCLICK)
         ## def on_margin_click(v):
         ##     self.handler("margin_clicked", v)
         ##     v.Skip()
