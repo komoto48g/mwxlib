@@ -785,13 +785,16 @@ def getBmp(key, size=None):
             return bmp
         except Exception:
             return wx.ArtProvider.GetBitmap(
-                provided_arts.get(key) or key, size=size or (14,14)) #<wx._core.Bitmap> IsOk ?
+                provided_arts.get(key) or key, size=size or (16,16)) #<wx._core.Bitmap> IsOk ?
+    
+    ## Note: null bitmap fails with AssertionError from 4.1.0
+    if key == '':
+        bmp = wx.Bitmap(size or (16,16))
+        bmp.SetMaskColour('black') # return dummy-sized blank bitmap
+        return bmp
     
     return wx.NullBitmap # The standard wx controls accept this,
     ## return wx.Bitmap(0,0) # some wx.lib.controls require this?
-    ## bmp = wx.Bitmap(size) # null bitmap fails with AssertionError from 4.1.1▲
-    ## bmp.SetMaskColour('black') # return dummy-sized blank bitmap
-    ## return bmp
 
 Icon = getBmp
 
