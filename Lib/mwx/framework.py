@@ -260,10 +260,9 @@ def split_into_words(text):
 def extract_words_from_tokens(tokens, sep=None, reverse=False):
     """Extract pythonic expressions from `tokens
     default `sep includes `@, binary-ops, and whitespaces, etc.
-            `sep should not include ?(=help) and !(=sx)
     """
     if sep is None:
-        sep = "`@=+-/*%<>&|^~,:; \t\r\n" # OPS + SEPARATOR_CHARS
+        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?" # OPS; SEPARATOR_CHARS; !?
     p, q = "({[", ")}]"
     if reverse:
         p,q = q,p
@@ -2781,7 +2780,7 @@ Flaky nutshell:
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
-        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?([{" # OPS + SEPARATOR_CHARS; !? and open-parens
+        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?([{" # OPS; SEPARATOR_CHARS; !? and open-parens
         
         if not self.CanEdit():
             return
@@ -2810,8 +2809,8 @@ Flaky nutshell:
         
         Note: This is called before run, execute, and original magic.
         """
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # ` OPS + SEPARATOR_CHARS; nospace, nocomma
-        sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # @ OPS + SEPARATOR_CHARS;
+        sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # ` OPS; SEPARATOR_CHARS; nospace, nocomma
+        sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # @ OPS; SEPARATOR_CHARS;
         for j,c in enumerate(tokens):
             l, r = tokens[:j], tokens[j+1:]
             
