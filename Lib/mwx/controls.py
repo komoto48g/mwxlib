@@ -790,6 +790,11 @@ def getBmp(key, size=None):
     ## Note: null bitmap fails with AssertionError from 4.1.0
     if key == '':
         bmp = wx.Bitmap(size or (16,16))
+        if 1:
+            dc = wx.MemoryDC(bmp)
+            dc.SetBackground(wx.Brush('black'))
+            dc.Clear()
+            del dc
         bmp.SetMaskColour('black') # return dummy-sized blank bitmap
         return bmp
     
