@@ -12,9 +12,9 @@ class Plugin(Layer):
     
     def Init(self):
         self.g1 = wx.Gauge(self, range=24, size=(100,24))
-        self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE)
+        self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE, tip="raibow gauge")
         
-        self.param = LParam("value", (0,24,1), 0)
+        self.param = LParam("value", (0,24,1), 0, tip="slider")
         
         self.layout(None, (
             self.g1,

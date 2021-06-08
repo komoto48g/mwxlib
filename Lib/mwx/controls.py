@@ -36,7 +36,7 @@ std_value : standard value (default None)
     knobs : knob list
     index : knob index -> reset -> callback
     check : knob tick (undefined)
-      doc : doc:str also shown as a tooltip
+      tip : doc:str also shown as a tooltip
  callback : single state machine that handles following events:
         control -> `index is changed (by knobs) or reset, calls handler if given
         check -> when `check ticks on/off, calls updater if given
@@ -44,7 +44,7 @@ std_value : standard value (default None)
         underflow -> when `value underflows
     """
     def __init__(self, name, range=None, value=None,
-        fmt=None, dtype=None, handler=None, updater=None, doc=None):
+        fmt=None, dtype=None, handler=None, updater=None, tip=None):
         self.__knobs = [] # used in update
         self.__name = name
         self.range = range if range is not None else [0]
@@ -68,7 +68,7 @@ std_value : standard value (default None)
            'overflow' : [],
           'underflow' : [],
         })
-        self.doc = doc
+        self.tip = tip
     
     def __str__(self, v=None):
         return self.__format(self.__value if v is None else v)
@@ -346,8 +346,7 @@ class Knob(wx.Panel):
         self.label.Enable(lw)
         self.label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
-        if self.__par.doc:
-            self.label.SetToolTip(self.__par.doc)
+        self.label.SetToolTip(self.__par.tip)
         
         if editable:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
@@ -830,7 +829,6 @@ class Button(pb.PlateButton):
             tip = tip or handler.__doc__
         tip = (tip or '').strip()
         self.SetToolTip(tip)
-        ## self.SetBitmap(Icon(icon))
         self.icon = icon
     
     def SetBitmap(self, bmp):
@@ -867,7 +865,6 @@ Note:
             tip = tip or handler.__doc__
         tip = (tip or '').strip()
         self.SetToolTip(tip)
-        ## self.SetBitmap(Icon(icon))
         self.icon = icon
 
 
@@ -1002,13 +999,14 @@ class Indicator(wx.Panel):
     spacing = 7
     radius = 5
     
-    def __init__(self, parent, tip=None, size=(-1,-1), value=0, **kwargs):
+    def __init__(self, parent, value=0, tip=None, size=(-1,-1), **kwargs):
         s = self.spacing
         size = (max(s*6+2, size[0]), # set minimum size:(6s,2s)
                 max(s*2+2, size[1]))
         wx.Panel.__init__(self, parent, size=size, **kwargs)
         
         self.SetToolTip(tip)
+        
         self.__value = value
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
@@ -1050,8 +1048,10 @@ class Gauge(wx.Panel):
         self.__range = int(v)
         self.Draw()
     
-    def __init__(self, parent, range=24, value=0, **kwargs):
+    def __init__(self, parent, range=24, value=0, tip=None, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+        
+        self.SetToolTip(tip)
         
         self.__range = range
         self.__value = value
@@ -1097,7 +1097,7 @@ if __name__ == '__main__':
             ControlPanel.__init__(self, *args, **kwargs)
             mwx.CtrlInterface.__init__(self)
             
-            self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, doc='amplitude')
+            self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0,1,1e-4))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
             self.Q =  Param('universe', (1,2,3,inf), inf, handler=print, updater=print)

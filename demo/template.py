@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Template of Layer
 
-Last updated: <2021-05-18 14:22:35 +0900>
+Last updated: <2021-06-08 17:10:45 +0900>
      Version: 0.0
       Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
@@ -28,7 +28,7 @@ class Plugin(Layer):
     unloadable = True
     
     def Init(self):
-        self.ksize = LParam("ksize", (1,99,2), 13, doc="kernel window size")
+        self.ksize = LParam("ksize", (1,99,2), 13, tip="kernel window size")
         
         self.btn = wx.Button(self, label="Run", size=(-1,22))
         self.btn.Bind(wx.EVT_BUTTON, lambda v: self.run())

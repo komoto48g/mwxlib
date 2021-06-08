@@ -47,7 +47,7 @@ class Plugin(Layer):
             row=2, expand=0,
         )
         self.LP =  LParam('L', (-1,1,0.01), 0, handler=print,
-            doc="Linear param"
+            tip="Linear param"
                 "\n In addition to direct key input to the textctrl,"
                 "\n [up][down][wheelup][wheeldown] keys can be used,"
                 "\n with modifiers S- 2x, C- 16x, and M- 256x steps."
