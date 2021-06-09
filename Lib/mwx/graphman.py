@@ -777,7 +777,7 @@ class Frame(mwx.Frame):
         
         if isinstance(plug, Layer):
             nb = plug.__notebook
-            if nb:
+            if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
         
         if show and not pane.IsShown(): plug.handler('pane_shown')
@@ -824,9 +824,9 @@ class Frame(mwx.Frame):
                 pane.Dock()
             
             nb = plug.__notebook
-            if nb:
+            if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
-                
+            
         if show and not pane.IsShown(): plug.handler('pane_shown')
         elif not show and pane.IsShown(): plug.handler('pane_closed')
         
@@ -988,18 +988,22 @@ class Frame(mwx.Frame):
                         ## AuiManager .Name をダブって登録することはできない
                         ## Notebook.title (category) はどのプラグインとも別名にすること
                         raise NameError("Notebook name must not be the same as any other plugins")
+                    
+                    nb.AddPage(plug, caption)
                     show = pane.IsShown()
                 else:
                     size = plug.GetSize() + (2,30)
                     nb = aui.AuiNotebook(self,
                         style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
                               &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+                    
+                    nb.AddPage(plug, caption)
+                    
                     self._mgr.AddPane(nb, aui.AuiPaneInfo()
                         .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
                     
                     @mwx.connect(nb, aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN)
                     def show_menu(evt): #<wx._aui.AuiNotebookEvent>
-                        ## nb.SetSelection(evt.Selection)
                         plug = nb.GetPage(evt.Selection)
                         mwx.Menu.Popup(nb, plug.Menu)
                     
@@ -1015,12 +1019,9 @@ class Frame(mwx.Frame):
                             if nb.CurrentPage is not plug:
                                 nb.CurrentPage.handler('pane_hidden')
                         evt.Skip() # must skip to the next handler, but called twice when click?
-                    
-                nb.AddPage(plug, caption)
                 
                 j = nb.GetPageIndex(plug)
                 nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
-                nb.SetSelection(j)
                 
             else:
                 nb = None
@@ -1035,6 +1036,7 @@ class Frame(mwx.Frame):
                 docking=docking, layer=layer, pos=pos, row=row, prop=prop,
                 floating_pos=floating_pos, floating_size=floating_size
             )
+            
             ## register menu item
             if not hasattr(module, 'ID_'): # give a unique index to the module
                 module.ID_ = Frame.__new_ID_
