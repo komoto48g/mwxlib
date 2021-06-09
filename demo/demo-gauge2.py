@@ -33,12 +33,11 @@ class Plugin(Layer):
         @self.param.bind(target='check')
         def check(p):
             def start():
-                while 1:
-                    for x in range(0,24):
-                        p.reset(x)
-                        time.sleep(0.1)
-                        if not self.thread.is_active:
-                            return
+                x = 0
+                while self.thread.is_active:
+                    p.reset(x % 24) # update control
+                    time.sleep(0.1)
+                    x += 1
             self.thread.Start(start)
         self.thread = Thread(self)
 
