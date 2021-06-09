@@ -155,7 +155,10 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
     if pred:
         if not callable(pred):
             raise TypeError("{} is not callable".format(typename(pred)))
-        if not inspect.isbuiltin(pred):
+        
+        if inspect.isclass(pred): # class ctor: int, float, str, ... etc.
+            pred = instance(pred)
+        elif not inspect.isbuiltin(pred):
             args, _varargs, _keywords, defaults = getargspec(pred)
             if not args or len(args) - len(defaults or ()) > 1:
                 raise TypeError("{} must take exactly one argument".format(typename(pred)))
