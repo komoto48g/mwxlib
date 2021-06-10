@@ -896,17 +896,17 @@ def postcall(f):
     return _f
 
 
-def connect(wxobj, event, f=None):
-    """An event binder: equiv. wxobj.Bind(event, f) -> f"""
+def connect(obj, event, f=None, **kwargs):
+    """An event binder: equiv. obj.Bind(event, f) -> f"""
     if not f:
-        return lambda f: connect(wxobj, event, f)
-    wxobj.Bind(event, f)
+        return lambda f: connect(obj, event, f, **kwargs)
+    obj.Bind(event, lambda v: f(v, **kwargs))
     return f
 
 
-def disconnect(wxobj, event, f=None):
-    """An event unbinder: equiv. wxobj.Unbind(event, f) -> f"""
-    return wxobj.Unbind(event, handler=f)
+def disconnect(obj, event, f=None):
+    """An event unbinder: equiv. obj.Unbind(event, f) -> f"""
+    return obj.Unbind(event, handler=f)
 
 
 def skip(v):
@@ -1267,13 +1267,13 @@ class Menu(wx.Menu):
             self.owner.Bind(wx.EVT_MENU_HIGHLIGHT, handler3, id=id)
     
     @staticmethod
-    def Popup(parent, menu):
+    def Popup(parent, menu, *args):
         menu = Menu(parent, menu)
-        parent.PopupMenu(menu)
+        parent.PopupMenu(menu, *args)
         menu.Destroy()
 
 
-class Menubar(wx.MenuBar, TreeList):
+class MenuBar(wx.MenuBar, TreeList):
     """Construt menubar as is orderd map
     
     ネストされたリストの順番どおりに GUI 上にマップしたメニューバーを構築する
@@ -1380,7 +1380,7 @@ class StatusBar(wx.StatusBar):
 class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """Frame base class
     
-    menubar : Menubar
+    menubar : MenuBar
   statusbar : StatusBar
   inspector : Inspector frame of the shell
     """
@@ -1395,7 +1395,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         ## statusbar/menubar などのカスタマイズを行う
         ## レイアウト系コマンドは statusbar/menubar の作成後
         
-        self.menubar = Menubar()
+        self.menubar = MenuBar()
         self.menubar["File"] = [
             (ID_(1), "&Inspector\tF12", "Shell for object inspection", wx.ITEM_CHECK,
                 lambda v: (self.inspector.Show(),
@@ -1459,7 +1459,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
 class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """MiniFrame base class
     
-    menubar : Menubar (not created by default)
+    menubar : MenuBar (not created by default)
   statusbar : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
@@ -1469,7 +1469,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         wx.MiniFrame.__init__(self, *args, **kwargs)
         
         ## To disable, self.SetMenuBar(None)
-        self.menubar = Menubar()
+        self.menubar = MenuBar()
         self.SetMenuBar(self.menubar)
         
         self.statusbar = StatusBar(self)
