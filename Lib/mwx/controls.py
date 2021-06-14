@@ -846,7 +846,7 @@ class ToggleButton(wx.ToggleButton):
      btn : button label
     ctrl : textctrl
 Note:
-    To get the status, check `Value property.
+    To get the status, check Value property or use event.GetInt
     """
     @property
     def icon(self):

@@ -36,6 +36,7 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator)
 from pprint import pprint, pformat
 from six.moves import builtins
+## from six import PY3
 
 try:
     from importlib import reload
@@ -2029,8 +2030,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def eol(self):
         """end of line"""
         text, lp = self.CurLine
-        if text[-2:] == '\r\n': lp += 2
-        elif text[-1:] == '\n': lp += 1
+        ## if text[-2:] == '\r\n': lp += 2
+        ## elif text[-1:] == '\n': lp += 1
+        if text.endswith(os.linesep):
+            lp += len(os.linesep)
         return (self.cur - lp + len(text.encode()))
     
     @property
@@ -2038,8 +2041,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Pythonic expression at the caret
         The caret scouts back and forth to scoop a chunk of expression.
         """
-        ls = self.GetTextRange(self.bol, self.cur)
-        rs = self.GetTextRange(self.cur, self.eol)
+        ## ls = self.GetTextRange(self.bol, self.cur)
+        ## rs = self.GetTextRange(self.cur, self.eol)
+        text, lp = self.CurLine
+        ls, rs = text[:lp], text[lp:]
         lhs = get_words_backward(ls) or ls.rpartition(' ')[-1]
         rhs = get_words_forward(rs) or rs.partition(' ')[0]
         return lhs + rhs
@@ -2222,19 +2227,27 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def kill_line(self):
         if self.CanEdit():
             p = self.eol
-            if p == self.cur:
-                if self.GetTextRange(p, p+2) == '\r\n': p += 2
-                elif self.GetTextRange(p, p+1) == '\n': p += 1
+            ## if p == self.cur:
+            ##     if self.GetTextRange(p, p+2) == '\r\n': p += 2
+            ##     elif self.GetTextRange(p, p+1) == '\n': p += 1
+            text, lp = self.CurLine
+            if text[:lp] == os.linesep:
+                p += len(os.linesep)
             self.Replace(self.cur, p, '')
     
     def backward_kill_line(self):
         if self.CanEdit():
             p = self.bol
-            if p == self.cur:
-                n = len(sys.ps2)
-                if self.GetTextRange(p-2, p) == '\r\n': p -= 2
-                elif self.GetTextRange(p-1, p) == '\n': p -= 1
-                elif self.GetTextRange(p-n, p) == sys.ps2: p -= n
+            ## if p == self.cur:
+            ##     n = len(sys.ps2)
+            ##     if self.GetTextRange(p-2, p) == '\r\n': p -= 2
+            ##     elif self.GetTextRange(p-1, p) == '\n': p -= 1
+            ##     elif self.GetTextRange(p-n, p) == sys.ps2: p -= n
+            text, lp = self.CurLine
+            if text[:lp] == '' and p: # caret at the beginning of the line
+                p -= len(os.linesep)
+            elif text[:lp] == sys.ps2: # caret at the prompt head
+                p -= len(sys.ps2)
             self.Replace(p, self.cur, '')
 
 
@@ -2675,28 +2688,29 @@ Flaky nutshell:
         self.set_style(self.PALETTE_STYLE)
         
         self.__cur = 0
+        self.__text = None
         self.__start = 0
         self.__history = []
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
     
     def OnUpdate(self, evt):
-        ln = self.CurrentLine
-        text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=-1)
-        
-        if self.handler.current_state != 0:
-            return
-        try:
-            if self.cur != self.__cur:
-                ## pythonic expression extracted from text[:lp] + text[lp:]
-                ##   pass to interp method <wx.py.introspect:getCallTip>
-                name, argspec, tip = self.interp.getCallTip(self.pyrepr_at_caret)
+        if self.cur != self.__cur:
+            ln = self.CurrentLine
+            text, lp = self.CurLine
+            self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=-1)
+            self.__cur = self.cur
+            
+            if self.handler.current_state != 0:
+                return
+            
+            text = self.pyrepr_at_caret
+            if text != self.__text:
+                name, argspec, tip = self.interp.getCallTip(text)
                 if tip:
-                    self.message(tip.splitlines()[0])
-                self.__cur = self.cur
-        except ValueError as e:
-            self.message(e) # inspection error in interp?
+                    tip = tip.splitlines()[0]
+                self.message(tip)
+                self.__text = text
         evt.Skip()
     
     def OnEscape(self, evt):

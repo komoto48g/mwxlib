@@ -345,8 +345,7 @@ unloadable : flag to set the layer to be unloadable
     ##     return any(art.get_visible() for art in self.Arts)
     
     def Draw(self, show=True):
-        """Draw arts in the view
-        Called when shown, hidden, and closed"""
+        """Draw arts in the view (Called when shown, hidden, and closed)"""
         if not self.Arts:
             return
         try:
@@ -362,8 +361,7 @@ unloadable : flag to set the layer to be unloadable
             del self.Arts
     
     def Activate(self, show=True):
-        """Activate the layer (to be overrided)
-        Called when shown or closed"""
+        """Activate the layer (to be overrided)"""
         pass
     
     def Destroy(self):
@@ -1274,7 +1272,7 @@ class Frame(mwx.Frame):
     def load_frame(self, paths=None, target=None):
         """Load frame(s) from paths to the target window
         
-        Call load_buffer and load the attributes of the frame(s).
+        Load buffer and the attributes of the frame.
         If the file names duplicate, the latter takes priority.
         """
         frames = self.load_buffer(paths, target)
@@ -1293,7 +1291,7 @@ class Frame(mwx.Frame):
     def save_frame(self, path=None, frame=None):
         """Save frame to the path
         
-        Call save_buffer and save the attributes of the frame.
+        Save buffer and the attributes of the frame.
         """
         frame = self.save_buffer(path, frame)
         if frame:
@@ -1317,9 +1315,7 @@ class Frame(mwx.Frame):
         if sys.version_info < (3,0):
             path = path.encode('shift-jis') # using Windows file encoding
         
-        ## buf = cv2.imread(path) # ▲ ok? bad sometime.
-        ## buf = plt.imread(path) # ▲ MPL fails in rading tif of <float>
-        buf = Image.open(path) # good. PIL is the best way to read an image file
+        buf = Image.open(path)
         info = {}
         if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
             return buf, info
@@ -1333,9 +1329,8 @@ class Frame(mwx.Frame):
     @staticmethod
     def write_buffer(path, buf):
         """Write buffer to `path file (to be overrided)"""
-        ## cv2.imwrite(path, buf)              # ▲ ok? maybe... not so sure.
-        ## plt.imsave(path, buf, cmap='gray')  # ▲ MPL saves as RGB (but not gray!)
-        Image.fromarray(buf).save(path) # good. PIL saves as L,I,F, or RGB.
+        img = Image.fromarray(buf)
+        img.save(path) # PIL saves as L,I,F, or RGB.
     
     @staticmethod
     def write_buffers_stack(path, buffers):
