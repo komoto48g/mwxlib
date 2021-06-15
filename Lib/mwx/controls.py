@@ -361,7 +361,7 @@ class Knob(wx.Panel):
                 self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKey)
                 self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
             
-            self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+            self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnTextMouseWheel)
             self.text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         else:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_READONLY)
@@ -384,6 +384,7 @@ class Knob(wx.Panel):
         elif type == 'spin' or type =='hspin':
             self.ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_HORIZONTAL)
             self.ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
+            self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'vspin':
             self.ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_VERTICAL)
@@ -448,8 +449,7 @@ class Knob(wx.Panel):
         except RuntimeError:
             pass # wrapped C/C++ object of type TextCtrl has been deleted
     
-    def shift(self, evt, sgn, **kwargs):
-        bit = self.__bit * sgn
+    def shift(self, evt, bit, **kwargs):
         if evt.ShiftDown():   bit *= 2
         if evt.ControlDown(): bit *= 16
         if evt.AltDown():     bit *= 256
@@ -463,13 +463,15 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
-        self.shift(evt, +1 if evt.GetWheelRotation()>0 else -1)
+        b = self.bitstep
+        self.shift(evt, b if evt.GetWheelRotation()>0 else -b)
         evt.Skip(False)
     
     def OnCtrlKeyDown(self, evt): #<wx._core.KeyEvent>
+        b = self.bitstep
         key = evt.GetKeyCode()
-        if key == wx.WXK_LEFT: return self.shift(evt, -1)
-        if key == wx.WXK_RIGHT: return self.shift(evt, 1)
+        if key == wx.WXK_LEFT: return self.shift(evt, -b)
+        if key == wx.WXK_RIGHT: return self.shift(evt, b)
         
         def focus(c):
             if isinstance(c, Knob) and c.ctrl.IsEnabled():
@@ -480,6 +482,10 @@ class Knob(wx.Panel):
         i = ls.index(self)
         if key == wx.WXK_DOWN: return any(focus(c) for c in ls[i+1:])
         if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
+    
+    def OnTextMouseWheel(self, evt): #<wx._core.MouseEvent>
+        self.shift(evt, +1 if evt.GetWheelRotation()>0 else -1)
+        evt.Skip(False)
     
     def OnTextKey(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
@@ -1147,6 +1153,8 @@ if __name__ == '__main__':
             ## for win in self.groups[1]:
             ##     print(win)
             ## 
+            self.groups[0][0].bitstep = 100
+            self.groups[1][0].bitstep = 100
             self.groups[1][1].Disable()
     
     app = wx.App()
