@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.40.6"
+__version__ = "0.40.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -347,6 +347,16 @@ if not os.path.exists(os.path.expanduser("~/.deb")): # deb 専ディレクトリ
 class SSM(OrderedDict):
     """Single State Machine/Context of FSM
     """
+    def __init__(self, context=None):
+        _context = {}
+        if context:
+            for event, transaction in context.items():
+                if isinstance(transaction, list):
+                    _context[event] = transaction.copy() # copy of transaction:list
+                else:
+                    _context[event] = transaction
+        OrderedDict.__init__(self, _context)
+    
     def __call__(self, event, *args):
         for act in self[event]:
             act(*args)
@@ -572,7 +582,6 @@ class FSM(dict):
             if k in self:
                 self[k].update(v)
             else:
-                ## self[k] = OrderedDict(v)
                 self[k] = SSM(v)
             self.validate(k)
         
@@ -589,7 +598,6 @@ class FSM(dict):
                     for act in transaction[1:]:
                         self.bind(event, act, k, k2)
             else:
-                ## self[k] = OrderedDict(v)
                 self[k] = SSM(v)
             self.validate(k)
     
@@ -620,7 +628,7 @@ class FSM(dict):
             return lambda f: self.bind(event, f, state, state2)
         
         if state not in self:
-            self[state] = SSM()
+            self[state] = SSM() #:ref
         
         context = self[state]
         if state2 is None:
@@ -931,8 +939,8 @@ class CtrlInterface(object):
             },
         })
         
-        ## self.Bind(wx.EVT_CHAR, self.on_char) # for TextCtrl only
-        
+        ## self.Bind(wx.EVT_CHAR, self.on_char)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_char_hook)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -961,12 +969,15 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
     
-    def on_char(self, evt): #<wx._core.KeyEvent>
-        """Called when char inputs (in TextCtrl)
-        if and when self.on_key_press calls evt.Skip()
-        """
-        evt.key = key = chr(evt.GetKeyCode())
-        self.handler('{} pressed'.format(key), evt)
+    ## def on_char(self, evt): #<wx._core.KeyEvent>
+    ##     """Called when char inputs (in TextCtrl)
+    ##     if and when self.on_key_press calls evt.Skip()
+    ##     """
+    ##     evt.key = key = chr(evt.GetKeyCode())
+    ##     self.handler('{} pressed'.format(key), evt)
+    
+    def on_char_hook(self, evt): #<wx._core.KeyEvent>
+        evt.Skip()
     
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
