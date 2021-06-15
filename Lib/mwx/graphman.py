@@ -240,11 +240,11 @@ unloadable : flag to set the layer to be unloadable
     def Arts(self):
         self.Arts = []
     
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, owner=None, **kwargs):
         if parent:
             ControlPanel.__init__(self, parent, size=(130,24)) # keep minimum size
         
-        self.__parent = parent #= self.Parent, but not always if whose son is floating
+        self.__parent = owner or parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
         self.__handler = mwx.FSM({0:{}})
         
