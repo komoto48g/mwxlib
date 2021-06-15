@@ -347,16 +347,6 @@ if not os.path.exists(os.path.expanduser("~/.deb")): # deb 専ディレクトリ
 class SSM(OrderedDict):
     """Single State Machine/Context of FSM
     """
-    def __init__(self, context=None):
-        _context = {}
-        if context:
-            for event, transaction in context.items():
-                if isinstance(transaction, list):
-                    _context[event] = transaction.copy() # copy of transaction:list
-                else:
-                    _context[event] = transaction
-        OrderedDict.__init__(self, _context)
-    
     def __call__(self, event, *args):
         for act in self[event]:
             act(*args)
@@ -559,6 +549,22 @@ class FSM(dict):
             print('\n'.join("  # " + x for x in exc.splitlines()), file=o)
             print('\n', file=o)
     
+    @staticmethod
+    def copy(context):
+        """Copy the transaction:list in the context
+        
+        This method is used for the contexts given to :append and :update
+        so that those elements (if they are lists) is not removed when unbound.
+        """
+        _context = {}
+        if context:
+            for event, transaction in context.items():
+                if isinstance(transaction, list):
+                    _context[event] = transaction.copy() # copy of transaction:list
+                else:
+                    _context[event] = transaction
+        return _context
+    
     def validate(self, state):
         """Sort and move to end items with key which includes `*?[]`"""
         context = self[state]
@@ -580,9 +586,9 @@ class FSM(dict):
         """Update each context or Add new contexts"""
         for k,v in contexts.items():
             if k in self:
-                self[k].update(v)
+                self[k].update(self.copy(v))
             else:
-                self[k] = SSM(v)
+                self[k] = SSM(self.copy(v))
             self.validate(k)
         
         keys = list(self)
@@ -598,7 +604,7 @@ class FSM(dict):
                     for act in transaction[1:]:
                         self.bind(event, act, k, k2)
             else:
-                self[k] = SSM(v)
+                self[k] = SSM(self.copy(v))
             self.validate(k)
     
     def remove(self, contexts):
