@@ -1445,7 +1445,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
         win = wx.Window.FindFocus()
-        if isinstance(win, (wx.TextEntry, stc.StyledTextCtrl)):
+        if isinstance(win, wx.TextEntry):
             evt.Skip()
             return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
@@ -1504,7 +1504,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
         win = wx.Window.FindFocus()
-        if isinstance(win, (wx.TextEntry, stc.StyledTextCtrl)):
+        if isinstance(win, wx.TextEntry):
             evt.Skip()
             return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
