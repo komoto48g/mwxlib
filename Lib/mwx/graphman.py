@@ -995,6 +995,7 @@ class Frame(mwx.Frame):
                         style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
                               &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE))
                     
+                    ## nb.SetTabCtrlHeight(22)
                     nb.AddPage(plug, caption)
                     
                     self._mgr.AddPane(nb, aui.AuiPaneInfo()
@@ -1589,7 +1590,7 @@ class Frame(mwx.Frame):
 if __name__ == '__main__':
     app = wx.App()
     frm = Frame(None)
-    frm.handler.debug = 0
+    frm.handler.debug = 4
     frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     

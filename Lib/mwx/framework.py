@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.40.5"
+__version__ = "0.40.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1444,6 +1444,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
+        win = wx.Window.FindFocus()
+        if isinstance(win, (wx.TextEntry, stc.StyledTextCtrl)):
+            evt.Skip()
+            return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def About(self):
@@ -1499,6 +1503,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     
     def OnCharHook(self, evt):
         """Called when key down (let the handler call skip event)"""
+        win = wx.Window.FindFocus()
+        if isinstance(win, (wx.TextEntry, stc.StyledTextCtrl)):
+            evt.Skip()
+            return
         self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def Destroy(self):
