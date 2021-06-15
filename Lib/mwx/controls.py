@@ -281,7 +281,7 @@ class Knob(wx.Panel):
     [Mbutton] resets to the std. value if it exists.
     
     param : A param <Param> object referred from knobs
-  bitstep : minimum step of this knob (>=1)
+  bitstep : minimum step of this knob (>=1) (to be deprecated)
     """
     param = property(lambda self: self.__par)
     bitstep = property(lambda self: self.__bit)
@@ -1153,8 +1153,8 @@ if __name__ == '__main__':
             ## for win in self.groups[1]:
             ##     print(win)
             ## 
-            self.groups[0][0].bitstep = 100
-            self.groups[1][0].bitstep = 100
+            ## self.groups[0][0].bitstep = 100
+            ## self.groups[1][0].bitstep = 100
             self.groups[1][1].Disable()
     
     app = wx.App()
