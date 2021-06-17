@@ -1183,7 +1183,7 @@ class Frame(mwx.Frame):
     def export_index(self, f=None, frames=None):
         """Save frames :ref to the Attributes file
         """
-        if frames is None:
+        if not frames:
             frames = self.selected_view.all_frames
             if not frames:
                 return

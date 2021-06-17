@@ -169,6 +169,11 @@ class MatplotPanel(wx.Panel):
         #<matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
         self.canvas = FigureCanvas(self, -1, self.figure)
         
+        ## To avoid AssertionError('self._cachedRenderer is not None')
+        ## To avoid AttributeError("draw_artist can only be used after an "
+        ##                         "initial draw which caches the renderer")
+        self.canvas.draw()
+        
         #<matplotlib.backends.backend_wxagg.NavigationToolbar2WxAgg>
         self.toolbar = Toolbar(self.canvas)
         self.toolbar.Show(0)

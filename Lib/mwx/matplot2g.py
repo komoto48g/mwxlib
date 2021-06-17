@@ -652,9 +652,6 @@ Constants:
         self.__rectarts = []
         self.rected.set_pickradius(4) # for backward compatibility
         
-        ## avoids AssertionError: 'self._cachedRenderer is not None'
-        ## self.canvas.draw_idle()
-        
         self.__isPicked = None
         self.selected.set_picker(True)
         self.selected.set_pickradius(8)
