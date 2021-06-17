@@ -540,13 +540,13 @@ class FSM(dict):
         
         f = os.path.expanduser("~/.deb/deb-dump.log")
         with open(f, 'a') as o:
-            exc = traceback.format_exc().strip()
-            lex = re.findall("File \"(.*)\", line ([0-9]+), in (.*)\n+(.*)", exc)
-            
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
-            print(':'.join(lex[-1]), file=o) # grep error format
-            print(*args, file=o, **kwargs) # fsm dump message
+            print(*args, file=o, **kwargs)
+            
+            exc = traceback.format_exc()
+            lex = re.findall("File \"(.*)\", line ([0-9]+), in (.*)\n+(.*)", exc)
             print('\n'.join("  # " + x for x in exc.splitlines()), file=o)
+            print(':'.join(lex[-1]), file=o)
             print('\n', file=o)
     
     @staticmethod
