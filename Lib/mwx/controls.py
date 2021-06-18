@@ -428,8 +428,9 @@ class Knob(wx.Panel):
     def update_ctrl(self):
         v = self.__par
         try:
-            self.text.SetValue(str(v))
             self.ctrl.SetValue(v.index)
+            self.text.SetValue(str(v))
+            self.text.Refresh()
         except Exception:
             pass
         
