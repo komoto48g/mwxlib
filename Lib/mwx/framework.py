@@ -2519,7 +2519,7 @@ Flaky nutshell:
             None : {
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
-           'shell_inactivated' : [ None, ],
+           'shell_inactivated' : [ None, self.on_inactivated],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -2941,6 +2941,14 @@ Flaky nutshell:
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
+    
+    def on_inactivated(self, shell):
+        del builtins.help
+        del builtins.info
+        del builtins.dive
+        del builtins.timeit
+        del builtins.execute
+        del builtins.puts
     
     def on_text_input(self, text):
         """Called when [Enter] text (before push)
