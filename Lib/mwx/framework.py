@@ -632,19 +632,20 @@ class FSM(dict):
         context = self[state]
         if state2 is None:
             state2 = state
+        
         if event in context:
             if state2 != context[event][0]:
                 print("- FSM:warning - transaction may conflict"
                       " (state {2!r} and the original state is not the same)"
                       " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
-                context[event][0] = state2 # change transition
                 pass
+                context[event][0] = state2 # update transition
         else:
-            if state2 not in self:
-                print("- FSM:warning - transaction may contradict"
-                      " (state {2!r} is not found in the contexts)"
-                      " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
-                pass
+            ## if state2 not in self:
+            ##     print("- FSM:warning - transaction may contradict"
+            ##           " (state {2!r} is not found in the contexts)"
+            ##           " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+            ##     pass
             context[event] = [state2] # new event:transaction
         
         if action not in context[event]:
@@ -657,7 +658,7 @@ class FSM(dict):
         The transaction is exepcted to be a list (not a tuple).
         """
         if state not in self:
-            print("- FSM:warning - context of [{!r}] does not exist.")
+            ## print("- FSM:warning - context of [{!r}] does not exist.")
             return
         
         context = self[state]
