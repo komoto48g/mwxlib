@@ -34,4 +34,4 @@ from .mgplt3 import GplotFrame
 try:
     from importlib import reload
 except ImportError:
-    pass
+    reload = reload

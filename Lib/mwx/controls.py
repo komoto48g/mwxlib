@@ -831,6 +831,7 @@ class Button(pb.PlateButton):
         pb.PlateButton.__init__(self, parent, -1, label,
             style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE, **kwargs)
         
+        tip = tip or ''
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
             if handler.__doc__:
@@ -869,6 +870,7 @@ Note:
     def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
+        tip = tip or ''
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, handler)
             if handler.__doc__:
@@ -881,7 +883,7 @@ Note:
 ## class Label(wx.Panel):
 ##     """Label (widget complex of bitmap and label) readonly.
 ##     """
-##     def __init__(self, parent, label, icon=None, tip=None, **kwargs):
+##     def __init__(self, parent, label, icon=None, tip='', **kwargs):
 ##         wx.Panel.__init__(self, parent, **kwargs)
 ##         
 ##         txt = wx.StaticText(self, label=label)
@@ -1008,13 +1010,13 @@ class Indicator(wx.Panel):
     spacing = 7
     radius = 5
     
-    def __init__(self, parent, value=0, tip=None, size=(-1,-1), **kwargs):
+    def __init__(self, parent, value=0, tip='', size=(-1,-1), **kwargs):
         s = self.spacing
         size = (max(s*6+2, size[0]), # set minimum size:(6s,2s)
                 max(s*2+2, size[1]))
         wx.Panel.__init__(self, parent, size=size, **kwargs)
         
-        self.SetToolTip(tip)
+        self.SetToolTip('')
         
         self.__value = value
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -1057,7 +1059,7 @@ class Gauge(wx.Panel):
         self.__range = int(v)
         self.Draw()
     
-    def __init__(self, parent, range=24, value=0, tip=None, **kwargs):
+    def __init__(self, parent, range=24, value=0, tip='', **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
         self.SetToolTip(tip)
