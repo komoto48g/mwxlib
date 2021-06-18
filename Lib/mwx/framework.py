@@ -2519,7 +2519,7 @@ Flaky nutshell:
             None : {
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
-           'shell_inactivated' : [ None, self.on_inactivated],
+           'shell_inactivated' : [ None, self.on_inactivated ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -2943,6 +2943,7 @@ Flaky nutshell:
         builtins.puts = postcall(lambda v: self.write(str(v)))
     
     def on_inactivated(self, shell):
+        """Called when inactivated"""
         del builtins.help
         del builtins.info
         del builtins.dive
