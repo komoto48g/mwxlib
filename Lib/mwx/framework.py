@@ -3062,9 +3062,11 @@ Flaky nutshell:
     def clear(self):
         """Clear all text in the shell (override) and put new prompt"""
         self.ClearAll()
+        
+        self.promptPosStart = 0
+        self.promptPosEnd = 0
+        self.more = False
         self.prompt()
-        self.prompt() # i dont know why twice
-        self.Refresh()
         self.__bolc_marks = []
         self.__eolc_marks = []
     
@@ -3192,10 +3194,10 @@ Flaky nutshell:
     
     def help(self, root=None):
         """Full description"""
-        if root is None:
-            self.message("The stream is currently piped to stdout (see command porompt).")
-            wx.CallAfter(pydoc.help)
-            return
+        ## if root is None:
+        ##     self.message("The stream is currently piped from stdin (see command porompt).")
+        ##     wx.CallAfter(pydoc.help)
+        ##     return
         doc = pydoc.plain(pydoc.render_doc(root)) or "No description about {}".format(root)
         try:
             self.message("help({})".format(typename(root)))
