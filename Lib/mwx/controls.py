@@ -827,14 +827,16 @@ class Button(pb.PlateButton):
         self.SetBitmap(Icon(v))
         self.Refresh()
     
-    def __init__(self, parent, label='', handler=None, icon=None, tip=None, **kwargs):
+    def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
         pb.PlateButton.__init__(self, parent, -1, label,
             style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE, **kwargs)
+        
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
-            tip = tip or handler.__doc__
-        tip = (tip or '').strip()
-        self.SetToolTip(tip)
+            if handler.__doc__:
+                tip += "\nPress: " + handler.__doc__
+        
+        self.SetToolTip(tip.strip())
         self.icon = icon
     
     def SetBitmap(self, bmp):
@@ -852,7 +854,7 @@ class ToggleButton(wx.ToggleButton):
      btn : button label
     ctrl : textctrl
 Note:
-    To get the status, check Value property or use event.GetInt
+    To get the status, check Value or event.GetInt or event.IsChecked.
     """
     @property
     def icon(self):
@@ -864,13 +866,15 @@ Note:
         self.SetBitmap(Icon(v))
         self.Refresh()
     
-    def __init__(self, parent, label='', handler=None, icon=None, tip=None, **kwargs):
+    def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
+        
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, handler)
-            tip = tip or handler.__doc__
-        tip = (tip or '').strip()
-        self.SetToolTip(tip)
+            if handler.__doc__:
+                tip += "\nToggle: " + handler.__doc__
+        
+        self.SetToolTip(tip.strip())
         self.icon = icon
 
 
@@ -879,8 +883,10 @@ Note:
 ##     """
 ##     def __init__(self, parent, label, icon=None, tip=None, **kwargs):
 ##         wx.Panel.__init__(self, parent, **kwargs)
+##         
 ##         txt = wx.StaticText(self, label=label)
 ##         bmp = wx.StaticBitmap(self, bitmap=Icon(icon)) if icon else (0,0)
+##         
 ##         self.SetSizer(
 ##             mwx.pack(self,
 ##                 (bmp, 0, wx.ALIGN_CENTER|wx.ALL, 0),
@@ -904,8 +910,8 @@ class TextCtrl(wx.Panel):
     def reset(self, v=''):
         self.value = v
     
-    def __init__(self, parent, label='',
-        handler=None, updater=None, icon=None, tip=None, readonly=0, **kwargs):
+    def __init__(self, parent, label='', handler=None, updater=None,
+                icon=None, tip='', readonly=0, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,-1))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
@@ -913,9 +919,8 @@ class TextCtrl(wx.Panel):
         
         kwargs['style'] = kwargs.get('style', 0)
         kwargs['style'] |= wx.TE_PROCESS_ENTER|(wx.TE_READONLY if readonly else 0)
+        
         self.ctrl = wx.TextCtrl(self, **kwargs)
-        ## self.ctrl.SetFont(
-        ##     wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'MS Gothic'))
         
         self.SetSizer(
             mwx.pack(self,
@@ -948,11 +953,8 @@ class Choice(wx.Panel):
         if v is not None:
             self.value = v
     
-    ## def __getattr__(self, attr): #! to be deprecated (Note: Panel interface is prior)
-    ##     return getattr(self.ctrl, attr)
-    
-    def __init__(self, parent, label='',
-        handler=None, updater=None, icon=None, tip=None, readonly=0, selection=None, **kwargs):
+    def __init__(self, parent, label='', handler=None, updater=None,
+                icon=None, tip='', readonly=0, selection=None, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,-1))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
@@ -960,7 +962,10 @@ class Choice(wx.Panel):
         
         kwargs['style'] = kwargs.get('style', 0)
         kwargs['style'] |= wx.TE_PROCESS_ENTER|(wx.CB_READONLY if readonly else 0)
+        
         self.ctrl = wx.ComboBox(self, **kwargs)
+        if selection is not None:
+            self.index = selection
         
         self.SetSizer(
             mwx.pack(self,
@@ -975,8 +980,6 @@ class Choice(wx.Panel):
         self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         if updater:
             self.btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
-        if selection is not None:
-            self.index = selection
     
     def OnEnter(self, evt):
         s = evt.String.strip()

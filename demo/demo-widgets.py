@@ -12,17 +12,22 @@ class Plugin(Layer):
     menu = "Plugins/&Demo"
     
     def Init(self):
+        
+        def trace(v):
+            "trace event"
+            print(v)
+        
         self.layout('Custom controls', (
             Button(self, label="button",
-                handler=lambda v: self.statusline(v.String, "pressed"),
+                handler=trace,
                     tip="this is a button",
                     icon='v',
                     size=(100,-1)),
             
             ToggleButton(self, label="toggle-button",
-                handler=lambda v: self.statusline(v.IsChecked(), "checked"),
+                handler=lambda v: self.statusline(v.GetInt(), v.IsChecked(), "checked"),
                     tip="this is a toggle-button",
-                    icon=None,
+                    icon='w',
                     size=(100,-1)),
             
             ## wx.StaticLine(self, size=(200,-1)),
@@ -32,16 +37,18 @@ class Plugin(Layer):
                 updater=lambda v: self.statusline(v.Value, "update"),
                     tip="this is a textctrl",
                     icon=wx.ART_NEW,
+                    value="hoge",
                     size=(200,-1)),
             (),
             Choice(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.String, "selected"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                 choices=['1','2','3'],
-                selection=1,
+                ## selection=-1,
                     tip="this is a choice",
-                    readonly=0,
                     icon=wx.ART_NEW,
+                    readonly=0,
+                    value='select one',
                     size=(200,-1)),
             ),
             row=2, expand=0,
