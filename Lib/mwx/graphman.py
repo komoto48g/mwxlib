@@ -51,8 +51,8 @@ class Thread(object):
     
     is_active : flag of being kept going
                 Check this to see the thread is running and intended being kept going
-   is_running : flag of being running now
-                Watch this to verify the worker is alive after it has been inactivated
+    is_running : flag of being running now
+                 Watch this to verify the worker is alive after it has been inactivated
     """
     is_active = property(lambda self: self.__keepGoing)
     is_running = property(lambda self: self.__isRunning)
@@ -1126,6 +1126,7 @@ class Frame(mwx.Frame):
         def init(shell):
             shell.target = self.get_plug(name)
         init(shell)
+        shell.run("self")
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",

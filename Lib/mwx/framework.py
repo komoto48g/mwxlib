@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.40.7"
+__version__ = "0.40.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -556,14 +556,7 @@ class FSM(dict):
         This method is used for the contexts given to :append and :update
         so that those elements (if they are lists) is not removed when unbound.
         """
-        _context = {}
-        if context:
-            for event, transaction in context.items():
-                if isinstance(transaction, list):
-                    _context[event] = transaction.copy() # copy of transaction:list
-                else:
-                    _context[event] = transaction
-        return _context
+        return {event:transaction[:] for event, transaction in context.items()}
     
     def validate(self, state):
         """Sort and move to end items with key which includes `*?[]`"""
