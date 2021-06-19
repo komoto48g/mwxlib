@@ -1235,17 +1235,12 @@ class Menu(wx.Menu):
                 argv = item[:-1]
                 subitems = item[-1]
                 submenu = Menu(owner, subitems)
-                ## if len(argv) > 1:
-                ##     submenu.SetTitle(argv[1])
-                submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv, kind=wx.ITEM_CHECK)
+                submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
                 submenu_item.SetSubMenu(submenu)
-                ## submenu_item.SetBitmap(wx.NullBitmap) # ビットマップ設定用 (現バージョンは無効)
                 self.Append(submenu_item)
                 submenu.Id = submenu_item.Id # <- ID_ANY
                 self.Enable(submenu_item.Id, bool(subitems)) # 空のメニューは無効にする
                 
-            elif isinstance(item[0], tuple): # :old-menu-style
-                    self.append_items(*item)
             else:
                 handlers = list(filter(callable, item)) # :new-menu-style
                 argv = item[:-len(handlers) or None]
