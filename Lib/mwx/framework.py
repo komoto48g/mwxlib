@@ -2595,7 +2595,7 @@ Flaky nutshell:
               'S-right pressed' : (2, skip),
               'shift* released' : (2, self.call_word_autocomp),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
@@ -2626,7 +2626,7 @@ Flaky nutshell:
               'S-right pressed' : (3, skip),
               'shift* released' : (3, self.call_apropos_autocomp),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
           '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
@@ -2657,7 +2657,7 @@ Flaky nutshell:
               'S-right pressed' : (4, skip),
               'shift* released' : (4, self.call_text_autocomp),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
           '[a-z0-9_.] released' : (4, self.call_text_autocomp),
@@ -2688,7 +2688,7 @@ Flaky nutshell:
               'S-right pressed' : (5, skip),
               'shift* released' : (5, self.call_module_autocomp),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (5, skip),
           '[a-z0-9_.] released' : (5, self.call_module_autocomp),
@@ -2961,6 +2961,7 @@ Flaky nutshell:
             
             self.__bolc_marks.append(self.bolc)
             self.__eolc_marks.append(self.eolc)
+            self.historyIndex = -1
     
     def on_text_output(self, text):
         """Called when [Enter] text (after push)
