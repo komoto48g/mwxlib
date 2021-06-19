@@ -1,5 +1,7 @@
 #! python
 # -*- coding: shift-jis -*-
+from __future__ import (division, print_function,
+                        absolute_import, unicode_literals)
 import wx
 import mwx
 from mwx.controls import Icon

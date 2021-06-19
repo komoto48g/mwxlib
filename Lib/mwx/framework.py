@@ -1230,39 +1230,29 @@ class Menu(wx.Menu):
         for item in values:
             if not item:
                 self.AppendSeparator()
-                
-            elif isinstance(item[0], LITERAL_TYPE): # Submenu
+                continue
+            id = item[0]
+            if isinstance(id, int):
+                handlers = [x for x in item if callable(x)]
+                icons =  [x for x in item if isinstance(x, wx.Bitmap)]
+                argv = [x for x in item if not x in handlers and not x in icons]
+                menu_item = wx.MenuItem(self, *argv)
+                if icons:
+                    menu_item.SetBitmaps(*icons)
+                self.Append(menu_item)
+                self.Bind(id, *handlers)
+            else:
                 argv = item[:-1]
                 subitems = item[-1]
                 submenu = Menu(owner, subitems)
                 submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
+                submenu_item.SetBitmap(wx.NullBitmap)
                 submenu_item.SetSubMenu(submenu)
                 self.Append(submenu_item)
                 submenu.Id = submenu_item.Id # <- ID_ANY
-                self.Enable(submenu_item.Id, bool(subitems)) # 空のメニューは無効にする
-                
-            else:
-                handlers = list(filter(callable, item)) # :new-menu-style
-                argv = item[:-len(handlers) or None]
-                self.append_items(argv, *handlers)
+                self.Enable(submenu_item.Id, bool(subitems)) # Disable empty menu
     
-    def append_items(self, argv, handler1=None, handler2=None, handler3=None):
-        id = argv[0]
-        if id == -1:
-            print("- Menu:warning: Id(-1) given as NewId") # may cause resource error
-            id = wx.NewId()
-            argv = (id,) + argv[1:]
-        
-        bitmap = None
-        if isinstance(argv[-1], wx.Bitmap): # the last argument is bitmap
-            bitmap = argv[-1]
-            argv = argv[:-1]
-        
-        item = wx.MenuItem(self, *argv)
-        if bitmap:
-            item.SetBitmap(bitmap)
-        self.Append(item)
-        
+    def Bind(self, id, handler1=None, handler2=None, handler3=None):
         if handler1:
             self.owner.Unbind(wx.EVT_MENU, id=id)
             self.owner.Bind(wx.EVT_MENU, handler1, id=id)
