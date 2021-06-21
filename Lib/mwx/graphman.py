@@ -569,10 +569,10 @@ class Frame(mwx.Frame):
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
-            (mwx.ID_(11), "&Import index", "Import buffers and attributes", Icon('open'),
+            (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import buffers and attributes", Icon('open'),
                 lambda v: self.import_index()),
                 
-            (mwx.ID_(12), "&Export index", "Export buffers and attributes", Icon('saveas'),
+            (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export buffers and attributes", Icon('saveas'),
                 lambda v: self.export_index(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
             (),
@@ -1191,6 +1191,7 @@ class Frame(mwx.Frame):
         
         if not f:
             with wx.FileDialog(self, "Select path to export",
+                defaultDir=os.path.dirname(next((frame.pathname for frame in frames), '')),
                 defaultFile=self.ATTRIBUTESFILE,
                 wildcard="Attributes (*.results)|*.results",
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
