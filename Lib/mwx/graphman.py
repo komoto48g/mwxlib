@@ -1562,8 +1562,7 @@ class Frame(mwx.Frame):
                 ))
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
             if paths:
-                ## paths = sorted(set(paths), key=paths.index) # 順序は保持して重複を除く
-                o.write("self.load_buffer(\n{})\n".format(pformat(paths, width=160)))
+                o.write("self.load_frame(\n{})\n".format(pformat(paths, width=160)))
             
             ## set-global-unit
             o.write("self.graph.unit = {}\n".format(self.graph.unit))
