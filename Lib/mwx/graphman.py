@@ -464,7 +464,11 @@ class MyFileDropLoader(wx.FileDropTarget):
             elif ext == '.jssn':
                 loader.load_session(path)
             elif ext == '.results' or not ext:
-                loader.load_file(path, target)
+                loader.import_index(path, target)
+            ## else:
+            ##     e = ("Unknown file type: {}\n"
+            ##          "Dropped to the target: {}".format(path, target))
+            ##     wx.MessageBox(str(e), style=wx.ICON_ERROR)
             else:
                 paths.append(path) # image file just stacks to be loaded
         if paths:
@@ -1146,12 +1150,6 @@ class Frame(mwx.Frame):
     ## load/save index file
     ## --------------------------------
     
-    def load_file(self, path, target):
-        ## e = ("Unknown file type: {}\n"
-        ##      "Dropped to the target: {}".format(path, target))
-        ## wx.MessageBox(str(e), style=wx.ICON_ERROR)
-        return self.import_index(path, target)
-    
     def import_index(self, f=None, target=None):
         """Load frames :ref to the Attributes file
         """
@@ -1478,26 +1476,21 @@ class Frame(mwx.Frame):
             del self.output[:]
             for name in list(self.plugins): # OrderedDict mutated during iteration
                 self.unload_plug(name)
-        try:
-            self.session_file = os.path.abspath(f)
-            self.statusbar("Loading session from {!r}...".format(f))
-            
-            ## with codecs.open(f, encoding='shift-jis') as i:
-            with open(f) as i:
-                self.inspector.shell.Execute(i.read())
-                self.menubar.reset()
-                dirname = os.path.dirname(f)
-                if dirname:
-                    os.chdir(dirname)
-            
-            self.statusbar("\b done.")
-            return True
         
-        except Exception as e:
-            print(self.statusbar("\b failed: {!r}".format(e)))
-            return False
-        finally:
-            self.OnShowFrame(None) # update titlebar
+        self.session_file = os.path.abspath(f)
+        self.statusbar("Loading session from {!r}...".format(f))
+        
+        ## with codecs.open(f, encoding='shift-jis') as i:
+        with open(f) as i:
+            self.inspector.shell.Execute(i.read())
+            self.menubar.reset()
+            dirname = os.path.dirname(f)
+            if dirname:
+                os.chdir(dirname)
+        
+        self.statusbar("\b done.")
+        self.OnShowFrame(None) # update titlebar
+        return True
     
     def save_session_as(self):
         """Save session as (new file)"""
@@ -1581,10 +1574,9 @@ class Frame(mwx.Frame):
             ## select-page
             if self.graph.frame:
                 o.write("self.graph.select({!r})\n".format(self.graph.frame.name))
-            
             o.write('# end of session\n')
             
-        self.statusbar("\b ok")
+        self.statusbar("\b done.")
         self.OnShowFrame(None) # update titlebar
         return True
 
