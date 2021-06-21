@@ -1054,7 +1054,6 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             
         except Exception as e:
-            ## self.statusbar("\b failed: {!r}".format(e))
             wx.CallAfter(wx.MessageBox, traceback.format_exc(),
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
             traceback.print_exc()
@@ -1094,7 +1093,6 @@ class Frame(mwx.Frame):
                 nb.Destroy()
             
         except Exception as e:
-            ## self.statusbar("\b failed: {!r}".format(e))
             traceback.print_exc()
             return False
     
@@ -1172,14 +1170,17 @@ class Frame(mwx.Frame):
         res, mis = self.read_attributes(f)
         
         paths = [attr['pathname'] for attr in res.values()]
-        frames = self.load_buffer(paths, target) or []
-        for frame in frames:
-            frame.update_attributes(res.get(frame.name))
+        frames = self.load_buffer(paths, target)
+        if frames:
+            for frame in frames:
+                frame.update_attributes(res.get(frame.name))
         
+        n = len(frames)
         self.statusbar(
             "{} frames were imported, "
-            "{} files are missing.".format(len(res), len(mis)))
-        return True
+            "{} files were skipped, "
+            "{} files are missing.".format(n, len(res)-n, len(mis)))
+        return frames
     
     def export_index(self, f=None, frames=None):
         """Save frames :ref to the Attributes file
@@ -1209,11 +1210,12 @@ class Frame(mwx.Frame):
                 self.save_buffer(path, frame)
         
         res, mis = self.write_attributes(f, frames)
-        
+        n = len(frames)
         self.statusbar(
             "{} frames were exported, "
-            "{} files are missing.".format(len(res), len(mis)))
-        return True
+            "{} files were skipped, "
+            "{} files are missing.".format(n, len(res)-n, len(mis)))
+        return frames
     
     ## --------------------------------
     ## load/save frames and attributes 
@@ -1259,7 +1261,6 @@ class Frame(mwx.Frame):
             ## res order may differ from that of given new frames.
             ## OrderedDict does not change the order even when updated,
             ##   so we take a few steps to update results to be exported.
-            newres = new.copy()
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
@@ -1270,7 +1271,7 @@ class Frame(mwx.Frame):
             print("- Failed to write attributes:", e)
             pass
         finally:
-            return newres, mis
+            return new, mis
     
     def load_frame(self, paths=None, target=None):
         """Load frame(s) from paths to the target window
@@ -1300,7 +1301,7 @@ class Frame(mwx.Frame):
         if frame:
             savedir = os.path.dirname(frame.pathname)
             f = os.path.join(savedir, self.ATTRIBUTESFILE)
-            res, mis =self.write_attributes(f, [frame])
+            res, mis = self.write_attributes(f, [frame])
         return frame
     
     ## --------------------------------
@@ -1390,9 +1391,11 @@ class Frame(mwx.Frame):
             target.select(frame)
             return frames
         
-        except Exception as e:
-            print(self.statusbar("\b failed: {!r}".format(e)))
+        except Image.UnidentifiedImageError as e:
+            self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
+        finally:
+            return frames
     
     def save_buffer(self, path=None, frame=None):
         """Save a buffer of the frame to the path
@@ -1424,7 +1427,7 @@ class Frame(mwx.Frame):
             return frame
         
         except Exception as e:
-            print(self.statusbar("\b failed: {!r}".format(e)))
+            self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
@@ -1449,10 +1452,11 @@ class Frame(mwx.Frame):
             
             self.write_buffers_stack(path, [frame.buffer for frame in frames])
             self.statusbar("\b done.")
-            return frames
+            return True
         
         except Exception as e:
-            print(self.statusbar("\b failed: {!r}".format(e)))
+            self.statusbar("\b failed.")
+            wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     ## --------------------------------
     ## open/close session
