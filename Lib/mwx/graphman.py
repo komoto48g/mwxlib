@@ -1223,20 +1223,21 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, f):
         """Read attributes file"""
-        from numpy import nan,inf
+        from numpy import nan, inf
         import datetime
         try:
             res = OrderedDict()
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
+            ## Evaluate atributes:tuple (name, attr), in locals
+            ## Note: datetime, nan, inf must be imported herein
             with open(f) as i:
-                res.update(eval(i.read())) # restore (locals: datetime, nan, inf)
+                res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
                 path = os.path.join(savedir, name)
                 if not os.path.exists(path): # check & pop missing files
-                    ## print("- {!r} in the record is missing... pass".format(name))
                     res.pop(name)
                     mis.update({name:attr})
                 else:
@@ -1258,7 +1259,7 @@ class Frame(mwx.Frame):
             
             ## res order may differ from that of given new frames.
             ## OrderedDict does not change the order even when updated,
-            ##   so we take a few steps to update results to be exported.
+            ## so we take a few steps to update results to be exported.
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
