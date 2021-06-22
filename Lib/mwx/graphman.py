@@ -1189,7 +1189,7 @@ class Frame(mwx.Frame):
                 return
         
         if not f:
-            ls = filter(None, (os.path.dirname(x.pathname) for x in frames))
+            ls = filter(None, (x.pathname for x in frames))
             with wx.FileDialog(self, "Select path to export",
                 defaultDir=os.path.dirname(next(ls, '')),
                 defaultFile=self.ATTRIBUTESFILE,
