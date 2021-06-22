@@ -2367,7 +2367,6 @@ Autocomp key bindings:
 
 Enter key bindings:
      C-enter : insert-line-break
-     S-enter : execute-command
 
 This module is based on the implementation of wx.py.shell.
     Some of the original key bindings are overrided in the FSM framework.
@@ -2521,7 +2520,6 @@ Flaky nutshell:
            '*backspace pressed' : (0, self.OnBackspace),
                '*enter pressed' : (0, ), # --> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
-              'S-enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _P(self.insertLineBreak)),
                  ## 'C-up pressed' : (0, _P(lambda v: self.OnHistoryReplace(+1), "prev-command")),
                ## 'C-down pressed' : (0, _P(lambda v: self.OnHistoryReplace(-1), "next-command")),
@@ -3427,8 +3425,9 @@ Flaky nutshell:
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
+            j = 0 if words else -1
             
-            self.__comp_ind = 0 if words else -1
+            self.__comp_ind = j
             self.__comp_hint = hint
             self.__comp_words = words
             
@@ -3537,7 +3536,6 @@ Flaky nutshell:
             j = next((k for k,w in enumerate(words) if P.match(w)),
                 next((k for k,w in enumerate(words) if p.match(w)), -1))
             
-            ## self.__comp_ind = j if hint.isidentifier() else -1
             self.__comp_ind = j if not hint.endswith('?') else -1
             self.__comp_hint = hint
             self.__comp_words = words
