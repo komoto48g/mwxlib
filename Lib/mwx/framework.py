@@ -176,7 +176,7 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
                     continue
                 word = repr(value)
                 word = ' '.join(s.strip() for s in word.splitlines()) # format in line
-            except (TypeError, ValueError):
+            except TypeError:
                 ## pred:error is ignored
                 continue
             except Exception as e:

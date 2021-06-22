@@ -158,16 +158,11 @@ std_value : standard value (default None)
     
     def update(self, valid=True):
         for knob in self.knobs:
-            knob.set_textcolour('#ffffff' if valid
-                           else '#ff8080' if valid is False # light-red
-                           else '#ffff80' if valid is None  # light-yellow
-                           else '')
-            knob.update_ctrl() # update the text:ctrl of related knobs
+            knob.update_ctrl(valid) # update the text:ctrl of related knobs
     
     def notify(self):
         for knob in self.knobs:
-            knob.set_textcolour('#ffff80') # light-yellow
-            wx.CallAfter(wx.CallLater, 1000, knob.set_textcolour, 'white')
+            knob.notify_ctrl()
     
     def set_check(self, v):
         self.__check = v
@@ -425,14 +420,26 @@ class Knob(wx.Panel):
         else:
             self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
     
-    def update_ctrl(self):
+    def notify_ctrl(self):
+        self.set_textcolour('#ffff80') # light-yellow
+        wx.CallAfter(wx.CallLater, 1000, self.set_textcolour, 'white')
+    
+    def update_ctrl(self, valid=True):
         v = self.__par
         try:
-            self.ctrl.SetValue(v.index)
-            self.text.SetValue(str(v))
-            self.text.Refresh()
-        except Exception:
-            pass
+            j = v.index
+        except (OverflowError, ValueError):
+            ## OverflowError: cannot convert float infinity to integer
+            ## ValueError: cannot convert float NaN to integer
+            j = -1
+        
+        self.ctrl.SetValue(j)
+        self.text.SetValue(str(v))
+        
+        self.set_textcolour('#ffffff' if valid
+                       else '#ff8080' if valid is False # light-red
+                       else '#ffff80' if valid is None  # light-yellow
+                       else '')
         
         if isinstance(self.label, wx.CheckBox):
             self.label.SetValue(bool(v.check))
@@ -446,7 +453,7 @@ class Knob(wx.Panel):
         try:
             if self.text.IsEditable():
                 self.text.SetBackgroundColour(c)
-                self.text.Refresh()
+            self.text.Refresh()
         except RuntimeError:
             pass # wrapped C/C++ object of type TextCtrl has been deleted
     
@@ -535,7 +542,6 @@ class Knob(wx.Panel):
                 self.__par.reset(self.__par.value, backcall=None) # restore value
         else:
             self.set_textcolour('white')
-            self.text.Refresh()
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
@@ -1013,8 +1019,8 @@ class Indicator(wx.Panel):
     
     def __init__(self, parent, value=0, tip='', size=(-1,-1), **kwargs):
         s = self.spacing
-        size = (max(s*6+2, size[0]), # set minimum size:(6s,2s)
-                max(s*2+2, size[1]))
+        size = (max(s*6, size[0]), # set minimum size:(6s,2s)
+                max(s*2+1, size[1]))
         wx.Panel.__init__(self, parent, size=size, **kwargs)
         
         self.SetToolTip('')
@@ -1029,12 +1035,12 @@ class Indicator(wx.Panel):
         s = self.spacing
         w, h = self.ClientSize
         dc.SetBrush(wx.Brush("black"))
-        dc.DrawRoundedRectangle(0, h/2-s, s*6+1, s*2+1, s)
+        dc.DrawRoundedRectangle(0, h/2-s, s*6-1, s*2+1, s)
         for j,name in enumerate(('red','yellow','green')):
             if not self.__value & 1 << (2-j):
                 name = 'gray'
             dc.SetBrush(wx.Brush(name))
-            dc.DrawCircle(s*(2*j+1), h/2, r)
+            dc.DrawCircle(s*(2*j+1)-j, h/2, r)
 
 
 class Gauge(wx.Panel):
@@ -1112,7 +1118,7 @@ if __name__ == '__main__':
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0,1,1e-4))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
-            self.Q =  Param('universe', (1,2,3,inf), inf, handler=print, updater=print)
+            self.Q =  LParam('universe', (1,20,3), inf, handler=print, updater=print)
             self.R =  LParam('lens', (1,0xffff,1), 0x8000, handler=print, updater=print, dtype=hex)
             self.params = (
                 self.A,
@@ -1142,7 +1148,7 @@ if __name__ == '__main__':
             self.layout("V2",
                 self.params,
                 row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-                type='spin', style='button', lw=-1, tw=60, cw=-1,
+                type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
             )
             self.layout("types", (
                 Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
