@@ -3602,6 +3602,8 @@ def watch(target=None, **kwargs):
     pos, size, conifg, locals, and app
     """
     from wx.lib.inspection import InspectionTool
+    if target:
+        kwargs.update(locals=target.__dict__)
     it = InspectionTool()
     it.Init(**kwargs)
     it.Show(target)
