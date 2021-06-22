@@ -1189,8 +1189,9 @@ class Frame(mwx.Frame):
                 return
         
         if not f:
+            ls = filter(None, (os.path.dirname(x.pathname) for x in frames))
             with wx.FileDialog(self, "Select path to export",
-                defaultDir=os.path.dirname(next((frame.pathname for frame in frames), '')),
+                defaultDir=os.path.dirname(next(ls, '')),
                 defaultFile=self.ATTRIBUTESFILE,
                 wildcard="Attributes (*.results)|*.results",
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1280,7 +1281,7 @@ class Frame(mwx.Frame):
         """
         frames = self.load_buffer(paths, target)
         if frames:
-            ls = [os.path.dirname(frame.pathname) for frame in frames]
+            ls = [os.path.dirname(x.pathname) for x in frames]
             savedirs = sorted(set(ls), key=ls.index) # keep order but no duplication
             results = {}
             for savedir in savedirs:
@@ -1449,7 +1450,7 @@ class Frame(mwx.Frame):
             self.statusbar("Saving {!r}...".format(name))
             busy = wx.BusyInfo("One moment please, now saving {!r}...".format(name))
             
-            self.write_buffers_stack(path, [frame.buffer for frame in frames])
+            self.write_buffers_stack(path, [x.buffer for x in frames])
             self.statusbar("\b done.")
             return True
         
