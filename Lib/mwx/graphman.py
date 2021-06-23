@@ -232,13 +232,17 @@ unloadable : flag to set the layer to be unloadable
     
     @Arts.setter
     def Arts(self, arts):
-        for art in self.__artists:
-            art.remove()
-        self.__artists = arts or []
+        ## for art in self.__artists:
+        ##     art.remove()
+        self.__artists = arts
+        self.Draw(True)
     
     @Arts.deleter
     def Arts(self):
-        self.Arts = []
+        ## self.Arts = []
+        for art in self.__artists:
+            art.remove()
+        self.__artists = []
     
     def __init__(self, parent, owner=None, **kwargs):
         if parent:
