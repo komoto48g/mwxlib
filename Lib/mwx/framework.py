@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.41.2"
+__version__ = "0.41.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1422,7 +1422,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             lambda v: self.statusbar.write(time.strftime('%m/%d %H:%M'), -1))
         
         ## AcceleratorTable mimic
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
         
         def close(v):
             """Close the window and exit the program"""
@@ -1438,7 +1438,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         })
         self.make_keymap('C-x')
     
-    def OnCharHook(self, evt):
+    def OnHookChar(self, evt):
         """Called when key down (let the handler call skip event)"""
         win = wx.Window.FindFocus()
         if isinstance(win, wx.TextEntry):
@@ -1481,7 +1481,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only, no skip
         
         ## AcceleratorTable mimic
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
         
         def close(v):
             """Close the window"""
@@ -1497,7 +1497,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         })
         self.make_keymap('C-x')
     
-    def OnCharHook(self, evt):
+    def OnHookChar(self, evt):
         """Called when key down (let the handler call skip event)"""
         win = wx.Window.FindFocus()
         if isinstance(win, wx.TextEntry):

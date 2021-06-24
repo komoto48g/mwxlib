@@ -53,15 +53,12 @@ def wx_hotkey(evt):
     }
     if key in speckeys:
         mod = ""
-        ## if evt.ControlDown(): mod += 'ctrl+'
-        ## if evt.AltDown(): mod += 'alt+'
-        ## if evt.ShiftDown(): mod += 'shift+'
-        for code, v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
-                        (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                        (wx.WXK_CONTROL, 'ctrl+'),
-                        (wx.WXK_ALT,     'alt+'),
-                        (wx.WXK_SHIFT,   'shift+')):
-            if key != code and wx.GetKeyState(code):
+        for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
+                     (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
+                     (wx.WXK_CONTROL, 'ctrl+'),
+                     (wx.WXK_ALT,     'alt+'),
+                     (wx.WXK_SHIFT,   'shift+')):
+            if key != k and wx.GetKeyState(k):
                 mod += v
         if mod.startswith("alt+"): # skip to mpl
             return
@@ -141,10 +138,6 @@ def mpl_mousekey(evt):
         if key:
             return key + '+' + btn
         return btn
-
-
-## def wx_hotkey(evt):
-##     return mwx.hotkey(evt)
 
 
 class MatplotPanel(wx.Panel):
