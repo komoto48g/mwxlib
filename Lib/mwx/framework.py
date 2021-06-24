@@ -1418,14 +1418,23 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         ##     lambda: self.statusbar.write(time.strftime('%m/%d %H:%M'), -1))
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
-        self.Bind(wx.EVT_TIMER,
-            lambda v: self.statusbar.write(time.strftime('%m/%d %H:%M'), -1))
+        
+        @connect(self, wx.EVT_TIMER)
+        def on_timer(evt):
+            self.statusbar.write(time.strftime('%m/%d %H:%M'), -1)
         
         ## AcceleratorTable mimic
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
+        ## self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
+        @connect(self, wx.EVT_CHAR_HOOK)
+        def on_char_hook(evt):
+            win = wx.Window.FindFocus()
+            if isinstance(win, wx.TextEntry):
+                evt.Skip()
+                return
+            self.handler('{} pressed'.format(hotkey(evt)), evt)
         
         def close(v):
-            """Close the window and exit the program"""
+            """Close the window"""
             self.Close()
         
         self.__handler = FSM({})
@@ -1438,13 +1447,13 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         })
         self.make_keymap('C-x')
     
-    def OnHookChar(self, evt):
-        """Called when key down (let the handler call skip event)"""
-        win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry):
-            evt.Skip()
-            return
-        self.handler('{} pressed'.format(hotkey(evt)), evt)
+    ## def OnHookChar(self, evt):
+    ##     """Called when key down (let the handler call skip event)"""
+    ##     win = wx.Window.FindFocus()
+    ##     if isinstance(win, wx.TextEntry):
+    ##         evt.Skip()
+    ##         return
+    ##     self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -1477,11 +1486,20 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.statusbar.Show(0)
         self.SetStatusBar(self.statusbar)
         
-        ## To defalut close, use self.Unbind(wx.EVT_CLOSE)
+        ## To defalut close,
+        ## >>> self.Unbind(wx.EVT_CLOSE)
+        
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only, no skip
         
         ## AcceleratorTable mimic
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
+        ## self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
+        @connect(self, wx.EVT_CHAR_HOOK)
+        def on_char_hook(evt):
+            win = wx.Window.FindFocus()
+            if isinstance(win, wx.TextEntry):
+                evt.Skip()
+                return
+            self.handler('{} pressed'.format(hotkey(evt)), evt)
         
         def close(v):
             """Close the window"""
@@ -1881,19 +1899,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
         self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
         
-        self.MarkerSetAlpha(0, 0x80)
-        ## m = 0
-        ## self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        ## self.SetMarginMask(0, 0xffff^(1<<m)) # marker display mask
-        ## self.SetMarginMask(1, 1<<m)
-        ## self.SetMarginWidth(0, 10)
-        ## self.SetMarginSensitive(0,True)
-        ## self.SetMarginSensitive(1,True)
-        ## 
-        ## @connect(self, stc.EVT_STC_MARGINCLICK)
-        ## def on_margin_click(v):
-        ##     self.handler("margin_clicked", v)
-        ##     v.Skip()
+        ## self.MarkerSetAlpha(0, 0x80)
         
         self.__mark = None
     
@@ -1929,9 +1935,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if "STC_STYLE_LINENUMBER" in spec:
             lxc = spec["STC_STYLE_LINENUMBER"]
             
-            ## [0] for numbers, 0 pixels wide, mask=0 (default?)
-            ## [1] for symbols, 16 pixels wide, mask=0x1ffffff
-            ## [2] for folding, 1 pixels wide, mask=0
+            ## [0] for numbers, 0 pixels wide, mask=0 (default)
+            ## [1] for symbols, 16 pixels wide, mask=0x01ffffff
+            ## [2] for folding, 1 pixels wide, mask->0xfe000000
+            
             self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
             self.SetMarginType(2, stc.STC_MARGIN_SYMBOL) # margin(2) for symbols
             self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # set up mask for folding symbols
@@ -3636,19 +3643,10 @@ if 1:
     app = wx.App()
     frm = Frame(None,
         title = repr(Frame),
-        ## style = wx.DEFAULT_FRAME_STYLE&~wx.CAPTION,
-        ## style = wx.DEFAULT_FRAME_STYLE&~(wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX|wx.RESIZE_BORDER),
+        style = wx.DEFAULT_FRAME_STYLE&~(wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX),
         size=(200,80),
     )
-    ## To defalut close, use self.Unbind(wx.EVT_CLOSE)
-    ## frm.inspector.Unbind(wx.EVT_CLOSE)
-    
-    frm.SetBackgroundColour(
-        '#012456' or wx.Colour(1,36,86)
-       #'#f0f0f0' or 'light_grey'
-    )
     frm.editor = Editor(frm)
-    frm.Show()
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
@@ -3658,5 +3656,5 @@ if 1:
     frm.inspector.shell.SetFocus()
     frm.inspector.shell.wrap(0)
     frm.inspector.Show()
-    
+    frm.Show()
     app.MainLoop()
