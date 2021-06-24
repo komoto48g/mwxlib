@@ -185,7 +185,7 @@ class Thread(object):
             ## sys.exit(1)
 
 
-class Layer(ControlPanel):
+class Layer(ControlPanel, mwx.CtrlInterface):
     """Graphman.Layer
     
       menu : menu string in parent menubar
@@ -220,26 +220,20 @@ unloadable : flag to set the layer to be unloadable
     histogram = property(lambda self: self.__parent.histogram)
     selected_view = property(lambda self: self.__parent.selected_view)
     
-    ## Thread = Thread
-    thread = None # as worker<Thread>
-    
-    handler = property(lambda self: self.__handler)
+    thread = None # worker<Thread>
     
     @property
     def Arts(self):
-        """List of arts <matplotlib.artist.Artist> drawn on the graph or output window"""
+        """List of arts <matplotlib.artist.Artist>"""
         return self.__artists
     
     @Arts.setter
     def Arts(self, arts):
-        ## for art in self.__artists:
-        ##     art.remove()
         self.__artists = arts
         self.Draw(True)
     
     @Arts.deleter
     def Arts(self):
-        ## self.Arts = []
         for art in self.__artists:
             art.remove()
         self.__artists = []
@@ -247,10 +241,10 @@ unloadable : flag to set the layer to be unloadable
     def __init__(self, parent, owner=None, **kwargs):
         if parent:
             ControlPanel.__init__(self, parent, size=(130,24)) # keep minimum size
+        mwx.CtrlInterface.__init__(self)
         
         self.__parent = owner or parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
-        self.__handler = mwx.FSM({0:{}})
         
         self.handler.update({ #<graphman.Layer handler>
             None : {
