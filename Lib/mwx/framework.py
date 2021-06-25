@@ -401,7 +401,7 @@ class FSM(dict):
         dict.__init__(self) # update dict, however, it does not clear
         dict.clear(self)    # if and when __init__ is called, all contents are cleared
         self.clear(default) # the first clear creates object localvars
-        self.update(contexts or {})
+        self.update(contexts or {}) # this may do the next clear
     
     def __missing__(self, key):
         raise Exception("FSM:logical error - undefined state {!r}".format(key))
@@ -584,6 +584,7 @@ class FSM(dict):
                 self[k] = SSM(self.copy(v))
             self.validate(k)
         
+        ## if there is only one state, reset that state as the default
         keys = list(self)
         if len(keys) == 1:
             self.clear(keys[0])
@@ -932,23 +933,31 @@ class CtrlInterface(object):
         self.__handler = FSM({})
         
         self.handler.update({ #<CtrlInterface handler>
+            None : {
+                   'motion' : [ None, skip ],
+                'focus_set' : [ None, skip ],
+               'focus_kill' : [ None, skip ],
+             'window_enter' : [ None, skip ],
+             'window_leave' : [ None, skip ],
+            },
             0 : {
                  '* dclick' : (0, skip),
                 '* pressed' : (0, skip),
                '* released' : (0, skip),
             },
         })
+        self.handler.clear(0)
         
-        self.Bind(wx.EVT_CHAR_HOOK, skip)
+        ## self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         
-        self.Bind(wx.EVT_MOTION, lambda v: self.window_handler('motion', v))
-        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.window_handler('focus_set', v))
-        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.window_handler('focus_kill', v))
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.window_handler('window_enter', v))
-        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.window_handler('window_leave', v))
+        self.Bind(wx.EVT_MOTION, lambda v: self.handler('motion', v))
+        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.handler('focus_set', v))
+        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.handler('focus_kill', v))
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.handler('window_enter', v))
+        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.handler('window_leave', v))
         
         self.Bind(wx.EVT_LEFT_DOWN, lambda v: self.mouse_handler('Lbutton pressed', v))
         self.Bind(wx.EVT_RIGHT_DOWN, lambda v: self.mouse_handler('Rbutton pressed', v))
@@ -990,15 +999,15 @@ class CtrlInterface(object):
         evt.key = self.__key + "wheel{}".format(p)
         self.handler('{} pressed'.format(evt.key), evt)
     
-    def window_handler(self, event, evt):
-        self.handler(event, evt)
-        evt.Skip()
-    
     def mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called when mouse event"""
         event = self.__key + event  # 'key+[LMRX]button pressed/released/dclick'
         evt.key = event.rsplit()[0] # event-key removes 'pressed/released/dclick'
         self.handler(event, evt)
+        try:
+            self.SetFocusIgnoringChildren() # let the panel accept key-events
+        except AttributeError:
+            pass
 
 
 class KeyCtrlInterfaceMixin(object):
@@ -2495,7 +2504,7 @@ Flaky nutshell:
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-             '*f[0-9]* pressed' : (0, ),
+             ## '*f[0-9]* pressed' : (0, ), # --> function keys skip to the parent
                     '* pressed' : (0, skip),
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),

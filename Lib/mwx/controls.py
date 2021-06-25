@@ -318,7 +318,7 @@ class Knob(wx.Panel):
             cw += tw
             tw = 0
         
-        label = self.__par.name + ('  ' if lw else '')
+        label = self.__par.name + '  ' #('  ' if lw else '')
         
         if style == 'chkbox':
             if lw > 0:
@@ -587,7 +587,6 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
         
         @mwx.connect(self, wx.EVT_SCROLLWIN_THUMBRELEASE) #<wx._core.ScrollWinEvent>
-        ## @mwx.connect(self, wx.EVT_MOUSE_EVENTS) #<wx._core.MouseEvent>
         @mwx.connect(self, wx.EVT_MOUSEWHEEL)
         @mwx.connect(self, wx.EVT_LEFT_DOWN)
         def recalc_layout(evt):
@@ -674,13 +673,14 @@ class ControlPanel(scrolled.ScrolledPanel):
             else c if isinstance(c, wx.Object)
             else Knob(self, c, **kwargs) for c in objs ]
         
+        def var(c):
+            if isinstance(c, Knob):
+                return c.param
+            elif hasattr(c, 'reset') and hasattr(c, 'value'):
+                return c
+        
         self.__groups.append([c for c in objs if isinstance(c, wx.Object)])
-        
-        def isvar(c):
-            return c.param if isinstance(c, Knob)\
-              else c if hasattr(c, 'reset') and hasattr(c, 'value') else None
-        
-        self.__params.append(list(filter(None, (isvar(c) for c in objs))))
+        self.__params.append(list(filter(None, (var(c) for c in objs))))
         
         ## do layout in row
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER

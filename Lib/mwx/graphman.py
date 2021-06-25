@@ -43,7 +43,6 @@ except ImportError:
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
 
-
 class Thread(object):
     """Thread for graphman.Layer
     The thread `worker runs the given method `target which is bound to `owner object.
@@ -1126,7 +1125,7 @@ class Frame(mwx.Frame):
         def init(shell):
             shell.target = self.get_plug(name)
         init(shell)
-        shell.run("self")
+        shell.run("this; self")
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
@@ -1259,6 +1258,7 @@ class Frame(mwx.Frame):
             ## res order may differ from that of given new frames.
             ## OrderedDict does not change the order even when updated,
             ## so we take a few steps to update results to be exported.
+            
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             

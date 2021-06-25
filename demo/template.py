@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 """Template of Layer
 
-Last updated: <2021-06-25 15:10:41 +0900>
-     Version: 0.0
-      Author: Kazuya O'moto <komoto@jeol.co.jp>
+Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
@@ -39,6 +37,7 @@ class Plugin(Layer):
             type='vspin',            # + style of Param; slider[*], [hv]spin, and choice are available
             cw=-1, lw=36, tw=30      # + and *w indicates width of Param; [c]ontrol, [l]abel, [t]ext
         )
+        self.handler.debug = 4
     
     def Destroy(self):
         return Layer.Destroy(self)
