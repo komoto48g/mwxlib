@@ -939,8 +939,7 @@ class CtrlInterface(object):
             },
         })
         
-        ## self.Bind(wx.EVT_CHAR, self.on_char)
-        ## self.Bind(wx.EVT_CHAR_HOOK, self.on_char_hook)
+        self.Bind(wx.EVT_CHAR_HOOK, skip)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -968,16 +967,6 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: self.mouse_handler('Mbutton dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
-    
-    ## def on_char(self, evt): #<wx._core.KeyEvent>
-    ##     """Called when char inputs (in TextCtrl)
-    ##     if and when self.on_key_press calls evt.Skip()
-    ##     """
-    ##     evt.key = key = chr(evt.GetKeyCode())
-    ##     self.handler('{} pressed'.format(key), evt)
-    
-    ## def on_char_hook(self, evt): #<wx._core.KeyEvent>
-    ##     evt.Skip() # skip to the parent
     
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""

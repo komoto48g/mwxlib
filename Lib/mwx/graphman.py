@@ -1606,8 +1606,9 @@ if __name__ == '__main__':
     
     ## 次の二つは別モジュール
     ## frm.load_plug('templates.template.py', show=1)
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
+    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
+    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
     
+    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1)
     frm.Show()
     app.MainLoop()

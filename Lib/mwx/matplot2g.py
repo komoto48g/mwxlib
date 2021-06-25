@@ -800,9 +800,9 @@ Constants:
     
     def index(self, j):
         if isinstance(j, LITERAL_TYPE):
-            return next(i for i,art in enumerate(self.__Arts) if art.name == j)
-            ## names = [art.name for art in self.__Arts]
-            ## return names.index(j)
+            ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
+            names = [art.name for art in self.__Arts]
+            return names.index(j)
         return self.__Arts.index(j)
     
     def find_frame(self, j):
