@@ -940,7 +940,7 @@ class CtrlInterface(object):
         })
         
         ## self.Bind(wx.EVT_CHAR, self.on_char)
-        self.Bind(wx.EVT_CHAR_HOOK, self.on_char_hook)
+        ## self.Bind(wx.EVT_CHAR_HOOK, self.on_char_hook)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -976,8 +976,8 @@ class CtrlInterface(object):
     ##     evt.key = key = chr(evt.GetKeyCode())
     ##     self.handler('{} pressed'.format(key), evt)
     
-    def on_char_hook(self, evt): #<wx._core.KeyEvent>
-        evt.Skip()
+    ## def on_char_hook(self, evt): #<wx._core.KeyEvent>
+    ##     evt.Skip() # skip to the parent
     
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
@@ -1424,14 +1424,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             self.statusbar.write(time.strftime('%m/%d %H:%M'), -1)
         
         ## AcceleratorTable mimic
-        ## self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
-        @connect(self, wx.EVT_CHAR_HOOK)
-        def on_char_hook(evt):
-            win = wx.Window.FindFocus()
-            if isinstance(win, wx.TextEntry):
-                evt.Skip()
-                return
-            self.handler('{} pressed'.format(hotkey(evt)), evt)
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
         
         def close(v):
             """Close the window"""
@@ -1447,13 +1440,13 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         })
         self.make_keymap('C-x')
     
-    ## def OnHookChar(self, evt):
-    ##     """Called when key down (let the handler call skip event)"""
-    ##     win = wx.Window.FindFocus()
-    ##     if isinstance(win, wx.TextEntry):
-    ##         evt.Skip()
-    ##         return
-    ##     self.handler('{} pressed'.format(hotkey(evt)), evt)
+    def OnHookChar(self, evt):
+        """Called when key down (let the handler call skip event)"""
+        win = wx.Window.FindFocus()
+        if isinstance(win, wx.TextEntry):
+            evt.Skip()
+            return
+        self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -1492,14 +1485,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only, no skip
         
         ## AcceleratorTable mimic
-        ## self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
-        @connect(self, wx.EVT_CHAR_HOOK)
-        def on_char_hook(evt):
-            win = wx.Window.FindFocus()
-            if isinstance(win, wx.TextEntry):
-                evt.Skip()
-                return
-            self.handler('{} pressed'.format(hotkey(evt)), evt)
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
         
         def close(v):
             """Close the window"""

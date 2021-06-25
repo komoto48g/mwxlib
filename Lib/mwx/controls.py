@@ -1115,6 +1115,9 @@ if __name__ == '__main__':
             ControlPanel.__init__(self, *args, **kwargs)
             mwx.CtrlInterface.__init__(self)
             
+            ## self.handler.debug = 4
+            ## return
+            
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0,1,1e-4))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
