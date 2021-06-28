@@ -810,11 +810,9 @@ def hotkey(evt):
             mod += v
     
     key = mod + (speckeys.get(key) or chr(key).lower())
-    if key:
-        head, sep, tail = key.rpartition('-')
-        evt.rawkey = tail or sep
-    else:
-        evt.rawkey = key
+    
+    head, sep, tail = key.rpartition('-')
+    evt.rawkey = tail or sep
     evt.key = key
     return key
 
