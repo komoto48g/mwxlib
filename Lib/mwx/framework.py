@@ -945,8 +945,8 @@ class CtrlInterface(object):
         })
         self.handler.clear(0)
         
-        ## self.Bind(wx.EVT_CHAR_HOOK, self.on_key_hook)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
+        ## self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         
@@ -973,16 +973,13 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
     
-    ## def on_key_hook(self, evt): #<wx._core.KeyEvent>
-    ##     """Called when key hook"""
-    ##     key = hotkey(evt)
-    ##     self.__key = regulate_key(key + '+')
-    ##     self.handler('{}'.format(key), evt)
-    
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
         key = hotkey(evt)
         self.__key = regulate_key(key + '+')
+        if not self.HasFocus():
+            evt.Skip()
+            return
         self.handler('{} pressed'.format(key), evt)
     
     def on_key_release(self, evt): #<wx._core.KeyEvent>
