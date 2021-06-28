@@ -490,7 +490,7 @@ class Knob(wx.Panel):
                 c.ctrl.SetFocus()
                 return True
         
-        ls = next(x for x in self.Parent.groups if self in x)
+        ls = next(x for x in self.Parent.layout_groups if self in x)
         i = ls.index(self)
         if key == wx.WXK_DOWN: return any(focus(c) for c in ls[i+1:])
         if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
@@ -569,7 +569,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     """Scrollable control layout panel
     スクロール可能なコントロール配置用パネル
     """
-    groups = property(lambda self: self.__groups)
+    layout_groups = property(lambda self: self.__groups)
     
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
@@ -1171,12 +1171,7 @@ if __name__ == '__main__':
                 row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
             )
             
-            ## for win in self.groups[1]:
-            ##     print(win)
-            ## 
-            ## self.groups[0][0].bitstep = 100
-            ## self.groups[1][0].bitstep = 100
-            self.groups[1][1].Disable()
+            self.layout_groups[1][1].Disable()
     
     app = wx.App()
     frm = mwx.Frame(None)
