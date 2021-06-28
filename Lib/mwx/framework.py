@@ -934,7 +934,6 @@ class CtrlInterface(object):
         
         self.handler.update({ #<CtrlInterface handler>
             None : {
-                   'motion' : [ None, skip ],
                 'focus_set' : [ None, skip ],
                'focus_kill' : [ None, skip ],
              'window_enter' : [ None, skip ],
@@ -953,7 +952,6 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         
-        self.Bind(wx.EVT_MOTION, lambda v: self.handler('motion', v))
         self.Bind(wx.EVT_SET_FOCUS, lambda v: self.handler('focus_set', v))
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.handler('focus_kill', v))
         self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.handler('window_enter', v))
@@ -1005,7 +1003,7 @@ class CtrlInterface(object):
         evt.key = event.rsplit()[0] # event-key removes 'pressed/released/dclick'
         self.handler(event, evt)
         try:
-            self.SetFocusIgnoringChildren() # let the panel accept key-events
+            self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
 
