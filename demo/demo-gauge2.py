@@ -5,6 +5,8 @@ from __future__ import (division, print_function,
 import time
 import wx
 import mwx
+import mwx.controls
+mwx.reload(mwx.controls)
 from mwx.controls import Gauge, LParam
 from mwx.graphman import Layer, Frame, Thread
 

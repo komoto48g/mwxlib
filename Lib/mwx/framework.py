@@ -110,7 +110,7 @@ def predicate(text):
 def Dir(obj):
     """As the standard dir, but also listup filelds of COM object
     
-    Note:you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
+    Note: you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
     """
     keys = dir(obj)
     try:

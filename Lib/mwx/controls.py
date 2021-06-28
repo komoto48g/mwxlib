@@ -683,7 +683,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         def var(c):
             if isinstance(c, Knob):
                 return c.param
-            elif hasattr(c, 'reset') and hasattr(c, 'value'):
+            elif hasattr(c, 'value'):
                 return c
         
         self.__groups.append([c for c in objs if isinstance(c, wx.Object)])
@@ -719,10 +719,16 @@ class ControlPanel(scrolled.ScrolledPanel):
         
         if not argv:
             for p in chain(*params):
-                p.reset(**kwargs)
+                try:
+                    p.reset(**kwargs)
+                except AttributeError:
+                    pass
         else:
             for p,v in zip(chain(*params), argv):
-                p.reset(v, **kwargs)
+                try:
+                    p.reset(v, **kwargs)
+                except AttributeError:
+                    p.value = v
     
     def copy_to_clipboard(self):
         text = '\t'.join(str(p.value) for p in chain(*self.__params))
@@ -793,7 +799,7 @@ if 1:
             '->|' : wx.ART_GOTO_LAST,
     }
 
-def getBmp(key, size=None):
+def Icon(key, size=None):
     if key:
         try:
             bmp = getattr(images, key).GetBitmap()
@@ -820,11 +826,9 @@ def getBmp(key, size=None):
     return wx.NullBitmap # The standard wx controls accept this,
     ## return wx.Bitmap(0,0) # some wx.lib.controls require this?
 
-Icon = getBmp
+Icon.provided_arts = provided_arts
 
-getBmp.provided_arts = provided_arts
-
-getBmp.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
+Icon.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
                             if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
 
 
@@ -866,10 +870,8 @@ class Button(pb.PlateButton):
 
 class ToggleButton(wx.ToggleButton):
     """Togglable button
-     btn : button label
-    ctrl : textctrl
-Note:
-    To get the status, check Value or event.GetInt or event.IsChecked.
+    
+    Note: To get the status, check Value or event.GetInt or event.IsChecked.
     """
     @property
     def icon(self):
@@ -878,6 +880,9 @@ Note:
     @icon.setter
     def icon(self, v):
         self.__icon = v
+        if isinstance(v, tuple):
+            v, w = v
+            self.SetBitmapPressed(Icon(w))
         self.SetBitmap(Icon(v))
         self.Refresh()
     
@@ -915,20 +920,22 @@ Note:
 
 class TextCtrl(wx.Panel):
     """Text control panel
-     btn : button label
-    ctrl : textctrl
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
     value = Value
     
-    def reset(self, v=''):
-        self.value = v
+    icon = property(
+        lambda self: Button.icon.fget(self.btn),
+        lambda self,v: Button.icon.fset(self.btn, v))
+    
+    ## def reset(self, v=''):
+    ##     self.value = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
                 icon=None, tip='', readonly=0, **kwargs):
-        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,-1))
+        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
                                 size=(-1,-1) if label or icon else (0,0))
@@ -937,6 +944,7 @@ class TextCtrl(wx.Panel):
         kwargs['style'] |= wx.TE_PROCESS_ENTER|(wx.TE_READONLY if readonly else 0)
         
         self.ctrl = wx.TextCtrl(self, **kwargs)
+        ## self.ctrl.Hint = hint
         
         self.SetSizer(
             mwx.pack(self,
@@ -953,7 +961,9 @@ class TextCtrl(wx.Panel):
 
 class Choice(wx.Panel):
     """Editable Choice (ComboBox) control panel
-    If input item is not found, appends to `choices (only if `readonly=0)
+    
+    Note: If the input item is not found in the choices,
+          it will be added to the list (only if readonly=0)
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
@@ -963,15 +973,18 @@ class Choice(wx.Panel):
     Selection = property(
         lambda self: self.ctrl.GetSelection(),
         lambda self,v: self.ctrl.SetSelection(v))
-    index = Selection
     
-    def reset(self, v=None):
-        if v is not None:
-            self.value = v
+    icon = property(
+        lambda self: Button.icon.fget(self.btn),
+        lambda self,v: Button.icon.fset(self.btn, v))
+    
+    ## def reset(self, v=None):
+    ##     if v is not None:
+    ##         self.value = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
                 icon=None, tip='', readonly=0, selection=None, **kwargs):
-        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,-1))
+        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
                                 size=(-1,-1) if label or icon else (0,0))
@@ -981,7 +994,8 @@ class Choice(wx.Panel):
         
         self.ctrl = wx.ComboBox(self, **kwargs)
         if selection is not None:
-            self.index = selection
+            self.ctrl.Selection = selection
+        ## self.ctrl.Hint = hint
         
         self.SetSizer(
             mwx.pack(self,

@@ -126,7 +126,7 @@ class Thread(object):
     
     def __call__(self, f, *args, **kwargs):
         """Decorator of thread starter function
-        Note: event args *v are ignored when decorated by this call
+        Note: The event args *v are ignored when decorated by this call.
         """
         @wraps(f)
         def _f(*v):
@@ -854,7 +854,7 @@ class Frame(mwx.Frame):
         """Get named plug window
         If not found, try to load it once.
         
-        Note: when called in thread, the display of AuiPane might be broken.
+        Note: When called in thread, the display of AuiPane might be broken.
         In that case, Select menu with [C-M-S] to reload after the thread exits.
         """
         plug = self.get_plug(name)

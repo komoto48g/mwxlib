@@ -5,6 +5,8 @@ from __future__ import (division, print_function,
 from numpy import inf
 import wx
 import mwx
+import mwx.controls
+mwx.reload(mwx.controls)
 from mwx.controls import Param, LParam
 from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame
@@ -29,7 +31,7 @@ class Plugin(Layer):
             ToggleButton(self, label="toggle-button",
                 handler=lambda v: self.statusline(v.GetInt(), v.IsChecked(), "checked"),
                     tip="this is a toggle-button",
-                    icon='w',
+                    icon=('w','v'),
                     size=(100,-1)),
             
             ## wx.StaticLine(self, size=(200,-1)),
@@ -39,19 +41,19 @@ class Plugin(Layer):
                 updater=lambda v: self.statusline(v.Value, "update"),
                     tip="this is a textctrl",
                     icon=wx.ART_NEW,
-                    value="hoge",
-                    size=(200,-1)),
+                    readonly=0,
+                    value="default value",
+                    size=(200,22)),
             (),
             Choice(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.String, "selected"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                 choices=['1','2','3'],
-                ## selection=-1,
                     tip="this is a choice",
                     icon=wx.ART_NEW,
                     readonly=0,
-                    value='select one',
-                    size=(200,-1)),
+                    selection=0,
+                    size=(200,22)),
             ),
             row=2, expand=0,
         )
@@ -78,7 +80,7 @@ class Plugin(Layer):
                 value = TextCtrl.__doc__,
                     tip="this is a textctrl",
                     icon='v',
-                    size=(210,100),
+                    size=(200,100),
                     style=wx.TE_MULTILINE|wx.TE_PROCESS_TAB
                          |wx.TE_RICH|wx.TE_AUTO_URL)
         
