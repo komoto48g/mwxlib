@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.41.3"
+__version__ = "0.41.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -809,12 +809,10 @@ def hotkey(evt):
         if key != k and wx.GetKeyState(k):
             mod += v
     
-    key = mod + (speckeys.get(key) or chr(key).lower())
-    
-    head, sep, tail = key.rpartition('-')
-    evt.rawkey = tail or sep
-    evt.key = key
-    return key
+    key = speckeys.get(key) or chr(key).lower()
+    evt.key = mod + key
+    ## evt.rawkey = key
+    return evt.key
 
 
 def regulate_key(key):
