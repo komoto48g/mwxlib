@@ -1000,7 +1000,7 @@ class CtrlInterface(object):
     def mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called when mouse event"""
         event = self.__key + event  # 'key+[LMRX]button pressed/released/dclick'
-        evt.key = event.rsplit()[0] # event-key removes 'pressed/released/dclick'
+        evt.key, st = event.split() # event-key removes 'pressed/released/dclick'
         self.handler(event, evt)
         try:
             self.SetFocusIgnoringChildren() # let the panel accept keys

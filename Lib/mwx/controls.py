@@ -57,7 +57,7 @@ std_value : standard value (default None)
             self.__format = lambda v: '{:04X}'.format(int(v))
         elif dtype is int:
             self.__eval = int
-            self.__format = lambda v:'{:,}'.format(int(v))
+            self.__format = lambda v:'{:,}'.format(v)
         elif dtype:
             print("Param:warning display type must be hex or int"
                   " otherwise None, not {}".format(dtype))
@@ -71,7 +71,11 @@ std_value : standard value (default None)
         self.tip = tip
     
     def __str__(self, v=None):
-        return self.__format(self.__value if v is None else v)
+        v = self.__value if v is None else v
+        try:
+            return self.__format(v)
+        except ValueError:
+            return str(v)
     
     def __int__(self):
         return int(self.__value)
@@ -150,7 +154,7 @@ std_value : standard value (default None)
             if v is None:
                 return
         elif isinstance(v, LITERAL_TYPE):
-            v = self.__eval(v.replace(',', '')) # eval nums with commas(,)
+            v = self.__eval(v.replace(',', '')) # eliminates commas(,)
         
         self.set_value(v)
         if backcall:
@@ -517,13 +521,15 @@ class Knob(wx.Panel):
     
     def OnText(self, evt): #<wx._core.CommandEvent>
         evt.Skip()
-        x = self.text.GetValue()
+        x = self.text.Value.strip()
         if x != str(self.__par):
             self.set_textcolour('#ffff80') # light-yellow
+        else:
+            self.set_textcolour('white')
     
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
         evt.Skip()
-        x = self.text.GetValue()
+        x = self.text.Value.strip()
         self.__par.reset(x)
     
     def OnTextFocus(self, evt): #<wx._core.FocusEvent>
@@ -533,7 +539,7 @@ class Knob(wx.Panel):
         if self.__par.value in (nan,inf):
             evt.Skip()
             return
-        x = self.text.GetValue()
+        x = self.text.Value.strip()
         if x != str(self.__par):
             try:
                 self.__par.reset(x) # update value if focus out
@@ -541,6 +547,7 @@ class Knob(wx.Panel):
                 self.text.SetValue(str(self.__par))
                 self.__par.reset(self.__par.value, backcall=None) # restore value
         else:
+            self.text.SetValue(x)
             self.set_textcolour('white')
         evt.Skip()
     

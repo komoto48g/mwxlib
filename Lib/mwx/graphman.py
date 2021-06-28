@@ -1609,6 +1609,6 @@ if __name__ == '__main__':
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
     
-    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1)
+    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4)
     frm.Show()
     app.MainLoop()
