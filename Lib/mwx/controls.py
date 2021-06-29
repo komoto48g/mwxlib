@@ -930,9 +930,6 @@ class TextCtrl(wx.Panel):
         lambda self: Button.icon.fget(self.btn),
         lambda self,v: Button.icon.fset(self.btn, v))
     
-    ## def reset(self, v=''):
-    ##     self.value = v
-    
     def __init__(self, parent, label='', handler=None, updater=None,
                 icon=None, tip='', readonly=0, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
@@ -965,22 +962,18 @@ class Choice(wx.Panel):
     Note: If the input item is not found in the choices,
           it will be added to the list (only if readonly=0)
     """
+    Selection = property(
+        lambda self: self.ctrl.GetSelection(),
+        lambda self,v: self.ctrl.SetSelection(v))
+    
     Value = property(
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
     value = Value
     
-    Selection = property(
-        lambda self: self.ctrl.GetSelection(),
-        lambda self,v: self.ctrl.SetSelection(v))
-    
     icon = property(
         lambda self: Button.icon.fget(self.btn),
         lambda self,v: Button.icon.fset(self.btn, v))
-    
-    ## def reset(self, v=None):
-    ##     if v is not None:
-    ##         self.value = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
                 icon=None, tip='', readonly=0, selection=None, **kwargs):
@@ -993,8 +986,6 @@ class Choice(wx.Panel):
         kwargs['style'] |= wx.TE_PROCESS_ENTER|(wx.CB_READONLY if readonly else 0)
         
         self.ctrl = wx.ComboBox(self, **kwargs)
-        if selection is not None:
-            self.ctrl.Selection = selection
         ## self.ctrl.Hint = hint
         
         self.SetSizer(
@@ -1010,6 +1001,9 @@ class Choice(wx.Panel):
         self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         if updater:
             self.btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+        
+        if selection is not None:
+            self.ctrl.Selection = selection # no events?
     
     def OnEnter(self, evt):
         s = evt.String.strip()
