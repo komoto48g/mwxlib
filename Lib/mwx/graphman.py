@@ -245,6 +245,8 @@ unloadable : flag to set the layer to be unloadable
         self.__parent = owner or parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
         
+        _F = mwx.funcall
+        
         self.handler.update({ #<graphman.Layer handler>
             None : {
                  'thread_begin' : [ None ], # thread begins processing
@@ -252,9 +254,9 @@ unloadable : flag to set the layer to be unloadable
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
                   'pane_loaded' : [ None ],
-                   'pane_shown' : [ None, lambda: self.Draw(True), lambda: self.Activate(True), ],
-                  'pane_hidden' : [ None, lambda: self.Draw(False) ],
-                  'pane_closed' : [ None, lambda: self.Draw(False), lambda: self.Activate(False), ],
+                   'pane_shown' : [ None, _F(self.Draw, show=True), _F(self.Activate, show=True), ],
+                  'pane_closed' : [ None, _F(self.Draw, show=False), _F(self.Activate, show=False), ],
+                  'pane_hidden' : [ None, _F(self.Draw, show=False) ],
                  'pane_removed' : [ None ],
             },
         })
@@ -335,14 +337,14 @@ unloadable : flag to set the layer to be unloadable
         return self.parent.get_pane(self).IsShown()
     
     def Show(self, show=True):
-        """Show the pane accociated to the plug"""
+        """Show the related pane"""
         self.parent.show_pane(self, show)
     
-    ## def IsDrawn(self):
-    ##     return any(art.get_visible() for art in self.Arts)
+    def IsDrawn(self):
+        return any(art.get_visible() for art in self.Arts)
     
     def Draw(self, show=True):
-        """Draw arts in the view (Called when shown, hidden, and closed)"""
+        """Draw arts"""
         if not self.Arts:
             return
         try:
@@ -354,7 +356,7 @@ unloadable : flag to set the layer to be unloadable
             art.axes.figure.canvas.draw_idle()
             
         except RuntimeError as e:
-            print("- {}: Arts failed drawing on".format(self.__module__), e)
+            print("- {}: Artists failed to draw;".format(self.__module__), e)
             del self.Arts
     
     def Activate(self, show=True):
@@ -779,8 +781,12 @@ class Frame(mwx.Frame):
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
         
-        if show and not pane.IsShown(): plug.handler('pane_shown')
-        elif not show and pane.IsShown(): plug.handler('pane_closed')
+        if show:
+            if not pane.IsShown():
+                plug.handler('pane_shown')
+        else:
+            if pane.IsShown():
+                plug.handler('pane_closed')
         
         pane.Show(show)
         self._mgr.Update()
@@ -826,8 +832,12 @@ class Frame(mwx.Frame):
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
             
-        if show and not pane.IsShown(): plug.handler('pane_shown')
-        elif not show and pane.IsShown(): plug.handler('pane_closed')
+        if show:
+            if not pane.IsShown():
+                plug.handler('pane_shown')
+        else:
+            if pane.IsShown():
+                plug.handler('pane_closed')
         
         pane.Show(show)
         self._mgr.Update()
@@ -1606,9 +1616,9 @@ if __name__ == '__main__':
     
     ## 次の二つは別モジュール
     ## frm.load_plug('templates.template.py', show=1)
-    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
-    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
+    frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
+    frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
     
-    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4)
+    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4, force=0)
     frm.Show()
     app.MainLoop()

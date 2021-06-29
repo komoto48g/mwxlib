@@ -1573,7 +1573,7 @@ Global bindings:
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
-        _P = funcall
+        _F = funcall
         
         self.handler.update({ #<InspectorFrame handler>
             0 : {
@@ -1583,11 +1583,11 @@ Global bindings:
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _P(self.PopupWindow, show=None, doc="Toggle the ghost")),
-                'S-f11 pressed' : (0, _P(self.PopupWindow, show=True, doc="Show the ghost")),
-                  'f12 pressed' : (0, _P(self.Close, alias="close", doc="Close the window")),
-                'S-f12 pressed' : (0, _P(self.shell.clear)),
-                'C-f12 pressed' : (0, _P(self.shell.clone)),
+                  'f11 pressed' : (0, _F(self.PopupWindow, show=None, doc="Toggle the ghost")),
+                'S-f11 pressed' : (0, _F(self.PopupWindow, show=True, doc="Show the ghost")),
+                  'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
+                'S-f12 pressed' : (0, _F(self.shell.clear)),
+                'C-f12 pressed' : (0, _F(self.shell.clone)),
             },
         })
         
@@ -1784,7 +1784,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             except AttributeError:
                 pass
         
-        _P = funcall
+        _F = funcall
         
         self.handler.update({ #<Editor handler>
             -1 : {  # original action of the Editor
@@ -1798,34 +1798,34 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
              '*button* pressed' : (0, skip, fork_parent),
             '*button* released' : (0, skip, fork_parent),
                     '* pressed' : (0, skip),
-               'escape pressed' : (-1, _P(lambda v: self.message("ESC-"), alias="escape")),
-               'insert pressed' : (0, _P(lambda v: self.over(None), "toggle-over")),
-                   'f9 pressed' : (0, _P(lambda v: self.wrap(None), "toggle-fold-type")),
-                  'C-l pressed' : (0, _P(lambda v: self.recenter(), "recenter")),
-                'C-S-l pressed' : (0, _P(lambda v: self.recenter(-1), "recenter-bottom")),
-               'C-M-up pressed' : (0, _P(lambda v: self.ScrollLines(-2), "scroll-up")),
-             'C-M-down pressed' : (0, _P(lambda v: self.ScrollLines(+2), "scroll-down")),
-               'C-left pressed' : (0, _P(self.WordLeft)),
-              'C-right pressed' : (0, _P(self.WordRightEnd)),
-               'C-S-up pressed' : (0, _P(self.LineUpExtend)),
-             'C-S-down pressed' : (0, _P(self.LineDownExtend)),
-             'C-S-left pressed' : (0, _P(self.selection_backward_word_or_paren)),
-            'C-S-right pressed' : (0, _P(self.selection_forward_word_or_paren)),
-                  'C-a pressed' : (0, _P(self.beggining_of_line)),
-                  'C-e pressed' : (0, _P(self.end_of_line)),
-                  'M-a pressed' : (0, _P(self.back_to_indentation)),
-                  'M-e pressed' : (0, _P(self.end_of_line)),
-                  'C-k pressed' : (0, _P(self.kill_line)),
-                'C-S-f pressed' : (0, _P(self.set_mark)), # override key
-              'C-space pressed' : (0, _P(self.set_mark)),
+               'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
+               'insert pressed' : (0, _F(lambda v: self.over(None), "toggle-over")),
+                   'f9 pressed' : (0, _F(lambda v: self.wrap(None), "toggle-fold-type")),
+                  'C-l pressed' : (0, _F(lambda v: self.recenter(), "recenter")),
+                'C-S-l pressed' : (0, _F(lambda v: self.recenter(-1), "recenter-bottom")),
+               'C-M-up pressed' : (0, _F(lambda v: self.ScrollLines(-2), "scroll-up")),
+             'C-M-down pressed' : (0, _F(lambda v: self.ScrollLines(+2), "scroll-down")),
+               'C-left pressed' : (0, _F(self.WordLeft)),
+              'C-right pressed' : (0, _F(self.WordRightEnd)),
+               'C-S-up pressed' : (0, _F(self.LineUpExtend)),
+             'C-S-down pressed' : (0, _F(self.LineDownExtend)),
+             'C-S-left pressed' : (0, _F(self.selection_backward_word_or_paren)),
+            'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
+                  'C-a pressed' : (0, _F(self.beggining_of_line)),
+                  'C-e pressed' : (0, _F(self.end_of_line)),
+                  'M-a pressed' : (0, _F(self.back_to_indentation)),
+                  'M-e pressed' : (0, _F(self.end_of_line)),
+                  'C-k pressed' : (0, _F(self.kill_line)),
+                'C-S-f pressed' : (0, _F(self.set_mark)), # override key
+              'C-space pressed' : (0, _F(self.set_mark)),
               'S-space pressed' : (0, skip),
           'C-backspace pressed' : (0, skip),
-          'S-backspace pressed' : (0, _P(self.backward_kill_line)),
+          'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                   ## 'C-d pressed' : (0, ),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                ## 'M-S-, pressed' : (0, _P(self.goto_char, pos=0, doc="beginning-of-buffer")),
-                ## 'M-S-. pressed' : (0, _P(self.goto_char, pos=-1, doc="end-of-buffer")),
+                ## 'M-S-, pressed' : (0, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
+                ## 'M-S-. pressed' : (0, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
             },
         })
         
@@ -2485,7 +2485,7 @@ Flaky nutshell:
         def fork(v):
             self.handler.fork(v) # fork event to 0=default
         
-        _P = funcall
+        _F = funcall
         
         self.handler.update({ #<Shell handler>
             None : {
@@ -2508,15 +2508,15 @@ Flaky nutshell:
            '*backspace pressed' : (0, self.OnBackspace),
                '*enter pressed' : (0, ), # --> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
-              'C-enter pressed' : (0, _P(self.insertLineBreak)),
-                 ## 'C-up pressed' : (0, _P(lambda v: self.OnHistoryReplace(+1), "prev-command")),
-               ## 'C-down pressed' : (0, _P(lambda v: self.OnHistoryReplace(-1), "next-command")),
+              'C-enter pressed' : (0, _F(self.insertLineBreak)),
+                 ## 'C-up pressed' : (0, _F(lambda v: self.OnHistoryReplace(+1), "prev-command")),
+               ## 'C-down pressed' : (0, _F(lambda v: self.OnHistoryReplace(-1), "next-command")),
                ## 'C-S-up pressed' : (0, ), # --> Shell.OnHistoryInsert(+1) 無効
              ## 'C-S-down pressed' : (0, ), # --> Shell.OnHistoryInsert(-1) 無効
-                 'M-up pressed' : (0, _P(self.goto_previous_mark)),
-               'M-down pressed' : (0, _P(self.goto_next_mark)),
-                  'C-a pressed' : (0, _P(self.beggining_of_command_line)),
-                  'C-e pressed' : (0, _P(self.end_of_command_line)),
+                 'M-up pressed' : (0, _F(self.goto_previous_mark)),
+               'M-down pressed' : (0, _F(self.goto_next_mark)),
+                  'C-a pressed' : (0, _F(self.beggining_of_command_line)),
+                  'C-e pressed' : (0, _F(self.end_of_command_line)),
                   'M-j pressed' : (0, self.call_tooltip2),
                   'C-j pressed' : (0, self.call_tooltip),
                   'M-h pressed' : (0, self.call_ghost),
