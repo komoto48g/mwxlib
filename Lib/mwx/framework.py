@@ -1230,7 +1230,7 @@ class Menu(wx.Menu):
             if isinstance(id, int):
                 handlers = [x for x in item if callable(x)]
                 icons =  [x for x in item if isinstance(x, wx.Bitmap)]
-                argv = [x for x in item if not x in handlers and not x in icons]
+                argv = [x for x in item if x not in handlers and x not in icons]
                 menu_item = wx.MenuItem(self, *argv)
                 if icons:
                     menu_item.SetBitmaps(*icons)
@@ -2883,7 +2883,8 @@ Flaky nutshell:
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
-        builtins.pp = pprint
+        ## builtins.pp = pprint
+        builtins.pp = lambda x: pprint(x, width=256)
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
