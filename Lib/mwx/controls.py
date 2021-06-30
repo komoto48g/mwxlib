@@ -42,6 +42,13 @@ std_value : standard value (default None)
         check -> when `check ticks on/off, calls updater if given
         overflow -> when `value overflows
         underflow -> when `value underflows
+
+Args:
+      fmt : text formatter or format str (default is '%g')
+    dtype : hex specifies hexadecimal format/eval (default is None)
+  handler : called when control changed
+  updater : called when check changed
+      tip : tooltip:str shown on the associated knobs
     """
     def __init__(self, name, range=None, value=None,
         fmt=None, dtype=None, handler=None, updater=None, tip=None):
@@ -55,11 +62,11 @@ std_value : standard value (default None)
         if dtype is hex:
             self.__eval = lambda v: int(v,16)
             self.__format = lambda v: '{:04X}'.format(int(v))
-        elif dtype is int:
-            self.__eval = int
-            self.__format = lambda v:'{:,}'.format(v)
+        ## elif dtype is int:
+        ##     self.__eval = int
+        ##     self.__format = lambda v:'{:,}'.format(v)
         elif dtype:
-            print("Param:warning display type must be hex or int"
+            print("Param:warning display type must be hex,"
                   " otherwise None, not {}".format(dtype))
         self.__check = 0
         self.__callback = mwx.SSM({
