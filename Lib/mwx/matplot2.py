@@ -122,8 +122,11 @@ C-M-S   ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
         ## matplot 3.2.x --> 3.4.x 対応
         key = key.replace("alt+ctrl+", "ctrl+alt+")
         
-    ## head, sep, tail = key.rpartition('+')
-    ## evt.rawkey = tail or sep
+    if key:
+        head, sep, tail = key.rpartition('+')
+        evt.rawkey = tail or sep
+    else:
+        evt.rawkey = key
     evt.key = key
     return key
 

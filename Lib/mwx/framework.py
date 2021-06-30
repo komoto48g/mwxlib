@@ -811,7 +811,7 @@ def hotkey(evt):
     
     key = speckeys.get(key) or chr(key).lower()
     evt.key = mod + key
-    ## evt.rawkey = key
+    evt.rawkey = key
     return evt.key
 
 
