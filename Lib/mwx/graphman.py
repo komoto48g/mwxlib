@@ -458,7 +458,7 @@ class MyFileDropLoader(wx.FileDropTarget):
                                        force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
                 loader.load_session(path)
-            elif ext == '.results' or not ext:
+            elif ext == '.results':
                 loader.import_index(path, target)
             ## else:
             ##     e = ("Unknown file type: {}\n"
@@ -868,7 +868,7 @@ class Frame(mwx.Frame):
             try:
                 ret = self.load_plug(name) # スレッド中に AuiPane の表示がおかしくなる ?
             except Exception:
-                return # ignore load failure, ret nil
+                return # ignore load failure
             return self.get_plug(name)
         return plug
     
@@ -1250,7 +1250,7 @@ class Frame(mwx.Frame):
             pass
         except Exception as e:
             print("- Failed to read attributes:", e)
-            pass
+            wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return res, mis # finally raise no exceptions
     
@@ -1273,9 +1273,9 @@ class Frame(mwx.Frame):
             
         except Exception as e:
             print("- Failed to write attributes:", e)
-            pass
+            wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
-            return new, mis
+            return new, mis # finally raise no exceptions
     
     def load_frame(self, paths=None, target=None):
         """Load frame(s) from paths to the target window
@@ -1374,8 +1374,14 @@ class Frame(mwx.Frame):
             for i, path in enumerate(paths):
                 f = os.path.basename(path)
                 self.statusbar("Loading {!r} ({} of {})...".format(f, i+1, len(paths)))
-                
-                buf, info = self.read_buffer(path)
+                try:
+                    buf, info = self.read_buffer(path)
+                    
+                except Image.UnidentifiedImageError:
+                    retvals = self.handler("unknown_format", path)
+                    if retvals and any(retvals):
+                        continue
+                    raise # no contexts or handlers
                 
                 frame = target.load(buf, f, show=0, # do not show while loading
                                     pathname=path, **info)
@@ -1395,11 +1401,12 @@ class Frame(mwx.Frame):
             target.select(frame)
             return frames
         
-        except Image.UnidentifiedImageError as e:
+        except Exception as e:
             self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
-        finally:
-            return frames
+        
+        target.select(frame)
+        return frames
     
     def save_buffer(self, path=None, frame=None):
         """Save a buffer of the frame to the path
