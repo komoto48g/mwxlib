@@ -44,6 +44,7 @@ class Gplot(object):
     
     def __init__(self, startup="__init__.plt", debug=0):
         self.gnuplot = subprocess.Popen(['pgnuplot'], shell=True, stdin=subprocess.PIPE)
+        
         print("Launching new gnuplot...", self.gnuplot)
         self.startupfile = startup or ""
         self.debug = debug
@@ -170,38 +171,30 @@ class GplotFrame(mwx.Frame):
         ]
         self.menubar["Gnuplot"] = [
             (mwx.ID_(80), "&Gnuplot setting\tCtrl-g", "Edit settings",
-                lambda v: self.edit(),
+                lambda v: self.gnuplot.edit(),
                 lambda v: v.Enable(self.gnuplot is not None)),
                 
             (mwx.ID_(81), "&Reset gnuplot\tCtrl-r", "Reset setting",
-                lambda v: (self.reset(), self.gnuplot("replot")),
+                lambda v: (self.gnuplot.reset(),
+                           self.gnuplot("replot")),
                 lambda v: v.Enable(self.gnuplot is not None)),
             (),
             (mwx.ID_(82), "Restart gnuplot", "Restart process",
-                lambda v: self.restart(),
+                lambda v: (self.gnuplot.restart(),
+                           self.gnuplot("replot")),
                 lambda v: v.Enable(self.gnuplot is not None)),
         ]
         self.menubar.reset()
-    
-    def edit(self):
-        self.gnuplot.edit()
-    
-    def reset(self):
-        self.gnuplot.reset()
-    
-    def restart(self):
-        self.gnuplot.restart()
-        self.gnuplot.reset()
-        self.gnuplot("replot")
     
     def Destroy(self):
         del self.gnuplot
         return mwx.Frame.Destroy(self)
 
 
-
 if __name__ == "__main__":
     from numpy import pi,sin,cos
+    
+    Gplot.init_path(r"C:\usr\home\bin\gnuplot-4.4\binary")
     
     gp = Gplot(None, debug=1)
     gp("""
