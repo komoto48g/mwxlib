@@ -416,7 +416,7 @@ class FSM(dict):
     def __call__(self, event, *args):
         self.__event = event
         
-        ret = False
+        ret = None
         if self.__state is not None:
             ret = self.call(event, *args) # Normal process (1)
         
@@ -465,9 +465,11 @@ class FSM(dict):
             
             self.__debcall__(event, *args) # check after transition
             
+            retvals = []
             for act in transaction[1:]:
                 try:
-                    act(*args) # try actions after transition
+                    ret = act(*args) # try actions after transition
+                    retvals.append(ret)
                     
                 except RuntimeError as e:
                     dumpf("- FSM:runtime error - {!r}".format(e),
@@ -484,8 +486,9 @@ class FSM(dict):
                           "   state : {}".format(self.__state),
                           "  action : {}".format(typename(act)), sep='\n')
                     traceback.print_exc()
-            ## return True # end of transaction
-            return len(transaction) > 1
+            ## end of transaction
+            ## return len(transaction) > 1
+            return retvals
         else:
             ## matching test using fnmatch ファイル名規約によるマッチングテスト
             ## Note: the event must be string
@@ -2881,7 +2884,7 @@ Flaky nutshell:
         builtins.reload = reload
         builtins.partial = partial
         ## builtins.pp = pprint
-        builtins.pp = lambda x: pprint(x, width=256)
+        builtins.pp = lambda x: pprint(x, width=128)
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
