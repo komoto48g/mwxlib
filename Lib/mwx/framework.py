@@ -110,7 +110,8 @@ def predicate(text):
 def Dir(obj):
     """As the standard dir, but also listup filelds of COM object
     
-    Note: you should check if the COM was created with [win32com.client.gencache.EnsureDispatch]
+    Note: Create COM object with [win32com.client.gencache.EnsureDispatch]
+    i.e., early-binding to get what methods and params are available.
     """
     keys = dir(obj)
     try:
@@ -300,7 +301,7 @@ def find_modules(force=False, verbose=True):
     try:
         reload(sys)
         sys.setdefaultencoding('utf-8') # <= PY2
-    except AttributeError as e:
+    except AttributeError:
         pass
     
     if verbose:
@@ -1368,7 +1369,6 @@ class StatusBar(wx.StatusBar):
         return self.GetStatusText(pane % self.GetFieldsCount())
 
 
-
 class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """Frame base class
     
@@ -1453,7 +1453,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         return wx.Frame.Destroy(self)
 
 
-
 class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """MiniFrame base class
     
@@ -1506,7 +1505,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     
     def Destroy(self):
         return wx.MiniFrame.Destroy(self)
-
 
 
 class InspectorFrame(MiniFrame):
@@ -1767,7 +1765,6 @@ Global bindings:
     def OnFindClose(self, evt): #<wx._core.FindDialogEvent>
         self.findDlg.Destroy()
         self.findDlg = None
-
 
 
 class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):

@@ -362,10 +362,6 @@ unloadable : flag to set the layer to be unloadable
     def Activate(self, show=True):
         """Activate the layer (to be overrided)"""
         pass
-    
-    def Destroy(self):
-        """Kill me softly (to be overrided)"""
-        return ControlPanel.Destroy(self)
 
 
 class Graph(GraphPlot):
