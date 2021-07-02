@@ -145,7 +145,10 @@ Args:
         if not f:
             la[:] = [a for a in la if not callable(a)]
         else:
-            la.remove(f)
+            try:
+                la.remove(f)
+            except ValueError:
+                pass
     
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs)
