@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.41.6"
+__version__ = "0.41.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -663,7 +663,7 @@ class FSM(dict):
         The transaction is exepcted to be a list (not a tuple).
         """
         if state not in self:
-            ## print("- FSM:warning - context of [{!r}] does not exist.")
+            ## print("- FSM:warning - [{!r}] context does not exist.".format(state))
             return
         
         context = self[state]
