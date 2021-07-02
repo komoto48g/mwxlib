@@ -45,29 +45,24 @@ std_value : standard value (default None)
 
 Args:
       fmt : text formatter or format str (default is '%g')
-    dtype : hex specifies hexadecimal format/eval (default is None)
+            `hex` specifies hexadecimal format/eval
   handler : called when control changed
   updater : called when check changed
       tip : tooltip:str shown on the associated knobs
     """
     def __init__(self, name, range=None, value=None,
-        fmt=None, dtype=None, handler=None, updater=None, tip=None):
+        fmt=None, handler=None, updater=None, tip=None):
         self.__knobs = [] # used in update
         self.__name = name
         self.range = range if range is not None else [0]
         self.__value = value if value is not None else self.min
         self.__std_value = value
-        self.__eval = eval
-        self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
-        if dtype is hex:
+        if fmt is hex:
             self.__eval = lambda v: int(v,16)
             self.__format = lambda v: '{:04X}'.format(int(v))
-        ## elif dtype is int:
-        ##     self.__eval = int
-        ##     self.__format = lambda v:'{:,}'.format(v)
-        elif dtype:
-            print("Param:warning display type must be hex,"
-                  " otherwise None, not {}".format(dtype))
+        else:
+            self.__eval = eval
+            self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
         self.__check = 0
         self.__callback = mwx.SSM({
             'control' : [ handler ] if handler else [],
@@ -1143,7 +1138,7 @@ if __name__ == '__main__':
             self.K = LParam('k', (0,1,1e-4))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
             self.Q =  LParam('universe', (1,20,3), inf, handler=print, updater=print)
-            self.R =  LParam('lens', (1,0xffff,1), 0x8000, handler=print, updater=print, dtype=hex)
+            self.R =  LParam('lens', (1,0xffff,1), 0x8000, handler=print, updater=print, fmt=hex)
             self.params = (
                 self.A,
                 self.K,
