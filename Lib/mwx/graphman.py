@@ -1389,13 +1389,12 @@ class Frame(mwx.Frame):
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
-                    dg = int(np.log10(n))
-                    fmt = "{{:0>{}}}".format(dg+1) # zero padding for numerical sorting
+                    dg = int(np.log10(n)) + 1
+                    fmt = "{{:0>{}}}-{}".format(dg, f) # zero padding for numerical sort
                     for j in range(1,n):
                         self.statusbar("Loading {!r} [{} of {} pages]...".format(f, j+1, n))
                         buf.seek(j)
-                        name = "{}-{}".format(fmt.format(j), f)
-                        frame = target.load(buf, name, show=0, pathname=None)
+                        frame = target.load(buf, name=fmt.format(j), show=0)
             
             self.statusbar("\b done.")
             target.select(frame)
