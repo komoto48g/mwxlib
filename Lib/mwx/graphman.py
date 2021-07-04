@@ -45,6 +45,7 @@ LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
 class Thread(object):
     """Thread for graphman.Layer
+    
     The thread `worker runs the given method `target which is bound to `owner object.
     The `target must be a method bound to an instance (__self__) of Layer, not staticmethod.
     
@@ -439,35 +440,32 @@ class Graph(GraphPlot):
 
 
 class MyFileDropLoader(wx.FileDropTarget):
+    """File Drop interface
+    
+    target: target window to drop, e.g. frame, graph, pane, etc.
+    loader: the main frame
+    """
     def __init__(self, target, loader):
         wx.FileDropTarget.__init__(self)
-        self.__target = target
-        self.__loader = loader
+        self.target = target
+        self.loader = loader
     
     def OnDropFiles(self, x, y, filenames):
-        target = self.__target
-        loader = self.__loader
-        pos = target.ScreenPosition + (x,y)
-        if isinstance(target, Frame):
-            target = None
+        pos = self.target.ScreenPosition + (x,y)
         paths = []
         for path in filenames:
             name, ext = os.path.splitext(path)
             if ext == '.py' or os.path.isdir(path):
-                loader.load_plug(path, show=1, floating_pos=pos,
-                                       force=wx.GetKeyState(wx.WXK_ALT))
+                self.loader.load_plug(path, show=1, floating_pos=pos,
+                                        force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
-                loader.load_session(path)
+                self.loader.load_session(path)
             elif ext == '.results':
-                loader.import_index(path, target)
-            ## else:
-            ##     e = ("Unknown file type: {}\n"
-            ##          "Dropped to the target: {}".format(path, target))
-            ##     wx.MessageBox(str(e), style=wx.ICON_ERROR)
+                self.loader.import_index(path, self.target)
             else:
                 paths.append(path) # image file just stacks to be loaded
         if paths:
-            loader.load_frame(paths, target)
+            self.loader.load_frame(paths, self.target)
         return True
 
 
@@ -1156,7 +1154,7 @@ class Frame(mwx.Frame):
     def import_index(self, f=None, target=None):
         """Load frames :ref to the Attributes file
         """
-        if not target:
+        if target not in self.graphic_windows:
             target = self.selected_view
         
         if not f:
@@ -1340,22 +1338,12 @@ class Frame(mwx.Frame):
         img = Image.fromarray(buf)
         img.save(path) # PIL saves as L,I,F, or RGB.
     
-    @staticmethod
-    def write_buffers_stack(path, buffers):
-        """Write stack of `buffers to `path file (to be overrided)"""
-        ## buffer <float32> cannot be stacked to tiff
-        stack = [Image.fromarray(buf.astype(int)) for buf in buffers]
-        stack[0].save(path,
-                save_all=True,
-                compression="tiff_deflate", # cf. tiff_lzw
-                append_images=stack[1:])
-    
     def load_buffer(self, paths=None, target=None):
         """Load buffers from paths to the target window
         
         If no target given, the currently selected view is chosen.
         """
-        if not target:
+        if target not in self.graphic_windows:
             target = self.selected_view
         
         if isinstance(paths, LITERAL_TYPE): # for single frame:backward compatibility
@@ -1460,7 +1448,12 @@ class Frame(mwx.Frame):
             self.statusbar("Saving {!r}...".format(name))
             busy = wx.BusyInfo("One moment please, now saving {!r}...".format(name))
             
-            self.write_buffers_stack(path, [x.buffer for x in frames])
+            stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
+            stack[0].save(path,
+                    save_all=True,
+                    compression="tiff_deflate", # cf. tiff_lzw
+                    append_images=stack[1:])
+            
             self.statusbar("\b done.")
             return True
         

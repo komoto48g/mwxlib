@@ -38,8 +38,8 @@ std_value : standard value (default None)
     check : knob tick (undefined)
       tip : doc:str also shown as a tooltip
  callback : single state machine that handles following events:
-        control -> `index is changed (by knobs) or reset, calls handler if given
-        check -> when `check ticks on/off, calls updater if given
+        control -> when `index changed by knobs or reset, calls handler
+        check -> when `check ticks on/off, calls updater
         overflow -> when `value overflows
         underflow -> when `value underflows
 
@@ -278,6 +278,7 @@ class LParam(Param):
 
 class Knob(wx.Panel):
     """Parameter control unit
+    パラメータクラスのコントロールノブ
     
     In addition to direct key input to the textctrl,
     [up][down][wheelup][wheeldown] keys can be used,
@@ -286,6 +287,16 @@ class Knob(wx.Panel):
     
     param : A param <Param> object referred from knobs
   bitstep : minimum step of this knob (>=1) (to be deprecated)
+
+Args:
+      par : Param <object>
+     type : control type (slider[*], [hv]spin, choice, and default None)
+    style : style of label
+            None -> static text (default)
+            chkbox -> label with check box
+            button -> label with flat button
+ editable : text ctrl is editable or readonly
+ lw,tw,cw : width of label, textbox, and control (default height `h=22 of widgets)
     """
     param = property(lambda self: self.__par)
     bitstep = property(lambda self: self.__bit)
@@ -303,16 +314,6 @@ class Knob(wx.Panel):
         self.__bit = int(v) or 1
     
     def __init__(self, parent, par, type='slider', style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22):
-        """パラメータクラスのコントロールノブ
-         par : Param <object>
-        type : control type (slider[*], [hv]spin, choice, and default None)
-       style : style of label
-               None -> static text
-               chkbox (previous style of label with wx.CheckBox)
-               button flat button
-    editable : textCtrl is editable or readonly
-  lw, tw, cw : width of label, textbox, and control (default height `h=22 of widgets)
-        """
         wx.Panel.__init__(self, parent)
         self.__bit = 1
         self.__par = par
