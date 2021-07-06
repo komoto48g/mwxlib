@@ -255,10 +255,10 @@ unloadable : flag to set the layer to be unloadable
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
                   'pane_loaded' : [ None ],
+                'pane_unloaded' : [ None ],
                    'pane_shown' : [ None, _F(self.Draw, show=True), _F(self.Activate, show=True), ],
                   'pane_closed' : [ None, _F(self.Draw, show=False), _F(self.Activate, show=False), ],
                   'pane_hidden' : [ None, _F(self.Draw, show=False) ],
-                 'pane_removed' : [ None ],
             },
         })
         
@@ -1089,7 +1089,7 @@ class Frame(mwx.Frame):
             self._mgr.Update()
             
             plug.handler('pane_closed')
-            plug.handler('pane_removed')
+            plug.handler('pane_unloaded')
             plug.Destroy()
             
             if nb and not nb.PageCount:
