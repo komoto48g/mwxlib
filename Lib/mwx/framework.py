@@ -453,14 +453,12 @@ class FSM(dict):
             self.__prev_state = self.__state # save previos state
             self.__state = transaction[0] # the state transits here
             
-            dumpf = self.dump
-            
             if self.__state not in self:
                 self.__state = self.__prev_state # rewind to previous state
-                dumpf("- FSM:unknown transaction {!r}".format(transaction),
-                      "   event : {}".format(event),
-                      "    from : {}".format(self.__prev_state),
-                      "   state : {}".format(self.__state), sep='\n')
+                self.dump("- FSM:unknown transaction {!r}".format(transaction),
+                          "   event : {}".format(event),
+                          "    from : {}".format(self.__prev_state),
+                          "   state : {}".format(self.__state), sep='\n')
                 raise Exception("FSM:unknown state {!r}".format(self.__state))
             
             self.__debcall__(event, *args) # check after transition
@@ -472,26 +470,23 @@ class FSM(dict):
                     retvals.append(ret)
                     
                 except RuntimeError as e:
-                    dumpf("- FSM:runtime error - {!r}".format(e),
-                          "   event : {}".format(event),
-                          "    from : {}".format(self.__prev_state),
-                          "   state : {}".format(self.__state),
-                          "  action : {}".format(typename(act)), sep='\n')
+                    self.dump("- FSM:runtime error - {!r}".format(e),
+                              "   event : {}".format(event),
+                              "    from : {}".format(self.__prev_state),
+                              "   state : {}".format(self.__state),
+                              "  action : {}".format(typename(act)), sep='\n')
                     traceback.print_exc()
                     
                 except Exception as e:
-                    dumpf("- FSM:exception - {!r}".format(e),
-                          "   event : {}".format(event),
-                          "    from : {}".format(self.__prev_state),
-                          "   state : {}".format(self.__state),
-                          "  action : {}".format(typename(act)), sep='\n')
+                    self.dump("- FSM:exception - {!r}".format(e),
+                              "   event : {}".format(event),
+                              "    from : {}".format(self.__prev_state),
+                              "   state : {}".format(self.__state),
+                              "  action : {}".format(typename(act)), sep='\n')
                     traceback.print_exc()
-            ## end of transaction
-            ## return len(transaction) > 1
             return retvals
         else:
             ## matching test using fnmatch ファイル名規約によるマッチングテスト
-            ## Note: the event must be string
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
                     return self.call(pat, *args) # recursive call with matched pattern
@@ -499,48 +494,37 @@ class FSM(dict):
         self.__debcall__(event, *args) # check when no transition
     
     def __debcall__(self, pattern, *args):
-        try:
-            if self.debug and self.__state is not None:
-                transaction = self[self.__prev_state].get(pattern) or []
-                actions = ', '.join(typename(a) for a in transaction[1:])
-                if (self.debug > 0 and self.__prev_state != self.__state
-                 or self.debug > 1 and self.__prev_event != self.__event
-                 or self.debug > 2 and actions
-                 or self.debug > 3):
-                    self.log("{c} {1} --> {2} {0!r} {a}".format(
-                        self.__event, self.__prev_state, self.__state,
-                        a = '' if not actions else ('=> ' + actions),
-                        c = '*' if self.__prev_state != self.__state else ' '))
-            
-            elif self.debug > 3: # state is None
-                transaction = self[None].get(pattern) or []
-                actions = ', '.join(typename(a) for a in transaction[1:])
-                if actions or self.debug > 4:
-                    self.log("\t& {0!r} {a}".format(
-                        self.__event,
-                        a = '' if not actions else ('=> ' + actions)))
-            
-            if self.debug > 5:  # whether state is None or not None
-                self.log(*args) # max verbose putting all arguments
-            
-        except Exception as e:
-            self.dump("- FSM:exception - {!r}".format(e),
-                      "   event : {}".format(self.__event),
-                      "    from : {}".format(self.__prev_state),
-                      "   state : {}".format(self.__state),
-                      " pattern : {}".format(pattern), sep='\n')
-            traceback.print_exc()
-    
-    STDERR = sys.__stderr__
-    STDOUT = sys.__stdout__
+        v = self.debug
+        if v and self.__state is not None:
+            transaction = self[self.__prev_state].get(pattern) or []
+            actions = ', '.join(typename(a) for a in transaction[1:])
+            if (v > 0 and self.__prev_state != self.__state
+             or v > 1 and self.__prev_event != self.__event
+             or v > 2 and actions
+             or v > 3):
+                self.log("{c} {1} --> {2} {0!r} {a}".format(
+                    self.__event, self.__prev_state, self.__state,
+                    a = '' if not actions else ('=> ' + actions),
+                    c = '*' if self.__prev_state != self.__state else ' '))
+        
+        elif v > 3: # state is None
+            transaction = self[None].get(pattern) or []
+            actions = ', '.join(typename(a) for a in transaction[1:])
+            if actions or v > 4:
+                self.log("\t& {0!r} {a}".format(
+                    self.__event,
+                    a = '' if not actions else ('=> ' + actions)))
+        
+        if v > 5: # max verbose level puts all args
+            self.log(*args)
     
     @staticmethod
     def log(*args, **kwargs):
-        print(*args, file=FSM.STDOUT, **kwargs)
+        print(*args, file=sys.__stdout__, **kwargs)
     
     @staticmethod
     def dump(*args, **kwargs):
-        print(*args, file=FSM.STDERR, **kwargs)
+        print(*args, file=sys.__stderr__, **kwargs)
         
         f = os.path.expanduser("~/.deb/deb-dump.log")
         with open(f, 'a') as o:
@@ -2450,7 +2434,7 @@ Flaky nutshell:
         ## ビルトインがデッドオブジェクトを参照することにならないように以下の方法で回避します．
         ## 
         ## This shell is expected to be called many times in the process,
-        ## e.g., when used as a debug point and when cloned.
+        ## e.g., when used as a break-point and when cloned.
         ## To prevent the builtins from referring dead objects, we use the following method.
         ## 
         ## Assign objects each time it is activated so that the target
