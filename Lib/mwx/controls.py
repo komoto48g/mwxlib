@@ -957,7 +957,8 @@ class TextCtrl(wx.Panel):
             )
         )
         if handler:
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, handler) # use style=wx.TE_PROCESS_ENTER
+            ## use style=wx.TE_PROCESS_ENTER
+            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
         if updater:
             self.btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
 
@@ -1002,8 +1003,9 @@ class Choice(wx.Panel):
             )
         )
         if handler:
-            self.ctrl.Bind(wx.EVT_COMBOBOX, handler)
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, handler) # use style=wx.TE_PROCESS_ENTER
+            ## use style=wx.TE_PROCESS_ENTER
+            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+            self.ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
         self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         if updater:
             self.btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))

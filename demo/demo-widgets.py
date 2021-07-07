@@ -37,7 +37,7 @@ class Plugin(Layer):
             ## wx.StaticLine(self, size=(200,-1)),
             (),
             TextCtrl(self, label="ctrl label",
-                handler=lambda v: self.statusline(v.String, "enter"),
+                handler=lambda v: self.statusline(v.Value, "enter"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                     tip="this is a textctrl",
                     icon=wx.ART_NEW,
@@ -46,7 +46,7 @@ class Plugin(Layer):
                     size=(200,22)),
             (),
             Choice(self, label="ctrl label",
-                handler=lambda v: self.statusline(v.String, "selected"),
+                handler=lambda v: self.statusline(v.Value, "selected"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                 choices=['1','2','3'],
                     tip="this is a choice",
@@ -75,7 +75,7 @@ class Plugin(Layer):
         )
         
         self.textctrl = TextCtrl(self, '',
-                handler=lambda v: self.statusline(v.String, "enter"),
+                handler=lambda v: self.statusline(v.Value, "enter"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                 value = TextCtrl.__doc__,
                     tip="this is a textctrl",
