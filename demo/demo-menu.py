@@ -32,15 +32,15 @@ class TestFrame(mwx.Frame):
                 print), #<wx._core.MenuEvent>
             (),
             ("&Print", (
-                (111, "setup\tctrl+s", Icon('+'), lambda v: print("setup")),
-                (112, "preview\tctrl+p", Icon('-'), lambda v: print("preview")),
+                (111, "setup\tctrl+shift+s", Icon('+'), lambda v: print("setup")),
+                (112, "preview\tctrl+shift+p", Icon('-'), lambda v: print("preview")),
                 ),
             ),
         ]
         self.menubar['Test/&Submenu'] = [ # add nested submenu into new menu
             ("&Print", (
-                (121, "setup\tctrl+s", Icon('+'), lambda v: print("setup")),
-                (122, "preview\tctrl+p", Icon('-'), lambda v: print("preview")),
+                (121, "setup", Icon('+'), lambda v: print("setup")),
+                (122, "preview", Icon('-'), lambda v: print("preview")),
                 ),
             ),
         ]
