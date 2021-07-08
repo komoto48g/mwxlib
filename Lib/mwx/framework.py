@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.41.8"
+__version__ = "0.41.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1233,7 +1233,6 @@ class Menu(wx.Menu):
                 if icons:
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
-                ## self.Bind(id, *handlers)
                 try:
                     self.owner.Bind(wx.EVT_MENU, handlers[0], id=id)
                     self.owner.Bind(wx.EVT_UPDATE_UI, handlers[1], id=id)
