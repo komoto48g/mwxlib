@@ -1205,10 +1205,20 @@ class TreeList(object):
 
 
 class Menu(wx.Menu):
+    """Construt menu
+    
+    item: (id, text, hint, style, icon,  ... Menu.Append arguments
+               action, updater, hilight) ... Menu Event handlers
+    where,
+      style -> menu style (ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO)
+       icon -> menu icon (bitmap)
+     action -> EVT_MENU handler
+    updater -> EVT_UPDATE_UI handler
+    hilight -> EVT_MENU_HIGHLIGHT handler
+    """
     def __init__(self, owner, values):
         wx.Menu.__init__(self)
         self.owner = owner
-        self.Id = None
         
         for item in values:
             if not item:
@@ -1223,7 +1233,13 @@ class Menu(wx.Menu):
                 if icons:
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
-                self.Bind(id, *handlers)
+                ## self.Bind(id, *handlers)
+                try:
+                    self.owner.Bind(wx.EVT_MENU, handlers[0], id=id)
+                    self.owner.Bind(wx.EVT_UPDATE_UI, handlers[1], id=id)
+                    self.owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], id=id)
+                except IndexError:
+                    pass
             else:
                 argv = item[:-1]
                 subitems = item[-1]
@@ -1235,17 +1251,6 @@ class Menu(wx.Menu):
                 submenu.Id = submenu_item.Id # <- ID_ANY
                 self.Enable(submenu_item.Id, bool(subitems)) # Disable empty menu
     
-    def Bind(self, id, handler1=None, handler2=None, handler3=None):
-        if handler1:
-            self.owner.Unbind(wx.EVT_MENU, id=id)
-            self.owner.Bind(wx.EVT_MENU, handler1, id=id)
-        if handler2:
-            self.owner.Unbind(wx.EVT_UPDATE_UI, id=id)
-            self.owner.Bind(wx.EVT_UPDATE_UI, handler2, id=id)
-        if handler3:
-            self.owner.Unbind(wx.EVT_MENU_HIGHLIGHT, id=id)
-            self.owner.Bind(wx.EVT_MENU_HIGHLIGHT, handler3, id=id)
-    
     @staticmethod
     def Popup(parent, menu, *args):
         menu = Menu(parent, menu)
@@ -1254,24 +1259,17 @@ class Menu(wx.Menu):
 
 
 class MenuBar(wx.MenuBar, TreeList):
-    """Construt menubar as is orderd map
+    """Construt menubar as is orderd menu:list
+    リストの順番どおりに GUI 上にマップしたメニューバーを構築する
     
-    ネストされたリストの順番どおりに GUI 上にマップしたメニューバーを構築する
-    menus <list> is the root of nest list (as directory structrue)
-    root
-     ├ key ─┬ item
-     │       ├ item
-     │       ├ key ─┬ item
-     │       │       ├ item ...
-    [key, [item:
-          ((id, text, hint, *style, *bitmap), ... Menu.Append arguments
-                *action, *updater, *hilight), ... Menu Event handlers
-    ]],
-    style : menu style in (ITEM_SEPARATOR, ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO, ITEM_MAX)
-   bitmap : menu icon (Bitmap object)
-   action : EVT_MENU にバインドされるハンドラ
-  updater : EVT_UPDATE_UI にバインドされるハンドラ
-  hilight : EVT_MENU_HIGHLIGHT にバインドされるハンドラ
+    root:TreeList is a nested list (as directory structrue)
+    ├ [key, [item,
+    │        item,...]],
+    ：
+    ├ [key, [item,
+    │        item,
+    │        submenu => [key, [item,
+    ：        ...               item,...]],
     """
     def __init__(self, *args, **kwargs):
         wx.MenuBar.__init__(self, *args, **kwargs)
@@ -1304,10 +1302,9 @@ class MenuBar(wx.MenuBar, TreeList):
             menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
             for item in menu2.MenuItems:
                 menu.Append(menu2.Remove(item)) # 重複しないようにいったん切り離して追加する
-                
-            ## cf. Menu.submenu.Id
-            if menu.Id:
-                self.Enable(menu.Id, menu.MenuItemCount > 0) # 空のメニューは無効にする
+            
+            if hasattr(menu, 'Id'):
+                self.Enable(menu.Id, menu.MenuItemCount > 0) # 空のサブメニューは無効にする
     
     def reset(self):
         """Call when the menulist is changed,

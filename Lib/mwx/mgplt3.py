@@ -194,7 +194,7 @@ class GplotFrame(mwx.Frame):
 if __name__ == "__main__":
     from numpy import pi,sin,cos
     
-    Gplot.init_path(r"C:\usr\home\bin\gnuplot-4.4\binary")
+    Gplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
     
     gp = Gplot(None, debug=1)
     gp("""

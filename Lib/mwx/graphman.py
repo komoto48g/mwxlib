@@ -561,7 +561,7 @@ class Frame(mwx.Frame):
             (wx.ID_SAVE, "&Save\tCtrl-s", "Save buffer as", Icon('save'),
                 lambda v: self.save_frame(),
                 lambda v: v.Enable(self.__view.frame is not None)),
-            
+                
             (wx.ID_SAVEAS, "&Save as tiffs", "Save buffers as a statck-tiff", Icon('saveas'),
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
