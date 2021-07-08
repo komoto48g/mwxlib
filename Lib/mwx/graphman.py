@@ -254,11 +254,11 @@ unloadable : flag to set the layer to be unloadable
                    'thread_end' : [ None ], # thread closed processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                  'pane_loaded' : [ None ],
-                'pane_unloaded' : [ None ],
-                   'pane_shown' : [ None, _F(self.Draw, show=True), _F(self.Activate, show=True), ],
-                  'pane_closed' : [ None, _F(self.Draw, show=False), _F(self.Activate, show=False), ],
-                  'pane_hidden' : [ None, _F(self.Draw, show=False) ],
+                  'pane_loaded' : [ None ], # Called after Init
+                'pane_unloaded' : [ None ], # Called before Destroy
+                   'pane_shown' : [ None, _F(self.Draw, show=True) ],  # when active
+                  'pane_closed' : [ None, _F(self.Draw, show=False) ], # when inactive
+                  'pane_hidden' : [ None, _F(self.Draw, show=False) ], # when hidden (not closed)
             },
         })
         
@@ -359,10 +359,6 @@ unloadable : flag to set the layer to be unloadable
         except RuntimeError as e:
             print("- {}: Artists failed to draw;".format(self.__module__), e)
             del self.Arts
-    
-    def Activate(self, show=True):
-        """Activate the layer"""
-        pass
 
 
 class Graph(GraphPlot):
@@ -1129,7 +1125,7 @@ class Frame(mwx.Frame):
         def init(shell):
             shell.target = self.get_plug(name)
         init(shell)
-        shell.run("this; self")
+        shell.run("this, self")
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
