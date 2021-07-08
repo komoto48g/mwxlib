@@ -361,7 +361,7 @@ unloadable : flag to set the layer to be unloadable
             del self.Arts
     
     def Activate(self, show=True):
-        """Activate the layer (to be overrided)"""
+        """Activate the layer"""
         pass
 
 
