@@ -18,8 +18,10 @@ The simplest frame, which consits of
 - simple statusbar
 - simple shell
 
+<!--
 [test-script](./test_frame.py)
 ![screenshot](./image/test_frame.png)
+-->
 
 
 ## mwx.Button
@@ -27,7 +29,7 @@ The simplest frame, which consits of
 - The button is based on <wx.lib.platebtn>
 - The panel is based on <wx.lib.scrolledpanel>, and extended to be foldable. (try it!)
 
-[demo-script](./demo-buttons.py)
+[demo-buttons](./demo-buttons.py)
 ![screenshot (folded)](./image/demo-buttons(folded).png)
 ![screenshot (expanded)](./image/demo-buttons(expanded).png)
 
@@ -37,7 +39,7 @@ The simplest frame, which consits of
 The mwx.menubar is described as structured list.
 Designed as WYSiWYG (see demo-code).
 
-[demo-script](./demo-menu.py)
+[demo-menu](./demo-menu.py)
 ![screenshot](./image/demo-menubar.png)
 
 
@@ -54,7 +56,7 @@ The mwx.controls including,
 
 Those wx controls (not only shown above) are laid out by only one method `layout` of mwx.ControlPanel<wx.lib.scrolled.ScrolledPanel> as WYSiWYG (see demo-code).
 
-[demo-script](./demo-widgets.py)
+[demo-widgets](./demo-widgets.py)
 ![screenshot](./image/demo-widgets.png)
 
 [demo-gauge](./demo-gauge.py)
@@ -78,5 +80,5 @@ The graphman is a graphic window manager.
     - index loader
     - session loader
 
-[template-script](./template.py)
+[template](./template.py)
 ![screenshot](./image/template-layer.png)

@@ -256,7 +256,7 @@ unloadable : flag to set the layer to be unloadable
                  'thread_error' : [ None ], # failed in error
                   'pane_loaded' : [ None ], # Called after Init
                 'pane_unloaded' : [ None ], # Called before Destroy
-                   'pane_shown' : [ None, _F(self.Draw, show=True) ],  # when active
+                   'pane_shown' : [ None, _F(self.Draw, show=True)  ], # when active
                   'pane_closed' : [ None, _F(self.Draw, show=False) ], # when inactive
                   'pane_hidden' : [ None, _F(self.Draw, show=False) ], # when hidden (not closed)
             },
@@ -1580,9 +1580,6 @@ class Frame(mwx.Frame):
         self.statusbar("\b done.")
         self.OnShowFrame(None) # update titlebar
         return True
-
-
-## Plugin = Layer
 
 
 if __name__ == '__main__':

@@ -1074,7 +1074,7 @@ def ID_(id): # Free ID - どこで使っているか検索できるように．
     return id + wx.ID_HIGHEST # not to use [ID_LOWEST(4999):ID_HIGHEST(5999)]
 
 
-def pack(self, *args, **kwargs):
+def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
     """Do layout
   usage:
     self.SetSizer(
@@ -1091,7 +1091,7 @@ def pack(self, *args, **kwargs):
           - ((-1,-1), 1, wx.EXPAND) ... stretched space
           - wx.StaticLine(self) ... border
           - (-1,-1) ... a fix blank
- **kwargs : 
+          
    orient : HORIZONTAL or VERTICAL
     style : (proportion=0, flag=0, border=2)
              proportion = EXPAND
@@ -1100,9 +1100,8 @@ def pack(self, *args, **kwargs):
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     label : label of StaticBox
     """
-    label = kwargs.get("label")
-    orient = kwargs.get("orient") or wx.HORIZONTAL
-    style = kwargs.get("style") or (0, wx.EXPAND|wx.ALL, 0)
+    if style is None:
+        style = (0, wx.EXPAND|wx.ALL, 0)
     
     if label is not None:
         box = wx.StaticBox(self, -1, label)
@@ -1117,7 +1116,7 @@ def pack(self, *args, **kwargs):
             item = ((0,0),) + style # padding with specified style
         try:
             sizer.Add(item, *style) # using style
-        except Exception:
+        except TypeError:
             sizer.Add(*item) # using item-specific style
     return sizer
 
