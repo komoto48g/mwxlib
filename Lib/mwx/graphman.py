@@ -345,17 +345,13 @@ unloadable : flag to set the layer to be unloadable
         return any(art.get_visible() for art in self.Arts)
     
     def Draw(self, show=True):
-        """Draw arts"""
         if not self.Arts:
             return
         try:
+            ## Arts may be belonging to either graph, output, and any other windows.
             for art in self.Arts:
                 art.set_visible(show)
-            
-            ## Arts may be belonging to either graph, output, and any other window.
-            ## where we can access to the canvas of the art as, though complicated,
             art.axes.figure.canvas.draw_idle()
-            
         except RuntimeError as e:
             print("- {}: Artists failed to draw;".format(self.__module__), e)
             del self.Arts
