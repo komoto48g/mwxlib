@@ -330,7 +330,7 @@ def find_modules(force=False, verbose=True):
         
         lm.sort(key=str.upper)
         with open(f, 'w') as o:
-            pprint(lm, width=256, stream=o) # write moduels
+            pprint(lm, stream=o) # write moduels
         print("done.")
     else:
         with open(f, 'r') as o:
@@ -2863,7 +2863,7 @@ Flaky nutshell:
         builtins.reload = reload
         builtins.partial = partial
         ## builtins.pp = pprint
-        builtins.pp = lambda x: pprint(x, width=128)
+        builtins.pp = lambda x: pprint(x, width=pp.width, compact=True); pp.width=200
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
