@@ -238,6 +238,21 @@ unloadable : flag to set the layer to be unloadable
             art.remove()
         self.__artists = []
     
+    def add_artists(self, target, *args):
+        for art in args:
+            if art.axes:
+                art.remove()
+            target.axes.add_artist(art)
+        self.__artists += args
+        self.Draw(True)
+    
+    def remove_artists(self, *args):
+        for art in args or self.__artists[:]:
+            if art.axes:
+                art.remove()
+            self.__artists.remove(art)
+        self.Draw(True)
+    
     def __init__(self, parent, owner=None, **kwargs):
         if parent:
             ControlPanel.__init__(self, parent, size=(130,24)) # keep minimum size
