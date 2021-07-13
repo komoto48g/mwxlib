@@ -961,9 +961,10 @@ if __name__ == '__main__':
     axes = frm.graph.axes
     if 1:
         #<matplotlib.patches.Circle>
-        axes.add_artist(plt.Circle((0, 0), np.sqrt(2), color='r', ls='dashed', fill=0))
+        ## axes.add_artist(plt.Circle((0, 0), np.sqrt(2), color='r', ls='dashed', fill=0))
         
-        axes.add_patch(patches.Circle((0, 0), 2, color='r', ls='dashed', fill=0, alpha=0.5))
+        ## axes.add_artist(patches.Circle((0, 0), 2.5, color='r', ls='dashed', fill=0, alpha=0.5))
+        axes.add_patch(patches.Circle((0, 0), 2.5, color='r', ls='dashed', fill=0, alpha=0.5))
         
         #<matplotlib.patches.Rectangle>
         axes.add_patch(patches.Rectangle((-1/2,-1/2),1,1, color='r', ls='solid', alpha=0.1))
