@@ -1,4 +1,3 @@
-## pip install -r requirements.txt
 wxpython
 numpy
 scipy
