@@ -50,6 +50,20 @@ def atom(x):
     return not hasattr(x, '__name__')
 
 
+def pdoc(f):
+    """A helper predicates do nothing but printing doc:str"""
+    if not atom(f):
+        doc = inspect.getdoc(f)
+        if doc:
+            print("  --{}".format("-" * 40))
+            print("  + {}".format(typename(f)))
+            head ="     |"
+            for ln in doc.splitlines():
+                print(head, ln)
+            print(head)
+    return True
+
+
 def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
@@ -121,20 +135,6 @@ def Dir(obj):
         return keys
 
 
-def docp(f):
-    """A helper predicates do nothing but printing doc:str"""
-    if not atom(f):
-        doc = inspect.getdoc(f)
-        if doc:
-            print("  --{}".format("-" * 40))
-            print("  + {}".format(typename(f)))
-            head ="     |"
-            for ln in doc.splitlines():
-                print(head, ln)
-            print(head)
-    return True
-
-
 def getargspec(f):
     try:
         args, _varargs, _keywords, defaults,\
@@ -158,7 +158,7 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
         if not callable(pred):
             raise TypeError("{} is not callable".format(typename(pred)))
         
-        if inspect.isclass(pred): # class ctor: int, float, str, ... etc.
+        if isinstance(pred, type):
             pred = instance(pred)
         elif not inspect.isbuiltin(pred):
             args, _varargs, _keywords, defaults = getargspec(pred)
@@ -196,9 +196,11 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
 def typename(root, docp=False, qualp=False):
     if hasattr(root, '__name__'): # class, module, method, function etc.
         if qualp:
-            if hasattr(root, '__qualname__'): # PY3 format
+            ## if hasattr(root, '__qualname__'): # PY3 format
+            try:
                 name = root.__qualname__
-            elif hasattr(root, 'im_class'): # PY2 format
+            ## elif hasattr(root, 'im_class'): # PY2 format
+            except AttributeError:
                 name = root.im_class.__name__ + '.' + root.__name__
         else:
             name = root.__name__
@@ -2295,9 +2297,9 @@ Magic syntax:
                 equiv. apropos(y, x [,ignorecase ?:True,??:False] [,pred=p])
                 y can contain regular expressions.
                     (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
-                p can be ?atom, ?callable, ?instance(*types), and
-                    predicates imported from inspect
-                    e.g., isclass, ismodule, ismethod, isfunction, etc.
+                p can be ?atom, ?callable, ?type (e.g., int,str,etc.),
+                    and any predicates imported from inspect module
+                    such as isclass, ismodule, isfunction, etc.
   
   *     info :  ?x (x@?) --> info(x) shows short information
   *     help : ??x (x@??) --> help(x) shows full description
