@@ -1109,7 +1109,10 @@ def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
     else:
         sizer = wx.BoxSizer(orient)
     
-    for item in args:
+    def flatten(a):
+        return (x for y in a for x in (flatten(y) if isinstance(y, list) else (y,)))
+    
+    for item in flatten(args):
         if item is None:
             item = ((0,0), 0,0,0) # dummy spacing
         if not item:
