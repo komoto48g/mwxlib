@@ -1086,19 +1086,18 @@ def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
         )
     )
     *args : wx objects `obj (with some packing directives)
-          - (obj, 1) ... packed by size with ratio 1 (orient 同じ方向)
-                         他に 0 以外を指定しているオブジェクトとエリアを分け合う
-          - (obj, x, wx.EXPAND) ... packed with expand (orient の垂直方向に引き伸ばす) with ratio
-          - (obj, 0, wx.ALIGN_CENTER|wx.LEFT, 4) ... packed at center with 4 pixel at wx.LEFT
-          - ((-1,-1), 1, wx.EXPAND) ... stretched space
-          - wx.StaticLine(self) ... border
-          - (-1,-1) ... a fix blank
-          
+          - (obj, 1) -> sized with ratio 1 (orient と同方向)
+                        他に 0 以外を指定しているオブジェクトとエリアを分け合う
+          - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
+          - (obj, 0, wx.ALIGN_CENTER|wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
+          - ((-1,-1), 1, wx.EXPAND) -> stretched space
+          - (-1,-1) -> padding space
+          - None -> phantom
    orient : HORIZONTAL or VERTICAL
-    style : (proportion=0, flag=0, border=2)
-             proportion = EXPAND
-                 border = TOP, BOTTOM, LEFT, RIGHT, ALL
-                  align = ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
+    style : (proportion, flag, border)
+            flag-expansion -> EXPAND
+            flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
+            flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     label : label of StaticBox
     """

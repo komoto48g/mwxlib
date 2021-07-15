@@ -346,11 +346,11 @@ unloadable : flag to set the layer to be unloadable
         pass
     
     def IsShown(self):
-        return self.parent.get_pane(self).IsShown()
+        return self.parent.get_pane(self.__module__).IsShown()
     
     def Show(self, show=True):
         """Show the related pane"""
-        self.parent.show_pane(self, show)
+        self.parent.show_pane(self.__module__, show)
     
     def IsDrawn(self):
         return any(art.get_visible() for art in self.Arts)
@@ -881,13 +881,13 @@ class Frame(mwx.Frame):
         
         root : Layer object, module, or `name of module
         show : the pane is to be shown when loaded
-     docking : dock_direction (1:top,2:right,3:bottom,4:left, 0 or False:Float)
        force : force loading even when it were already loaded
+     docking : dock_direction (1:top, 2:right, 3:bottom, 4:left, *5:center)
        layer : docking layer
          pos : docking position
          row : docking row position
         prop : docking proportion < 1e6 ?
-     floating_pos/size : for floating window
+  floating_* : pos/size of floating window
         """
         if isinstance(root, type(sys)): #<type 'module'>
             root = root.__file__
@@ -1605,7 +1605,6 @@ if __name__ == '__main__':
     ## frm.load_plug('templates.template.py', show=1)
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
-    
-    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4, force=0)
+    ## frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4, force=0)
     frm.Show()
     app.MainLoop()
