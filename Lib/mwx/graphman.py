@@ -226,7 +226,6 @@ unloadable : flag to set the layer to be unloadable
     @Arts.setter
     def Arts(self, arts):
         self.__artists = arts
-        ## self.Draw(True)
     
     @Arts.deleter
     def Arts(self):
@@ -240,14 +239,12 @@ unloadable : flag to set the layer to be unloadable
                 art.remove()
             target.axes.add_artist(art)
         self.__artists += args
-        ## self.Draw(True)
     
     def remove_artists(self, *args):
         for art in args or self.__artists[:]:
             if art.axes:
                 art.remove()
             self.__artists.remove(art)
-        ## self.Draw(True)
     
     def __init__(self, parent, owner=None, **kwargs):
         if parent:
@@ -349,7 +346,6 @@ unloadable : flag to set the layer to be unloadable
         return self.parent.get_pane(self.__module__).IsShown()
     
     def Show(self, show=True):
-        """Show the related pane"""
         self.parent.show_pane(self.__module__, show)
     
     def IsDrawn(self):
