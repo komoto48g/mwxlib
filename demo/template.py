@@ -39,9 +39,6 @@ class Plugin(Layer):
         )
         self.handler.debug = 4
     
-    def Destroy(self):
-        return Layer.Destroy(self)
-    
     def run(self):
         k = self.ksize.value
         src = self.graph.buffer

@@ -145,18 +145,14 @@ class Thread(object):
             try:
                 self.owner.handler('thread_begin', self)
                 self.result = f(*args, **kwargs)
-                
-            except AssertionError as e:
-                print("- Thread:execution failed: {}".format(e))
-                
             except KeyboardInterrupt as e:
                 print("- Thread:execution stoped: {}".format(e))
-                
+            except AssertionError as e:
+                print("- Thread:execution failed: {}".format(e))
             except Exception as e:
                 traceback.print_exc()
                 print("- Thread:exception occurred in {!r}: {!r}".format(mwx.typename(f), e))
                 self.owner.handler('thread_error', self)
-                
             finally:
                 self.__keepGoing = self.__isRunning = 0
                 self.owner.handler('thread_end', self)
@@ -494,14 +490,6 @@ class Frame(mwx.Frame):
     def select_view(self, view):
         self.__view = view
     
-    ## @property
-    ## def selected_graphic_window(self):
-    ##     """currently focused graphic window
-    ##     if no focus has any graphic windows, the main graph is returned
-    ##     """
-    ##     return next((w for w in self.__graphic_windows
-    ##                 if w.canvas.HasFocus()), self.graph)
-    
     @property
     def graphic_windows(self):
         """graphic windows list
@@ -509,9 +497,9 @@ class Frame(mwx.Frame):
         """
         return self.__graphic_windows
     
-    @property
-    def graphic_windows_on_screen(self):
-        return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
+    ## @property
+    ## def graphic_windows_on_screen(self):
+    ##     return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
     
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
