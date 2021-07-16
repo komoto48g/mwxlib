@@ -1118,7 +1118,7 @@ class Frame(mwx.Frame):
         
         @shell.handler.bind("shell_activated")
         def init(shell):
-            shell.target = self.get_plug(name)
+            shell.target = self.get_plug(name) or self # when unloaded
         init(shell)
         shell.run("this, self")
     
