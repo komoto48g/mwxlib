@@ -306,11 +306,6 @@ def find_modules(force=False, verbose=True):
     except AttributeError:
         pass
     
-    if verbose:
-        princ = print
-    else:
-        def princ(*args, **kwargs):
-            pass
     lm = []
     f = os.path.expanduser("~/.deb/deb-modules-{}.log".format(sys.winver))
     if force or not os.path.exists(f):
@@ -319,16 +314,19 @@ def find_modules(force=False, verbose=True):
         
         def callback(path, modname, desc):
             lm.append(modname)
-            princ('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='')
+            if verbose:
+                print('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='')
         
         def error(modname):
             ## lm.append(modname + '*') # do not append to the list
-            princ('\b'*80 + "- failed: {}".format(modname[:70]))
+            if verbose:
+                print('\b'*80 + "- failed: {}".format(modname[:70]))
         
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore') # ignore problems during import
             pydoc.ModuleScanner().run(callback, key='', onerror=error)
-            princ('\b'*80 + "The results were written in {!r}.".format(f))
+            if verbose:
+                print('\b'*80 + "The results were written in {!r}.".format(f))
         
         lm.sort(key=str.upper)
         with open(f, 'w') as o:
@@ -1197,7 +1195,7 @@ class TreeList(object):
             else:
                 ls.append([key, value]) # append to items:list
         except (TypeError, AttributeError)  as e:
-            print("- TreeList:warning [{}]".format(key), e)
+            print("- TreeList:warning - [{!r}]: {}".format(key, e))
     
     @classmethod
     def delf(self, ls, key):
@@ -3112,11 +3110,10 @@ Flaky nutshell:
     
     def about(self):
         """About the shell (to be overrided)"""
-        print( # >>> self.write
+        print(
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
-            '',
             "#{!r}".format(wx.py.shell), sep='\n', file=self)
         return Shell.about(self)
     
@@ -3146,7 +3143,6 @@ Flaky nutshell:
             self.parent.PopupWindow(ed)
         except AttributeError:
             print(doc)
-            pass
     
     def help(self, root=None):
         """Full description"""
@@ -3162,7 +3158,6 @@ Flaky nutshell:
             self.parent.PopupWindow(ed)
         except AttributeError:
             print(doc)
-            pass
     
     def eval(self, text):
         ## return eval(text, self.__target.__dict__)
@@ -3559,7 +3554,7 @@ Note:
             frame.shell.prompt()
             
     if not isinstance(app, wx.App):
-        ## print("- Argument app has unexpected type {!r}".format(typename(app)))
+        print("- deb: argument app has unexpected type {!r}".format(typename(app)))
         pass
     elif not app.GetMainLoop():
         app.MainLoop()

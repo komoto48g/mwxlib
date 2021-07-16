@@ -360,7 +360,7 @@ unloadable : flag to set the layer to be unloadable
                 art.set_visible(show)
             art.axes.figure.canvas.draw_idle()
         except RuntimeError as e:
-            print("- {}: Artists failed to draw;".format(self.__module__), e)
+            print("- {}: Artists failed to draw: {}".format(self.__module__, e))
             del self.Arts
 
 
@@ -1238,7 +1238,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print("- Failed to read attributes:", e)
+            print("- Failed to read attributes: {}".format(e))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return res, mis # finally raise no exceptions
@@ -1261,7 +1261,7 @@ class Frame(mwx.Frame):
                 pprint(tuple(new.items()), stream=o) # save all attributes
             
         except Exception as e:
-            print("- Failed to write attributes:", e)
+            print("- Failed to write attributes: {}".format(e))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return new, mis # finally raise no exceptions

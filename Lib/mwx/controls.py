@@ -754,7 +754,7 @@ class Clipboard:
     @staticmethod
     def read():
         do = wx.TextDataObject()
-        wx.TheClipboard.Open() or print("Unable to open the clipboard")
+        wx.TheClipboard.Open() or print("- Unable to open the clipboard")
         wx.TheClipboard.GetData(do)
         wx.TheClipboard.Close()
         return do.GetText()
@@ -762,7 +762,7 @@ class Clipboard:
     @staticmethod
     def write(text):
         do = wx.TextDataObject(str(text))
-        wx.TheClipboard.Open() or print("Unable to open the clipboard")
+        wx.TheClipboard.Open() or print("- Unable to open the clipboard")
         wx.TheClipboard.SetData(do)
         wx.TheClipboard.Close()
 

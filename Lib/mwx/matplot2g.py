@@ -379,7 +379,7 @@ class Clipboard:
     def imread():
         try:
             do = wx.BitmapDataObject()
-            wx.TheClipboard.Open() or print("Unable to open the clipboard")
+            wx.TheClipboard.Open() or print("- Unable to open the clipboard")
             wx.TheClipboard.GetData(do)
             bmp = do.GetBitmap()
             img = bmp.ConvertToImage()
@@ -400,7 +400,7 @@ class Clipboard:
             img.SetData(buf.tostring())
             bmp = img.ConvertToBitmap()
             do = wx.BitmapDataObject(bmp)
-            wx.TheClipboard.Open() or print("Unable to open the clipboard")
+            wx.TheClipboard.Open() or print("- Unable to open the clipboard")
             wx.TheClipboard.SetData(do)
         finally:
             wx.TheClipboard.Close()
