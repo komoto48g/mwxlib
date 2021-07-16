@@ -582,9 +582,8 @@ class FSM(dict):
         for k,v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
-                    k2 = transaction[0]
                     for act in transaction[1:]:
-                        self.bind(event, act, k, k2)
+                        self.bind(event, act, k, transaction[0])
             else:
                 self[k] = SSM(self.copy(v))
             self.validate(k)
@@ -592,9 +591,13 @@ class FSM(dict):
     def remove(self, contexts):
         """Remove old contexts"""
         for k,v in contexts.items():
-            for event, transaction in v.items():
-                for act in transaction[1:]:
-                    self.unbind(event, act, k) # with no error
+            if k in self:
+                for event, transaction in v.items():
+                    if self[k].get(event) is transaction: # pop event:tuple,list
+                        self[k].pop(event)
+                        continue
+                    for act in transaction[1:]:
+                        self.unbind(event, act, k)
     
     def hook(self, event, action=None, state=None):
         if not action:
@@ -616,7 +619,8 @@ class FSM(dict):
             return lambda f: self.bind(event, f, state, state2)
         
         if state not in self:
-            self[state] = SSM() #:ref
+            print("- FSM:warning - [{!r}] context newly created.".format(state))
+            self[state] = SSM()
         
         context = self[state]
         if state2 is None:
@@ -638,7 +642,11 @@ class FSM(dict):
             context[event] = [state2] # new event:transaction
         
         if action not in context[event]:
-            context[event].append(action)
+            try:
+                context[event].append(action)
+            except AttributeError:
+                print("- FSM:warning - appending action to context"
+                      "({!r} : {!r}) must be a list, not tuple".format(state, event))
         return action
     
     def unbind(self, event, action, state=None):
@@ -647,22 +655,20 @@ class FSM(dict):
         The transaction is exepcted to be a list (not a tuple).
         """
         if state not in self:
-            ## print("- FSM:warning - [{!r}] context does not exist.".format(state))
+            print("- FSM:warning - [{!r}] context does not exist.".format(state))
             return
         
         context = self[state]
         if event in context and action in context[event]:
             try:
-                context[event].remove(action) # must be list type
+                context[event].remove(action)
                 if len(context[event]) == 1:
                     context.pop(event)
-                    if not context:
-                        self.pop(state)
+                    ## if not context:
+                    ##     self.pop(state)
             except AttributeError:
                 print("- FSM:warning - removing action from context"
                       "({!r} : {!r}) must be a list, not tuple".format(state, event))
-        else:
-            pass # transaction not found, nothing to be done
 
 
 ## --------------------------------
@@ -2367,8 +2373,8 @@ Flaky nutshell:
         
         self.interp.locals.update(target.__dict__)
         try:
-            self.parent.Title = re.sub(
-                "(.*) - (.*)", "\\1 - {!r}".format(target), self.parent.Title)
+            self.parent.Title = re.sub("(.*) - (.*)",
+                "\\1 - {!r}".format(target), self.parent.Title)
         except Exception:
             pass
     
@@ -3223,12 +3229,8 @@ Flaky nutshell:
             raise TypeError("You cannot dive into an primitive object")
         
         frame = deb(target,
-             # locals=self.interp.locals,
              size=self.parent.Size,
              title="Clone of Nautilus - {!r}".format(target))
-        
-        ## frame.shell.__root = self
-        ## frame.shell.__class__.root = property(lambda _: self)
         
         self.handler("shell_cloned", frame.shell)
         return frame.shell
