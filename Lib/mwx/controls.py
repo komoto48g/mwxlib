@@ -12,7 +12,7 @@ import sys
 import wx
 import numpy as np
 from numpy import pi
-from numpy import nan,inf
+from numpy import nan, inf
 from . import framework as mwx
 from . import images as images
 import wx.lib.platebtn as pb
@@ -52,7 +52,7 @@ Args:
     """
     def __init__(self, name, range=None, value=None,
         fmt=None, handler=None, updater=None, tip=None):
-        self.__knobs = [] # used in update
+        self.__knobs = []
         self.__name = name
         self.range = range if range is not None else [0]
         self.__value = value if value is not None else self.min
@@ -61,7 +61,7 @@ Args:
             self.__eval = lambda v: int(v,16)
             self.__format = lambda v: '{:04X}'.format(int(v))
         else:
-            self.__eval = eval
+            self.__eval = lambda v: float(v)
             self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
         self.__check = 0
         self.__callback = mwx.SSM({
@@ -144,11 +144,9 @@ Args:
         la = self.__callback[target]
         if not f:
             la[:] = [a for a in la if not callable(a)]
-        else:
-            if f in la:
-                la.remove(f)
-            else:
-                pass # action not found, nothing to be done
+            return
+        if f in la:
+            la.remove(f)
     
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs)
@@ -158,6 +156,8 @@ Args:
             v = self.__std_value
             if v is None:
                 return
+        elif v == 'nan': v = nan
+        elif v == 'inf': v = inf
         elif isinstance(v, LITERAL_TYPE):
             v = self.__eval(v.replace(',', '')) # eliminates commas(,)
         
@@ -188,7 +188,7 @@ Args:
         """
         if v is None:
             v = nan
-        if v in (nan,inf):
+        if v in (nan, inf):
             self.__value = v
             self.update(None)
             return
@@ -218,7 +218,7 @@ Args:
     
     def set_offset(self, v):
         if self.__std_value is not None:
-            if v is not nan: # Note! nan +x is not nan
+            if v is not nan: # Note: nan +x is not nan
                 v += self.__std_value
         self.set_value(v)
     
@@ -533,7 +533,7 @@ Args:
         evt.Skip()
     
     def OnTextFocusKill(self, evt): #<wx._core.FocusEvent>
-        if self.__par.value in (nan,inf):
+        if self.__par.value in (nan, inf):
             evt.Skip()
             return
         x = self.text.Value.strip()
@@ -1138,8 +1138,8 @@ if __name__ == '__main__':
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0,1,1e-4))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
-            self.Q =  LParam('universe', (1,20,1), inf, handler=print, updater=print)
-            self.R =  LParam('lens', (0,0xffff), 0x8000, handler=print, updater=print, fmt=hex)
+            self.Q = LParam('universe', (1,20,1), inf, handler=print, updater=print)
+            self.R = LParam('lens', (0,0xffff), 0x8000, handler=print, updater=print, fmt=hex)
             self.params = (
                 self.A,
                 self.K,

@@ -1216,15 +1216,16 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, f):
         """Read attributes file"""
-        from numpy import nan, inf
-        import datetime
         try:
             res = OrderedDict()
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
-            ## Evaluate atributes:tuple (name, attr), in locals
-            ## Note: datetime, nan, inf must be imported herein
+            ## Note: To evaluate atributes:tuple in locals,
+            ##   datetime, nan, inf must be imported.
+            from numpy import nan, inf
+            import datetime
+            
             with open(f) as i:
                 res.update(eval(i.read()))
             
