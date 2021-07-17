@@ -286,7 +286,6 @@ class Knob(wx.Panel):
     [Mbutton] resets to the std. value if it exists.
     
     param : A param <Param> object referred from knobs
-  bitstep : minimum step of this knob (>=1) (to be deprecated)
 
 Args:
       par : Param <object>
@@ -298,8 +297,9 @@ Args:
  editable : text ctrl is editable or readonly
  lw,tw,cw : width of label, textbox, and control (default height `h=22 of widgets)
     """
-    param = property(lambda self: self.__par)
-    bitstep = property(lambda self: self.__bit)
+    @property
+    def param(self):
+        return self.__par
     
     @param.setter
     def param(self, v):
@@ -308,10 +308,6 @@ Args:
         self.__par.knobs.append(self)
         self.update_range()
         self.update_ctrl()
-    
-    @bitstep.setter
-    def bitstep(self, v):
-        self.__bit = int(v) or 1
     
     def __init__(self, parent, par, type='slider', style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22):
         wx.Panel.__init__(self, parent)
@@ -366,7 +362,7 @@ Args:
                 self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKey)
                 self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
             
-            self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnTextMouseWheel)
+            self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             self.text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         else:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_READONLY)
@@ -394,6 +390,7 @@ Args:
         elif type == 'vspin':
             self.ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_VERTICAL)
             self.ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
+            self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'choice':
             self.ctrl = wx.Choice(self, size=(cw,h))
@@ -481,15 +478,13 @@ Args:
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
-        b = self.bitstep
-        self.shift(evt, b if evt.GetWheelRotation()>0 else -b)
+        self.shift(evt, 1 if evt.WheelRotation>0 else -1)
         evt.Skip(False)
     
     def OnCtrlKeyDown(self, evt): #<wx._core.KeyEvent>
-        b = self.bitstep
         key = evt.GetKeyCode()
-        if key == wx.WXK_LEFT: return self.shift(evt, -b)
-        if key == wx.WXK_RIGHT: return self.shift(evt, b)
+        if key == wx.WXK_LEFT: return self.shift(evt, -1)
+        if key == wx.WXK_RIGHT: return self.shift(evt, 1)
         
         def focus(c):
             if isinstance(c, Knob) and c.ctrl.IsEnabled():
@@ -500,10 +495,6 @@ Args:
         i = ls.index(self)
         if key == wx.WXK_DOWN: return any(focus(c) for c in ls[i+1:])
         if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
-    
-    def OnTextMouseWheel(self, evt): #<wx._core.MouseEvent>
-        self.shift(evt, +1 if evt.GetWheelRotation()>0 else -1)
-        evt.Skip(False)
     
     def OnTextKey(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
@@ -575,8 +566,6 @@ class ControlPanel(scrolled.ScrolledPanel):
     """Scrollable control layout panel
     スクロール可能なコントロール配置用パネル
     """
-    layout_groups = property(lambda self: self.__groups)
-    
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
         
@@ -625,6 +614,9 @@ class ControlPanel(scrolled.ScrolledPanel):
     ## --------------------------------
     ## Layout commands and attributes
     ## --------------------------------
+    @property
+    def layout_groups(self):
+        return self.__groups
     
     def is_enabled(self, groupid, pred=all):
         return pred(win.Enabled for win in self.__groups[groupid])
@@ -1146,8 +1138,8 @@ if __name__ == '__main__':
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0,1,1e-4))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
-            self.Q =  LParam('universe', (1,20,3), inf, handler=print, updater=print)
-            self.R =  LParam('lens', (1,0xffff,1), 0x8000, handler=print, updater=print, fmt=hex)
+            self.Q =  LParam('universe', (1,20,1), inf, handler=print, updater=print)
+            self.R =  LParam('lens', (0,0xffff), 0x8000, handler=print, updater=print, fmt=hex)
             self.params = (
                 self.A,
                 self.K,
@@ -1189,8 +1181,8 @@ if __name__ == '__main__':
                 ),
                 row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
             )
-            
-            self.layout_groups[1][1].Disable()
+            for x in self.layout_groups[1][0:2]:
+                x.Disable()
     
     app = wx.App()
     frm = mwx.Frame(None)
