@@ -878,7 +878,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
         except Exception:
             pass
     
-    action.__name__ = str(alias or f.__name__) #.replace('<lambda>', 'lambda'))
+    action.__name__ = str(alias or f.__name__)
     action.__doc__ = doc if doc is not None else f.__doc__
     return action
 

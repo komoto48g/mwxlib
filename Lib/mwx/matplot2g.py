@@ -94,6 +94,13 @@ cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst
     return bins, (a,b), img
 
 
+def _Property(name):
+    return property(
+        lambda self:   getattr(self.parent, name),
+        lambda self,v: setattr(self.parent, name, v),
+        lambda self:   delattr(self.parent, name))
+
+
 class AxesImagePhantom(object):
     """Phantom of frame facade
     
@@ -106,7 +113,57 @@ class AxesImagePhantom(object):
 attributes : optional. misc info about the frame/buffer
   pathname : optional. fullpath of buffer, when bounds to file
 annotation : optional. annotation of the buffer
+
+Args:
+       buf : buffer
+      name : buffer name
+      show : show immediately when loaded
+    aspect : initial aspect ratio <float>
+ localunit : initial localunit
+attributes : additional info:dict
     """
+    def __init__(self, parent, buf, name, show, localunit, aspect=1.0, **attributes):
+        self.__owner = parent
+        self.__name = name
+        self.__localunit = localunit or None # [+] value, no assertion
+        self.__aspect_ratio = aspect
+        self.__attributes = attributes
+        self.__attributes['localunit'] = self.__localunit
+        self.__buf = imbuffer(buf)
+        bins, vlim, img = imconvert(self.__buf,
+                cutoff = self.parent.score_percentile,
+             threshold = self.parent.nbytes_threshold,
+               binning = 1,
+        )
+        self.__bins = bins
+        self.__vlim = vlim
+        self.__art = parent.axes.imshow(img,
+                  cmap = cm.gray,
+                aspect = 'equal',
+         interpolation = 'nearest',
+               visible = show,
+                picker = True,
+        )
+        self.update_extent() # this determines the aspect ratio
+    
+    def __getattr__(self, attr):
+        return getattr(self.__art, attr)
+    
+    def __eq__(self, x):
+        return x is self.__art
+    
+    parent = property(lambda self: self.__owner)
+    artist = property(lambda self: self.__art)
+    name = property(lambda self: self.__name)
+    image = property(lambda self: self.__art.get_array())
+    buffer = property(lambda self: self.__buf)
+    binning = property(lambda self: self.__bins)
+    vlim = property(lambda self: self.__vlim)
+    
+    clim = property(
+        lambda self: self.__art.get_clim(),
+        lambda self,v: self.__art.set_clim(v))
+    
     attributes = property(lambda self: self.__attributes)
     
     pathname = property(
@@ -140,65 +197,9 @@ annotation : optional. annotation of the buffer
                 self.parent.infobar.ShowMessage(v)
             self.parent.handler('frame_updated', self)
     
-    parent = property(lambda self: self.__owner)
-    artist = property(lambda self: self.__art)
-    name = property(lambda self: self.__name)
-    image = property(lambda self: self.__art.get_array())
-    buffer = property(lambda self: self.__buf)
-    binning = property(lambda self: self.__bins)
-    vlim = property(lambda self: self.__vlim)
-    
-    @property
-    def selector(self):
-        return self.__owner.Selector
-    
-    @selector.setter
-    def selector(self, v):
-        self.__owner.Selector = v
-    
-    @selector.deleter
-    def selector(self):
-        del self.__owner.Selector
-    
-    @property
-    def markers(self):
-        return self.__owner.Markers
-    
-    @markers.setter
-    def markers(self, v):
-        self.__owner.Markers = v
-    
-    @markers.deleter
-    def markers(self):
-        del self.__owner.Markers
-    
-    @property
-    def region(self):
-        return self.__owner.Region
-    
-    @region.setter
-    def region(self, v):
-        self.__owner.Region = v
-    
-    @region.deleter
-    def region(self):
-        del self.__owner.Region
-    
-    extent = property(
-        lambda self: self.__art.get_extent(),
-        lambda self,v: self.__art.set_extent(v))
-    
-    clim = property(
-        lambda self: self.__art.get_clim(),
-        lambda self,v: self.__art.set_clim(v))
-    
-    ## cmap = property(
-    ##     lambda self: self.__art.get_cmap(),
-    ##     lambda self,v: self.__art.set_cmap(v))
-    
-    ## interpolation = property(
-    ##     lambda self: self.__art.get_interpolation(),
-    ##     lambda self,v: self.__art.set_interpolation(v))
+    selector = _Property('Selector')
+    markers = _Property('Markers')
+    region = _Property('Region')
     
     @name.setter
     def name(self, v):
@@ -257,44 +258,18 @@ annotation : optional. annotation of the buffer
         """self page number in the parent book"""
         return self.parent.index(self)
     
-    def __init__(self, parent, buf, name, show, localunit, aspect=1.0, **attributes):
-        self.__owner = parent
-        self.__name = name
-        self.__localunit = localunit or None # [+] value, no assertion
-        self.__aspect_ratio = aspect
-        self.__attributes = attributes
-        self.__attributes['localunit'] = self.__localunit
-        self.__buf = imbuffer(buf)
-        self.__bins, self.__vlim, img = imconvert(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-               binning = 1,
-        )
-        self.__art = parent.axes.imshow(img,
-                  cmap = cm.gray,
-                aspect = 'equal',
-         interpolation = 'nearest',
-               visible = show,
-                picker = True,
-        )
-        self.update_extent() # this determines the aspect ratio
-    
-    def __getattr__(self, attr):
-        return getattr(self.__art, attr)
-    
-    def __eq__(self, x):
-        return x is self.__art
-    
     def update_buffer(self, buf=None):
         """Update buffer and the image"""
         if buf is not None:
             self.__buf = imbuffer(buf)
         
-        self.__bins, self.__vlim, img = imconvert(self.__buf,
+        bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
                binning = 1,
         )
+        self.__bins = bins
+        self.__vlim = vlim
         self.__art.set_array(img)
         self.parent.handler('frame_modified', self)
     
@@ -318,16 +293,14 @@ annotation : optional. annotation of the buffer
     
     @roi.setter
     def roi(self, v):
-        self.roi[:] = v # could not broadcast input array into different shape
+        self.roi[:] = v # cannot broadcast input array into different shape
         self.update_buffer()
-        self.parent.draw()
+        ## self.parent.draw()
     
-    ## def xytinside(self, x, y=None):
-    ##     if y is None:
-    ##         x, y = x
-    ##     l,r,b,t = self.__art.get_extent()
-    ##     return (np.all(l <= x) and np.all(x <= r)
-    ##         and np.all(b <= y) and np.all(y <= t))
+    @buffer.setter
+    def buffer(self, v):
+        self.update_buffer(v)
+        ## self.parent.draw()
     
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst, otherwise interpolated"""
@@ -718,7 +691,7 @@ Constants:
             ## 前と異なるユニット長であれば表示を更新する
             if u != self.frame.unit:
                 ## self.update_axis()
-                self.axes.axis(self.frame.extent)
+                self.axes.axis(self.frame.get_extent())
         else:
             self.__index = None
         
@@ -835,7 +808,7 @@ Constants:
     def frame(self):
         self.__delitem__(self.__index)
     
-    selected_frame = frame
+    ## selected_frame = frame
     
     buffer = property(
         lambda self: self.frame and self.frame.buffer,
@@ -843,7 +816,7 @@ Constants:
         lambda self: self.__delitem__(self.__index),
         doc = "current buffer array")
     
-    selected_buffer = buffer
+    ## selected_buffer = buffer
     
     newbuffer = property(
         lambda self: None,
@@ -893,7 +866,7 @@ Constants:
     def update_axis(self):
         """Reset display range (xylim's), update home position"""
         if self.frame:
-            self.axes.axis(self.frame.extent) # reset xlim and ylim
+            self.axes.axis(self.frame.get_extent()) # reset xlim and ylim
             self.update_position()
             self.draw()
     
@@ -1053,7 +1026,7 @@ Constants:
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         
         if self.frame:
-            ## <mpl_toolkits.axes_grid1.axes_divider.AxesDivider>
+            #<mpl_toolkits.axes_grid1.axes_divider.AxesDivider>
             divider = make_axes_locatable(self.axes)
             
             #<matplotlib.colorbar.Colorbar> : matplotlib.figure.Figure.colorbar
@@ -1209,7 +1182,7 @@ Constants:
         """Restrict point (x,y) in image area
         if centred, correct the point to the center of the nearest pixel.
         """
-        l,r,b,t = self.frame.extent
+        l,r,b,t = self.frame.get_extent()
         nx, ny = self.frame.xytopixel(
             x = l if x < l else r if x > r else x,
             y = b if y < b else t if y > t else y,
@@ -1372,7 +1345,7 @@ Constants:
             return np.array((x, y))
     
     def set_current_rect(self, x, y):
-        l,r,b,t = self.frame.extent
+        l,r,b,t = self.frame.get_extent()
         xa, xb = min(x), max(x)
         ya, yb = min(y), max(y)
         if (xa < l or xb > r) or (ya < b or yb > t):

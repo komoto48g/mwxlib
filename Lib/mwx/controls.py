@@ -29,7 +29,7 @@ class Param(object):
     
      name : label
     range : range [min:max:step]
-  min,max : extent of parameter
+  min,max : lower and upper limits
 std_value : standard value (default None)
     value : current value := std_value + offset
    offset : ditto (if std_value is None, this is the same as `value)
@@ -714,8 +714,9 @@ class ControlPanel(scrolled.ScrolledPanel):
     ## --------------------------------
     ## 外部入出力／クリップボード通信
     ## --------------------------------
-    parameters = property(
-        lambda self: [p.value for p in chain(*self.__params)])
+    @property
+    def parameters(self):
+        return [p.value for p in chain(*self.__params)]
     
     def reset_params(self, argv=None, groupid=None, **kwargs):
         if groupid is not None:
@@ -930,6 +931,7 @@ class TextCtrl(wx.Panel):
     Value = property(
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
+    
     value = Value
     
     icon = property(
@@ -976,6 +978,7 @@ class Choice(wx.Panel):
     Value = property(
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
+    
     value = Value
     
     icon = property(

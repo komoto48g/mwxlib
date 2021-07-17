@@ -216,7 +216,7 @@ unloadable : flag to set the layer to be unloadable
     histogram = property(lambda self: self.__parent.histogram)
     selected_view = property(lambda self: self.__parent.selected_view)
     
-    thread = None # worker<Thread>
+    thread = None # worker <Thread>
     
     @property
     def Arts(self):

@@ -558,7 +558,7 @@ class MatplotPanel(wx.Panel):
     
     @property
     def p_event(self):
-        """the last `pressed` event<matplotlib.backend_bases.MouseEvent>"""
+        """the last `pressed` event <matplotlib.backend_bases.MouseEvent>"""
         return self.__isPressed
     
     @p_event.setter
@@ -580,8 +580,8 @@ class MatplotPanel(wx.Panel):
         
       * Data reference method (get_xdata/ydata) should be added
       * scatter はデータ参照メソッドを持たないので，マニュアルで追加する
-      o axes.plot<matplotlib.lines.Line2D>
-      x axes.scatter<matplotlib.collections.PathCollection>
+      o axes.plot <matplotlib.lines.Line2D>
+      x axes.scatter <matplotlib.collections.PathCollection>
         """
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
             return

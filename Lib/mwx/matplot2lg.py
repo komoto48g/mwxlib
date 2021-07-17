@@ -196,7 +196,7 @@ class LinePlot(MatplotPanel):
 class Histogram(LinePlot):
     """LinePlot panel for histogram (Multi-graph : Single-frame)
     
-    graph.frame.image<uint8> (buffer ではない) を参照して，ヒストグラムをプロットする
+    frame.image <uint8> (buffer ではない) を参照して，ヒストグラムをプロットする
     常に整数ビット画像となるので，高速なビンづめ法で計算する
     
    __graphs : list of attached graph <matplot2g.GraphPlot>
