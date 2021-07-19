@@ -28,8 +28,8 @@ from .controls import ControlPanel
 from .matplot2g import GraphPlot
 from .matplot2lg import Histogram
 ## from matplotlib import pyplot as plt
-## from matplotlib import colors
-## from matplotlib import cm
+from matplotlib import colors
+from matplotlib import cm
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
@@ -598,27 +598,33 @@ class Frame(mwx.Frame):
                 lambda v: self.show_pane("histogram", v.IsChecked()),
                 lambda v: v.Check(self.get_pane("histogram").IsShown())),
                 
-            (mwx.ID_(25), "&Invert Color\tCtrl-i", "Invert colormap", wx.ITEM_CHECK,
+            (mwx.ID_(25), "&Invert Color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.__view.invert_cmap(),
                 lambda v: v.Check(self.__view.get_cmap()[-2:] == "_r")),
         ]
-        ## def cmenu(name, i):
-        ##     return (30+i, "&"+name, name, wx.ITEM_CHECK,
-        ##         lambda v: self.__view.set_cmap(name),
-        ##         lambda v: v.Check(self.__view.get_cmap() == name
-        ##                        or self.__view.get_cmap() == name+"_r"),
-        ##     )
-        ## lscm = [c for c in dir(cm) if c[-2:] != "_r"
-        ##         and isinstance(getattr(cm,c), colors.LinearSegmentedColormap)]
-        ## 
-        ## self.menubar["Edit"] += [
-        ##     (mwx.ID_(26), "Default Color", "gray scale", wx.ITEM_CHECK,
-        ##         lambda v: self.__view.set_cmap('gray'),
-        ##         lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
-        ##         
-        ##     ("Standard Color", [cmenu(c,i) for i,c in enumerate(lscm) if c.islower()]),
-        ##     ("+Another Color", [cmenu(c,i) for i,c in enumerate(lscm) if not c.islower()]),
-        ## ]
+        
+        def cmenu(i, name):
+            return (mwx.ID_(30 + i), "&" + name, name, wx.ITEM_CHECK,
+                lambda v: self.__view.set_cmap(name),
+                lambda v: v.Check(self.__view.get_cmap() == name
+                               or self.__view.get_cmap() == name+"_r"),
+            )
+        colours = [c for c in dir(cm) if c[-2:] != "_r"
+                    and isinstance(getattr(cm,c), colors.LinearSegmentedColormap)]
+        
+        self.menubar["Edit"] += [
+            (),
+            ## (mwx.ID_(26), "Default Color", "gray", wx.ITEM_CHECK,
+            ##     lambda v: self.__view.set_cmap('gray'),
+            ##     lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
+            ##     
+            ("Standard Color",
+                [cmenu(i,c) for i,c in enumerate(colours) if c.islower()]),
+                
+            ("Another Color",
+                [cmenu(i,c) for i,c in enumerate(colours) if not c.islower()]),
+        ]
+        
         self.menubar[Layer.menu] = [ # Plugins menu
             (mwx.ID_(100), "&Load Plugs", "Load plugins", Icon('load'),
                 self.OnLoadPlugins),
@@ -1580,9 +1586,9 @@ class Frame(mwx.Frame):
 if __name__ == '__main__':
     app = wx.App()
     frm = Frame(None)
-    frm.handler.debug = 0
-    frm.graph.handler.debug = 0
-    frm.output.handler.debug = 0
+    frm.handler.debug = 4
+    frm.graph.handler.debug = 4
+    frm.output.handler.debug = 4
     
     frm.load_buffer(u"C:/usr/home/workspace/images/sample.bmp")
     frm.load_buffer(u"C:/usr/home/workspace/images/サンプル.bmp")

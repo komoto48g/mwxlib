@@ -19,8 +19,7 @@ from matplotlib import cm
 from PIL import Image
 from PIL import ImageFile
 import numpy as np
-from numpy import pi,nan
-## from scipy import stats
+from numpy import pi, nan
 from scipy import ndimage as ndi
 import cv2
 
@@ -34,7 +33,7 @@ def imbuffer(img):
     
     if isinstance(img, wx.Bitmap):
         img = img.ConvertToImage()
-        
+    
     if isinstance(img, wx.Image):
         w, h = img.GetSize()
         buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
@@ -78,8 +77,6 @@ cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst
     if hasattr(cutoff, '__iter__'):
         a, b = cutoff
     elif cutoff > 0:
-        ## a = stats.scoreatpercentile(src, cutoff)
-        ## b = stats.scoreatpercentile(src, 100-cutoff)
         a = np.percentile(src, cutoff)
         b = np.percentile(src, 100-cutoff)
     else:
@@ -133,7 +130,6 @@ attributes : additional info:dict
         bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
-               binning = 1,
         )
         self.__bins = bins
         self.__vlim = vlim
@@ -266,7 +262,6 @@ attributes : additional info:dict
         bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
-               binning = 1,
         )
         self.__bins = bins
         self.__vlim = vlim
@@ -431,11 +426,11 @@ Constants:
                   'end pressed' : [ None, _F(self.select, j=-1) ], # end-of-frames
                 'alt+a pressed' : [ None, _F(self.fit_to_canvas) ],
                'ctrl+a pressed' : [ None, _F(self.update_axis) ],
-               'ctrl+c pressed' : [ None, lambda v: self.write_buffer_to_clipboard() ],
-               'ctrl+v pressed' : [ None, lambda v: self.read_buffer_from_clipboard() ],
-               'ctrl+k pressed' : [ None, lambda v: self.kill_buffer() ],
-         'ctrl+shift+k pressed' : [ None, lambda v: self.kill_buffer_all() ],
-               'ctrl+i pressed' : [ None, lambda v: self.invert_cmap() ],
+               'ctrl+c pressed' : [ None, _F(self.write_buffer_to_clipboard) ],
+               'ctrl+v pressed' : [ None, _F(self.read_buffer_from_clipboard) ],
+               'ctrl+k pressed' : [ None, _F(self.kill_buffer) ],
+         'ctrl+shift+k pressed' : [ None, _F(self.kill_buffer_all) ],
+               'ctrl+i pressed' : [ None, _F(self.invert_cmap) ],
             },
             NORMAL : {
                  'image_picked' : (NORMAL, self.OnImagePicked),
@@ -802,19 +797,11 @@ Constants:
         if self.__Arts and self.__index is not None:
             return self.__Arts[self.__index]
     
-    @frame.deleter
-    def frame(self):
-        self.__delitem__(self.__index)
-    
-    ## selected_frame = frame
-    
     buffer = property(
         lambda self: self.frame and self.frame.buffer,
         lambda self,v: self.__setitem__(self.__index, v),
         lambda self: self.__delitem__(self.__index),
         doc = "current buffer array")
-    
-    ## selected_buffer = buffer
     
     newbuffer = property(
         lambda self: None,

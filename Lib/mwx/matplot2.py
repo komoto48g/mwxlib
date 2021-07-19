@@ -609,14 +609,16 @@ class MatplotPanel(wx.Panel):
         key = wx_hotkey(evt)
         if key:
             self.handler('{} pressed'.format(key), evt)
-        evt.Skip() # skip to mpl:on_key_press
+        else:
+            evt.Skip() # skip to mpl:on_key_press
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Catch the event that mpl misses by wx"""
         key = wx_hotkey(evt)
         if key:
             self.handler('{} released'.format(key), evt)
-        evt.Skip() # skip to mpl:on_key_release
+        else:
+            evt.Skip() # skip to mpl:on_key_release
     
     def on_key_press(self, evt): #<matplotlib.backend_bases.KeyEvent>
         """mpl key_press_event"""
