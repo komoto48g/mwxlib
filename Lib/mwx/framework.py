@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.42.2"
+__version__ = "0.42.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -50,20 +50,6 @@ def atom(x):
     return not hasattr(x, '__name__')
 
 
-def pdoc(f):
-    """A helper predicates do nothing but printing doc:str"""
-    if not atom(f):
-        doc = inspect.getdoc(f)
-        if doc:
-            print("  --{}".format("-" * 40))
-            print("  + {}".format(typename(f)))
-            head ="     |"
-            for ln in doc.splitlines():
-                print(head, ln)
-            print(head)
-    return True
-
-
 def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
@@ -72,8 +58,15 @@ def instance(*types):
     return _pred
 
 
+def _P(p):
+    if isinstance(p, type):
+        return instance(p)
+    return p
+
+
 def Not(p):
     ## return lambda v: not p(v)
+    p = _P(p)
     def _pred(v):
         return not p(v)
     _pred.__name__ = str("not {}".format(p.__name__))
@@ -82,6 +75,7 @@ def Not(p):
 
 def And(p, q):
     ## return lambda v: p(v) and q(v)
+    p, q = _P(p), _P(q)
     def _pred(v):
         return p(v) and q(v)
     _pred.__name__ = str("{} and {}".format(p.__name__, q.__name__))
@@ -90,6 +84,7 @@ def And(p, q):
 
 def Or(p, q):
     ## return lambda v: p(v) or q(v)
+    p, q = _P(p), _P(q)
     def _pred(v):
         return p(v) or q(v)
     _pred.__name__ = str("{} or {}".format(p.__name__, q.__name__))
@@ -824,9 +819,12 @@ def regulate_key(key):
 ## --------------------------------
 
 def funcall(f, doc=None, alias=None, **kwargs):
-    """Decorator as curried function with `doc (`alias)
-    equiv. (lambda *v: f`alias<'doc'>(*v, **kwargs))
+    """Decorator as curried function
+    equiv. (lambda *v: f`alias<doc:str>(*v, **kwargs))
     """
+    assert(isinstance(doc, (LITERAL_TYPE, type(None))))
+    assert(isinstance(alias, (LITERAL_TYPE, type(None))))
+    
     @wraps(f)
     def _Act(*v):
         return f(*v, **kwargs) # ufunc with one event args
@@ -879,7 +877,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
             pass
     
     action.__name__ = str(alias or f.__name__)
-    action.__doc__ = doc if doc is not None else f.__doc__
+    action.__doc__ = doc or f.__doc__
     return action
 
 
@@ -1080,7 +1078,8 @@ def ID_(id): # Free ID - どこで使っているか検索できるように．
     return id + wx.ID_HIGHEST # not to use [ID_LOWEST(4999):ID_HIGHEST(5999)]
 
 
-def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
+## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
+def pack(self, *args, **kwargs):
     """Do layout
   usage:
     self.SetSizer(
@@ -1097,6 +1096,7 @@ def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
           - ((-1,-1), 1, wx.EXPAND) -> stretched space
           - (-1,-1) -> padding space
           - None -> phantom
+ **kwargs : 
    orient : HORIZONTAL or VERTICAL
     style : (proportion, flag, border)
             flag-expansion -> EXPAND
@@ -1105,8 +1105,9 @@ def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     label : label of StaticBox
     """
-    if style is None:
-        style = (0, wx.EXPAND|wx.ALL, 0)
+    orient = kwargs.get("orient") or wx.HORIZONTAL
+    style = kwargs.get("style") or (0, wx.EXPAND|wx.ALL, 0)
+    label = kwargs.get("label")
     
     if label is not None:
         box = wx.StaticBox(self, -1, label)

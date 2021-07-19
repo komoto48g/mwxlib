@@ -160,7 +160,7 @@ Args:
         elif v == 'inf': v = inf
         elif isinstance(v, LITERAL_TYPE):
             v = self.__eval(v.replace(',', '')) # eliminates commas(,)
-        
+            ## v = self.__eval(v)
         self.set_value(v)
         if backcall:
             self.__callback('control', self)

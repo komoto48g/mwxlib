@@ -376,36 +376,35 @@ class Graph(GraphPlot):
         self.__parent = parent
         self.__loader = loader or parent
         
+        _F = mwx.funcall
+        
         self.handler.append({ #<Graph handler>
             None : {
-                   'f5 pressed' : [ None, self.refresh ],
-                  'frame_shown' : [ None, self.update_infobar ],
-              'shift+a pressed' : [ None, self.toggle_infobar ],
-             'canvas_focus_set' : [ None, lambda v: self.loader.select_view(self) ],
+                   'f5 pressed' : [ None, _F(self.refresh) ],
+                  'frame_shown' : [ None, _F(self.update_infobar) ],
+              'shift+a pressed' : [ None, _F(self.toggle_infobar) ],
+             'canvas_focus_set' : [ None, _F(self.loader.select_view, view=self) ],
             },
         })
         ## ドロップターゲットを許可する
         self.SetDropTarget(MyFileDropLoader(self, loader=self.loader))
     
-    def refresh(self, evt):
+    def refresh(self):
         if self.frame:
             self.frame.update_buffer()
             self.draw()
     
-    def toggle_infobar(self, evt):
+    def toggle_infobar(self):
         """Toggle infobar (frame.annotation)"""
-        if self.frame:
-            if self.infobar.IsShown():
-                self.infobar.Dismiss()
-            else:
-                self.infobar.ShowMessage(str(self.frame.annotation))
-                ## wx.CallLater(4000, self.infobar.Dismiss) # dismiss in time automatically
+        if self.infobar.IsShown():
+            self.infobar.Dismiss()
+        elif self.frame:
+            self.infobar.ShowMessage(str(self.frame.annotation))
     
     def update_infobar(self, frame):
         """Show infobar (frame.annotation)"""
-        if self.frame:
-            if self.infobar.IsShown():
-                self.infobar.ShowMessage(str(self.frame.annotation))
+        if self.infobar.IsShown():
+            self.infobar.ShowMessage(str(frame.annotation))
     
     def get_frame_visible(self):
         if self.frame:
@@ -1600,8 +1599,13 @@ if __name__ == '__main__':
     
     ## 次の二つは別モジュール
     ## frm.load_plug('templates.template.py', show=1)
+    ## frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4, force=0)
+    
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
-    ## frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4, force=0)
+    
+    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
+    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
+    
     frm.Show()
     app.MainLoop()

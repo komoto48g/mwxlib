@@ -401,7 +401,7 @@ Constants:
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        _P = mwx.funcall
+        _F = mwx.funcall
         
         self.handler.update({ #<GraphPlot handler>
             None : {
@@ -427,10 +427,10 @@ Constants:
              'alt+down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],   # page-up
              'pagedown pressed' : [ None, self.OnPageDown ], # page-down
-                 'home pressed' : [ None, _P(self.select, j=0) ],  # beggining-of-frames
-                  'end pressed' : [ None, _P(self.select, j=-1) ], # end-of-frames
-                'alt+a pressed' : [ None, _P(self.fit_to_canvas) ],
-               'ctrl+a pressed' : [ None, _P(self.update_axis) ],
+                 'home pressed' : [ None, _F(self.select, j=0) ],  # beggining-of-frames
+                  'end pressed' : [ None, _F(self.select, j=-1) ], # end-of-frames
+                'alt+a pressed' : [ None, _F(self.fit_to_canvas) ],
+               'ctrl+a pressed' : [ None, _F(self.update_axis) ],
                'ctrl+c pressed' : [ None, lambda v: self.write_buffer_to_clipboard() ],
                'ctrl+v pressed' : [ None, lambda v: self.read_buffer_from_clipboard() ],
                'ctrl+k pressed' : [ None, lambda v: self.kill_buffer() ],
@@ -557,11 +557,9 @@ Constants:
             },
         })
         
-        _P = mwx.funcall
-        
         self.handler.append({ #<GraphPlot handler>
             None : {
-             'canvas_focus_set' : [ None, _P(self.draw), _P(self.writeln) ],
+             'canvas_focus_set' : [ None, _F(self.draw), _F(self.writeln) ],
           'canvas_focus_killed' : [ None, self.on_picker_lock ],
             },
         })
