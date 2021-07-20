@@ -607,7 +607,6 @@ class ControlPanel(scrolled.ScrolledPanel):
                             cc.Show(not cc.IsShown())
                         self.Layout()
                         self.SendSizeEvent()
-                        self.Refresh()
                         break
         evt.Skip()
     

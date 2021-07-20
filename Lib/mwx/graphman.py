@@ -844,11 +844,15 @@ class Frame(mwx.Frame):
         ## evt.Skip() # cause the same event call twice?
     
     ## --------------------------------
-    ## plugins(layer) interface
+    ## Plugin (Layer) interface
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
     
-    __new_ID_ = 1001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
+    @property
+    def plugs(self):
+        return OrderedDict((k, v.__plug__) for k,v in self.plugins.items())
+    
+    __new_ID_ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
     
     def require(self, name):
         """Get named plug window
@@ -989,7 +993,7 @@ class Frame(mwx.Frame):
                         raise NameError("Notebook name must not be the same as any other plugins")
                     
                     nb.AddPage(plug, caption)
-                    show = pane.IsShown()
+                    show = show or pane.IsShown()
                 else:
                     size = plug.GetSize() + (2,30)
                     nb = aui.AuiNotebook(self,
