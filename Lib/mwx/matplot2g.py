@@ -1032,7 +1032,7 @@ Constants:
                 cbar.draw_all()
                 self.canvas.draw_idle()
         else:
-            self['*dummy*'] = np.rand(2,2) # dummy
+            self['*dummy*'] = np.random.rand(2,2) # dummy
             self.create_colorbar()
             del self['*dummy*']
     
