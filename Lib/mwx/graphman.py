@@ -110,7 +110,8 @@ class Thread(object):
         m = inspect.getmodule(f)
         
         if not self.is_active:
-            raise AssertionError("The thread is not running (cannot enter {})".format(f.f_code.co_name))
+            raise AssertionError("The thread is not running. "
+                                 "(cannot enter {})".format(f.f_code.co_name))
         
         event = "{}:{}:enter".format(m.__name__, f.f_code.co_name)
         self.owner.handler(event, self)
@@ -556,10 +557,10 @@ class Frame(mwx.Frame):
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
-            (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import buffers and attributes", Icon('open'),
+            (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
                 lambda v: self.import_index()),
                 
-            (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export buffers and attributes", Icon('saveas'),
+            (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
                 lambda v: self.export_index(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
             (),
@@ -864,7 +865,7 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if plug is None:
             try:
-                ret = self.load_plug(name) # スレッド中に AuiPane の表示がおかしくなる ?
+                self.load_plug(name) # スレッド中に AuiPane の表示がおかしくなる ?
             except Exception:
                 return # ignore load failure
             return self.get_plug(name)
@@ -949,7 +950,7 @@ class Frame(mwx.Frame):
             print(self.statusbar("\b failed to import: {}".format(e)))
             return False
         
-        except AttributeError as e:
+        except AttributeError:
             wx.CallAfter(wx.MessageBox, traceback.format_exc(),
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
             traceback.print_exc()
@@ -1058,7 +1059,7 @@ class Frame(mwx.Frame):
             
             self.statusbar("\b done.")
             
-        except Exception as e:
+        except Exception:
             wx.CallAfter(wx.MessageBox, traceback.format_exc(),
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
             traceback.print_exc()
@@ -1097,7 +1098,7 @@ class Frame(mwx.Frame):
                 self._mgr.Update()
                 nb.Destroy()
             
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             return False
     
