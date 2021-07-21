@@ -46,11 +46,12 @@ LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 class Thread(object):
     """Thread for graphman.Layer
     
-    The thread `worker runs the given method `target which is bound to `owner object.
-    The `target must be a method bound to an instance (__self__) of Layer, not staticmethod.
+    The worker:thread runs the given target:method which is bound to owner:object.
+    The target must be a method bound to an instance (__self__) of Layer, not staticmethod.
+    The result retains the last return value.
     
     is_active : flag of being kept going
-                Check this to see the thread is running and intended being kept going
+                Check this to see the worker is running and intended being kept going
     is_running : flag of being running now
                  Watch this to verify the worker is alive after it has been inactivated
     """
@@ -126,13 +127,21 @@ class Thread(object):
         event = "{}:{}:exit".format(m.__name__, f.f_code.co_name)
         self.owner.handler(event, self)
     
-    def __call__(self, f, *args, **kwargs):
-        """Decorator of thread starter function
-        Note: The event args *v are ignored when decorated by this call.
-        """
-        @wraps(f)
+    ## def __call__(self, f, *args, **kwargs):
+    ##     """Decorator of thread starter function
+    ##     Note: The event args *v are ignored when decorated by this call.
+    ##     """
+    ##     @wraps(f)
+    ##     def _f(*v):
+    ##         return self.Start(f, *(v+args), **kwargs)
+    ##     _f.__name__ = f.__name__
+    ##     _f.__doc__ = f.__doc__
+    ##     return _f
+    
+    def __call__(self, f, **kwargs):
+        """Decorator of thread starter function"""
         def _f(*v):
-            return self.Start(f, *(v+args), **kwargs)
+            return self.Start(mwx.funcall(f, **kwargs), *v)
         _f.__name__ = f.__name__
         _f.__doc__ = f.__doc__
         return _f
@@ -259,8 +268,8 @@ unloadable : flag to set the layer to be unloadable
         
         self.handler.update({ #<graphman.Layer handler>
             None : {
-                 'thread_begin' : [ None ], # thread begins processing
-                   'thread_end' : [ None ], # thread closed processing
+                 'thread_begin' : [ None ], # begin processing
+                   'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
                   'pane_loaded' : [ None ], # Called after Init
