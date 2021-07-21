@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 import traceback
 import sys
-import os
 import wx
 from . import framework as mwx
 from .matplot2 import MatplotPanel
@@ -410,14 +409,15 @@ Constants:
                 'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
                 'frame_cmapped' : [ None ], # cmap
                     'line_draw' : [ None ],
-                   'line_drawn' : [ None ],
-                 'line_removed' : [ None ],
+                   'line_drawn' : [ None, _F(self.draw) ],
+                 'line_removed' : [ None, _F(self.draw) ],
                     'mark_draw' : [ None ],
-                   'mark_drawn' : [ None ],
-                 'mark_removed' : [ None ],
+                   'mark_drawn' : [ None, _F(self.draw) ],
+                 'mark_removed' : [ None, _F(self.draw) ],
                   'region_draw' : [ None ],
-                 'region_drawn' : [ None ],
-               'region_removed' : [ None ],
+                 'region_drawn' : [ None, _F(self.draw) ],
+               'region_removed' : [ None, _F(self.draw) ],
+                                
                'alt+up pressed' : [ None, self.OnPageUp ],
              'alt+down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],   # page-up

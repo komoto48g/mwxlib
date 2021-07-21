@@ -393,7 +393,7 @@ class MatplotPanel(wx.Panel):
             ## self.canvas.restore_region(bg)
             self.axes.draw_artist(art)
             self.canvas.blit(art.get_clip_box())
-            self.canvas.draw_idle()
+            ## self.canvas.draw_idle()
         elif art is None:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
