@@ -2871,8 +2871,7 @@ Flaky nutshell:
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
-        ## builtins.pp = pprint
-        builtins.pp = lambda x: pprint(x, width=pp.width, compact=True); pp.width=200
+        builtins.pp = pprint
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
@@ -2884,6 +2883,12 @@ Flaky nutshell:
             return (inspect.getsourcefile(object),
                     inspect.getsourcelines(object)[1])
         builtins.fileno = fileno
+        
+        def put(x):
+            pprint(x, width=put.width, compact=put.compact)
+        put.width = 200
+        put.compact = True
+        builtins.put = put
     
     def on_activated(self, shell):
         """Called when activated"""
