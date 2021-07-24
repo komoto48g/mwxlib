@@ -350,7 +350,7 @@ class Clipboard:
             wx.TheClipboard.GetData(do)
             bmp = do.GetBitmap()
             img = bmp.ConvertToImage()
-            buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
+            buf = np.asarray(img.GetDataBuffer())
             w, h = img.GetSize()
             return buf.reshape(h, w, 3).copy() # need copy to prevent memory leaaks?
         finally:
@@ -359,12 +359,11 @@ class Clipboard:
     @staticmethod
     def imwrite(buf):
         try:
-            if buf.ndim < 3:
-                buf = np.array([buf] * 3).transpose((1,2,0)) # convert to gray bitmap
             h, w = buf.shape[:2]
-            ## img = wx.Image(w, h, buf.tostring())
-            img = wx.Image(w, h)
-            img.SetData(buf.tostring())
+            if buf.ndim < 3:
+                ## buf = np.array([buf] * 3).transpose((1,2,0)) # convert to gray bitmap
+                buf = buf.repeat(3, axis=1)
+            img = wx.Image(w, h, buf.tobytes())
             bmp = img.ConvertToBitmap()
             do = wx.BitmapDataObject(bmp)
             wx.TheClipboard.Open() or print("- Unable to open the clipboard")
@@ -1001,6 +1000,7 @@ Constants:
                 self.load(Clipboard.imread())
         except Exception as e:
             self.message("- No data in clipboard: {}".format(e))
+            traceback.print_exc()
     
     def create_colorbar(self):
         """make colorbar
