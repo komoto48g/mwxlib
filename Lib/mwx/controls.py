@@ -415,10 +415,11 @@ Args:
         self.update_range()
         self.update_ctrl()
         
-        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
-        def destroy(evt):
-            self.__par.knobs.remove(self) # パラメータの関連付けを解除する
-            evt.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+    
+    def OnDestroy(self, evt):
+        self.__par.knobs.remove(self) # パラメータの関連付けを解除する
+        evt.Skip()
     
     def update_range(self):
         v = self.__par
@@ -588,12 +589,13 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: mwx.Menu.Popup(self, self.Menu))
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
         
-        @mwx.connect(self, wx.EVT_SCROLLWIN_THUMBRELEASE) #<wx._core.ScrollWinEvent>
-        @mwx.connect(self, wx.EVT_MOUSEWHEEL)
-        @mwx.connect(self, wx.EVT_LEFT_DOWN)
-        def recalc_layout(evt):
-            self.Layout()
-            evt.Skip()
+        self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.recalc_layout)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.recalc_layout)
+        self.Bind(wx.EVT_LEFT_DOWN, self.recalc_layout)
+    
+    def recalc_layout(self, evt): #<wx._core.ScrollWinEvent>
+        self.Layout()
+        evt.Skip()
     
     def OnToggleFold(self, evt): #<wx._core.MouseEvent>
         x, y = evt.Position

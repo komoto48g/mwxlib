@@ -13,7 +13,7 @@ from .framework import SSM, FSM
 from .framework import pack
 from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, InspectorFrame, Editor, Nautilus
-from .framework import funcall, postcall, connect, disconnect # curry spices
+from .framework import funcall, postcall # curry spices
 from .framework import deb
 
 ## widgets

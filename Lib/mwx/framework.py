@@ -894,19 +894,6 @@ def postcall(f):
     return _f
 
 
-def connect(obj, event, f=None, **kwargs):
-    """An event binder: equiv. obj.Bind(event, f) -> f"""
-    if not f:
-        return lambda f: connect(obj, event, f, **kwargs)
-    obj.Bind(event, lambda v: f(v, **kwargs))
-    return f
-
-
-def disconnect(obj, event, f=None):
-    """An event unbinder: equiv. obj.Unbind(event, f) -> f"""
-    return obj.Unbind(event, handler=f)
-
-
 def skip(v):
     v.Skip()
 
@@ -1405,7 +1392,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         
-        @connect(self, wx.EVT_TIMER)
+        @partial(self.Bind, wx.EVT_TIMER)
         def on_timer(evt):
             self.statusbar.write(time.strftime('%m/%d %H:%M'), -1)
         
@@ -2443,7 +2430,7 @@ Flaky nutshell:
         ## 
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
-        @connect(self.parent, wx.EVT_ACTIVATE)
+        @partial(self.parent.Bind, wx.EVT_ACTIVATE)
         def on_activate(v):
             self.handler('shell_activated' if v.Active else 'shell_inactivated', self)
             v.Skip()

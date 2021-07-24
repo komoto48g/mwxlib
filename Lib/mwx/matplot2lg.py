@@ -221,11 +221,11 @@ class Histogram(LinePlot):
         }
         self.modeline.Show(0)
         
-        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
             for graph in self.__graphs:
                 self.detach(graph)
             evt.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
     
     def clear(self):
         LinePlot.clear(self)
@@ -438,11 +438,11 @@ class LineProfile(LinePlot):
                 lambda v: v.Check(not self.__logicp)),
         ]
         
-        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
             for graph in self.__graphs:
                 self.detach(graph)
             evt.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
     
     def clear(self):
         LinePlot.clear(self)

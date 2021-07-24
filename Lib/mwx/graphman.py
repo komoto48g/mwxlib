@@ -8,6 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from collections import OrderedDict
+from functools import partial
 from functools import wraps
 import subprocess
 import threading
@@ -303,7 +304,7 @@ unloadable : flag to set the layer to be unloadable
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
         
-        @mwx.connect(self, wx.EVT_WINDOW_DESTROY)
+        @partial(self.Bind, wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
             if self.thread and self.thread.is_active:
                 self.thread.Stop()
@@ -1005,17 +1006,17 @@ class Frame(mwx.Frame):
                     self._mgr.AddPane(nb, aui.AuiPaneInfo()
                         .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
                     
-                    @mwx.connect(nb, aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN)
+                    @partial(nb.Bind, aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN)
                     def show_menu(evt): #<wx._aui.AuiNotebookEvent>
                         plug = nb.GetPage(evt.Selection)
                         mwx.Menu.Popup(nb, plug.Menu)
                     
-                    @mwx.connect(nb, aui.EVT_AUINOTEBOOK_PAGE_CHANGED)
+                    @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGED)
                     def on_page_changed(evt): #<wx._aui.AuiNotebookEvent>
                         nb.CurrentPage.handler('pane_shown')
                         evt.Skip()
                     
-                    @mwx.connect(nb, aui.EVT_AUINOTEBOOK_PAGE_CHANGING)
+                    @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGING)
                     def on_page_changing(evt): #<wx._aui.AuiNotebookEvent>
                         plug = nb.GetPage(evt.Selection)
                         if nb.CurrentPage:
