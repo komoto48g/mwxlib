@@ -1145,7 +1145,7 @@ class TreeList(object):
     
     def __getitem__(self, k):
         if isinstance(k, LITERAL_TYPE):
-            return self.getf(self.__items, k) or []
+            return self.getf(self.__items, k)
         return self.__items.__getitem__(k)
     
     def __setitem__(self, k, v):

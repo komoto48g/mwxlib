@@ -127,17 +127,6 @@ class Thread(object):
         event = "{}:{}:exit".format(m.__name__, f.f_code.co_name)
         self.owner.handler(event, self)
     
-    ## def __call__(self, f, *args, **kwargs):
-    ##     """Decorator of thread starter function
-    ##     Note: The event args *v are ignored when decorated by this call.
-    ##     """
-    ##     @wraps(f)
-    ##     def _f(*v):
-    ##         return self.Start(f, *(v+args), **kwargs)
-    ##     _f.__name__ = f.__name__
-    ##     _f.__doc__ = f.__doc__
-    ##     return _f
-    
     def __call__(self, f, **kwargs):
         """Decorator of thread starter function"""
         def _f(*v):
@@ -1063,7 +1052,8 @@ class Frame(mwx.Frame):
                     lambda v: self.show_pane(name, v.IsChecked()),
                     lambda v: v.Check(self.get_pane(name).IsShown()),
                 )
-                self.menubar[plug.menu] += [plug.__Menu_item]
+                menu = self.menubar[plug.menu] or []
+                self.menubar[plug.menu] = menu + [plug.__Menu_item]
                 self.menubar.update(plug.menu)
             
             self.statusbar("\b done.")
