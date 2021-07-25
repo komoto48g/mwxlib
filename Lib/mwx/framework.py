@@ -54,7 +54,15 @@ def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
         return isinstance(v, types)
-    _pred.__name__ = str(','.join(p.__name__ for p in types))
+    _pred.__name__ = str("instance of " + ','.join(p.__name__ for p in types))
+    return _pred
+
+
+def subclass(*types):
+    ## return lambda v: issubclass(v, types)
+    def _pred(v):
+        return issubclass(v, types)
+    _pred.__name__ = str("subclass of " + ','.join(p.__name__ for p in types))
     return _pred
 
 
