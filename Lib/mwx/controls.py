@@ -27,28 +27,29 @@ LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 class Param(object):
     """Standard Parameter
     
-     name : label
-    range : range [min:max:step]
-  min,max : lower and upper limits
-std_value : standard value (default None)
-    value : current value := std_value + offset
-   offset : ditto (if std_value is None, this is the same as `value)
-    knobs : knob list
-    index : knob index -> reset -> callback
-    check : knob tick (undefined)
-      tip : doc:str also shown as a tooltip
- callback : single state machine that handles following events:
-        control -> when `index changed by knobs or reset, calls handler
-        check -> when `check ticks on/off, calls updater
-        overflow -> when `value overflows
-        underflow -> when `value underflows
+Attributes:
+       name : label
+      range : range [min:max:step]
+    min,max : lower and upper limits
+  std_value : standard value (default None)
+      value : current value := std_value + offset
+     offset : ditto (if std_value is None, this is the same as `value)
+      knobs : knob list
+      index : knob index -> reset -> callback
+      check : knob tick (undefined)
+        tip : doc:str also shown as a tooltip
+   callback : single state machine that handles following events:
+            control -> when `index changed by knobs or reset (call handler)
+            check -> when `check ticks on/off (call updater)
+            overflow -> when `value overflows
+            underflow -> when `value underflows
 
 Args:
-      fmt : text formatter or format str (default is '%g')
-            `hex` specifies hexadecimal format/eval
-  handler : called when control changed
-  updater : called when check changed
-      tip : tooltip:str shown on the associated knobs
+        fmt : text formatter or format str (default is '%g')
+              `hex` specifies hexadecimal format/eval
+    handler : called when control changed
+    updater : called when check changed
+        tip : tooltip:str shown on the associated knobs
     """
     def __init__(self, name, range=None, value=None,
         fmt=None, handler=None, updater=None, tip=None):
@@ -282,9 +283,10 @@ class Knob(wx.Panel):
     
     In addition to direct key input to the textctrl,
     [up][down][wheelup][wheeldown] keys can be used,
-      with modifiers S- 2x, C- 16x, and M- 256x steps.
+    with modifiers S- 2x, C- 16x, and M- 256x steps.
     [Mbutton] resets to the std. value if it exists.
-    
+
+Attributes:
     param : A param <Param> object referred from knobs
 
 Args:
@@ -589,11 +591,11 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: mwx.Menu.Popup(self, self.Menu))
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
         
-        self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.recalc_layout)
-        self.Bind(wx.EVT_MOUSEWHEEL, self.recalc_layout)
-        self.Bind(wx.EVT_LEFT_DOWN, self.recalc_layout)
+        self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnRecalcLayout)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnRecalcLayout)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnRecalcLayout)
     
-    def recalc_layout(self, evt): #<wx._core.ScrollWinEvent>
+    def OnRecalcLayout(self, evt): #<wx._core.ScrollWinEvent>
         self.Layout()
         evt.Skip()
     
@@ -829,11 +831,20 @@ def Icon(key, size=None):
 Icon.provided_arts = provided_arts
 
 Icon.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
-                            if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
+                          if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
 
 
 class Button(pb.PlateButton):
     """Flat button
+    
+Attributes:
+       icon : key:str for Icon
+Args:
+      label : button label
+    handler : event handler when the button is pressed
+       icon : key:str for button icon
+        tip : tip:str displayed on the button
+   **kwargs : keywords for wx.lib.platebtn.PlateButton
     """
     @property
     def icon(self):
@@ -870,6 +881,15 @@ class Button(pb.PlateButton):
 
 class ToggleButton(wx.ToggleButton):
     """Togglable button
+    
+Attributes:
+       icon : key:str for Icon
+Args:
+      label : button label
+    handler : event handler when the button is pressed
+       icon : key:str for button icon
+        tip : tip:str displayed on the button
+   **kwargs : keywords for wx.ToggleButton
     
     Note: To get the status, check Value or event.GetInt or event.IsChecked.
     """
@@ -920,6 +940,19 @@ class ToggleButton(wx.ToggleButton):
 
 class TextCtrl(wx.Panel):
     """Text control panel
+    
+Attributes:
+      Value : textctrl value:str
+       icon : Icon key:str
+Args:
+      label : button label
+    handler : event handler when text is entered
+    updater : event handler when the button is pressed
+       icon : key:str for button icon
+        tip : tip:str displayed on the button
+   readonly : flag:bool for wx.TE_READONLY
+   **kwargs : keywords for wx.TextCtrl
+        e.g., value:str
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
@@ -932,7 +965,7 @@ class TextCtrl(wx.Panel):
         lambda self,v: Button.icon.fset(self.btn, v))
     
     def __init__(self, parent, label='', handler=None, updater=None,
-                icon=None, tip='', readonly=0, **kwargs):
+                    icon=None, tip='', readonly=0, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
@@ -961,6 +994,21 @@ class TextCtrl(wx.Panel):
 class Choice(wx.Panel):
     """Editable Choice (ComboBox) control panel
     
+Attributes:
+  Selection : combobox selection:int
+      Value : combobox value:str
+       icon : Icon key:str
+Args:
+      label : button label
+    handler : event handler when text is entered or item is selected
+    updater : event handler when the button is pressed
+       icon : key:str for button icon
+        tip : tip:str displayed on the button
+   readonly : flag:bool for wx.TE_READONLY
+  selection : initial selection:int for combobox
+   **kwargs : keywords for wx.TextCtrl
+        e.g., choices:list
+    
     Note: If the input item is not found in the choices,
           it will be added to the list (only if readonly=0)
     """
@@ -979,7 +1027,7 @@ class Choice(wx.Panel):
         lambda self,v: Button.icon.fset(self.btn, v))
     
     def __init__(self, parent, label='', handler=None, updater=None,
-                icon=None, tip='', readonly=0, selection=None, **kwargs):
+                    icon=None, tip='', readonly=0, selection=None, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
