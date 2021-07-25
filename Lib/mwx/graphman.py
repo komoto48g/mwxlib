@@ -130,10 +130,9 @@ class Thread(object):
     
     def __call__(self, f, **kwargs):
         """Decorator of thread starter function"""
+        @wraps(f)
         def _f(*v):
             return self.Start(mwx.funcall(f, **kwargs), *v)
-        _f.__name__ = f.__name__
-        _f.__doc__ = f.__doc__
         return _f
     
     def Start(self, f, *args, **kwargs):

@@ -145,7 +145,6 @@ class Gplot(object):
         return subprocess.Popen("notepad {}".format(self.startupfile))
 
 
-
 class GplotFrame(mwx.Frame):
     """gnuplot プロット専用のフレーム
     

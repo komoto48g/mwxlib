@@ -889,8 +889,6 @@ def postcall(f):
     @wraps(f)
     def _f(*args, **kwargs):
         wx.CallAfter(f, *args, **kwargs)
-    _f.__name__ = f.__name__
-    _f.__doc__ = f.__doc__
     return _f
 
 
@@ -3580,7 +3578,6 @@ def filling(target=None, **kwargs):
     frame.filling.text.WrapMode = 0
     frame.Show()
     return frame
-
 
 
 if __name__ == '__main__':

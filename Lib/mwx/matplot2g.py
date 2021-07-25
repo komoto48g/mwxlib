@@ -1684,7 +1684,6 @@ Constants:
             self.next_mark(-1)
 
 
-
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
     
