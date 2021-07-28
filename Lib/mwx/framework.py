@@ -141,9 +141,9 @@ def Dir(obj):
 def getargspec(f):
     try:
         args, _varargs, _keywords, defaults,\
-          _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) #>= PY3
+          _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) # PY3
     except AttributeError:
-        args, _varargs, _keywords, defaults = inspect.getargspec(f) #<= PY2
+        args, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
     return args, _varargs, _keywords, defaults
 
 
@@ -151,8 +151,8 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
     """Put a list of objects having expression `rexpr in `root
     """
     name = alias or typename(root)
-    rexpr = (rexpr.replace('\\a','[a-z0-9]')  # \a: identifier chars (custom rule)
-                  .replace('\\A','[A-Z0-9]')) # \A: (start of the string) から変更
+    rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
+                  .replace('\\A','[A-Z0-9]')) #\A: 
     
     if isinstance(pred, LITERAL_TYPE):
         pred = eval(predicate(pred) or 'None', None, locals)
@@ -197,22 +197,27 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
 
 
 def typename(root, docp=False, qualp=False):
-    if hasattr(root, '__name__'): # class, module, method, function etc.
+    """Typename of the root object
+
+    retval-> module:root<doc>       when root is callable and qualp=False
+             module:class.root<doc> when root is callable and qualp=True
+             module:class<doc>      when root is a class or an instance of a class
+             repr<root>             otherwise
+    """
+    if hasattr(root, '__name__'): # class, module, method, function, etc.
         if qualp:
-            ## if hasattr(root, '__qualname__'): # PY3 format
             try:
-                name = root.__qualname__
-            ## elif hasattr(root, 'im_class'): # PY2 format
+                name = root.__qualname__ # PY3 format
             except AttributeError:
-                name = root.im_class.__name__ + '.' + root.__name__
+                name = root.im_class.__name__ + '.' + root.__name__ # PY2 format
         else:
             name = root.__name__
         
-        if hasattr(root, '__module__'): # module:callable
-            if root.__module__ not in ('__main__', 'mwx.framework', None):
+        if hasattr(root, '__module__'): # module:name
+            if root.__module__ not in (None, '__main__', 'mwx.framework'):
                 name = root.__module__ + ':' + name
         
-    elif hasattr(root, '__module__'): # atom -> module.class (class-object)
+    elif hasattr(root, '__module__'): # atom -> module.class
         name = root.__module__ + '.' + root.__class__.__name__
         
     else:
@@ -1074,7 +1079,8 @@ def ID_(id): # Free ID - どこで使っているか検索できるように．
 ## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
 def pack(self, *args, **kwargs):
     """Do layout
-  usage:
+
+Usage:
     self.SetSizer(
         pack(self,
             (label, 0, wx.ALIGN_CENTER|wx.LEFT, 4),
@@ -1501,11 +1507,11 @@ class InspectorFrame(MiniFrame):
        Help : temporary buffer for help
         Log : logging buffer
     History : shell history (read only)
-    
+
 Prefix:
         C-x : extention map for the frame
         C-c : spefific map for the editors and the shell
-        
+
 Global bindings:
         C-f : Find text
         M-f : Filter text
@@ -1690,13 +1696,17 @@ Global bindings:
             return win
         return self.shell # default editor
     
+    def apply_word3_filter(self, win, pos, length):
+        if wx.VERSION >= (4,1,0):
+            win.StartStyling(pos)
+        else:
+            win.StartStyling(pos, 0x1f)
+        win.SetStyling(length, stc.STC_P_WORD3)
+    
+    @postcall
     def OnFilterSetStyling(self, evt):
         win = self.current_editor
-        if wx.VERSION >= (4,1,0):
-            win.StartStyling(0)
-        else:
-            win.StartStyling(0, 0x1f)
-        win.SetStyling(0, stc.STC_P_WORD3) # is dummy selection necessary?
+        self.apply_word3_filter(win, 0, 0)
     
     @postcall
     def OnFilterText(self, evt):
@@ -1704,15 +1714,14 @@ Global bindings:
         word = win.topic_at_caret.encode()
         if word:
             text = win.GetText().encode() # for multi-byte string
-            pos = text.find(word)
+            pos = 0
             n = 0
-            while pos in range(win.TextLength):
-                if wx.VERSION >= (4,1,0):
-                    win.StartStyling(pos)
-                else:
-                    win.StartStyling(pos, 0x1f)
-                win.SetStyling(len(word), stc.STC_P_WORD3)
-                pos = text.find(word, pos+1)
+            while 1:
+                pos = text.find(word, pos)
+                if pos < 0:
+                    break
+                self.apply_word3_filter(win, pos, len(word))
+                pos += 1
                 n += 1
             self.findData.FindString = word
             self.message("{}: {} found".format(word.decode(), n))
@@ -2342,11 +2351,11 @@ This module is based on the implementation of wx.py.shell.
     To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
     The original key bindings are mapped in esc-map, i.e.,
     e.g., if you want to do 'select-all', type [ESC C-a], not [C-a]
-    
+
 The most convenient way to see the details of keymaps on the shell:
     >>> self.shell.handler @p
      or self.shell.handler @filling
-    
+
 Flaky nutshell:
     Half-baked by Patrik K. O'Brien,
     and the other half by K. O'moto ;)

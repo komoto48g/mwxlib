@@ -129,7 +129,7 @@ To Divers:
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
         """,
-        size=(854,360))
+        size=(854,480))
 
 
 if __name__ == '__main__':
