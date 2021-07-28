@@ -1086,14 +1086,12 @@ class Indicator(wx.Panel):
     
     def __init__(self, parent, value=0, tip='', size=(-1,-1), **kwargs):
         s = self.spacing
-        size = (max(s*6, size[0]), # set minimum size:(6s,2s)
-                max(s*2+1, size[1]))
+        size = np.maximum((s*6, s*2+1), size) # set minimum size:(6s,2s)
         wx.Panel.__init__(self, parent, size=size, **kwargs)
-        
-        self.SetToolTip('')
         
         self.__value = value
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.SetToolTip(tip)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
@@ -1104,7 +1102,7 @@ class Indicator(wx.Panel):
         dc.SetBrush(wx.Brush("black"))
         dc.DrawRoundedRectangle(0, h//2-s, s*6-1, s*2+1, s)
         for j,name in enumerate(('red','yellow','green')):
-            if not self.__value & 1 << (2-j):
+            if not self.__value & (1 << 2-j):
                 name = 'gray'
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
@@ -1136,14 +1134,13 @@ class Gauge(wx.Panel):
     def __init__(self, parent, range=24, value=0, tip='', **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
-        self.SetToolTip(tip)
-        
         self.__range = range
         self.__value = value
         self.canvas = wx.Bitmap(self.ClientSize)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.SetToolTip(tip)
     
     def OnSize(self, evt):
         self.canvas = wx.Bitmap(self.ClientSize)
