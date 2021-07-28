@@ -1439,6 +1439,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def Destroy(self):
         self.timer.Stop()
+        del self.timer
         self.inspector.Destroy() # inspector is not my child
         return wx.Frame.Destroy(self)
 
@@ -1605,13 +1606,15 @@ Global bindings:
             j = (pages.index(self.current_editor) + p) % len(pages)
             pages[j].SetFocus()
         
-        @self.define_key('C-d')
-        def duplicate(v):
+        @self.define_key('C-S-d', clear=0)
+        @self.define_key('C-d', clear=1)
+        def duplicate(v, clear):
             """Duplicate an expression at the caret-line"""
             win = self.current_editor
             text = win.SelectedText or win.pyrepr_at_caret
             if text:
-                self.shell.clearCommand()
+                if clear:
+                    self.shell.clearCommand()
                 self.shell.write(text, -1)
                 self.shell.SetFocus()
         
@@ -1713,7 +1716,8 @@ Global bindings:
         win = self.current_editor
         word = win.topic_at_caret.encode()
         if word:
-            text = win.GetText().encode() # for multi-byte string
+            ## text = win.GetText().encode() # for multi-byte string
+            text = win.GetTextRaw()
             pos = 0
             n = 0
             while 1:
@@ -2180,17 +2184,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             return self.GetTextRange(p, q)
     
     def save_excursion(self):
-        return self.Excursion(self)
-    
-    class Excursion(object):
-        def __init__(self, target):
-            self.target = target
-        
-        def __enter__(self):
-            self.pos = self.target.cur
-        
-        def __exit__(self, t, v, tb):
-            self.target.GotoPos(self.pos)
+        class Excursion(object):
+            def __init__(self, target):
+                self.target = target
+            
+            def __enter__(self):
+                self.pos = self.target.cur
+                self.vpos = self.target.GetScrollPos(wx.VERTICAL)
+                self.hpos = self.target.GetScrollPos(wx.HORIZONTAL)
+                print(vars(self))
+            
+            def __exit__(self, t, v, tb):
+                self.target.GotoPos(self.pos)
+                self.target.ScrollToLine(self.vpos)
+                self.target.SetXOffset(self.hpos)
+            
+        return Excursion(self)
     
     ## --------------------------------
     ## Edit /eat /kill
