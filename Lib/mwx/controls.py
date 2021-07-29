@@ -1169,7 +1169,7 @@ class Gauge(wx.Panel):
                 dc.SetBrush(wx.Brush(wx.Colour(color(i/N))))
             else:
                 dc.SetBrush(wx.Brush('white'))
-            dc.DrawRectangle(i*w/N, 0, w/N-1, h)
+            dc.DrawRectangle(i*w//N, 0, w//N-1, h)
 
 
 if __name__ == '__main__':

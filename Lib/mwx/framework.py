@@ -1258,9 +1258,9 @@ class Menu(wx.Menu):
                 self.Enable(submenu_item.Id, bool(subitems)) # Disable empty menu
     
     @staticmethod
-    def Popup(parent, menu, *args):
+    def Popup(parent, menu):
         menu = Menu(parent, menu)
-        parent.PopupMenu(menu, *args)
+        parent.PopupMenu(menu)
         menu.Destroy()
 
 
@@ -1405,7 +1405,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.timer.Start(1000)
         
         @partial(self.Bind, wx.EVT_TIMER)
-        def on_timer(evt):
+        def on_timer(v):
             self.statusbar.write(time.strftime('%m/%d %H:%M'), -1)
         
         ## AcceleratorTable mimic
@@ -1567,8 +1567,8 @@ Global bindings:
         self.handler.update({ #<InspectorFrame handler>
             0 : {
                    'f1 pressed' : (0, self.About),
-                  'M-c pressed' : (0, self.OnFilterSetStyling),
-                  'M-f pressed' : (0, self.OnFilterSetStyling, self.OnFilterText),
+                  'M-c pressed' : (0, self.OnClearFilterText),
+                  'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
@@ -1693,39 +1693,31 @@ Global bindings:
         if isinstance(win, wx.MiniFrame): # floating ghost ?
             return self.ghost.CurrentPage # select the Editor window
         
-        ## pages = (self.scratch, self.Help, self.Log, self.History)
         pages = (self.ghost.GetPage(i) for i in range(self.ghost.PageCount))
         if win in pages:
             return win
         return self.shell # default editor
     
-    def apply_word3_filter(self, win, pos, length):
-        if wx.VERSION >= (4,1,0):
-            win.StartStyling(pos)
-        else:
-            win.StartStyling(pos, 0x1f)
-        win.SetStyling(length, stc.STC_P_WORD3)
-    
     @postcall
-    def OnFilterSetStyling(self, evt):
+    def OnClearFilterText(self, evt):
         win = self.current_editor
-        self.apply_word3_filter(win, 0, 0)
+        win.apply_word3_filter(0, 0)
     
     @postcall
     def OnFilterText(self, evt):
         win = self.current_editor
         word = win.topic_at_caret.encode()
-        if word:
-            ## text = win.GetText().encode() # for multi-byte string
-            text = win.GetTextRaw()
-            pos = 0
+        if not word:
+            win.apply_word3_filter(0, 0)
+        else:
+            text = win.GetTextRaw() # for multi-byte string
+            pos = -1
             n = 0
             while 1:
-                pos = text.find(word, pos)
+                pos = text.find(word, pos+1)
                 if pos < 0:
                     break
-                self.apply_word3_filter(win, pos, len(word))
-                pos += 1
+                win.apply_word3_filter(pos, len(word))
                 n += 1
             self.findData.FindString = word
             self.message("{}: {} found".format(word.decode(), n))
@@ -1825,11 +1817,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         self.define_key('C-c C-c', self.goto_matched_paren, "goto matched paren")
         
-        ## EditWindow.OnUpdateUI は Shell.OnUpdateUI によってオーバーライドされるので
-        ## ここでは別途に EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
+        ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
+        ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for matching braces
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnMatchBrace) # no skip
+        
+        ## @partial(self.Bind, stc.EVT_STC_UPDATEUI) # no skip
+        ## def on_update(v):
+        ##     self.OnMatchBrace(v)
+        ##     self.handler("editor_updated", self)
         
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
@@ -1951,6 +1948,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
     
+    def apply_word3_filter(self, pos, length):
+        if wx.VERSION >= (4,1,0):
+            self.StartStyling(pos)
+        else:
+            self.StartStyling(pos, 0x1f)
+        self.SetStyling(length, stc.STC_P_WORD3)
+    
     def OnMatchBrace(self, evt):
         cur = self.cur
         if self.following_char in "({[<":
@@ -1984,7 +1988,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if ln=0, the cursor goes top of the screen. ln=-1 the bottom
         """
         n = self.LinesOnScreen() # lines completely visible
-        ln = self.CurrentLine - (n/2 if ln is None else ln%n if ln < n else n)
+        ln = self.CurrentLine - (n//2 if ln is None else ln%n if ln < n else n)
         self.ScrollToLine(ln)
     
     ## --------------------------------
@@ -2192,7 +2196,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self.pos = self.target.cur
                 self.vpos = self.target.GetScrollPos(wx.VERTICAL)
                 self.hpos = self.target.GetScrollPos(wx.HORIZONTAL)
-                print(vars(self))
             
             def __exit__(self, t, v, tb):
                 self.target.GotoPos(self.pos)
@@ -2466,7 +2469,7 @@ Flaky nutshell:
         self.SetKeyWords(1, ' '.join(builtins.__dict__)
                           + ' self this help info dive timeit execute puts')
         
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdate)
+        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip
         
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
