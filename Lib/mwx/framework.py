@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.42.5"
+__version__ = "0.42.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -72,7 +72,7 @@ def _P(p):
     return p
 
 
-def Not(p):
+def _Not(p):
     ## return lambda v: not p(v)
     p = _P(p)
     def _pred(v):
@@ -81,7 +81,7 @@ def Not(p):
     return _pred
 
 
-def And(p, q):
+def _And(p, q):
     ## return lambda v: p(v) and q(v)
     p, q = _P(p), _P(q)
     def _pred(v):
@@ -90,7 +90,7 @@ def And(p, q):
     return _pred
 
 
-def Or(p, q):
+def _Or(p, q):
     ## return lambda v: p(v) or q(v)
     p, q = _P(p), _P(q)
     def _pred(v):
@@ -105,20 +105,20 @@ def predicate(text):
     while j < len(tokens):
         c = tokens[j]
         if c == 'not' or c == '~':
-            tokens[j:j+2] = ["Not({})".format(tokens[j+1])]
+            tokens[j:j+2] = ["_Not({})".format(tokens[j+1])]
         j += 1
     j = 0
     while j < len(tokens):
         c = tokens[j]
         if c == 'and' or c == '&':
-            tokens[j-1:j+2] = ["And({},{})".format(tokens[j-1], tokens[j+1])]
+            tokens[j-1:j+2] = ["_And({},{})".format(tokens[j-1], tokens[j+1])]
             continue
         j += 1
     j = 0
     while j < len(tokens):
         c = tokens[j]
         if c == 'or' or c == '|':
-            tokens[j-1:j+2] = ["Or({},{})".format(tokens[j-1], tokens[j+1])]
+            tokens[j-1:j+2] = ["_Or({},{})".format(tokens[j-1], tokens[j+1])]
             continue
         j += 1
     return ' '.join(tokens)
@@ -136,6 +136,15 @@ def Dir(obj):
             keys += obj._prop_map_get_.keys()
     finally:
         return keys
+
+
+def man(*words):
+    def _pred(v):
+        if not atom(v):
+            doc = inspect.getdoc(v)
+            return any(w in doc for w in words)
+    _pred.__name__ = str("man{!r}".format(words))
+    return _pred
 
 
 def getargspec(f):
@@ -168,32 +177,35 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
             if not args or len(args) - len(defaults or ()) > 1:
                 raise TypeError("{} must take exactly one argument".format(typename(pred)))
     
-    print("matching to {!r} in {} {} :{}".format(rexpr, name, type(root), typename(pred)))
-    try:
-        p = re.compile(rexpr, re.I if ignorecase else 0)
-        keys = sorted(filter(p.search, Dir(root)), key=lambda s:s.upper())
-        n = 0
-        for key in keys:
-            try:
-                value = getattr(root, key)
-                if callable(pred) and not pred(value):
-                    continue
-                word = repr(value)
-                word = ' '.join(s.strip() for s in word.splitlines()) # format in line
-            except TypeError:
-                ## pred:error is ignored
-                continue
-            except Exception as e:
-                word = '#<{!r}>'.format(e) # repr fails in formatting
-            ellipsis = ('...' if len(word)>80 else '')
-            print("    {}.{:<36s} {}".format(name, key, word[:80] + ellipsis))
-            n += 1
-        if callable(pred):
-            print("... found {} of {} words with :{}".format(n, len(keys), typename(pred)))
-        else:
-            print("... found {} words.".format(len(keys)))
-    except re.error as e:
-        print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        
+        print("matching to {!r} in {} {} :{}".format(rexpr, name, type(root), typename(pred)))
+        try:
+            p = re.compile(rexpr, re.I if ignorecase else 0)
+            keys = sorted(filter(p.search, Dir(root)), key=lambda s:s.upper())
+            n = 0
+            for key in keys:
+                try:
+                    value = getattr(root, key)
+                    if callable(pred) and not pred(value):
+                        continue
+                    word = repr(value)
+                    word = ' '.join(s.strip() for s in word.splitlines()) # format in line
+                ## except TypeError:
+                ##     ## pred:error is ignored
+                ##     continue
+                except Exception as e:
+                    word = '#<{!r}>'.format(e) # repr fails in formatting
+                ellipsis = ('...' if len(word)>80 else '')
+                print("    {}.{:<36s} {}".format(name, key, word[:80] + ellipsis))
+                n += 1
+            if callable(pred):
+                print("... found {} of {} words with :{}".format(n, len(keys), typename(pred)))
+            else:
+                print("... found {} words.".format(len(keys)))
+        except re.error as e:
+            print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
 def typename(root, docp=False, qualp=False):
@@ -331,7 +343,8 @@ def find_modules(force=False, verbose=True):
                 print('\b'*80 + "- failed: {}".format(modname[:70]))
         
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore') # ignore problems during import
+            warnings.simplefilter('ignore') # ignore problems during import
+            
             pydoc.ModuleScanner().run(callback, key='', onerror=error)
             if verbose:
                 print('\b'*80 + "The results were written in {!r}.".format(f))
@@ -3325,9 +3338,10 @@ Flaky nutshell:
             self.CallTipCancel()
         if self.CanEdit():
             self.OnCallTipAutoCompleteManually(argp) # autoCallTipShow
-        else:
-            text = self.SelectedText or self.pyrepr_at_caret
-            self.autoCallTipShow(text, False, True)
+            if self.CallTipActive():
+                return
+        text = self.SelectedText or self.pyrepr_at_caret
+        self.autoCallTipShow(text, False, True)
     
     def clear_autocomp(self, evt):
         """Clear Autocomp, selection, and message"""
