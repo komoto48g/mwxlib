@@ -396,6 +396,9 @@ Constants:
         
         _F = mwx.funcall
         
+        draw_all = _F(self.canvas.draw)
+        draw_idle = _F(self.canvas.draw_idle)
+        
         self.handler.update({ #<GraphPlot handler>
             None : {
                   'frame_shown' : [ None ], # show
@@ -407,15 +410,16 @@ Constants:
                'frame_modified' : [ None ], # set[],load,roi, (frame.update_buffer)
                 'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
                 'frame_cmapped' : [ None ], # cmap
+                 'image_picked' : [ None, draw_idle ],
                     'line_draw' : [ None ],
-                   'line_drawn' : [ None, _F(self.draw) ],
-                 'line_removed' : [ None, _F(self.draw) ],
+                   'line_drawn' : [ None, draw_idle ],
+                 'line_removed' : [ None, draw_idle ],
                     'mark_draw' : [ None ],
-                   'mark_drawn' : [ None, _F(self.draw) ],
-                 'mark_removed' : [ None, _F(self.draw) ],
+                   'mark_drawn' : [ None, draw_idle ],
+                 'mark_removed' : [ None, draw_idle ],
                   'region_draw' : [ None ],
-                 'region_drawn' : [ None, _F(self.draw) ],
-               'region_removed' : [ None, _F(self.draw) ],
+                 'region_drawn' : [ None, draw_idle ],
+               'region_removed' : [ None, draw_idle ],
                                 
                'alt+up pressed' : [ None, self.OnPageUp ],
              'alt+down pressed' : [ None, self.OnPageDown ],

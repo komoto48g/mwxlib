@@ -601,6 +601,7 @@ class MatplotPanel(wx.Panel):
             evt.xdata = x = xs[k]
             evt.ydata = y = ys[k]
             self.Selector = (x, y)
+            self.canvas.draw_idle()
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
