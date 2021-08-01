@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.42.6"
+__version__ = "0.43.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1418,11 +1418,17 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.timer.Start(1000)
         
         @partial(self.Bind, wx.EVT_TIMER)
-        def on_timer(v):
+        def on_timer(evt):
             self.statusbar.write(time.strftime('%m/%d %H:%M'), -1)
         
         ## AcceleratorTable mimic
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
+        @partial(self.Bind, wx.EVT_CHAR_HOOK)
+        def on_char(evt):
+            """Called when key down (let handler call skip)"""
+            if isinstance(evt.EventObject, wx.TextEntry):
+                evt.Skip()
+            else:
+                self.handler('{} pressed'.format(hotkey(evt)), evt)
         
         def close(v):
             """Close the window"""
@@ -1437,14 +1443,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             },
         })
         self.make_keymap('C-x')
-    
-    def OnHookChar(self, evt):
-        """Called when key down (let the handler call skip event)"""
-        win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry):
-            evt.Skip()
-            return
-        self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -1483,7 +1481,13 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only, no skip
         
         ## AcceleratorTable mimic
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnHookChar)
+        @partial(self.Bind, wx.EVT_CHAR_HOOK)
+        def on_char(evt):
+            """Called when key down (let handler call skip)"""
+            if isinstance(evt.EventObject, wx.TextEntry):
+                evt.Skip()
+            else:
+                self.handler('{} pressed'.format(hotkey(evt)), evt)
         
         def close(v):
             """Close the window"""
@@ -1498,14 +1502,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             },
         })
         self.make_keymap('C-x')
-    
-    def OnHookChar(self, evt):
-        """Called when key down (let the handler call skip event)"""
-        win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry):
-            evt.Skip()
-            return
-        self.handler('{} pressed'.format(hotkey(evt)), evt)
     
     def Destroy(self):
         return wx.MiniFrame.Destroy(self)
@@ -1871,6 +1867,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## default style of control-char
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
+        
+        ## self.TabWidth = 4
+        ## self.UseTabs = False
         
         self.WrapMode = 0
         self.WrapIndentMode = 1
@@ -2472,9 +2471,12 @@ Flaky nutshell:
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
         @partial(self.parent.Bind, wx.EVT_ACTIVATE)
-        def on_activate(v):
-            self.handler('shell_activated' if v.Active else 'shell_inactivated', self)
-            v.Skip()
+        def on_activate(evt):
+            if evt.Active:
+                self.handler('shell_activated', self)
+            else:
+                 self.handler('shell_inactivated', self)
+            evt.Skip()
         
         self.on_activated(self)
         
@@ -2488,6 +2490,10 @@ Flaky nutshell:
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
         self.SetDropTarget(None)
+        
+        ## some AutoComp settings
+        self.AutoCompSetAutoHide(False)
+        self.AutoCompSetIgnoreCase(True)
         
         def clear(v):
             ## Clear selection and statusline, no skip.
