@@ -918,6 +918,14 @@ def postcall(f):
     return _f
 
 
+def connect(binder, event, f=None, **kwargs):
+    """An event binder equiv. @partial(binder, event)(f) -> f"""
+    if not f:
+        return lambda f: connect(binder, event, f, **kwargs)
+    binder(event, funcall(f, **kwargs))
+    return f
+
+
 def skip(v):
     v.Skip()
 
