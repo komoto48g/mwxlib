@@ -1385,7 +1385,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
-        self.inspector = InspectorFrame(None, target=self)
+        self.inspector = ShellFrame(None, target=self)
         
         ## statusbar/menubar などのカスタマイズを行う
         ## レイアウト系コマンドは statusbar/menubar の作成後
@@ -1511,7 +1511,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         return wx.MiniFrame.Destroy(self)
 
 
-class InspectorFrame(MiniFrame):
+class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break `target
 -------------------------------------------------------------------
      target : Inspection target `self, any wx.Object, otherwise __main__
@@ -1577,7 +1577,7 @@ Global bindings:
         
         _F = funcall
         
-        self.handler.update({ #<InspectorFrame handler>
+        self.handler.update({ #<ShellFrame handler>
             0 : {
                    'f1 pressed' : (0, self.About),
                   'M-c pressed' : (0, self.OnClearFilterText),
@@ -2202,18 +2202,18 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def save_excursion(self):
         class Excursion(object):
-            def __init__(self, target):
-                self.target = target
+            def __init__(self, win):
+                self._win = win
             
             def __enter__(self):
-                self.pos = self.target.cur
-                self.vpos = self.target.GetScrollPos(wx.VERTICAL)
-                self.hpos = self.target.GetScrollPos(wx.HORIZONTAL)
+                self.pos = self._win.cur
+                self.vpos = self._win.GetScrollPos(wx.VERTICAL)
+                self.hpos = self._win.GetScrollPos(wx.HORIZONTAL)
             
             def __exit__(self, t, v, tb):
-                self.target.GotoPos(self.pos)
-                self.target.ScrollToLine(self.vpos)
-                self.target.SetXOffset(self.hpos)
+                self._win.GotoPos(self.pos)
+                self._win.ScrollToLine(self.vpos)
+                self._win.SetXOffset(self.hpos)
             
         return Excursion(self)
     
@@ -2391,14 +2391,11 @@ Flaky nutshell:
     
     @target.setter
     def target(self, target):
-        self.__target = target
         target.self = target
-        try:
-            target.this = sys.modules[target.__module__]
-        except Exception:
-            target.this = __import__('__main__')
-        target.shell = self
+        target.this = inspect.getmodule(target)
+        target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
+        self.__target = target
         self.interp.locals.update(target.__dict__)
         try:
             self.parent.Title = re.sub("(.*) - (.*)",
@@ -2456,6 +2453,10 @@ Flaky nutshell:
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
+        
+        ## target.self = target
+        ## target.this = inspect.getmodule(target)
+        ## target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2919,12 +2920,10 @@ Flaky nutshell:
     
     def on_activated(self, shell):
         """Called when activated"""
-        target = shell.target # cf. target.setter, new target (not locals)
+        target = shell.target # assert(shell is self)
+        
         target.self = target
-        try:
-            target.this = sys.modules[target.__module__]
-        except Exception:
-            target.this = __import__('__main__')
+        target.this = inspect.getmodule(target)
         target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
         builtins.help = self.help # utilities functions to builtins (not locals)
@@ -3576,7 +3575,7 @@ Note:
     if app is None:
         app = wx.GetApp() or wx.App()
     
-    frame = InspectorFrame(None, target, **kwargs)
+    frame = ShellFrame(None, target, **kwargs)
     frame.Show()
     frame.shell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window

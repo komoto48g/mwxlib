@@ -1127,9 +1127,9 @@ class Frame(mwx.Frame):
         
         @shell.handler.bind("shell_activated")
         def init(shell):
-            shell.target = self.get_plug(name) or self # when unloaded
+            shell.target = self.get_plug(name) or self # reset when unloaded
         init(shell)
-        shell.run("this, self")
+        shell.run("self, this")
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
