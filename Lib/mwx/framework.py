@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.0"
+__version__ = "0.43.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -26,7 +26,7 @@ import wx
 from wx import aui
 from wx import stc
 from wx.py.shell import Shell
-from wx.py.editwindow import EditWindow
+## from wx.py.editwindow import EditWindow
 import numpy as np
 import fnmatch
 import pydoc
@@ -1762,7 +1762,7 @@ Global bindings:
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = self.current_editor # or self.findDlg.Parent #<EditWindow>
+        win = self.current_editor # or self.findDlg.Parent
         win.DoFindNext(data)
     
     def OnFindPrev(self, evt):
@@ -1832,18 +1832,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
         })
         
-        self.define_key('C-c C-c', self.goto_matched_paren, "goto matched paren")
-        
-        ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
-        ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
+        self.define_key('C-c C-c', self.goto_matched_paren)
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for matching braces
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnMatchBrace) # no skip
-        
-        ## @partial(self.Bind, stc.EVT_STC_UPDATEUI) # no skip
-        ## def on_update(v):
-        ##     self.OnMatchBrace(v)
-        ##     self.handler("editor_updated", self)
         
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
@@ -2265,7 +2257,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.Replace(p, self.cur, '')
 
 
-class Editor(EditWindow, EditorInterface):
+class Editor(stc.StyledTextCtrl, EditorInterface):
     """Python code editor
     """
     parent = property(lambda self: self.__parent)
@@ -2300,7 +2292,7 @@ class Editor(EditWindow, EditorInterface):
     }
     
     def __init__(self, parent, **kwargs):
-        EditWindow.__init__(self, parent, **kwargs)
+        stc.StyledTextCtrl.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
@@ -2493,7 +2485,10 @@ Flaky nutshell:
         self.SetKeyWords(1, ' '.join(builtins.__dict__)
                           + ' self this help info dive timeit execute puts')
         
-        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip
+        ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
+        ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
+        
+        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to OnMatchBrace
         
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
