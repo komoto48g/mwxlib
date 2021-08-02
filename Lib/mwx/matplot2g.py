@@ -1400,7 +1400,6 @@ Constants:
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
         self.__rectsel = [k] if dots < 8 else [0,1,2,3,4] # リージョンの全選択
         self.update_art_of_region()
-        ## self.OnEscapeSelection(evt) # セレクションの削除
     
     def OnRegionDeselected(self, evt): #<matplotlib.backend_bases.PickEvent>
         self.__rectsel = []

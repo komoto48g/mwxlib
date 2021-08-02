@@ -199,7 +199,7 @@ class MatplotPanel(wx.Panel):
         self.__isPressed = None
         self.__isDragging = False # True if dragging. (None if dblclicked)
         
-        self.set_margin(margin or (0,0,1,1))
+        self.set_margin(margin or (0,0,1,1)) # if margin is None
         self.clear()
         
         ## mpl event handler
@@ -265,7 +265,6 @@ class MatplotPanel(wx.Panel):
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
                     'z pressed' : (ZOOM, self.OnZoomBegin),
-                 'figure leave' : (NORMAL, self.clear_cursor),
                  'xaxis motion' : (XAXIS, self.OnAxisEnter),
                  'yaxis motion' : (YAXIS, self.OnAxisEnter),
                 'y2axis motion' : (YAXIS, self.OnAxisEnter),
@@ -398,6 +397,16 @@ class MatplotPanel(wx.Panel):
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
     
+    def set_margin(self, lbrt):
+        self.figure.subplots_adjust(*lbrt)
+    
+    def set_wxcursor(self, c):
+        self.canvas.SetCursor(wx.Cursor(c))
+    
+    def escape(self, evt=None):
+        """{escape} を押した気持ちになる"""
+        wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
+    
     ## --------------------------------
     ## Property of current frame
     ## --------------------------------
@@ -443,13 +452,8 @@ class MatplotPanel(wx.Panel):
         v = np.array((px, py)).T
         return self.axes.transData.inverted().transform(v)
     
-    def set_wxcursor(self, c):
-        self.canvas.SetCursor(wx.Cursor(c))
-    
-    def set_margin(self, lbwt):
-        self.figure.subplots_adjust(*lbwt)
-    
-    def on_modeline_tip(self, evt):
+    def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
+        print("evt =", evt)
         pos = self.modeline.ScreenToClient(wx.GetMousePosition())
         flag = self.modeline.HitTest(pos)
         tip = self.modeline.ToolTip
@@ -457,27 +461,19 @@ class MatplotPanel(wx.Panel):
             tip.SetTip(self.modeline.read())
         evt.Skip()
     
-    def on_focus_set(self, evt):
+    def on_focus_set(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour('#000000')
             self.modeline.SetForegroundColour('#f0f0f0')
             self.Refresh()
         self.handler('canvas_focus_set', self.frame)
     
-    def on_focus_killed(self, evt):
+    def on_focus_killed(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour('')
             self.modeline.SetForegroundColour('#000000')
             self.Refresh()
         self.handler('canvas_focus_killed', self.frame)
-    
-    def escape(self, evt=None):
-        """{escape} を押した気持ちになる"""
-        wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
-    
-    def clear_cursor(self, evt=None): #<matplotlib.backend_bases.MouseEvent>
-        self.cursor.clear(evt)
-        self.canvas.draw()
     
     ## --------------------------------
     ## 外部入出力／複合インターフェース
@@ -528,12 +524,13 @@ class MatplotPanel(wx.Panel):
             x, y = x[0], y[0]
         self.message("({:g}, {:g})".format(x, y))
     
-    def on_figure_enter(self, evt):
+    def on_figure_enter(self, evt): #<matplotlib.backend_bases.MouseEvent>
         if self.Selector.size:
             self.trace_point(*self.Selector)
     
-    def on_figure_leave(self, evt):
-        pass
+    def on_figure_leave(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        self.cursor.clear(evt)
+        self.canvas.draw()
     
     @property
     def Selector(self):
