@@ -2049,7 +2049,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ls, rs = text[:lp], text[lp:]
         lhs = get_words_backward(ls) or ls.rpartition(' ')[-1]
         rhs = get_words_forward(rs) or rs.partition(' ')[0]
-        return lhs + rhs
+        return (lhs + rhs).strip()
     
     @property
     def topic_at_caret(self):
@@ -2544,8 +2544,8 @@ Flaky nutshell:
                   'C-e pressed' : (0, _F(self.end_of_command_line)),
                   'M-j pressed' : (0, self.call_tooltip2),
                   'C-j pressed' : (0, self.call_tooltip),
-                  'M-h pressed' : (0, self.call_ghost),
-                  'C-h pressed' : (0, self.call_autocomp),
+                  'M-h pressed' : (0, self.call_help_tooltip2),
+                  'C-h pressed' : (0, self.call_help_tooltip),
                     '. pressed' : (2, self.OnEnterDot), # autoCompleteKeys -> AutoCompShow
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
@@ -2602,8 +2602,8 @@ Flaky nutshell:
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
                   'M-j pressed' : (2, self.call_tooltip2),
                   'C-j pressed' : (2, self.call_tooltip),
-                  'M-h pressed' : (2, self.call_ghost),
-                  'C-h pressed' : (2, self.call_autocomp),
+                  'M-h pressed' : (2, self.call_help_tooltip2),
+                  'C-h pressed' : (2, self.call_help_tooltip),
                   ## 'M-. pressed' : (2, self.on_completion),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2633,8 +2633,8 @@ Flaky nutshell:
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
                   'M-j pressed' : (3, self.call_tooltip2),
                   'C-j pressed' : (3, self.call_tooltip),
-                  'M-h pressed' : (3, self.call_ghost),
-                  'C-h pressed' : (3, self.call_autocomp),
+                  'M-h pressed' : (3, self.call_help_tooltip2),
+                  'C-h pressed' : (3, self.call_help_tooltip),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, self.on_completion),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2664,8 +2664,8 @@ Flaky nutshell:
           '*backspace released' : (4, self.call_text_autocomp),
                   'M-j pressed' : (4, self.call_tooltip2),
                   'C-j pressed' : (4, self.call_tooltip),
-                  'M-h pressed' : (4, self.call_ghost),
-                  'C-h pressed' : (4, self.call_autocomp),
+                  'M-h pressed' : (4, self.call_help_tooltip2),
+                  'C-h pressed' : (4, self.call_help_tooltip),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, self.on_completion),
@@ -3290,15 +3290,13 @@ Flaky nutshell:
         except AttributeError:
             pass
     
-    def AutoCompShow(self, *args, **kwargs):
-        """Display an auto-completion list.
-        (override) catch AssertionError (phoenix >= 4.1.1)
-        """
+    def gen_autocomp(self, offset, words):
+        """Call AutoCompShow for the specified words"""
         try:
-            Shell.AutoCompShow(self, *args, **kwargs)
-        except AssertionError:
+            self.AutoCompShow(offset, ' '.join(words))
+        except AssertionError: # for phoenix >= 4.1.1
             pass
-        
+    
     def gen_tooltip(self, text):
         """Call ToolTip of the selected word or focused line"""
         if self.AutoCompActive():
@@ -3321,7 +3319,7 @@ Flaky nutshell:
         """Call ToolTip of the selected word or command line"""
         self.gen_tooltip(self.SelectedText or self.getCommand() or self.pyrepr_at_caret)
     
-    def call_ghost(self, evt):
+    def call_help_tooltip2(self, evt):
         try:
             text = self.SelectedText
             if text:
@@ -3336,18 +3334,16 @@ Flaky nutshell:
         except Exception as e:
             self.message("{} : {!r}".format(e, text))
     
-    def call_autocomp(self, evt, argp=True):
-        """Call Autocomp to show a tooltip of args.
-        stc.CallTipShow if argp (=1 default), otherwise stc.AutoCompShow
-        """
+    def call_help_tooltip(self, evt):
+        """Show tooltips for the selected topic"""
         if self.AutoCompActive():
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-        if self.CanEdit():
-            self.OnCallTipAutoCompleteManually(argp) # autoCallTipShow
-            if self.CallTipActive():
-                return
+        ## if self.CanEdit():
+        ##     self.OnCallTipAutoCompleteManually(True) # autoCallTipShow or autoCompleteShow
+        ##     if self.CallTipActive():
+        ##         return
         text = self.SelectedText or self.pyrepr_at_caret
         self.autoCallTipShow(text, False, True)
     
@@ -3421,7 +3417,8 @@ Flaky nutshell:
             self.on_completion(evt) # show completion always
             
             ## the latest history stacks in the head of the list (time-descending)
-            self.message("[history] {} candidates matched with {!r}".format(len(words), hint))
+            self.message("[history] {} candidates matched"
+                         " with {!r}".format(len(words), hint))
         except Exception:
             raise
     
@@ -3442,8 +3439,9 @@ Flaky nutshell:
             self.__comp_hint = hint
             self.__comp_words = words
             
-            self.AutoCompShow(len(hint), ' '.join(words))
-            self.message("[text] {} candidates matched with {!r}".format(len(words), hint))
+            self.gen_autocomp(len(hint), words)
+            self.message("[text] {} candidates matched"
+                         " with {!r}".format(len(words), hint))
         except Exception:
             raise
     
@@ -3484,9 +3482,12 @@ Flaky nutshell:
             self.__comp_hint = hint
             self.__comp_words = words
             
-            self.AutoCompShow(len(hint), ' '.join(words))
-            self.message("[module] {} candidates"
-                         " matched with {!r} in {}".format(len(words), hint, text))
+            self.gen_autocomp(len(hint), words)
+            self.message("[module] {} candidates matched"
+                         " with {!r} in {}".format(len(words), hint, text))
+            
+        except re.error as e:
+            self.message("re:miss compilation {!r} : {!r}".format(e, hint))
             
         except (AttributeError, NameError, SyntaxError) as e:
             self.message("{} : {!r}".format(e, text))
@@ -3516,9 +3517,9 @@ Flaky nutshell:
             self.__comp_hint = hint
             self.__comp_words = words
             
-            self.AutoCompShow(len(hint), ' '.join(words))
-            self.message("[word] {} candidates"
-                         " matched with {!r} in {}".format(len(words), hint, text))
+            self.gen_autocomp(len(hint), words)
+            self.message("[word] {} candidates matched"
+                         " with {!r} in {}".format(len(words), hint, text))
             
         except re.error as e:
             self.message("re:miss compilation {!r} : {!r}".format(e, hint))
@@ -3551,9 +3552,9 @@ Flaky nutshell:
             self.__comp_hint = hint
             self.__comp_words = words
             
-            self.AutoCompShow(len(hint), ' '.join(words))
-            self.message("[apropos] {} candidates"
-                         " matched with {!r} in {}".format(len(words), hint, text))
+            self.gen_autocomp(len(hint), words)
+            self.message("[apropos] {} candidates matched"
+                         " with {!r} in {}".format(len(words), hint, text))
             
         except re.error as e:
             self.message("re:miss compilation {!r} : {!r}".format(e, hint))
