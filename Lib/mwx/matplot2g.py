@@ -410,7 +410,6 @@ Constants:
                'frame_modified' : [ None ], # set[],load,roi, (frame.update_buffer)
                 'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
                 'frame_cmapped' : [ None ], # cmap
-                 'image_picked' : [ None, draw_idle ],
                     'line_draw' : [ None ],
                    'line_drawn' : [ None, draw_idle ],
                  'line_removed' : [ None, draw_idle ],
@@ -1080,6 +1079,7 @@ Constants:
                     return
                 self.__isPicked = 'line' # image pick gurad
                 self.handler('line_picked', evt)
+        self.canvas.draw_idle()
         
     def on_picker_lock(self, evt):
         self.__isPicked = True
