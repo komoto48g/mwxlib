@@ -2923,7 +2923,7 @@ Flaky nutshell:
         
         def pp(x):
             pprint(x, width=pp.width, compact=pp.compact)
-        pp.width = 200
+        pp.width = 100 # default 80
         pp.compact = False
         builtins.pp = pp
     
@@ -3469,7 +3469,8 @@ Flaky nutshell:
                 else:
                     text, sep, hint = get_words_hint(self.cmdlc)
                     root = self.eval(text or 'self')
-                    modules = [k for k,v in inspect.getmembers(root, inspect.ismodule)]
+                    ## modules = [k for k,v in inspect.getmembers(root, inspect.ismodule)]
+                    modules = [k for k,v in vars(root).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -3548,7 +3549,7 @@ Flaky nutshell:
             j = next((k for k,w in enumerate(words) if P.match(w)),
                 next((k for k,w in enumerate(words) if p.match(w)), -1))
             
-            self.__comp_ind = j if not hint.endswith('?') else -1
+            self.__comp_ind = j
             self.__comp_hint = hint
             self.__comp_words = words
             
