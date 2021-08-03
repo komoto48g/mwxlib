@@ -25,15 +25,15 @@ setup(
         'mwx',
     ],
     
-    ## install_requires = [
-    ##     'wxpython',
-    ##     'numpy',
-    ##     'scipy',
-    ##     'pillow',
-    ##     'matplotlib',
-    ##     'opencv-python',
-    ## ],
-    install_requires = open("requirements.txt").read().splitlines(),
+    install_requires = [
+        'wxpython',
+        'numpy',
+        'scipy',
+        'pillow',
+        'matplotlib',
+        'opencv-python',
+    ],
+    ## install_requires = open("requirements.txt").read().splitlines(),
     
     ## This is necessary for egg distribution to include *.txt files
     package_data={
