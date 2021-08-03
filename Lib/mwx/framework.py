@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.2"
+__version__ = "0.43.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -218,10 +218,12 @@ def typename(root, docp=False, qualp=False):
     """
     if hasattr(root, '__name__'): # class, module, method, function, etc.
         if qualp:
-            try:
-                name = root.__qualname__ # PY3 format
-            except AttributeError:
-                name = root.im_class.__name__ + '.' + root.__name__ # PY2 format
+            if hasattr(root, '__qualname__'):
+                name = root.__qualname__
+            elif hasattr(root, 'im_class'): 
+                name = root.im_class.__name__ + '.' + root.__name__
+            else:
+                name = root.__name__
         else:
             name = root.__name__
         
