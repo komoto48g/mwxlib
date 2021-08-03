@@ -453,7 +453,6 @@ class MatplotPanel(wx.Panel):
         return self.axes.transData.inverted().transform(v)
     
     def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
-        print("evt =", evt)
         pos = self.modeline.ScreenToClient(wx.GetMousePosition())
         flag = self.modeline.HitTest(pos)
         tip = self.modeline.ToolTip
