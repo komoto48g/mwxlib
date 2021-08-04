@@ -2705,9 +2705,8 @@ Flaky nutshell:
         self.set_style(self.PALETTE_STYLE)
         
         self.__cur = 0
-        self.__text = None
+        self.__text = ''
         self.__start = 0
-        self.__history = []
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
     
@@ -2981,17 +2980,9 @@ Flaky nutshell:
     ## --------------------------------
     fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-autocomp
     
-    @property
-    def history(self):
-        return self.__history
-    
-    @history.setter
-    def history(self, v):
-        self.__history = v
-    
-    @history.deleter
-    def history(self):
-        self.__history = []
+    ## Note: shell.history is an instance variable of the Shell.
+    ## If del shell.history, the history of the class variable is used
+    history = []
     
     def addHistory(self, command):
         """Add command to the command history
