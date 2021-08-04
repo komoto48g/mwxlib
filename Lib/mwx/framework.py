@@ -1837,6 +1837,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
         })
         
+        self.make_keymap('C-x')
+        self.define_key('C-x *', skip) # skip to parent frame always
+        
+        self.make_keymap('C-c')
+        self.define_key('C-c *', skip) # skip to parent frame always
+        
         self.define_key('C-c C-c', self.goto_matched_paren)
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for matching braces
