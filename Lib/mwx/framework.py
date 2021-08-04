@@ -418,6 +418,7 @@ class FSM(dict):
     
     def clear(self, state):
         """Reset current and previous states"""
+        self.default_state = state
         self.__state = self.__prev_state = state
         self.__event = self.__prev_event = None
     
@@ -636,7 +637,7 @@ class FSM(dict):
         """Append a transaction to the context
         equiv. self[state] += {event : [state2, action]}
         The transaction is exepcted to be a list (not a tuple).
-        When action is not given, this does nothing, but returns @decor(event-binder)
+        When action is not given, this does nothing, but returns @decor(event-binder).
         """
         if not action:
             return lambda f: self.bind(event, f, state, state2)
@@ -1028,10 +1029,10 @@ class KeyCtrlInterfaceMixin(object):
       - handler <FSM>
       - message <statusbar>
     
-    map : event key name that excluds 'pressed'
-        global-map : (0 :default)
-         ctl-x-map : 'ctrl+x'
-          spec-map : 'ctrl+c'
+    keymap : event key name that excluds 'pressed'
+        global-map : 0 (default)
+         ctl-x-map : 'C-x'
+          spec-map : 'C-c'
            esc-map : 'escape'
     """
     message = print
@@ -1047,15 +1048,15 @@ class KeyCtrlInterfaceMixin(object):
         
         self.handler.update({ #<KeyCtrlInterfaceMixin handler>
             state : {
-                       keyevent : [keymap, self.prefix_command_hook],
+                       keyevent : [ keymap, self.prefix_command_hook, skip ],
             },
             keymap : {
-                         'quit' : [default, ],
-                    '* pressed' : [default, _Pass],
-                 '*alt pressed' : [keymap, _Pass],
-                '*ctrl pressed' : [keymap, _Pass],
-               '*shift pressed' : [keymap, _Pass],
-             '*[LR]win pressed' : [keymap, _Pass],
+                         'quit' : [ default, ],
+                    '* pressed' : [ default, _Pass ],
+                 '*alt pressed' : [ keymap, _Pass ],
+                '*ctrl pressed' : [ keymap, _Pass ],
+               '*shift pressed' : [ keymap, _Pass ],
+             '*[LR]win pressed' : [ keymap, _Pass ],
             },
         })
     
@@ -1065,25 +1066,27 @@ class KeyCtrlInterfaceMixin(object):
         or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
           # or any other of pre-selection-p?
             self.handler('quit', evt)
-            evt.Skip()
             return
         self.message(evt.key + '-')
     
     def define_key(self, keymap, action=None, doc=None, alias=None, **kwargs):
-        """Define [map key-pressed] action at default 0=state
-        If no action, invalidates the keymap and returns a decor @ keymap-binder.
-        keymap must be in C-M-S order (ctrl + alt(meta) + shift).
+        """Define [map key] action at default state
+        If no action, invalidates the key and returns @decor(key-binder).
+        key must be in C-M-S order (ctrl + alt(meta) + shift).
         """
+        state = self.handler.default_state
         keymap = regulate_key(keymap)
         ls = keymap.rsplit(' ', 1)
-        map, key = ls if len(ls)>1 else (0, ls[0])
-        if map == '*':
-            map = None
+        if len(ls) == 1:
+            map, key = (state, keymap)
+        else:
+            map, key = ls
+            if map == '*':
+                map = None
+            elif map not in self.handler: # make key map automatically
+                self.make_keymap(map)
         
-        if map not in self.handler: # make key map automatically
-            self.make_keymap(map)
-        
-        self.handler[map][key+' pressed'] = transaction = [0] # overwrite transaction
+        self.handler[map][key+' pressed'] = transaction = [state] # overwrite transaction
         self.handler.validate(map)
         if action:
             transaction.append(funcall(action, doc, alias, **kwargs))
@@ -3448,7 +3451,7 @@ Flaky nutshell:
             else:
                 m = re.match("(import|from)\s+(.*)", self.cmdlc)
                 if m:
-                    if not hint: # return (not quit)
+                    if not hint:
                         return
                     text = '.'
                     modules = self.modules
