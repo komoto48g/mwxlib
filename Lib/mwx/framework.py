@@ -1602,7 +1602,7 @@ Global bindings:
         @self.define_key('C-x j', win=self.scratch, doc="Show scratch window")
         @self.define_key('C-x l', win=self.Log, doc="Show Log window")
         @self.define_key('C-x h', win=self.Help, doc="Show Help window")
-        @self.define_key('C-x C-h', win=self.History, doc="Show History")
+        @self.define_key('C-x S-h', win=self.History, doc="Show History")
         def popup(v, win, show=True):
             self.PopupWindow(win, show)
         
@@ -2956,11 +2956,9 @@ Flaky nutshell:
     def on_text_input(self, text):
         """Called when [Enter] text (before push)
         
-        Note: The text is raw input:str, no magic cast
+        Note: text is raw input:str with no magic cast
         """
         if text.rstrip():
-            self.MarkerAdd(self.CurrentLine, 1) # input-Marker
-            
             self.__bolc_marks.append(self.bolc)
             self.__eolc_marks.append(self.eolc)
             self.historyIndex = -1
@@ -2968,19 +2966,15 @@ Flaky nutshell:
     def on_text_output(self, text):
         """Called when [Enter] text (after push)
         
-        Note: The text is raw output:str, no magic cast
+        Note: text is raw output:str with no magic cast
         """
-        lex = re.findall("File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
-        if lex:
-            self.MarkerAdd(self.LineFromPosition(self.__bolc_marks[-1]), 3) # error-marker
-            return False
-        
-        ## Check if input starts with the definition of a function or a class.
-        ## If so, we set the `_' variables to the function or class.
-        ## m = re.match("(def|class)\s+(\w+)", text.strip())
-        ## if m:
-        ##     builtins._ = self.eval(m.group(2))
-        return True
+        ln = self.LineFromPosition(self.__bolc_marks[-1]) # ine to set marker
+        err = re.findall("File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
+        if not err:
+            self.MarkerAdd(ln, 1) # white-marker
+        else:
+            self.MarkerAdd(ln, 3) # error-marker
+        return not err
     
     ## --------------------------------
     ## Attributes of the shell
@@ -3004,11 +2998,8 @@ Flaky nutshell:
         (override) if the command is new (i.e., not found in the head of the list).
         Then, write the command to History buffer.
         """
-        if self.history and self.history[0] == command\
-          or not command:
+        if not command:
             return
-        
-        Shell.addHistory(self, command)
         
         ## この段階では push された直後で，次のようになっている
         ## bolc : begginning of command-line
@@ -3022,8 +3013,10 @@ Flaky nutshell:
                           .replace(os.linesep + sys.ps2, lf)
                           .replace(os.linesep, lf)
                           .lstrip())
-            if input:
-                self.history[0] = input
+            
+            repeat = (self.history and self.history[0] == input)
+            if not repeat and input:
+                Shell.addHistory(self, input)
             
             self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # for text-comp
             noerr = self.on_text_output(output.strip(os.linesep))
@@ -3031,14 +3024,15 @@ Flaky nutshell:
             ed = self.parent.History
             ed.ReadOnly = 0
             ed.write(command + os.linesep)
-            ln = ed.LineFromPosition(ed.TextLength - len(command)) # pos to mark
+            ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
             if noerr:
-                ed.MarkerAdd(ln, 1)
+                ed.MarkerAdd(ln, 1) # white-marker
             else:
-                ed.MarkerAdd(ln, 3)
+                ed.MarkerAdd(ln, 3) # error-marker
             ed.ReadOnly = 1
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
+            ## Shell.addHistory(self, command)
             pass
     
     def _In(self, j):
@@ -3201,10 +3195,10 @@ Flaky nutshell:
         ##     return
         doc = pydoc.plain(pydoc.render_doc(root)) or "No description about {}".format(root)
         try:
-            self.message("help({})".format(typename(root)))
             ed = self.parent.Help
             ed.SetValue(doc)
             self.parent.PopupWindow(ed)
+            self.message("help({})".format(typename(root)))
         except AttributeError:
             print(doc)
     
@@ -3405,7 +3399,6 @@ Flaky nutshell:
             if hint.isspace() or self.bol != self.bolc:
                 self.handler('quit', evt)
                 self.indent_line()
-                ## evt.Skip()
                 return
             
             hint = hint.strip()
