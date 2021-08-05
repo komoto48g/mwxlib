@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.3"
+__version__ = "0.43.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -37,7 +37,6 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint, pformat
 from six.moves import builtins
 ## from six import PY3
-
 try:
     from importlib import reload
 except ImportError:
@@ -1642,24 +1641,22 @@ Global bindings:
         
         f = os.path.expanduser("~/.deb/deb-logging.log")
         if os.path.exists(f):
-            if sys.version_info >= (3,0):
-                with open(f, newline='') as i:
-                    self.Log.Value = i.read()
-            else:
-                with open(f) as i:
-                    self.Log.Value = i.read()
+            with self.open(f) as i:
+                self.Log.Value = i.read()
+    
+    def open(self, f, *args):
+        try:
+            return open(f, *args, newline='') # PY3
+        except TypeError:
+            return open(f, *args) # PY2
     
     def Destroy(self):
         f = os.path.expanduser("~/.deb/deb-logging.log")
-        if sys.version_info >= (3,0):
-            with open(f, 'w', newline='') as o:
-                o.write(self.Log.Value)
-        else:
-            with open(f, 'w') as o:
-                o.write(self.Log.Value)
+        with self.open(f, 'w') as o:
+            o.write(self.Log.Value)
         
         f = os.path.expanduser("~/.deb/deb-history.log")
-        with open(f, 'w') as o:
+        with self.open(f, 'w') as o:
             o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
             o.write(self.History.Value)
         
