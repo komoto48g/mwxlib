@@ -1641,10 +1641,10 @@ Global bindings:
         
         f = os.path.expanduser("~/.deb/deb-logging.log")
         if os.path.exists(f):
-            with self.open(f) as i:
+            with self.fopen(f) as i:
                 self.Log.Value = i.read()
     
-    def open(self, f, *args):
+    def fopen(self, f, *args):
         try:
             return open(f, *args, newline='') # PY3
         except TypeError:
@@ -1652,11 +1652,11 @@ Global bindings:
     
     def Destroy(self):
         f = os.path.expanduser("~/.deb/deb-logging.log")
-        with self.open(f, 'w') as o:
+        with self.fopen(f, 'w') as o:
             o.write(self.Log.Value)
         
         f = os.path.expanduser("~/.deb/deb-history.log")
-        with self.open(f, 'w') as o:
+        with self.fopen(f, 'w') as o:
             o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
             o.write(self.History.Value)
         
