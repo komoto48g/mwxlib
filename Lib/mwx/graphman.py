@@ -1486,7 +1486,6 @@ class Frame(mwx.Frame):
         self.session_file = os.path.abspath(f)
         self.statusbar("Loading session from {!r}...".format(f))
         
-        ## with codecs.open(f, encoding='shift-jis') as i:
         with open(f) as i:
             self.inspector.shell.Execute(i.read())
             self.menubar.reset()
@@ -1517,7 +1516,6 @@ class Frame(mwx.Frame):
         self.session_file = os.path.abspath(f)
         self.statusbar("Saving session to {!r}...".format(f))
         
-        ## with codecs.open(f, 'w', encoding='shift-jis') as o:
         with open(f, 'w') as o:
             o.write('\n'.join((
                 "#! wxpyJemacs session file (This file is generated automatically)",

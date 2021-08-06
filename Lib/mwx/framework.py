@@ -155,7 +155,7 @@ def getargspec(f):
     return args, _varargs, _keywords, defaults
 
 
-def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
+def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None, err=True):
     """Put a list of objects having expression `rexpr in `root
     """
     name = alias or typename(root)
@@ -191,10 +191,9 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
                         continue
                     word = repr(value)
                     word = ' '.join(s.strip() for s in word.splitlines()) # format in line
-                ## except TypeError:
-                ##     ## pred:error is ignored
-                ##     continue
                 except Exception as e:
+                    if not err:
+                        continue
                     word = '#<{!r}>'.format(e) # repr fails in formatting
                 ellipsis = ('...' if len(word)>80 else '')
                 print("    {}.{:<36s} {}".format(name, key, word[:80] + ellipsis))
@@ -3632,10 +3631,8 @@ if 1:
     self.inspector
     root = self.inspector.shell
     """
+    from scipy import constants as const
     np.set_printoptions(linewidth=256) # default 75
-    if 0:
-        from scipy import constants
-        apropos('', constants, pred='atom')
     
     app = wx.App()
     frm = Frame(None,
