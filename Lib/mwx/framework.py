@@ -53,7 +53,7 @@ def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
         return isinstance(v, types)
-    _pred.__name__ = str("instance of " + ','.join(p.__name__ for p in types))
+    _pred.__name__ = str("instance<{}>".format(','.join(p.__name__ for p in types)))
     return _pred
 
 
@@ -61,7 +61,7 @@ def subclass(*types):
     ## return lambda v: issubclass(v, types)
     def _pred(v):
         return issubclass(v, types)
-    _pred.__name__ = str("subclass of " + ','.join(p.__name__ for p in types))
+    _pred.__name__ = str("subclass<{}>".format(','.join(p.__name__ for p in types)))
     return _pred
 
 
@@ -155,7 +155,7 @@ def getargspec(f):
     return args, _varargs, _keywords, defaults
 
 
-def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None, err=True):
+def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
     """Put a list of objects having expression `rexpr in `root
     """
     name = alias or typename(root)
@@ -192,8 +192,6 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None, er
                     word = repr(value)
                     word = ' '.join(s.strip() for s in word.splitlines()) # format in line
                 except Exception as e:
-                    if not err:
-                        continue
                     word = '#<{!r}>'.format(e) # repr fails in formatting
                 ellipsis = ('...' if len(word)>80 else '')
                 print("    {}.{:<36s} {}".format(name, key, word[:80] + ellipsis))
