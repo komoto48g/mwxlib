@@ -959,8 +959,8 @@ class CtrlInterface(object):
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
         key = hotkey(evt)
-        self.__key = regulate_key(key + '+')
-        if not self.HasFocus():
+        self.__key = (key + '+')
+        if evt.EventObject is not self:
             evt.Skip()
             return
         self.handler('{} pressed'.format(key), evt)
@@ -972,8 +972,10 @@ class CtrlInterface(object):
         self.handler('{} released'.format(key), evt)
     
     def on_mousewheel(self, evt): #<wx._core.MouseEvent>
-        """Called when wheel event"""
-        ## if evt.WheelAxis: # [left|right] <= phoenix 4.0.7
+        """Called when wheel event
+        Trigger event: 'key+wheel[up|down|right|left] pressed'
+        """
+        ## if evt.WheelAxis: # for phoenix >= 4.0.7
         if evt.GetWheelAxis():
             p = 'right' if evt.WheelRotation > 0 else 'left'
         else:
@@ -982,9 +984,11 @@ class CtrlInterface(object):
         self.handler('{} pressed'.format(evt.key), evt)
     
     def mouse_handler(self, event, evt): #<wx._core.MouseEvent>
-        """Called when mouse event"""
-        event = self.__key + event  # 'key+[LMRX]button pressed/released/dclick'
-        evt.key, st = event.split() # event-key removes 'pressed/released/dclick'
+        """Called when mouse event
+        Trigger event: 'key+[LMRX]button pressed/released/dclick'
+        """
+        event = self.__key + event
+        evt.key, st = event.rsplit(' ', 1)
         self.handler(event, evt)
         try:
             self.SetFocusIgnoringChildren() # let the panel accept keys
@@ -1409,10 +1413,11 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def on_char(evt):
             """Called when key down (let handler call skip)"""
+            ## Text editing is prior to the handler
             if isinstance(evt.EventObject, wx.TextEntry):
                 evt.Skip()
-            else:
-                self.handler('{} pressed'.format(hotkey(evt)), evt)
+                return
+            self.handler('{} pressed'.format(hotkey(evt)), evt)
         
         def close(v):
             """Close the window"""
@@ -1468,10 +1473,11 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def on_char(evt):
             """Called when key down (let handler call skip)"""
+            ## Text editing is prior to the handler
             if isinstance(evt.EventObject, wx.TextEntry):
                 evt.Skip()
-            else:
-                self.handler('{} pressed'.format(hotkey(evt)), evt)
+                return
+            self.handler('{} pressed'.format(hotkey(evt)), evt)
         
         def close(v):
             """Close the window"""
