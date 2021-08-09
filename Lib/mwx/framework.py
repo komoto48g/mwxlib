@@ -165,16 +165,11 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
     if isinstance(pred, LITERAL_TYPE):
         pred = eval(predicate(pred) or 'None', None, locals)
     
-    if pred:
-        if not callable(pred):
-            raise TypeError("{} is not callable".format(typename(pred)))
-        
-        if isinstance(pred, type):
-            pred = instance(pred)
-        elif not inspect.isbuiltin(pred):
-            args, _varargs, _keywords, defaults = getargspec(pred)
-            if not args or len(args) - len(defaults or ()) > 1:
-                raise TypeError("{} must take exactly one argument".format(typename(pred)))
+    if isinstance(pred, type):
+        pred = instance(pred)
+    
+    if pred and not callable(pred):
+        raise TypeError("{} is not callable".format(typename(pred)))
     
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)
@@ -455,10 +450,6 @@ class FSM(dict):
     def fork(self, *args):
         """Invoke the current event"""
         if self.__state == self.__prev_state: # possibly results in an infinite loop
-            self.dump("- FSM:logic error in {!r}".format('fork'),
-                      "   event : {}".format(self.__event),
-                      "    from : {}".format(self.__prev_state),
-                      "   state : {}".format(self.__state), sep='\n')
             raise Exception("FSM:logic error - a fork cannot fork itself")
         return self.call(self.__event, *args)
     
@@ -467,19 +458,9 @@ class FSM(dict):
         
         if event in context:
             transaction = context[event]
-            if not transaction:
-                raise Exception("FSM:bad transaction {!r} : {!r}".format(self.__state, event))
             
-            self.__prev_state = self.__state # save previos state
+            self.__prev_state = self.__state # save previous state
             self.__state = transaction[0] # the state transits here
-            
-            if self.__state not in self:
-                self.__state = self.__prev_state # rewind to previous state
-                self.dump("- FSM:unknown transaction {!r}".format(transaction),
-                          "   event : {}".format(event),
-                          "    from : {}".format(self.__prev_state),
-                          "   state : {}".format(self.__state), sep='\n')
-                raise Exception("FSM:unknown state {!r}".format(self.__state))
             
             self.__debcall__(event, *args) # check after transition
             
@@ -494,7 +475,7 @@ class FSM(dict):
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
-                              "  action : {}".format(typename(act)), sep='\n')
+                              "  action : {}".format(typename(act)))
                     traceback.print_exc()
                     
                 except Exception as e:
@@ -502,7 +483,7 @@ class FSM(dict):
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
-                              "  action : {}".format(typename(act)), sep='\n')
+                              "  action : {}".format(typename(act)))
                     traceback.print_exc()
             return retvals
         else:
@@ -539,23 +520,18 @@ class FSM(dict):
             self.log(*args)
     
     @staticmethod
-    def log(*args, **kwargs):
-        print(*args, file=sys.__stdout__, **kwargs)
+    def log(*args):
+        print(*args, file=sys.__stdout__)
     
     @staticmethod
-    def dump(*args, **kwargs):
-        print(*args, file=sys.__stderr__, **kwargs)
+    def dump(*args):
+        print(*args, file=sys.__stderr__, sep='\n')
         
         f = os.path.expanduser("~/.deb/deb-dump.log")
         with open(f, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
-            print(*args, file=o, **kwargs)
-            
-            exc = traceback.format_exc()
-            lex = re.findall("File \"(.*)\", line ([0-9]+), in (.*)\n+(.*)", exc)
-            print('\n'.join("  # " + x for x in exc.splitlines()), file=o)
-            print(':'.join(lex[-1]), file=o)
-            print('\n', file=o)
+            print(*args, file=o, sep='\n', end='\n\n')
+            print(traceback.format_exc(), file=o)
     
     @staticmethod
     def copy(context):
