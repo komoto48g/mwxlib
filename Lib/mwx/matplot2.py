@@ -29,41 +29,44 @@ XAXIS, YAXIS = 'Xaxis', 'Yaxis'
 MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 
 
+speckeys = {
+    wx.WXK_CANCEL           : 'break',
+    wx.WXK_UP               : 'up',
+    wx.WXK_DOWN             : 'down',
+    wx.WXK_LEFT             : 'left',
+    wx.WXK_RIGHT            : 'right',
+    wx.WXK_RETURN           : 'enter',
+    wx.WXK_TAB              : 'tab',
+    wx.WXK_NUMPAD_UP        : 'up',
+    wx.WXK_NUMPAD_DOWN      : 'down',
+    wx.WXK_NUMPAD_LEFT      : 'left',
+    wx.WXK_NUMPAD_RIGHT     : 'right',
+    wx.WXK_NUMPAD_ENTER     : 'enter',
+    wx.WXK_WINDOWS_LEFT     : 'Lwin',
+    wx.WXK_WINDOWS_RIGHT    : 'Rwin',
+}
+
+## speckeys = mwx.speckeys
+
 def wx_hotkey(evt):
-    """mpl が取りこぼすイベントを捕まえるとそのキーを CMS-修飾付きで返す
-    特殊キー (speckeys) のみ対応する．mpl_hotkey 形式に変換する．
-    cf. mwx.hotkey
+    """mpl が取りこぼすイベントを捕まえるとそのキーを mpl 形式で返す
+    特殊キー (speckeys) のみに対応し，それ以外は Skip.
     """
     key = evt.GetKeyCode()
-    speckeys = {
-        wx.WXK_CANCEL           : 'break',
-        wx.WXK_UP               : 'up',
-        wx.WXK_DOWN             : 'down',
-        wx.WXK_LEFT             : 'left',
-        wx.WXK_RIGHT            : 'right',
-        wx.WXK_RETURN           : 'enter',
-        wx.WXK_TAB              : 'tab',
-        wx.WXK_NUMPAD_UP        : 'up',
-        wx.WXK_NUMPAD_DOWN      : 'down',
-        wx.WXK_NUMPAD_LEFT      : 'left',
-        wx.WXK_NUMPAD_RIGHT     : 'right',
-        wx.WXK_NUMPAD_ENTER     : 'enter',
-        wx.WXK_WINDOWS_LEFT     : 'Lwin',
-        wx.WXK_WINDOWS_RIGHT    : 'Rwin',
-    }
-    if key in speckeys:
-        mod = ""
-        for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
-                     (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                     (wx.WXK_CONTROL, 'ctrl+'),
-                     (wx.WXK_ALT,     'alt+'),
-                     (wx.WXK_SHIFT,   'shift+')):
-            if key != k and wx.GetKeyState(k):
-                mod += v
-        if mod.startswith("alt+"): # skip to mpl
-            return
-        evt.key = mod + speckeys[key]
-        return mpl_hotkey(evt)
+    if key not in speckeys:
+        return
+    mod = ""
+    for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
+                (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
+                (wx.WXK_CONTROL, 'ctrl+'),
+                (wx.WXK_ALT,     'alt+'),
+                (wx.WXK_SHIFT,   'shift+')):
+        if key != k and wx.GetKeyState(k):
+            mod += v
+    
+    key = speckeys.get(key) or chr(key).lower()
+    evt.key = mod + key
+    return evt.key
 
 
 def mpl_hotkey(evt):
@@ -89,7 +92,9 @@ C-M-S   ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
         ## matplot 3.2.x --> 3.4.x 対応
         if key.startswith('shift+'):
             key = key[6:]
-        if key == 'alt+ctrl+alt':   key = 'ctrl+alt'
+        if key == 'alt+ctrl+alt':
+            key = 'ctrl+alt'
+    
     if   key == 'control':          key = 'ctrl'
     elif key == 'ctrl+control':     key = 'ctrl'
     elif key == 'alt+alt':          key = 'alt'
@@ -122,11 +127,6 @@ C-M-S   ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
         ## matplot 3.2.x --> 3.4.x 対応
         key = key.replace("alt+ctrl+", "ctrl+alt+")
         
-    if key:
-        head, sep, tail = key.rpartition('+')
-        evt.rawkey = tail or sep
-    else:
-        evt.rawkey = key
     evt.key = key
     return key
 
@@ -221,6 +221,7 @@ class MatplotPanel(wx.Panel):
         
         ## mpl が取りこぼすイベントを捕まえる
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
+        self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.handler('Xbutton1 pressed', v))
         self.canvas.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: self.handler('Xbutton2 pressed', v))
@@ -602,7 +603,7 @@ class MatplotPanel(wx.Panel):
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
-        """Catch the event that mpl misses by wx"""
+        """Catch the event that mpl won't catch"""
         key = wx_hotkey(evt)
         if key:
             self.handler('{} pressed'.format(key), evt)
@@ -610,7 +611,7 @@ class MatplotPanel(wx.Panel):
             evt.Skip() # skip to mpl:on_key_press
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
-        """Catch the event that mpl misses by wx"""
+        """Catch the event that mpl won't catch"""
         key = wx_hotkey(evt)
         if key:
             self.handler('{} released'.format(key), evt)
@@ -954,7 +955,9 @@ if __name__ == '__main__':
     app = wx.App()
     frm = mwx.Frame(None)
     frm.graph = MatplotPanel(frm, log=frm.statusbar, size=(300,240))
-    frm.graph.handler.debug = 2
+    
+    frm.handler.debug = 4
+    frm.graph.handler.debug = 4
     
     axes = frm.graph.axes
     if 1:

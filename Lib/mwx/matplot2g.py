@@ -396,7 +396,6 @@ Constants:
         
         _F = mwx.funcall
         
-        draw_all = _F(self.canvas.draw)
         draw_idle = _F(self.canvas.draw_idle)
         
         self.handler.update({ #<GraphPlot handler>
@@ -1694,7 +1693,8 @@ if __name__ == '__main__':
     frm = mwx.Frame(None)
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=(.1,.1,.9,.9), size=(300,240))
     
-    frm.graph.handler.debug = 4
+    frm.handler.debug = 2
+    frm.graph.handler.debug = 2
     
     def _imread(path):
         if sys.version_info < (3,0):
