@@ -290,8 +290,8 @@ class MatplotPanel(wx.Panel):
            'ctrl+shift pressed' : (PAN, ),
                 },
                 PAN+DRAGGING : {
-                '*[LR]drag end' : (NORMAL, self.OnPanEnd),
-         '*[LR]button released' : (NORMAL, self.OnPanEnd),
+                '*[LR]drag end' : (NORMAL, self.OnPanEnd, self.draw),
+         '*[LR]button released' : (NORMAL, self.OnPanEnd, self.draw),
                 },
                 ZOOM : {
               '*[LR]drag begin' : (ZOOM+DRAGGING, ),
@@ -300,8 +300,8 @@ class MatplotPanel(wx.Panel):
                     'z pressed' : (NORMAL, self.OnZoomEnd),
                 },
                 ZOOM+DRAGGING : {
-                '*[LR]drag end' : (NORMAL, self.OnZoomEnd),
-         '*[LR]button released' : (NORMAL, self.OnZoomEnd),
+                '*[LR]drag end' : (NORMAL, self.OnZoomEnd, self.draw),
+         '*[LR]button released' : (NORMAL, self.OnZoomEnd, self.draw),
                 },
                 XAXIS : {
                    'axes enter' : (NORMAL, self.OnAxisLeave),
@@ -394,7 +394,8 @@ class MatplotPanel(wx.Panel):
             self.axes.draw_artist(art)
             self.canvas.blit(art.get_clip_box())
             ## self.canvas.draw_idle()
-        elif art is None:
+        ## elif art is None:
+        else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
     
@@ -732,16 +733,16 @@ class MatplotPanel(wx.Panel):
         """Escape from selection"""
         del self.Selector
     
-    def OnShiftLimit(self, evt, r=0.1):
-        w = self.xlim[1] - self.xlim[0]
-        h = self.ylim[1] - self.ylim[0]
-        if 'up' in evt.key: self.ylim += h * r
-        elif 'down' in evt.key: self.ylim -= h * r
-        elif 'left' in evt.key: self.xlim -= w * r
-        elif 'right' in evt.key: self.xlim += w * r
-        if 1:
-            self.toolbar.push_current()
-            self.draw()
+    ## def OnShiftLimit(self, evt, r=0.1):
+    ##     w = self.xlim[1] - self.xlim[0]
+    ##     h = self.ylim[1] - self.ylim[0]
+    ##     if 'up' in evt.key: self.ylim += h * r
+    ##     elif 'down' in evt.key: self.ylim -= h * r
+    ##     elif 'left' in evt.key: self.xlim -= w * r
+    ##     elif 'right' in evt.key: self.xlim += w * r
+    ##     if 1:
+    ##         self.toolbar.push_current()
+    ##         self.draw()
     
     def zoomlim(self, lim, M, c=None):
         ## 拡大しすぎると処理速度が遅くなるため表示幅を制限する (None を返す)
@@ -778,7 +779,7 @@ class MatplotPanel(wx.Panel):
     def OnPanEnd(self, evt):
         self.toolbar.set_cursor(1)
         self.toolbar.pan()
-        self.draw()
+        ## self.draw()
         self.handler.current_state = self.__prev  # PAN 前の状態に戻す
         del self.__prev
     
@@ -791,7 +792,7 @@ class MatplotPanel(wx.Panel):
     def OnZoomEnd(self, evt):
         self.toolbar.set_cursor(1)
         self.toolbar.zoom()
-        self.draw()
+        ## self.draw()
         self.handler.current_state = self.__prev  # ZOOM 前の状態に戻す
         del self.__prev
     
