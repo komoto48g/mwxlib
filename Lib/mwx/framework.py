@@ -26,7 +26,7 @@ import wx
 from wx import aui
 from wx import stc
 from wx.py.shell import Shell
-## from wx.py.editwindow import EditWindow
+from wx.py.editwindow import EditWindow
 import numpy as np
 import fnmatch
 import pydoc
@@ -1742,7 +1742,7 @@ Global bindings:
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = self.current_editor # or self.findDlg.Parent
+        win = self.current_editor # or self.findDlg.Parent <EditWindow>
         win.DoFindNext(data)
     
     def OnFindPrev(self, evt):
@@ -2243,7 +2243,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.Replace(p, self.cur, '')
 
 
-class Editor(stc.StyledTextCtrl, EditorInterface):
+class Editor(EditWindow, EditorInterface):
     """Python code editor
     """
     parent = property(lambda self: self.__parent)
@@ -2278,7 +2278,7 @@ class Editor(stc.StyledTextCtrl, EditorInterface):
     }
     
     def __init__(self, parent, **kwargs):
-        stc.StyledTextCtrl.__init__(self, parent, **kwargs)
+        EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
