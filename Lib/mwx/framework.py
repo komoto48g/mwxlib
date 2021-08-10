@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.4"
+__version__ = "0.43.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -323,7 +323,8 @@ def find_modules(force=False, verbose=True):
     f = os.path.expanduser("~/.deb/deb-modules-{}.log".format(sys.winver))
     if force or not os.path.exists(f):
         print("Please wait a moment "
-              "while Py{} gathers a list of all available modules...".format(sys.winver))
+              "while Py{} gathers a list of all available modules... "
+              "(This is executed once)".format(sys.winver))
         
         def callback(path, modname, desc):
             lm.append(modname)
