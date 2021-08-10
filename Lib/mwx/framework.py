@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.5"
+__version__ = "0.43.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3142,11 +3142,10 @@ Flaky nutshell:
     
     def about(self):
         """About the shell (to be overrided)"""
-        print(
-            "#<module 'mwx' from {!r}>".format(__file__),
-            "Author: {!r}".format(__author__),
-            "Version: {!s}".format(__version__),
-            "#{!r}".format(wx.py.shell), sep='\n', file=self)
+        print("#<module 'mwx' from {!r}>".format(__file__),
+              "Author: {!r}".format(__author__),
+              "Version: {!s}".format(__version__),
+              "#{!r}".format(wx.py.shell), sep='\n', file=self)
         return Shell.about(self)
     
     def _clip(self, data):
