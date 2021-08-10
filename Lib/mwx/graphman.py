@@ -269,7 +269,7 @@ unloadable : flag to set the layer to be unloadable
             },
         })
         
-        ## ControlPanel.Menu (override)
+        ## Menu (override)
         self.Menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
                 lambda v: self.copy_to_clipboard()),
@@ -283,17 +283,17 @@ unloadable : flag to set the layer to be unloadable
         if self.editable: self.Menu += [
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
-                lambda v: self.parent.edit_plug(self.__module__),
+                lambda v: self.parent.edit_plug(self),
                 lambda v: v.Enable(self.editable)),
                 
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
-                lambda v: self.parent.load_plug(self.__module__,
+                lambda v: self.parent.load_plug(self,
                             show=1, force=1, session=self.get_current_session()),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.is_active))),
                 
             (mwx.ID_(202), "&Unload module", "Unload module", Icon('delete'),
-                lambda v: self.parent.unload_plug(self.__module__),
+                lambda v: self.parent.unload_plug(self),
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.is_active))),
         ]
@@ -342,10 +342,10 @@ unloadable : flag to set the layer to be unloadable
         pass
     
     def IsShown(self):
-        return self.parent.get_pane(self.__module__).IsShown()
+        return self.parent.get_pane(self).IsShown()
     
     def Show(self, show=True):
-        self.parent.show_pane(self.__module__, show)
+        self.parent.show_pane(self, show)
     
     def IsDrawn(self):
         return any(art.get_visible() for art in self.Arts)
@@ -690,7 +690,7 @@ class Frame(mwx.Frame):
     Editor = "notepad"
     
     def edit(self, f):
-        if isinstance(f, type(sys)):
+        if inspect.ismodule(f):
             name, ext = os.path.splitext(f.__file__)
             f = name + '.py'
         subprocess.Popen('{} "{}"'.format(self.Editor, f))
@@ -731,7 +731,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif isinstance(name, Layer):
+        elif isinstance(name, ControlPanel):
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -753,10 +753,11 @@ class Frame(mwx.Frame):
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
                 plug = self.get_plug(name)
-                if isinstance(plug, Layer):
+                try:
                     self.load_plug(name, show=1, force=plug.reloadable)
                     pane = self.get_pane(name)
-            
+                except AttributeError:
+                    pass
             ## (ctrl + shift + menu) reset floating position of a stray window
             if wx.GetKeyState(wx.WXK_CONTROL):
                 pane.floating_pos = wx.GetMousePosition()
@@ -765,10 +766,12 @@ class Frame(mwx.Frame):
         ## for Layers only 
         plug = self.get_plug(name)
         
-        if isinstance(plug, Layer):
+        try:
             nb = plug.__notebook
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
+        except AttributeError:
+            pass
         
         if show:
             if not pane.IsShown():
@@ -805,7 +808,7 @@ class Frame(mwx.Frame):
         ## for Layers only (graph window has not plug.constants)
         plug = self.get_plug(name)
         
-        if isinstance(plug, Layer):
+        try:
             if isinstance(plug.caption, LITERAL_TYPE) and not plug.category:
                 pane.CaptionVisible(1)
                 pane.Caption(plug.caption)
@@ -816,11 +819,12 @@ class Frame(mwx.Frame):
             if plug.dockable and plug.dock_dir: # ドッキング可能でその方向が指定されていれば
                 pane.Direction(plug.dock_dir)   # その指定方向を優先する
                 pane.Dock()
-            
             nb = plug.__notebook
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
-            
+        except AttributeError:
+            pass
+        
         if show:
             if not pane.IsShown():
                 plug.handler('pane_shown')
@@ -873,7 +877,7 @@ class Frame(mwx.Frame):
         """Find named plug window in registred plugins"""
         if name in self.plugins:
             return self.plugins[name].__plug__
-        if isinstance(name, Layer):
+        if isinstance(name, ControlPanel):
             return name
         return self._mgr.GetPane(name).window
     
@@ -893,11 +897,14 @@ class Frame(mwx.Frame):
         prop : docking proportion < 1e6 ?
   floating_* : pos/size of floating window
         """
-        if isinstance(root, type(sys)): #<type 'module'>
-            root = root.__file__
-        
-        if isinstance(root, Layer):
-            root = root.__module__
+        try:
+            if inspect.ismodule(root):
+                root = root.__file__ #<type 'module'>
+            else:
+                root = root.__module__ #<type 'Layer'>
+                root = self.plugins.get(root).__file__ # reloading plugin file
+        except AttributeError as e:
+            pass
         
         root = os.path.normpath(root)
         dirname = os.path.dirname(root)
@@ -1069,6 +1076,9 @@ class Frame(mwx.Frame):
         try:
             ## self.statusbar("Unloading plugin {!r}...".format(name))
             plug = self.get_plug(name)
+            if not plug:
+                return False
+            name = plug.__module__
             
             if name in self.plugins:
                 del self.plugins[name]
@@ -1102,7 +1112,9 @@ class Frame(mwx.Frame):
             return False
     
     def edit_plug(self, name):
-        self.edit(self.plugins[name])
+        ## self.edit(self.plugins[name])
+        plug = self.get_plug(name)
+        self.edit(self.plugins.get(plug.__module__))
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell
@@ -1607,14 +1619,13 @@ if __name__ == '__main__':
     ## frm.graph.load(np.randn(1024,1024))
     
     ## 次の二つは別モジュール
-    ## frm.load_plug('templates.template.py', show=1)
-    ## frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1, docking=4, force=0)
+    ## frm.load_plug('demo.template.py', show=1, docking=4, force=1)
+    ## frm.load_plug('demo/template.py', show=1, docking=4, force=1)
     
+    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
+    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
-    
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
     
     frm.Show()
     app.MainLoop()
