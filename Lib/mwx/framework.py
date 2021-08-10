@@ -2760,18 +2760,16 @@ Flaky nutshell:
             return
         
         text = self.GetTextRange(self.bolc, self.eolc).lstrip()
-        if not text or self.reader.isreading:
-            evt.Skip()
-            return
+        
+        ## if not text or self.reader.isreading:
+        ##     evt.Skip()
+        ##     return
         
         if self.CallTipActive():
             self.CallTipCancel()
         
-        ## set marks, reset history point, etc.
-        self.on_text_input(text)
-        
         ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
-        if text[0] in '!?':
+        if not text or text[0] in '!?':
             evt.Skip()
             return
         
@@ -2938,6 +2936,7 @@ Flaky nutshell:
     
     def on_text_input(self, text):
         """Called when [Enter] text (before push)
+        Mark points, reset history point, etc.
         
         Note: text is raw input:str with no magic cast
         """
@@ -2948,6 +2947,7 @@ Flaky nutshell:
     
     def on_text_output(self, text):
         """Called when [Enter] text (after push)
+        Set markers at the last command line.
         
         Note: text is raw output:str with no magic cast
         """
@@ -2968,6 +2968,16 @@ Flaky nutshell:
     ## If del shell.history, the history of the class variable is used
     history = []
     
+    def push(self, command, **kwargs):
+        """Send command to the interpreter for execution.
+        (override) mark points before push.
+        """
+        try:
+            self.on_text_input(command)
+        except AttributeError:
+            pass
+        Shell.push(self, command, **kwargs)
+    
     def addHistory(self, command):
         """Add command to the command history
         (override) if the command is new (i.e., not found in the head of the list).
@@ -2980,9 +2990,10 @@ Flaky nutshell:
         ## bolc : begginning of command-line
         ## eolc : end of the output-buffer
         try:
-            input = self.GetTextRange(self.bolc, self.__eolc_marks[-1])
+            ## input = self.GetTextRange(self.bolc, self.__eolc_marks[-1])
+            input = self.GetTextRange(self.__bolc_marks[-1], self.__eolc_marks[-1])
             output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
-            substr = self.GetTextRange(self.bolc, self.eolc)
+            substr = input + output
             lf = '\n'
             input = (input.replace(os.linesep + sys.ps1, lf)
                           .replace(os.linesep + sys.ps2, lf)
@@ -3007,17 +3018,19 @@ Flaky nutshell:
             ed.ReadOnly = 1
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
-            ## Shell.addHistory(self, command)
             pass
     
-    def _In(self, j):
-        """Input command:str"""
-        return self.GetTextRange(self.__bolc_marks[j], self.__eolc_marks[j])
-    
-    def _Out(self, j):
-        """Output result:str"""
-        marks = self.__bolc_marks[1:] + [self.bolc]
-        return self.GetTextRange(self.__eolc_marks[j]+len(os.linesep), marks[j]-len(sys.ps1))
+    ## def _In(self, j):
+    ##     """Input command:str"""
+    ##     return self.GetTextRange(self.__bolc_marks[j],
+    ##                              self.__eolc_marks[j])
+    ## 
+    ## def _Out(self, j):
+    ##     """Output result:str"""
+    ##     ms = self.__bolc_marks[1:] + [self.bolc]
+    ##     le = len(os.linesep)
+    ##     return self.GetTextRange(self.__eolc_marks[j] + le,
+    ##                              ms[j] - len(sys.ps1) - le)
     
     def goto_previous_mark(self):
         marks = self.__bolc_marks + [self.bolc]
@@ -3183,7 +3196,7 @@ Flaky nutshell:
     
     def Execute(self, text):
         """Replace selection with text, run commands,
-        (override) and check clock +fix finally block indent
+        (override) and check the clock time
         """
         self.__start = self.clock()
         
@@ -3199,15 +3212,13 @@ Flaky nutshell:
             ## if line.strip() == sys.ps2.strip():
             ##     line = ''
             lstrip = line.lstrip()
-            if (lstrip and lstrip == line
-                and not any(lstrip.startswith(x) for x in (
-                    'else', 'elif',
-                    'except', 'finally'))): # <-- add `finally` to the original code
+            if (lstrip and lstrip == line and not any(
+                lstrip.startswith(x) for x in ('else', 'elif', 'except', 'finally'))):
                 if c:
-                    commands.append(c)
+                    commands.append(c) # Add the previous command to the list
                 c = line
             else:
-                c += lf + line
+                c += lf + line # Multiline command. Add to the command
         commands.append(c)
         
         self.Replace(self.bolc, self.eolc, '')
@@ -3215,13 +3226,13 @@ Flaky nutshell:
             self.write(c.replace(lf, os.linesep + sys.ps2))
             self.processLine()
     
-    def run(self, *args, **kwargs):
+    def run(self, command, **kwargs):
         """Execute command as if it was typed in directly
-        (override) and check clock
+        (override) and check the clock time
         """
         self.__start = self.clock()
         
-        return Shell.run(self, *args, **kwargs)
+        return Shell.run(self, command, **kwargs)
     
     @staticmethod
     def clock():
