@@ -148,15 +148,6 @@ def man(*words):
     return _pred
 
 
-def getargspec(f):
-    try:
-        args, _varargs, _keywords, defaults,\
-          _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) # PY3
-    except AttributeError:
-        args, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
-    return args, _varargs, _keywords, defaults
-
-
 def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
     """Put a list of objects having expression `rexpr in `root
     """
@@ -853,7 +844,12 @@ def funcall(f, doc=None, alias=None, **kwargs):
         return k
     
     if not inspect.isbuiltin(f):
-        args, _varargs, _keywords, defaults = getargspec(f)
+        try:
+            args, _varargs, _keywords, defaults,\
+              _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) # PY3
+        except AttributeError:
+            args, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
+        
         k = explicit_args(args, defaults)
         if k == 0 or inspect.ismethod(f) and k == 1: # 暗黙の引数 'self' は除く
             @wraps(f)
@@ -1603,8 +1599,9 @@ Global bindings:
         @self.define_key('M-left', p=-1)
         def other_window(v, p=1):
             "Focus moves to other window"
-            pages = (self.ghost.GetPage(i) for i in range(self.ghost.PageCount))
-            pages = [self.shell] + [w for w in pages if w.IsShownOnScreen()]
+            ## pages = (self.ghost.GetPage(i) for i in range(self.ghost.PageCount))
+            ## pages = [self.shell] + [w for w in pages if w.IsShownOnScreen()]
+            pages = [w for w in self.all_pages if w.IsShownOnScreen()]
             j = (pages.index(self.current_editor) + p) % len(pages)
             pages[j].SetFocus()
         
@@ -1688,13 +1685,15 @@ Global bindings:
     ## --------------------------------
     
     @property
+    def all_pages(self):
+        return [self.shell] + [self.ghost.GetPage(i) for i in range(self.ghost.PageCount)]
+    
+    @property
     def current_editor(self):
         win = wx.Window.FindFocus()
-        if isinstance(win, wx.MiniFrame): # floating ghost ?
+        if isinstance(win, aui.AuiFloatingFrame): # floating ghost ?
             return self.ghost.CurrentPage # select the Editor window
-        
-        pages = (self.ghost.GetPage(i) for i in range(self.ghost.PageCount))
-        if win in pages:
+        elif win in self.all_pages:
             return win
         return self.shell # default editor
     
