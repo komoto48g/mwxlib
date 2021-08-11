@@ -283,17 +283,17 @@ unloadable : flag to set the layer to be unloadable
         if self.editable: self.Menu += [
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
-                lambda v: self.parent.edit_plug(self),
+                lambda v: self.parent.edit_plug(self.__module__),
                 lambda v: v.Enable(self.editable)),
                 
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
-                lambda v: self.parent.load_plug(self,
+                lambda v: self.parent.load_plug(self.__module__,
                             show=1, force=1, session=self.get_current_session()),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.is_active))),
                 
             (mwx.ID_(202), "&Unload module", "Unload module", Icon('delete'),
-                lambda v: self.parent.unload_plug(self),
+                lambda v: self.parent.unload_plug(self.__module__),
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.is_active))),
         ]
@@ -690,7 +690,7 @@ class Frame(mwx.Frame):
     Editor = "notepad"
     
     def edit(self, f):
-        if inspect.ismodule(f):
+        if hasattr(f, '__file__'):
             name, ext = os.path.splitext(f.__file__)
             f = name + '.py'
         subprocess.Popen('{} "{}"'.format(self.Editor, f))
@@ -731,7 +731,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif isinstance(name, ControlPanel):
+        elif hasattr(name, 'category'): #<type 'Layer'>
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -877,7 +877,7 @@ class Frame(mwx.Frame):
         """Find named plug window in registred plugins"""
         if name in self.plugins:
             return self.plugins[name].__plug__
-        if isinstance(name, ControlPanel):
+        elif hasattr(name, 'category'): #<type 'Layer'>
             return name
         return self._mgr.GetPane(name).window
     
@@ -897,12 +897,14 @@ class Frame(mwx.Frame):
         prop : docking proportion < 1e6 ?
   floating_* : pos/size of floating window
         """
+        if hasattr(root, '__file__'): #<type 'module'>
+            root = root.__file__
+        elif hasattr(root, '__module__'): #<type 'Layer'>
+            root = root.__module__
         try:
-            if inspect.ismodule(root):
-                root = root.__file__ #<type 'module'>
-            else:
-                root = root.__module__ #<type 'Layer'>
-                root = self.plugins.get(root).__file__ # reloading plugin file
+            ## If the name of root has been loaded,
+            ## we reload it refering to the file-name, not module-name
+            root = self.plugins.get(root).__file__
         except AttributeError as e:
             pass
         
@@ -1112,9 +1114,8 @@ class Frame(mwx.Frame):
             return False
     
     def edit_plug(self, name):
-        ## self.edit(self.plugins[name])
         plug = self.get_plug(name)
-        self.edit(self.plugins.get(plug.__module__))
+        self.edit(self.plugins[plug.__module__])
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell
