@@ -2027,8 +2027,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def eol(self):
         """end of line"""
         text, lp = self.CurLine
-        ## if text[-2:] == '\r\n': lp += 2
-        ## elif text[-1:] == '\n': lp += 1
         if text.endswith(os.linesep):
             lp += len(os.linesep)
         return (self.cur - lp + len(text.encode()))
@@ -2038,8 +2036,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Pythonic expression at the caret
         The caret scouts back and forth to scoop a chunk of expression.
         """
-        ## ls = self.GetTextRange(self.bol, self.cur)
-        ## rs = self.GetTextRange(self.cur, self.eol)
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
         lhs = get_words_backward(ls) or ls.rpartition(' ')[-1]
@@ -2228,9 +2224,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def kill_line(self):
         if self.CanEdit():
             p = self.eol
-            ## if p == self.cur:
-            ##     if self.GetTextRange(p, p+2) == '\r\n': p += 2
-            ##     elif self.GetTextRange(p, p+1) == '\n': p += 1
             text, lp = self.CurLine
             if text[:lp] == os.linesep:
                 p += len(os.linesep)
@@ -2239,11 +2232,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def backward_kill_line(self):
         if self.CanEdit():
             p = self.bol
-            ## if p == self.cur:
-            ##     n = len(sys.ps2)
-            ##     if self.GetTextRange(p-2, p) == '\r\n': p -= 2
-            ##     elif self.GetTextRange(p-1, p) == '\n': p -= 1
-            ##     elif self.GetTextRange(p-n, p) == sys.ps2: p -= n
             text, lp = self.CurLine
             if text[:lp] == '' and p: # caret at the beginning of the line
                 p -= len(os.linesep)
@@ -2768,11 +2756,7 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        text = self.GetTextRange(self.bolc, self.eolc).lstrip()
-        
-        ## if not text or self.reader.isreading:
-        ##     evt.Skip()
-        ##     return
+        text = self.GetTextRange(self.bolc, self.eolc) #.lstrip()
         
         if self.CallTipActive():
             self.CallTipCancel()
@@ -3002,20 +2986,14 @@ Flaky nutshell:
             ## input = self.GetTextRange(self.bolc, self.__eolc_marks[-1])
             input = self.GetTextRange(self.__bolc_marks[-1], self.__eolc_marks[-1])
             output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
-            substr = input + output
             
-            ## lf = '\n'
-            ## input = (input.replace(os.linesep + sys.ps1, lf)
-            ##               .replace(os.linesep + sys.ps2, lf)
-            ##               .replace(os.linesep, lf)
-            ##               .lstrip())
             input = regulate_cmd(input).lstrip()
             
             repeat = (self.history and self.history[0] == input)
             if not repeat and input:
                 Shell.addHistory(self, input)
             
-            self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", substr)) # for text-comp
+            self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", input + output)) # for text-comp
             noerr = self.on_text_output(output.strip(os.linesep))
             
             ed = self.parent.History
@@ -3228,15 +3206,10 @@ Flaky nutshell:
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        ## text = (text.replace(os.linesep + sys.ps1, lf)
-        ##             .replace(os.linesep + sys.ps2, lf)
-        ##             .replace(os.linesep, lf))
         text = regulate_cmd(text)
         commands = []
         c = ''
         for line in text.split(lf):
-            ## if line.strip() == sys.ps2.strip():
-            ##     line = ''
             lstr = line.lstrip()
             if (lstr and lstr == line and not any(
                 lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally'))):
