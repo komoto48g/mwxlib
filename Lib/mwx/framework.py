@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.7"
+__version__ = "0.43.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -131,8 +131,10 @@ def Dir(obj):
     """
     keys = dir(obj)
     try:
-        if hasattr(obj, '_prop_map_get_'):
-            keys += obj._prop_map_get_.keys()
+        ## if hasattr(obj, '_prop_map_get_'):
+        ##     keys += obj._prop_map_get_.keys()
+        if hasattr(obj, '_dispobj_'):
+            keys += dir(obj._dispobj_)
     finally:
         return keys
 
