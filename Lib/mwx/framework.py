@@ -3116,13 +3116,13 @@ Flaky nutshell:
     def indent_line(self):
         """Auto-indent the current line"""
         line = self.GetTextRange(self.bol, self.eol) # no-prompt
-        lstrip = line.strip()
+        lstr = line.strip()
         indent = self.calc_indent()
         pos = max(self.bol + len(indent),
-                  self.cur + len(indent) - (len(line) - len(lstrip)))
+                  self.cur + len(indent) - (len(line) - len(lstr)))
         self.goto_char(self.eol)
         self.select_char(self.bol)
-        self.ReplaceSelection(indent + lstrip)
+        self.ReplaceSelection(indent + lstr)
         self.goto_char(pos)
     
     def calc_indent(self):
@@ -3133,13 +3133,13 @@ Flaky nutshell:
             if line.startswith(p):
                 line = line[len(p):]
                 break
-        lstrip = line.lstrip()
-        if not lstrip:
+        lstr = line.lstrip()
+        if not lstr:
             indent = line.strip(os.linesep)
         else:
-            indent = line[:(len(line)-len(lstrip))]
+            indent = line[:(len(line)-len(lstr))]
             if line.strip()[-1] == ':':
-                m = re.match("[a-z]+", lstrip)
+                m = re.match("[a-z]+", lstr)
                 if m and m.group(0) in (
                     'if','else','elif','for','while','with',
                     'def','class','try','except','finally'):
@@ -3237,9 +3237,9 @@ Flaky nutshell:
         for line in text.split(lf):
             ## if line.strip() == sys.ps2.strip():
             ##     line = ''
-            lstrip = line.lstrip()
-            if (lstrip and lstrip == line and not any(
-                lstrip.startswith(x) for x in ('else', 'elif', 'except', 'finally'))):
+            lstr = line.lstrip()
+            if (lstr and lstr == line and not any(
+                lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally'))):
                 if c:
                     commands.append(c) # Add the previous command to the list
                 c = line
