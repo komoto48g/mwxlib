@@ -350,9 +350,9 @@ class Clipboard:
             wx.TheClipboard.GetData(do)
             bmp = do.GetBitmap()
             img = bmp.ConvertToImage()
-            buf = np.asarray(img.GetDataBuffer())
+            buf = np.array(img.GetDataBuffer()) # do copy, don't ref
             w, h = img.GetSize()
-            return buf.reshape(h, w, 3).copy() # need copy to prevent memory leaaks?
+            return buf.reshape(h, w, 3)
         finally:
             wx.TheClipboard.Close()
     

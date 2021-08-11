@@ -808,6 +808,13 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
+def regulate_cmd(text):
+    lf = '\n'
+    return (text.replace(os.linesep + sys.ps1, lf)
+                .replace(os.linesep + sys.ps2, lf)
+                .replace(os.linesep, lf))
+
+
 ## --------------------------------
 ## Interfaces of Controls
 ## --------------------------------
@@ -2996,11 +3003,13 @@ Flaky nutshell:
             input = self.GetTextRange(self.__bolc_marks[-1], self.__eolc_marks[-1])
             output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
             substr = input + output
-            lf = '\n'
-            input = (input.replace(os.linesep + sys.ps1, lf)
-                          .replace(os.linesep + sys.ps2, lf)
-                          .replace(os.linesep, lf)
-                          .lstrip())
+            
+            ## lf = '\n'
+            ## input = (input.replace(os.linesep + sys.ps1, lf)
+            ##               .replace(os.linesep + sys.ps2, lf)
+            ##               .replace(os.linesep, lf)
+            ##               .lstrip())
+            input = regulate_cmd(input).lstrip()
             
             repeat = (self.history and self.history[0] == input)
             if not repeat and input:
@@ -3164,6 +3173,21 @@ Flaky nutshell:
             pass
         Shell._clip(self, data)
     
+    def Paste(self):
+        """Replace selection with clipboard contents.
+        (override) Remove ps1 and ps2 from command to be pasted
+        """
+        if self.CanPaste() and wx.TheClipboard.Open():
+            data = wx.TextDataObject()
+            if wx.TheClipboard.GetData(data):
+                self.ReplaceSelection('')
+                text = data.GetText()
+                text = self.lstripPrompt(text)
+                text = self.fixLineEndings(text)
+                command = regulate_cmd(text).rstrip()
+                self.write(command.replace('\n', os.linesep + sys.ps2))
+            wx.TheClipboard.Close()
+    
     def info(self, root=None):
         """Short information"""
         if root is None:
@@ -3204,9 +3228,10 @@ Flaky nutshell:
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        text = (text.replace(os.linesep + sys.ps1, lf)
-                    .replace(os.linesep + sys.ps2, lf)
-                    .replace(os.linesep, lf))
+        ## text = (text.replace(os.linesep + sys.ps1, lf)
+        ##             .replace(os.linesep + sys.ps2, lf)
+        ##             .replace(os.linesep, lf))
+        text = regulate_cmd(text)
         commands = []
         c = ''
         for line in text.split(lf):
