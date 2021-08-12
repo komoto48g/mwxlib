@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.43.9"
+__version__ = "0.44.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1698,11 +1698,12 @@ Global bindings:
     @property
     def current_editor(self):
         win = wx.Window.FindFocus()
-        if isinstance(win, aui.AuiFloatingFrame): # floating ghost ?
-            return self.ghost.CurrentPage # select the Editor window
-        elif win in self.all_pages:
+        if win in self.all_pages:
             return win
-        return self.shell # default editor
+        if win.Parent:
+            if self.ghost in win.Parent.Children: # floating ghost ?
+                return self.ghost.CurrentPage # select the Editor window
+        return self.shell # otherwise, select the default editor
     
     @postcall
     def OnClearFilterText(self, evt):
