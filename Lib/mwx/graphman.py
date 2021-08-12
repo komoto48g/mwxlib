@@ -110,10 +110,11 @@ class Thread(object):
     def __enter__(self):
         f = inspect.currentframe().f_back
         m = inspect.getmodule(f)
-        
         if not self.is_active:
-            raise AssertionError("The thread is not running. "
-                                 "(cannot enter {})".format(f.f_code.co_name))
+            ## raise AssertionError("The thread is not running. "
+            ##                      "(cannot enter {})".format(f.f_code.co_name))
+            raise AssertionError("can't enter {} "
+                "unless the thread is running".format(f.f_code.co_name))
         
         event = "{}:{}:enter".format(m.__name__, f.f_code.co_name)
         self.owner.handler(event, self)
@@ -132,7 +133,7 @@ class Thread(object):
         """Decorator of thread starter function"""
         @wraps(f)
         def _f(*v):
-            return self.Start(mwx.funcall(f, **kwargs), *v)
+            return self.Start(f, *v, **kwargs)
         return _f
     
     def Start(self, f, *args, **kwargs):
@@ -214,6 +215,8 @@ unloadable : flag to set the layer to be unloadable
     output = property(lambda self: self.__parent.output)
     histogram = property(lambda self: self.__parent.histogram)
     selected_view = property(lambda self: self.__parent.selected_view)
+    
+    pane = property(lambda self: self.__parent.get_pane(self))
     
     thread = None # worker <Thread>
     
