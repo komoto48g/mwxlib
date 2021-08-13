@@ -61,7 +61,7 @@ class Thread(object):
     
     flag = property(lambda self: self.__flag)
     
-    def check(self, timeout=None):
+    def wait(self, timeout=None):
         """Wait flag or interrupt the process
         The caller pauses the thread (flag.clear) and calls check.
         The chequer waits for the flag to be set.
@@ -76,6 +76,8 @@ class Thread(object):
             return True
         finally:
             self.__flag.set()
+    
+    check = wait
     
     def pause(self, msg=""):
         """Pause the process where called
