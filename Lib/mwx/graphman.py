@@ -558,12 +558,25 @@ class Frame(mwx.Frame):
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
-            (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
-                lambda v: self.import_index()),
-                
-            (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
-                lambda v: self.export_index(),
-                lambda v: v.Enable(self.selected_view.frame is not None)),
+            ("Index", (
+                (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
+                    lambda v: self.import_index()),
+                    
+                (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
+                    lambda v: self.export_index(),
+                    lambda v: v.Enable(self.selected_view.frame is not None)),
+                )),
+            (),
+            ("Session", (
+                (mwx.ID_(15), "&Open session", "Open session file",
+                    lambda v: self.load_session()),
+                    
+                (mwx.ID_(16), "&Ssave session", "Save session file",
+                    lambda v: self.save_session()),
+                    
+                (mwx.ID_(17), "&Ssave session as", "Save session file as",
+                    lambda v: self.save_session_as()),
+                )),
             (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("graph", v.IsChecked()),
