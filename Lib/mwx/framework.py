@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.44.0"
+__version__ = "0.44.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -808,13 +808,6 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
-def regulate_cmd(text):
-    lf = '\n'
-    return (text.replace(os.linesep + sys.ps1, lf)
-                .replace(os.linesep + sys.ps2, lf)
-                .replace(os.linesep, lf))
-
-
 ## --------------------------------
 ## Interfaces of Controls
 ## --------------------------------
@@ -965,7 +958,7 @@ class CtrlInterface(object):
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
         key = hotkey(evt)
-        self.__key = (key + '+')
+        self.__key = regulate_key(key + '+')
         if evt.EventObject is not self:
             evt.Skip()
             return
@@ -981,7 +974,6 @@ class CtrlInterface(object):
         """Called when wheel event
         Trigger event: 'key+wheel[up|down|right|left] pressed'
         """
-        ## if evt.WheelAxis: # for phoenix >= 4.0.7
         if evt.GetWheelAxis():
             p = 'right' if evt.WheelRotation > 0 else 'left'
         else:
@@ -993,8 +985,9 @@ class CtrlInterface(object):
         """Called when mouse event
         Trigger event: 'key+[LMRX]button pressed/released/dclick'
         """
-        event = self.__key + event
-        evt.key, st = event.rsplit(' ', 1)
+        event = self.__key + event # 'C-M-S-K+[LMRX]button pressed/released/dclick'
+        key, sep, st = event.rpartition(' ') # removes st:'pressed/released/dclick'
+        evt.key = key or st
         self.handler(event, evt)
         try:
             self.SetFocusIgnoringChildren() # let the panel accept keys
@@ -2988,7 +2981,7 @@ Flaky nutshell:
             input = self.GetTextRange(self.__bolc_marks[-1], self.__eolc_marks[-1])
             output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
             
-            input = regulate_cmd(input).lstrip()
+            input = self.regulate_cmd(input).lstrip()
             
             repeat = (self.history and self.history[0] == input)
             if not repeat and input:
@@ -3009,6 +3002,13 @@ Flaky nutshell:
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             pass
+    
+    @staticmethod
+    def regulate_cmd(text):
+        lf = '\n'
+        return (text.replace(os.linesep + sys.ps1, lf)
+                    .replace(os.linesep + sys.ps2, lf)
+                    .replace(os.linesep, lf))
     
     ## def _In(self, j):
     ##     """Input command:str"""
@@ -3163,7 +3163,7 @@ Flaky nutshell:
                 text = data.GetText()
                 text = self.lstripPrompt(text)
                 text = self.fixLineEndings(text)
-                command = regulate_cmd(text).rstrip()
+                command = self.regulate_cmd(text).rstrip()
                 self.write(command.replace('\n', os.linesep + sys.ps2))
             wx.TheClipboard.Close()
     
@@ -3207,7 +3207,9 @@ Flaky nutshell:
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        text = regulate_cmd(text)
+        text = self.fixLineEndings(text)
+        text = self.lstripPrompt(text)
+        text = self.regulate_cmd(text)
         commands = []
         c = ''
         for line in text.split(lf):
