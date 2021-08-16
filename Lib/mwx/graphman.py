@@ -63,8 +63,9 @@ class Thread(object):
     
     def wait(self, timeout=None):
         """Wait flag or interrupt the process
-        The caller pauses the thread (flag.clear) and calls check.
-        The chequer waits for the flag to be set.
+        1. flag.clear   -> clear flag:False so that the thread suspends when wait is called
+        2. flag.wait    -> wait until the chequer flag to be set True
+        3. flag.set     -> set flag:True to resume the thread
         """
         ## The event.wait returns immediately when it is True (:set)
         ## and blocks until the internal flag is True when it is False (:clear)
@@ -192,9 +193,8 @@ class Layer(ControlPanel, mwx.CtrlInterface):
    caption : flag to set the pane caption to be visible (default caption is __module__)
              a string can also be specified
   dockable : flag to set the pane to be dockable
-  dock_dir : docking direction (1:top, 2:right, 3:bottom, 4:left, *5:center) or None as it is
-reloadable : flag to set the layer to be reloadable
-unloadable : flag to set the layer to be unloadable
+reloadable : flag to set the Layer to be reloadable
+unloadable : flag to set the Layer to be unloadable
     parent : parent <Frame> (not always equals `Parent' especially when floating)
      graph : parent.graph window
     otuput : parent.output window
@@ -205,7 +205,6 @@ unloadable : flag to set the layer to be unloadable
     caption = True
     category = None
     dockable = True
-    dock_dir = None
     editable = True # to be deprecated
     reloadable = True
     unloadable = True
@@ -816,9 +815,9 @@ class Frame(mwx.Frame):
         pane.floating_pos = kwargs.get('floating_pos') or pane.floating_pos
         pane.floating_size = kwargs.get('floating_size') or pane.floating_size
         
-        docking = kwargs.get('docking')
-        if docking:
-            pane.dock_direction = docking
+        dock = kwargs.get('docking')
+        if dock:
+            pane.dock_direction = dock
             pane.Dock()
         else:
             pane.Float()
@@ -834,9 +833,9 @@ class Frame(mwx.Frame):
                 pane.CaptionVisible(bool(plug.caption))
             pane.Gripper(not plug.caption) # if no caption, grip
             pane.Dockable(plug.dockable)
-            if plug.dockable and plug.dock_dir: # ドッキング可能でその方向が指定されていれば
-                pane.Direction(plug.dock_dir)   # その指定方向を優先する
-                pane.Dock()
+            ## if plug.dockable and plug.dock_dir: # ドッキング可能でその方向が指定されていれば
+            ##     pane.Direction(plug.dock_dir)   # その指定方向を優先する
+            ##     pane.Dock()
             nb = plug.__notebook
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
@@ -908,11 +907,11 @@ class Frame(mwx.Frame):
         root : Layer object, module, or `name of module
         show : the pane is to be shown when loaded
        force : force loading even when it were already loaded
-     docking : dock_direction (1:top, 2:right, 3:bottom, 4:left, *5:center)
-       layer : docking layer
-         pos : docking position
-         row : docking row position
-        prop : docking proportion < 1e6 ?
+     docking : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
+       layer : dock_layer
+         pos : dock_pos
+         row : dock_row position
+        prop : dock_proportion < 1e6 ?
   floating_* : pos/size of floating window
         """
         if hasattr(root, '__file__'): #<type 'module'>
@@ -1638,8 +1637,8 @@ if __name__ == '__main__':
     ## frm.graph.load(np.randn(1024,1024))
     
     ## 次の二つは別モジュール
-    ## frm.load_plug('demo.template.py', show=1, docking=4, force=1)
-    ## frm.load_plug('demo/template.py', show=1, docking=4, force=1)
+    ## frm.load_plug('demo.template.py', show=1, force=1)
+    ## frm.load_plug('demo/template.py', show=1, force=1)
     
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
