@@ -728,17 +728,20 @@ class ControlPanel(scrolled.ScrolledPanel):
         else:
             for p,v in zip(chain(*params), argv):
                 try:
-                    p.reset(v, **kwargs)
+                    p.reset(eval(v), **kwargs) # eval v:str -> value
                 except AttributeError:
                     p.value = v
+                except Exception as e: # failed to eval
+                    print("- Failed to eval {}".format(e))
+                    pass
     
     def copy_to_clipboard(self):
-        text = '\t'.join(str(p.value) for p in chain(*self.__params))
+        text = '\t'.join(str(p.value) for p in chain(*self.__params)) # repr value -> v:str
         Clipboard.write(text)
     
     def paste_from_clipboard(self):
         text = Clipboard.read()
-        self.reset_params(text.split())
+        self.reset_params(text.split('\t'))
 
 
 class Clipboard:
@@ -958,11 +961,15 @@ Args:
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
     
-    value = Value
+    value = Value # internal use only
     
-    icon = property(
-        lambda self: Button.icon.fget(self.btn),
-        lambda self,v: Button.icon.fset(self.btn, v))
+    @property
+    def icon(self):
+        return self.btn.icon
+    
+    @icon.setter
+    def icon(self, v):
+        self.btn.icon = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
                     icon=None, tip='', readonly=0, **kwargs):
@@ -1020,11 +1027,15 @@ Args:
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
     
-    value = Value
+    value = Value # internal use only
     
-    icon = property(
-        lambda self: Button.icon.fget(self.btn),
-        lambda self,v: Button.icon.fset(self.btn, v))
+    @property
+    def icon(self):
+        return self.btn.icon
+    
+    @icon.setter
+    def icon(self, v):
+        self.btn.icon = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
                     icon=None, tip='', readonly=0, selection=None, **kwargs):
@@ -1079,8 +1090,6 @@ class Indicator(wx.Panel):
         self.__value = int(v)
         self.Refresh()
     
-    value = Value
-    
     spacing = 7
     radius = 5
     
@@ -1119,8 +1128,6 @@ class Gauge(wx.Panel):
     def Value(self, v):
         self.__value = int(v)
         self.Draw()
-    
-    value = Value
     
     @property
     def Range(self):

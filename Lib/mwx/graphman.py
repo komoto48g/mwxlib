@@ -154,7 +154,7 @@ class Thread(object):
                 print("- Thread:execution failed: {}".format(e))
             except Exception as e:
                 traceback.print_exc()
-                print("- Thread:exception occurred in {!r}: {!r}".format(mwx.typename(f), e))
+                print("- Thread:exception: {}".format(e))
                 self.owner.handler('thread_error', self)
             finally:
                 self.__keepGoing = self.__isRunning = 0
@@ -922,7 +922,7 @@ class Frame(mwx.Frame):
             ## If the name of root has been loaded,
             ## we reload it refering to the file-name, not module-name
             root = self.plugins.get(root).__file__
-        except AttributeError as e:
+        except AttributeError:
             pass
         
         root = os.path.normpath(root)

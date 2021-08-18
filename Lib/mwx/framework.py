@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.44.1"
+__version__ = "0.44.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -465,7 +465,7 @@ class FSM(dict):
                     retvals.append(ret)
                     
                 except RuntimeError as e:
-                    self.dump("- FSM:runtime error - {!r}".format(e),
+                    self.dump("- FSM:runtime error {!r}".format(e),
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
@@ -473,7 +473,7 @@ class FSM(dict):
                     traceback.print_exc()
                     
                 except Exception as e:
-                    self.dump("- FSM:exception - {!r}".format(e),
+                    self.dump("- FSM:exception {!r}".format(e),
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
@@ -1201,7 +1201,7 @@ class TreeList(object):
             else:
                 ls.append([key, value]) # append to items:list
         except (TypeError, AttributeError)  as e:
-            print("- TreeList:warning - [{!r}]: {}".format(key, e))
+            print("- TreeList:warning {!r}: key={!r}".format(e, key))
     
     @classmethod
     def delf(self, ls, key):
