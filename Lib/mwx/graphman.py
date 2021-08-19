@@ -971,7 +971,7 @@ class Frame(mwx.Frame):
                 floating_size = floating_size or pane.floating_size[:] # copy
             
         except ImportError as e:
-            print(self.statusbar("\b failed to import: {}".format(e)))
+            self.statusbar("\b failed to import: {}".format(e))
             return False
         
         except AttributeError:
