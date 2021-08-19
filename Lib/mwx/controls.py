@@ -160,7 +160,7 @@ Args:
         elif v == 'nan': v = nan
         elif v == 'inf': v = inf
         elif isinstance(v, LITERAL_TYPE):
-            v = self.__eval(v.replace(',', '')) # eliminates commas(,)
+            v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
             ## v = self.__eval(v)
         self.set_value(v)
         if backcall:
@@ -168,7 +168,8 @@ Args:
     
     def update(self, valid=True):
         for knob in self.knobs:
-            knob.update_ctrl(valid) # update the text:ctrl of related knobs
+            knob.update_ctrl(valid) # text:ctrl of related knobs
+            knob.update_label()
     
     def notify(self):
         for knob in self.knobs:
@@ -177,11 +178,13 @@ Args:
     def set_check(self, v):
         self.__check = v
         self.__callback('check', self)
-        self.update()
+        for knob in self.knobs:
+            knob.update_label()
     
     def set_name(self, v):
         self.__name = v
-        self.update()
+        for knob in self.knobs:
+            knob.update_label()
     
     def set_value(self, v):
         """Set value and check the limit.
@@ -210,7 +213,8 @@ Args:
     
     def set_std_value(self, v):
         self.__std_value = v
-        self.update()
+        for knob in self.knobs:
+            knob.update_label()
     
     def get_offset(self):
         if self.__std_value is not None:
@@ -229,7 +233,7 @@ Args:
     def set_range(self, v):
         self.__range = sorted(v)
         for knob in self.knobs:
-            knob.update_range() # update the range of related knobs
+            knob.update_range() # list range of related knobs
     
     def get_index(self, v=None):
         if v is None:
@@ -262,7 +266,7 @@ class LParam(Param):
         self.__max = v[1]
         self.__step = v[2] if len(v)>2 else 1
         for knob in self.knobs:
-            knob.update_range() # update related knobs range
+            knob.update_range() # linear range of related knobs
     
     def get_index(self, v=None):
         if v is None:
@@ -379,7 +383,7 @@ Args:
             
         elif type == 'slider*':
             self.ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
-            self.ctrl.Bind(wx.EVT_SCROLL, self.OnScroll) # update while dragging
+            self.ctrl.Bind(wx.EVT_SCROLL, self.OnScroll) # called while dragging
             self.ctrl.Bind(wx.EVT_SCROLL_CHANGED, lambda v: None) # pass no action
             self.ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
             self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
@@ -430,9 +434,15 @@ Args:
         else:
             self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
     
-    def notify_ctrl(self):
-        self.set_textcolour('#ffff80') # light-yellow
-        wx.CallAfter(wx.CallLater, 1000, self.set_textcolour, 'white')
+    def update_label(self):
+        v = self.__par
+        if isinstance(self.label, wx.CheckBox):
+            self.label.SetValue(bool(v.check))
+        
+        if self.label.IsEnabled():
+            t = '  ' if v.std_value is None or v.value == v.std_value else '*'
+            self.label.SetLabel(v.name + t)
+            self.label.Refresh()
     
     def update_ctrl(self, valid=True):
         v = self.__par
@@ -450,14 +460,10 @@ Args:
                        else '#ff8080' if valid is False # light-red
                        else '#ffff80' if valid is None  # light-yellow
                        else '')
-        
-        if isinstance(self.label, wx.CheckBox):
-            self.label.SetValue(bool(v.check))
-        
-        if self.label.IsEnabled():
-            t = '  ' if v.std_value is None or v.value == v.std_value else '*'
-            self.label.SetLabel(v.name + t)
-            self.label.Refresh()
+    
+    def notify_ctrl(self):
+        self.set_textcolour('#ffff80') # light-yellow
+        wx.CallAfter(wx.CallLater, 1000, self.set_textcolour, 'white')
     
     def set_textcolour(self, c):
         try:
