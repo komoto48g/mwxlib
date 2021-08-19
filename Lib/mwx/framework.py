@@ -45,8 +45,8 @@ except ImportError:
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
 
-def atom(x):
-    return not hasattr(x, '__name__')
+def atom(v):
+    return not hasattr(v, '__name__')
 
 
 def instance(*types):
@@ -137,15 +137,6 @@ def Dir(obj):
             keys += dir(obj._dispobj_)
     finally:
         return keys
-
-
-def man(*words):
-    def _pred(v):
-        if not atom(v):
-            doc = inspect.getdoc(v)
-            return any(w in doc for w in words)
-    _pred.__name__ = str("man{!r}".format(words))
-    return _pred
 
 
 def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
