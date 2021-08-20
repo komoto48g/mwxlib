@@ -487,6 +487,7 @@ class Frame(mwx.Frame):
     
     def select_view(self, view):
         self.__view = view
+        self.OnShowFrame(view.frame)
     
     @property
     def graphic_windows(self):
@@ -565,7 +566,7 @@ class Frame(mwx.Frame):
                     
                 (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
                     lambda v: self.export_index(),
-                    lambda v: v.Enable(self.selected_view.frame is not None)),
+                    lambda v: v.Enable(self.__view.frame is not None)),
                 )),
             (),
             ("Session", (
@@ -682,6 +683,9 @@ class Frame(mwx.Frame):
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
+        
+        ## self.Bind(wx.EVT_ACTIVATE,
+        ##     lambda v: self.OnShowFrame(self.selected_view.frame))
         
         ## Custom Key Bindings:
         self.define_key('C-g', self.Quit)
@@ -1524,7 +1528,6 @@ class Frame(mwx.Frame):
                 os.chdir(dirname)
         
         self.statusbar("\b done.")
-        self.OnShowFrame(None) # update titlebar
         return True
     
     def save_session_as(self):
@@ -1611,7 +1614,6 @@ class Frame(mwx.Frame):
             o.write('# end of session\n')
             
         self.statusbar("\b done.")
-        self.OnShowFrame(None) # update titlebar
         return True
 
 
