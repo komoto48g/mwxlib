@@ -98,7 +98,7 @@ Args:
     
     value = property(
         lambda self: self.__value,
-        lambda self,v: self.set_value(v) and self.notify())
+        lambda self,v: self.set_value(v) and self._notify())
     
     std_value = property(
         lambda self: self.__std_value,
@@ -166,12 +166,7 @@ Args:
         if backcall:
             self.__callback('control', self)
     
-    def update(self, valid=True):
-        for knob in self.knobs:
-            knob.update_ctrl(valid) # text:ctrl of related knobs
-            knob.update_label()
-    
-    def notify(self):
+    def _notify(self):
         for knob in self.knobs:
             knob.notify_ctrl()
     
@@ -194,7 +189,8 @@ Args:
             v = nan
         if v in (nan, inf):
             self.__value = v
-            self.update(None)
+            for knob in self.knobs:
+                knob.update_ctrl(None)
             return
         elif v == self.__value:
             return
@@ -208,7 +204,8 @@ Args:
         else:
             self.__value = self.max
             self.__callback('overflow', self)
-        self.update(valid)
+        for knob in self.knobs:
+            knob.update_ctrl(valid)
         return valid
     
     def set_std_value(self, v):
@@ -454,12 +451,14 @@ Args:
             j = -1
         
         self.ctrl.SetValue(j)
-        self.text.SetValue(str(v))
-        
-        self.set_textcolour('#ffffff' if valid
-                       else '#ff8080' if valid is False # light-red
-                       else '#ffff80' if valid is None  # light-yellow
-                       else '')
+        self.text.SetValue(str(v)) # => OnText
+        if valid:
+            self.set_textcolour('#ffffff') # white
+        elif valid is None:
+            self.set_textcolour('#ffff80') # light-yellow
+        else:
+            self.set_textcolour('#ff8080') # light-red
+        self.update_label()
     
     def notify_ctrl(self):
         self.set_textcolour('#ffff80') # light-yellow
@@ -471,7 +470,8 @@ Args:
                 self.text.SetBackgroundColour(c)
             self.text.Refresh()
         except RuntimeError:
-            pass # wrapped C/C++ object of type TextCtrl has been deleted
+            ## wrapped C/C++ object of type TextCtrl has been deleted
+            pass
     
     def shift(self, evt, bit, **kwargs):
         if evt.ShiftDown():   bit *= 2
@@ -1195,10 +1195,10 @@ if __name__ == '__main__':
             self.handler.debug = 4
             
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
-            self.K = LParam('k', (0,1,1e-4))
+            self.K = LParam('k', (0, 1, 1e-3))
             self.P = LParam('φ', (-pi, pi, pi/100), 0)
-            self.Q = LParam('universe', (1,20,1), inf, handler=print, updater=print)
-            self.R = LParam('lens', (0,0xffff), 0x8000, handler=print, updater=print, fmt=hex)
+            self.Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
+            self.R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex)
             self.params = (
                 self.A,
                 self.K,
@@ -1229,19 +1229,19 @@ if __name__ == '__main__':
                 row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
                 type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
             )
-            self.layout("types", (
-                Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
-                for type in (
-                    'vspin',
-                    'hspin',
-                    'choice',
-                    'slider',
-                    )
-                ),
-                row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
-            )
-            for x in self.layout_groups[1][0:2]:
-                x.Disable()
+            ## self.layout("types", (
+            ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
+            ##     for type in (
+            ##         'vspin',
+            ##         'hspin',
+            ##         'choice',
+            ##         'slider',
+            ##         )
+            ##     ),
+            ##     row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
+            ## )
+            ## for x in self.layout_groups[1][0:2]:
+            ##     x.Disable()
     
     app = wx.App()
     frm = mwx.Frame(None)
