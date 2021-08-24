@@ -289,12 +289,10 @@ attributes : additional info:dict
     def roi(self, v):
         self.roi[:] = v # cannot broadcast input array into different shape
         self.update_buffer()
-        ## self.parent.draw()
     
     @buffer.setter
     def buffer(self, v):
         self.update_buffer(v)
-        ## self.parent.draw()
     
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst, otherwise interpolated"""
@@ -396,7 +394,8 @@ Constants:
         
         _F = mwx.funcall
         
-        draw_idle = _F(self.canvas.draw_idle)
+        def draw_idle(v):
+            self.canvas.draw_idle()
         
         self.handler.update({ #<GraphPlot handler>
             None : {
@@ -418,7 +417,9 @@ Constants:
                   'region_draw' : [ None ],
                  'region_drawn' : [ None, draw_idle ],
                'region_removed' : [ None, draw_idle ],
-                                
+             'canvas_focus_set' : [ None, _F(self.draw),
+                                          _F(self.writeln) ],
+          'canvas_focus_killed' : [ None, self.on_picker_lock ],
                'alt+up pressed' : [ None, self.OnPageUp ],
              'alt+down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],   # page-up
@@ -442,7 +443,7 @@ Constants:
                     'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'r+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
           'alt+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
-               'escape pressed' : (NORMAL, self.OnEscapeSelection),
+               'escape pressed' : (NORMAL, self.OnEscapeSelection, draw_idle),
                 'shift pressed' : (NORMAL, self.on_picker_lock),
                'shift released' : (NORMAL, self.on_picker_unlock),
               'Lbutton pressed' : (NORMAL, self.OnDragLock),
@@ -504,7 +505,7 @@ Constants:
                'right released' : (MARK, self.OnMarkShiftEnd),
                     'n pressed' : (MARK, self.OnMarkSkipNext),
                     'p pressed' : (MARK, self.OnMarkSkipPrevious),
-               'escape pressed' : (NORMAL, self.OnMarkDeselected),
+               'escape pressed' : (NORMAL, self.OnMarkDeselected, draw_idle),
                'delete pressed' : (MARK, self.OnMarkRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -533,7 +534,7 @@ Constants:
                 'down released' : (REGION, self.OnRegionShiftEnd),
                 'left released' : (REGION, self.OnRegionShiftEnd),
                'right released' : (REGION, self.OnRegionShiftEnd),
-               'escape pressed' : (NORMAL, self.OnRegionDeselected),
+               'escape pressed' : (NORMAL, self.OnRegionDeselected, draw_idle),
                'delete pressed' : (NORMAL, self.OnRegionRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -550,13 +551,6 @@ Constants:
                'alt+Ldrag move' : (REGION+DRAGGING, self.OnRegionDragMetaMove),
                   '*Ldrag move' : (REGION+DRAGGING, self.OnRegionDragMove),
                    '*Ldrag end' : (REGION, self.OnRegionDragEnd),
-            },
-        })
-        
-        self.handler.append({ #<GraphPlot handler>
-            None : {
-             'canvas_focus_set' : [ None, _F(self.draw), _F(self.writeln) ],
-          'canvas_focus_killed' : [ None, self.on_picker_lock ],
             },
         })
         
@@ -638,11 +632,11 @@ Constants:
         if name in self: # existing frame
             j = self.index(name)
             art = self.__Arts[j]
-            art.update_buffer(buf)
-            art.update_extent()
-            art.unit = localunit      # => no draw
-            art.aspect_ratio = aspect # => no draw
-            art.update_attributes(attributes)
+            art.update_buffer(buf)      # => frame_modified
+            art.update_extent()         # => ?
+            art.unit = localunit        # => frame_updated
+            art.aspect_ratio = aspect   # => frame_updated
+            art.update_attributes(attributes) # => frame_updated?
             if show:
                 self.select(j)
             return art
@@ -692,7 +686,7 @@ Constants:
         self.draw()
         self.writeln()
         self.trace_point(*self.Selector, type=NORMAL)
-        ## return True
+        
         return self.frame
     
     def __getitem__(self, j):
@@ -778,7 +772,7 @@ Constants:
         return self.__Arts[j]
     
     ## --------------------------------
-    ## Property of current frame
+    ## Property of frame / drawer
     ## --------------------------------
     
     ## image bytes max when loading matplotlib wxagg backend
