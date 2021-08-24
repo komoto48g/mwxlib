@@ -2,9 +2,9 @@
 *.ssn
 *.db
 *.l
+*.log
 *.txt
 *.lnk
-
 Makefile
 exclude_files
 c/

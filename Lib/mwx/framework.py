@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.44.3"
+__version__ = "0.44.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -854,7 +854,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
             m = re.search("(\w+)\((.*)\)", inspect.getdoc(f))
             name, argspec = m.groups()
             args = [x for x in argspec.strip().split(',') if x]
-            defaults = re.findall("\w+\s*=(\w+)", argspec)
+            defaults = re.findall(r"\w+\s*=(\w+)", argspec)
             k = explicit_args(args, defaults)
             if k == 0:
                 @wraps(f)
@@ -2930,7 +2930,7 @@ Flaky nutshell:
         Note: text is raw output:str with no magic cast
         """
         ln = self.LineFromPosition(self.__bolc_marks[-1]) # ine to set marker
-        err = re.findall("File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
+        err = re.findall(r"File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
         if not err:
             self.MarkerAdd(ln, 1) # white-marker
         else:
@@ -2978,7 +2978,6 @@ Flaky nutshell:
             if not repeat and input:
                 Shell.addHistory(self, input)
             
-            self.fragmwords |= set(re.findall("[a-zA-Z_][\w.]+", input + output)) # for text-comp
             noerr = self.on_text_output(output.strip(os.linesep))
             
             ed = self.parent.History
@@ -2987,6 +2986,7 @@ Flaky nutshell:
             ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
             if noerr:
                 ed.MarkerAdd(ln, 1) # white-marker
+                self.fragmwords |= set(re.findall(r"\b[a-zA-Z_][\w.]+", input + output))
             else:
                 ed.MarkerAdd(ln, 3) # error-marker
             ed.ReadOnly = 1
