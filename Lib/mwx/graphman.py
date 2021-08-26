@@ -1121,11 +1121,10 @@ class Frame(mwx.Frame):
                 return False
             
             name = plug.__module__
-            
-            if name in self.plugins:
-                del self.plugins[name]
-            else:
+            if name not in self.plugins:
                 return False
+            
+            del self.plugins[name]
             
             nb = plug.__notebook
             if nb:
