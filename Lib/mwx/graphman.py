@@ -271,6 +271,9 @@ unloadable : flag to set the Layer to be unloadable
                   'pane_closed' : [ None, _F(self.Draw, show=False) ], # when inactive
                   'pane_hidden' : [ None, _F(self.Draw, show=False) ], # when hidden (not closed)
             },
+            ## 0 : {
+            ##        'f5 pressed' : (0, _F(self.reload_safe)),
+            ## }
         })
         
         ## Menu (override)
@@ -283,16 +286,15 @@ unloadable : flag to set the Layer to be unloadable
             (),
             (wx.ID_RESET, "&Reset params", "Reset params", Icon('-'),
                 lambda v: (self.Draw(False), self.reset_params())),
-        ]
-        if self.editable: self.Menu += [
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
                 lambda v: self.parent.edit_plug(self.__module__),
                 lambda v: v.Enable(self.editable)),
                 
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
-                lambda v: self.parent.load_plug(self.__module__,
-                            show=1, force=1, session=self.get_current_session()),
+                ## lambda v: self.parent.load_plug(self.__module__,
+                ##             show=1, force=1, session=self.get_current_session()),
+                lambda v: self.reload_safe(),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.is_active))),
                 
@@ -300,8 +302,6 @@ unloadable : flag to set the Layer to be unloadable
                 lambda v: self.parent.unload_plug(self.__module__),
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.is_active))),
-        ]
-        self.Menu += [
             (),
             (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "deb", Icon('core'),
                 lambda v: self.parent.inspect_plug(self.__module__)),
@@ -344,6 +344,11 @@ unloadable : flag to set the Layer to be unloadable
     def set_current_session(self, session):
         """Restore settings to be loaded from session file (to be overrided)"""
         pass
+    
+    def reload_safe(self):
+        if self.reloadable and not (self.thread and self.thread.is_active):
+            self.parent.load_plug(self.__module__,
+                show=1, force=1, session=self.get_current_session())
     
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
