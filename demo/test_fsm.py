@@ -1,4 +1,4 @@
-#! python
+#! python3
 # -*- coding: utf-8 -*-
 """Test of FSM [A Gate Keeper]
 
