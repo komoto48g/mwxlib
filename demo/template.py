@@ -18,8 +18,10 @@ class Plugin(Layer):
     """
     menu = "Plugins/&Template"
     menustr = "&template ver.0"
-    category = None
+    category = "Test"
     caption = True
+    ## category = None
+    ## caption = None
     dockable = True
     editable = True
     reloadable = True

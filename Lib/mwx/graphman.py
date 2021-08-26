@@ -348,7 +348,7 @@ unloadable : flag to set the Layer to be unloadable
     def reload_safe(self):
         if self.reloadable and not (self.thread and self.thread.is_active):
             self.parent.load_plug(self.__module__,
-                show=1, force=1, session=self.get_current_session())
+                force=1, session=self.get_current_session())
     
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
@@ -835,12 +835,12 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         
         try:
-            if isinstance(plug.caption, LITERAL_TYPE) and not plug.category:
-                pane.CaptionVisible(1)
-                pane.Caption(plug.caption)
-            else:
-                pane.CaptionVisible(bool(plug.caption))
-            pane.Gripper(not plug.caption) # if no caption, grip
+            ## if isinstance(plug.caption, LITERAL_TYPE) and not plug.category:
+            ##     pane.CaptionVisible(1)
+            ## else:
+            ##     pane.CaptionVisible(bool(plug.caption))
+            pane.CaptionVisible(bool(plug.caption))
+            pane.Gripper(not plug.caption)
             pane.Dockable(plug.dockable)
             ## if plug.dockable and plug.dock_dir: # ドッキング可能でその方向が指定されていれば
             ##     pane.Direction(plug.dock_dir)   # その指定方向を優先する
@@ -905,7 +905,6 @@ class Frame(mwx.Frame):
             return self.plugins[name].__plug__
         elif hasattr(name, 'category'): #<type 'Layer'>
             return name
-        return self._mgr.GetPane(name).window
     
     def load_plug(self, root, show=False,
             docking=False, layer=0, pos=0, row=0, prop=10000,
@@ -940,9 +939,11 @@ class Frame(mwx.Frame):
         if root.endswith(".py") or root.endswith(".pyc"):
             name, ext = os.path.splitext(name)
         
-        pane = self.get_pane(name)
+        ## pane = self.get_pane(name)
+        plug = self.get_plug(name)
         
-        if pane.IsOk(): # [name] がすでに登録されている
+        ## if pane.IsOk(): # [name] がすでに登録されている
+        if plug:
             if not force:
                 self.update_pane(name, show=show,
                     docking=docking, layer=layer, pos=pos, row=row, prop=prop,
@@ -950,7 +951,7 @@ class Frame(mwx.Frame):
                 )
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
-                    plug = self.get_plug(name)
+                    ## plug = self.get_plug(name)
                     plug.set_current_session(session)
                 return
         
@@ -966,10 +967,24 @@ class Frame(mwx.Frame):
             else:
                 module = __import__(name, fromlist=[''])
                 
+            title = module.Plugin.category
+            if title:
+                pane = self._mgr.GetPane(title)
+                if pane.IsOk():
+                    nb = pane.window
+                    if not isinstance(nb, aui.AuiNotebook):
+                        ## AuiManager .Name をダブって登録することはできない
+                        ## Notebook.title (category) はどのプラグインとも別名にすること
+                        raise NameError("Notebook name must not be the same as any other plugins")
+            
             name = module.Plugin.__module__ # module must have class Plugin
             pane = self.get_pane(name)
             
             if pane.IsOk():
+                plug = self.get_plug(name)
+                if not plug:
+                    raise NameError("Plugin name must not be the same as any other notebooks")
+                
                 show = show or pane.IsShown()
                 docking = pane.IsDocked() and pane.dock_direction
                 layer = pane.dock_layer
@@ -983,10 +998,9 @@ class Frame(mwx.Frame):
             self.statusbar("\b failed to import: {}".format(e))
             return False
         
-        except AttributeError:
-            wx.CallAfter(wx.MessageBox, traceback.format_exc(),
+        except Exception as e:
+            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
-            traceback.print_exc()
             return False
         
         try:
@@ -1021,11 +1035,11 @@ class Frame(mwx.Frame):
                 pane = self._mgr.GetPane(title)
                 if pane.IsOk():
                     nb = pane.window
-                    if not isinstance(nb, aui.AuiNotebook):
-                        ## AuiManager .Name をダブって登録することはできない
-                        ## Notebook.title (category) はどのプラグインとも別名にすること
-                        raise NameError("Notebook name must not be the same as any other plugins")
-                    
+                    ## if not isinstance(nb, aui.AuiNotebook):
+                    ##     ## AuiManager .Name をダブって登録することはできない
+                    ##     ## Notebook.title (category) はどのプラグインとも別名にすること
+                    ##     raise NameError("Notebook name must not be the same as any other plugins")
+                    ## 
                     nb.AddPage(plug, caption)
                     show = show or pane.IsShown()
                 else:
@@ -1093,10 +1107,9 @@ class Frame(mwx.Frame):
             
             self.statusbar("\b done.")
             
-        except Exception:
-            wx.CallAfter(wx.MessageBox, traceback.format_exc(),
+        except Exception as e:
+            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
-            traceback.print_exc()
             return False
     
     def unload_plug(self, name):
@@ -1106,6 +1119,7 @@ class Frame(mwx.Frame):
             plug = self.get_plug(name)
             if not plug:
                 return False
+            
             name = plug.__module__
             
             if name in self.plugins:
@@ -1135,8 +1149,9 @@ class Frame(mwx.Frame):
                 self._mgr.Update()
                 nb.Destroy()
             
-        except Exception:
-            traceback.print_exc()
+        except Exception as e:
+            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
+                caption="Error in unloading {!r}".format(name), style=wx.ICON_ERROR)
             return False
     
     def edit_plug(self, name):
@@ -1649,8 +1664,8 @@ if __name__ == '__main__':
     
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
+    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
+    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
     
     frm.Show()
     app.MainLoop()
