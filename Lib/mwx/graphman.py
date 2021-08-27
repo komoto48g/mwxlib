@@ -789,7 +789,7 @@ class Frame(mwx.Frame):
                 pane.floating_pos = wx.GetMousePosition()
             show = True
         
-        ## for Layers only 
+        ## for Layers only
         plug = self.get_plug(name)
         
         try:
@@ -955,7 +955,8 @@ class Frame(mwx.Frame):
                     plug.set_current_session(session)
                 return
         
-        if os.path.isdir(dirname): # to import name
+        ## 正しくロードできるようにインクルードパスを更新する
+        if os.path.isdir(dirname):
             if dirname in sys.path:
                 sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
             sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
@@ -966,24 +967,24 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = __import__(name, fromlist=[''])
-                
-            title = module.Plugin.category
-            if title:
-                pane = self._mgr.GetPane(title)
-                if pane.IsOk():
-                    nb = pane.window
-                    if not isinstance(nb, aui.AuiNotebook):
-                        ## AuiManager .Name をダブって登録することはできない
-                        ## Notebook.title (category) はどのプラグインとも別名にすること
-                        raise NameError("Notebook name must not be the same as any other plugins")
             
-            name = module.Plugin.__module__ # module must have class Plugin
+            title = module.Plugin.category
+            pane = self._mgr.GetPane(title)
+            
+            if pane.IsOk():
+                nb = pane.window
+                if not isinstance(nb, aui.AuiNotebook):
+                    ## AuiManager .Name をダブって登録することはできない
+                    ## Notebook.title (category) はどのプラグインとも別名にすること
+                    raise NameError("Notebook name must not be the same as any other plugins")
+            
+            name = module.Plugin.__module__ # rename as module plugin name
             pane = self.get_pane(name)
             
             if pane.IsOk():
-                plug = self.get_plug(name)
+                plug = self.get_plug(name) # plug must exist
                 if not plug:
-                    raise NameError("Plugin name must not be the same as any other notebooks")
+                    raise NameError("Plugin name must not be the same as any other panes")
                 
                 show = show or pane.IsShown()
                 docking = pane.IsDocked() and pane.dock_direction
@@ -1012,6 +1013,7 @@ class Frame(mwx.Frame):
             ## self.plugins[name] = module
             
             ## Create a plug and register to plugins list プラグインのロード開始
+            ## The module must have a class Plugin
             plug = module.Plugin(self, **kwargs)
             
             plug.__notebook = None
@@ -1031,15 +1033,11 @@ class Frame(mwx.Frame):
             ## create a pane or notebook pane
             caption = plug.caption if isinstance(plug.caption, LITERAL_TYPE) else name
             title = plug.category
+            
             if title:
                 pane = self._mgr.GetPane(title)
                 if pane.IsOk():
                     nb = pane.window
-                    ## if not isinstance(nb, aui.AuiNotebook):
-                    ##     ## AuiManager .Name をダブって登録することはできない
-                    ##     ## Notebook.title (category) はどのプラグインとも別名にすること
-                    ##     raise NameError("Notebook name must not be the same as any other plugins")
-                    ## 
                     nb.AddPage(plug, caption)
                     show = show or pane.IsShown()
                 else:
@@ -1074,7 +1072,6 @@ class Frame(mwx.Frame):
                 
                 j = nb.GetPageIndex(plug)
                 nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
-                
             else:
                 nb = None
                 size = plug.GetSize() + (2,2)
@@ -1659,7 +1656,7 @@ if __name__ == '__main__':
     
     ## 次の二つは別モジュール
     ## frm.load_plug('demo.template.py', show=1, force=1)
-    ## frm.load_plug('demo/template.py', show=1, force=1)
+    frm.load_plug('demo/template.py', show=1, force=1)
     
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
     frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
