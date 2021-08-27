@@ -35,7 +35,7 @@ class Plugin(Layer):
 
 if __name__ == "__main__":
     app = wx.App()
-    frm = Frame(None, size=(640,360))
+    frm = Frame(None)
     frm.load_plug(__file__, show=1, docking=4)
     frm.load_buffer(u"./sample.bmp")
     frm.Show()

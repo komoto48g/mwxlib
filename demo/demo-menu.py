@@ -7,7 +7,7 @@ import mwx
 from mwx.controls import Icon
 
 
-class TestFrame(mwx.Frame):
+class Frame(mwx.Frame):
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
@@ -49,6 +49,6 @@ class TestFrame(mwx.Frame):
 
 if __name__ == '__main__':
     app = wx.App()
-    frm = TestFrame(None)
+    frm = Frame(None)
     frm.Show()
     app.MainLoop()

@@ -3,9 +3,6 @@
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import wx
-import mwx
-import mwx.controls
-mwx.reload(mwx.controls)
 from mwx.controls import Button, Icon
 from mwx.graphman import Layer, Frame
 

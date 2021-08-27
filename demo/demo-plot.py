@@ -3,7 +3,6 @@
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
 import wx
-import mwx
 import numpy as np
 from numpy import pi,exp,sin,cos
 from mwx.controls import LParam
@@ -48,6 +47,6 @@ class Plugin(Layer):
 if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
-    frm.load_plug(__file__, show=1)
+    frm.load_plug(__file__, show=1, docking=4)
     frm.Show()
     app.MainLoop()
