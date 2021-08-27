@@ -778,9 +778,8 @@ class Frame(mwx.Frame):
             
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
-                plug = self.get_plug(name)
                 try:
-                    self.load_plug(name, show=1, force=plug.reloadable)
+                    self.load_plug(name, show=1, force=pane.window.reloadable)
                     pane = self.get_pane(name)
                 except AttributeError:
                     pass
@@ -799,12 +798,13 @@ class Frame(mwx.Frame):
         except AttributeError:
             pass
         
-        if show:
-            if not pane.IsShown():
-                plug.handler('pane_shown')
-        else:
-            if pane.IsShown():
-                plug.handler('pane_closed')
+        if plug:
+            if show:
+                if not pane.IsShown():
+                    plug.handler('pane_shown')
+            else:
+                if pane.IsShown():
+                    plug.handler('pane_closed')
         
         pane.Show(show)
         self._mgr.Update()
@@ -851,12 +851,13 @@ class Frame(mwx.Frame):
         except AttributeError:
             pass
         
-        if show:
-            if not pane.IsShown():
-                plug.handler('pane_shown')
-        else:
-            if pane.IsShown():
-                plug.handler('pane_closed')
+        if plug:
+            if show:
+                if not pane.IsShown():
+                    plug.handler('pane_shown')
+            else:
+                if pane.IsShown():
+                    plug.handler('pane_closed')
         
         pane.Show(show)
         self._mgr.Update()
