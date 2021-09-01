@@ -2507,8 +2507,8 @@ Flaky nutshell:
              ## 'C-S-down pressed' : (0, ), # --> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark)),
                'M-down pressed' : (0, _F(self.goto_next_mark)),
-                  'C-a pressed' : (0, _F(self.beggining_of_command_line)),
-                  'C-e pressed' : (0, _F(self.end_of_command_line)),
+                  ## 'C-a pressed' : (0, _F(self.beggining_of_command_line)),
+                  ## 'C-e pressed' : (0, _F(self.end_of_command_line)),
                   'M-j pressed' : (0, self.call_tooltip2),
                   'C-j pressed' : (0, self.call_tooltip),
                   'M-h pressed' : (0, self.call_help_tooltip2),
@@ -3075,12 +3075,12 @@ Flaky nutshell:
     ##     """full command-(multi-)line (with prompts)"""
     ##     return self.GetTextRange(self.bolc, self.eolc)
     
-    def beggining_of_command_line(self):
-        self.goto_char(self.bolc)
-        self.ScrollToColumn(0)
+    ## def beggining_of_command_line(self):
+    ##     self.goto_char(self.bolc)
+    ##     self.ScrollToColumn(0)
     
-    def end_of_command_line(self):
-        self.goto_char(self.eolc)
+    ## def end_of_command_line(self):
+    ##     self.goto_char(self.eolc)
     
     def indent_line(self):
         """Auto-indent the current line"""
