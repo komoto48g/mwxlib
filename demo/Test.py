@@ -14,12 +14,11 @@ class Plugin(Layer):
     """
     def Init(self):
         """Initialize me safely (to be overrided)"""
-        ## self.handler.update({
-        ##     0 : {
-        ##            'f5 pressed' : (0, lambda v: self.reload_safe()),
-        ##     }
-        ## })
-        self.define_key('f5', lambda v: self.reload_safe()) # >= 0.44.8 test
+        self.handler.update({
+            0 : {
+                   'f5 pressed' : (0, lambda v: self.reload_safe()),
+            }
+        })
     
     def Destroy(self):
         """Kill me safely (to be overrided)"""

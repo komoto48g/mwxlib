@@ -184,7 +184,7 @@ class Thread(object):
             ## sys.exit(1)
 
 
-class Layer(ControlPanel, mwx.CtrlInterface, mwx.KeyCtrlInterfaceMixin):
+class Layer(ControlPanel, mwx.CtrlInterface):
     """Graphman.Layer
     
       menu : menu string in parent menubar
@@ -219,7 +219,7 @@ unloadable : flag to set the Layer to be unloadable
     
     pane = property(lambda self: self.__parent.get_pane(self))
     
-    thread = None # common worker <Thread>
+    thread = None # worker <Thread>
     
     @property
     def Arts(self):
@@ -293,7 +293,7 @@ unloadable : flag to set the Layer to be unloadable
                 
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
                 ## lambda v: self.parent.load_plug(self.__module__,
-                ##             force=1, session=self.get_current_session()),
+                ##             show=1, force=1, session=self.get_current_session()),
                 lambda v: self.reload_safe(),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.is_active))),
@@ -952,6 +952,7 @@ class Frame(mwx.Frame):
                 )
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
+                    ## plug = self.get_plug(name)
                     plug.set_current_session(session)
                 return
         

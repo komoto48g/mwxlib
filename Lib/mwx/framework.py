@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.44.8"
+__version__ = "0.44.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1805,10 +1805,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
         })
         
-        ## self.make_keymap('C-x')
+        self.make_keymap('C-x')
         self.define_key('C-x *', skip) # skip to parent frame always
         
-        ## self.make_keymap('C-c')
+        self.make_keymap('C-c')
         self.define_key('C-c *', skip) # skip to parent frame always
         
         self.define_key('C-c C-c', self.goto_matched_paren)
