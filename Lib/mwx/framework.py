@@ -1040,8 +1040,7 @@ class KeyCtrlInterfaceMixin(object):
         key must be in C-M-S order (ctrl + alt(meta) + shift).
         """
         state = self.handler.default_state
-        keymap = regulate_key(keymap)
-        map, sep, key = keymap.rpartition(' ')
+        map, sep, key = regulate_key(keymap).rpartition(' ')
         map = map.strip()
         if not map:
             map = state
