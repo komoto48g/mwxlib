@@ -1041,15 +1041,14 @@ class KeyCtrlInterfaceMixin(object):
         """
         state = self.handler.default_state
         keymap = regulate_key(keymap)
-        ls = keymap.rsplit(' ', 1)
-        if len(ls) == 1:
-            map, key = (state, keymap)
-        else:
-            map, key = ls
-            if map == '*':
-                map = None
-            elif map not in self.handler: # make key map automatically
-                self.make_keymap(map)
+        map, sep, key = keymap.rpartition(' ')
+        map = map.strip()
+        if not map:
+            map = state
+        elif map == '*':
+            map = None
+        elif map not in self.handler: # make key map automatically
+            self.make_keymap(map)
         
         self.handler[map][key+' pressed'] = transaction = [state] # overwrite transaction
         self.handler.validate(map)
