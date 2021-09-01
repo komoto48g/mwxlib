@@ -1,4 +1,4 @@
-#! python
+#! python3
 # -*- coding: utf-8 -*-
 """deb utility
 
@@ -114,7 +114,7 @@ def init_spec(self):
         "STC_P_OPERATOR"        : "",
         "STC_P_NUMBER"          : "fore:#ffc080",
     })
-    self.wrap(1)
+    self.wrap(0)
 
 
 def dive(*args):
