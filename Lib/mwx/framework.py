@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.44.7"
+__version__ = "0.44.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2112,8 +2112,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return self.skip_chars_forward('\s')
     
     def beggining_of_line(self):
-        self.ScrollToColumn(0)
         self.GotoPos(self.bol)
+        self.ScrollToColumn(0)
         return self.cur
     
     def end_of_line(self):
@@ -3351,6 +3351,7 @@ Flaky nutshell:
     def on_completion_backward(self, evt):
         self.on_completion(evt, -1)
     
+    @postcall
     def on_completion(self, evt, step=0):
         """Show completion with selection"""
         try:
@@ -3629,7 +3630,7 @@ if 1:
     frm.inspector.shell.handler.debug = 0
     frm.inspector.shell.Execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
-    frm.inspector.shell.wrap(0)
+    frm.inspector.shell.wrap(1)
     frm.inspector.Show()
     frm.Show()
     app.MainLoop()

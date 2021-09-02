@@ -76,13 +76,10 @@ def init_spec(self):
         else:
             self.message("no mark")
     
-    @self.define_key('M-S-,', pos=0, doc="beginning-of-buffer")
-    @self.define_key('M-S-.', pos=-1, doc="end-of-buffer")
+    @self.define_key('C-x [', pos=0, doc="beginning-of-buffer")
+    @self.define_key('C-x ]', pos=-1, doc="end-of-buffer")
     def goto(pos):
         self.goto_char(pos)
-    
-    ## self.define_key('C-c j', lambda v:
-    ##     (self.Execute (self.GetTextRange (self.bolc, self.eolc))), 'evaln')
     
     @self.define_key('C-c j')
     def evaln():
@@ -123,9 +120,10 @@ To Divers:
     This executes your startup script ($PYTHONSTARTUP:~/.py).
     Then, call spec (post-startup function defined above),
     """
-    mwx.deb(*args, startup=init_spec,
+    mwx.deb(*args,
+        startup=init_spec,
         execStartupScript=True,
-        introText = """
+        introText="""
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
         """,

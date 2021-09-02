@@ -453,11 +453,11 @@ Args:
         self.ctrl.SetValue(j)
         self.text.SetValue(str(v)) # => OnText
         if valid:
-            self.set_textcolour('#ffffff') # white
+            self.set_textcolour('#ffffff') # True: white
         elif valid is None:
-            self.set_textcolour('#ffff80') # light-yellow
+            self.set_textcolour('#ffff80') # None: light-yellow
         else:
-            self.set_textcolour('#ff8080') # light-red
+            self.set_textcolour('#ff8080') # Otherwise: light-red
         self.update_label()
     
     def notify_ctrl(self):
