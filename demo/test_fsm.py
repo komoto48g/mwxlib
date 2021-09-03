@@ -31,4 +31,4 @@ if __name__ == "__main__":
     while 1:
         ret = handler(input("[{}] > ".format(handler.current_state)))
         print("ret =", ret)
-    print('Au revoir!')
+    print("Au revoir!")
