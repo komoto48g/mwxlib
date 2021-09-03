@@ -1681,8 +1681,6 @@ Constants:
 
 
 if __name__ == '__main__':
-    from matplotlib import pyplot as plt
-    
     app = wx.App()
     frm = mwx.Frame(None)
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=(.1,.1,.9,.9), size=(300,240))
@@ -1699,12 +1697,6 @@ if __name__ == '__main__':
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/サンプル.bmp"), "サンプル")
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample_circ.bmp"), "sample data")
     
-    path = u"C:/usr/home/workspace/images/6000.tif"
-    
-    frm.graph.load(Image.open(path), "PIL") # ok :readonly
-    frm.graph.load(plt.imread(path), "MPL") # ok :?
-    frm.graph.load(cv2.imread(path), "CV2") # NG
-    
     frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
     
     frm.graph.frame.aspect_ratio = 1.1
@@ -1720,8 +1712,8 @@ if __name__ == '__main__':
         x = r * ux * np.cos(t)
         y = r * uy * np.sin(t)
         graph.axes.plot(x, y, 'r-', lw=0.5)
-    
     ## _plot(frm.graph)
+    
     frm.Fit()
     frm.Show()
     app.MainLoop()
