@@ -34,6 +34,7 @@ class Plugin(Layer):
         self.run(None)
     
     def run(self, lp):
+        del self.Arts
         a = self.A.value
         b = self.B.value
         t = np.arange(0, 10.01, 0.01) * 2*pi
