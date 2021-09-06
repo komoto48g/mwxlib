@@ -295,9 +295,9 @@ attributes : additional info:dict
         self.update_buffer(v)
     
     def xytoc(self, x, y=None, nearest=True):
-        """Convert xydata (x,y) -> data[(x,y)] value of neaerst, otherwise interpolated"""
-        if y is None:
-            x, y = x
+        """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel
+        if nearest is False, retval is interpolated with spline
+        """
         h, w = self.__buf.shape[:2]
         nx, ny = self.xytopixel(x, y, cast=nearest)
         ## if np.any((nx<0) | (nx>=w) | (ny<0) | (ny>=h)):
@@ -309,24 +309,27 @@ attributes : additional info:dict
     
     def xytopixel(self, x, y=None, cast=True):
         """Convert xydata (x,y) -> [ny,nx] pixel (cast to integer)"""
+        def pixel_cast(n):
+            """Convert pixel-based length to pixel number"""
+            return np.int32(np.floor(np.round(n, 1)))
         if y is None:
             x, y = x
+        if not isinstance(x, np.ndarray): x = np.array(x)
+        if not isinstance(y, np.ndarray): y = np.array(y)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
         ny = (t - y) / uy # Y ピクセルインデクスは座標と逆
         if cast:
-            ## return (np.int32(nx), np.int32(ny))
-            ## return np.int32(nx-0.5), np.int32(ny-0.5)
-            nx = np.round(nx, 1)
-            ny = np.round(ny, 1)
-            return np.int32(np.floor(nx)), np.int32(np.floor(ny))
+            return (pixel_cast(nx), pixel_cast(ny))
         return (nx-0.5, ny-0.5)
     
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)"""
         if ny is None:
             nx, ny = nx
+        if not isinstance(nx, np.ndarray): nx = np.array(nx)
+        if not isinstance(ny, np.ndarray): ny = np.array(ny)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
@@ -906,16 +909,10 @@ Constants:
             if len(x) == 0: # no selection
                 return
             
-            if len(x) == 1: # 1-Selector trace point
-                ## if type is None: # スレッドエラー抑制▲ <--- matplot:on_figure_enter
-                ##     return
+            if len(x) == 1: # 1-Selector trace point (called from Marker:setter)
                 return self.trace_point(x[0], y[0], type)
             
-            if not isinstance(x, np.ndarray):
-                x = np.array(x)
-                y = np.array(y)
-            
-            if len(x) == 2: # 2-Selector trace line
+            if len(x) == 2: # 2-Selector trace line (called from Selector:setter)
                 nx, ny = self.frame.xytopixel(x, y)
                 dx = x[1] - x[0]
                 dy = y[1] - y[0]
@@ -925,7 +922,7 @@ Constants:
                 self.message("[Line]"
                     " Length: {:.1f} pixel ({:g}u), Angle: {:.1f} deg".format(li, lu, a))
                 
-            elif type == REGION: # N-Selector trace polygon
+            elif type == REGION: # N-Selector trace polygon (called from Region:setter)
                 nx, ny = self.frame.xytopixel(x, y)
                 xo, xr = min(nx), max(nx)
                 yo, yr = min(ny), max(ny)
@@ -1091,17 +1088,23 @@ Constants:
     ## --------------------------------
     ## Pan/Zoom actions (override)
     ## --------------------------------
+    ## antialiased, nearest, bilinear, bicubic, spline16,
+    ## spline36, hanning, hamming, hermite, kaiser, quadric,
+    ## catrom, gaussian, bessel, mitchell, sinc, lanczos, or none
+    interpolation_mode = 'bilinear'
     
     def OnDraw(self, evt):
         """Called before canvas.draw (overrided)"""
+        if not self.interpolation_mode:
+            return
         if self.frame:
             ## [dots/pixel] = [dots/u] * [u/pixel]
             dots = self.ddpu[0] * self.frame.unit * self.frame.binning
             
             if self.frame.get_interpolation() == 'nearest' and dots < 1:
-                self.frame.set_interpolation('bilinear')
-            
-            elif self.frame.get_interpolation() == 'bilinear' and dots > 1:
+                self.frame.set_interpolation(self.interpolation_mode)
+                
+            elif self.frame.get_interpolation() != 'nearest' and dots > 1:
                 self.frame.set_interpolation('nearest')
     
     def OnMotion(self, evt):
