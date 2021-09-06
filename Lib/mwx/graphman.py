@@ -236,14 +236,23 @@ unloadable : flag to set the Layer to be unloadable
             art.remove()
         self.__artists = []
     
-    def add_artists(self, target, *args):
+    def set_artists(self, target, *args):
+        """Add artists (unbound arts such as patches objects) to target.
+        If the target is None, the arts will be removed from the axes.
+        """
+        if target:
+            self.add_artists(target, *args)
+        else:
+            self.remove_artists(*args)
+    
+    def add_artists(self, target, *args): # to be deprecated
         for art in args:
             if art.axes:
                 art.remove()
             target.axes.add_artist(art)
-        self.__artists += args
+            self.__artists.append(art)
     
-    def remove_artists(self, *args):
+    def remove_artists(self, *args): # to be deprecated
         for art in args or self.__artists[:]:
             if art.axes:
                 art.remove()
