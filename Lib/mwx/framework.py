@@ -1247,9 +1247,9 @@ class Menu(wx.Menu):
                 self.Enable(submenu_item.Id, bool(subitems)) # Disable empty menu
     
     @staticmethod
-    def Popup(parent, menu):
+    def Popup(parent, menu, *args, **kwargs):
         menu = Menu(parent, menu)
-        parent.PopupMenu(menu)
+        parent.PopupMenu(menu, *args, **kwargs)
         menu.Destroy()
 
 
