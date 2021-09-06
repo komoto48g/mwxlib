@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.44.9"
+__version__ = "0.45.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -923,6 +923,8 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         
+        ## self.Bind(wx.EVT_MOTION, lambda v: self.handler('motion', v))
+        
         self.Bind(wx.EVT_SET_FOCUS, lambda v: self.handler('focus_set', v))
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.handler('focus_kill', v))
         self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.handler('window_enter', v))
@@ -1086,7 +1088,7 @@ Usage:
           - None -> phantom
  **kwargs : 
    orient : HORIZONTAL or VERTICAL
-    style : (proportion, flag, border)
+    style : (proportion, flag, border) :default (0, wx.EXPAND|wx.ALL, 0)
             flag-expansion -> EXPAND
             flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
             flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
