@@ -585,6 +585,8 @@ class Frame(mwx.Frame):
                     lambda v: self.save_session_as()),
                 )),
             (),
+            ("Options", []), # reserved for optional app settings
+            (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("graph", v.IsChecked()),
                 lambda v: v.Check(self.get_pane("graph").IsShown())),
@@ -1650,18 +1652,7 @@ if __name__ == '__main__':
     
     frm.load_buffer(u"demo/sample.bmp")
     frm.load_buffer(u"demo/sample2.tif")
-    ## frm.load_buffer(u"C:/usr/home/workspace/images/sample.bmp")
-    ## frm.load_buffer(u"C:/usr/home/workspace/images/サンプル.bmp")
-    ## frm.load_buffer(u"C:/usr/home/workspace/images/Stack_image.tif")
-    
-    ## n = 512
-    ## x = np.arange(-n,n)/n
-    ## y = np.arange(-n,n)/n
-    ## X, Y = np.meshgrid(x, y)
-    ## ## X, Y = np.mgrid[-n:n,-n:n] /n
-    ## z = np.exp(-(X**2 + Y**2)) - 1/2
-    ## frm.graph.load(z)
-    ## frm.graph.load(np.randn(1024,1024))
+    frm.graph.load(np.random.randn(1024,1024))
     
     ## 次の二つは別モジュール
     ## frm.load_plug('demo.template.py', show=1, force=1)
