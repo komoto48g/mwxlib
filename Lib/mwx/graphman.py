@@ -557,11 +557,11 @@ class Frame(mwx.Frame):
                 lambda v: self.__view.kill_buffer_all(),
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
-            (wx.ID_SAVE, "&Save\tCtrl-s", "Save buffer as", Icon('save'),
+            (wx.ID_SAVE, "&Save as\tCtrl-s", "Save buffer as", Icon('save'),
                 lambda v: self.save_frame(),
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
-            (wx.ID_SAVEAS, "&Save as tiffs", "Save buffers as a statck-tiff", Icon('saveas'),
+            (wx.ID_SAVEAS, "&Save as TIFFs", "Save buffers as a statck-tiff", Icon('saveas'),
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
@@ -1387,8 +1387,14 @@ class Frame(mwx.Frame):
     @staticmethod
     def write_buffer(path, buf):
         """Write buffer to `path file (to be overrided)"""
-        img = Image.fromarray(buf)
-        img.save(path) # PIL saves as L,I,F, or RGB.
+        try:
+            img = Image.fromarray(buf)
+            img.save(path) # PIL saves as L,I,F,RGB.
+        except PermissionError:
+            raise
+        except OSError: # e.g., cannot write mode L; 16 as BMP
+            os.remove(path)
+            raise
     
     def load_buffer(self, paths=None, target=None):
         """Load buffers from paths to the target window
@@ -1642,8 +1648,10 @@ if __name__ == '__main__':
     frm.graph.handler.debug = 2
     frm.output.handler.debug = 2
     
-    frm.load_buffer(u"C:/usr/home/workspace/images/sample.bmp")
-    frm.load_buffer(u"C:/usr/home/workspace/images/サンプル.bmp")
+    frm.load_buffer(u"demo/sample.bmp")
+    frm.load_buffer(u"demo/sample2.tif")
+    ## frm.load_buffer(u"C:/usr/home/workspace/images/sample.bmp")
+    ## frm.load_buffer(u"C:/usr/home/workspace/images/サンプル.bmp")
     ## frm.load_buffer(u"C:/usr/home/workspace/images/Stack_image.tif")
     
     ## n = 512
