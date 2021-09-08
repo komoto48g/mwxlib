@@ -1096,6 +1096,7 @@ class Indicator(wx.Panel):
         self.__value = int(v)
         self.Refresh()
     
+    tricolor = ('red','yellow','green')
     spacing = 7
     radius = 5
     
@@ -1111,13 +1112,14 @@ class Indicator(wx.Panel):
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
         dc.Clear()
-        r = self.radius
+        N = len(self.tricolor)
         s = self.spacing
+        r = self.radius
         w, h = self.ClientSize
         dc.SetBrush(wx.Brush("black"))
-        dc.DrawRoundedRectangle(0, h//2-s, s*6-1, s*2+1, s)
-        for j,name in enumerate(('red','yellow','green')):
-            if not self.__value & (1 << 2-j):
+        dc.DrawRoundedRectangle(0, h//2-s, s*2*N-1, s*2+1, s)
+        for j,name in enumerate(self.tricolor):
+            if not self.__value & (1 << N-j):
                 name = 'gray'
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
