@@ -39,8 +39,8 @@ The simplest frame, which consits of
 The mwx.menubar is described as structured list.
 Designed as WYSiWYG (see demo-code).
 
-[demo-menu](./demo-menu.py)
-![screenshot](./image/demo-menubar.png)
+[test_menubar](./test_menubar.py)
+![screenshot](./image/test_menubar.png)
 
 
 ## mwx.controls
