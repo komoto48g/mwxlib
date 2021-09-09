@@ -946,10 +946,21 @@ class Frame(mwx.Frame):
             pass
         
         root = os.path.normpath(root)
-        dirname = os.path.dirname(root)
         name = os.path.basename(root)
+        dirname = os.path.dirname(root)
+        
         if root.endswith(".py") or root.endswith(".pyc"):
             name, ext = os.path.splitext(name)
+        
+        ## 正しくロードできるようにインクルードパスを更新する
+        if dirname:
+            if os.path.isdir(dirname):
+                if dirname in sys.path:
+                    sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
+                sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
+            else:
+                print("- No such directory: {!r}".format(dirname))
+                return False
         
         ## pane = self.get_pane(name)
         plug = self.get_plug(name)
@@ -966,13 +977,6 @@ class Frame(mwx.Frame):
                     ## plug = self.get_plug(name)
                     plug.set_current_session(session)
                 return
-        
-        ## 正しくロードできるようにインクルードパスを更新する
-        if os.path.isdir(dirname):
-            if dirname in sys.path:
-                sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
-            sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
-        
         try:
             self.statusbar("Loading plugin {!r}...".format(name))
             if name in sys.modules:
