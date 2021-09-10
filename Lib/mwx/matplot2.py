@@ -157,7 +157,7 @@ class MatplotPanel(wx.Panel):
         self.message = log or (lambda s: s)
         
         #<matplotlib.figure.Figure>
-        self.figure = Figure(facecolor='white', figsize=(1,1))
+        self.figure = Figure(facecolor='white', figsize=(0.5, 0.5))
         
         #<matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
         self.canvas = FigureCanvas(self, -1, self.figure)
