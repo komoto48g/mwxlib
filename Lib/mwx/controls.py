@@ -1120,7 +1120,7 @@ class Indicator(wx.Panel):
         dc.SetBrush(wx.Brush("black"))
         dc.DrawRoundedRectangle(0, h//2-s, s*2*N-1, s*2+1, s)
         for j,name in enumerate(self.tricolor):
-            if not self.__value & (1 << N-j):
+            if not self.__value & (1 << N-1-j):
                 name = 'gray'
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
