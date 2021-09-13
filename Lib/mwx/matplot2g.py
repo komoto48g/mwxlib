@@ -1193,7 +1193,7 @@ Constants:
     def OnSelectorAppend(self, evt):
         xs, ys = self.Selector
         x, y = self.calc_point(evt.xdata, evt.ydata)
-        self.Selector = np.append(xs,x), np.append(ys,y)
+        self.Selector = np.append(xs, x), np.append(ys, y)
         self.handler('line_drawn', self.frame)
     
     def OnDragLock(self, evt):
@@ -1551,7 +1551,7 @@ Constants:
             n = len(xm)
             k = len(x) if hasattr(x, '__iter__') else 1
             self.__marksel = list(range(n, n+k))
-            xm, ym = np.append(xm,x), np.append(ym,y)
+            xm, ym = np.append(xm, x), np.append(ym, y)
             self.marked.set_data(xm, ym)
             self.marked.set_visible(1)
             self.update_art_of_mark()
