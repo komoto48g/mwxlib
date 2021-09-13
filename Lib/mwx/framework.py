@@ -1428,10 +1428,12 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                         caption="About this software")
     
     def Destroy(self):
-        self.timer.Stop()
-        del self.timer
-        self.inspector.Destroy() # inspector is not my child
-        return wx.Frame.Destroy(self)
+        try:
+            self.timer.Stop()
+            ## del self.timer
+            self.inspector.Destroy() # inspector is not my child
+        finally:
+            return wx.Frame.Destroy(self)
 
 
 class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
@@ -1506,8 +1508,8 @@ Global bindings:
         C-f : Find text
         M-f : Filter text
     """
-    def __init__(self, parent, target=None, title=None,
-            size=(1000,500), style=wx.DEFAULT_FRAME_STYLE, **kwargs):
+    def __init__(self, parent, target=None, title=None, size=(1000,500),
+                 style=wx.DEFAULT_FRAME_STYLE, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         if target is None:
@@ -1620,17 +1622,18 @@ Global bindings:
             return open(f, *args) # PY2
     
     def Destroy(self):
-        f = os.path.expanduser("~/.deb/deb-logging.log")
-        with self.fopen(f, 'w') as o:
-            o.write(self.Log.Value)
-        
-        f = os.path.expanduser("~/.deb/deb-history.log")
-        with self.fopen(f, 'w') as o:
-            o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
-            o.write(self.History.Value)
-        
-        self._mgr.UnInit()
-        return MiniFrame.Destroy(self)
+        try:
+            f = os.path.expanduser("~/.deb/deb-logging.log")
+            with self.fopen(f, 'w') as o:
+                o.write(self.Log.Value)
+            
+            f = os.path.expanduser("~/.deb/deb-history.log")
+            with self.fopen(f, 'w') as o:
+                o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
+                o.write(self.History.Value)
+        finally:
+            self._mgr.UnInit()
+            return MiniFrame.Destroy(self)
     
     def About(self, evt=None):
         self.Help.SetValue('\n\n'.join((
@@ -2443,7 +2446,11 @@ Flaky nutshell:
             if evt.Active:
                 self.handler('shell_activated', self)
             else:
-                 self.handler('shell_inactivated', self)
+                self.handler('shell_inactivated', self)
+                if self.AutoCompActive():
+                    self.AutoCompCancel()
+                if self.CallTipActive():
+                    self.CallTipCancel()
             evt.Skip()
         
         self.on_activated(self)
@@ -2514,7 +2521,7 @@ Flaky nutshell:
                   'C-j pressed' : (0, self.call_tooltip),
                   'M-h pressed' : (0, self.call_help_tooltip2),
                   'C-h pressed' : (0, self.call_help_tooltip),
-                    '. pressed' : (2, self.OnEnterDot), # autoCompleteKeys -> AutoCompShow
+                    '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
@@ -3274,8 +3281,6 @@ Flaky nutshell:
     
     def gen_tooltip(self, text):
         """Call ToolTip of the selected word or focused line"""
-        if self.AutoCompActive():
-            self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
         try:
@@ -3296,29 +3301,14 @@ Flaky nutshell:
     
     def call_help_tooltip2(self, evt):
         try:
-            text = self.SelectedText
+            text = self.SelectedText or self.pyrepr_at_caret
             if text:
-                self.help(self.eval(text) or '')
-                return
-            try:
-                text = self.pyrepr_at_caret
-                self.help(self.eval(text) or '')
-            except Exception:
-                text = self.topic_at_caret
-                self.help(self.eval(text) or '')
+                self.help(self.eval(text))
         except Exception as e:
             self.message("{} : {!r}".format(e, text))
     
     def call_help_tooltip(self, evt):
         """Show tooltips for the selected topic"""
-        if self.AutoCompActive():
-            self.AutoCompCancel()
-        if self.CallTipActive():
-            self.CallTipCancel()
-        ## if self.CanEdit():
-        ##     self.OnCallTipAutoCompleteManually(True) # autoCallTipShow or autoCompleteShow
-        ##     if self.CallTipActive():
-        ##         return
         text = self.SelectedText or self.pyrepr_at_caret
         self.autoCallTipShow(text, False, True)
     
