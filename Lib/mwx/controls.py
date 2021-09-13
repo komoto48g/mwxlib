@@ -51,8 +51,8 @@ Args:
     updater : called when check changed
         tip : tooltip:str shown on the associated knobs
     """
-    def __init__(self, name, range=None, value=None,
-        fmt=None, handler=None, updater=None, tip=None):
+    def __init__(self, name, range=None, value=None, fmt=None,
+                 handler=None, updater=None, tip=None):
         self.__knobs = []
         self.__name = name
         self.range = range if range is not None else [0]
@@ -312,7 +312,8 @@ Args:
         self.update_range()
         self.update_ctrl()
     
-    def __init__(self, parent, par, type='slider', style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22):
+    def __init__(self, parent, par, type='slider',
+                 style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22):
         wx.Panel.__init__(self, parent)
         self.__bit = 1
         self.__par = par
@@ -866,8 +867,8 @@ Args:
         self.Refresh()
     
     def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
-        pb.PlateButton.__init__(self, parent, -1, label,
-            style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE, **kwargs)
+        kwargs['style'] = kwargs.get('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
+        pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         tip = tip or ''
         if handler:
@@ -978,7 +979,7 @@ Args:
         self.btn.icon = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
-                    icon=None, tip='', readonly=0, **kwargs):
+                 icon=None, tip='', readonly=0, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
@@ -1044,7 +1045,7 @@ Args:
         self.btn.icon = v
     
     def __init__(self, parent, label='', handler=None, updater=None,
-                    icon=None, tip='', readonly=0, selection=None, **kwargs):
+                 icon=None, tip='', readonly=0, selection=None, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
