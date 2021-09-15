@@ -586,13 +586,13 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.__params = []
         
         self.Menu = [
-            (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
+            (wx.ID_COPY, "&Copy params", "Copy params",
                 lambda v: self.copy_to_clipboard()),
                 
-            (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
+            (wx.ID_PASTE, "&Paste params", "Read params",
                 lambda v: self.paste_from_clipboard()),
             (),
-            (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params",
+            (wx.ID_RESET, "&Reset params", "Reset params",
                 lambda v: self.reset_params()),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: mwx.Menu.Popup(self, self.Menu))
@@ -664,9 +664,11 @@ class ControlPanel(scrolled.ScrolledPanel):
             self.Parent.SendSizeEvent() # let parent redraw the child panel
     
     def layout(self, title, objs,
-        row=1, expand=0, border=2, hspacing=1, vspacing=1,
-        show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):
+               row=1, expand=0, border=2, hspacing=1, vspacing=1,
+               show=True, visible=True, fix=True, align=wx.ALIGN_LEFT,
+               **kwargs):
         """Do layout (cf. Layout) using mwx.pack
+        
         title : box header string
          objs : list of Params, wx.Objects, tuple of sizing, or None
           row : number of row to arange widgets
@@ -677,6 +679,7 @@ class ControlPanel(scrolled.ScrolledPanel):
        border : size of outline border
   [hv]spacing : spacing among packed objs inside the group
         align : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
+          fix : tell sizer to fix the minimum layout
      **kwargs : extra keyword arguments given for Knob
         """
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
@@ -709,7 +712,8 @@ class ControlPanel(scrolled.ScrolledPanel):
                     style=(expand>1, p|wx.BOTTOM|wx.TOP, vspacing))
         
         self.Sizer.Add(sizer, expand>1, p|wx.ALL, border)
-        self.Sizer.Fit(self)
+        if fix:
+            self.Sizer.Fit(self)
         self.show(-1, visible)
         self.fold(-1, not show)
     
