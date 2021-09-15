@@ -280,9 +280,12 @@ unloadable : flag to set the Layer to be unloadable
                   'pane_closed' : [ None, _F(self.Draw, show=False) ], # when inactive
                   'pane_hidden' : [ None, _F(self.Draw, show=False) ], # when hidden (not closed)
             },
-            ## 0 : {
-            ##        'f5 pressed' : (0, _F(self.reload_safe)),
-            ## }
+            0 : {
+                   ## 'f5 pressed' : (0, _F(self.reload_safe)),
+                  'C-c pressed' : (0, _F(self.copy_to_clipboard)),
+                  'C-v pressed' : (0, _F(self.paste_from_clipboard)),
+                  'C-n pressed' : (0, _F(self.Draw, show=False), _F(self.reset_params)),
+            }
         })
         
         ## Menu (override)
@@ -293,7 +296,7 @@ unloadable : flag to set the Layer to be unloadable
             (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
                 lambda v: self.paste_from_clipboard()),
             (),
-            (wx.ID_RESET, "&Reset params", "Reset params", Icon('-'),
+            (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params", Icon('-'),
                 lambda v: (self.Draw(False), self.reset_params())),
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),

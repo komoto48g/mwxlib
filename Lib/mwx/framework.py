@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.45.1"
+__version__ = "0.45.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1089,7 +1089,7 @@ Usage:
  **kwargs : 
    orient : HORIZONTAL or VERTICAL
     style : (proportion, flag, border) :default (0, wx.EXPAND|wx.ALL, 0)
-            flag-expansion -> EXPAND
+            flag-expansion -> EXPAND, SHAPED
             flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
             flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
