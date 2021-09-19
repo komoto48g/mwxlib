@@ -628,7 +628,8 @@ Constants:
             name = "{}({:d})".format(base, i)
         return name
     
-    def load(self, buf, name=None, pos=None, show=True, localunit=None, aspect=1.0, **attributes):
+    def load(self, buf, name=None, pos=None, show=True,
+             localunit=None, aspect=1.0, **attributes):
         if buf is None:
             return
         
@@ -766,7 +767,7 @@ Constants:
         if isinstance(j, LITERAL_TYPE):
             ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
             names = [art.name for art in self.__Arts]
-            return names.index(j)
+            return names.index(j) # -> ValueError: `j' is not in list
         return self.__Arts.index(j)
     
     def find_frame(self, j):
