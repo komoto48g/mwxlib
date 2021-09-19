@@ -365,6 +365,7 @@ unloadable : flag to set the Layer to be unloadable
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
     
+    @mwx.postcall
     def Show(self, show=True):
         self.parent.show_pane(self, show)
     
@@ -425,6 +426,11 @@ class Graph(GraphPlot):
         """Show infobar (frame.annotation)"""
         if self.infobar.IsShown():
             self.infobar.ShowMessage(str(frame.annotation))
+    
+    def get_frame(self, j):
+        if isinstance(j, LITERAL_TYPE):
+            return next((art for art in self.all_frames if art.name == j), None)
+        return self.all_frames[j]
     
     def get_frame_visible(self):
         if self.frame:
@@ -1649,7 +1655,7 @@ class Frame(mwx.Frame):
             ## set-local-unit
             for frame in self.graph.all_frames:
                 if frame.localunit and frame.pathname: # localunit:need-buffer-save-?
-                    o.write("self.graph.find_frame({!r}).unit = {}\n".format(
+                    o.write("self.graph.get_frame({!r}).unit = {}\n".format(
                             frame.name, frame.localunit))
             ## select-page
             if self.graph.frame:
