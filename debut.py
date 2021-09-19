@@ -67,23 +67,31 @@ def init_spec(self):
             else:
                 break
     
-    @self.define_key('M-w')
-    def copy_region():
-        if self.mark is not None:
-            with self.save_excursion():
-                self.SetCurrentPos(self.mark)
-                self.Copy()
-        else:
-            self.message("no mark")
+    ## @self.define_key('M-w')
+    ## def copy_region():
+    ##     if self.mark is not None:
+    ##         with self.save_excursion():
+    ##             self.SetCurrentPos(self.mark)
+    ##             self.Copy()
+    ##     else:
+    ##         self.message("no mark")
     
     @self.define_key('C-x [', pos=0, doc="beginning-of-buffer")
     @self.define_key('C-x ]', pos=-1, doc="end-of-buffer")
     def goto(pos):
         self.goto_char(pos)
     
-    @self.define_key('C-c j')
-    def evaln():
-        self.Execute(self.GetTextRange(self.bolc, self.eolc))
+    ## @self.define_key('C-c j')
+    ## def evaln():
+    ##     self.Execute(self.GetTextRange(self.bolc, self.eolc))
+    
+    @self.define_key('M-enter')
+    def duplicate_command(clear=True):
+        cmd = self.getMultilineCommand()
+        if cmd:
+            if clear:
+                self.clearCommand()
+            self.write(cmd, -1)
     
     ## Theme: 'Dive into the night'
     self.set_style({
