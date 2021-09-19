@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.45.2"
+__version__ = "0.45.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -49,6 +49,11 @@ def atom(v):
     return not hasattr(v, '__name__')
 
 
+def isobject(v):
+    ## return atom(v) and hasattr(v, '__module__')
+    return re.match(r"<([\w.]+) object at \w+>", repr(v))
+
+
 def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
@@ -65,15 +70,10 @@ def subclass(*types):
     return _pred
 
 
-def _P(p):
-    if isinstance(p, type):
-        return instance(p)
-    return p
-
-
 def _Not(p):
     ## return lambda v: not p(v)
-    p = _P(p)
+    if isinstance(p, type):
+        p = instance(p)
     def _pred(v):
         return not p(v)
     _pred.__name__ = str("not {}".format(p.__name__))
@@ -82,7 +82,10 @@ def _Not(p):
 
 def _And(p, q):
     ## return lambda v: p(v) and q(v)
-    p, q = _P(p), _P(q)
+    if isinstance(p, type):
+        p = instance(p)
+    if isinstance(q, type):
+        q = instance(q)
     def _pred(v):
         return p(v) and q(v)
     _pred.__name__ = str("{} and {}".format(p.__name__, q.__name__))
@@ -91,14 +94,17 @@ def _And(p, q):
 
 def _Or(p, q):
     ## return lambda v: p(v) or q(v)
-    p, q = _P(p), _P(q)
+    if isinstance(p, type):
+        p = instance(p)
+    if isinstance(q, type):
+        q = instance(q)
     def _pred(v):
         return p(v) or q(v)
     _pred.__name__ = str("{} or {}".format(p.__name__, q.__name__))
     return _pred
 
 
-def predicate(text):
+def predicate(text, locals=None):
     tokens = [x for x in split_into_words(text.strip()) if not x.isspace()]
     j = 0
     while j < len(tokens):
@@ -120,7 +126,7 @@ def predicate(text):
             tokens[j-1:j+2] = ["_Or({},{})".format(tokens[j-1], tokens[j+1])]
             continue
         j += 1
-    return ' '.join(tokens)
+    return eval(' '.join(tokens) or 'None', None, locals)
 
 
 def Dir(obj):
@@ -147,7 +153,7 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
                   .replace('\\A','[A-Z0-9]')) #\A: 
     
     if isinstance(pred, LITERAL_TYPE):
-        pred = eval(predicate(pred) or 'None', None, locals)
+        pred = predicate(pred, locals)
     
     if isinstance(pred, type):
         pred = instance(pred)
@@ -381,7 +387,7 @@ class FSM(dict):
         [5] + and more, all events and executed actions
     """
     debug = 0
-    
+    default_state = None
     current_event = property(lambda self: self.__event)
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
@@ -533,7 +539,7 @@ class FSM(dict):
         ast = []
         bra = []
         for event in list(context): #? OrderedDict mutated during iteration
-            if re.search("\[.+\]", event):
+            if re.search(r"\[.+\]", event):
                 bra.append((event, context.pop(event))) # event key has '[]'
             elif '*' in event or '?' in event:
                 ast.append((event, context.pop(event))) # event key has '*?'
@@ -851,7 +857,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
         ## Builtin functions don't have an argspec that we can get.
         ## Try alalyzing the doc:str to get argspec info.
         try:
-            m = re.search("(\w+)\((.*)\)", inspect.getdoc(f))
+            m = re.search(r"(\w+)\((.*)\)", inspect.getdoc(f))
             name, argspec = m.groups()
             args = [x for x in argspec.strip().split(',') if x]
             defaults = re.findall(r"\w+\s*=(\w+)", argspec)
@@ -1608,7 +1614,7 @@ Global bindings:
                 if clear:
                     self.shell.clearCommand()
                 self.shell.write(text, -1)
-                self.shell.SetFocus()
+            self.shell.SetFocus()
         
         f = os.path.expanduser("~/.deb/deb-logging.log")
         if os.path.exists(f):
@@ -2717,8 +2723,8 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        if re.match("(import|from)\s*$", self.cmdlc)\
-        or re.match("from\s+([\w.]+)\s+import\s*$", self.cmdlc):
+        if re.match(r"(import|from)\s*$", self.cmdlc)\
+        or re.match(r"from\s+([\w.]+)\s+import\s*$", self.cmdlc):
             self.ReplaceSelection(' ')
             self.handler('M-m pressed', None) # call_module_autocomp
             return
@@ -2824,7 +2830,7 @@ Flaky nutshell:
                 lhs = ''.join(l).strip() or '_'
                 rhs = ''.join(extract_words_from_tokens(r, sep2)).strip()
                 
-                m = re.match("\(.*\)$", rhs) # x@(y,...) => partial(y,...)(x)
+                m = re.match(r"\(.*\)$", rhs) # x@(y,...) => partial(y,...)(x)
                 if m:
                     try:
                         p = "partial{}".format(m.group(0))
@@ -2842,7 +2848,7 @@ Flaky nutshell:
             
             if c == '?':
                 head, sep, hint = ''.join(l).rpartition('.')
-                cc, pred = re.search("(\?+)\s*(.*)", c+''.join(r)).groups()
+                cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(r)).groups()
                 
                 return ("apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, "
                         "pred={3!r}, locals=self.shell.interp.locals)".format(
@@ -3116,7 +3122,7 @@ Flaky nutshell:
         else:
             indent = line[:(len(line)-len(lstr))]
             if line.strip()[-1] == ':':
-                m = re.match("[a-z]+", lstr)
+                m = re.match(r"[a-z]+", lstr)
                 if m and m.group(0) in (
                     'if','else','elif','for','while','with',
                     'def','class','try','except','finally'):
@@ -3393,8 +3399,7 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            ## hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
-            hint = re.search("[\w.]*$", self.cmdlc).group(0)
+            hint = re.search(r"[\w.]*$", self.cmdlc).group(0) # get the last word or ''
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
@@ -3416,16 +3421,15 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            ## hint = re.split("[^\w.]+", self.cmdlc)[-1] # get the last word or possibly ''
-            hint = re.search("[\w.]*$", self.cmdlc).group(0)
+            hint = re.search(r"[\w.]*$", self.cmdlc).group(0) # get the last word or ''
             
-            m = re.match("from\s+([\w.]+)\s+import\s+(.*)", self.cmdlc)
+            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", self.cmdlc)
             if m:
                 text = m.group(1)
                 modules = [x[len(text)+1:] for x in self.modules if x.startswith(text)]
                 modules = [x for x in modules if x and '.' not in x]
             else:
-                m = re.match("(import|from)\s+(.*)", self.cmdlc)
+                m = re.match(r"(import|from)\s+(.*)", self.cmdlc)
                 if m:
                     if not hint:
                         return
