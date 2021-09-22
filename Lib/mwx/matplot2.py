@@ -413,7 +413,7 @@ class MatplotPanel(wx.Panel):
     ## Property of current frame
     ## --------------------------------
     
-    frame = property(lambda self: self) # to be overrided (handler process `frame` in draw)
+    frame = property(lambda self: self) # to be overridden (handler process `frame` in draw)
     
     axes = property(lambda self: self.figure.axes[0])
     

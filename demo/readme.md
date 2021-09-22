@@ -13,7 +13,7 @@ Check how the mwx.FSM works by running the test code:
 
 ## mwx.Frame
 
-The simplest frame, which consits of 
+The simplest frame, which consists of 
 - simple menubar
 - simple statusbar
 - simple shell

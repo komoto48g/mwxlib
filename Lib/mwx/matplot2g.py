@@ -171,7 +171,7 @@ attributes : additional info:dict
     
     def update_attributes(self, attr=None, **kwargs):
         """Update frame-specifc attributes
-        The frame holds any attributes with dictionay
+        The frame holds any attributes with dictionary
         There are some keys which acts as the value setter when given,
         `annotation' also shows the message with infobar
         `localunit' also updates the frame.unit
@@ -341,7 +341,7 @@ class Clipboard:
     """Clipboard interface of images
     
     This does not work unless wx.App exists.
-    The clipboard data cannot be transfered unless wx.Frame exists.
+    The clipboard data cannot be transferred unless wx.Frame exists.
     """
     @staticmethod
     def imread():
@@ -1095,7 +1095,7 @@ Constants:
     interpolation_mode = 'bilinear'
     
     def OnDraw(self, evt):
-        """Called before canvas.draw (overrided)"""
+        """Called before canvas.draw (overridden)"""
         if not self.interpolation_mode:
             return
         if self.frame:
@@ -1109,7 +1109,7 @@ Constants:
                 self.frame.set_interpolation('nearest')
     
     def OnMotion(self, evt):
-        """Called when mouse moves in axes (overrided)"""
+        """Called when mouse moves in axes (overridden)"""
         if self.frame and self.Selector.shape[1] < 2:
             self.trace_point(evt.xdata, evt.ydata, type=NORMAL)
     

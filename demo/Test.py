@@ -13,21 +13,21 @@ class Plugin(Layer):
     """Plugin template ver.0
     """
     def Init(self):
-        """Initialize me safely (to be overrided)"""
+        """Initialize me safely (to be overridden)"""
         @self.handler.bind("f5 pressed", state=0)
         def update(v):
             self.reload_safe()
     
     def Destroy(self):
-        """Kill me safely (to be overrided)"""
+        """Kill me safely (to be overridden)"""
         return Layer.Destroy(self)
     
     def get_current_session(self):
-        """Return settings to be saved in session file (to be overrided)"""
+        """Return settings to be saved in session file (to be overridden)"""
         return True
     
     def set_current_session(self, session):
-        """Restore settings to be loaded from session file (to be overrided)"""
+        """Restore settings to be loaded from session file (to be overridden)"""
         print("session =", session)
 
 

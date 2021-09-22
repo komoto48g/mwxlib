@@ -759,7 +759,7 @@ class Clipboard:
     """Clipboard interface of text
     
     This does not work unless wx.App instance exists.
-    The clipboard data cannot be transfered unless wx.Frame exists.
+    The clipboard data cannot be transferred unless wx.Frame exists.
     """
     @staticmethod
     def read():

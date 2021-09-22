@@ -149,7 +149,7 @@ class Thread(object):
                 self.owner.handler('thread_begin', self)
                 self.result = f(*args, **kwargs)
             except KeyboardInterrupt as e:
-                print("- Thread:execution stoped: {}".format(e))
+                print("- Thread:execution stopped: {}".format(e))
             except AssertionError as e:
                 print("- Thread:execution failed: {}".format(e))
             except Exception as e:
@@ -346,15 +346,15 @@ unloadable : flag to set the Layer to be unloadable
                 self.layout(None, (bmp, txt), row=2)
     
     def Init(self):
-        """Initialize me safely (to be overrided)"""
+        """Initialize me safely (to be overridden)"""
         pass
     
     def get_current_session(self):
-        """Return settings to be saved in session file (to be overrided)"""
+        """Return settings to be saved in session file (to be overridden)"""
         pass
     
     def set_current_session(self, session):
-        """Restore settings to be loaded from session file (to be overrided)"""
+        """Restore settings to be loaded from session file (to be overridden)"""
         pass
     
     def reload_safe(self):
@@ -923,7 +923,7 @@ class Frame(mwx.Frame):
         return plug
     
     def get_plug(self, name):
-        """Find named plug window in registred plugins"""
+        """Find named plug window in registered plugins"""
         if name in self.plugins:
             return self.plugins[name].__plug__
         elif hasattr(name, 'category'): #<type 'Layer'>
@@ -951,7 +951,7 @@ class Frame(mwx.Frame):
             root = root.__module__
         try:
             ## If the name of root has been loaded,
-            ## we reload it refering to the file-name, not module-name
+            ## we reload it referring to the file-name, not module-name
             root = self.plugins.get(root).__file__
         except AttributeError:
             pass
@@ -1307,7 +1307,7 @@ class Frame(mwx.Frame):
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
-            ## Note: To evaluate atributes:tuple in locals,
+            ## Note: To evaluate attributes:tuple in locals,
             ##   datetime, nan, inf must be imported.
             from numpy import nan, inf
             import datetime
@@ -1395,7 +1395,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def read_buffer(path):
-        """Read buffer from `path file (to be overrided)"""
+        """Read buffer from `path file (to be overridden)"""
         if sys.version_info < (3,0):
             path = path.encode('shift-jis') # using Windows file encoding
         
@@ -1412,7 +1412,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def write_buffer(path, buf):
-        """Write buffer to `path file (to be overrided)"""
+        """Write buffer to `path file (to be overridden)"""
         try:
             img = Image.fromarray(buf)
             img.save(path) # PIL saves as L,I,F,RGB.

@@ -154,7 +154,7 @@ class LinePlot(MatplotPanel):
             self.__lastpoint = self.region[1]   # set origin right
         elif v == 3:
             self.set_wxcursor(wx.CURSOR_SIZEWE) # right-edge
-            self.__lastpoint = self.region[0]   # set oigin left
+            self.__lastpoint = self.region[0]   # set origin left
         else:
             self.set_wxcursor(wx.CURSOR_SIZEWE) # outside
     

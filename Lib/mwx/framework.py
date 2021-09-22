@@ -130,7 +130,7 @@ def predicate(text, locals=None):
 
 
 def Dir(obj):
-    """As the standard dir, but also listup filelds of COM object
+    """As the standard dir, but also listup fields of COM object
     
     Note: Create COM object with [win32com.client.gencache.EnsureDispatch]
     i.e., early-binding to get what methods and params are available.
@@ -335,11 +335,11 @@ def find_modules(force=False, verbose=True):
         
         lm.sort(key=str.upper)
         with open(f, 'w') as o:
-            pprint(lm, stream=o) # write moduels
+            pprint(lm, stream=o) # write modules
         print("done.")
     else:
         with open(f, 'r') as o:
-            lm = eval(o.read()) # read and eval a list of moduels
+            lm = eval(o.read()) # read and eval a list of modules
     return lm
 
 
@@ -381,7 +381,7 @@ class FSM(dict):
     state : current state
     debug : verbose level
         [1] dump when state transits
-        [2] + differnt event comes
+        [2] + different event comes
         [3] + executed actions (excepting None-state)
         [4] + executed actions (including None-state)
         [5] + and more, all events and executed actions
@@ -637,7 +637,7 @@ class FSM(dict):
         return action
     
     def unbind(self, event, action, state=None):
-        """Remove a transaction from the contex
+        """Remove a transaction from the context
         equiv. self[state] -= {event : [*, action]}
         The transaction is exepcted to be a list (not a tuple).
         """
@@ -777,7 +777,7 @@ def speckey_state(key):
 
 def hotkey(evt):
     """Interpret evt.KeyCode as Hotkey string and overwrite evt.key.
-    The modifiers are aranged in the same order as matplotlib as
+    The modifiers are arranged in the same order as matplotlib as
     [LR]win + ctrl + alt(meta) + shift.
     """
     key = evt.GetKeyCode()
@@ -1209,16 +1209,16 @@ class TreeList(object):
 
 
 class Menu(wx.Menu):
-    """Construt menu
+    """Construct menu
     
     item: (id, text, hint, style, icon,  ... Menu.Append arguments
-               action, updater, hilight) ... Menu Event handlers
+             action, updater, highlight) ... Menu Event handlers
     where,
       style -> menu style (ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO)
        icon -> menu icon (bitmap)
      action -> EVT_MENU handler
     updater -> EVT_UPDATE_UI handler
-    hilight -> EVT_MENU_HIGHLIGHT handler
+  highlight -> EVT_MENU_HIGHLIGHT handler
     """
     def __init__(self, owner, values):
         wx.Menu.__init__(self)
@@ -1262,7 +1262,7 @@ class Menu(wx.Menu):
 
 
 class MenuBar(wx.MenuBar, TreeList):
-    """Construt menubar as is orderd menu:list
+    """Construct menubar as is ordered menu:list
     リストの順番どおりに GUI 上にマップしたメニューバーを構築する
     
     root:TreeList is a nested list (as directory structrue)
@@ -1326,7 +1326,7 @@ class MenuBar(wx.MenuBar, TreeList):
 
 
 class StatusBar(wx.StatusBar):
-    """Construt statusbar with read/write
+    """Construct statusbar with read/write
     
    field : list of field widths
     pane : index of status text field
@@ -1462,7 +1462,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.statusbar.Show(0)
         self.SetStatusBar(self.statusbar)
         
-        ## To defalut close,
+        ## To default close,
         ## >>> self.Unbind(wx.EVT_CLOSE)
         
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only, no skip
@@ -1507,8 +1507,8 @@ class ShellFrame(MiniFrame):
     History : shell history (read only)
 
 Prefix:
-        C-x : extention map for the frame
-        C-c : spefific map for the editors and the shell
+        C-x : extension map for the frame
+        C-c : specific map for the editors and the shell
 
 Global bindings:
         C-f : Find text
@@ -2154,7 +2154,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if q != -1:
             self.SetCurrentPos(q) # forward selection to quoted words
             return
-        self.WordRightEndExtend()  # othewise, extend selection forward word
+        self.WordRightEndExtend()  # otherwise, extend selection forward word
     
     def selection_backward_word_or_paren(self):
         p = self.left_paren
@@ -2348,7 +2348,7 @@ Enter key bindings:
      C-enter : insert-line-break
 
 This module is based on the implementation of wx.py.shell.
-    Some of the original key bindings are overrided in the FSM framework.
+    Some of the original key bindings are overridden in the FSM framework.
     To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
     The original key bindings are mapped in esc-map, i.e.,
     e.g., if you want to do 'select-all', type [ESC C-a], not [C-a]
@@ -2978,7 +2978,7 @@ Flaky nutshell:
             return
         
         ## この段階では push された直後で，次のようになっている
-        ## bolc : begginning of command-line
+        ## bolc : beginning of command-line
         ## eolc : end of the output-buffer
         try:
             ## input = self.GetTextRange(self.bolc, self.__eolc_marks[-1])
@@ -3064,7 +3064,7 @@ Flaky nutshell:
     
     ## input = classmethod(Shell.ask)
     
-    bolc = property(lambda self: self.promptPosEnd, doc="begginning of command-line")
+    bolc = property(lambda self: self.promptPosEnd, doc="beginning of command-line")
     eolc = property(lambda self: self.TextLength, doc="end of command-line")
     
     @property
@@ -3134,7 +3134,7 @@ Flaky nutshell:
     ## --------------------------------
     
     def about(self):
-        """About the shell (to be overrided)"""
+        """About the shell (to be overridden)"""
         print("#<module 'mwx' from {!r}>".format(__file__),
               "Author: {!r}".format(__author__),
               "Version: {!s}".format(__version__),
@@ -3549,7 +3549,7 @@ def deb(target=None, app=None, startup=None, **kwargs):
     execStartupScript : First, execute your script ($PYTHONSTARTUP:~/.py)
 
 Note:
-    PyNoAppError will be raised when the App is missing in pocess.
+    PyNoAppError will be raised when the App is missing in process.
     When this may cause bad traceback, please restart.
     """
     if app is None:
