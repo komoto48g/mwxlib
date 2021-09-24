@@ -2812,7 +2812,7 @@ Flaky nutshell:
         Interpret magic syntax
            quoteback : x`y --> y=x
             pullback : x@y --> y(x)
-             partial : x@(y1,..,yn) --> partial(y1,..,yn,x)
+             partial : x@(y1,...,yn) --> partial(y1,...,yn)(x)
              apropos : x.y?p --> apropos(y,x,...,p)
         
         Note: This is called before run, execute, and original magic.
@@ -2834,9 +2834,8 @@ Flaky nutshell:
                 lhs = ''.join(l).strip() or '_'
                 rhs = ''.join(extract_words_from_tokens(r, sep2)).strip()
                 
-                m = re.match(r"\(.*\)$", rhs) # x@(y,...) --> partial(y,...)(x)
-                if m:
-                    rhs = "partial{}".format(m.group(0))
+                rhs = re.sub(r"(\(.*\))$",      # x@(y1,...,yn)
+                             r"partial\1", rhs) # --> partial(y1,...,yn)(x)
                 
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
             
