@@ -424,7 +424,7 @@ class FSM(dict):
         
         ret = []
         if self.__state is not None:
-            ret = self.call(event, *args) # Normal process (1)
+            ret += self.call(event, *args) # Normal process (1)
         
         if None in self:
             self.__state, org = None, self.__state
@@ -436,7 +436,10 @@ class FSM(dict):
         
         self.__prev_state = self.__state
         self.__prev_event = event
-        return ret
+        if ret:
+            if len(ret) == 1:
+                return ret[0]
+            return ret
     
     def fork(self, *args):
         """Invoke the current event"""
