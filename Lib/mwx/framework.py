@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.45.3"
+__version__ = "0.45.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -422,14 +422,14 @@ class FSM(dict):
     def __call__(self, event, *args):
         self.__event = event
         
-        ret = None
+        ret = []
         if self.__state is not None:
             ret = self.call(event, *args) # Normal process (1)
         
         if None in self:
             self.__state, org = None, self.__state
             try:
-                ret = self.call(event, *args) # state `None process (2) forced
+                ret += self.call(event, *args) # state `None process (2) forced
             finally:
                 if self.__state is None: # restore original
                     self.__state = org
@@ -484,6 +484,7 @@ class FSM(dict):
                     return self.call(pat, *args) # recursive call with matched pattern
         
         self.__debcall__(event, *args) # check when no transition
+        return []
     
     def __debcall__(self, pattern, *args):
         v = self.debug
@@ -580,7 +581,7 @@ class FSM(dict):
         for k,v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
-                    if self[k].get(event) is transaction: # pop event:tuple,list
+                    if self[k].get(event) is transaction: # remove the event
                         self[k].pop(event)
                         continue
                     for act in transaction[1:]:
@@ -651,8 +652,6 @@ class FSM(dict):
                 context[event].remove(action)
                 if len(context[event]) == 1:
                     context.pop(event)
-                    ## if not context:
-                    ##     self.pop(state)
             except AttributeError:
                 print("- FSM:warning - removing action from context"
                       "({!r} : {!r}) must be a list, not tuple".format(state, event))
@@ -2298,7 +2297,7 @@ Features:
     See below.
 
 Magic syntax:
-   backquote : x`y --> y=x  | x`y`z --> z=y=x
+   quoteback : x`y --> y=x  | x`y`z --> z=y=x
     pullback : x@y --> y(x) | x@y@z --> z(y(x))
      apropos : x.y? [not] p --> shows apropos (not-)matched by predicates `p
                 equiv. apropos(y, x [,ignorecase ?:True,??:False] [,pred=p])
@@ -2507,18 +2506,18 @@ Flaky nutshell:
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-             ## '*f[0-9]* pressed' : (0, ), # --> function keys skip to the parent
+             ## '*f[0-9]* pressed' : (0, ), # -> function keys skip to the parent
                     '* pressed' : (0, skip),
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-               '*enter pressed' : (0, ), # --> OnShowCompHistory 無効
+               '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
                  ## 'C-up pressed' : (0, _F(lambda v: self.OnHistoryReplace(+1), "prev-command")),
                ## 'C-down pressed' : (0, _F(lambda v: self.OnHistoryReplace(-1), "next-command")),
-               ## 'C-S-up pressed' : (0, ), # --> Shell.OnHistoryInsert(+1) 無効
-             ## 'C-S-down pressed' : (0, ), # --> Shell.OnHistoryInsert(-1) 無効
+               ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
+             ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark)),
                'M-down pressed' : (0, _F(self.goto_next_mark)),
                   ## 'C-a pressed' : (0, _F(self.beggining_of_command_line)),
@@ -2808,7 +2807,7 @@ Flaky nutshell:
     def magic_interpret(self, tokens):
         """Called when [Enter] command, or eval-time for tooltip
         Interpret magic syntax
-           backquote : x`y --> y=x
+           quoteback : x`y --> y=x
             pullback : x@y --> y(x)
              partial : x@(y1,..,yn) --> partial(y1,..,yn,x)
              apropos : x.y?p --> apropos(y,x,...,p)
@@ -2817,27 +2816,25 @@ Flaky nutshell:
         """
         sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # ` OPS; SEPARATOR_CHARS; nospace, nocomma
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # @ OPS; SEPARATOR_CHARS;
+        
         for j,c in enumerate(tokens):
             l, r = tokens[:j], tokens[j+1:]
             
             if c == '@':
                 f = "{rhs}({lhs})"
-                if r and r[0] == '*': # x@*y => y(*x)
-                    f = "{rhs}(*{lhs})"
-                    r = r[1:]
+                if r and r[0] == '*':
+                    f = "{rhs}(*{lhs})" # x@*y --> y(*x)
+                    r.pop(0)
                 while r and r[0].isspace(): # skip whites
-                    r = r[1:]
+                    r.pop(0)
+                
                 lhs = ''.join(l).strip() or '_'
                 rhs = ''.join(extract_words_from_tokens(r, sep2)).strip()
                 
-                m = re.match(r"\(.*\)$", rhs) # x@(y,...) => partial(y,...)(x)
+                m = re.match(r"\(.*\)$", rhs) # x@(y,...) --> partial(y,...)(x)
                 if m:
-                    try:
-                        p = "partial{}".format(m.group(0))
-                        self.eval(p)
-                        rhs = p
-                    except Exception:
-                        pass
+                    rhs = "partial{}".format(m.group(0))
+                
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '`':
@@ -2854,9 +2851,11 @@ Flaky nutshell:
                         "pred={3!r}, locals=self.shell.interp.locals)".format(
                         hint.strip(), head or 'this', len(cc) < 2, pred or None))
             
-            if c == sys.ps2.strip(): # ...
-                i = next((k for k,a in enumerate(r) if not a.isspace()), len(r))
-                return ''.join(l) + c + ''.join(r[:i]) + self.magic_interpret(r[i:])
+            if c == sys.ps2.strip():
+                s = ''
+                while r and r[0].isspace(): # eat whites
+                    s += r.pop(0)
+                return ''.join(l) + c + s + self.magic_interpret(r)
             
             if c in ';\r\n':
                 return ''.join(l) + c + self.magic_interpret(r)
@@ -2865,7 +2864,7 @@ Flaky nutshell:
     
     def magic(self, cmd):
         """Called before command pushed
-        (override) with magic: f x => f(x) disabled
+        (override) with magic: f x --> f(x) disabled
         """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
