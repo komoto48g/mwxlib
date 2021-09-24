@@ -37,7 +37,7 @@ if 1:
     builtins.partial = partial
 
 
-def init_spec(self):
+def init_shell(self):
     """Initialize shell/editor and the environs
     """
     @self.define_key('C-tab')
@@ -124,18 +124,18 @@ def init_spec(self):
 
 def dive(*args):
     """Dive into the process, from your diving point.
-To Divers:
+    Divers:
     This executes your startup script ($PYTHONSTARTUP:~/.py).
-    Then, call spec (post-startup function defined above),
+    Then, call post-startup function defined above.
     """
     mwx.deb(*args,
-        startup=init_spec,
-        execStartupScript=True,
-        introText="""
-        Anything one man can imagine, other man can make real.
-        --- Jules Verne (1828--1905)
-        """,
-        size=(854,480))
+            startup=init_shell,
+            execStartupScript=True,
+            introText="""
+            Anything one man can imagine, other man can make real.
+            --- Jules Verne (1828--1905)
+            """,
+            size=(854,480))
 
 
 if __name__ == '__main__':
