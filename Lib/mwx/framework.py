@@ -436,10 +436,7 @@ class FSM(dict):
         
         self.__prev_state = self.__state
         self.__prev_event = event
-        if ret:
-            if len(ret) == 1:
-                return ret[0]
-            return ret
+        return ret
     
     def fork(self, *args):
         """Invoke the current event"""

@@ -1,18 +1,12 @@
-#! python
+#! python3
 # -*- coding: utf-8 -*-
 """deb utility
 
-Snippets of code, syntax, semantics, theme, interface,
-    and anything new
-        one
-        can
-      imagine
+Snippets of code, syntax, semantics, interface,
+  and everything new one can imagine
 """
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 from six.moves import builtins
-from functools import partial
-from functools import reduce
+from functools import partial, reduce
 import operator as op
 import numpy as np
 import mwx
@@ -21,7 +15,7 @@ np.set_printoptions(linewidth=256) # default 75
 
 if 1:
     """Shell built-in utility:
-  Usage:
+    
     >>> 1,5 @range @(reduce, op.mul) => reduce(op.mul, range(1,5))
     24
     >>> x@(do,f,**kw) => do.results = [f(v,**kw) for v in fx]
