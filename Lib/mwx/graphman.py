@@ -67,6 +67,9 @@ class Thread(object):
         2. flag.wait    -> wait until the chequer flag to be set True
         3. flag.set     -> set flag:True to resume the thread
         """
+        if not self.is_active:
+            return False
+        
         ## The event.wait returns immediately when it is True (:set)
         ## and blocks until the internal flag is True when it is False (:clear)
         try:
@@ -84,6 +87,8 @@ class Thread(object):
         """Pause the process where called
         The caller should check the retval and decide whether to stop the thread.
         """
+        if not self.is_active:
+            return False
         try:
             self.__flag.clear()
             if wx.MessageBox(msg + "\n"
@@ -219,6 +224,7 @@ unloadable : flag to set the Layer to be unloadable
     
     pane = property(lambda self: self.__parent.get_pane(self))
     
+    thread_type = Thread
     thread = None # worker <Thread>
     
     @property
