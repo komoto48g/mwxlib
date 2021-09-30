@@ -191,7 +191,7 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
 
 def typename(root, docp=False, qualp=False):
     """Typename of the root object
-
+    
     retval-> module:root<doc>       when root is callable and qualp=False
              module:class.root<doc> when root is callable and qualp=True
              module:class<doc>      when root is a class or an instance of a class
@@ -395,8 +395,8 @@ class FSM(dict):
     @current_state.setter
     def current_state(self, state):
         self.__state = state
-        self.__event = None
-        self.__debcall__(None)
+        self.__event = '*forced*'
+        self.__debcall__(self.__event)
     
     def clear(self, state):
         """Reset current and previous states"""
@@ -423,16 +423,19 @@ class FSM(dict):
         self.__event = event
         
         ret = []
-        if self.__state is not None:
-            ret += self.call(event, *args) # Normal process (1)
-        
         if None in self:
-            self.__state, org = None, self.__state
+            org = self.__state
+            prg = self.__prev_state
             try:
-                ret += self.call(event, *args) # state `None process (2) forced
+                self.__state = None
+                ret += self.call(event, *args) # `None` process
             finally:
                 if self.__state is None: # restore original
                     self.__state = org
+                    self.__prev_state = prg
+        
+        if self.__state is not None:
+            ret += self.call(event, *args) # normal process
         
         self.__prev_state = self.__state
         self.__prev_event = event
@@ -665,7 +668,7 @@ speckeys = {
     wx.WXK_ALT                  : 'alt',
     wx.WXK_BACK                 : 'backspace',
     wx.WXK_CANCEL               : 'break',
-    wx.WXK_CAPITAL              : 'capital',
+    wx.WXK_CAPITAL              : 'caps_lock',
     wx.WXK_CONTROL              : 'ctrl',
     wx.WXK_DELETE               : 'delete',
     wx.WXK_DOWN                 : 'down',
@@ -953,10 +956,13 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
     
+    hotkey = staticmethod(hotkey) # to be overridden
+    
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
-        key = hotkey(evt)
-        self.__key = regulate_key(key + '+')
+        key = self.hotkey(evt)
+        ## self.__key = regulate_key(key + '+')
+        self.__key = (key + '+')
         if evt.EventObject is not self:
             evt.Skip()
             return
@@ -964,7 +970,7 @@ class CtrlInterface(object):
     
     def on_key_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up"""
-        key = hotkey(evt)
+        key = self.hotkey(evt)
         self.__key = ''
         self.handler('{} released'.format(key), evt)
     
@@ -1068,8 +1074,12 @@ class KeyCtrlInterfaceMixin(object):
 ## wx Framework and Designer
 ## --------------------------------
 
-def ID_(id): # Free ID - どこで使っているか検索できるように．
-    return id + wx.ID_HIGHEST # not to use [ID_LOWEST(4999):ID_HIGHEST(5999)]
+def ID_(id):
+    ## Free ID - どこで使っているか検索できるように
+    ## do not use [ID_LOWEST(4999):ID_HIGHEST(5999)]
+    id += wx.ID_HIGHEST
+    assert(not wx.ID_LOWEST <= id <= wx.ID_HIGHEST)
+    return id
 
 
 ## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
@@ -2766,7 +2776,7 @@ Flaky nutshell:
         ## cast magic for `@?
         try:
             tokens = split_tokens(text)
-            if any(x in tokens for x in '`@?'):
+            if any(x in tokens for x in '`@?$'): # python では使用されないトークン
                 cmd = self.magic_interpret(tokens)
                 if '\n' in cmd:
                     self.Execute(cmd) # for multi-line commands
@@ -3621,7 +3631,7 @@ if 1:
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.shell.handler.debug = 0
+    frm.inspector.shell.handler.debug = 4
     frm.inspector.shell.Execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
     frm.inspector.shell.wrap(1)
