@@ -14,7 +14,7 @@ import subprocess
 import threading
 import traceback
 import inspect
-## import codecs
+import codecs
 import sys
 import os
 import platform
@@ -42,6 +42,9 @@ except ImportError:
     pass
 
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
+
+if sys.version_info < (3,0):
+    FileNotFoundError = IOError
 
 
 class Thread(object):
@@ -979,7 +982,7 @@ class Frame(mwx.Frame):
                     sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
                 sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
             else:
-                print("- No such directory: {!r}".format(dirname))
+                print("- No such directory {!r}".format(dirname))
                 return False
         
         ## pane = self.get_pane(name)
@@ -1288,12 +1291,16 @@ class Frame(mwx.Frame):
         
         savedir = os.path.dirname(f)
         for frame in frames:
-            name = re.sub("[\\/:*?\"<>|]", '_', frame.name) # normal-basename
-            path = os.path.join(savedir, name)
-            if not os.path.exists(path):
-                if not path.endswith('.tif'):
-                    path += '.tif'
-                self.save_buffer(path, frame)
+            try:
+                path = os.path.join(savedir, frame.name)
+                if not os.path.exists(path):
+                    if not path.endswith('.tif'):
+                        path += '.tif'
+                    self.write_buffer(path, frame.buffer)
+            except (PermissionError, OSError)  as e:
+                print("- Failed to save {!r}".format(path))
+                print("  {!r}".format((e)))
+                pass
         
         res, mis = self.write_attributes(f, frames)
         n = len(frames)
@@ -1321,7 +1328,7 @@ class Frame(mwx.Frame):
             from numpy import nan, inf
             import datetime
             
-            with open(f) as i:
+            with codecs.open(f, encoding='utf-8') as i:
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
@@ -1353,7 +1360,7 @@ class Frame(mwx.Frame):
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
-            with open(f, 'w') as o:
+            with codecs.open(f, 'w', encoding='utf-8') as o:
                 pprint(tuple(new.items()), stream=o) # save all attributes
             
         except Exception as e:
@@ -1499,8 +1506,9 @@ class Frame(mwx.Frame):
                 return
         
         if not path:
+            name = re.sub("[\\/:*?\"<>|]", '_', frame.name)
             with wx.FileDialog(self, "Save buffer as",
-                defaultFile=re.sub("[\\/:*?\"<>|]", '_', frame.name), # normal-basename
+                defaultFile=name,
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
