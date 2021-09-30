@@ -724,12 +724,8 @@ class ControlPanel(scrolled.ScrolledPanel):
     def parameters(self):
         return [p.value for p in chain(*self.__params)]
     
-    def reset_params(self, argv=None, groupid=None, **kwargs):
-        if groupid is not None:
-            params = [self.__params[groupid]]
-        else:
-            params = self.__params
-        
+    def reset_params(self, argv=None, **kwargs):
+        params = self.__params
         if not argv:
             for p in chain(*params):
                 try:
@@ -747,12 +743,13 @@ class ControlPanel(scrolled.ScrolledPanel):
                     pass
     
     def copy_to_clipboard(self):
-        text = '\t'.join(str(p.value) for p in chain(*self.__params)) # repr value -> v:str
+        params = self.__params
+        text = '\t'.join(str(p.value) for p in chain(*params)) # repr value -> v:str
         Clipboard.write(text)
     
-    def paste_from_clipboard(self):
+    def paste_from_clipboard(self, **kwargs):
         text = Clipboard.read()
-        self.reset_params(text.split('\t'))
+        self.reset_params(text.split('\t'), **kwargs)
 
 
 class Clipboard:
