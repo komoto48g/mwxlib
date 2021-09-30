@@ -291,6 +291,9 @@ unloadable : flag to set the Layer to be unloadable
                   'C-c pressed' : (0, _F(self.copy_to_clipboard)),
                   'C-v pressed' : (0, _F(self.paste_from_clipboard)),
                   'C-n pressed' : (0, _F(self.Draw, show=False), _F(self.reset_params)),
+                'C-S-c pressed' : (0, _F(self.copy_to_clipboard, checked_only=1)),
+                'C-S-v pressed' : (0, _F(self.paste_from_clipboard, checked_only=1)),
+                'C-S-n pressed' : (0, _F(self.reset_params, checked_only=1)),
             }
         })
         

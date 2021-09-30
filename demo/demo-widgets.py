@@ -69,7 +69,7 @@ class Plugin(Layer):
             self.P,
             ),
             row=1, expand=1, show=1, 
-            type='slider', lw=20, tw=40, cw=100, h=22,
+            type='slider', style='chkbox', lw=20, tw=40, cw=100, h=22,
         )
         
         self.textctrl = TextCtrl(self, '',

@@ -724,16 +724,18 @@ class ControlPanel(scrolled.ScrolledPanel):
     def parameters(self):
         return [p.value for p in chain(*self.__params)]
     
-    def reset_params(self, argv=None, **kwargs):
-        params = self.__params
+    def reset_params(self, argv=None, checked_only=False, **kwargs):
+        ## params = chain(*self.__params)
+        params = filter((lambda c: hasattr(c, 'check') and c.check)
+                        if checked_only else None, chain(*self.__params))
         if not argv:
-            for p in chain(*params):
+            for p in params:
                 try:
                     p.reset(**kwargs)
                 except AttributeError:
                     pass
         else:
-            for p,v in zip(chain(*params), argv):
+            for p,v in zip(params, argv):
                 try:
                     p.reset(eval(v), **kwargs) # eval v:str -> value
                 except AttributeError:
@@ -742,14 +744,16 @@ class ControlPanel(scrolled.ScrolledPanel):
                     print("- Failed to eval {}".format(e))
                     pass
     
-    def copy_to_clipboard(self):
-        params = self.__params
-        text = '\t'.join(str(p.value) for p in chain(*params)) # repr value -> v:str
+    def copy_to_clipboard(self, checked_only=False):
+        ## params = chain(*self.__params)
+        params = filter((lambda c: hasattr(c, 'check') and c.check)
+                        if checked_only else None, chain(*self.__params))
+        text = '\t'.join(str(p.value) for p in params) # repr value -> v:str
         Clipboard.write(text)
     
-    def paste_from_clipboard(self, **kwargs):
+    def paste_from_clipboard(self, checked_only=False, **kwargs):
         text = Clipboard.read()
-        self.reset_params(text.split('\t'), **kwargs)
+        self.reset_params(text.split('\t'), checked_only, **kwargs)
 
 
 class Clipboard:
