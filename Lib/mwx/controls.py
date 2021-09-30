@@ -150,7 +150,7 @@ Args:
             la.remove(f)
     
     def reset(self, v=None, backcall=True):
-        """Reset value when indexed (by knobs)
+        """Reset value when indexed (by knobs) with callback
         When backcall is True, this calls back default control handler
         """
         if v is None or v == '':
@@ -737,18 +737,21 @@ class ControlPanel(scrolled.ScrolledPanel):
         else:
             for p,v in zip(params, argv):
                 try:
-                    p.reset(eval(v), **kwargs) # eval v:str -> value
+                    ## p.reset(eval(v), **kwargs) # eval v:str -> value
+                    p.reset(v, **kwargs) # eval v:str -> value
                 except AttributeError:
                     p.value = v
                 except Exception as e: # failed to eval
-                    print("- Failed to eval {}".format(e))
+                    print("- Failed to reset {!r}: {}".format(p, e))
                     pass
     
     def copy_to_clipboard(self, checked_only=False):
         ## params = chain(*self.__params)
         params = filter((lambda c: hasattr(c, 'check') and c.check)
                         if checked_only else None, chain(*self.__params))
-        text = '\t'.join(str(p.value) for p in params) # repr value -> v:str
+        
+        ## text = '\t'.join(str(p.value) for p in params) # repr value -> v:str
+        text = '\t'.join(str(p) if isinstance(p, Param) else str(p.value) for p in params)
         Clipboard.write(text)
     
     def paste_from_clipboard(self, checked_only=False, **kwargs):
@@ -1248,8 +1251,6 @@ if __name__ == '__main__':
             ##     ),
             ##     row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
             ## )
-            ## for x in self.layout_groups[1][0:2]:
-            ##     x.Disable()
     
     app = wx.App()
     frm = mwx.Frame(None)
