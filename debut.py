@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """deb utility
 
-Snippets of code, syntax, semantics, interface,
-  and everything new one can imagine
+Test for snippets of code, syntax, semantics, interface,
+  everything one can imagine
 """
 from six.moves import builtins
 from functools import partial, reduce
