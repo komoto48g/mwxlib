@@ -150,9 +150,7 @@ Args:
             la.remove(f)
     
     def reset(self, v=None, backcall=True):
-        """Reset value when indexed (by knobs) with callback
-        When backcall is True, this calls back default control handler
-        """
+        """Reset value when indexed (by knobs) with callback"""
         if v is None or v == '':
             v = self.__std_value
             if v is None:
@@ -279,7 +277,7 @@ class LParam(Param):
 ## --------------------------------
 
 class Knob(wx.Panel):
-    """Parameter control unit
+    """Parameter controller unit
     パラメータクラスのコントロールノブ
     
     In addition to direct key input to the textctrl,
@@ -292,13 +290,13 @@ Attributes:
 
 Args:
       par : Param <object>
-     type : control type (slider[*], [hv]spin, choice, and default None)
+     type : ctrl type (slider[*], [hv]spin, choice, and default None)
     style : style of label
             None -> static text (default)
             chkbox -> label with check box
             button -> label with flat button
- editable : text ctrl is editable or readonly
- lw,tw,cw : width of label, textbox, and control (default height `h=22 of widgets)
+ editable : textctrl is editable or readonly
+ lw,tw,cw : width of label, textbox, and ctrl (default height `h=22 of widgets)
     """
     @property
     def param(self):
@@ -399,7 +397,7 @@ Args:
         elif type == 'choice':
             self.ctrl = wx.Choice(self, size=(cw,h))
             self.ctrl.Bind(wx.EVT_CHOICE, self.OnScroll)
-            self.ctrl.SetValue = self.ctrl.SetSelection # setter mimic of controller
+            self.ctrl.SetValue = self.ctrl.SetSelection # setter of choice
             self.ctrl.GetValue = self.ctrl.GetSelection # getter (ditto)
             
         else:
@@ -573,7 +571,7 @@ Args:
 
 
 class ControlPanel(scrolled.ScrolledPanel):
-    """Scrollable control layout panel
+    """Scrollable Control Panel
     スクロール可能なコントロール配置用パネル
     """
     def __init__(self, *args, **kwargs):
@@ -957,7 +955,7 @@ Args:
 
 
 class TextCtrl(wx.Panel):
-    """Text control panel
+    """Text panel
     
 Attributes:
       Value : textctrl value:str
@@ -1014,7 +1012,7 @@ Args:
 
 
 class Choice(wx.Panel):
-    """Editable Choice (ComboBox) control panel
+    """Editable Choice (ComboBox) panel
     
 Attributes:
   Selection : combobox selection:int

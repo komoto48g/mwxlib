@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.45.6"
+__version__ = "0.45.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -316,12 +316,12 @@ def find_modules(force=False, verbose=True):
               "while Py{} gathers a list of all available modules... "
               "(This is executed once)".format(sys.winver))
         
-        def callback(path, modname, desc):
+        def _callback(path, modname, desc):
             lm.append(modname)
             if verbose:
                 print('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='')
         
-        def error(modname):
+        def _error(modname):
             ## lm.append(modname + '*') # do not append to the list
             if verbose:
                 print('\b'*80 + "- failed: {}".format(modname[:70]))
@@ -329,7 +329,7 @@ def find_modules(force=False, verbose=True):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore') # ignore problems during import
             
-            pydoc.ModuleScanner().run(callback, key='', onerror=error)
+            pydoc.ModuleScanner().run(_callback, key='', onerror=_error)
             if verbose:
                 print('\b'*80 + "The results were written in {!r}.".format(f))
         
