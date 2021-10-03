@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.45.7"
+__version__ = "0.45.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -961,8 +961,7 @@ class CtrlInterface(object):
     def on_key_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
         key = self.hotkey(evt)
-        ## self.__key = regulate_key(key + '+')
-        self.__key = (key + '+')
+        self.__key = regulate_key(key + '+')
         if evt.EventObject is not self:
             evt.Skip()
             return
@@ -2291,7 +2290,7 @@ class Editor(EditWindow, EditorInterface):
 
 
 class Nautilus(Shell, EditorInterface):
-    """Shell of the Nautilus with Editor interface
+    """Nautilus in the Shell with Editor interface
 --------------------------------------------------
 Features:
     All objects in the process can be accessed
@@ -2368,7 +2367,7 @@ The most convenient way to see the details of keymaps on the shell:
 
 Flaky nutshell:
     Half-baked by Patrik K. O'Brien,
-    and the other half by K. O'moto ;)
+    and the other half by K. O'moto.
     """
     target = property(lambda self: self.__target)
     parent = property(lambda self: self.__parent)
