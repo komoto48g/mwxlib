@@ -420,9 +420,6 @@ Constants:
                   'region_draw' : [ None ],
                  'region_drawn' : [ None, draw_idle ],
                'region_removed' : [ None, draw_idle ],
-             'canvas_focus_set' : [ None, _F(self.draw),
-                                          _F(self.writeln) ],
-          'canvas_focus_killed' : [ None, self.on_picker_lock ],
                'alt+up pressed' : [ None, self.OnPageUp ],
              'alt+down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],   # page-up
@@ -871,14 +868,21 @@ Constants:
         self.draw()
     
     def on_focus_set(self, evt):
+        """Called when focus is set
+        (override)
+        """
         MatplotPanel.on_focus_set(self, evt)
         if self.frame:
             self.handler('frame_selected', self.frame)
     
-    def on_focus_killed(self, evt):
-        MatplotPanel.on_focus_killed(self, evt)
+    def on_focus_kill(self, evt):
+        """Called when focus is killed
+        (override)
+        """
+        MatplotPanel.on_focus_kill(self, evt)
         if self.frame:
             self.handler('frame_deselected', self.frame)
+            self.on_picker_lock(evt)
     
     def get_cmap(self):
         if self.frame:

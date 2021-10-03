@@ -212,11 +212,11 @@ class MatplotPanel(wx.Panel):
         self.canvas.mpl_connect('button_release_event', self.on_button_release)
         self.canvas.mpl_connect('motion_notify_event', self.on_motion_notify)
         
-        self.canvas.mpl_connect('figure_enter_event', lambda v: self.handler('figure enter', v))
-        self.canvas.mpl_connect('figure_leave_event', lambda v: self.handler('figure leave', v))
-        self.canvas.mpl_connect('axes_enter_event', lambda v: self.handler('axes enter', v))
-        self.canvas.mpl_connect('axes_leave_event', lambda v: self.handler('axes leave', v))
-        self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
+        self.canvas.mpl_connect('figure_enter_event', lambda v: self.handler('figure_enter', v))
+        self.canvas.mpl_connect('figure_leave_event', lambda v: self.handler('figure_leave', v))
+        self.canvas.mpl_connect('axes_enter_event', lambda v: self.handler('axes_enter', v))
+        self.canvas.mpl_connect('axes_leave_event', lambda v: self.handler('axes_leave', v))
+        ## self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
         ## self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         ## mpl が取りこぼすイベントを捕まえる
@@ -228,8 +228,8 @@ class MatplotPanel(wx.Panel):
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: self.handler('Xbutton1 released', v))
         self.canvas.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: self.handler('Xbutton2 released', v))
         
-        self.canvas.Bind(wx.EVT_SET_FOCUS, self.on_focus_set)     # => 'canvas_focus_set'
-        self.canvas.Bind(wx.EVT_KILL_FOCUS, self.on_focus_killed) # => 'canvas_focus_killed'
+        self.canvas.Bind(wx.EVT_SET_FOCUS, lambda v: self.handler('focus_set', v))
+        self.canvas.Bind(wx.EVT_KILL_FOCUS, lambda v: self.handler('focus_kill', v))
         
         ## `Rbutton pressed` on_menu is enabled for Normal mode only.
         ## The context menus is disabled and never skip to the next handler.
@@ -242,13 +242,13 @@ class MatplotPanel(wx.Panel):
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
                 #'canvas_drawn' : [ None, ],             # after canvas.draw :deprecated
-               'canvas_resized' : [ None, ],
-             'canvas_focus_set' : [ None, self.escape ],
-          'canvas_focus_killed' : [ None, self.escape ],
-                 'figure enter' : [ None, self.on_figure_enter ],
-                 'figure leave' : [ None, self.on_figure_leave ],
-                   'axes enter' : [ None, ],
-                   'axes leave' : [ None, ],
+              #'canvas_resized' : [ None, ],
+                    'focus_set' : [ None, self.on_focus_set, self.escape ],
+                   'focus_kill' : [ None, self.on_focus_kill, self.escape ],
+                 'figure_enter' : [ None, self.on_figure_enter ],
+                 'figure_leave' : [ None, self.on_figure_leave ],
+                   'axes_enter' : [ None, ],
+                   'axes_leave' : [ None, ],
                  'home pressed' : [ None, self.OnHomePosition ],
             'backspace pressed' : [ None, self.OnBackPosition ],
         'alt+backspace pressed' : [ None, self.OnForwardPosition ],
@@ -283,9 +283,9 @@ class MatplotPanel(wx.Panel):
               '*[LR]drag begin' : (PAN+DRAGGING, ),
                 'ctrl released' : (NORMAL, self.OnPanEnd),
                'space released' : (NORMAL, self.OnPanEnd),
-          'canvas_focus_killed' : (NORMAL, self.OnPanEnd),
-                 'figure leave' : (NORMAL, self.OnPanEnd),
-                   'axes leave' : (NORMAL, self.OnPanEnd),
+                 'figure_leave' : (NORMAL, self.OnPanEnd),
+                   'axes_leave' : (NORMAL, self.OnPanEnd),
+                   'focus_kill' : (NORMAL, self.OnPanEnd),
                'ctrl+* pressed' : (NORMAL, fork, self.OnPanEnd),
            'ctrl+shift pressed' : (PAN, ),
                 },
@@ -304,7 +304,7 @@ class MatplotPanel(wx.Panel):
          '*[LR]button released' : (NORMAL, self.OnZoomEnd, self.draw),
                 },
                 XAXIS : {
-                   'axes enter' : (NORMAL, self.OnAxisLeave),
+                   'axes_enter' : (NORMAL, self.OnAxisLeave),
                   'Ldrag begin' : (XAXIS+DRAGGING, self.OnAxisDragBegin),
                  '*Ldrag begin' : (XAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  '*Rdrag begin' : (XAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
@@ -331,7 +331,7 @@ class MatplotPanel(wx.Panel):
                    '*Rdrag end' : (XAXIS, self.OnAxisDragEnd),
                 },
                 YAXIS : {
-                   'axes enter' : (NORMAL, self.OnAxisLeave),
+                   'axes_enter' : (NORMAL, self.OnAxisLeave),
                   'Ldrag begin' : (YAXIS+DRAGGING, self.OnAxisDragBegin),
                  '*Ldrag begin' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  '*Rdrag begin' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
@@ -467,14 +467,14 @@ class MatplotPanel(wx.Panel):
             self.modeline.SetBackgroundColour('#000000')
             self.modeline.SetForegroundColour('#f0f0f0')
             self.Refresh()
-        self.handler('canvas_focus_set', self.frame)
+        evt.Skip()
     
-    def on_focus_killed(self, evt): #<wx._core.FocusEvent>
+    def on_focus_kill(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour('')
             self.modeline.SetForegroundColour('#000000')
             self.Refresh()
-        self.handler('canvas_focus_killed', self.frame)
+        evt.Skip()
     
     ## --------------------------------
     ## 外部入出力／複合インターフェース
@@ -870,7 +870,7 @@ class MatplotPanel(wx.Panel):
     def OnAxisDragEnd(self, evt):
         self.toolbar.push_current()
         if evt.inaxes:
-            self.handler('axes enter', evt)
+            self.handler('axes_enter', evt)
     
     def OnXAxisPanMove(self, evt):
         self.xlim -= (evt.xdata - self.p_event.xdata)

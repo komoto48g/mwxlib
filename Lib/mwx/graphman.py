@@ -413,10 +413,10 @@ class Graph(GraphPlot):
         
         self.handler.append({ #<Graph handler>
             None : {
-                   'f5 pressed' : [ None, _F(self.refresh) ],
+                    'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
               'shift+a pressed' : [ None, _F(self.toggle_infobar) ],
-             'canvas_focus_set' : [ None, _F(self.loader.select_view, view=self) ],
+                   'f5 pressed' : [ None, _F(self.refresh) ],
             },
         })
         ## ドロップターゲットを許可する
@@ -603,7 +603,7 @@ class Frame(mwx.Frame):
                     lambda v: self.export_index(),
                     lambda v: v.Enable(self.__view.frame is not None)),
                 )),
-            (),
+            ## (),
             ("Session", (
                 (mwx.ID_(15), "&Open session", "Open session file",
                     lambda v: self.load_session()),
@@ -614,7 +614,7 @@ class Frame(mwx.Frame):
                 (mwx.ID_(17), "&Ssave session as", "Save session file as",
                     lambda v: self.save_session_as()),
                 )),
-            (),
+            ## (),
             ("Options", []), # reserved for optional app settings
             (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
@@ -813,6 +813,7 @@ class Frame(mwx.Frame):
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
                 try:
+                    ## load_plug に再帰
                     self.load_plug(name, show=1, force=pane.window.reloadable)
                     pane = self.get_pane(name)
                 except AttributeError:
@@ -869,16 +870,9 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         
         try:
-            ## if isinstance(plug.caption, LITERAL_TYPE) and not plug.category:
-            ##     pane.CaptionVisible(1)
-            ## else:
-            ##     pane.CaptionVisible(bool(plug.caption))
             pane.CaptionVisible(bool(plug.caption))
             pane.Gripper(not plug.caption)
             pane.Dockable(plug.dockable)
-            ## if plug.dockable and plug.dock_dir: # ドッキング可能でその方向が指定されていれば
-            ##     pane.Direction(plug.dock_dir)   # その指定方向を優先する
-            ##     pane.Dock()
             nb = plug.__notebook
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
@@ -1047,8 +1041,8 @@ class Frame(mwx.Frame):
             if pane.IsOk():
                 self.unload_plug(name) # unload once right here
             
-            ## Add to the list in advance with the constructor to refer the module in Plugin.Init.
-            ## However, it's uncertain that the Init will run successfully.
+            ## Add to the list in advance to refer the module in Plugin.Init.
+            ## However, it's uncertain that the Init will end successfully.
             ## self.plugins[name] = module
             
             ## Create a plug and register to plugins list プラグインのロード開始
@@ -1064,7 +1058,7 @@ class Frame(mwx.Frame):
             ## set reference of a plug (one module, one plugin)
             module.__plug__ = plug
             
-            ## when the plug is created successfully, add to the list
+            ## Add to the list after the plug is created successfully.
             self.plugins[name] = module
             
             plug.handler('pane_loaded')

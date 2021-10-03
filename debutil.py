@@ -35,7 +35,7 @@ class MagicInterpreter(object):
         -> [list(range(1,5))] [@] [p]
         => p(list(range(1,5)))
     --------
-    Example:pullback
+    Example:pullback+
     >>> 5 @range @(reduce, lambda x,y:x+y)
     10
     - Input tokens: [5, @, range, @, '(reduce, lambda x,y:x+y)']
@@ -78,6 +78,8 @@ class MagicInterpreter(object):
     
     def __call__(self, tokens):
         """Called before push
+        Called  when if tokens include non-pythonic chars `@?$
+        
         Return interpreted command:str
         
         l:token is converted to a string and becomes part of the retval
