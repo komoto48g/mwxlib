@@ -405,12 +405,8 @@ class MatplotPanel(wx.Panel):
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))
     
-    def escape(self, evt=None):
-        """{escape} を押した気持ちになる"""
-        wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
-    
     ## --------------------------------
-    ## Property of current frame
+    ## Property of the current frame
     ## --------------------------------
     
     frame = property(lambda self: self) # to be overridden (handler process `frame` in draw)
@@ -454,6 +450,15 @@ class MatplotPanel(wx.Panel):
         v = np.array((px, py)).T
         return self.axes.transData.inverted().transform(v)
     
+    ## --------------------------------
+    ## Property of the modeline
+    ## --------------------------------
+    
+    selectedModeLineBg = '#000000'
+    selectedModeLineFg = '#f0f0f0'
+    unselectedModeLineBg = 'auto'
+    unselectedModeLineFg = 'auto'
+    
     def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
         pos = self.modeline.ScreenToClient(wx.GetMousePosition())
         flag = self.modeline.HitTest(pos)
@@ -464,17 +469,23 @@ class MatplotPanel(wx.Panel):
     
     def on_focus_set(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
-            self.modeline.SetBackgroundColour('#000000')
-            self.modeline.SetForegroundColour('#f0f0f0')
+            self.modeline.SetBackgroundColour(self.selectedModeLineBg)
+            self.modeline.SetForegroundColour(self.selectedModeLineFg)
             self.Refresh()
         evt.Skip()
     
     def on_focus_kill(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
-            self.modeline.SetBackgroundColour('')
-            self.modeline.SetForegroundColour('#000000')
+            self.modeline.SetBackgroundColour(self.unselectedModeLineBg)
+            self.modeline.SetForegroundColour(self.unselectedModeLineFg)
             self.Refresh()
         evt.Skip()
+    
+    def escape(self, evt=None):
+        """Feel like pressing {escape}
+        エスケープキーを押した気持ちになる
+        """
+        wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
     
     ## --------------------------------
     ## 外部入出力／複合インターフェース
