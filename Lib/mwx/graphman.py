@@ -70,7 +70,7 @@ class Thread(object):
         2. flag.wait    -> wait until the chequer flag to be set True
         3. flag.set     -> set flag:True to resume the thread
         """
-        if not self.is_active:
+        if not self.is_running:
             return False
         
         ## The event.wait returns immediately when it is True (:set)
@@ -90,7 +90,7 @@ class Thread(object):
         """Pause the process where called
         The caller should check the retval and decide whether to stop the thread.
         """
-        if not self.is_active:
+        if not self.is_running:
             return False
         try:
             self.__flag.clear()
