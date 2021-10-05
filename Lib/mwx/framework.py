@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.46.0"
+__version__ = "0.46.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1709,26 +1709,25 @@ Global bindings:
     @postcall
     def OnClearFilterText(self, evt):
         win = self.current_editor
-        win.apply_word3_filter(0, 0)
+        win.apply_filter(0, 0, stc.STC_P_WORD3)
     
     @postcall
     def OnFilterText(self, evt):
         win = self.current_editor
-        word = win.topic_at_caret.encode()
+        word = win.topic_at_caret.encode() # for multi-byte string
         if not word:
-            win.apply_word3_filter(0, 0)
-        else:
-            text = win.GetTextRaw() # for multi-byte string
-            pos = -1
-            n = 0
-            while 1:
-                pos = text.find(word, pos+1)
-                if pos < 0:
-                    break
-                win.apply_word3_filter(pos, len(word))
-                n += 1
-            self.findData.FindString = word
-            self.message("{}: {} found".format(word.decode(), n))
+            win.apply_filter(0, 0, stc.STC_P_WORD3)
+            return
+        pos = -1
+        n = 0
+        while 1:
+            pos = win.TextRaw.find(word, pos+1)
+            if pos < 0:
+                break
+            win.apply_filter(pos, len(word), stc.STC_P_WORD3)
+            n += 1
+        self.findData.FindString = word
+        self.message("{}: {} found".format(word.decode(), n))
     
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     
@@ -1871,9 +1870,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.WrapMode = 0
         self.WrapIndentMode = 1
         
-        ## custom constants to be embedded in stc
-        stc.STC_P_WORD3 = 16
-        
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
@@ -1883,6 +1879,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.MarkerSetAlpha(0, 0x80)
         
         self.__mark = None
+    
+    ## custom constants to be embedded in stc
+    stc.STC_P_WORD3 = 16
     
     mark = property(
         lambda self: self.get_mark(),
@@ -1957,12 +1956,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
     
-    def apply_word3_filter(self, pos, length):
+    def apply_filter(self, pos, length, style):
         if wx.VERSION >= (4,1,0):
             self.StartStyling(pos)
         else:
             self.StartStyling(pos, 0x1f)
-        self.SetStyling(length, stc.STC_P_WORD3)
+        self.SetStyling(length, style)
+    
+    def apply_indicator(self, pos, length, style):
+        self.SetIndicatorCurrent(style)
+        self.IndicatorFillRange(pos, length)
     
     def OnMatchBrace(self, evt):
         cur = self.cur
@@ -2523,6 +2526,7 @@ Flaky nutshell:
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
+            'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
                  ## 'C-up pressed' : (0, _F(lambda v: self.OnHistoryReplace(+1), "prev-command")),
                ## 'C-down pressed' : (0, _F(lambda v: self.OnHistoryReplace(-1), "next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
@@ -2691,29 +2695,25 @@ Flaky nutshell:
         
         self.set_style(self.PALETTE_STYLE)
         
-        self.__cur = 0
         self.__text = ''
         self.__start = 0
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
     
-    def OnUpdate(self, evt):
-        if self.cur != self.__cur:
+    def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
+        if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             ln = self.CurrentLine
             text, lp = self.CurLine
             self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=-1)
-            self.__cur = self.cur
             
-            if self.handler.current_state != 0:
-                return
-            
-            text = self.pyrepr_at_caret
-            if text != self.__text:
-                name, argspec, tip = self.interp.getCallTip(text)
-                if tip:
-                    tip = tip.splitlines()[0]
-                self.message(tip)
-                self.__text = text
+            if self.handler.current_state == 0:
+                text = self.pyrepr_at_caret
+                if text != self.__text:
+                    name, argspec, tip = self.interp.getCallTip(text)
+                    if tip:
+                        tip = tip.splitlines()[0]
+                    self.message(tip)
+                    self.__text = text
         evt.Skip()
     
     def OnEscape(self, evt):
