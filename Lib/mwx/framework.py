@@ -224,9 +224,9 @@ def typename(root, docp=False, qualp=False):
     return name
 
 
-def get_words_hint(cmd, sep=None):
-    head, sep, tail = get_words_backward(cmd, sep).rpartition('.')
-    return head, sep, tail.strip()
+def get_words_hint(cmd):
+    text = get_words_backward(cmd)
+    return text.rpartition('.')
 
 
 def get_words_backward(text, sep=None):
@@ -1205,7 +1205,7 @@ class TreeList(object):
                     li[-1] = value # assign value to item (li must be a list)
             else:
                 ls.append([key, value]) # append to items:list
-        except (TypeError, AttributeError)  as e:
+        except (TypeError, AttributeError) as e:
             print("- TreeList:warning {!r}: key={!r}".format(e, key))
     
     @classmethod
@@ -3310,7 +3310,7 @@ Flaky nutshell:
             self.CallTipShow(self.cur, pformat(self.eval(text)))
             self.message(text)
         except Exception as e:
-            self.message("{}: {!r}".format(e, text))
+            self.message("- {}: {!r}".format(e, text))
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
@@ -3326,7 +3326,7 @@ Flaky nutshell:
             if text:
                 self.help(self.eval(text))
         except Exception as e:
-            self.message("{} : {!r}".format(e, text))
+            self.message("- {} : {!r}".format(e, text))
     
     def call_help_tooltip(self, evt):
         """Show tooltips for the selected topic"""
@@ -3472,10 +3472,10 @@ Flaky nutshell:
                          " with {!r} in {}".format(len(words), hint, text))
             
         except re.error as e:
-            self.message("re:miss compilation {!r} : {!r}".format(e, hint))
+            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
             
-        except (AttributeError, NameError, SyntaxError) as e:
-            self.message("{} : {!r}".format(e, text))
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
     
     def call_word_autocomp(self, evt):
         """Called when word-comp mode"""
@@ -3507,10 +3507,10 @@ Flaky nutshell:
                          " with {!r} in {}".format(len(words), hint, text))
             
         except re.error as e:
-            self.message("re:miss compilation {!r} : {!r}".format(e, hint))
+            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
             
-        except (AttributeError, NameError, SyntaxError) as e:
-            self.message("{} : {!r}".format(e, text))
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
     
     def call_apropos_autocomp(self, evt):
         """Called when apropos mode"""
@@ -3542,10 +3542,10 @@ Flaky nutshell:
                          " with {!r} in {}".format(len(words), hint, text))
             
         except re.error as e:
-            self.message("re:miss compilation {!r} : {!r}".format(e, hint))
+            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
             
-        except (AttributeError, NameError, SyntaxError) as e:
-            self.message("{} : {!r}".format(e, text))
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
 
 
 def deb(target=None, app=None, startup=None, **kwargs):

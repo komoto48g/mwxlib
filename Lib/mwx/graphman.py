@@ -1291,7 +1291,7 @@ class Frame(mwx.Frame):
                     if not path.endswith('.tif'):
                         path += '.tif'
                     self.write_buffer(path, frame.buffer)
-            except (PermissionError, OSError)  as e:
+            except (PermissionError, OSError) as e:
                 print("- Failed to save {!r}".format(path))
                 print("  {!r}".format((e)))
                 pass
