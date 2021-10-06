@@ -1572,7 +1572,6 @@ Global bindings:
         self.handler.update({ #<ShellFrame handler>
             0 : {
                    'f1 pressed' : (0, self.About),
-                  'M-c pressed' : (0, self.OnClearFilterText),
                   'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1707,27 +1706,29 @@ Global bindings:
         return self.shell # otherwise, select the default editor
     
     @postcall
-    def OnClearFilterText(self, evt):
-        win = self.current_editor
-        win.apply_filter(0, 0, stc.STC_P_WORD3)
-    
-    @postcall
     def OnFilterText(self, evt):
         win = self.current_editor
-        word = win.topic_at_caret.encode() # for multi-byte string
-        if not word:
-            win.apply_filter(0, 0, stc.STC_P_WORD3)
+        text = win.topic_at_caret
+        if not text:
+            ## win.apply_filter(0, 0, 0)
+            win.apply_indicator(0, win.TextLength, 0, False)
+            win.apply_indicator(0, win.TextLength, 1, False)
             return
+        rawText = win.TextRaw # for multi-byte string
+        word = text.encode()
+        lw = len(word)
         pos = -1
         n = 0
         while 1:
-            pos = win.TextRaw.find(word, pos+1)
+            pos = rawText.find(word, pos+1)
             if pos < 0:
                 break
-            win.apply_filter(pos, len(word), stc.STC_P_WORD3)
+            ## win.apply_filter(pos, lw, stc.STC_P_WORD3)
+            win.apply_indicator(pos, lw, 0)
+            win.apply_indicator(pos, lw, 1)
             n += 1
-        self.findData.FindString = word
-        self.message("{}: {} found".format(word.decode(), n))
+        self.findData.FindString = text
+        self.message("{}: {} found".format(text, n))
     
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     
@@ -1851,32 +1852,29 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
         ## self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         
-        ## self.SetCaretStyle(stc.STC_CARETSTYLE_LINE)
-        ## self.SetCaretWidth(2)
-        ## self.SetCaretForeground("#000000")
-        ## self.SetCaretLineBackground("#ffff00")
-        ## self.SetCaretLineVisible(1)
-        
         ## default no magin for line number
         self.SetMarginLeft(2)
         
-        ## default style of control-char
+        ## Custom style of control-char, wrap-mode
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
-        
         ## self.TabWidth = 4
         ## self.UseTabs = False
-        
         self.WrapMode = 0
         self.WrapIndentMode = 1
         
+        ## Custom markers
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
         self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
         self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
         
-        ## self.MarkerSetAlpha(0, 0x80)
+        ## Custom indicator for search-word
+        self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
+        self.IndicatorSetForeground(0, "#ff0000")
+        self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+        self.IndicatorSetForeground(1, "#ff0000")
         
         self.__mark = None
     
@@ -1925,8 +1923,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.SetMarginWidth(1, 32 if lxc else 0)
             self.SetMarginWidth(2, 1 if lxc else 0)
             
-            for lx in lxc.split(','):
-                key, value = lx.partition(':')[::2]
+            for kv in lxc.split(','):
+                key, value = kv.partition(':')[::2]
                 if key == 'fore': # set colors used as a chequeboard pattern
                     self.SetFoldMarginColour(True, value) # back: one of the colors
                     self.SetFoldMarginHiColour(True, value) # fore: other color (same as the one)
@@ -1936,22 +1934,30 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             lxc = spec.pop("STC_STYLE_CARETLINE")
             
             self.SetCaretLineVisible(0) # no back
-            for lx in lxc.split(','):
-                key, value = lx.partition(':')[::2]
-                
+            for kv in lxc.split(','):
+                key, value = kv.partition(':')[::2]
                 if key == 'fore':
                     self.SetCaretForeground(value)
-                
                 elif key == 'back':
                     self.SetCaretLineBackground(value)
                     self.SetCaretLineVisible(1)
-                
                 elif key == 'size':
                     self.SetCaretWidth(int(value))
                     self.SetCaretStyle(stc.STC_CARETSTYLE_LINE)
-                
                 elif key == 'bold':
                     self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
+        
+        ## Custom indicator for search-word
+        if "STC_P_WORD3" in spec:
+            lxc = spec["STC_P_WORD3"]
+            for kv in lxc.split(','):
+                key, value = kv.partition(':')[::2]
+                if key == 'fore':
+                    self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
+                    self.IndicatorSetForeground(0, value)
+                ## elif key == 'back':
+                    self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+                    self.IndicatorSetForeground(1, value)
         
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
@@ -1963,9 +1969,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.StartStyling(pos, 0x1f)
         self.SetStyling(length, style)
     
-    def apply_indicator(self, pos, length, style):
+    def apply_indicator(self, pos, length, style, enable=True):
         self.SetIndicatorCurrent(style)
-        self.IndicatorFillRange(pos, length)
+        if enable:
+            self.IndicatorFillRange(pos, length)
+        else:
+            self.IndicatorClearRange(pos, length)
     
     def OnMatchBrace(self, evt):
         cur = self.cur
@@ -2474,8 +2483,7 @@ Flaky nutshell:
         
         ## Keywords(2) setting for *STC_P_WORD*
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
-        self.SetKeyWords(1, ' '.join(builtins.__dict__)
-                          + ' self this help info dive timeit execute puts')
+        self.SetKeyWords(1, ' '.join(builtins.__dict__) + ' self this')
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
