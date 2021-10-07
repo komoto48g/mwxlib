@@ -56,9 +56,6 @@ class MagicInterpreter(object):
         => p(*range(5))
     """
     def __init__(self, shell):
-        def fork(l,r):
-            return self.handler.fork(l, r)
-        
         self.handler = mwx.FSM({
             0 : {
                     '`' : (0, self.quoteback),
@@ -78,7 +75,7 @@ class MagicInterpreter(object):
     
     def __call__(self, tokens):
         """Called before push
-        Called  when if tokens include non-pythonic chars `@?$
+        and if tokens include non-pythonic chars `@?$
         
         Return interpreted command:str
         

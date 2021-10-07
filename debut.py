@@ -16,10 +16,18 @@ np.set_printoptions(linewidth=256) # default 75
 if 1:
     """Shell built-in utility:
     
-    >>> 1,5 @range @(reduce, op.mul) => reduce(op.mul, range(1,5))
+    --------
+    >>> 5 @range @(reduce, op.mul)
+    ==> partial(reduce, op.mul)(range(5))
+    ==> reduce(op.mul, range(5))
     24
-    >>> x@(do,f,**kw) => do.results = [f(v,**kw) for v in fx]
-    
+    --------
+    >>> 5 @range @(do, p, end=',')
+    ==> partial(do, p, end=',')(range(5))
+    ==> do.results = tuple(p(v, end=',') for v in range(5))
+    0,1,2,3,4,
+    >>> do.results
+    (None, None, None, None, None)
     """
     def do(f, *iterables, **kwargs):
         if not iterables:
@@ -65,7 +73,7 @@ def init_shell(self):
     ## def copy_region():
     ##     if self.mark is not None:
     ##         with self.save_excursion():
-    ##             self.SetCurrentPos(self.mark)
+    ##             self.SetCurrentPos(self.mark) # mark set by [C-space]
     ##             self.Copy()
     ##     else:
     ##         self.message("no mark")
