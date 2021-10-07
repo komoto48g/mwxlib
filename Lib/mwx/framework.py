@@ -1710,19 +1710,15 @@ Global bindings:
         win = self.current_editor
         text = win.topic_at_caret
         if not text:
-            ## win.apply_filter(0, 0, 0)
+            ## win.apply_filter(0, 0, stc.STC_P_WORD3)
             win.apply_indicator(0, win.TextLength, 0, False)
             win.apply_indicator(0, win.TextLength, 1, False)
             return
-        rawText = win.TextRaw # for multi-byte string
-        word = text.encode()
+        word = text.encode() # for multi-byte string
         lw = len(word)
-        pos = -1
         n = 0
-        while 1:
-            pos = rawText.find(word, pos+1)
-            if pos < 0:
-                break
+        for m in re.finditer(word, win.TextRaw):
+            pos = m.start()
             ## win.apply_filter(pos, lw, stc.STC_P_WORD3)
             win.apply_indicator(pos, lw, 0)
             win.apply_indicator(pos, lw, 1)
@@ -1739,8 +1735,8 @@ Global bindings:
         
         win = self.current_editor
         self.findData.FindString = win.topic_at_caret
-        self.findDlg = wx.FindReplaceDialog(win, self.findData,
-                            "Find", style=wx.FR_NOWHOLEWORD|wx.FR_NOUPDOWN)
+        self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
+                            style=wx.FR_NOWHOLEWORD|wx.FR_NOUPDOWN)
         self.findDlg.Show()
     
     def OnFindNext(self, evt, backward=False): #<wx._core.FindDialogEvent>
