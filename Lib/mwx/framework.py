@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.46.1"
+__version__ = "0.46.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1616,7 +1616,7 @@ Global bindings:
         def duplicate(v, clear):
             """Duplicate an expression at the caret-line"""
             win = self.current_editor
-            text = win.SelectedText or win.pyrepr_at_caret
+            text = win.SelectedText or win.expr_at_caret
             if text:
                 if clear:
                     self.shell.clearCommand()
@@ -1705,7 +1705,7 @@ Global bindings:
                 return self.ghost.CurrentPage # select the Editor window
         return self.shell # otherwise, select the default editor
     
-    @postcall
+    ## @postcall
     def OnFilterText(self, evt):
         win = self.current_editor
         text = win.topic_at_caret
@@ -1872,9 +1872,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         ## Custom indicator for search-word
         self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
-        self.IndicatorSetForeground(0, "#ff0000")
+        self.IndicatorSetForeground(0, "red")
         self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
-        self.IndicatorSetForeground(1, "#ff0000")
+        self.IndicatorSetForeground(1, "red")
         
         self.__mark = None
     
@@ -1906,58 +1906,53 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         spec = spec and spec.copy() or {}
         spec.update(kwargs)
         
+        def _map(sc):
+            return dict(kv.partition(':')[::2] for kv in sc.split(','))
+        
         if "STC_STYLE_DEFAULT" in spec:
             self.StyleSetSpec(stc.STC_STYLE_DEFAULT, spec.pop("STC_STYLE_DEFAULT"))
             self.StyleClearAll()
         
         if "STC_STYLE_LINENUMBER" in spec:
-            lxc = spec["STC_STYLE_LINENUMBER"]
+            lsc = _map(spec.get("STC_STYLE_LINENUMBER"))
             
             ## [0] for numbers, 0 pixels wide, mask=0 (default)
-            ## [1] for symbols, 16 pixels wide, mask=0x01ffffff
+            ## [1] for symbols, 32 pixels wide, mask=0x01ffffff
             ## [2] for folding, 1 pixels wide, mask->0xfe000000
             
             self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
             self.SetMarginType(2, stc.STC_MARGIN_SYMBOL) # margin(2) for symbols
-            self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # set up mask for folding symbols
-            self.SetMarginWidth(1, 32 if lxc else 0)
-            self.SetMarginWidth(2, 1 if lxc else 0)
+            self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folding symbols
+            self.SetMarginWidth(1, 32)
+            self.SetMarginWidth(2, 1)
             
-            for kv in lxc.split(','):
-                key, value = kv.partition(':')[::2]
-                if key == 'fore': # set colors used as a chequeboard pattern
-                    self.SetFoldMarginColour(True, value) # back: one of the colors
-                    self.SetFoldMarginHiColour(True, value) # fore: other color (same as the one)
+            if 'fore' in lsc: # set colors used as a chequeboard pattern
+                c = lsc['fore']
+                self.SetFoldMarginColour(True, c) # back: one of the colors
+                self.SetFoldMarginHiColour(True, c) # fore: the other color
         
         ## Custom style for caret and line colour
         if "STC_STYLE_CARETLINE" in spec:
-            lxc = spec.pop("STC_STYLE_CARETLINE")
-            
+            lsc = _map(spec.pop("STC_STYLE_CARETLINE"))
             self.SetCaretLineVisible(0) # no back
-            for kv in lxc.split(','):
-                key, value = kv.partition(':')[::2]
-                if key == 'fore':
-                    self.SetCaretForeground(value)
-                elif key == 'back':
-                    self.SetCaretLineBackground(value)
-                    self.SetCaretLineVisible(1)
-                elif key == 'size':
-                    self.SetCaretWidth(int(value))
-                    self.SetCaretStyle(stc.STC_CARETSTYLE_LINE)
-                elif key == 'bold':
-                    self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
+            if 'fore' in lsc:
+                self.SetCaretForeground(lsc['fore'])
+            if 'back' in lsc:
+                self.SetCaretLineBackground(lsc['back'])
+                self.SetCaretLineVisible(1)
+            if 'size' in lsc:
+                self.SetCaretWidth(int(lsc['size']))
+                self.SetCaretStyle(stc.STC_CARETSTYLE_LINE)
+            if 'bold' in lsc:
+                self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
         ## Custom indicator for search-word
         if "STC_P_WORD3" in spec:
-            lxc = spec["STC_P_WORD3"]
-            for kv in lxc.split(','):
-                key, value = kv.partition(':')[::2]
-                if key == 'fore':
-                    self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
-                    self.IndicatorSetForeground(0, value)
-                ## elif key == 'back':
-                    self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
-                    self.IndicatorSetForeground(1, value)
+            lsc = _map(spec.get("STC_P_WORD3"))
+            self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
+            self.IndicatorSetForeground(0, lsc.get('fore') or "red")
+            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+            self.IndicatorSetForeground(1, lsc.get('back') or "red")
         
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
@@ -2046,14 +2041,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return (self.cur - lp + len(text.encode()))
     
     @property
-    def pyrepr_at_caret(self):
+    def expr_at_caret(self):
         """Pythonic expression at the caret
         The caret scouts back and forth to scoop a chunk of expression.
         """
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
-        lhs = get_words_backward(ls) or ls.rpartition(' ')[-1]
-        rhs = get_words_forward(rs) or rs.partition(' ')[0]
+        lhs = get_words_backward(ls) # or ls.rpartition(' ')[-1]
+        rhs = get_words_forward(rs) # or rs.partition(' ')[0]
         return (lhs + rhs).strip()
     
     @property
@@ -2715,7 +2710,7 @@ Flaky nutshell:
             self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=-1)
             
             if self.handler.current_state == 0:
-                text = self.pyrepr_at_caret
+                text = self.expr_at_caret
                 if text != self.__text:
                     name, argspec, tip = self.interp.getCallTip(text)
                     if tip:
@@ -3314,15 +3309,15 @@ Flaky nutshell:
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
-        self.gen_tooltip(self.SelectedText or self.pyrepr_at_caret)
+        self.gen_tooltip(self.SelectedText or self.expr_at_caret)
     
     def call_tooltip(self, evt):
         """Call ToolTip of the selected word or command line"""
-        self.gen_tooltip(self.SelectedText or self.getCommand() or self.pyrepr_at_caret)
+        self.gen_tooltip(self.SelectedText or self.getCommand() or self.expr_at_caret)
     
     def call_help_tooltip2(self, evt):
         try:
-            text = self.SelectedText or self.pyrepr_at_caret
+            text = self.SelectedText or self.expr_at_caret
             if text:
                 self.help(self.eval(text))
         except Exception as e:
@@ -3330,7 +3325,7 @@ Flaky nutshell:
     
     def call_help_tooltip(self, evt):
         """Show tooltips for the selected topic"""
-        text = self.SelectedText or self.pyrepr_at_caret
+        text = self.SelectedText or self.expr_at_caret
         self.autoCallTipShow(text, False, True)
     
     def clear_autocomp(self, evt):
