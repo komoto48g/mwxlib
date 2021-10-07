@@ -44,6 +44,10 @@ class Frame(mwx.Frame):
                 ),
             ),
         ]
+        self.menubar["Test/&Submenu/&Print2"] = [ # add nested submenu into new menu
+            (121, "setup", Icon('+'), lambda v: print("setup")),
+            (122, "preview", Icon('-'), lambda v: print("preview")),
+        ]
         self.menubar.reset()
 
 

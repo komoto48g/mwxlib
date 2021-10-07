@@ -1237,10 +1237,10 @@ class Menu(wx.Menu):
                 self.AppendSeparator()
                 continue
             id = item[0]
+            handlers = [x for x in item if callable(x)]
+            icons =  [x for x in item if isinstance(x, wx.Bitmap)]
+            argv = [x for x in item if x not in handlers and x not in icons]
             if isinstance(id, int):
-                handlers = [x for x in item if callable(x)]
-                icons =  [x for x in item if isinstance(x, wx.Bitmap)]
-                argv = [x for x in item if x not in handlers and x not in icons]
                 menu_item = wx.MenuItem(self, *argv)
                 if icons:
                     menu_item.SetBitmaps(*icons)
@@ -1252,15 +1252,15 @@ class Menu(wx.Menu):
                 except IndexError:
                     pass
             else:
-                argv = item[:-1]
-                subitems = item[-1]
+                subitems = argv.pop()
                 submenu = Menu(owner, subitems)
                 submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
-                submenu_item.SetBitmap(wx.NullBitmap)
                 submenu_item.SetSubMenu(submenu)
+                if icons:
+                    submenu_item.SetBitmaps(*icons)
                 self.Append(submenu_item)
+                self.Enable(submenu_item.Id, len(subitems)) # Disable an empty menu
                 submenu.Id = submenu_item.Id # <- ID_ANY
-                self.Enable(submenu_item.Id, bool(subitems)) # Disable empty menu
     
     @staticmethod
     def Popup(parent, menu, *args, **kwargs):
