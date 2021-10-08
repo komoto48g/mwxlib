@@ -42,50 +42,19 @@ if 1:
 def init_shell(self):
     """Initialize shell/editor and the environs
     """
-    @self.define_key('C-tab')
-    def insert_space_like_tab():
-        """タブの気持ちになって半角スペースを前向きに入力する
-        Enter half-width spaces forward as if feeling like a tab
-        """
-        self.eat_white_forward()
-        
-        _text, lp = self.CurLine
-        n = lp % 4
-        self.write(' ' * (4-n))
-    
-    @self.define_key('C-S-tab')
-    def delete_backward_space_like_tab():
-        """シフト+タブの気持ちになって半角スペースを後ろ向きに消す
-        Delete half-width spaces backward as if feeling like a shift+tab
-        """
-        self.eat_white_forward()
-        
-        _text, lp = self.CurLine
-        n = lp % 4 or 4
-        for i in range(n):
-            p = self.cur
-            if self.preceding_char == ' ' and p != self.bol:
-                self.Replace(p-1, p, '')
-            else:
-                break
-    
-    ## @self.define_key('M-w')
-    ## def copy_region():
-    ##     if self.mark is not None:
-    ##         with self.save_excursion():
-    ##             self.SetCurrentPos(self.mark) # mark set by [C-space]
-    ##             self.Copy()
-    ##     else:
-    ##         self.message("no mark")
+    @self.define_key('M-w')
+    def copy_region():
+        if self.mark is not None:
+            with self.save_excursion():
+                self.SetCurrentPos(self.mark) # mark set by [C-space]
+                self.Copy()
+        else:
+            self.message("no mark")
     
     @self.define_key('C-x [', pos=0, doc="beginning-of-buffer")
     @self.define_key('C-x ]', pos=-1, doc="end-of-buffer")
     def goto(pos):
         self.goto_char(pos)
-    
-    ## @self.define_key('C-c j')
-    ## def evaln():
-    ##     self.Execute(self.GetTextRange(self.bolc, self.eolc))
     
     @self.define_key('M-enter')
     def duplicate_command(clear=True):

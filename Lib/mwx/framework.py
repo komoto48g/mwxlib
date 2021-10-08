@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.46.2"
+__version__ = "0.46.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1814,6 +1814,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
               'S-space pressed' : (0, skip),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
+                'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
+              'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
                   ## 'C-d pressed' : (0, ),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
@@ -2046,7 +2048,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ln = self.GetTextRange(self.bol, self.cur)[::-1]
         return next((c for c in ln if not c.isspace()), '')
     
-    cur = property(lambda self: self.CurrentPos)
+    cur = property(
+        lambda self: self.GetCurrentPos(),
+        lambda self,v: self.SetCurrentPos(v))
     
     @property
     def bol(self):
@@ -2260,6 +2264,27 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             elif text[:lp] == sys.ps2: # caret at the prompt head
                 p -= len(sys.ps2)
             self.Replace(p, self.cur, '')
+    
+    def insert_space_like_tab(self):
+        """Enter half-width spaces forward as if feeling like a tab
+        タブの気持ちになって半角スペースを前向きに入力する
+        """
+        self.eat_white_forward()
+        _text, lp = self.CurLine
+        self.write(' ' * (4 - lp % 4))
+    
+    def delete_backward_space_like_tab(self):
+        """Delete half-width spaces backward as if feeling like a shift+tab
+        タブの気持ちになって半角スペースを前向きに入力する
+        """
+        self.eat_white_forward()
+        _text, lp = self.CurLine
+        for i in range(lp % 4 or 4):
+            p = self.cur
+            if self.preceding_char != ' ' or p == self.bol:
+                break
+            self.cur = p-1
+        self.ReplaceSelection('')
 
 
 class Editor(EditWindow, EditorInterface):
@@ -3126,9 +3151,7 @@ Flaky nutshell:
         indent = self.calc_indent()
         pos = max(self.bol + len(indent),
                   self.cur + len(indent) - (len(line) - len(lstr)))
-        self.goto_char(self.eol)
-        self.SetCurrentPos(self.bol)
-        self.ReplaceSelection(indent + lstr)
+        self.Replace(self.bol, self.eol, indent + lstr)
         self.goto_char(pos)
     
     def calc_indent(self):
@@ -3362,7 +3385,7 @@ Flaky nutshell:
         if self.following_char.isalnum() and self.preceding_char == '.':
             pos = self.cur
             self.WordRight()
-            self.SetCurrentPos(pos) # backward selection to anchor point
+            self.cur = pos # backward selection to anchor point
         elif self.cur == self.bol:
             self.handler('quit', evt)
     
@@ -3383,7 +3406,7 @@ Flaky nutshell:
             n = len(self.__comp_hint)
             pos = self.cur
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.SetCurrentPos(pos) # backward selection to anchor point
+            self.cur = pos # backward selection to anchor point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
