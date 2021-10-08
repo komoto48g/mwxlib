@@ -1705,7 +1705,6 @@ Global bindings:
                 return self.ghost.CurrentPage # select the Editor window
         return self.shell # otherwise, select the default editor
     
-    ## @postcall
     def OnFilterText(self, evt):
         win = self.current_editor
         text = win.topic_at_caret
@@ -1715,10 +1714,14 @@ Global bindings:
             win.apply_indicator(0, win.TextLength, 1, False)
             return
         word = text.encode() # for multi-byte string
+        raw = win.TextRaw
         lw = len(word)
+        pos = -1
         n = 0
-        for m in re.finditer(word, win.TextRaw):
-            pos = m.start()
+        while 1:
+            pos = raw.find(word, pos+1)
+            if pos < 0:
+                break
             ## win.apply_filter(pos, lw, stc.STC_P_WORD3)
             win.apply_indicator(pos, lw, 0)
             win.apply_indicator(pos, lw, 1)
