@@ -8,7 +8,7 @@
        esc-map : 'escape'
 
 
-## Inspector
+## Shell
 
 Global bindings: (see also `self.inspector.handler@filling`)
 

@@ -41,7 +41,7 @@ $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 >>> from mwx import deb
 >>> deb()
 ```
-The more pragmatic sample is 'debut.py'.
+The more pragmatic sample is [Lib/debut.py]("Lib/debut.py").
 Enjoy diving!
 
 :memo: mwxlib creates ~/.deb/ in your home directory.
@@ -52,12 +52,6 @@ The collected module name is used for completion at the time of input in the she
 If you start the shell while pressing [C-S-], the dictionary will be recreated.
 
 ### Uninstalling
-<!--
-```sh
-$ py -3 setup.py install --record files.txt
-$ cat files.txt | xargs rm -rf
-```
--->
 ```
 $ pip uninstall mwxlib
 ```
@@ -65,7 +59,7 @@ $ pip uninstall mwxlib
 
 # Features
 
-## Fearture of mwx.framework.Nautilus
+## Nautilus in the Shell
 
 The framework has an extended class based on wx.py.shell.Shell named Nautilus,
 which has the following features:
@@ -142,7 +136,7 @@ See [key bindings](key-bindings.md) for more information.
 
 ![apropos](doc/image/apropos.gif)
 
-## Shell built-in utility:
+## built-in utility:
     @p          synonym of print
     @pp         synonym of pprint
     @puts       same as p but put it into the prompt
@@ -160,6 +154,7 @@ See [key bindings](key-bindings.md) for more information.
     @fileno     (file, line-number)
 
 ![utils-mod](doc/image/utils-mod.gif)
+
 
 ## Ghost in the shell
 
