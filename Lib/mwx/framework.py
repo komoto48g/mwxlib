@@ -1827,8 +1827,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         self.define_key('C-c C-c', self.goto_matched_paren)
         
-        ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for matching braces
-        self.Bind(stc.EVT_STC_UPDATEUI, self.OnMatchBrace) # no skip
+        ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
+        self.Bind(stc.EVT_STC_UPDATEUI,
+                  lambda v: self.match_paren()) # no skip
         
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
@@ -1859,18 +1860,25 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.WrapMode = 0
         self.WrapIndentMode = 1
         
-        ## Custom markers
+        ## Custom markers (cf. MarkerAdd)
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
         self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
         self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
         
-        ## Custom indicator for search-word
-        self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
-        self.IndicatorSetForeground(0, "red")
+        ## Custom indicator for search-word (cf. apply_indicator)
+        if wx.VERSION < (4,1,0):
+            self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
+        else:
+            self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
         self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+        self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "red")
+        
+        ## Custom indicator for match-paran (cf. apply_indicator)
+        self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
+        self.IndicatorSetForeground(2, "gray") # fore font colour
         
         self.__mark = None
     
@@ -1930,7 +1938,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## Custom style for caret and line colour
         if "STC_STYLE_CARETLINE" in spec:
             lsc = _map(spec.pop("STC_STYLE_CARETLINE"))
-            self.SetCaretLineVisible(0) # no back
+            
+            self.SetCaretLineVisible(0)
             if 'fore' in lsc:
                 self.SetCaretForeground(lsc['fore'])
             if 'back' in lsc:
@@ -1945,40 +1954,55 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## Custom indicator for search-word
         if "STC_P_WORD3" in spec:
             lsc = _map(spec.get("STC_P_WORD3"))
-            self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
+            
             self.IndicatorSetForeground(0, lsc.get('fore') or "red")
-            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
             self.IndicatorSetForeground(1, lsc.get('back') or "red")
         
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
     
     def apply_filter(self, pos, length, style):
-        if wx.VERSION >= (4,1,0):
-            self.StartStyling(pos)
-        else:
+        if length < 0:
+            length = -length
+            pos -= length
+        if wx.VERSION < (4,1,0):
             self.StartStyling(pos, 0x1f)
+        else:
+            self.StartStyling(pos)
         self.SetStyling(length, style)
     
     def apply_indicator(self, pos, length, style, enable=True):
+        if length < 0:
+            length = -length
+            pos -= length
         self.SetIndicatorCurrent(style)
         if enable:
             self.IndicatorFillRange(pos, length)
         else:
             self.IndicatorClearRange(pos, length)
     
-    def OnMatchBrace(self, evt):
+    ## def match_paren(self):
+    ##     if wx.VERSION < (4,1,0):
+    ##         return self._match_paren()
+    ##     self.apply_indicator(0, self.TextLength, 2, False)
+    ##     p = self._match_paren()
+    ##     if p:
+    ##         self.apply_indicator(p, self.cur-p, 2)
+    
+    def match_paren(self):
         cur = self.cur
         if self.following_char in "({[<":
             pos = self.BraceMatch(cur)
             if pos != -1:
                 self.BraceHighlight(cur, pos) # matched to following char
+                return pos
             else:
                 self.BraceBadLight(cur)
         elif self.preceding_char in ")}]>":
             pos = self.BraceMatch(cur-1)
             if pos != -1:
                 self.BraceHighlight(pos, cur-1) # matched to preceding char
+                return pos
             else:
                 self.BraceBadLight(cur-1)
         else:
@@ -2479,7 +2503,7 @@ Flaky nutshell:
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
         
-        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to OnMatchBrace
+        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
