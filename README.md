@@ -41,7 +41,7 @@ $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 >>> from mwx import deb
 >>> deb()
 ```
-The more pragmatic sample is [Lib/debut.py]("Lib/debut.py").
+The more pragmatic sample is [Lib/debut.py](./Lib/debut.py).
 Enjoy diving!
 
 :memo: mwxlib creates ~/.deb/ in your home directory.
