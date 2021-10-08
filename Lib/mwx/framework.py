@@ -1882,7 +1882,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         self.__mark = None
     
-    ## custom constants to be embedded in stc
+    ## custom constants embedded in stc
     stc.STC_P_WORD3 = 16
     
     mark = property(
@@ -2122,12 +2122,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoPos(pos)
         return self.cur
     
-    def select_char(self, pos):
-        if pos < 0:
-            pos += self.TextLength + 1 # end-of-buffer (+1:\0)
-        self.SetCurrentPos(pos)
-        return self.cur
-    
     def goto_line(self, ln):
         if ln < 0:
             ln += self.LineCount
@@ -2183,23 +2177,19 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def selection_forward_word_or_paren(self):
         p = self.right_paren
         if p != -1:
-            self.SetCurrentPos(p+1) # forward selection to parenthesized words
-            return
+            return self.SetCurrentPos(p+1) # forward selection to parenthesized words
         q = self.right_quotation
         if q != -1:
-            self.SetCurrentPos(q) # forward selection to quoted words
-            return
+            return self.SetCurrentPos(q) # forward selection to quoted words
         self.WordRightEndExtend()  # otherwise, extend selection forward word
     
     def selection_backward_word_or_paren(self):
         p = self.left_paren
         if p != -1:
-            self.SetCurrentPos(p) # backward selection to parenthesized words
-            return
+            return self.SetCurrentPos(p) # backward selection to parenthesized words
         q = self.left_quotation
         if q != -1:
-            self.SetCurrentPos(q) # forward selection to quoted words
-            return
+            return self.SetCurrentPos(q) # forward selection to quoted words
         self.WordLeftExtend() # otherwise, extend selection backward word
     
     def get_selection_or_topic(self):
@@ -3134,7 +3124,7 @@ Flaky nutshell:
         pos = max(self.bol + len(indent),
                   self.cur + len(indent) - (len(line) - len(lstr)))
         self.goto_char(self.eol)
-        self.select_char(self.bol)
+        self.SetCurrentPos(self.bol)
         self.ReplaceSelection(indent + lstr)
         self.goto_char(pos)
     
