@@ -5,8 +5,6 @@
 Version: 1.0
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 import wx
 import cv2
 from mwx.controls import LParam
@@ -31,20 +29,20 @@ class Plugin(Layer):
         self.btn = wx.Button(self, label="Run", size=(-1,22))
         self.btn.Bind(wx.EVT_BUTTON, lambda v: self.run())
         
-        self.layout("Gaussian blur", # subtitle of this layout group. otherwise None if no frame
-            (self.ksize, self.btn,), # the list of objects to be stacked with the following style:
-            row=1, expand=0, show=1, # + style of grouping. Note `row means the horizontal stack size
-            type='vspin',            # + style of Param; slider[*], [hv]spin, and choice are available
-            cw=-1, lw=36, tw=30      # + and *w indicates width of Param; [c]ontrol, [l]abel, [t]ext
+        self.layout("Gaussian blur", # subtitle of this layout group. otherwise None (no frame)
+            (self.ksize, self.btn,), # the list of objects stacked with the following style:
+            row=1, expand=0, show=1, # grouping style: row means the horizontal stack size
+            type='vspin',            # control style: slider[*], [hv]spin, choice
+            cw=-1, lw=36, tw=30      # w: width of [c]ontrol, [l]abel, [t]ext
         )
     
-    def set_current_session(self, session):
+    def init_session(self, session):
+        """Restore settings from a session file"""
         self.ksize.value = session.get('ksize')
     
-    def get_current_session(self):
-        return {
-            'ksize': self.ksize.value,
-        }
+    def save_session(self, session):
+        """Save settings in a session file"""
+        session['ksize'] = self.ksize.value
     
     def run(self):
         k = self.ksize.value

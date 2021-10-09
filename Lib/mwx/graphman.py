@@ -316,8 +316,6 @@ unloadable : flag to set the Layer to be unloadable
                 lambda v: v.Enable(self.editable)),
                 
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
-                ## lambda v: self.parent.load_plug(self.__module__,
-                ##             show=1, force=1, session=self.get_current_session()),
                 lambda v: self.reload_safe(),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.is_active))),
@@ -342,8 +340,8 @@ unloadable : flag to set the Layer to be unloadable
             self.Init()
             
             session = kwargs.get('session')
-            if session is not None:
-                wx.CallAfter(self.set_current_session, session)
+            if session:
+                wx.CallAfter(self.init_session, session)
             
         except RuntimeError:
             if parent: # unless stand-alone Layer <wx.Window> object is intended ?
@@ -361,18 +359,28 @@ unloadable : flag to set the Layer to be unloadable
         """Initialize me safely (to be overridden)"""
         pass
     
+    def init_session(self, session):
+        """Restore settings from a session file (to be overridden)"""
+        self.set_current_session(session)
+    
+    def save_session(self, session):
+        """Save settings in a session file (to be overridden)"""
+        session.update(self.get_current_session() or {})
+    
     def get_current_session(self):
-        """Return settings to be saved in session file (to be overridden)"""
+        """Return settings to be saved in a session file (to be deprecated)"""
         pass
     
     def set_current_session(self, session):
-        """Restore settings to be loaded from session file (to be overridden)"""
+        """Restore settings from a session file (to be deprecated)"""
         pass
     
     def reload_safe(self):
         if self.reloadable and not (self.thread and self.thread.is_active):
+            current_session = {}
+            self.save_session(current_session)
             self.parent.load_plug(self.__module__,
-                force=1, session=self.get_current_session())
+                force=1, session=current_session or None)
     
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
@@ -991,8 +999,7 @@ class Frame(mwx.Frame):
                 )
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
-                    ## plug = self.get_plug(name)
-                    plug.set_current_session(session)
+                    plug.init_session(session)
                 return
         try:
             self.statusbar("Loading plugin {!r}...".format(name))
@@ -1640,6 +1647,8 @@ class Frame(mwx.Frame):
                     path = path[:-1]
                 if path.endswith("/__init__.py"): # when root:module is a package
                     path = path[:-12]
+                current_session = {}
+                plug.save_session(current_session)
                 o.write("self.load_plug('{name}', show={show}, docking={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
                         "floating_pos={fpos}, floating_size={fsize}, "
@@ -1653,7 +1662,7 @@ class Frame(mwx.Frame):
                     prop = pane.dock_proportion,
                     fpos = pane.floating_pos,
                    fsize = pane.floating_size,
-                 session = plug.get_current_session(),
+                 session = current_session or None,
                 ))
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
             if paths:

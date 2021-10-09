@@ -2048,6 +2048,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ln = self.GetTextRange(self.bol, self.cur)[::-1]
         return next((c for c in ln if not c.isspace()), '')
     
+    ## CurrentPos, cf. Anchor
     cur = property(
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
@@ -2275,7 +2276,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def delete_backward_space_like_tab(self):
         """Delete half-width spaces backward as if feeling like a shift+tab
-        タブの気持ちになって半角スペースを前向きに入力する
+        シフト+タブの気持ちになって半角スペースを後ろ向きに消す
         """
         self.eat_white_forward()
         _text, lp = self.CurLine
@@ -3613,7 +3614,7 @@ Note:
             traceback.print_exc()
             frame.shell.write(traceback.format_exc())
             frame.shell.prompt()
-            
+    
     if not isinstance(app, wx.App):
         print("- deb: argument app has unexpected type {!r}".format(typename(app)))
         pass
