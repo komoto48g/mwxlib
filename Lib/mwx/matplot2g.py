@@ -1529,6 +1529,7 @@ Constants:
             self.message("- got too many markers ({}) to plot".format(len(x)))
             return
         self.marked.set_data(x, y)
+        self.__marksel = []
         self.update_art_of_mark()
         self.handler('mark_drawn', self.frame)
     

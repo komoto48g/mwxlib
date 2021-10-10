@@ -138,6 +138,7 @@ class MagicInterpreter(object):
 
 def init_shell(self):
     self.magic_interpret = MagicInterpreter(self)
+    self.parent.About()
 
 if __name__ == '__main__':
     mwx.deb(startup=init_shell,
