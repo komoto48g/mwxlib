@@ -963,25 +963,25 @@ class Frame(mwx.Frame):
             root = root.__file__
         elif hasattr(root, '__module__'): #<type 'Layer'>
             root = root.__module__
-        try:
-            ## If the name of root has been loaded,
-            ## we reload it referring to the file-name, not module-name
-            root = self.plugins.get(root).__file__
-        except AttributeError:
-            pass
+        
+        ## If the name of root has been loaded,
+        ## we reload it referring to the file-name, not module-name
+        module = self.plugins.get(root)
+        if module:
+            root = module.__file__
         
         root = os.path.normpath(root)
         name = os.path.basename(root)
         dirname = os.path.dirname(root)
         
-        if root.endswith(".py") or root.endswith(".pyc"):
+        if name.endswith(".py") or name.endswith(".pyc"):
             name, ext = os.path.splitext(name)
         
         ## 正しくロードできるようにインクルードパスを更新する
         if dirname:
             if os.path.isdir(dirname):
                 if dirname in sys.path:
-                    sys.path.remove(dirname) # インクルードパスの先頭に移動するためにいったん削除
+                    sys.path.remove(dirname) # インクルードパスの先頭に移動するため削除
                 sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
             else:
                 print("- No such directory {!r}".format(dirname))
