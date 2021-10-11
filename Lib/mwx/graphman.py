@@ -757,15 +757,14 @@ class Frame(mwx.Frame):
     
     def edit(self, f):
         if hasattr(f, '__file__'):
-            name, ext = os.path.splitext(f.__file__)
+            name,_ext = os.path.splitext(f.__file__)
             f = name + '.py'
         subprocess.Popen('{} "{}"'.format(self.Editor, f))
     
     def OnShowFrame(self, frame):
+        session_name,_ext = os.path.splitext(os.path.basename(self.session_file or '--'))
         self.SetTitle("{}@{} - [{}] {}".format(
-            self.__class__.__name__,
-            platform.node(),
-            os.path.splitext(os.path.basename(self.session_file or '--'))[0],
+            self.__class__.__name__, platform.node(), session_name,
             (frame.pathname or frame.name) if frame else '',
         ))
     
@@ -931,8 +930,9 @@ class Frame(mwx.Frame):
         if plug is None:
             try:
                 self.load_plug(name) # スレッド中に AuiPane の表示がおかしくなる ?
+                name,_ext = os.path.splitext(os.path.basename(name))
             except Exception:
-                return # ignore load failure
+                return # ignore load-failure
             return self.get_plug(name)
         return plug
     
@@ -975,7 +975,7 @@ class Frame(mwx.Frame):
         dirname = os.path.dirname(root)
         
         if name.endswith(".py") or name.endswith(".pyc"):
-            name, ext = os.path.splitext(name)
+            name,_ext = os.path.splitext(name)
         
         ## 正しくロードできるようにインクルードパスを更新する
         if dirname:
