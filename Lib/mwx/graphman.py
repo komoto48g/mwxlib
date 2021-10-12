@@ -926,14 +926,12 @@ class Frame(mwx.Frame):
         Note: When called in thread, the display of AuiPane might be broken.
         In that case, Select menu with [C-M-S] to reload after the thread exits.
         """
+        if name.endswith(".py") or name.endswith(".pyc"):
+            name,_ext = os.path.splitext(os.path.basename(name))
         plug = self.get_plug(name)
         if plug is None:
-            try:
-                self.load_plug(name) # スレッド中に AuiPane の表示がおかしくなる ?
-                name,_ext = os.path.splitext(os.path.basename(name))
-            except Exception:
-                return # ignore load-failure
-            return self.get_plug(name)
+            if self.load_plug(name) is not False:
+                return self.get_plug(name)
         return plug
     
     def get_plug(self, name):
@@ -970,14 +968,13 @@ class Frame(mwx.Frame):
         if module:
             root = module.__file__
         
-        root = os.path.normpath(root)
         name = os.path.basename(root)
-        dirname = os.path.dirname(root)
-        
         if name.endswith(".py") or name.endswith(".pyc"):
             name,_ext = os.path.splitext(name)
         
         ## 正しくロードできるようにインクルードパスを更新する
+        root = os.path.normpath(root)
+        dirname = os.path.dirname(root)
         if dirname:
             if os.path.isdir(dirname):
                 if dirname in sys.path:
@@ -1071,8 +1068,10 @@ class Frame(mwx.Frame):
             plug.handler('pane_loaded')
             
             ## create a pane or notebook pane
-            caption = plug.caption if isinstance(plug.caption, LITERAL_TYPE) else name
             title = plug.category
+            caption = plug.caption
+            if not isinstance(caption, LITERAL_TYPE):
+                caption = name
             
             if title:
                 pane = self._mgr.GetPane(title)
