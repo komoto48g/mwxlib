@@ -140,17 +140,14 @@ class Thread(object):
         event = "{}:{}:exit".format(m.__name__, f.f_code.co_name)
         self.owner.handler(event, self)
     
-    def __call__(self, f, **kwargs):
+    def __call__(self, f, *args, **kwargs):
         """Decorator of thread starter function"""
         @wraps(f)
         def _f(*v):
-            return self.Start(f, *v, **kwargs)
+            return self.Start(f, *v+args, **kwargs)
         return _f
     
     def Start(self, f, *args, **kwargs):
-        if not f:
-            return lambda f: self.Start(f, *args, **kwargs)
-        
         @wraps(f)
         def _f(*args, **kwargs):
             try:
