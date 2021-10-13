@@ -185,11 +185,11 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
         """Get all flags in the branches"""
         return copy.deepcopy(list(self)) # => ItemData.__deepcopy__
     
-    def set_flags(self, temp, target=None):
-        """Set temp flags to the target (or self) as most as possible
-        temp : TreeList template of flags to copy to the target
+    def set_flags(self, temp, tree=None):
+        """Set temp flags to the tree (or self) as most as possible
+        temp : TreeList template of flags to copy to the tree
         """
-        for org, branch in zip(temp, target or self):
+        for org, branch in zip(temp, tree or self):
             tag, flags = org[0], org[-1]
             key, data = branch[0], branch[-1]
             if key != tag:

@@ -249,20 +249,23 @@ unloadable : flag to set the Layer to be unloadable
             art.remove()
         self.__artists = []
     
-    def set_artists(self, target, *args):
-        """Add artists (unbound arts such as patches objects) to target.
-        If the target is None, the arts will be removed from the axes.
+    def attach_artists(self, axes, *args):
+        """Attach unbound artists (e.g., patches) to the given axes
+        If axes is None, the arts will be removed from their axes.
         """
-        if target:
-            self._add_artists(target, *args)
+        if axes:
+            self._add_artists(axes, *args)
         else:
             self._remove_artists(*args)
     
-    def _add_artists(self, target, *args): # to be deprecated
+    def set_artists(self, target, *args): # to be deprecated
+        self.attach_artists(target.axes, *args)
+    
+    def _add_artists(self, axes, *args): # to be deprecated
         for art in args:
             if art.axes:
                 art.remove()
-            target.axes.add_artist(art)
+            axes.add_artist(art)
             self.__artists.append(art)
     
     def _remove_artists(self, *args): # to be deprecated
@@ -489,8 +492,8 @@ class Graph(GraphPlot):
 class MyFileDropLoader(wx.FileDropTarget):
     """File Drop interface
     
-    target: target window to drop, e.g. frame, graph, pane, etc.
-    loader: the main frame
+    target : target window to drop, e.g. frame, graph, pane, etc.
+    loader : the main frame
     """
     def __init__(self, target, loader):
         wx.FileDropTarget.__init__(self)
@@ -1222,7 +1225,7 @@ class Frame(mwx.Frame):
         def init(shell):
             shell.target = self.get_plug(name) or self # reset when unloaded
         init(shell)
-        shell.run("self, this")
+        ## shell.run("self, this")
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
@@ -1244,11 +1247,11 @@ class Frame(mwx.Frame):
     ## load/save index file
     ## --------------------------------
     
-    def import_index(self, f=None, target=None):
+    def import_index(self, f=None, view=None):
         """Load frames :ref to the Index file
         """
-        if target not in self.graphic_windows:
-            target = self.selected_view
+        if view not in self.graphic_windows:
+            view = self.selected_view
         
         if not f:
             with wx.FileDialog(self, "Select path to import",
@@ -1262,7 +1265,7 @@ class Frame(mwx.Frame):
         res, mis = self.read_attributes(f)
         
         paths = [attr['pathname'] for attr in res.values()]
-        frames = self.load_buffer(paths, target)
+        frames = self.load_buffer(paths, view)
         if frames:
             for frame in frames:
                 frame.update_attributes(res.get(frame.name))
@@ -1373,13 +1376,13 @@ class Frame(mwx.Frame):
         finally:
             return new, mis # finally raise no exceptions
     
-    def load_frame(self, paths=None, target=None):
-        """Load frame(s) from paths to the target window
+    def load_frame(self, paths=None, view=None):
+        """Load frame(s) from paths to the view window
         
         Load buffer and the attributes of the frame.
         If the file names duplicate, the latter takes priority.
         """
-        frames = self.load_buffer(paths, target)
+        frames = self.load_buffer(paths, view)
         if frames:
             ls = [os.path.dirname(x.pathname) for x in frames]
             savedirs = sorted(set(ls), key=ls.index) # keep order but no duplication
@@ -1442,13 +1445,13 @@ class Frame(mwx.Frame):
             os.remove(path)
             raise
     
-    def load_buffer(self, paths=None, target=None):
-        """Load buffers from paths to the target window
+    def load_buffer(self, paths=None, view=None):
+        """Load buffers from paths to the view window
         
-        If no target given, the currently selected view is chosen.
+        If no view given, the currently selected view is chosen.
         """
-        if target not in self.graphic_windows:
-            target = self.selected_view
+        if view not in self.graphic_windows:
+            view = self.selected_view
         
         if isinstance(paths, LITERAL_TYPE): # for single frame:backward compatibility
             paths = [paths]
@@ -1475,7 +1478,7 @@ class Frame(mwx.Frame):
                         continue
                     raise # no contexts or handlers
                 
-                frame = target.load(buf, f, show=0, # do not show while loading
+                frame = view.load(buf, f, show=0, # do not show while loading
                                     pathname=path, **info)
                 frames.append(frame)
                 
@@ -1486,23 +1489,23 @@ class Frame(mwx.Frame):
                     for j in range(1,n):
                         self.statusbar("Loading {!r} [{} of {} pages]...".format(f, j+1, n))
                         buf.seek(j)
-                        frame = target.load(buf, name=fmt.format(j), show=0)
+                        frame = view.load(buf, name=fmt.format(j), show=0)
             
             self.statusbar("\b done.")
-            target.select(frame)
+            view.select(frame)
             return frames
         
         except Exception as e:
             self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         
-        target.select(frame)
+        view.select(frame)
         return frames
     
     def save_buffer(self, path=None, frame=None):
         """Save a buffer of the frame to the path
         
-        If no target given, the currently selected view is chosen.
+        If no view given, the currently selected view is chosen.
         """
         if not frame:
             frame = self.selected_view.frame

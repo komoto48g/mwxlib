@@ -200,7 +200,7 @@ class Histogram(LinePlot):
     常に整数ビット画像となるので，高速なビンづめ法で計算する
     
    __graphs : list of attached graph <matplot2g.GraphPlot>
-    __frame : reference to the current target frame
+    __frame : reference to the current frame
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
@@ -274,7 +274,7 @@ class Histogram(LinePlot):
         return bins, hist
     
     def hplot(self, frame):
-        self.__frame = frame # update reference of target frame
+        self.__frame = frame # update reference of the frame
         if frame:
             x, y = frame.__data = self.calc(frame) # histogram_data buffer
             self.__plot.set_data(x, y)
@@ -285,7 +285,7 @@ class Histogram(LinePlot):
             self.draw()
     
     def hreplot(self, frame):
-        self.__frame = frame # update reference of target frame
+        self.__frame = frame # update reference of the frame
         if frame:
             try:
                 image = self.frmae.image
@@ -370,7 +370,7 @@ class LineProfile(LinePlot):
     """LinePlot panel for line profile (Multi-graph : Single-frame)
     
    __graphs : list of attached graph <matplot2g.GraphPlot>
-    __frame : reference to the current target frame
+    __frame : reference to the current frame
      logicp : lien axis in logical unit
   linewidth : line width to integrate [pixel]
     """
@@ -515,7 +515,7 @@ class LineProfile(LinePlot):
             self.linplot(frame)
     
     def linplot(self, frame, fit=True):
-        self.__frame = frame # update reference of target frame
+        self.__frame = frame # update reference of the frame
         if frame:
             sel = frame.selector
             if sel.shape[1] < 2:
