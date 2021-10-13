@@ -264,12 +264,11 @@ unloadable : flag to set the Layer to be unloadable
                 art.remove()
             self.__artists.remove(art)
     
-    def __init__(self, parent, owner=None, **kwargs):
-        if parent:
-            ControlPanel.__init__(self, parent, size=(130,24)) # keep minimum size
+    def __init__(self, parent, **kwargs):
+        ControlPanel.__init__(self, parent, size=(130,24)) # keep minimum size
         mwx.CtrlInterface.__init__(self)
         
-        self.__parent = owner or parent #= self.Parent, but not always if whose son is floating
+        self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
         
         _F = mwx.funcall

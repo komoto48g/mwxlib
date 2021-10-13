@@ -284,19 +284,19 @@ class Knob(wx.Panel):
     [up][down][wheelup][wheeldown] keys can be used,
     with modifiers S- 2x, C- 16x, and M- 256x steps.
     [Mbutton] resets to the std. value if it exists.
-
+    
 Attributes:
-    param : A param <Param> object referred from knobs
+      param : A param <Param> object referred from knobs
 
 Args:
-      par : Param <object>
-     type : ctrl type (slider[*], [hv]spin, choice, and default None)
-    style : style of label
-            None -> static text (default)
-            chkbox -> label with check box
-            button -> label with flat button
- editable : textctrl is editable or readonly
- lw,tw,cw : width of label, textbox, and ctrl (default height `h=22 of widgets)
+        par : Param <object>
+       type : ctrl type (slider[*], [hv]spin, choice, and default None)
+      style : style of label
+              None -> static text (default)
+              chkbox -> label with check box
+              button -> label with flat button
+   editable : textctrl is editable or readonly
+   lw,tw,cw : width of label, textbox, and ctrl (default height `h=22 of widgets)
     """
     @property
     def param(self):

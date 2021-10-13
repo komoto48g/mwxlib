@@ -100,23 +100,23 @@ def _Property(name):
 class AxesImagePhantom(object):
     """Phantom of frame facade
     
-    unit : logical length per pixel arb.unit [u/pixel]
-   image : image <numpy.ndarray> (dtype:uint8)
-  buffer : raw buffer <numpy.ndarray>
- binning : binning size of image
-            ( ･ω･)? Current verision of wxagg limits < 24M bytes? Is phoenix ok?
-            The image pixel size must be reduced by resizing, binning or somehow.
-attributes : optional. misc info about the frame/buffer
-  pathname : optional. fullpath of buffer, when bounds to file
-annotation : optional. annotation of the buffer
+       unit : logical length per pixel arb.unit [u/pixel]
+      image : image <numpy.ndarray> (dtype:uint8)
+     buffer : raw buffer <numpy.ndarray>
+    binning : binning size of image
+              ( ･ω･)? Current verision of wxagg limits < 24M bytes?
+              The image pixel size must be reduced by resizing or binning.
+ attributes : optional. misc info about the frame/buffer
+   pathname : optional. fullpath of buffer, when bounds to file
+ annotation : optional. annotation of the buffer
 
 Args:
-       buf : buffer
-      name : buffer name
-      show : show immediately when loaded
-    aspect : initial aspect ratio <float>
- localunit : initial localunit
-attributes : additional info:dict
+        buf : buffer
+       name : buffer name
+       show : show immediately when loaded
+     aspect : initial aspect ratio <float>
+  localunit : initial localunit
+ attributes : additional info:dict
     """
     def __init__(self, parent, buf, name, show, localunit, aspect=1.0, **attributes):
         self.__owner = parent
