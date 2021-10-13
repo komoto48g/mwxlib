@@ -23,7 +23,7 @@ class Plugin(Layer):
             self.param,
             ),
             row=1, expand=1, hspacing=1, vspacing=1, show=1, visible=1,
-            type='slider*', style='button', lw=-1, tw=0, cw=-1, h=22
+            type='slider*', style='chkbox', lw=-1, tw=0, cw=-1, h=22
         )
         
         @self.param.bind

@@ -100,6 +100,7 @@ def _Property(name):
 class AxesImagePhantom(object):
     """Phantom of frame facade
     
+Attributes:
        unit : logical length per pixel arb.unit [u/pixel]
       image : image <numpy.ndarray> (dtype:uint8)
      buffer : raw buffer <numpy.ndarray>

@@ -132,8 +132,8 @@ def predicate(text, locals=None):
 def Dir(obj):
     """As the standard dir, but also listup fields of COM object
     
-    Note: Create COM object with [win32com.client.gencache.EnsureDispatch]
-    i.e., early-binding to get what methods and params are available.
+    Create COM object with [win32com.client.gencache.EnsureDispatch]
+    for early-binding to get what methods and params are available.
     """
     keys = dir(obj)
     try:
@@ -3004,7 +3004,7 @@ Flaky nutshell:
     ## --------------------------------
     fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-autocomp
     
-    ## Note: shell.history is an instance variable of the Shell.
+    ## shell.history is an instance variable of the Shell.
     ## If del shell.history, the history of the class variable is used
     history = []
     
@@ -3583,7 +3583,7 @@ Flaky nutshell:
 def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
-    --- Put me at breakpoint.
+    --- Put me at break-point.
     
     target : object or module. Default None sets target as __main__.
        app : an instance of App.

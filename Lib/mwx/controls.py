@@ -830,7 +830,7 @@ def Icon(key, size=None):
             return wx.ArtProvider.GetBitmap(
                 provided_arts.get(key) or key, size=size or (16,16)) #<wx._core.Bitmap> IsOk ?
     
-    ## Note: null bitmap fails with AssertionError from 4.1.0
+    ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.0
     if key == '':
         bmp = wx.Bitmap(size or (16,16))
         if 1:
@@ -854,6 +854,7 @@ class Button(pb.PlateButton):
     
 Attributes:
        icon : key:str for Icon
+
 Args:
       label : button label
     handler : event handler when the button is pressed
@@ -899,14 +900,16 @@ class ToggleButton(wx.ToggleButton):
     
 Attributes:
        icon : key:str for Icon
+
 Args:
       label : button label
     handler : event handler when the button is pressed
        icon : key:str for button icon
         tip : tip:str displayed on the button
    **kwargs : keywords for wx.ToggleButton
-    
-    Note: To get the status, check Value or event.GetInt or event.IsChecked.
+
+Note:
+    To get the status, check Value or event.GetInt or event.IsChecked.
     """
     @property
     def icon(self):
@@ -959,6 +962,7 @@ class TextCtrl(wx.Panel):
 Attributes:
       Value : textctrl value:str
        icon : Icon key:str
+
 Args:
       label : button label
     handler : event handler when text is entered
@@ -1017,6 +1021,7 @@ Attributes:
   Selection : combobox selection:int
       Value : combobox value:str
        icon : Icon key:str
+
 Args:
       label : button label
     handler : event handler when text is entered or item is selected
@@ -1027,9 +1032,10 @@ Args:
   selection : initial selection:int for combobox
    **kwargs : keywords for wx.TextCtrl
         e.g., choices:list
-    
-    Note: If the input item is not found in the choices,
-          it will be added to the list (only if readonly=0)
+
+Note:
+    If the input item is not found in the choices,
+    it will be added to the list (unless readonly)
     """
     Selection = property(
         lambda self: self.ctrl.GetSelection(),

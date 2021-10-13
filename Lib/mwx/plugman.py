@@ -20,7 +20,7 @@ Attributes:
      symbol : map of status:icons idx
    callback : a function which is called from menu
        root : owner tree plugin object (to be overridden)
-    execute : funtion callback in subprocess (to be overridden)
+    execute : function callback in subprocess (to be overridden)
     """
     menu = None
     category = None
@@ -67,7 +67,7 @@ Attributes:
         self.status = status
         self.tree.SetItemImage(self.ItemId, self.symbol.get(status))
     
-    def children(self):
+    def get_children(self):
         """Generate items in the branch associated with this data:item"""
         item, cookie = self.tree.GetFirstChild(self.ItemId)
         while item.IsOk():
@@ -234,7 +234,7 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                 mwx.Menu.Popup(self.Parent, (
                     (1, "clear", Icon(''),
                         lambda v: data.update_status(-1)),
-                        
+                    
                     (2, "execute", Icon('->'),
                         lambda v: data.callback(),
                         lambda v: v.Enable(data.callback is not None
@@ -242,10 +242,10 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                     (),
                     (3, "pass", Icon('v'),
                         lambda v: data.update_status(True)),
-                        
+                    
                     (4, "fail", Icon('w'),
                         lambda v: data.update_status(False)),
-                        
+                    
                     (5, "nil", Icon('x'),
                         lambda v: data.update_status(None)),
                     (),

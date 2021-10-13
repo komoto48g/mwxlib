@@ -50,10 +50,16 @@ if sys.version_info < (3,0):
 class Thread(object):
     """Thread for graphman.Layer
     
-    The worker:thread runs the given target:method of owner:object.
+    The worker:thread runs the given target:f of owner:object.
     
-    target : A method bound to an instance (__self__) of Layer.
-    result : retains the last return values.
+Attributes:
+     target : A method bound to an instance of Layer.
+     result : A variable that retains the last retval of f.
+
+     worker : reference of the worker thread
+      owner : reference of the handler owner (was typ. f.__self__)
+              if None, the thread_event is handled by its own handler
+Note:
     is_active : flag of being kept going
                 Check this to see the worker is running and intended being kept going
     is_running : flag of being running now
@@ -179,7 +185,6 @@ class Thread(object):
         self.worker = threading.Thread(target=_f, args=args, kwargs=kwargs)
         ## self.worker.setDaemon(True)
         self.worker.start()
-        return self
     
     @mwx.postcall
     def Stop(self):
@@ -922,7 +927,7 @@ class Frame(mwx.Frame):
         If not found, try to load it once.
         
         Note: When called in thread, the display of AuiPane might be broken.
-        In that case, Select menu with [C-M-S] to reload after the thread exits.
+              Reload this from menu with [C-M-S] key after the thread exits.
         """
         if isinstance(name, LITERAL_TYPE):
             if name.endswith(".py") or name.endswith(".pyc"):
@@ -1240,7 +1245,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     
     def import_index(self, f=None, target=None):
-        """Load frames :ref to the Attributes file
+        """Load frames :ref to the Index file
         """
         if target not in self.graphic_windows:
             target = self.selected_view
@@ -1248,7 +1253,7 @@ class Frame(mwx.Frame):
         if not f:
             with wx.FileDialog(self, "Select path to import",
                 defaultFile=self.ATTRIBUTESFILE,
-                wildcard="Attributes (*.results)|*.results",
+                wildcard="Index (*.results)|*.results",
                 style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
@@ -1270,7 +1275,7 @@ class Frame(mwx.Frame):
         return frames
     
     def export_index(self, f=None, frames=None):
-        """Save frames :ref to the Attributes file
+        """Save frames :ref to the Index file
         """
         if not frames:
             frames = self.selected_view.all_frames
@@ -1282,7 +1287,7 @@ class Frame(mwx.Frame):
             with wx.FileDialog(self, "Select path to export",
                 defaultDir=os.path.dirname(next(ls, '')),
                 defaultFile=self.ATTRIBUTESFILE,
-                wildcard="Attributes (*.results)|*.results",
+                wildcard="Index (*.results)|*.results",
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
@@ -1322,8 +1327,8 @@ class Frame(mwx.Frame):
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
-            ## Note: To evaluate attributes:tuple in locals,
-            ##   datetime, nan, inf must be imported.
+            ## To evaluate attributes:tuple in locals,
+            ## datetime, nan, inf must be imported.
             from numpy import nan, inf
             import datetime
             
