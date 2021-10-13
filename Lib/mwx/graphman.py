@@ -50,10 +50,10 @@ if sys.version_info < (3,0):
 class Thread(object):
     """Thread for graphman.Layer
     
-    The worker:thread runs the given target:method which is bound to owner:object.
-    The target must be a method bound to an instance (__self__) of Layer, not staticmethod.
-    The result retains the last return value.
+    The worker:thread runs the given target:method of owner:object.
     
+    target : A method bound to an instance (__self__) of Layer.
+    result : retains the last return values.
     is_active : flag of being kept going
                 Check this to see the worker is running and intended being kept going
     is_running : flag of being running now
@@ -113,6 +113,10 @@ class Thread(object):
         self.__isRunning = 0
         self.__flag = threading.Event()
         self.__flag.set()
+        try:
+            self.handler = self.owner.handler
+        except AttributeError:
+            self.handler = mwx.FSM({})
     
     def __del__(self):
         if self.is_active:
@@ -128,17 +132,17 @@ class Thread(object):
                 "unless the thread is running".format(f.f_code.co_name))
         
         event = "{}:{}:enter".format(m.__name__, f.f_code.co_name)
-        self.owner.handler(event, self)
+        self.handler(event, self)
     
     def __exit__(self, t, v, tb):
         f = inspect.currentframe().f_back
         m = inspect.getmodule(f)
         if t:
             event = "{}:{}:error".format(m.__name__, f.f_code.co_name)
-            self.owner.handler(event, self)
+            self.handler(event, self)
         
         event = "{}:{}:exit".format(m.__name__, f.f_code.co_name)
-        self.owner.handler(event, self)
+        self.handler(event, self)
     
     def __call__(self, f, *args, **kwargs):
         """Decorator of thread starter function"""
@@ -151,7 +155,7 @@ class Thread(object):
         @wraps(f)
         def _f(*args, **kwargs):
             try:
-                self.owner.handler('thread_begin', self)
+                self.handler('thread_begin', self)
                 self.result = f(*args, **kwargs)
             except KeyboardInterrupt as e:
                 print("- Thread:execution stopped: {}".format(e))
@@ -160,17 +164,15 @@ class Thread(object):
             except Exception as e:
                 traceback.print_exc()
                 print("- Thread:exception: {}".format(e))
-                self.owner.handler('thread_error', self)
+                self.handler('thread_error', self)
             finally:
                 self.__keepGoing = self.__isRunning = 0
-                self.owner.handler('thread_end', self)
+                self.handler('thread_end', self)
         
         if self.__isRunning:
             wx.MessageBox("The thread is running (Press C-g to quit).", style=wx.ICON_WARNING)
             return
         
-        if not self.owner:
-            self.owner = f.__self__
         self.target = f
         self.result = None
         self.__keepGoing = self.__isRunning = 1
@@ -184,7 +186,7 @@ class Thread(object):
         self.__keepGoing = 0
         if self.__isRunning:
             busy = wx.BusyInfo("One moment please, now waiting for threads to die...")
-            self.owner.handler('thread_quit', self)
+            self.handler('thread_quit', self)
             self.worker.join(1)
             ## sys.exit(1)
 
@@ -922,8 +924,9 @@ class Frame(mwx.Frame):
         Note: When called in thread, the display of AuiPane might be broken.
         In that case, Select menu with [C-M-S] to reload after the thread exits.
         """
-        if name.endswith(".py") or name.endswith(".pyc"):
-            name,_ext = os.path.splitext(os.path.basename(name))
+        if isinstance(name, LITERAL_TYPE):
+            if name.endswith(".py") or name.endswith(".pyc"):
+                name,_ext = os.path.splitext(os.path.basename(name))
         plug = self.get_plug(name)
         if plug is None:
             if self.load_plug(name) is not False:

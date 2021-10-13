@@ -842,7 +842,6 @@ def Icon(key, size=None):
         return bmp
     
     return wx.NullBitmap # The standard wx controls accept this,
-    ## return wx.Bitmap(0,0) # some wx.lib.controls require this?
 
 Icon.provided_arts = provided_arts
 
