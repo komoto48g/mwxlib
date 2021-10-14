@@ -7,57 +7,27 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import copy
 import wx
 from . import framework as mwx
-from .controls import Button
-from .graphman import Layer, Icon
 from .framework import CtrlInterface, TreeList
+from .controls import Icon
 
 
-class ItemData(Layer):
+class ItemData(object):
     """Item data for TreeCtrl
     
 Attributes:
+       tree : owner tree object
+       plug : owner plugin object
+   callback : a function which is called from menu
      status : status of the plugin (default -1)
      symbol : map of status:icons idx
-   callback : a function which is called from menu
-       root : owner tree plugin object (to be overridden)
-    execute : function callback in subprocess (to be overridden)
     """
-    menu = None
-    category = None
-    caption = property(lambda self: self.__module__)
-    
-    @property
-    def section(self):
-        return "{}/{}".format(self.category, self.caption)
-    
-    @property
-    def tree(self):
-        return self.root.tree
-    
-    def Init(self):
-        self.layout(None, (
-            Button(self, "Execute",
-                handler=lambda v: self.callback(), icon='->'),
-            ),
-        )
+    def __init__(self, tree, plug=None, callback=None, tip=None):
+        self.tree = tree
+        self.plug = plug
+        self.callback = callback
+        self.__doc__ = plug.__doc__ if plug else (tip or '')
         self.symbol = {-3:6, -2:2, -1:1, False:3, True:4, None:5,}
         self.status = -1
-        
-        self.callback = self.root.thread(self.call_subprocess)
-        self.tree.append(self.section, self)
-    
-    def init_session(self, session):
-        self.item.status = session.get('status')
-    
-    def save_session(self, session):
-        session['status'] = self.item.status
-    
-    def Destroy(self):
-        try:
-            self.tree.remove(self.section)
-        finally:
-            ## wrapped C/C++ object has been deleted.
-            return Layer.Destroy(self)
     
     def __deepcopy__(self, memo):
         """Called from deepcopy to export status"""
@@ -73,29 +43,6 @@ Attributes:
         while item.IsOk():
             yield self.tree.GetItemData(item)
             item, cookie = self.tree.GetNextChild(self.ItemId, cookie)
-    
-    def call_subprocess(self):
-        """Callback execution process
-        
-        ST_EXCEPTION = -3
-        ST_PROCESS   = -2
-        ST_NORMAL    = -1
-        * ST_FAILURE = False
-        * ST_SUCCESS = True
-        * ST_ERROR   = None
-        """
-        try:
-            print(self.root.message("[{}] is processing... "
-                                    "(Press C-g to quit)".format(self.section)))
-            self.update_status(-2)
-            ret = self.execute()
-            self.update_status(ret)
-            print(self.root.message("[{}] retval: {}".format(self.section, ret)))
-            return ret
-        except Exception as e:
-            print(self.root.message("- [{}] stopped: {}".format(self.section, e)))
-            self.update_status(-3)
-            raise
 
 
 class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
@@ -201,7 +148,7 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                 self.set_flags(flags, data)
     
     ## --------------------------------
-    ## TreeCtrl:Interface event handler
+    ## Interface for event handler
     ## --------------------------------
     
     def OnMotion(self, evt):
@@ -219,7 +166,7 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
         if item.IsOk(): # and flags & (0x10|0x20|0x40|0x80):
             try:
                 data = self.GetItemData(item)
-                data.Show()
+                data.plug.Show()
             except AttributeError:
                 wx.MessageBox("The selected item has no control panel")
                 pass
@@ -231,12 +178,13 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
             self.SelectItem(item)
             try:
                 data = self.GetItemData(item)
+                name = data.plug and data.plug.__module__
                 mwx.Menu.Popup(self.Parent, (
                     (1, "clear", Icon(''),
                         lambda v: data.update_status(-1)),
                     
                     (2, "execute", Icon('->'),
-                        lambda v: data.callback(),
+                        lambda v: data.callback(data),
                         lambda v: v.Enable(data.callback is not None
                                        and data.status is not True)),
                     (),
@@ -249,8 +197,9 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                     (5, "nil", Icon('x'),
                         lambda v: data.update_status(None)),
                     (),
-                    (6, "Maintenance for {!r}".format(data.__module__), Icon('proc'),
-                        lambda v: data.Show()),
+                    (6, "Maintenance for {!r}".format(name), Icon('proc'),
+                        lambda v: data.plug.Show(),
+                        lambda v: v.Enable(name is not None)),
                 ))
             except AttributeError:
                 pass
