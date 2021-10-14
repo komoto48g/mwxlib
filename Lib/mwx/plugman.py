@@ -6,9 +6,8 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import copy
 import wx
-from . import framework as mwx
-from .framework import CtrlInterface, TreeList
 from .controls import Icon
+from .framework import Menu, TreeList
 
 
 class ItemData(object):
@@ -19,82 +18,110 @@ Attributes:
        plug : owner plugin object
    callback : a function which is called from menu
      status : status of the plugin (default -1)
-     symbol : map of status:icons idx
+    _ItemId : reference of the TreeItemId
     """
+    ST_EXCEPTION = -3
+    ST_PROCESS   = -2
+    ST_NORMAL    = -1
+    ST_FAILURE   = False
+    ST_SUCCESS   = True
+    ST_ERROR     = None
+    
     def __init__(self, tree, plug=None, callback=None, tip=None):
         self.tree = tree
         self.plug = plug
         self.callback = callback
         self.__doc__ = plug.__doc__ if plug else (tip or '')
-        self.symbol = {-3:6, -2:2, -1:1, False:3, True:4, None:5,}
-        self.status = -1
+        self.__status = -1
+        self.__symbols = {-3:6, -2:2, -1:1, False:3, True:4, None:5,} # status:icons
     
     def __deepcopy__(self, memo):
         """Called from deepcopy to export status"""
-        return self.status
+        return self.__status
     
-    def update_status(self, status):
-        self.status = status
-        self.tree.SetItemImage(self.ItemId, self.symbol.get(status))
+    status = property(
+        lambda self: self.__status,
+        lambda self,v: self.set_status(v))
     
-    def get_children(self):
-        """Generate items in the branch associated with this data:item"""
-        item, cookie = self.tree.GetFirstChild(self.ItemId)
-        while item.IsOk():
-            yield self.tree.GetItemData(item)
-            item, cookie = self.tree.GetNextChild(self.ItemId, cookie)
+    def set_status(self, v):
+        self.__status = v
+        self.tree.SetItemImage(self._ItemId, self.__symbols.get(v))
+    
+    ## def setq(self, **kwargs):
+    ##     for k,v in kwargs.items():
+    ##         setattr(self, k, v)
+    
+    ## def get_icon(self) -> str:
+    ##     j = self.tree.GetItemImage(self._ItemId)
+    ##     return TreeCtrl.icons[j]
+    ## 
+    ## def set_icon(self, icon:str):
+    ##     j = TreeCtrl.icons.index(icon)
+    ##     self.tree.SetItemImage(self._ItemId, j)
+    
+    def set_default_icon(self, icon):
+        self.__symbols[-1] = TreeCtrl.icons.index(icon)
 
 
-class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
+class TreeCtrl(wx.TreeCtrl, TreeList):
+    """TreeList Control 
+    """
     icons = (
-        'folder',   # 0: 
-        'file',     # 1: (default)
-        '->',       # 2: (busy) in process
+        'folder',   # 0: container
+        'file',     # 1: (default) data
+        '->',       # 2: (busy) in-process
         'w',        # 3: (false) 0=failure
         'v',        # 4: (true) 1=success
-        '!!',       # 5: (nan) error
+        '!!',       # 5: (none) error
         '!!!',      # 6: (nil) exception
     )
-    def __init__(self, parent, **kwargs):
-        wx.TreeCtrl.__init__(self, parent, **kwargs)
-        CtrlInterface.__init__(self)
+    
+    def __init__(self, *args, **kwargs):
+        wx.TreeCtrl.__init__(self, *args, **kwargs)
         TreeList.__init__(self)
         
-        self.li = wx.ImageList(16,16)
+        li = wx.ImageList(16,16)
         for icon in self.icons:
-            self.li.Add(Icon(icon, (16,16)))
-        self.SetImageList(self.li)
+            li.Add(Icon(icon, (16,16)))
+        self.SetImageList(li)
         
-        self._root = None
+        self.__li = li # リストを保持する必要がある
+        self.__root = None
         
-        self.handler.update({
-            0 : {
-             '*Rbutton pressed' : (0, self.OnRightDown),
-               'Lbutton dclick' : (0, self.OnLeftDclick),
-                       'motion' : (0, self.OnMotion),
-            },
-        })
-        self.Bind(wx.EVT_MOTION, lambda v: self.handler('motion', v))
+        self.Bind(wx.EVT_MOTION, self.OnMotion)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDclick)
     
     def reset(self):
         self.DeleteAllItems()
-        self._root = self.AddRoot("Root")
+        self.__root = self.AddRoot("Root")
         for branch in self:
-            self.set_item(self._root, *branch)
+            self.set_item(self.__root, *branch)
     
     def append(self, key, value):
         self[key] = value
-        if not self._root:
+        if not self.__root:
             return self.reset()
         rootkey = key.partition('/')[0]
-        self.set_item(self._root, rootkey, self[rootkey])
+        self.set_item(self.__root, rootkey, self[rootkey])
         self.Refresh()
     
     def remove(self, key):
         del self[key]
         self.reset()
     
+    def get_children(self, parent):
+        """Generate items associated with the parent:item"""
+        if isinstance(parent, ItemData):
+            parent = parent._ItemId
+        
+        item, cookie = self.GetFirstChild(parent)
+        while item.IsOk():
+            yield self.GetItemData(item)
+            item, cookie = self.GetNextChild(parent, cookie)
+    
     def get_item(self, parent, key):
+        """Get item from parent[key]"""
         if '/' in key:
             a, b = key.split('/', 1)
             child = self.get_item(parent, a)
@@ -107,6 +134,7 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
             item, cookie = self.GetNextChild(parent, cookie)
     
     def set_item(self, parent, key, *values):
+        """Set item values to parent[key]"""
         if '/' in key:
             a, b = key.split('/', 1)
             child = self.get_item(parent, a)
@@ -116,13 +144,13 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
         data = values[0]
         if isinstance(data, ItemData):
             self.SetItemData(item, data)
-            data.ItemId = item # set reference to the own item
+            data._ItemId = item # set reference to the own item <wx.TreeItemId>
             
-            if len(values) == 1: # => (key, data)
-                data.update_status(data.status) # resotre session
+            if len(values) == 1: # => (key, data) no more branches
+                data.set_status(data.status) # set icon
                 return
-            
-            data.symbol[-1] = 0 # set default icon as 'folder'
+            else:
+                data.set_default_icon('folder') # container
         
         for branch in values[-1]: # => (key, data, branches)
             self.set_item(item, *branch)
@@ -140,10 +168,10 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
             tag, flags = org[0], org[-1]
             key, data = branch[0], branch[-1]
             if key != tag:
-                raise KeyError("Failed to restore status: "
-                               "got inconsistent keys {!r}, {!r})".format(tag, key))
+                raise KeyError("Failed to restore flags: "
+                               "got inconsistent keys {!r} for {!r})".format(tag, key))
             if isinstance(data, ItemData):
-                data.update_status(flags)
+                data.set_status(flags)
             else:
                 self.set_flags(flags, data)
     
@@ -178,10 +206,11 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
             self.SelectItem(item)
             try:
                 data = self.GetItemData(item)
-                name = data.plug and data.plug.__module__
-                mwx.Menu.Popup(self.Parent, (
+                name = data.plug and data.plug.__module__ # None, otherwise
+                
+                Menu.Popup(self.Parent, (
                     (1, "clear", Icon(''),
-                        lambda v: data.update_status(-1)),
+                        lambda v: data.set_status(-1)),
                     
                     (2, "execute", Icon('->'),
                         lambda v: data.callback(data),
@@ -189,17 +218,17 @@ class TreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                                        and data.status is not True)),
                     (),
                     (3, "pass", Icon('v'),
-                        lambda v: data.update_status(True)),
+                        lambda v: data.set_status(True)),
                     
                     (4, "fail", Icon('w'),
-                        lambda v: data.update_status(False)),
+                        lambda v: data.set_status(False)),
                     
                     (5, "nil", Icon('x'),
-                        lambda v: data.update_status(None)),
+                        lambda v: data.set_status(None)),
                     (),
                     (6, "Maintenance for {!r}".format(name), Icon('proc'),
                         lambda v: data.plug.Show(),
-                        lambda v: v.Enable(name is not None)),
+                        lambda v: v.Enable(bool(name))),
                 ))
             except AttributeError:
                 pass
