@@ -168,8 +168,7 @@ class TreeCtrl(wx.TreeCtrl, TreeList):
             tag, flags = org[0], org[-1]
             key, data = branch[0], branch[-1]
             if key != tag:
-                raise KeyError("Failed to restore flags: "
-                               "got inconsistent keys {!r} for {!r})".format(tag, key))
+                raise KeyError("inconsistent keys {!r} for {!r})".format(tag, key))
             if isinstance(data, ItemData):
                 data.set_status(flags)
             else:

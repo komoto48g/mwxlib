@@ -1040,7 +1040,7 @@ class Frame(mwx.Frame):
                 floating_size = floating_size or pane.floating_size[:] # copy
             
         except ImportError as e:
-            self.statusbar("\b failed to import: {}".format(e))
+            print("-", self.statusbar("\b failed to import: {}".format(e)))
             return False
         
         except Exception as e:
@@ -1496,7 +1496,7 @@ class Frame(mwx.Frame):
             return frames
         
         except Exception as e:
-            self.statusbar("\b failed.")
+            print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         
         view.select(frame)
@@ -1533,7 +1533,7 @@ class Frame(mwx.Frame):
             return frame
         
         except Exception as e:
-            self.statusbar("\b failed.")
+            print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
@@ -1566,7 +1566,7 @@ class Frame(mwx.Frame):
             return True
         
         except Exception as e:
-            self.statusbar("\b failed.")
+            print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     ## --------------------------------
