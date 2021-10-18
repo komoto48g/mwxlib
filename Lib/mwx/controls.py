@@ -1222,8 +1222,8 @@ if __name__ == '__main__':
             )
             for lp in self.params:
                 lp.callback.update({
-                    'control' : [lambda p: print('control', p.name, p.value)],
-                      'check' : [lambda p: print('check', p.check)],
+                    'control' : [lambda p: print("control", p.name, p.value)],
+                      'check' : [lambda p: print("check", p.check)],
                    'overflow' : [lambda p: print("overflow", p)],
                   'underflow' : [lambda p: print("underflow", p)],
                 })

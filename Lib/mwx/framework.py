@@ -29,6 +29,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import numpy as np
 import fnmatch
+import pkgutil
 import pydoc
 import warnings
 import inspect
@@ -172,16 +173,17 @@ def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
             for key in keys:
                 try:
                     value = getattr(root, key)
-                    if callable(pred) and not pred(value):
+                    if pred and not pred(value):
                         continue
                     word = repr(value)
                     word = ' '.join(s.strip() for s in word.splitlines()) # format in line
+                    n += 1
                 except Exception as e:
-                    word = '#<{!r}>'.format(e) # repr fails in formatting
-                ellipsis = ('...' if len(word)>80 else '')
-                print("    {}.{:<36s} {}".format(name, key, word[:80] + ellipsis))
-                n += 1
-            if callable(pred):
+                    word = '#<{!r}>'.format(e)
+                if len(word) > 80:
+                    word = word[:80] + '...' # truncate words +3 ellipsis
+                print("    {}.{:<36s} {}".format(name, key, word))
+            if pred:
                 print("... found {} of {} words with :{}".format(n, len(keys), typename(pred)))
             else:
                 print("... found {} words.".format(len(keys)))
@@ -324,19 +326,19 @@ def find_modules(force=False, verbose=True):
         def _error(modname):
             ## lm.append(modname + '*') # do not append to the list
             if verbose:
-                print('\b'*80 + "- failed: {}".format(modname[:70]))
+                print('\b'*80 + "- failed: {}".format(modname))
         
         with warnings.catch_warnings():
             warnings.simplefilter('ignore') # ignore problems during import
             
-            pydoc.ModuleScanner().run(_callback, key='', onerror=_error)
-            if verbose:
-                print('\b'*80 + "The results were written in {!r}.".format(f))
+            ## pydoc.ModuleScanner().run(_callback, key='', onerror=_error)
+            for _importer, modname, _ispkg in pkgutil.walk_packages(onerror=_error):
+                _callback(None, modname, '')
         
         lm.sort(key=str.upper)
         with open(f, 'w') as o:
             pprint(lm, stream=o) # write modules
-        print("done.")
+        print('\b'*80 + "The results were written in {!r}.".format(f))
     else:
         with open(f, 'r') as o:
             lm = eval(o.read()) # read and eval a list of modules
@@ -1415,10 +1417,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         
         ## AcceleratorTable mimic
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
-        def on_char(evt):
+        def hook_char(evt):
             """Called when key down (let handler call skip)"""
-            ## Text editing is prior to the handler
             if isinstance(evt.EventObject, wx.TextEntry):
+                ## Text edit is prior to handler
                 evt.Skip()
                 return
             self.handler('{} pressed'.format(hotkey(evt)), evt)
@@ -1477,10 +1479,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         
         ## AcceleratorTable mimic
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
-        def on_char(evt):
+        def hook_char(evt):
             """Called when key down (let handler call skip)"""
-            ## Text editing is prior to the handler
             if isinstance(evt.EventObject, wx.TextEntry):
+                ## Text edit is prior to handler
                 evt.Skip()
                 return
             self.handler('{} pressed'.format(hotkey(evt)), evt)
@@ -1529,7 +1531,7 @@ Global bindings:
         if target is None:
             target = __import__('__main__')
         
-        self.SetTitle(title or "Nautilus - {!r}".format(target))
+        self.Title = title or "Nautilus - {!r}".format(target)
         
         self.statusbar.resize((-1,200))
         self.statusbar.Show(1)
@@ -1726,8 +1728,8 @@ Global bindings:
             win.apply_indicator(pos, lw, 0)
             win.apply_indicator(pos, lw, 1)
             n += 1
-        self.findData.FindString = text
         self.message("{}: {} found".format(text, n))
+        self.findData.FindString = text
     
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     
@@ -2427,11 +2429,8 @@ Flaky nutshell:
         
         self.__target = target
         self.interp.locals.update(target.__dict__)
-        try:
-            self.parent.Title = re.sub("(.*) - (.*)",
-                "\\1 - {!r}".format(target), self.parent.Title)
-        except Exception:
-            pass
+        self.parent.Title = re.sub("(.*) - (.*)",
+            "\\1 - {!r}".format(target), self.parent.Title)
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2478,15 +2477,11 @@ Flaky nutshell:
         if locals:
             self.interp.locals.update(locals)
         
-        self.modules = find_modules(force=speckey_state('ctrl')
-                                         &speckey_state('shift'))
+        self.modules = find_modules(speckey_state('ctrl')
+                                  & speckey_state('shift'))
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
-        
-        ## target.self = target
-        ## target.this = inspect.getmodule(target)
-        ## target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2501,8 +2496,7 @@ Flaky nutshell:
         ## 
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
-        @partial(self.parent.Bind, wx.EVT_ACTIVATE)
-        def on_activate(evt):
+        def activate(evt):
             if evt.Active:
                 self.handler('shell_activated', self)
             else:
@@ -2512,8 +2506,9 @@ Flaky nutshell:
                 if self.CallTipActive():
                     self.CallTipCancel()
             evt.Skip()
+        self.parent.Bind(wx.EVT_ACTIVATE, activate)
         
-        self.on_activated(self)
+        self.on_activated(self) # call once manually
         
         ## Keywords(2) setting for *STC_P_WORD*
         self.SetKeyWords(0, ' '.join(keyword.kwlist))

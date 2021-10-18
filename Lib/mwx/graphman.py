@@ -492,7 +492,7 @@ class Graph(GraphPlot):
 class MyFileDropLoader(wx.FileDropTarget):
     """File Drop interface
     
-    target : target window to drop, e.g. frame, graph, pane, etc.
+    window : target window to drop in, e.g. frame, graph, pane, etc.
     loader : the main frame
     """
     def __init__(self, target, loader):

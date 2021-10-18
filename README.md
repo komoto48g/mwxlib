@@ -71,7 +71,7 @@ which has the following features:
     - [4] text-comp-mode
     - [5] module-comp-mode
 1. Objective magic syntax is implemented.
-    - [ ` ] backquote
+    - [ ` ] quoteback
     - [@] pullback
 1. Powerful inspectoin utillities are compiled.
     - Filling
@@ -86,7 +86,7 @@ which has the following features:
 
 **It is very easy to include the shell in your wxPython application.**
 ```
->>> self.inspector = mwx.InspectorFrame(self, target=self)
+>>> self.inspector = mwx.ShellFrame(self, target=self)
 ```
 As you are diving into the python process,
 you can watch, inspect, and change everything in the target.
@@ -115,7 +115,7 @@ See [key bindings](key-bindings.md) for more information.
 
 ## Magic syntax:
 
-  - backquote : ```x`y --> y=x  | x`y`z --> z=y=x```
+  - quoteback : ```x`y --> y=x  | x`y`z --> z=y=x```
 
   - pullback : ```x@y --> y(x) | x@y@z --> z(y(x))```
 
