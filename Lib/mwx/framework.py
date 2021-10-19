@@ -321,12 +321,13 @@ def find_modules(force=False, verbose=True):
         def _callback(path, modname, desc):
             lm.append(modname)
             if verbose:
-                print('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='')
+                print('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='',
+                    file=sys.__stdout__)
         
         def _error(modname):
-            ## lm.append(modname + '*') # do not append to the list
             if verbose:
-                print('\b'*80 + "- failed: {}".format(modname))
+                print('\b'*80 + "- failed: {}".format(modname),
+                    file=sys.__stdout__)
         
         with warnings.catch_warnings():
             warnings.simplefilter('ignore') # ignore problems during import
@@ -527,7 +528,7 @@ class FSM(dict):
         f = os.path.expanduser("~/.deb/deb-dump.log")
         with open(f, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
-            print(*args, file=o, sep='\n', end='\n\n')
+            print(*args, sep='\n', end='\n\n', file=o)
             print(traceback.format_exc(), file=o)
     
     @staticmethod
@@ -611,8 +612,10 @@ class FSM(dict):
         if not action:
             return lambda f: self.bind(event, f, state, state2)
         
+        warn = self.log
+        
         if state not in self:
-            print("- FSM:warning - [{!r}] context newly created.".format(state))
+            warn("- FSM:warning - [{!r}] context newly created.".format(state))
             self[state] = SSM()
         
         context = self[state]
@@ -621,16 +624,16 @@ class FSM(dict):
         
         if event in context:
             if state2 != context[event][0]:
-                print("- FSM:warning - transaction may conflict"
-                      " (state {2!r} and the original state is not the same)"
-                      " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+                warn("- FSM:warning - transaction may conflict"
+                     " (state {2!r} and the original state is not the same)"
+                     " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
                 pass
                 context[event][0] = state2 # update transition
         else:
             ## if state2 not in self:
-            ##     print("- FSM:warning - transaction may contradict"
-            ##           " (state {2!r} is not found in the contexts)"
-            ##           " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+            ##     warn("- FSM:warning - transaction may contradict"
+            ##          " (state {2!r} is not found in the contexts)"
+            ##          " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
             ##     pass
             context[event] = [state2] # new event:transaction
         
@@ -638,8 +641,8 @@ class FSM(dict):
             try:
                 context[event].append(action)
             except AttributeError:
-                print("- FSM:warning - appending action to context"
-                      "({!r} : {!r}) must be a list, not tuple".format(state, event))
+                warn("- FSM:warning - appending action to context"
+                     "({!r} : {!r}) must be a list, not tuple".format(state, event))
         return action
     
     def unbind(self, event, action, state=None):
@@ -647,8 +650,10 @@ class FSM(dict):
         equiv. self[state] -= {event : [*, action]}
         The transaction is exepcted to be a list (not a tuple).
         """
+        warn = self.log
+        
         if state not in self:
-            print("- FSM:warning - [{!r}] context does not exist.".format(state))
+            warn("- FSM:warning - [{!r}] context does not exist.".format(state))
             return
         
         context = self[state]
@@ -658,8 +663,8 @@ class FSM(dict):
                 if len(context[event]) == 1:
                     context.pop(event)
             except AttributeError:
-                print("- FSM:warning - removing action from context"
-                      "({!r} : {!r}) must be a list, not tuple".format(state, event))
+                warn("- FSM:warning - removing action from context"
+                     "({!r} : {!r}) must be a list, not tuple".format(state, event))
 
 
 ## --------------------------------
@@ -3180,7 +3185,7 @@ Flaky nutshell:
         print("#<module 'mwx' from {!r}>".format(__file__),
               "Author: {!r}".format(__author__),
               "Version: {!s}".format(__version__),
-              "#{!r}".format(wx.py.shell), sep='\n', file=self)
+              "#{!r}".format(wx.py.shell), sep='\n')
         return Shell.about(self)
     
     def _clip(self, data):
