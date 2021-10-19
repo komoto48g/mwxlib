@@ -2579,8 +2579,8 @@ Flaky nutshell:
                   ## 'C-e pressed' : (0, _F(self.end_of_command_line)),
                   'M-j pressed' : (0, self.call_tooltip2),
                   'C-j pressed' : (0, self.call_tooltip),
-                  'M-h pressed' : (0, self.call_help_tooltip2),
-                  'C-h pressed' : (0, self.call_help_tooltip),
+                  'M-h pressed' : (0, self.call_helpTip2),
+                  'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
@@ -2637,8 +2637,8 @@ Flaky nutshell:
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
                   'M-j pressed' : (2, self.call_tooltip2),
                   'C-j pressed' : (2, self.call_tooltip),
-                  'M-h pressed' : (2, self.call_help_tooltip2),
-                  'C-h pressed' : (2, self.call_help_tooltip),
+                  'M-h pressed' : (2, self.call_helpTip2),
+                  'C-h pressed' : (2, self.call_helpTip),
                   ## 'M-. pressed' : (2, self.on_completion),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2668,8 +2668,8 @@ Flaky nutshell:
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
                   'M-j pressed' : (3, self.call_tooltip2),
                   'C-j pressed' : (3, self.call_tooltip),
-                  'M-h pressed' : (3, self.call_help_tooltip2),
-                  'C-h pressed' : (3, self.call_help_tooltip),
+                  'M-h pressed' : (3, self.call_helpTip2),
+                  'C-h pressed' : (3, self.call_helpTip),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, self.on_completion),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2699,8 +2699,8 @@ Flaky nutshell:
           '*backspace released' : (4, self.call_text_autocomp),
                   'M-j pressed' : (4, self.call_tooltip2),
                   'C-j pressed' : (4, self.call_tooltip),
-                  'M-h pressed' : (4, self.call_help_tooltip2),
-                  'C-h pressed' : (4, self.call_help_tooltip),
+                  'M-h pressed' : (4, self.call_helpTip2),
+                  'C-h pressed' : (4, self.call_helpTip),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, self.on_completion),
@@ -3352,7 +3352,7 @@ Flaky nutshell:
         """Call ToolTip of the selected word or command line"""
         self.gen_tooltip(self.SelectedText or self.getCommand() or self.expr_at_caret)
     
-    def call_help_tooltip2(self, evt):
+    def call_helpTip2(self, evt):
         try:
             text = self.SelectedText or self.expr_at_caret
             if text:
@@ -3360,10 +3360,15 @@ Flaky nutshell:
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
     
-    def call_help_tooltip(self, evt):
+    def call_helpTip(self, evt):
         """Show tooltips for the selected topic"""
-        text = self.SelectedText or self.expr_at_caret
-        self.autoCallTipShow(text, False, True)
+        if self.CallTipActive():
+            self.CallTipCancel()
+        self.OnCallTipAutoCompleteManually(True) # autoCallTipShow or autoCompleteShow
+        if not self.CallTipActive():
+            text = self.SelectedText or self.expr_at_caret
+            if text:
+                self.autoCallTipShow(text, False, True)
     
     def clear_autocomp(self, evt):
         """Clear Autocomp, selection, and message"""
