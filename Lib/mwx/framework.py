@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.46.7"
+__version__ = "0.46.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -256,7 +256,19 @@ def split_tokens(text):
     lexer.wordchars += '.'
     ## lexer.whitespace = '\r\n' # space(tab) is not a white
     lexer.whitespace = '' # nothing is white (for multiline analysis)
-    return list(lexer)
+    ## return list(lexer)
+    
+    p = re.compile(r"([a-zA-Z])[\"\']") # [bfru]-string, and more?
+    ls = []
+    n = 0
+    for token in lexer:
+        m = p.match(token)
+        if m:
+            ls.append(m.group(1))
+            return ls + split_tokens(text[n+1:])
+        ls.append(token)
+        n += len(token)
+    return ls
 
 
 def split_into_words(text):
@@ -1716,9 +1728,10 @@ Global bindings:
         win = self.current_editor
         text = win.topic_at_caret
         if not text:
-            ## win.apply_filter(0, 0, stc.STC_P_WORD3)
-            win.apply_indicator(0, win.TextLength, 0, False)
-            win.apply_indicator(0, win.TextLength, 1, False)
+            ## win.apply_filter(0, 0)
+            for i in range(2):
+                win.SetIndicatorCurrent(i)
+                win.IndicatorClearRange(0, win.TextLength)
             return
         word = text.encode() # for multi-byte string
         raw = win.TextRaw
@@ -1729,9 +1742,10 @@ Global bindings:
             pos = raw.find(word, pos+1)
             if pos < 0:
                 break
-            ## win.apply_filter(pos, lw, stc.STC_P_WORD3)
-            win.apply_indicator(pos, lw, 0)
-            win.apply_indicator(pos, lw, 1)
+            ## win.apply_filter(pos, lw)
+            for i in range(2):
+                win.SetIndicatorCurrent(i)
+                win.IndicatorFillRange(pos, lw)
             n += 1
         self.message("{}: {} found".format(text, n))
         self.findData.FindString = text
@@ -1879,16 +1893,17 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
         self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
         
-        ## Custom indicator for search-word (cf. apply_indicator)
+        ## Custom indicator for search-word
         if wx.VERSION < (4,1,0):
             self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
+            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         else:
             self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
-        self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         self.IndicatorSetForeground(0, "red")
-        self.IndicatorSetForeground(1, "red")
+        self.IndicatorSetForeground(1, "yellow")
         
-        ## Custom indicator for match-paran (cf. apply_indicator)
+        ## Custom indicator for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
         self.IndicatorSetForeground(2, "gray") # fore font colour
         
@@ -1973,33 +1988,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
     
-    def apply_filter(self, pos, length, style):
-        if length < 0:
-            length = -length
-            pos -= length
-        if wx.VERSION < (4,1,0):
-            self.StartStyling(pos, 0x1f)
-        else:
-            self.StartStyling(pos)
-        self.SetStyling(length, style)
-    
-    def apply_indicator(self, pos, length, style, enable=True):
-        if length < 0:
-            length = -length
-            pos -= length
-        self.SetIndicatorCurrent(style)
-        if enable:
-            self.IndicatorFillRange(pos, length)
-        else:
-            self.IndicatorClearRange(pos, length)
+    ## def apply_filter(self, pos, length):
+    ##     if wx.VERSION < (4,1,0):
+    ##         self.StartStyling(pos, 0x1f)
+    ##     else:
+    ##         self.StartStyling(pos)
+    ##     self.SetStyling(length, stc.STC_P_WORD3)
     
     ## def match_paren(self):
     ##     if wx.VERSION < (4,1,0):
     ##         return self._match_paren()
-    ##     self.apply_indicator(0, self.TextLength, 2, False)
+    ##     self.SetIndicatorCurrent(2)
+    ##     self.IndicatorClearRange(0, self.TextLength)
     ##     p = self._match_paren()
     ##     if p:
-    ##         self.apply_indicator(p, self.cur-p, 2)
+    ##         self.IndicatorFillRange(p, self.cur-p)
     
     def match_paren(self):
         cur = self.cur
@@ -2047,11 +2050,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def following_symbol(self):
+        """Similar to following_char, but skips whites"""
         ln = self.GetTextRange(self.cur, self.eol)
         return next((c for c in ln if not c.isspace()), '')
     
     @property
     def preceding_symbol(self):
+        """Similar to preceding_char, but skips whites"""
         ln = self.GetTextRange(self.bol, self.cur)[::-1]
         return next((c for c in ln if not c.isspace()), '')
     
@@ -2842,6 +2847,9 @@ Flaky nutshell:
             return
         
         if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
+            self.handler('quit', evt)
+        
+        elif self.GetStyleAt(self.cur-1) in (3,4,6,7): # STC_P_STRING,...
             self.handler('quit', evt)
         
         ## elif self.preceding_char in sep:
