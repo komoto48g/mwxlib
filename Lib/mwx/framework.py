@@ -1875,16 +1875,28 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
         ## self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         
-        ## default no magin for line number
-        self.SetMarginLeft(2)
+        ## The magin style for line numbers and symbols
+        ## [0] for markers, 10 pixels wide, mask 0b11111
+        ## [1] for numbers, 32 pixels wide, mask 0x01ffffff (~stc.STC_MASK_FOLDERS)
+        ## [2] for borders,  1 pixels wide, mask 0xfe000000 ( stc.STC_MASK_FOLDERS)
+        self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
+        self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+        self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         
-        ## Custom style of control-char, wrap-mode
-        ## self.ViewEOL = True
-        ## self.ViewWhiteSpace = True
-        ## self.TabWidth = 4
-        ## self.UseTabs = False
-        self.WrapMode = 0
-        self.WrapIndentMode = 1
+        ## Set the mask and width
+        ## [1] 32bit mask 1111,1110,0000,0000,0000,0000,0000,0000
+        ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
+        
+        self.SetMarginMask(0, 0b11111) # mask for 5 markers (cf. MarkerDefine)
+        self.SetMarginWidth(0, 10)
+        
+        self.SetMarginMask(1, 0) # no symbols
+        self.SetMarginWidth(1, 0) # hide margin
+        
+        self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
+        self.SetMarginWidth(2, 0)
+        
+        self.SetMarginLeft(2) # +1 margin at the left
         
         ## Custom markers (cf. MarkerAdd)
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
@@ -1906,6 +1918,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## Custom indicator for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
         self.IndicatorSetForeground(2, "gray") # fore font colour
+        
+        ## Custom style of control-char, wrap-mode
+        ## self.ViewEOL = True
+        ## self.ViewWhiteSpace = True
+        ## self.TabWidth = 4
+        ## self.UseTabs = False
+        self.WrapMode = 0
+        self.WrapIndentMode = 1
         
         self.__mark = None
     
@@ -1947,16 +1967,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if "STC_STYLE_LINENUMBER" in spec:
             lsc = _map(spec.get("STC_STYLE_LINENUMBER"))
             
-            ## [0] for numbers, 0 pixels wide, mask=0 (default)
-            ## [1] for symbols, 32 pixels wide, mask=0x01ffffff
-            ## [2] for folding, 1 pixels wide, mask->0xfe000000
-            
-            self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-            self.SetMarginType(2, stc.STC_MARGIN_SYMBOL) # margin(2) for symbols
-            self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folding symbols
             self.SetMarginWidth(1, 32)
             self.SetMarginWidth(2, 1)
-            
             if 'fore' in lsc: # set colors used as a chequeboard pattern
                 c = lsc['fore']
                 self.SetFoldMarginColour(True, c) # back: one of the colors
@@ -3001,7 +3013,7 @@ Flaky nutshell:
         
         Note: text is raw output:str with no magic cast
         """
-        ln = self.LineFromPosition(self.__bolc_marks[-1]) # ine to set marker
+        ln = self.LineFromPosition(self.__bolc_marks[-1]) # Line to set marker
         err = re.findall(r"File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
         if not err:
             self.MarkerAdd(ln, 1) # white-marker
