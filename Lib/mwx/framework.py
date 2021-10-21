@@ -2846,14 +2846,16 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
+        st = self.GetStyleAt(self.cur-1)
+        
         if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
-        
-        elif self.GetStyleAt(self.cur-1) in (3,4,6,7): # STC_P_STRING,...
+        elif st in (1,2,5,8,9,12): # comment, num, word, class, def
             self.handler('quit', evt)
-        
-        ## elif self.preceding_char in sep:
-        elif self.preceding_symbol in sep: # i.e., skip-white-backward
+            pass
+        elif st in (3,4,6,7,13): # string, char, triplet, eol
+            pass
+        elif self.preceding_symbol in sep:
             self.ReplaceSelection("self")
         
         self.ReplaceSelection('.') # just write down a dot.
