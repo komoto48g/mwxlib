@@ -132,9 +132,7 @@ Note:
         f = inspect.currentframe().f_back
         m = inspect.getmodule(f)
         if not self.is_active:
-            ## raise AssertionError("The thread is not running. "
-            ##                      "(cannot enter {})".format(f.f_code.co_name))
-            raise AssertionError("can't enter {} "
+            raise AssertionError("cannot enter {} "
                 "unless the thread is running".format(f.f_code.co_name))
         
         event = "{}:{}:enter".format(m.__name__, f.f_code.co_name)
@@ -205,6 +203,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
    caption : flag to set the pane caption to be visible (default caption is __module__)
              a string can also be specified
   dockable : flag to set the pane to be dockable
+             type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
 reloadable : flag to set the Layer to be reloadable
 unloadable : flag to set the Layer to be unloadable
     parent : parent <Frame> (not always equals `Parent' especially when floating)
@@ -820,13 +819,10 @@ class Frame(mwx.Frame):
             w, h = self.graph.GetClientSize()
             pane.best_size = (w//2, h) # サイズはドッキング時に再計算される
         
-        ## (shift + menu) reset floating position of a stray window
         if wx.GetKeyState(wx.WXK_SHIFT) and name != "graph":
-            
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
                 try:
-                    ## load_plug に再帰
                     self.load_plug(name, show=1, force=pane.window.reloadable)
                     pane = self.get_pane(name)
                 except AttributeError:
@@ -836,10 +832,10 @@ class Frame(mwx.Frame):
                 pane.floating_pos = wx.GetMousePosition()
             show = True
         
-        ## for Layers only
         plug = self.get_plug(name)
         
         try:
+            ## for Layers only (has notebook property)
             nb = plug.__notebook
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
@@ -853,7 +849,6 @@ class Frame(mwx.Frame):
             else:
                 if pane.IsShown():
                     plug.handler('pane_closed')
-        
         pane.Show(show)
         self._mgr.Update()
     
@@ -879,12 +874,12 @@ class Frame(mwx.Frame):
         else:
             pane.Float()
         
-        ## for Layers only (graph window has not plug.constants)
         plug = self.get_plug(name)
         
         try:
+            ## for Layers only (has some special constants)
             pane.CaptionVisible(bool(plug.caption))
-            pane.Gripper(not plug.caption)
+            pane.Gripper(not plug.caption and dock != 5)
             pane.Dockable(plug.dockable)
             nb = plug.__notebook
             if nb and show:
@@ -899,7 +894,6 @@ class Frame(mwx.Frame):
             else:
                 if pane.IsShown():
                     plug.handler('pane_closed')
-        
         pane.Show(show)
         self._mgr.Update()
     
@@ -994,7 +988,7 @@ class Frame(mwx.Frame):
         ## pane = self.get_pane(name)
         plug = self.get_plug(name)
         
-        ## if pane.IsOk(): # [name] がすでに登録されている
+        ## [name] がすでに登録されている
         if plug:
             if not force:
                 self.update_pane(name, show=show,
@@ -1015,6 +1009,7 @@ class Frame(mwx.Frame):
             title = module.Plugin.category
             pane = self._mgr.GetPane(title)
             
+            ## [category] がすでに登録されている
             if pane.IsOk():
                 nb = pane.window
                 if not isinstance(nb, aui.AuiNotebook):
@@ -1025,9 +1020,9 @@ class Frame(mwx.Frame):
             name = module.Plugin.__module__ # rename as module plugin name
             pane = self.get_pane(name)
             
+            ## [name] がすでに登録されている
             if pane.IsOk():
-                plug = self.get_plug(name) # plug must exist
-                if not plug:
+                if name not in self.plugins:
                     raise NameError("Plugin name must not be the same as any other panes")
                 
                 show = show or pane.IsShown()
@@ -1079,6 +1074,9 @@ class Frame(mwx.Frame):
             caption = plug.caption
             if not isinstance(caption, LITERAL_TYPE):
                 caption = name
+            
+            if not isinstance(plug.dockable, bool):
+                docking = plug.dockable
             
             if title:
                 pane = self._mgr.GetPane(title)
