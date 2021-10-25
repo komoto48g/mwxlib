@@ -13,6 +13,7 @@ etc/
 icon*/
 test*/
 wiki/
+!Lib/mwx/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
