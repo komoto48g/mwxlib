@@ -647,11 +647,11 @@ Constants:
         
         ## 最初のロード axes.imshow (=> self.axes.axis 表示を更新する)
         art = AxesImagePhantom(self, buf, name, show, localunit, aspect, **attributes)
+        wx.Yield()
         
         j = len(self) if pos is None else pos
         self.__Arts.insert(j, art)
         self.handler('frame_loaded', art)
-        
         if show:
             self.select(j)
         return art
