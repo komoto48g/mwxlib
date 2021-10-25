@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.46.8"
+__version__ = "0.46.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -146,7 +146,7 @@ def Dir(obj):
         return keys
 
 
-def apropos(rexpr, root, ignorecase=True, alias=None, pred=None, locals=None):
+def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     """Put a list of objects having expression `rexpr in `root
     """
     name = alias or typename(root)
@@ -2163,7 +2163,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoLine(ln)
         return self.cur
     
-    def skip_chars_forward(self, rexpr='\s'):
+    def skip_chars_forward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.following_char):
             c = self.cur
@@ -2172,7 +2172,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.GotoPos(c + 1)
         return self.cur
     
-    def skip_chars_backward(self, rexpr='\s'):
+    def skip_chars_backward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.preceding_char):
             c = self.cur
@@ -2184,7 +2184,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def back_to_indentation(self):
         self.ScrollToColumn(0)
         self.GotoPos(self.bol)
-        return self.skip_chars_forward('\s')
+        return self.skip_chars_forward(r'\s')
     
     def beggining_of_line(self):
         self.GotoPos(self.bol)
@@ -2267,12 +2267,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def eat_white_forward(self):
         p = self.cur
-        q = self.skip_chars_forward('\s')
+        q = self.skip_chars_forward(r'\s')
         self.Replace(p, q, '')
     
     def eat_white_backward(self):
         p = self.cur
-        q = self.skip_chars_backward('\s')
+        q = self.skip_chars_backward(r'\s')
         self.Replace(max(q, self.bol), p, '')
     
     def kill_line(self):
@@ -2383,7 +2383,7 @@ Magic syntax:
    quoteback : x`y --> y=x  | x`y`z --> z=y=x
     pullback : x@y --> y(x) | x@y@z --> z(y(x))
      apropos : x.y? [not] p --> shows apropos (not-)matched by predicates `p
-                equiv. apropos(y, x [,ignorecase ?:True,??:False] [,pred=p])
+                equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
                 y can contain regular expressions.
                     (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
                 p can be ?atom, ?callable, ?type (e.g., int,str,etc.),
@@ -2636,8 +2636,8 @@ Flaky nutshell:
                'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
-             'S-[a-z\] pressed' : (1, skip),
-            'S-[a-z\] released' : (1, self.call_history_comp),
+            'S-[a-z\\] pressed' : (1, skip),
+           'S-[a-z\\] released' : (1, self.call_history_comp),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2660,8 +2660,8 @@ Flaky nutshell:
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
-             'S-[a-z\] pressed' : (2, skip),
-            'S-[a-z\] released' : (2, self.call_word_autocomp),
+            'S-[a-z\\] pressed' : (2, skip),
+           'S-[a-z\\] released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, self.skipback_autocomp, skip),
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
@@ -2691,8 +2691,8 @@ Flaky nutshell:
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
           '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
-             'S-[a-z\] pressed' : (3, skip),
-            'S-[a-z\] released' : (3, self.call_apropos_autocomp),
+            'S-[a-z\\] pressed' : (3, skip),
+           'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, self.skipback_autocomp, skip),
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
@@ -2722,8 +2722,8 @@ Flaky nutshell:
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
           '[a-z0-9_.] released' : (4, self.call_text_autocomp),
-             'S-[a-z\] pressed' : (4, skip),
-            'S-[a-z\] released' : (4, self.call_text_autocomp),
+            'S-[a-z\\] pressed' : (4, skip),
+           'S-[a-z\\] released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
            '*backspace pressed' : (4, self.skipback_autocomp, skip),
           '*backspace released' : (4, self.call_text_autocomp),
@@ -2753,8 +2753,8 @@ Flaky nutshell:
                'escape pressed' : (0, self.clear_autocomp),
            '[a-z0-9_.] pressed' : (5, skip),
           '[a-z0-9_.] released' : (5, self.call_module_autocomp),
-             'S-[a-z\] pressed' : (5, skip),
-            'S-[a-z\] released' : (5, self.call_module_autocomp),
+            'S-[a-z\\] pressed' : (5, skip),
+           'S-[a-z\\] released' : (5, self.call_module_autocomp),
            '*backspace pressed' : (5, self.skipback_autocomp, skip),
           '*backspace released' : (5, self.call_module_autocomp),
                  '*alt pressed' : (5, ),
@@ -2897,7 +2897,7 @@ Flaky nutshell:
            quoteback : x`y --> y=x
             pullback : x@y --> y(x)
              partial : x@(y1,...,yn) --> partial(y1,...,yn)(x)
-             apropos : x.y?p --> apropos(y,x,...,p)
+             apropos : x.y?p --> apropos(x,y,...,p)
         
         Note: This is called before run, execute, and original magic.
         """
@@ -2933,9 +2933,9 @@ Flaky nutshell:
                 head, sep, hint = ''.join(l).rpartition('.')
                 cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(r)).groups()
                 
-                return ("apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, "
+                return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=self.shell.interp.locals)".format(
-                        hint.strip(), head or 'this', len(cc) < 2, pred or None))
+                        head, hint.strip(), len(cc) < 2, pred or None))
             
             if c == sys.ps2.strip():
                 s = ''

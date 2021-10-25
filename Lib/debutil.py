@@ -65,6 +65,7 @@ class MagicInterpreter(object):
                   '[?]' : (0, self.apropos),
             },
             1 : {
+                    '*' : (0, self.feed),
                     '@' : (0, self.pullback),
                    '@=' : (0, self.pullback_dcor),
                  '@[*]' : (0, self.pullback_vargs),
@@ -93,7 +94,7 @@ class MagicInterpreter(object):
     
     def fork(self, l, r):
         c = self.handler.current_event
-        if r and r[0] in SEP2: # eat whites, seps, and ops
+        while r and r[0] in SEP2: # eat whites, seps, and ops
             c += r.pop(0)
         return self.handler(c, l, r)
     
@@ -112,8 +113,8 @@ class MagicInterpreter(object):
     def pullback(self, l, r):
         lhs = ''.join(l).strip() or '_'
         rhs = ''.join(extract_words_from_tokens(r, SEP2)).strip()
-        rhs = re.sub(r"(\(.*\))",
-                     r"partial\1", rhs) # --> partial(y,...)
+        rhs = re.sub(r"(\(.*\))",       # @(y1,...,yn)
+                     r"partial\1", rhs) # --> partial(y1,...,yn)
         r[0:0] = [f"{rhs}({lhs})"]
         l[:] = []
     
@@ -131,9 +132,9 @@ class MagicInterpreter(object):
         head, sep, hint = ''.join(l).rpartition('.')
         cc, pred = re.search(r"(\?+)\s*(.*)", '?'+''.join(r)).groups()
         r[:] = []
-        l[:] = ["apropos({0!r}, {1}, ignorecase={2}, alias={1!r}, "
+        l[:] = ["apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                 "pred={3!r}, locals=self.shell.interp.locals)".format(
-                hint.strip(), head or 'this', len(cc) < 2, pred or None)]
+                head or 'this', hint.strip(), len(cc) < 2, pred or None)]
 
 
 def init_shell(self):

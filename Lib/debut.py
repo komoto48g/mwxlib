@@ -91,6 +91,7 @@ def init_shell(self):
         "STC_P_NUMBER"          : "fore:#ffc080",
     })
     self.wrap(1)
+    self.parent.About()
 
 
 def dive(*args):
