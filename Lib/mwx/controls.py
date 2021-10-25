@@ -643,7 +643,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## child = self.Sizer.Children[groupid]
         ## child.Show(p)
         self.Sizer.Show(groupid % len(self.__groups), p)
-        self.Sizer.Fit(self) # do Fit(self.Parent) if needed
+        ## self.Sizer.Fit(self) # do Fit(self.Parent) if needed
         self.Layout()
         self.Parent.SendSizeEvent() # let parent redraw the child panel
     
@@ -657,7 +657,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         if isinstance(child.Sizer, wx.StaticBoxSizer) and child.IsShown():
             for cc in child.Sizer.Children: # child of child <wx._core.SizerItem>
                 cc.Show(not p)
-            self.Sizer.Fit(self) # do Fit(self.Parent) if needed
+            ## self.Sizer.Fit(self) # do Fit(self.Parent) if needed
             self.Layout()
             self.Parent.SendSizeEvent() # let parent redraw the child panel
     
