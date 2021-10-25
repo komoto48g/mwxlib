@@ -323,12 +323,16 @@ def find_modules(force=False, verbose=True):
     except AttributeError:
         pass
     
-    lm = []
     f = os.path.expanduser("~/.deb/deb-modules-{}.log".format(sys.winver))
-    if force or not os.path.exists(f):
+    if not force and os.path.exists(f):
+        with open(f, 'r') as o:
+            return eval(o.read()) # read and eval a list of modules
+    else:
         print("Please wait a moment "
               "while Py{} gathers a list of all available modules... "
               "(This is executed once)".format(sys.winver))
+        
+        lm = list(sys.builtin_module_names)
         
         def _callback(path, modname, desc):
             lm.append(modname)
@@ -351,11 +355,9 @@ def find_modules(force=False, verbose=True):
         lm.sort(key=str.upper)
         with open(f, 'w') as o:
             pprint(lm, stream=o) # write modules
+        
         print('\b'*80 + "The results were written in {!r}.".format(f))
-    else:
-        with open(f, 'r') as o:
-            lm = eval(o.read()) # read and eval a list of modules
-    return lm
+        return lm
 
 
 ## --------------------------------
@@ -1142,10 +1144,11 @@ Usage:
         return (x for y in a for x in (flatten(y) if isinstance(y, list) else (y,)))
     
     for item in flatten(args):
-        if item is None:
-            item = ((0,0), 0,0,0) # dummy spacing
         if not item:
-            item = ((0,0),) + style # padding with specified style
+            if item is None:
+                item = (0,0), 0,0,0, # dummy spacing with null style
+            else:
+                item = (0,0) # padding with specified style
         try:
             sizer.Add(item, *style) # using style
         except TypeError:
@@ -1424,13 +1427,13 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         
         ## ステータスバーに時刻表示 (/msec)
         ## self.timer = wx.PyTimer(
-        ##     lambda: self.statusbar.write(time.strftime('%m/%d %H:%M'), -1))
+        ##     lambda: self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1))
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         
         @partial(self.Bind, wx.EVT_TIMER)
         def on_timer(evt):
-            self.statusbar.write(time.strftime('%m/%d %H:%M'), -1)
+            self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1)
         
         ## AcceleratorTable mimic
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
@@ -1550,7 +1553,7 @@ Global bindings:
         
         self.Title = title or "Nautilus - {!r}".format(target)
         
-        self.statusbar.resize((-1,200))
+        self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
         self.shell = Nautilus(self, target, **kwargs)
@@ -1747,7 +1750,7 @@ Global bindings:
                 win.SetIndicatorCurrent(i)
                 win.IndicatorFillRange(pos, lw)
             n += 1
-        self.message("{}: {} found".format(text, n))
+        self.statusbar("{}: {} found".format(text, n))
         self.findData.FindString = text
     
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
@@ -2276,8 +2279,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if self.CanEdit():
             p = self.eol
             text, lp = self.CurLine
-            if text[:lp] == os.linesep:
-                p += len(os.linesep)
+            if p == self.cur:
+                if self.GetTextRange(p, p+2) == '\r\n': p += 2
+                elif self.GetTextRange(p, p+1) == '\n': p += 1
             self.Replace(self.cur, p, '')
     
     def backward_kill_line(self):
@@ -2445,14 +2449,20 @@ Flaky nutshell:
     
     @target.setter
     def target(self, target):
+        if not hasattr(target, '__dict__'):
+            raise TypeError("cannot target primitive objects")
         target.self = target
         target.this = inspect.getmodule(target)
         target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
         self.__target = target
         self.interp.locals.update(target.__dict__)
-        self.parent.Title = re.sub("(.*) - (.*)",
-            "\\1 - {!r}".format(target), self.parent.Title)
+        try:
+            self.parent.Title = re.sub("(.*) - (.*)",
+                                       "\\1 - {!r}".format(target),
+                                       self.parent.Title)
+        except AttributeError:
+            pass
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2582,6 +2592,9 @@ Flaky nutshell:
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
+                 'left pressed' : (0, self.OnBackspace),
+               'C-left pressed' : (0, self.OnBackspace),
+               'S-left pressed' : (0, self.OnBackspace),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
@@ -2763,7 +2776,7 @@ Flaky nutshell:
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             ln = self.CurrentLine
             text, lp = self.CurLine
-            self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=-1)
+            self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=1)
             
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
@@ -2804,6 +2817,7 @@ Flaky nutshell:
             ##      so not to backspace over the latest non-continuation prompt
             if self.AutoCompActive():
                 self.AutoCompCancel()
+            return
         evt.Skip()
     
     def OnEnter(self, evt):
@@ -3324,10 +3338,10 @@ Flaky nutshell:
         if target is None:
             target = self.target
         elif not hasattr(target, '__dict__'):
-            raise TypeError("You cannot dive into an primitive object")
+            raise TypeError("cannot dive into a primitive object")
         
         frame = deb(target,
-             size=self.parent.Size,
+             ## size=self.Size,
              title="Clone of Nautilus - {!r}".format(target))
         
         self.handler("shell_cloned", frame.shell)
