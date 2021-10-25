@@ -867,7 +867,7 @@ class Frame(mwx.Frame):
         pane.floating_pos = kwargs.get('floating_pos') or pane.floating_pos
         pane.floating_size = kwargs.get('floating_size') or pane.floating_size
         
-        dock = kwargs.get('docking')
+        dock = kwargs.get('dock')
         if dock:
             pane.dock_direction = dock
             pane.Dock()
@@ -896,6 +896,21 @@ class Frame(mwx.Frame):
                     plug.handler('pane_closed')
         pane.Show(show)
         self._mgr.Update()
+    
+    def get_props(self, name):
+        pane = self.get_pane(name)
+        if not pane.IsOk():
+            return {}
+        return dict(
+            show = pane.IsShown(),
+            dock = pane.IsDocked() and pane.dock_direction,
+            layer = pane.dock_layer,
+            pos = pane.dock_pos,
+            row = pane.dock_row,
+            prop = pane.dock_proportion,
+            floating_pos = pane.floating_pos[:],
+            floating_size = pane.floating_size[:],
+        )
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
@@ -943,7 +958,7 @@ class Frame(mwx.Frame):
             return name
     
     def load_plug(self, root, show=False,
-            docking=False, layer=0, pos=0, row=0, prop=10000,
+            docking=None, dock=False, layer=0, pos=0, row=0, prop=10000,
             floating_pos=None, floating_size=None, force=False, **kwargs):
         """Load plugin module
         The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
@@ -951,7 +966,7 @@ class Frame(mwx.Frame):
         root : Layer object, module, or `name of module
         show : the pane is to be shown when loaded
        force : force loading even when it were already loaded
-     docking : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
+        dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
        layer : dock_layer
          pos : dock_pos
          row : dock_row position
@@ -988,11 +1003,14 @@ class Frame(mwx.Frame):
         ## pane = self.get_pane(name)
         plug = self.get_plug(name)
         
+        if docking is not None:
+            dock = docking # to be deprecated
+        
         ## [name] がすでに登録されている
         if plug:
             if not force:
                 self.update_pane(name, show=show,
-                    docking=docking, layer=layer, pos=pos, row=row, prop=prop,
+                    dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                     floating_pos=floating_pos, floating_size=floating_size
                 )
                 session = kwargs.get('session') # session が指定されていれば優先
@@ -1026,7 +1044,7 @@ class Frame(mwx.Frame):
                     raise NameError("Plugin name must not be the same as any other panes")
                 
                 show = show or pane.IsShown()
-                docking = pane.IsDocked() and pane.dock_direction
+                dock = pane.IsDocked() and pane.dock_direction
                 layer = pane.dock_layer
                 pos = pane.dock_pos
                 row = pane.dock_row
@@ -1076,7 +1094,7 @@ class Frame(mwx.Frame):
                 caption = name
             
             if not isinstance(plug.dockable, bool):
-                docking = plug.dockable
+                dock = plug.dockable
             
             if title:
                 pane = self._mgr.GetPane(title)
@@ -1126,7 +1144,7 @@ class Frame(mwx.Frame):
             plug.__notebook = nb
             
             self.update_pane(name, show=show,
-                docking=docking, layer=layer, pos=pos, row=row, prop=prop,
+                dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                 floating_pos=floating_pos, floating_size=floating_size
             )
             
@@ -1630,7 +1648,7 @@ class Frame(mwx.Frame):
             "")))
             for name in ('output', 'histogram'): # save built-in window layout
                 pane = self.get_pane(name)
-                o.write("self.update_pane('{name}', show={show}, docking={dock}, "
+                o.write("self.update_pane('{name}', show={show}, dock={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
                         "floating_pos={fpos}, floating_size={fsize})\n".format(
                     name = name,
@@ -1653,7 +1671,7 @@ class Frame(mwx.Frame):
                     path = path[:-12]
                 current_session = {}
                 plug.save_session(current_session)
-                o.write("self.load_plug('{name}', show={show}, docking={dock}, "
+                o.write("self.load_plug('{name}', show={show}, dock={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
                         "floating_pos={fpos}, floating_size={fsize}, "
                         "force=0, session={session!r})\n".format(
