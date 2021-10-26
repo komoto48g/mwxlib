@@ -897,21 +897,6 @@ class Frame(mwx.Frame):
         pane.Show(show)
         self._mgr.Update()
     
-    def get_current_props(self, name):
-        pane = self.get_pane(name)
-        if not pane.IsOk():
-            return {}
-        return dict(
-            show = pane.IsShown(),
-            dock = pane.IsDocked() and pane.dock_direction,
-            layer = pane.dock_layer,
-            pos = pane.dock_pos,
-            row = pane.dock_row,
-            prop = pane.dock_proportion,
-            floating_pos = pane.floating_pos[:],
-            floating_size = pane.floating_size[:],
-        )
-    
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
         win = pane.window
@@ -1003,23 +988,21 @@ class Frame(mwx.Frame):
         
         if docking is not None:
             dock = docking # to be deprecated
-        
+            
         props = dict(show=show,
-            dock=dock, layer=layer, pos=pos, row=row, prop=prop,
-            floating_pos=floating_pos, floating_size=floating_size, )
+                     dock=dock, layer=layer, pos=pos, row=row, prop=prop,
+                     floating_pos=floating_pos, floating_size=floating_size)
         
-        ## --------------------------------
-        ## 0. Check if plugged in  already 
-        ## --------------------------------
-        ## pane = self.get_pane(name)
+        ## Check if already plugged in
         plug = self.get_plug(name)
         
         ## [name] がすでに登録されている
         if plug:
             if not force:
                 if not isinstance(plug.dockable, bool):
-                    props.update(dock=plug.dockable)
+                    props.update(dock = plug.dockable)
                 self.update_pane(name, **props)
+                
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
                     plug.init_session(session)
@@ -1054,15 +1037,16 @@ class Frame(mwx.Frame):
                 if name not in self.plugins:
                     raise NameError("Plugin name must not be the same as any other panes")
                 
-                show = show or pane.IsShown()
-                dock = pane.IsDocked() and pane.dock_direction
-                layer = pane.dock_layer
-                pos = pane.dock_pos
-                row = pane.dock_row
-                prop = pane.dock_proportion
-                floating_pos = floating_pos or pane.floating_pos[:] # copy (!pane is to be unloaded)
-                floating_size = floating_size or pane.floating_size[:] # copy
-            
+                props.update(
+                    show = show or pane.IsShown(),
+                    dock = pane.IsDocked() and pane.dock_direction,
+                    layer = pane.dock_layer,
+                    pos = pane.dock_pos,
+                    row = pane.dock_row,
+                    prop = pane.dock_proportion,
+                    floating_pos = floating_pos or pane.floating_pos[:], # copy (!pane is to be unloaded)
+                    floating_size = floating_size or pane.floating_size[:], # copy
+                )
         except ImportError as e:
             print("-", self.statusbar("\b failed to import: {}".format(e)))
             return False
@@ -1073,7 +1057,7 @@ class Frame(mwx.Frame):
             return False
         
         ## --------------------------------
-        ## 2. plug in and load the session 
+        ## 2. register the plugin
         ## --------------------------------
         try:
             if pane.IsOk():
@@ -1108,14 +1092,14 @@ class Frame(mwx.Frame):
                 caption = name
             
             if not isinstance(plug.dockable, bool):
-                dock = plug.dockable
+                props.update(dock = plug.dockable)
             
             if title:
                 pane = self._mgr.GetPane(title)
                 if pane.IsOk():
                     nb = pane.window
                     nb.AddPage(plug, caption)
-                    show = show or pane.IsShown()
+                    props.update(show = show or pane.IsShown())
                 else:
                     size = plug.GetSize() + (2,30)
                     nb = aui.AuiNotebook(self,
@@ -1157,10 +1141,7 @@ class Frame(mwx.Frame):
             ## set reference of notebook (optional)
             plug.__notebook = nb
             
-            self.update_pane(name, show=show,
-                dock=dock, layer=layer, pos=pos, row=row, prop=prop,
-                floating_pos=floating_pos, floating_size=floating_size
-            )
+            self.update_pane(name, **props)
             
             ## register menu item
             if not hasattr(module, 'ID_'): # give a unique index to the module
