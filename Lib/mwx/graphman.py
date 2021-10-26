@@ -897,7 +897,7 @@ class Frame(mwx.Frame):
         pane.Show(show)
         self._mgr.Update()
     
-    def get_props(self, name):
+    def get_current_props(self, name):
         pane = self.get_pane(name)
         if not pane.IsOk():
             return {}
@@ -971,18 +971,19 @@ class Frame(mwx.Frame):
          pos : dock_pos
          row : dock_row position
         prop : dock_proportion < 1e6 ?
-  floating_* : pos/size of floating window
+   floating_ : pos/size of floating window
         """
         if hasattr(root, '__file__'): #<type 'module'>
             root = root.__file__
+            
         elif hasattr(root, '__module__'): #<type 'Layer'>
             root = root.__module__
-        
-        ## If the name of root has been loaded,
-        ## we reload it referring to the file-name, not module-name
-        module = self.plugins.get(root)
-        if module:
-            root = module.__file__
+            
+            ## If the name of root has been loaded,
+            ## we reload it referring to the file-name, not module-name
+            module = self.plugins.get(root)
+            if module:
+                root = module.__file__
         
         name = os.path.basename(root)
         if name.endswith(".py") or name.endswith(".pyc"):
@@ -1000,23 +1001,33 @@ class Frame(mwx.Frame):
                 print("- No such directory {!r}".format(dirname))
                 return False
         
-        ## pane = self.get_pane(name)
-        plug = self.get_plug(name)
-        
         if docking is not None:
             dock = docking # to be deprecated
+        
+        props = dict(show=show,
+            dock=dock, layer=layer, pos=pos, row=row, prop=prop,
+            floating_pos=floating_pos, floating_size=floating_size, )
+        
+        ## --------------------------------
+        ## 0. Check if plugged in  already 
+        ## --------------------------------
+        ## pane = self.get_pane(name)
+        plug = self.get_plug(name)
         
         ## [name] がすでに登録されている
         if plug:
             if not force:
-                self.update_pane(name, show=show,
-                    dock=dock, layer=layer, pos=pos, row=row, prop=prop,
-                    floating_pos=floating_pos, floating_size=floating_size
-                )
+                if not isinstance(plug.dockable, bool):
+                    props.update(dock=plug.dockable)
+                self.update_pane(name, **props)
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
                     plug.init_session(session)
                 return
+        
+        ## --------------------------------
+        ## 1. import the module
+        ## --------------------------------
         try:
             self.statusbar("Loading plugin {!r}...".format(name))
             if name in sys.modules:
@@ -1061,6 +1072,9 @@ class Frame(mwx.Frame):
                 caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
             return False
         
+        ## --------------------------------
+        ## 2. plug in and load the session 
+        ## --------------------------------
         try:
             if pane.IsOk():
                 self.unload_plug(name) # unload once right here
