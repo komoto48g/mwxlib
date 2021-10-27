@@ -1882,22 +1882,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [0] for markers, 10 pixels wide, mask 0b11111
         ## [1] for numbers, 32 pixels wide, mask 0x01ffffff (~stc.STC_MASK_FOLDERS)
         ## [2] for borders,  1 pixels wide, mask 0xfe000000 ( stc.STC_MASK_FOLDERS)
-        self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-        self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         
         ## Set the mask and width
         ## [1] 32bit mask 1111,1110,0000,0000,0000,0000,0000,0000
         ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
         
+        self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(0, 0b11111) # mask for 5 markers (cf. MarkerDefine)
         self.SetMarginWidth(0, 10)
         
-        self.SetMarginMask(1, 0) # no symbols
-        self.SetMarginWidth(1, 0) # hide margin
+        self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
+        self.SetMarginMask(1, 0) # default: no symbols
+        self.SetMarginWidth(1, 0) # default: no margin
         
+        self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
-        self.SetMarginWidth(2, 0)
+        self.SetMarginWidth(2, 0) # default: no margin
         
         self.SetMarginLeft(2) # +1 margin at the left
         
@@ -1907,6 +1907,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(2, stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
         self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
         self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
+        
+        v = 'white', 'black'
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS,  *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,    *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_LCORNER,  *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_TCORNER,  *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_TCORNER,  *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE,    *v)
         
         ## Custom indicator for search-word
         if wx.VERSION < (4,1,0):
@@ -1972,10 +1981,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             
             self.SetMarginWidth(1, 32)
             self.SetMarginWidth(2, 1)
-            if 'fore' in lsc: # set colors used as a chequeboard pattern
-                c = lsc['fore']
-                self.SetFoldMarginColour(True, c) # back: one of the colors
-                self.SetFoldMarginHiColour(True, c) # fore: the other color
+            self.SetProperty('fold', '0')
+            ## Set colors used as a chequeboard pattern.
+            ## Being one pixel solid line, the back and fore should be the same.
+            self.SetFoldMarginColour(True, lsc.get('fore')) # back: one of the colors
+            self.SetFoldMarginHiColour(True, lsc.get('fore')) # fore: the other color
         
         ## Custom style for caret and line colour
         if "STC_STYLE_CARETLINE" in spec:
@@ -2549,7 +2559,7 @@ Flaky nutshell:
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
         
-        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
@@ -2767,6 +2777,14 @@ Flaky nutshell:
         
         self.set_style(self.PALETTE_STYLE)
         
+        ## Enable folder at margin=2
+        self.SetProperty('fold', '1')
+        self.SetMarginWidth(2, 14)
+        self.SetMarginSensitive(2, True)
+        self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
+        self.SetFoldMarginHiColour(True, "#c0c0c0")
+        self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+        
         self.__text = ''
         self.__start = 0
         self.__bolc_marks = [self.bolc]
@@ -2786,6 +2804,14 @@ Flaky nutshell:
                         tip = tip.splitlines()[0]
                     self.message(tip)
                     self.__text = text
+        evt.Skip()
+    
+    def OnMarginClick(self, evt):
+        lc = self.LineFromPosition(evt.Position)
+        lv = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+        ## if lv & stc.STC_FOLDLEVELHEADERFLAG:
+        if lv == stc.STC_FOLDLEVELHEADERFLAG: # fold only the topmost
+            self.ToggleFold(lc)
         evt.Skip()
     
     def OnEscape(self, evt):
