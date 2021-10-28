@@ -107,7 +107,7 @@ Attributes:
     binning : binning size of image
               ( ･ω･)? Current verision of wxagg limits < 24M bytes?
               The image pixel size must be reduced by resizing or binning.
- attributes : optional. misc info about the frame/buffer
+ attributes : optional. miscellaneous info about the frame/buffer
    pathname : optional. fullpath of buffer, when bounds to file
  annotation : optional. annotation of the buffer
 

@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.46.9"
+__version__ = "0.47.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -159,8 +159,13 @@ def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     if isinstance(pred, type):
         pred = instance(pred)
     
-    if pred and not callable(pred):
-        raise TypeError("{} is not callable".format(typename(pred)))
+    if pred:
+        if not callable(pred):
+            raise TypeError("{} is not callable".format(typename(pred)))
+        try:
+            pred(None)
+        except (TypeError, ValueError):
+            pass
     
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)
@@ -178,6 +183,8 @@ def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
                     word = repr(value)
                     word = ' '.join(s.strip() for s in word.splitlines()) # format in line
                     n += 1
+                except (TypeError, ValueError):
+                    continue
                 except Exception as e:
                     word = '#<{!r}>'.format(e)
                 if len(word) > 80:
@@ -3308,7 +3315,7 @@ Flaky nutshell:
             print(doc)
     
     def eval(self, text):
-        ## return eval(text, self.__target.__dict__)
+        ## return eval(text, self.target.__dict__)
         return eval(text, self.interp.locals)
     
     def Execute(self, text):
@@ -3729,7 +3736,7 @@ if 1:
     app = wx.App()
     frm = Frame(None,
         title = repr(Frame),
-        style = wx.DEFAULT_FRAME_STYLE&~(wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX),
+        style = wx.DEFAULT_FRAME_STYLE, #&~(wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX),
         size=(200,80),
     )
     frm.editor = Editor(frm)
