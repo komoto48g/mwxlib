@@ -407,8 +407,8 @@ Constants:
                  'frame_hidden' : [ None ], # show
                  'frame_loaded' : [ None ], # load
                 'frame_removed' : [ None ], # del[] ! event arg is indices, not frames.
-               'frame_selected' : [ None ], # focus_set
-             'frame_deselected' : [ None ], # focus_killed
+               'frame_selected' : [ None ], # = focus_set
+             'frame_deselected' : [ None ], # = focus_kill
                'frame_modified' : [ None ], # set[],load,roi, (frame.update_buffer)
                 'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
                 'frame_cmapped' : [ None ], # cmap
@@ -869,17 +869,13 @@ Constants:
         self.draw()
     
     def on_focus_set(self, evt):
-        """Called when focus is set
-        (override)
-        """
+        """Called when focus is set (override)"""
         MatplotPanel.on_focus_set(self, evt)
         if self.frame:
             self.handler('frame_selected', self.frame)
     
     def on_focus_kill(self, evt):
-        """Called when focus is killed
-        (override)
-        """
+        """Called when focus is killed (override)"""
         MatplotPanel.on_focus_kill(self, evt)
         if self.frame:
             self.handler('frame_deselected', self.frame)

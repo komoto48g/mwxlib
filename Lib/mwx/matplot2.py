@@ -618,7 +618,7 @@ class MatplotPanel(wx.Panel):
         """Catch the event that mpl won't catch"""
         key = wx_hotkey(evt)
         if key:
-            self.handler('{} pressed'.format(key), evt)
+            self.handler('{} pressed'.format(key), evt) or evt.Skip()
         else:
             evt.Skip() # skip to mpl:on_key_press
     
@@ -626,7 +626,7 @@ class MatplotPanel(wx.Panel):
         """Catch the event that mpl won't catch"""
         key = wx_hotkey(evt)
         if key:
-            self.handler('{} released'.format(key), evt)
+            self.handler('{} released'.format(key), evt) or evt.Skip()
         else:
             evt.Skip() # skip to mpl:on_key_release
     

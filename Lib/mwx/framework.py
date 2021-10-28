@@ -939,21 +939,6 @@ class CtrlInterface(object):
         self.__key = ''
         self.__handler = FSM({})
         
-        self.handler.update({ #<CtrlInterface handler>
-            None : {
-                'focus_set' : [ None, skip ],
-               'focus_kill' : [ None, skip ],
-             'window_enter' : [ None, skip ],
-             'window_leave' : [ None, skip ],
-            },
-            0 : {
-                 '* dclick' : (0, skip),
-                '* pressed' : (0, skip),
-               '* released' : (0, skip),
-            },
-        })
-        self.handler.clear(0)
-        
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
         ## self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
         self.Bind(wx.EVT_KEY_UP, self.on_key_release)
@@ -961,10 +946,10 @@ class CtrlInterface(object):
         
         ## self.Bind(wx.EVT_MOTION, lambda v: self.handler('motion', v))
         
-        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.handler('focus_set', v))
-        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.handler('focus_kill', v))
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.handler('window_enter', v))
-        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.handler('window_leave', v))
+        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.window_handler('focus_set', v))
+        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.window_handler('focus_kill', v))
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.window_handler('window_enter', v))
+        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.window_handler('window_leave', v))
         
         self.Bind(wx.EVT_LEFT_DOWN, lambda v: self.mouse_handler('Lbutton pressed', v))
         self.Bind(wx.EVT_RIGHT_DOWN, lambda v: self.mouse_handler('Rbutton pressed', v))
@@ -993,13 +978,13 @@ class CtrlInterface(object):
         if evt.EventObject is not self:
             evt.Skip()
             return
-        self.handler('{} pressed'.format(key), evt)
+        self.handler('{} pressed'.format(key), evt) or evt.Skip()
     
     def on_key_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up"""
         key = self.hotkey(evt)
         self.__key = ''
-        self.handler('{} released'.format(key), evt)
+        self.handler('{} released'.format(key), evt) or evt.Skip()
     
     def on_mousewheel(self, evt): #<wx._core.MouseEvent>
         """Called when wheel event
@@ -1010,7 +995,7 @@ class CtrlInterface(object):
         else:
             p = 'up' if evt.WheelRotation > 0 else 'down'
         evt.key = self.__key + "wheel{}".format(p)
-        self.handler('{} pressed'.format(evt.key), evt)
+        self.handler('{} pressed'.format(evt.key), evt) or evt.Skip()
     
     def mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called when mouse event
@@ -1019,11 +1004,14 @@ class CtrlInterface(object):
         event = self.__key + event # 'C-M-S-K+[LMRX]button pressed/released/dclick'
         key, sep, st = event.rpartition(' ') # removes st:'pressed/released/dclick'
         evt.key = key or st
-        self.handler(event, evt)
+        self.handler(event, evt) or evt.Skip()
         try:
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
+    
+    def window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
+        self.handler(event, evt) or evt.Skip()
 
 
 class KeyCtrlInterfaceMixin(object):
@@ -1445,12 +1433,13 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         ## AcceleratorTable mimic
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
-            """Called when key down (let handler call skip)"""
+            """Called when key down"""
             if isinstance(evt.EventObject, wx.TextEntry):
                 ## Text edit is prior to handler
                 evt.Skip()
                 return
-            self.handler('{} pressed'.format(hotkey(evt)), evt)
+            if not self.handler('{} pressed'.format(hotkey(evt)), evt):
+                evt.Skip()
         
         def close(v):
             """Close the window"""
@@ -1460,7 +1449,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         
         self.handler.update({ #<Frame handler>
             0 : {
-                    '* pressed' : (0, skip),
+                    ## '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
             },
         })
@@ -1502,17 +1491,18 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         ## To default close,
         ## >>> self.Unbind(wx.EVT_CLOSE)
         
-        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only, no skip
+        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only
         
         ## AcceleratorTable mimic
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
-            """Called when key down (let handler call skip)"""
+            """Called when key down"""
             if isinstance(evt.EventObject, wx.TextEntry):
                 ## Text edit is prior to handler
                 evt.Skip()
                 return
-            self.handler('{} pressed'.format(hotkey(evt)), evt)
+            if not self.handler('{} pressed'.format(hotkey(evt)), evt):
+                evt.Skip()
         
         def close(v):
             """Close the window"""
@@ -1821,7 +1811,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             0 : {
              '*button* pressed' : (0, skip, fork_parent),
             '*button* released' : (0, skip, fork_parent),
+                     '* dclick' : (0, skip, fork_parent),
                     '* pressed' : (0, skip),
+                   '* released' : (0, skip),
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
                'insert pressed' : (0, _F(lambda v: self.over(None), "toggle-over")),
                    'f9 pressed' : (0, _F(lambda v: self.wrap(None), "toggle-fold-type")),
@@ -1854,6 +1846,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 ## 'M-S-. pressed' : (0, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
             },
         })
+        self.handler.clear(0)
         
         self.make_keymap('C-x')
         self.define_key('C-x *', skip) # skip to parent frame always

@@ -304,6 +304,7 @@ unloadable : flag to set the Layer to be unloadable
                 'C-S-n pressed' : (0, _F(self.reset_params, checked_only=1)),
             }
         })
+        self.handler.clear(0)
         
         ## Menu (override)
         self.Menu = [
