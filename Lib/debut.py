@@ -44,12 +44,11 @@ def init_shell(self):
     """
     @self.define_key('M-w')
     def copy_region():
-        if self.mark is not None:
-            with self.save_excursion():
-                self.SetCurrentPos(self.mark) # mark set by [C-space]
-                self.Copy()
-        else:
+        if self.mark is None:
             self.message("no mark")
+        else:
+            self.Anchor = self.mark
+            self.Copy()
     
     @self.define_key('C-x [', pos=0, doc="beginning-of-buffer")
     @self.define_key('C-x ]', pos=-1, doc="end-of-buffer")
