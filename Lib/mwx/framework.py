@@ -433,6 +433,11 @@ class FSM(dict):
         dict.clear(self)    # if and when __init__ is called, all contents are cleared
         self.clear(default) # the first clear creates object localvars
         self.update(contexts or {}) # this may do the next clear
+        
+        ## if there is only one state, reset that state as the default
+        keys = list(self)
+        if len(keys) == 1 and default is None:
+            self.clear(keys[0])
     
     def __missing__(self, key):
         raise Exception("FSM:logical error - undefined state {!r}".format(key))
@@ -586,11 +591,6 @@ class FSM(dict):
             else:
                 self[k] = SSM(self.copy(v))
             self.validate(k)
-        
-        ## if there is only one state, reset that state as the default
-        keys = list(self)
-        if len(keys) == 1:
-            self.clear(keys[0])
     
     def append(self, contexts):
         """Append new contexts"""
@@ -1445,11 +1445,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             """Close the window"""
             self.Close()
         
-        self.__handler = FSM({})
-        
-        self.handler.update({ #<Frame handler>
+        self.__handler = FSM({ #<Frame handler>
             0 : {
-                    ## '* pressed' : (0, skip),
+                    '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
             },
         })
@@ -1508,9 +1506,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             """Close the window"""
             self.Close()
         
-        self.__handler = FSM({})
-        
-        self.handler.update({ #<MiniFrame handler>
+        self.__handler = FSM({ #<MiniFrame handler>
             0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
@@ -1913,9 +1909,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS,  *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,    *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_LCORNER,  *v)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_TCORNER,  *v)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_TCORNER,  *v)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE,    *v)
+        ## self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_TCORNER, *v)
+        ## self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_TCORNER, *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_VLINE, *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
         ## Custom indicator for search-word
         if wx.VERSION < (4,1,0):
@@ -2887,7 +2885,7 @@ Flaky nutshell:
         
         ## normal execute/run
         if '\n' in text:
-            self.Execute(text) # for multi-line commands, no skip
+            self.Execute(text) # for multi-line commands
         else:
             evt.Skip()
     
