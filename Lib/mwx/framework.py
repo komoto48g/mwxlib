@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.0"
+__version__ = "0.47.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -38,6 +38,7 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint, pformat
 from six.moves import builtins
 ## from six import PY3
+import pdb
 try:
     from importlib import reload
 except ImportError:
@@ -939,50 +940,46 @@ class CtrlInterface(object):
         self.__key = ''
         self.__handler = FSM({})
         
-        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
-        ## self.Bind(wx.EVT_KEY_DOWN, self.on_key_press)
-        self.Bind(wx.EVT_KEY_UP, self.on_key_release)
+        ## self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
+        self.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
-        
-        ## self.Bind(wx.EVT_MOTION, lambda v: self.handler('motion', v))
-        
-        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.window_handler('focus_set', v))
-        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.window_handler('focus_kill', v))
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.window_handler('window_enter', v))
-        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.window_handler('window_leave', v))
-        
-        self.Bind(wx.EVT_LEFT_DOWN, lambda v: self.mouse_handler('Lbutton pressed', v))
-        self.Bind(wx.EVT_RIGHT_DOWN, lambda v: self.mouse_handler('Rbutton pressed', v))
-        self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.mouse_handler('Mbutton pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.mouse_handler('Xbutton1 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: self.mouse_handler('Xbutton2 pressed', v))
         
         self.Bind(wx.EVT_LEFT_UP, lambda v: self.mouse_handler('Lbutton released', v))
         self.Bind(wx.EVT_RIGHT_UP, lambda v: self.mouse_handler('Rbutton released', v))
         self.Bind(wx.EVT_MIDDLE_UP, lambda v: self.mouse_handler('Mbutton released', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: self.mouse_handler('Xbutton1 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: self.mouse_handler('Xbutton2 released', v))
-        
+        self.Bind(wx.EVT_LEFT_DOWN, lambda v: self.mouse_handler('Lbutton pressed', v))
+        self.Bind(wx.EVT_RIGHT_DOWN, lambda v: self.mouse_handler('Rbutton pressed', v))
+        self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.mouse_handler('Mbutton pressed', v))
         self.Bind(wx.EVT_LEFT_DCLICK, lambda v: self.mouse_handler('Lbutton dclick', v))
         self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: self.mouse_handler('Rbutton dclick', v))
         self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: self.mouse_handler('Mbutton dclick', v))
+        
+        self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: self.mouse_handler('Xbutton1 released', v))
+        self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: self.mouse_handler('Xbutton2 released', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.mouse_handler('Xbutton1 pressed', v))
+        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: self.mouse_handler('Xbutton2 pressed', v))
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
+        
+        ## self.Bind(wx.EVT_MOTION, lambda v: self.window_handler('motion', v))
+        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.window_handler('focus_set', v))
+        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.window_handler('focus_kill', v))
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.window_handler('window_enter', v))
+        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.window_handler('window_leave', v))
     
-    hotkey = staticmethod(hotkey) # to be overridden
-    
-    def on_key_press(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
-        key = self.hotkey(evt)
+        key = hotkey(evt)
         self.__key = regulate_key(key + '+')
         if evt.EventObject is not self:
             evt.Skip()
             return
         self.handler('{} pressed'.format(key), evt) or evt.Skip()
     
-    def on_key_release(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up"""
-        key = self.hotkey(evt)
+        key = hotkey(evt)
         self.__key = ''
         self.handler('{} released'.format(key), evt) or evt.Skip()
     
@@ -1609,6 +1606,8 @@ Global bindings:
         @self.define_key('S-f11', loop=True)
         @self.define_key('Xbutton1', p=-1)
         @self.define_key('Xbutton2', p=+1)
+        @self.define_key('C-x p', p=-1)
+        @self.define_key('C-x n', p=1)
         def other_editor(v, p=1, loop=False):
             "Focus moves to other editor"
             j = self.ghost.Selection + p
@@ -1616,12 +1615,10 @@ Global bindings:
                 j %= self.ghost.PageCount
             self.ghost.SetSelection(j)
         
-        @self.define_key('M-right', p=1)
-        @self.define_key('M-left', p=-1)
+        @self.define_key('C-x left', p=-1)
+        @self.define_key('C-x right', p=1)
         def other_window(v, p=1):
             "Focus moves to other window"
-            ## pages = (self.ghost.GetPage(i) for i in range(self.ghost.PageCount))
-            ## pages = [self.shell] + [w for w in pages if w.IsShownOnScreen()]
             pages = [w for w in self.all_pages if w.IsShownOnScreen()]
             j = (pages.index(self.current_editor) + p) % len(pages)
             pages[j].SetFocus()
@@ -1708,7 +1705,8 @@ Global bindings:
     
     @property
     def all_pages(self):
-        return [self.shell] + [self.ghost.GetPage(i) for i in range(self.ghost.PageCount)]
+        return [self.shell] + [self.ghost.GetPage(i)
+                                for i in range(self.ghost.PageCount)]
     
     @property
     def current_editor(self):
@@ -1884,7 +1882,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b11111) # mask for 5 markers (cf. MarkerDefine)
+        self.SetMarginMask(0, 0b11111) # mask for 5 markers
         self.SetMarginWidth(0, 10)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
@@ -2600,9 +2598,7 @@ Flaky nutshell:
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-                 'left pressed' : (0, self.OnBackspace),
-               'C-left pressed' : (0, self.OnBackspace),
-               'S-left pressed' : (0, self.OnBackspace),
+                '*left pressed' : (0, self.OnBackspace),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
@@ -2777,11 +2773,12 @@ Flaky nutshell:
         
         ## Enable folder at margin=2
         self.SetProperty('fold', '1')
-        self.SetMarginWidth(2, 14)
+        self.SetMarginWidth(2, 12)
         self.SetMarginSensitive(2, True)
         self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
         self.SetFoldMarginHiColour(True, "#c0c0c0")
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+        self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
         self.__text = ''
         self.__start = 0
@@ -2806,11 +2803,65 @@ Flaky nutshell:
     
     def OnMarginClick(self, evt):
         lc = self.LineFromPosition(evt.Position)
-        lv = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        ## if lv & stc.STC_FOLDLEVELHEADERFLAG:
-        if lv == stc.STC_FOLDLEVELHEADERFLAG: # fold only the topmost
-            self.ToggleFold(lc)
-        evt.Skip()
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
+        
+        ## if level == stc.STC_FOLDLEVELHEADERFLAG: # fold the top-level header only
+        if level: # fold any if the indent level is non-zero
+            self.toggle_fold(lc)
+    
+    def OnMarginRClick(self, evt):
+        lc = self.LineFromPosition(evt.Position)
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+        Menu.Popup(self, [
+            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+                lambda v: self.fold_all()),
+                
+            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+                lambda v: self.unfold_all()),
+        ])
+    
+    def toggle_fold(self, lc=None):
+        """Toggle fold/unfold the header including the given line"""
+        if lc is None:
+            lc = self.CurrentLine
+        while 1:
+            lp = self.GetFoldParent(lc)
+            if lp == -1:
+                break
+            lc = lp
+        self.ToggleFold(lc)
+    
+    def fold_all(self):
+        """Fold all headers"""
+        ln = self.LineCount
+        lc = 0
+        while lc < ln:
+            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+            if level == stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldExpanded(lc, False)
+                le = self.GetLastChild(lc, -1)
+                if le > lc:
+                    self.HideLines(lc+1, le)
+                lc = le
+            lc = lc + 1
+    
+    def unfold_all(self):
+        """Unfold all toplevel headers"""
+        ln = self.LineCount
+        lc = 0
+        while lc < ln:
+            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+            if level == stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldExpanded(lc, True)
+                le = self.GetLastChild(lc, -1)
+                if le > lc:
+                    self.ShowLines(lc+1, le)
+                lc = le
+            lc = lc + 1
+    
+    ## --------------------------------
+    ## Spec-keys actions of the shell
+    ## --------------------------------
     
     def OnEscape(self, evt):
         """Called when escape pressed"""
@@ -3237,7 +3288,7 @@ Flaky nutshell:
         return indent
     
     ## --------------------------------
-    ## Utility functions of the Shell 
+    ## Utility functions of the shell 
     ## --------------------------------
     
     def about(self):
