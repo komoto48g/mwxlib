@@ -2417,6 +2417,7 @@ Shell built-in utility:
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
+    @where      filename and fileline or module
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
@@ -3042,7 +3043,7 @@ Flaky nutshell:
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
-        ## builtins.pp = pprint
+        ## builtins.pp = pprint # see below; optional args.
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
@@ -3050,10 +3051,14 @@ Flaky nutshell:
         builtins.code = inspect.getsource
         builtins.module = inspect.getmodule
         
-        def fileno(object):
-            return (inspect.getsourcefile(object),
-                    inspect.getsourcelines(object)[1])
-        builtins.fileno = fileno
+        def where(obj):
+            try:
+                ## class, method, function, traceback, frame, or code object was expected
+                return (inspect.getsourcefile(obj),
+                        inspect.getsourcelines(obj)[1])
+            except TypeError:
+                return inspect.getmodule(obj)
+        builtins.where = where
         
         def pp(x):
             pprint(x, width=pp.width, compact=pp.compact)
@@ -3072,6 +3077,7 @@ Flaky nutshell:
         builtins.help = self.help # utilities functions to builtins (not locals)
         builtins.info = self.info # if locals could have the same name functions.
         builtins.dive = self.clone
+        builtins.debug = self.debug
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
@@ -3081,6 +3087,7 @@ Flaky nutshell:
         del builtins.help
         del builtins.info
         del builtins.dive
+        del builtins.debug
         del builtins.timeit
         del builtins.execute
         del builtins.puts
@@ -3398,6 +3405,15 @@ Flaky nutshell:
         
         return Shell.run(self, command, **kwargs)
     
+    def debug(self, target, *args, **kwargs):
+        try:
+            wx.CallAfter(wx.EndBusyCursor)
+            dbg = pdb.Pdb()
+            dbg.set_trace(inspect.currentframe())
+            return target(*args, **kwargs)
+        except Exception:
+            dbg.do_quit(None)
+    
     @staticmethod
     def clock():
         try:
@@ -3419,7 +3435,7 @@ Flaky nutshell:
              ## size=self.Size,
              title="Clone of Nautilus - {!r}".format(target))
         
-        self.handler("shell_cloned", frame.shell)
+        self.handler('shell_cloned', frame.shell)
         return frame.shell
     
     ## --------------------------------

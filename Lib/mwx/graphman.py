@@ -365,6 +365,10 @@ unloadable : flag to set the Layer to be unloadable
         """Initialize me safely (to be overridden)"""
         pass
     
+    ## def Destroy(self):
+    ##     """Called from parent (to be overridden) -> destroy"""
+    ##     return Layer.Destroy(self)
+    
     def init_session(self, session):
         """Restore settings from a session file (to be overridden)"""
         self.set_current_session(session)
@@ -1485,7 +1489,7 @@ class Frame(mwx.Frame):
                     buf, info = self.read_buffer(path)
                     
                 except Image.UnidentifiedImageError:
-                    retvals = self.handler("unknown_format", path)
+                    retvals = self.handler('unknown_format', path)
                     if retvals and any(retvals):
                         continue
                     raise # no contexts or handlers
