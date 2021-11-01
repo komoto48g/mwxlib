@@ -1882,7 +1882,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b11111) # mask for 5 markers (cf. MarkerDefine)
+        self.SetMarginMask(0, 0b11111) # mask for 5 markers
         self.SetMarginWidth(0, 10)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
@@ -2778,6 +2778,7 @@ Flaky nutshell:
         self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
         self.SetFoldMarginHiColour(True, "#c0c0c0")
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+        self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
         self.__text = ''
         self.__start = 0
@@ -2802,10 +2803,61 @@ Flaky nutshell:
     
     def OnMarginClick(self, evt):
         lc = self.LineFromPosition(evt.Position)
-        lv = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        if lv == stc.STC_FOLDLEVELHEADERFLAG: # fold only the topmost
-            self.ToggleFold(lc)
-        evt.Skip()
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
+        
+        ## if level == stc.STC_FOLDLEVELHEADERFLAG: # fold the top-level header only
+        if level: # fold any if the indent level is non-zero
+            self.toggle_fold(lc)
+    
+    def OnMarginRClick(self, evt):
+        lc = self.LineFromPosition(evt.Position)
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+        Menu.Popup(self, [
+            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+                lambda v: self.fold_all()),
+                
+            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+                lambda v: self.unfold_all()),
+        ])
+    
+    def toggle_fold(self, lc=None):
+        """Toggle fold/unfold the header including the given line"""
+        if lc is None:
+            lc = self.CurrentLine
+        while 1:
+            lp = self.GetFoldParent(lc)
+            if lp == -1:
+                break
+            lc = lp
+        self.ToggleFold(lc)
+    
+    def fold_all(self):
+        """Fold all headers"""
+        ln = self.LineCount
+        lc = 0
+        while lc < ln:
+            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+            if level == stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldExpanded(lc, False)
+                le = self.GetLastChild(lc, -1)
+                if le > lc:
+                    self.HideLines(lc+1, le)
+                lc = le
+            lc = lc + 1
+    
+    def unfold_all(self):
+        """Unfold all toplevel headers"""
+        ln = self.LineCount
+        lc = 0
+        while lc < ln:
+            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+            if level == stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldExpanded(lc, True)
+                le = self.GetLastChild(lc, -1)
+                if le > lc:
+                    self.ShowLines(lc+1, le)
+                lc = le
+            lc = lc + 1
     
     ## --------------------------------
     ## Spec-keys actions of the shell
