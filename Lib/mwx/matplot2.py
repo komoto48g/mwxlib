@@ -48,7 +48,7 @@ speckeys = {
 
 ## speckeys = mwx.speckeys
 
-def wx_hotkey(evt):
+def hotkey(evt):
     """mpl が取りこぼすイベントを捕まえるとそのキーを mpl 形式で返す
     特殊キー (speckeys) のみに対応し，それ以外は Skip.
     """
@@ -194,10 +194,6 @@ class MatplotPanel(wx.Panel):
         )
         self.modeline.Show(0)
         self.Layout()
-        
-        self.__isMenu = None
-        self.__isPressed = None
-        self.__isDragging = False # True if dragging. (None if dblclicked)
         
         self.set_margin(margin or (0,0,1,1)) # if margin is None
         self.clear()
@@ -367,6 +363,10 @@ class MatplotPanel(wx.Panel):
             ## (mwx.ID_(502), "&Export image", "Save canvas image",
             ##     lambda v: self.save_to_file()),
         ]
+        
+        self.__isMenu = None
+        self.__isPressed = None
+        self.__isDragging = False # True if dragging. (None if dblclicked)
     
     def clear(self):
         """Initialize the plot figure"""
@@ -616,7 +616,7 @@ class MatplotPanel(wx.Panel):
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Catch the event that mpl won't catch"""
-        key = wx_hotkey(evt)
+        key = hotkey(evt)
         if key:
             self.handler('{} pressed'.format(key), evt) or evt.Skip()
         else:
@@ -624,7 +624,7 @@ class MatplotPanel(wx.Panel):
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Catch the event that mpl won't catch"""
-        key = wx_hotkey(evt)
+        key = hotkey(evt)
         if key:
             self.handler('{} released'.format(key), evt) or evt.Skip()
         else:
