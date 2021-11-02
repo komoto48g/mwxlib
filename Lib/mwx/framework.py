@@ -241,22 +241,16 @@ def get_words_hint(cmd):
 
 def get_words_backward(text, sep=None):
     """Get words (from text at left side of caret)"""
-    try:
-        tokens = split_tokens(text)[::-1]
-        words = extract_words_from_tokens(tokens, sep, reverse=1)
-        return ''.join(reversed(words))
-    except ValueError:
-        return ''
+    tokens = split_tokens(text)[::-1]
+    words = extract_words_from_tokens(tokens, sep, reverse=1)
+    return ''.join(reversed(words))
 
 
 def get_words_forward(text, sep=None):
     """Get words (from text at right side of caret)"""
-    try:
-        tokens = split_tokens(text)
-        words = extract_words_from_tokens(tokens, sep)
-        return ''.join(words)
-    except ValueError:
-        return ''
+    tokens = split_tokens(text)
+    words = extract_words_from_tokens(tokens, sep)
+    return ''.join(words)
 
 
 def split_tokens(text):
@@ -269,13 +263,16 @@ def split_tokens(text):
     p = re.compile(r"([a-zA-Z])[\"\']") # [bfru]-string, and more?
     ls = []
     n = 0
-    for token in lexer:
-        m = p.match(token)
-        if m:
-            ls.append(m.group(1))
-            return ls + split_tokens(text[n+1:])
-        ls.append(token)
-        n += len(token)
+    try:
+        for token in lexer:
+            m = p.match(token)
+            if m:
+                ls.append(m.group(1))
+                return ls + split_tokens(text[n+1:])
+            ls.append(token)
+            n += len(token)
+    except ValueError:
+        pass
     return ls
 
 
@@ -2091,7 +2088,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """beginning of line"""
         text, lp = self.CurLine
         return self.cur - lp
-        ## return self.PositionFromLine(self.CurrentLine)
     
     @property
     def eol(self):
@@ -2861,7 +2857,7 @@ Flaky nutshell:
             lc = lc + 1
     
     ## --------------------------------
-    ## Spec-keys actions of the shell
+    ## Special keymap of the shell
     ## --------------------------------
     
     def OnEscape(self, evt):
@@ -2964,7 +2960,7 @@ Flaky nutshell:
         evt.Skip(False)            # and do not skip to default autocomp mode
     
     ## --------------------------------
-    ## Magic suite of the shell
+    ## Magic caster of the shell
     ## --------------------------------
     
     def magic_interpret(self, tokens):
@@ -3351,10 +3347,11 @@ Flaky nutshell:
     def help(self, root=None):
         """Full description"""
         ## if root is None:
-        ##     self.message("The stream is currently piped from stdin (see command porompt).")
+        ##     self.message("The stream is piped from stdin.")
         ##     wx.CallAfter(pydoc.help)
         ##     return
-        doc = pydoc.plain(pydoc.render_doc(root)) or "No description about {}".format(root)
+        doc = pydoc.plain(pydoc.render_doc(root))\
+                or "No description about {}".format(root)
         try:
             ed = self.parent.Help
             ed.SetValue(doc)
@@ -3405,15 +3402,6 @@ Flaky nutshell:
         
         return Shell.run(self, command, **kwargs)
     
-    def debug(self, target, *args, **kwargs):
-        try:
-            wx.CallAfter(wx.EndBusyCursor)
-            dbg = pdb.Pdb()
-            dbg.set_trace(inspect.currentframe())
-            return target(*args, **kwargs)
-        except Exception:
-            dbg.do_quit(None)
-    
     @staticmethod
     def clock():
         try:
@@ -3439,6 +3427,19 @@ Flaky nutshell:
         return frame.shell
     
     ## --------------------------------
+    ## Debug functions of the shell
+    ## --------------------------------
+    
+    def debug(self, target, *args, **kwargs):
+        try:
+            wx.CallAfter(wx.EndBusyCursor)
+            dbg = pdb.Pdb()
+            dbg.set_trace(inspect.currentframe())
+            return target(*args, **kwargs)
+        except Exception:
+            dbg.do_quit(None)
+    
+    ## --------------------------------
     ## Auto-comp actions of the shell
     ## --------------------------------
     
@@ -3447,7 +3448,6 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                ## pt = self.ClientToScreen(self.PointFromPosition(pos))
                 self.parent.scratch.SetValue(tip)
         except AttributeError:
             pass
