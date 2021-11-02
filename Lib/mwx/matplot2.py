@@ -693,7 +693,7 @@ class MatplotPanel(wx.Panel):
             elif evt.ydata > ly[1]: event = 'x2axis'
             else:
                 return
-            self.handler("{} motion".format(event), evt)
+            self.handler('{} motion'.format(event), evt)
     
     def on_scroll(self, evt): #<matplotlib.backend_bases.MouseEvent>
         self.p_event = evt
