@@ -2918,18 +2918,15 @@ Flaky nutshell:
             return
         
         ## cast magic for `@?
-        try:
-            tokens = split_tokens(text)
-            if any(x in tokens for x in '`@?$'): # python では使用されないトークン
-                cmd = self.magic_interpret(tokens)
-                if '\n' in cmd:
-                    self.Execute(cmd) # for multi-line commands
-                else:
-                    self.run(cmd, verbose=0, prompt=0)
-                    self.message(cmd)
-                return
-        except ValueError:
-            pass
+        tokens = split_tokens(text)
+        if any(x in tokens for x in '`@?$'): # python では使用されないトークン
+            cmd = self.magic_interpret(tokens)
+            if '\n' in cmd:
+                self.Execute(cmd) # for multi-line commands
+            else:
+                self.run(cmd, verbose=0, prompt=0)
+                self.message(cmd)
+            return
         
         ## normal execute/run
         if '\n' in text:
@@ -3302,20 +3299,20 @@ Flaky nutshell:
               "#{!r}".format(wx.py.shell), sep='\n')
         return Shell.about(self)
     
-    def _clip(self, data):
-        """Transfer data to clipboard when copy and paste
-        (override) and transfer the data to the Log board
-        """
-        try:
-            ed = self.parent.Log
-            pos = ed.TextLength
-            ed.write(data.Text + os.linesep)
-            ed.set_mark(pos, 0)
-            ed.set_mark(pos, 1)
-            ed.goto_char(-1)
-        except AttributeError:
-            pass
-        Shell._clip(self, data)
+    ## def _clip(self, data):
+    ##     """Transfer data to clipboard when copy and paste
+    ##     (override) and transfer the data to the Log board
+    ##     """
+    ##     try:
+    ##         ed = self.parent.Log
+    ##         pos = ed.TextLength
+    ##         ed.write(data.Text + os.linesep)
+    ##         ed.set_mark(pos, 0)
+    ##         ed.set_mark(pos, 1)
+    ##         ed.goto_char(-1)
+    ##     except AttributeError:
+    ##         pass
+    ##     Shell._clip(self, data)
     
     def Paste(self):
         """Replace selection with clipboard contents.
