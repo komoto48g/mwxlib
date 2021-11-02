@@ -2057,8 +2057,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if ln=0, the cursor goes top of the screen. ln=-1 the bottom
         """
         n = self.LinesOnScreen() # lines completely visible
-        ln = self.CurrentLine - (n//2 if ln is None else ln%n if ln < n else n)
-        self.ScrollToLine(ln)
+        lc = self.lcur - (n//2 if ln is None else ln%n if ln < n else n)
+        self.ScrollToLine(lc)
     
     ## --------------------------------
     ## Attributes of the editor
@@ -2082,6 +2082,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     cur = property(
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
+    
+    ## CurrentLine
+    lcur = property(
+        lambda self: self.GetCurrentLine(),
+        lambda self,v: self.SetCurrentLine(v))
     
     @property
     def bol(self):
@@ -2152,6 +2157,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Goto, Skip, Selection, etc.
     ## --------------------------------
+    
+    def clear(self):
+        """Delete all text"""
+        self.ClearAll()
     
     def goto_char(self, pos):
         if pos < 0:
@@ -2784,10 +2793,8 @@ Flaky nutshell:
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
-            ln = self.CurrentLine
             text, lp = self.CurLine
-            self.message("{:>6d}:{} ({})".format(ln, lp, self.cur), pane=1)
-            
+            self.message("{:>6d}:{} ({})".format(self.lcur, lp, self.cur), pane=1)
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
                 if text != self.__text:
@@ -2820,7 +2827,7 @@ Flaky nutshell:
     def toggle_fold(self, lc=None):
         """Toggle fold/unfold the header including the given line"""
         if lc is None:
-            lc = self.CurrentLine
+            lc = self.lcur
         while 1:
             lp = self.GetFoldParent(lc)
             if lp == -1:
@@ -3199,7 +3206,7 @@ Flaky nutshell:
             self.goto_char(marks[j])
     
     def clear(self):
-        """Clear all text in the shell (override) and put new prompt"""
+        """Delete all text (override) and put new prompt"""
         self.ClearAll()
         
         self.promptPosStart = 0
@@ -3269,7 +3276,7 @@ Flaky nutshell:
     def calc_indent(self):
         """Calculate indent spaces from prefious line"""
         ## cf. wx.py.shell.Shell.prompt
-        line = self.GetLine(self.CurrentLine-1)
+        line = self.GetLine(self.lcur - 1)
         for p in (sys.ps1, sys.ps2, sys.ps3):
             if line.startswith(p):
                 line = line[len(p):]
