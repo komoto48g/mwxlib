@@ -1956,18 +1956,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def get_mark(self):
         return self.__mark
     
-    def set_mark(self, pos=None, marker=0):
+    def set_mark(self, pos=None):
         if pos is None:
             pos = self.cur
-        elif pos < 0:
-            pos += self.TextLength + 1
-        if marker == 0:
-            self.__mark = pos
-            self.MarkerDeleteAll(0)
-        self.MarkerAdd(self.LineFromPosition(pos), marker)
+        self.__mark = pos
+        self.MarkerDeleteAll(0) # exclusive mark (like emacs)
+        self.MarkerAdd(self.LineFromPosition(pos), 0)
     
     def del_mark(self):
         self.__mark = None
+        self.MarkerDeleteAll(0)
     
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
@@ -3316,21 +3314,6 @@ Flaky nutshell:
               "Version: {!s}".format(__version__),
               "#{!r}".format(wx.py.shell), sep='\n')
         return Shell.about(self)
-    
-    ## def _clip(self, data):
-    ##     """Transfer data to clipboard when copy and paste
-    ##     (override) and transfer the data to the Log board
-    ##     """
-    ##     try:
-    ##         ed = self.parent.Log
-    ##         pos = ed.TextLength
-    ##         ed.write(data.Text + os.linesep)
-    ##         ed.set_mark(pos, 0)
-    ##         ed.set_mark(pos, 1)
-    ##         ed.goto_char(-1)
-    ##     except AttributeError:
-    ##         pass
-    ##     Shell._clip(self, data)
     
     def Paste(self):
         """Replace selection with clipboard contents.
