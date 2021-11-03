@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.1"
+__version__ = "0.47.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -398,15 +398,25 @@ class FSM(dict):
         state `None` is a wildcard (as executed any time)
         event is a string that can include wildcards `*?[]` (fnmatch rule)
         actions must accept the same *args of function as __call__(*args)
-          if no action, FSM carries out only a transition.
-            transition is always done before actions
-    state : current state
+        
+    If no action, FSM carries out only a transition.
+    The transition is always done before actions.
+
+Attributes:
     debug : verbose level
         [1] dump when state transits
         [2] + different event comes
         [3] + executed actions (excepting None-state)
         [4] + executed actions (including None-state)
-        [5] + and more, all events and executed actions
+        [5] ++ all events and actions (if any)
+        [6] ++ all events (even if no actions)
+        [8] +++ max verbose level to put all args
+    default_state : referred as default state sucn as global-map
+        default=None is given as an argument of the init.
+        If there is only one state, that state will be the default.
+    current_state : referred as the current state
+   previous_state : (read-only, internal use only)
+    current_event : (read-only, internal use only)
     """
     debug = 0
     default_state = None
@@ -464,7 +474,7 @@ class FSM(dict):
         if self.__state is not None:
             ret += self.call(event, *args) # normal process
         
-        self.__prev_state = self.__state
+        ## self.__prev_state = self.__state
         self.__prev_event = event
         return ret
     
@@ -533,12 +543,13 @@ class FSM(dict):
         elif v > 3: # state is None
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a) for a in transaction[1:])
-            if actions or v > 4:
+            if (v > 4 and actions
+             or v > 5):
                 self.log("\t& {0!r} {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         
-        if v > 5: # max verbose level puts all args
+        if v > 7: # max verbose level puts all args
             self.log(*args)
     
     @staticmethod
@@ -935,7 +946,7 @@ class CtrlInterface(object):
     
     def __init__(self):
         self.__key = ''
-        self.__handler = FSM({})
+        self.__handler = FSM({None:{}})
         
         ## self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
@@ -967,11 +978,11 @@ class CtrlInterface(object):
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
-        key = hotkey(evt)
-        self.__key = regulate_key(key + '+')
         if evt.EventObject is not self:
             evt.Skip()
             return
+        key = hotkey(evt)
+        self.__key = regulate_key(key + '+')
         self.handler('{} pressed'.format(key), evt) or evt.Skip()
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
@@ -1428,23 +1439,23 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
             """Called when key down"""
-            if isinstance(evt.EventObject, wx.TextEntry):
-                ## Text edit is prior to handler
+            if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
-                return
-            if not self.handler('{} pressed'.format(hotkey(evt)), evt):
-                evt.Skip()
+            else:
+                self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
         
         def close(v):
             """Close the window"""
             self.Close()
         
         self.__handler = FSM({ #<Frame handler>
-            0 : {
+                0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
+                },
             },
-        })
+            default = 0
+        )
         self.make_keymap('C-x')
     
     def About(self):
@@ -1489,23 +1500,23 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
             """Called when key down"""
-            if isinstance(evt.EventObject, wx.TextEntry):
-                ## Text edit is prior to handler
+            if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
-                return
-            if not self.handler('{} pressed'.format(hotkey(evt)), evt):
-                evt.Skip()
+            else:
+                self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
         
         def close(v):
             """Close the window"""
             self.Close()
         
         self.__handler = FSM({ #<MiniFrame handler>
-            0 : {
+                0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
+                },
             },
-        })
+            default = 0
+        )
         self.make_keymap('C-x')
     
     def Destroy(self):
@@ -3360,7 +3371,6 @@ Flaky nutshell:
             ed = self.parent.Help
             ed.SetValue(doc)
             self.parent.PopupWindow(ed)
-            self.message("help({})".format(typename(root)))
         except AttributeError:
             print(doc)
     
