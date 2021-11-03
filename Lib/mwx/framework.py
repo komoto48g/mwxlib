@@ -1394,7 +1394,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
   inspector : Inspector frame of the shell
     """
     handler = property(lambda self: self.__handler)
-    message = property(lambda self: self.statusbar)
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
@@ -1478,7 +1477,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
   statusbar : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
-    message = property(lambda self: self.statusbar)
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
@@ -1890,27 +1888,27 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b11111) # mask for 5 markers
+        self.SetMarginMask(0, 0b0111) # mask for default 3 markers
+        ## self.SetMarginMask(0, -1) # mask for all markers
         self.SetMarginWidth(0, 10)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-        self.SetMarginMask(1, 0) # default: no symbols
+        self.SetMarginMask(1, 0b1000) # default: no symbols
         self.SetMarginWidth(1, 0) # default: no margin
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
+        self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 0) # default: no margin
         
         self.SetMarginLeft(2) # +1 margin at the left
         
         ## Custom markers (cf. MarkerAdd)
-        self.MarkerDefine(0, stc.STC_MARK_CIRCLE,    '#0080f0', "#0080f0") # o:blue-mark
-        self.MarkerDefine(1, stc.STC_MARK_ARROW,     '#000000', "#ffffff") # >:fold-arrow
-        self.MarkerDefine(2, stc.STC_MARK_ARROWDOWN, '#000000', "#ffffff") # v:expand-arrow
-        self.MarkerDefine(3, stc.STC_MARK_ARROW,     '#7f0000', "#ff0000")
-        self.MarkerDefine(4, stc.STC_MARK_ARROWDOWN, '#7f0000', "#ff0000")
+        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#0080f0', "#0080f0") # o blue-mark
+        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', "#ffffff") # > white-arrow
+        self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', "#ff0000") # > red-arrow
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "gray")   # >> pointer
         
-        v = 'white', 'black'
+        v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS,  *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,    *v)
@@ -1933,7 +1931,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         ## Custom indicator for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
-        self.IndicatorSetForeground(2, "gray") # fore font colour
+        self.IndicatorSetForeground(2, "light gray")
         
         ## Custom style of control-char, wrap-mode
         ## self.ViewEOL = True
@@ -3121,9 +3119,9 @@ Flaky nutshell:
         ln = self.LineFromPosition(self.__bolc_marks[-1]) # Line to set marker
         err = re.findall(r"File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
         if not err:
-            self.MarkerAdd(ln, 1) # white-marker
+            self.MarkerAdd(ln, 1) # white-arrow
         else:
-            self.MarkerAdd(ln, 3) # error-marker
+            self.MarkerAdd(ln, 2) # error-arrow
         return not err
     
     ## --------------------------------
