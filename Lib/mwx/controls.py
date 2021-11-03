@@ -1210,9 +1210,12 @@ class Gauge(wx.Panel):
 
 if __name__ == '__main__':
     
-    class TestPanel(ControlPanel):
+    class TestPanel(ControlPanel, mwx.CtrlInterface):
         def __init__(self, *args, **kwargs):
             ControlPanel.__init__(self, *args, **kwargs)
+            mwx.CtrlInterface.__init__(self)
+            
+            self.handler.debug = 6
             
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0, 1, 1e-3))
