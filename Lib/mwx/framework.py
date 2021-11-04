@@ -38,7 +38,8 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint, pformat
 from six.moves import builtins
 ## from six import PY3
-import pdb
+from pdb import Pdb
+import linecache
 try:
     from importlib import reload
 except ImportError:
@@ -147,10 +148,10 @@ def Dir(obj):
         return keys
 
 
-def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
-    """Put a list of objects having expression `rexpr in `root
+def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
+    """Put a list of objects having expression `rexpr in `obj
     """
-    name = alias or typename(root)
+    name = alias or typename(obj)
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
                   .replace('\\A','[A-Z0-9]')) #\A: 
     
@@ -171,14 +172,14 @@ def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)
         
-        print("matching to {!r} in {} {} :{}".format(rexpr, name, type(root), typename(pred)))
+        print("matching to {!r} in {} {} :{}".format(rexpr, name, type(obj), typename(pred)))
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
-            keys = sorted(filter(p.search, Dir(root)), key=lambda s:s.upper())
+            keys = sorted(filter(p.search, Dir(obj)), key=lambda s:s.upper())
             n = 0
             for key in keys:
                 try:
-                    value = getattr(root, key)
+                    value = getattr(obj, key)
                     if pred and not pred(value):
                         continue
                     word = repr(value)
@@ -199,38 +200,38 @@ def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
-def typename(root, docp=False, qualp=False):
-    """Typename of the root object
+def typename(obj, docp=False, qualp=False):
+    """Typename of the obj object
     
-    retval-> module:root<doc>       when root is callable and qualp=False
-             module:class.root<doc> when root is callable and qualp=True
-             module:class<doc>      when root is a class or an instance of a class
-             repr<root>             otherwise
+    retval-> module:obj<doc>       when obj is callable and qualp=False
+             module:class.obj<doc> when obj is callable and qualp=True
+             module:class<doc>     when obj is a class or an instance of a class
+             repr<obj>             otherwise
     """
-    if hasattr(root, '__name__'): # class, module, method, function, etc.
+    if hasattr(obj, '__name__'): # class, module, method, function, etc.
         if qualp:
-            if hasattr(root, '__qualname__'):
-                name = root.__qualname__
-            elif hasattr(root, 'im_class'): 
-                name = root.im_class.__name__ + '.' + root.__name__
+            if hasattr(obj, '__qualname__'):
+                name = obj.__qualname__
+            elif hasattr(obj, 'im_class'): 
+                name = obj.im_class.__name__ + '.' + obj.__name__
             else:
-                name = root.__name__
+                name = obj.__name__
         else:
-            name = root.__name__
+            name = obj.__name__
         
-        if hasattr(root, '__module__'): # module:name
-            if root.__module__ not in (None, '__main__', 'mwx.framework'):
-                name = root.__module__ + ':' + name
+        if hasattr(obj, '__module__'): # module:name
+            if obj.__module__ not in (None, '__main__', 'mwx.framework'):
+                name = obj.__module__ + ':' + name
         
-    elif hasattr(root, '__module__'): # atom -> module.class
-        name = root.__module__ + '.' + root.__class__.__name__
+    elif hasattr(obj, '__module__'): # atom -> module.class
+        name = obj.__module__ + '.' + obj.__class__.__name__
         
     else:
-        ## return "{!r}<{!r}>".format(root, pydoc.describe(root))
-        return repr(root)
+        ## return "{!r}<{!r}>".format(obj, pydoc.describe(obj))
+        return repr(obj)
     
-    if docp and callable(root) and root.__doc__:
-        name += "<{!r}>".format(root.__doc__.splitlines()[0]) # concat the first doc line
+    if docp and callable(obj) and obj.__doc__:
+        name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
     return name
 
 
@@ -1344,7 +1345,7 @@ class MenuBar(wx.MenuBar, TreeList):
         Recreates menubar if the Parent were attached by SetMenuBar
         """
         if self.Parent:
-            for j in range(self.GetMenuCount()): # remove and del all attached root-menu
+            for j in range(self.GetMenuCount()): # remove and del all top-level menu
                 menu = self.Remove(0)
                 menu.Destroy()
             
@@ -1888,7 +1889,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b0111) # mask for default 3 markers
+        self.SetMarginMask(0, 0b0111) # mask for default markers
         ## self.SetMarginMask(0, -1) # mask for all markers
         self.SetMarginWidth(0, 10)
         
@@ -1906,7 +1907,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#0080f0', "#0080f0") # o blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', "#ffffff") # > white-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', "#ff0000") # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "gray")   # >> pointer
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "blue")   # >> pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
@@ -2421,6 +2422,7 @@ Shell built-in utility:
     @info   @?  short info
     @help   @?? full description
     @dive       clone the shell with new target
+    @debug      debug the callable object using pdb
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
@@ -2533,6 +2535,8 @@ Flaky nutshell:
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
+        self.__root = None
+        self.dbg = None
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2811,6 +2815,10 @@ Flaky nutshell:
                     self.message(tip)
                     self.__text = text
         evt.Skip()
+    
+    ## --------------------------------
+    ## Fold/Unfold feature
+    ## --------------------------------
     
     def OnMarginClick(self, evt):
         lc = self.LineFromPosition(evt.Position)
@@ -3175,7 +3183,7 @@ Flaky nutshell:
                 ed.MarkerAdd(ln, 1) # white-marker
                 self.fragmwords |= set(re.findall(r"\b[a-zA-Z_][\w.]+", input + output))
             else:
-                ed.MarkerAdd(ln, 3) # error-marker
+                ed.MarkerAdd(ln, 2) # error-marker
             ed.ReadOnly = 1
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
@@ -3328,11 +3336,12 @@ Flaky nutshell:
                 self.write(command.replace('\n', os.linesep + sys.ps2))
             wx.TheClipboard.Close()
     
-    def info(self, root=None):
+    def info(self, obj=None):
         """Short information"""
-        if root is None:
-            root = self
-        doc = inspect.getdoc(root) or "No information about {}".format(root)
+        if obj is None:
+            obj = self
+        doc = inspect.getdoc(obj)\
+          or "No information about {}".format(obj)
         try:
             ed = self.parent.Help
             ed.SetValue(doc)
@@ -3340,14 +3349,14 @@ Flaky nutshell:
         except AttributeError:
             print(doc)
     
-    def help(self, root=None):
+    def help(self, obj=None):
         """Full description"""
-        ## if root is None:
+        ## if obj is None:
         ##     self.message("The stream is piped from stdin.")
         ##     wx.CallAfter(pydoc.help)
         ##     return
-        doc = pydoc.plain(pydoc.render_doc(root))\
-                or "No description about {}".format(root)
+        doc = pydoc.plain(pydoc.render_doc(obj))\
+          or "No description about {}".format(obj)
         try:
             ed = self.parent.Help
             ed.SetValue(doc)
@@ -3419,6 +3428,7 @@ Flaky nutshell:
              title="Clone of Nautilus - {!r}".format(target))
         
         self.handler('shell_cloned', frame.shell)
+        frame.shell.__root = self
         return frame.shell
     
     ## --------------------------------
@@ -3426,13 +3436,25 @@ Flaky nutshell:
     ## --------------------------------
     
     def debug(self, target, *args, **kwargs):
+        if not callable(target):
+            raise TypeError("{} is not callable".format(target))
+        if inspect.isbuiltin(target):
+            print("- cannot debug {!r}".format(target))
+            return
         try:
-            wx.CallAfter(wx.EndBusyCursor)
-            dbg = pdb.Pdb()
-            dbg.set_trace(inspect.currentframe())
-            return target(*args, **kwargs)
+            ## self.write("--> target = {!r}\n".format(target))
+            self.parent.PopupWindow(self.parent.Log)
+            self.parent.Log.ClearAll()
+            wx.CallAfter(wx.EndBusyCursor)      # cancel the egg timer
+            wx.CallAfter(self.Execute, 's,n')   # step next into the target
+            return self.breakpoint(target, *args, **kwargs)
         except Exception:
-            dbg.do_quit(None)
+            pass
+    
+    def breakpoint(self, target, *args, **kwargs):
+        self.dbg = Debugger(self.parent.Log)
+        self.dbg.set_trace(inspect.currentframe())
+        return target(*args, **kwargs)
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3611,9 +3633,9 @@ Flaky nutshell:
                     modules = self.modules
                 else:
                     text, sep, hint = get_words_hint(self.cmdlc)
-                    root = self.eval(text or 'self')
-                    ## modules = [k for k,v in inspect.getmembers(root, inspect.ismodule)]
-                    modules = [k for k,v in vars(root).items() if inspect.ismodule(v)]
+                    obj = self.eval(text or 'self')
+                    ## modules = [k for k,v in inspect.getmembers(obj, inspect.ismodule)]
+                    modules = [k for k,v in vars(obj).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -3643,16 +3665,16 @@ Flaky nutshell:
             return
         try:
             text, sep, hint = get_words_hint(self.cmdlc)
-            root = self.eval(text)
+            obj = self.eval(text)
             
-            if isinstance(root, (bool,int,float,type(None))):
+            if isinstance(obj, (bool,int,float,type(None))):
                 self.handler('quit', evt)
                 self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in Dir(root) if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in Dir(obj) if p.match(x)], key=lambda s:s.upper())
             
             j = next((k for k,w in enumerate(words) if P.match(w)),
                 next((k for k,w in enumerate(words) if p.match(w)), -1))
@@ -3678,16 +3700,16 @@ Flaky nutshell:
             return
         try:
             text, sep, hint = get_words_hint(self.cmdlc)
-            root = self.eval(text)
+            obj = self.eval(text)
             
-            if isinstance(root, (bool,int,float,type(None))):
+            if isinstance(obj, (bool,int,float,type(None))):
                 self.handler('quit', evt)
                 self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in Dir(root) if p.search(x)], key=lambda s:s.upper())
+            words = sorted([x for x in Dir(obj) if p.search(x)], key=lambda s:s.upper())
             
             j = next((k for k,w in enumerate(words) if P.match(w)),
                 next((k for k,w in enumerate(words) if p.match(w)), -1))
@@ -3705,6 +3727,84 @@ Flaky nutshell:
             
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
+
+
+class Debugger(Pdb):
+    """Debugger for wxPython
+    
+    set_trace -> reset -> set_step -> sys.settrace
+    +            reset -> forget
+    +   user_line (user_call)
+    +   bp_commands
+    +   interaction -> setup -> execRcLines
+        print_stack_entry
+        cmd:cmdloop --> readline<module>
+    --- cmd:preloop
+            line = cmd:precmd(line)
+            stop = cmd:onecmd(line)
+            stop = cmd:postcmd(stop, line)
+    (Pdb)
+            user_return => interaction
+            user_exception => interaction
+    --- cmd:postloop
+    """
+    prefix1 = "wxdb"
+    prefix2 = "  --> "
+    
+    def __init__(self, logger, *args, **kwargs):
+        Pdb.__init__(self, *args, **kwargs)
+        self.logger = logger
+        self.module = None
+    
+    def print_stack_trace(self):
+        """Print a traceback starting at the top stack frame."""
+        return Pdb.print_stack_trace(self)
+    
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        """Print the stack entry frame_lineno (frame, lineno).
+        (override) Change prompt_prefix
+        """
+        return Pdb.print_stack_entry(self, frame_lineno,
+                                     prompt_prefix or ('\n'+self.prefix2))
+    
+    def set_break(self, filename, lineno, *args, **kwargs):
+        self.logger.MarkerAdd(lineno-1, 1) # add breakpoint
+        return Pdb.set_break(self, filename, lineno, *args, **kwargs)
+    
+    def interaction(self, frame, traceback):
+        print(self.prefix1, file=self.stdout, end='')
+        return Pdb.interaction(self, frame, traceback)
+        
+    def preloop(self):
+        """Hook method executed once when the cmdloop() method is called.
+        (override) output buffer to the logger
+        """
+        module = inspect.getmodule(self.curframe)
+        if module:
+            filename = self.curframe.f_code.co_filename
+            breaklist = self.get_file_breaks(filename)
+            lines = linecache.getlines(filename, self.curframe.f_globals)
+            lcur = self.curframe.f_lineno # current line number
+            lexc = self.tb_lineno.get(self.curframe) # exception
+            if self.module is not module:
+                self.logger.Text = ''.join(lines)
+            self.logger.MarkerDeleteAll(0)
+            self.logger.MarkerAdd(lcur-1, 0) # pointer
+            for lineno in breaklist:
+                self.logger.MarkerAdd(lineno-1, 1) # breakpoint(s)
+            if lexc is not None:
+                self.logger.MarkerAdd(lexc-1, 2) # exception
+            self.logger.goto_char(self.logger.PositionFromLine(lcur-1))
+            wx.CallAfter(self.logger.recenter)
+        else:
+            self.set_quit()
+            print("[EOD] Press enter to quit.")
+        self.module = module
+        Pdb.preloop(self)
+    
+    def postloop(self):
+        """Hook method executed once when the cmdloop() method is about to return."""
+        Pdb.postloop(self)
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
