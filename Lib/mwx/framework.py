@@ -148,10 +148,10 @@ def Dir(obj):
         return keys
 
 
-def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
-    """Put a list of objects having expression `rexpr in `root
+def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
+    """Put a list of objects having expression `rexpr in `obj
     """
-    name = alias or typename(root)
+    name = alias or typename(obj)
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
                   .replace('\\A','[A-Z0-9]')) #\A: 
     
@@ -172,14 +172,14 @@ def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)
         
-        print("matching to {!r} in {} {} :{}".format(rexpr, name, type(root), typename(pred)))
+        print("matching to {!r} in {} {} :{}".format(rexpr, name, type(obj), typename(pred)))
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
-            keys = sorted(filter(p.search, Dir(root)), key=lambda s:s.upper())
+            keys = sorted(filter(p.search, Dir(obj)), key=lambda s:s.upper())
             n = 0
             for key in keys:
                 try:
-                    value = getattr(root, key)
+                    value = getattr(obj, key)
                     if pred and not pred(value):
                         continue
                     word = repr(value)
@@ -200,38 +200,38 @@ def apropos(root, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
-def typename(root, docp=False, qualp=False):
-    """Typename of the root object
+def typename(obj, docp=False, qualp=False):
+    """Typename of the obj object
     
-    retval-> module:root<doc>       when root is callable and qualp=False
-             module:class.root<doc> when root is callable and qualp=True
-             module:class<doc>      when root is a class or an instance of a class
-             repr<root>             otherwise
+    retval-> module:obj<doc>       when obj is callable and qualp=False
+             module:class.obj<doc> when obj is callable and qualp=True
+             module:class<doc>     when obj is a class or an instance of a class
+             repr<obj>             otherwise
     """
-    if hasattr(root, '__name__'): # class, module, method, function, etc.
+    if hasattr(obj, '__name__'): # class, module, method, function, etc.
         if qualp:
-            if hasattr(root, '__qualname__'):
-                name = root.__qualname__
-            elif hasattr(root, 'im_class'): 
-                name = root.im_class.__name__ + '.' + root.__name__
+            if hasattr(obj, '__qualname__'):
+                name = obj.__qualname__
+            elif hasattr(obj, 'im_class'): 
+                name = obj.im_class.__name__ + '.' + obj.__name__
             else:
-                name = root.__name__
+                name = obj.__name__
         else:
-            name = root.__name__
+            name = obj.__name__
         
-        if hasattr(root, '__module__'): # module:name
-            if root.__module__ not in (None, '__main__', 'mwx.framework'):
-                name = root.__module__ + ':' + name
+        if hasattr(obj, '__module__'): # module:name
+            if obj.__module__ not in (None, '__main__', 'mwx.framework'):
+                name = obj.__module__ + ':' + name
         
-    elif hasattr(root, '__module__'): # atom -> module.class
-        name = root.__module__ + '.' + root.__class__.__name__
+    elif hasattr(obj, '__module__'): # atom -> module.class
+        name = obj.__module__ + '.' + obj.__class__.__name__
         
     else:
-        ## return "{!r}<{!r}>".format(root, pydoc.describe(root))
-        return repr(root)
+        ## return "{!r}<{!r}>".format(obj, pydoc.describe(obj))
+        return repr(obj)
     
-    if docp and callable(root) and root.__doc__:
-        name += "<{!r}>".format(root.__doc__.splitlines()[0]) # concat the first doc line
+    if docp and callable(obj) and obj.__doc__:
+        name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
     return name
 
 
@@ -1345,7 +1345,7 @@ class MenuBar(wx.MenuBar, TreeList):
         Recreates menubar if the Parent were attached by SetMenuBar
         """
         if self.Parent:
-            for j in range(self.GetMenuCount()): # remove and del all attached root-menu
+            for j in range(self.GetMenuCount()): # remove and del all top-level menu
                 menu = self.Remove(0)
                 menu.Destroy()
             
@@ -2816,6 +2816,10 @@ Flaky nutshell:
                     self.__text = text
         evt.Skip()
     
+    ## --------------------------------
+    ## Fold/Unfold feature
+    ## --------------------------------
+    
     def OnMarginClick(self, evt):
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
@@ -3332,11 +3336,12 @@ Flaky nutshell:
                 self.write(command.replace('\n', os.linesep + sys.ps2))
             wx.TheClipboard.Close()
     
-    def info(self, root=None):
+    def info(self, obj=None):
         """Short information"""
-        if root is None:
-            root = self
-        doc = inspect.getdoc(root) or "No information about {}".format(root)
+        if obj is None:
+            obj = self
+        doc = inspect.getdoc(obj)\
+          or "No information about {}".format(obj)
         try:
             ed = self.parent.Help
             ed.SetValue(doc)
@@ -3344,14 +3349,14 @@ Flaky nutshell:
         except AttributeError:
             print(doc)
     
-    def help(self, root=None):
+    def help(self, obj=None):
         """Full description"""
-        ## if root is None:
+        ## if obj is None:
         ##     self.message("The stream is piped from stdin.")
         ##     wx.CallAfter(pydoc.help)
         ##     return
-        doc = pydoc.plain(pydoc.render_doc(root))\
-                or "No description about {}".format(root)
+        doc = pydoc.plain(pydoc.render_doc(obj))\
+          or "No description about {}".format(obj)
         try:
             ed = self.parent.Help
             ed.SetValue(doc)
@@ -3628,9 +3633,9 @@ Flaky nutshell:
                     modules = self.modules
                 else:
                     text, sep, hint = get_words_hint(self.cmdlc)
-                    root = self.eval(text or 'self')
-                    ## modules = [k for k,v in inspect.getmembers(root, inspect.ismodule)]
-                    modules = [k for k,v in vars(root).items() if inspect.ismodule(v)]
+                    obj = self.eval(text or 'self')
+                    ## modules = [k for k,v in inspect.getmembers(obj, inspect.ismodule)]
+                    modules = [k for k,v in vars(obj).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -3660,16 +3665,16 @@ Flaky nutshell:
             return
         try:
             text, sep, hint = get_words_hint(self.cmdlc)
-            root = self.eval(text)
+            obj = self.eval(text)
             
-            if isinstance(root, (bool,int,float,type(None))):
+            if isinstance(obj, (bool,int,float,type(None))):
                 self.handler('quit', evt)
                 self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in Dir(root) if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in Dir(obj) if p.match(x)], key=lambda s:s.upper())
             
             j = next((k for k,w in enumerate(words) if P.match(w)),
                 next((k for k,w in enumerate(words) if p.match(w)), -1))
@@ -3695,16 +3700,16 @@ Flaky nutshell:
             return
         try:
             text, sep, hint = get_words_hint(self.cmdlc)
-            root = self.eval(text)
+            obj = self.eval(text)
             
-            if isinstance(root, (bool,int,float,type(None))):
+            if isinstance(obj, (bool,int,float,type(None))):
                 self.handler('quit', evt)
                 self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in Dir(root) if p.search(x)], key=lambda s:s.upper())
+            words = sorted([x for x in Dir(obj) if p.search(x)], key=lambda s:s.upper())
             
             j = next((k for k,w in enumerate(words) if P.match(w)),
                 next((k for k,w in enumerate(words) if p.match(w)), -1))
