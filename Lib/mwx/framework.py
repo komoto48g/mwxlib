@@ -38,7 +38,8 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint, pformat
 from six.moves import builtins
 ## from six import PY3
-import pdb
+from pdb import Pdb
+import linecache
 try:
     from importlib import reload
 except ImportError:
@@ -1888,7 +1889,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b0111) # mask for default 3 markers
+        self.SetMarginMask(0, 0b0111) # mask for default markers
         ## self.SetMarginMask(0, -1) # mask for all markers
         self.SetMarginWidth(0, 10)
         
@@ -1906,7 +1907,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#0080f0', "#0080f0") # o blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', "#ffffff") # > white-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', "#ff0000") # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "gray")   # >> pointer
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "blue")   # >> pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
@@ -2421,6 +2422,7 @@ Shell built-in utility:
     @info   @?  short info
     @help   @?? full description
     @dive       clone the shell with new target
+    @debug      debug the callable object using pdb
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
@@ -2533,6 +2535,8 @@ Flaky nutshell:
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
+        self.__root = None
+        self.dbg = None
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -3175,7 +3179,7 @@ Flaky nutshell:
                 ed.MarkerAdd(ln, 1) # white-marker
                 self.fragmwords |= set(re.findall(r"\b[a-zA-Z_][\w.]+", input + output))
             else:
-                ed.MarkerAdd(ln, 3) # error-marker
+                ed.MarkerAdd(ln, 2) # error-marker
             ed.ReadOnly = 1
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
@@ -3419,6 +3423,7 @@ Flaky nutshell:
              title="Clone of Nautilus - {!r}".format(target))
         
         self.handler('shell_cloned', frame.shell)
+        frame.shell.__root = self
         return frame.shell
     
     ## --------------------------------
@@ -3426,13 +3431,25 @@ Flaky nutshell:
     ## --------------------------------
     
     def debug(self, target, *args, **kwargs):
+        if not callable(target):
+            raise TypeError("{} is not callable".format(target))
+        if inspect.isbuiltin(target):
+            print("- cannot debug {!r}".format(target))
+            return
         try:
-            wx.CallAfter(wx.EndBusyCursor)
-            dbg = pdb.Pdb()
-            dbg.set_trace(inspect.currentframe())
-            return target(*args, **kwargs)
+            ## self.write("--> target = {!r}\n".format(target))
+            self.parent.PopupWindow(self.parent.Log)
+            self.parent.Log.ClearAll()
+            wx.CallAfter(wx.EndBusyCursor)      # cancel the egg timer
+            wx.CallAfter(self.Execute, 's,n')   # step next into the target
+            return self.breakpoint(target, *args, **kwargs)
         except Exception:
-            dbg.do_quit(None)
+            pass
+    
+    def breakpoint(self, target, *args, **kwargs):
+        self.dbg = Debugger(self.parent.Log)
+        self.dbg.set_trace(inspect.currentframe())
+        return target(*args, **kwargs)
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3705,6 +3722,84 @@ Flaky nutshell:
             
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
+
+
+class Debugger(Pdb):
+    """Debugger for wxPython
+    
+    set_trace -> reset -> set_step -> sys.settrace
+    +            reset -> forget
+    +   user_line (user_call)
+    +   bp_commands
+    +   interaction -> setup -> execRcLines
+        print_stack_entry
+        cmd:cmdloop --> readline<module>
+    --- cmd:preloop
+            line = cmd:precmd(line)
+            stop = cmd:onecmd(line)
+            stop = cmd:postcmd(stop, line)
+    (Pdb)
+            user_return => interaction
+            user_exception => interaction
+    --- cmd:postloop
+    """
+    prefix1 = "wxdb"
+    prefix2 = "  --> "
+    
+    def __init__(self, logger, *args, **kwargs):
+        Pdb.__init__(self, *args, **kwargs)
+        self.logger = logger
+        self.module = None
+    
+    def print_stack_trace(self):
+        """Print a traceback starting at the top stack frame."""
+        return Pdb.print_stack_trace(self)
+    
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        """Print the stack entry frame_lineno (frame, lineno).
+        (override) Change prompt_prefix
+        """
+        return Pdb.print_stack_entry(self, frame_lineno,
+                                     prompt_prefix or ('\n'+self.prefix2))
+    
+    def set_break(self, filename, lineno, *args, **kwargs):
+        self.logger.MarkerAdd(lineno-1, 1) # add breakpoint
+        return Pdb.set_break(self, filename, lineno, *args, **kwargs)
+    
+    def interaction(self, frame, traceback):
+        print(self.prefix1, file=self.stdout, end='')
+        return Pdb.interaction(self, frame, traceback)
+        
+    def preloop(self):
+        """Hook method executed once when the cmdloop() method is called.
+        (override) output buffer to the logger
+        """
+        module = inspect.getmodule(self.curframe)
+        if module:
+            filename = self.curframe.f_code.co_filename
+            breaklist = self.get_file_breaks(filename)
+            lines = linecache.getlines(filename, self.curframe.f_globals)
+            lcur = self.curframe.f_lineno # current line number
+            lexc = self.tb_lineno.get(self.curframe) # exception
+            if self.module is not module:
+                self.logger.Text = ''.join(lines)
+            self.logger.MarkerDeleteAll(0)
+            self.logger.MarkerAdd(lcur-1, 0) # pointer
+            for lineno in breaklist:
+                self.logger.MarkerAdd(lineno-1, 1) # breakpoint(s)
+            if lexc is not None:
+                self.logger.MarkerAdd(lexc-1, 2) # exception
+            self.logger.goto_char(self.logger.PositionFromLine(lcur-1))
+            wx.CallAfter(self.logger.recenter)
+        else:
+            self.set_quit()
+            print("[EOD] Press enter to quit.")
+        self.module = module
+        Pdb.preloop(self)
+    
+    def postloop(self):
+        """Hook method executed once when the cmdloop() method is about to return."""
+        Pdb.postloop(self)
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
