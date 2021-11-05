@@ -27,6 +27,7 @@ from wx import aui
 from wx import stc
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
+from wx.py.filling import FillingFrame
 import numpy as np
 import fnmatch
 import pkgutil
@@ -3444,22 +3445,18 @@ Flaky nutshell:
         if not callable(target):
             raise TypeError("{} is not callable".format(target))
         if inspect.isbuiltin(target):
-            print("- cannot debug {!r}".format(target))
+            print("- cannot break {!r}".format(target))
             return
         try:
-            ## self.write("--> target = {!r}\n".format(target))
             self.parent.PopupWindow(self.parent.Log)
             self.parent.Log.ClearAll()
-            wx.CallAfter(wx.EndBusyCursor)      # cancel the egg timer
-            wx.CallAfter(self.Execute, 's,n')   # step next into the target
-            return self.breakpoint(target, *args, **kwargs)
+            wx.CallAfter(wx.EndBusyCursor)  # cancel the egg timer
+            wx.CallAfter(self.Execute, 's') # step next into the target
+            self.dbg = Debugger(self.parent.Log)
+            self.dbg.set_trace(inspect.currentframe())
+            return target(*args, **kwargs)
         except Exception:
             pass
-    
-    def breakpoint(self, target, *args, **kwargs):
-        self.dbg = Debugger(self.parent.Log)
-        self.dbg.set_trace(inspect.currentframe())
-        return target(*args, **kwargs)
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3738,7 +3735,7 @@ class Debugger(Pdb):
     """Debugger for wxPython
     
     + set_trace -> reset -> set_step -> sys.settrace
-    +              reset -> forget
+                   reset -> forget
     > user_line (user_call)
     > bp_commands
     > interaction -> setup -> execRcLines
@@ -3758,8 +3755,15 @@ class Debugger(Pdb):
     
     def __init__(self, logger, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
-        self.logger = logger
+        
         self.module = None
+        self.logger = logger
+        self.namespace = {}
+        self.viewer = FillingFrame(title="Debugger in the Shell",
+                                   rootObject=self.namespace,
+                                   rootLabel="namespace")
+        self.viewer.filling.text.WrapMode = 0
+        self.viewer.Show()
     
     def print_stack_trace(self):
         """Print a traceback starting at the top stack frame."""
@@ -3773,43 +3777,64 @@ class Debugger(Pdb):
                                      prompt_prefix or ('\n'+self.prefix2))
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.logger.MarkerAdd(lineno-1, 1) # add breakpoint
+        self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def interaction(self, frame, traceback):
         print(self.prefix1, file=self.stdout, end='')
         return Pdb.interaction(self, frame, traceback)
-        
+    
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called.
-        (override) output buffer to the logger
+        (override) output buffer to the logger (cf. pdb._print_lines)
         """
-        module = inspect.getmodule(self.curframe)
+        frame = self.curframe
+        module = inspect.getmodule(frame)
         if module:
-            filename = self.curframe.f_code.co_filename
+            filename = frame.f_code.co_filename
             breaklist = self.get_file_breaks(filename)
-            lines = linecache.getlines(filename, self.curframe.f_globals)
-            lcur = self.curframe.f_lineno # current line number
-            lexc = self.tb_lineno.get(self.curframe) # exception
+            lines = linecache.getlines(filename, frame.f_globals)
+            lc = frame.f_lineno # current line number
+            lx = self.tb_lineno.get(frame) # exception
+            
+            ## Update logger (text and marker)
             if self.module is not module:
                 self.logger.Text = ''.join(lines)
+            
             self.logger.MarkerDeleteAll(0)
-            self.logger.MarkerAdd(lcur-1, 0) # pointer
-            for lineno in breaklist:
-                self.logger.MarkerAdd(lineno-1, 1) # breakpoint(s)
-            if lexc is not None:
-                self.logger.MarkerAdd(lexc-1, 2) # exception
-            self.logger.goto_char(self.logger.PositionFromLine(lcur-1))
+            self.logger.MarkerAdd(lc-1, 0)     # (->) pointer
+            for ln in breaklist:
+                self.logger.MarkerAdd(ln-1, 1) # (B ) breakpoints
+            if lx is not None:
+                self.logger.MarkerAdd(lx-1, 2) # (>>) exception
+            
+            self.logger.goto_char(self.logger.PositionFromLine(lc-1))
             wx.CallAfter(self.logger.recenter)
+            
+            ## Update view of the namespace
+            try:
+                self.namespace.clear()
+                self.namespace.update(
+                    globals=frame.f_globals,
+                    locals=frame.f_locals,
+                )
+                tree = self.viewer.filling.tree
+                tree.display()
+                tree.Expand(tree.Selection)
+            except RuntimeError:
+                pass
         else:
             self.set_quit()
             print("[EOD] Press enter to quit.")
         self.module = module
-        Pdb.preloop(self)
+        return Pdb.preloop(self)
     
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""
-        Pdb.postloop(self)
+        lineno = self.curframe.f_lineno
+        self.logger.MarkerDeleteAll(3)
+        self.logger.MarkerAdd(lineno-1, 3) # (=>) last pointer
+        return Pdb.postloop(self)
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
@@ -3876,7 +3901,9 @@ def filling(target=None, **kwargs):
     """
     from wx.py.filling import FillingFrame
     frame = FillingFrame(rootObject=target,
-                         rootLabel=typename(target), **kwargs)
+                         rootLabel=typename(target),
+                         static=False, # update each time pushed
+                         **kwargs)
     frame.filling.text.WrapMode = 0
     frame.Show()
     return frame
