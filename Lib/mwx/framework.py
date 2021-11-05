@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.2"
+__version__ = "0.47.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -228,7 +228,8 @@ def typename(obj, docp=False, qualp=False):
         
     else:
         ## return "{!r}<{!r}>".format(obj, pydoc.describe(obj))
-        return repr(obj)
+        ## return repr(obj)
+        return str(type(obj))
     
     if docp and callable(obj) and obj.__doc__:
         name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
@@ -384,8 +385,12 @@ class SSM(OrderedDict):
         return "<{} object at 0x{:X}>".format(typename(self), id(self))
     
     def __str__(self):
+        def name(a):
+            if callable(a):
+                return typename(a, docp=1, qualp=0)
+            return repr(a) # index
         return '\n'.join("{:>32} : {}".format(
-            k, ', '.join(typename(a, docp=1, qualp=0) for a in v)) for k,v in self.items())
+            k, ', '.join(name(a) for a in v)) for k,v in self.items())
 
 
 class FSM(dict):
@@ -2431,7 +2436,7 @@ Shell built-in utility:
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
-    @where      filename and fileline or module
+    @where      (filename, lineno) or the module
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
@@ -3732,21 +3737,21 @@ Flaky nutshell:
 class Debugger(Pdb):
     """Debugger for wxPython
     
-    set_trace -> reset -> set_step -> sys.settrace
-    +            reset -> forget
-    +   user_line (user_call)
-    +   bp_commands
-    +   interaction -> setup -> execRcLines
-        print_stack_entry
-        cmd:cmdloop --> readline<module>
-    --- cmd:preloop
+    + set_trace -> reset -> set_step -> sys.settrace
+    +              reset -> forget
+    > user_line (user_call)
+    > bp_commands
+    > interaction -> setup -> execRcLines
+      - print_stack_entry
+      - cmd:cmdloop --> readline<module>
+      - cmd:preloop
             line = cmd:precmd(line)
             stop = cmd:onecmd(line)
             stop = cmd:postcmd(stop, line)
     (Pdb)
             user_return => interaction
             user_exception => interaction
-    --- cmd:postloop
+      - cmd:postloop
     """
     prefix1 = "wxdb"
     prefix2 = "  --> "
@@ -3870,7 +3875,8 @@ def filling(target=None, **kwargs):
     """Wx.py tool for watching ingredients of the target
     """
     from wx.py.filling import FillingFrame
-    frame = FillingFrame(rootObject=target, rootLabel=typename(target), **kwargs)
+    frame = FillingFrame(rootObject=target,
+                         rootLabel=typename(target), **kwargs)
     frame.filling.text.WrapMode = 0
     frame.Show()
     return frame
