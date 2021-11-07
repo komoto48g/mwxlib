@@ -151,7 +151,8 @@ See [key bindings](key-bindings.md) for more information.
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
-    @fileno     (file, line-number)
+    @where      (file, line-number) or the module
+    @debug      pdb in the shell
 
 ![utils-mod](doc/image/utils-mod.gif)
 

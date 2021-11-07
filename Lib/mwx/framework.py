@@ -2431,6 +2431,7 @@ Shell built-in utility:
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
     @where      (filename, lineno) or the module
+    @debug      pdb in the shell
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
