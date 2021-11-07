@@ -27,6 +27,7 @@ from wx import aui
 from wx import stc
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
+from wx.py.filling import FillingFrame
 import numpy as np
 import fnmatch
 import pkgutil
@@ -163,7 +164,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     
     if pred:
         if not callable(pred):
-            raise TypeError("{} is not callable".format(typename(pred)))
+            raise TypeError("{!r} is not callable".format(pred))
         try:
             pred(None)
         except (TypeError, ValueError):
@@ -172,7 +173,8 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)
         
-        print("matching to {!r} in {} {} :{}".format(rexpr, name, type(obj), typename(pred)))
+        print("matching to {!r} in {} {} :{}".format(
+              rexpr, name, type(obj), pred and typename(pred)))
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
             keys = sorted(filter(p.search, Dir(obj)), key=lambda s:s.upper())
@@ -183,7 +185,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
                     if pred and not pred(value):
                         continue
                     word = repr(value)
-                    word = ' '.join(s.strip() for s in word.splitlines()) # format in line
+                    word = ' '.join(s.strip() for s in word.splitlines())
                     n += 1
                 except (TypeError, ValueError):
                     continue
@@ -931,14 +933,6 @@ def postcall(f):
     def _f(*args, **kwargs):
         wx.CallAfter(f, *args, **kwargs)
     return _f
-
-
-def connect(binder, event, f=None, **kwargs):
-    """An event binder equiv. @partial(binder, event)(f) -> f"""
-    if not f:
-        return lambda f: connect(binder, event, f, **kwargs)
-    binder(event, funcall(f, **kwargs))
-    return f
 
 
 def skip(v):
@@ -1912,7 +1906,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#0080f0', "#0080f0") # o blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', "#ffffff") # > white-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', "#ff0000") # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "blue")   # >> pointer
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "gray")   # >> pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
@@ -3444,22 +3438,25 @@ Flaky nutshell:
         if not callable(target):
             raise TypeError("{} is not callable".format(target))
         if inspect.isbuiltin(target):
-            print("- cannot debug {!r}".format(target))
+            print("- cannot break {!r}".format(target))
             return
         try:
-            ## self.write("--> target = {!r}\n".format(target))
+            self.write("#>> starting debugger (Enter n(ext) to continue)\n", -1)
             self.parent.PopupWindow(self.parent.Log)
             self.parent.Log.ClearAll()
-            wx.CallAfter(wx.EndBusyCursor)      # cancel the egg timer
-            wx.CallAfter(self.Execute, 's,n')   # step next into the target
-            return self.breakpoint(target, *args, **kwargs)
-        except Exception:
+            self.redirectStdout()
+            self.redirectStdin()
+            wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
+            wx.CallAfter(self.Execute, 'step') # step into the target
+            self.dbg = Debugger(logger=self.parent.Log,
+                                stdin=self.interp.stdin,
+                                stdout=self.interp.stdout)
+            self.dbg.set_trace(inspect.currentframe())
+            target(*args, **kwargs)
+        except Exception: # bdb.BdbQuit
             pass
-    
-    def breakpoint(self, target, *args, **kwargs):
-        self.dbg = Debugger(self.parent.Log)
-        self.dbg.set_trace(inspect.currentframe())
-        return target(*args, **kwargs)
+        finally:
+            self.dbg.close()
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3738,7 +3735,7 @@ class Debugger(Pdb):
     """Debugger for wxPython
     
     + set_trace -> reset -> set_step -> sys.settrace
-    +              reset -> forget
+                   reset -> forget
     > user_line (user_call)
     > bp_commands
     > interaction -> setup -> execRcLines
@@ -3749,66 +3746,127 @@ class Debugger(Pdb):
             stop = cmd:onecmd(line)
             stop = cmd:postcmd(stop, line)
     (Pdb)
+            user_call => interaction
             user_return => interaction
             user_exception => interaction
       - cmd:postloop
+    [EOF]
     """
-    prefix1 = "wxdb"
-    prefix2 = "  --> "
+    indent = "  "
+    prefix1 = indent + "wxdb"
+    prefix2 = indent + "--> "
+    verbose = False
     
-    def __init__(self, logger, *args, **kwargs):
+    def __init__(self, logger, verbose=False, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
-        self.logger = logger
+        
+        self.prompt = self.indent + '(Pdb) '
+        self.verbose = verbose
         self.module = None
+        self.logger = logger
+        self.namespace = {}
+        self.viewer = filling(target=self.namespace, label='locals')
     
-    def print_stack_trace(self):
-        """Print a traceback starting at the top stack frame."""
-        return Pdb.print_stack_trace(self)
+    def message(self, msg, **kwargs):
+        print(self.indent + msg, file=self.stdout, **kwargs)
+    
+    def close(self):
+        try:
+            self.viewer.Close()
+            self.set_quit()
+        except RuntimeError:
+            pass
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
         (override) Change prompt_prefix
         """
-        return Pdb.print_stack_entry(self, frame_lineno,
-                                     prompt_prefix or ('\n'+self.prefix2))
+        if not self.verbose:
+            return
+        Pdb.print_stack_entry(self, frame_lineno,
+                              prompt_prefix or ('\n' + self.prefix2))
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.logger.MarkerAdd(lineno-1, 1) # add breakpoint
+        self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
+    def set_quit(self):
+        if self.verbose:
+            print("stacked frame")
+            for frame_lineno in self.stack:
+                self.message(self.format_stack_entry(frame_lineno))
+        return Pdb.set_quit(self)
+    
+    ## Override Bdb methods
+    
+    def user_call(self, frame, argument_list):
+        """--Call--"""
+        print("$(argument_list) = {!r}".format((argument_list)))
+        Pdb.user_call(self, frame, argument_list)
+    
+    def user_line(self, frame):
+        Pdb.user_line(self, frame)
+    
+    def user_return(self, frame, return_value):
+        """--Return--"""
+        print("$(return_value) = {!r}".format((return_value)))
+        Pdb.user_return(self, frame, return_value)
+    
+    def user_exception(self, frame, exc_info):
+        """--Exception--"""
+        print("$(exc_info) = {!r}".format((exc_info)))
+        Pdb.user_exception(self, frame, exc_info)
+    
     def interaction(self, frame, traceback):
-        print(self.prefix1, file=self.stdout, end='')
-        return Pdb.interaction(self, frame, traceback)
-        
+        if self.verbose:
+            print(self.prefix1, end='', file=self.stdout)
+        Pdb.interaction(self, frame, traceback)
+    
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called.
-        (override) output buffer to the logger
+        (override) output buffer to the logger (cf. pdb._print_lines)
         """
-        module = inspect.getmodule(self.curframe)
+        frame = self.curframe
+        module = inspect.getmodule(frame)
         if module:
-            filename = self.curframe.f_code.co_filename
+            filename = frame.f_code.co_filename
             breaklist = self.get_file_breaks(filename)
-            lines = linecache.getlines(filename, self.curframe.f_globals)
-            lcur = self.curframe.f_lineno # current line number
-            lexc = self.tb_lineno.get(self.curframe) # exception
+            lines = linecache.getlines(filename, frame.f_globals)
+            lc = frame.f_lineno # current line number
+            lx = self.tb_lineno.get(frame) # exception
+            
+            ## Update logger (text and marker)
             if self.module is not module:
                 self.logger.Text = ''.join(lines)
-            self.logger.MarkerDeleteAll(0)
-            self.logger.MarkerAdd(lcur-1, 0) # pointer
-            for lineno in breaklist:
-                self.logger.MarkerAdd(lineno-1, 1) # breakpoint(s)
-            if lexc is not None:
-                self.logger.MarkerAdd(lexc-1, 2) # exception
-            self.logger.goto_char(self.logger.PositionFromLine(lcur-1))
+            
+            for ln in breaklist:
+                self.logger.MarkerAdd(ln-1, 1) # (B ) breakpoints
+            if lx is not None:
+                self.logger.MarkerAdd(lx-1, 2) # (>>) exception
+            if 1:
+                self.logger.MarkerDeleteAll(3)
+                self.logger.MarkerAdd(lc-1, 3) # (->) pointer
+            
+            self.logger.goto_char(self.logger.PositionFromLine(lc-1))
             wx.CallAfter(self.logger.recenter)
-        else:
-            self.set_quit()
-            print("[EOD] Press enter to quit.")
+            
+            ## Update view of the namespace
+            try:
+                self.namespace.clear()
+                self.namespace.update(frame.f_locals)
+                tree = self.viewer.filling.tree
+                tree.display()
+                ## tree.Expand(tree.root)
+            except RuntimeError:
+                pass
         self.module = module
         Pdb.preloop(self)
     
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""
+        lineno = self.curframe.f_lineno
+        self.logger.MarkerDeleteAll(0)
+        self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
 
 
@@ -3871,12 +3929,14 @@ def watch(target=None, **kwargs):
     return it
 
 
-def filling(target=None, **kwargs):
+def filling(target=None, label=None, **kwargs):
     """Wx.py tool for watching ingredients of the target
     """
     from wx.py.filling import FillingFrame
     frame = FillingFrame(rootObject=target,
-                         rootLabel=typename(target), **kwargs)
+                         rootLabel=label or typename(target),
+                         static=False, # update each time pushed
+                         **kwargs)
     frame.filling.text.WrapMode = 0
     frame.Show()
     return frame
