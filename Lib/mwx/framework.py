@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.3"
+__version__ = "0.47.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1552,12 +1552,12 @@ Global bindings:
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        self.shell = Nautilus(self, target, **kwargs)
-        
         self.scratch = Editor(self)
         self.Help = Editor(self)
         self.Log = Editor(self)
         self.History = Editor(self)
+        
+        self.shell = Nautilus(self, target, **kwargs)
         
         ## self.Log.ViewEOL = True
         self.Log.ViewWhiteSpace = True
@@ -2574,6 +2574,8 @@ Flaky nutshell:
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
         self.SetDropTarget(None)
@@ -2797,10 +2799,17 @@ Flaky nutshell:
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
+        self.dbg = Debugger(logger=self.parent.Log,
+                            stdin=self.interp.stdin,
+                            stdout=self.interp.stdout)
+        
         self.__text = ''
         self.__start = 0
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
+    
+    def OnDestroy(self, evt):
+        evt.Skip()
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -3449,15 +3458,15 @@ Flaky nutshell:
             self.redirectStdin()
             wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
             wx.CallAfter(self.Execute, 'step') # step into the target
-            self.dbg = Debugger(logger=self.parent.Log,
-                                stdin=self.interp.stdin,
-                                stdout=self.interp.stdout)
-            self.dbg.set_trace(inspect.currentframe())
+            self.handler("debug_begin", target, *args, **kwargs)
+            self.dbg.open(inspect.currentframe())
             target(*args, **kwargs)
         except Exception: # bdb.BdbQuit
             pass
         finally:
             self.dbg.close()
+            self.prompt()
+            self.handler("debug_end", target, *args, **kwargs)
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3733,7 +3742,7 @@ Flaky nutshell:
 
 
 class Debugger(Pdb):
-    """Debugger for wxPython
+    """Graphical debugger of the phoenix, by the phoenix, for the phoenix
     
     + set_trace -> reset -> set_step -> sys.settrace
                    reset -> forget
@@ -3758,25 +3767,29 @@ class Debugger(Pdb):
     prefix2 = indent + "--> "
     verbose = False
     
-    def __init__(self, logger, verbose=False, *args, **kwargs):
+    def __init__(self, logger, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
         self.prompt = self.indent + '(Pdb) '
-        self.verbose = verbose
-        self.module = None
         self.logger = logger
+        self.module = None
         self.namespace = {}
-        self.viewer = filling(target=self.namespace, label='locals')
+        self.viewer = None
     
     def message(self, msg, **kwargs):
+        """(override) Add indent to msg"""
         print(self.indent + msg, file=self.stdout, **kwargs)
     
+    def open(self, frame=None, verbose=False):
+        self.verbose = verbose
+        self.viewer = filling(target=self.namespace, label='locals')
+        Pdb.set_trace(self, frame)
+    
     def close(self):
-        try:
+        self.set_quit()
+        if self.viewer:
             self.viewer.Close()
-            self.set_quit()
-        except RuntimeError:
-            pass
+        self.viewer = None
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
@@ -3792,10 +3805,10 @@ class Debugger(Pdb):
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
-        if self.verbose:
-            print("stacked frame")
-            for frame_lineno in self.stack:
-                self.message(self.format_stack_entry(frame_lineno))
+        ## if self.verbose:
+        ##     print("stacked frame")
+        ##     for frame_lineno in self.stack:
+        ##         self.message(self.format_stack_entry(frame_lineno))
         return Pdb.set_quit(self)
     
     ## Override Bdb methods
@@ -3817,6 +3830,10 @@ class Debugger(Pdb):
         """--Exception--"""
         print("$(exc_info) = {!r}".format((exc_info)))
         Pdb.user_exception(self, frame, exc_info)
+    
+    def bp_commands(self, frame):
+        """--Break--"""
+        return Pdb.bp_commands(self, frame)
     
     def interaction(self, frame, traceback):
         if self.verbose:
