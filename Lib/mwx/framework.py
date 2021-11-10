@@ -2536,7 +2536,7 @@ Flaky nutshell:
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
         self.__root = None
-        self.dbg = None
+        self.debugger = None
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2799,9 +2799,9 @@ Flaky nutshell:
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
-        self.dbg = Debugger(logger=self.parent.Log,
-                            stdin=self.interp.stdin,
-                            stdout=self.interp.stdout)
+        self.debugger = Debugger(logger=self.parent.Log,
+                                 stdin=self.interp.stdin,
+                                 stdout=self.interp.stdout)
         
         self.__text = ''
         self.__start = 0
@@ -2948,9 +2948,9 @@ Flaky nutshell:
             evt.Skip()
             return
         
-        ## cast magic for `@?
+        ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
         tokens = split_tokens(text)
-        if any(x in tokens for x in '`@?$'): # python では使用されないトークン
+        if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
                 self.Execute(cmd) # for multi-line commands
@@ -3001,8 +3001,8 @@ Flaky nutshell:
         
         Note: This is called before run, execute, and original magic.
         """
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # ` OPS; SEPARATOR_CHARS; nospace, nocomma
-        sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # @ OPS; SEPARATOR_CHARS;
+        sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # [`] SEPARATOR_CHARS; nospace, nocomma
+        sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # [@] SEPARATOR_CHARS;
         
         for j,c in enumerate(tokens):
             l, r = tokens[:j], tokens[j+1:]
@@ -3456,15 +3456,15 @@ Flaky nutshell:
             self.parent.Log.ClearAll()
             self.redirectStdout()
             self.redirectStdin()
-            wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
+            wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
             wx.CallAfter(self.Execute, 'step') # step into the target
             self.handler("debug_begin", target, *args, **kwargs)
-            self.dbg.open(inspect.currentframe())
+            self.debugger.open(inspect.currentframe())
             target(*args, **kwargs)
         except Exception: # bdb.BdbQuit
             pass
         finally:
-            self.dbg.close()
+            self.debugger.close()
             self.prompt()
             self.handler("debug_end", target, *args, **kwargs)
     
@@ -3493,9 +3493,13 @@ Flaky nutshell:
         if self.CallTipActive():
             self.CallTipCancel()
         try:
-            tokens = split_tokens(text)
-            text = self.magic_interpret(tokens)
-            self.CallTipShow(self.cur, pformat(self.eval(text)))
+            try:
+                cmd = self.magic_interpret(split_tokens(text))
+                obj = self.eval(cmd)
+                text = cmd
+            except Exception as e:
+                obj = self.eval(text)
+            self.CallTipShow(self.cur, pformat(obj))
             self.message(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))
@@ -3762,23 +3766,27 @@ class Debugger(Pdb):
       - cmd:postloop
     [EOF]
     """
-    indent = "  "
-    prefix1 = indent + "wxdb"
-    prefix2 = indent + "--> "
+    prefix = "  "
+    prefix1 = "> "
+    prefix2 = "--> "
     verbose = False
     
     def __init__(self, logger, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.prompt = self.indent + '(Pdb) '
+        self.prompt = self.prefix + '(Pdb) '
         self.logger = logger
         self.module = None
         self.namespace = {}
         self.viewer = None
     
-    def message(self, msg, **kwargs):
+    def __del__(self):
+        self.close()
+    
+    def message(self, msg, indent=-1, **kwargs):
         """(override) Add indent to msg"""
-        print(self.indent + msg, file=self.stdout, **kwargs)
+        prefix = self.prefix if indent < 0 else ' ' * indent
+        print(prefix + str(msg), file=self.stdout, **kwargs)
     
     def open(self, frame=None, verbose=False):
         self.verbose = verbose
@@ -3790,6 +3798,7 @@ class Debugger(Pdb):
         if self.viewer:
             self.viewer.Close()
         self.viewer = None
+        self.module = None
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
@@ -3797,8 +3806,15 @@ class Debugger(Pdb):
         """
         if not self.verbose:
             return
-        Pdb.print_stack_entry(self, frame_lineno,
-                              prompt_prefix or ('\n' + self.prefix2))
+        if prompt_prefix is None:
+            prompt_prefix = '\n' + self.prefix + self.prefix2
+        ## Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
+        prefix = self.prefix
+        frame, lineno = frame_lineno
+        if frame is self.curframe:
+            prefix += self.prefix1
+        self.message(prefix +
+            self.format_stack_entry(frame_lineno, prompt_prefix), indent=0)
     
     def set_break(self, filename, lineno, *args, **kwargs):
         self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
@@ -3815,7 +3831,8 @@ class Debugger(Pdb):
     
     def user_call(self, frame, argument_list):
         """--Call--"""
-        print("$(argument_list) = {!r}".format((argument_list)))
+        print(frame)
+        self.message("$(argument_list) = {!r}".format((argument_list)))
         Pdb.user_call(self, frame, argument_list)
     
     def user_line(self, frame):
@@ -3823,12 +3840,12 @@ class Debugger(Pdb):
     
     def user_return(self, frame, return_value):
         """--Return--"""
-        print("$(return_value) = {!r}".format((return_value)))
+        self.message("$(return_value) = {!r}".format((return_value)))
         Pdb.user_return(self, frame, return_value)
     
     def user_exception(self, frame, exc_info):
         """--Exception--"""
-        print("$(exc_info) = {!r}".format((exc_info)))
+        self.message("$(exc_info) = {!r}".format((exc_info)))
         Pdb.user_exception(self, frame, exc_info)
     
     def bp_commands(self, frame):
@@ -3836,8 +3853,6 @@ class Debugger(Pdb):
         return Pdb.bp_commands(self, frame)
     
     def interaction(self, frame, traceback):
-        if self.verbose:
-            print(self.prefix1, end='', file=self.stdout)
         Pdb.interaction(self, frame, traceback)
     
     def preloop(self):
