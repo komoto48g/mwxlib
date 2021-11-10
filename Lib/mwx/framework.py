@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.5"
+__version__ = "0.47.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3926,6 +3926,9 @@ class Debugger(Pdb):
     @staticmethod
     def dump(wxobj):
         """Dump all event handlers bound to wxobj"""
+        if not hasattr(wxobj, '__deb__handler__'):
+            print("  No handler information to dump.")
+            return
         for event, actions in wxobj.__deb__handler__.items():
             name = ew._eventIdMap[event]
             print("  {}: {!r}".format(event, name))
