@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.4"
+__version__ = "0.47.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3930,7 +3930,7 @@ def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=w
     event.Bind(self, id, id2, handler)
     ## record all handlers: single state machine
     if not hasattr(self, '__deb__handler__'):
-        self.__deb__handler__ = SSM()
+        self.__deb__handler__ = {}
     if event.typeId in self.__deb__handler__:
         self.__deb__handler__[event.typeId] += [handler]
     else:
