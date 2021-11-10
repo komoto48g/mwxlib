@@ -1257,7 +1257,7 @@ class Frame(mwx.Frame):
             plug = self.get_plug(name)
             if plug.thread and plug.thread.is_active:
                 plug.thread._Thread__keepGoing = 0 # is_active=False 直接切り替える
-                plug.thread.Stop() # @postcall なのですぐに止まらない
+                plug.thread.Stop() # すぐに止まるわけではない
     
     ## --------------------------------
     ## load/save index file

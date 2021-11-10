@@ -3463,10 +3463,11 @@ Flaky nutshell:
             return
         try:
             self.write("#>> starting debugger (Enter n(ext) to continue)\n", -1)
+            self.parent.Show()
+            self.parent.Log.clear()
             self.parent.PopupWindow(self.parent.Log)
-            self.parent.Log.ClearAll()
-            self.redirectStdout()
             self.redirectStdin()
+            self.redirectStdout()
             wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
             wx.CallAfter(self.Execute, 'step') # step into the target
             self.handler("debug_begin", target, *args, **kwargs)
