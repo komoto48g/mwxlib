@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.6"
+__version__ = "0.47.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3102,6 +3102,7 @@ Flaky nutshell:
         builtins.help = self.help # utilities functions to builtins (not locals)
         builtins.info = self.info # if locals could have the same name functions.
         builtins.dive = self.clone
+        builtins.dump = self.dump
         builtins.debug = self.debug
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
@@ -3445,9 +3446,25 @@ Flaky nutshell:
     ## Debug functions of the shell
     ## --------------------------------
     
+    def dump(self, wxobj, verbose=False):
+        if hasattr(wxobj, '__deb__handler__'):
+            db = wxobj.__deb__handler__
+            if verbose:
+                for event, actions in db.items():
+                    name = ew._eventIdMap[event]
+                    print("  {}: {!r}".format(event, name))
+                    for act in actions:
+                        file = inspect.getsourcefile(act)
+                        lines = inspect.getsourcelines(act)
+                        print("{}{}:{}:{}".format(' '*9, file, lines[1], typename(act)))
+            return db
+        print("- {} has no handler information to dump.".format(wxobj))
+    
     def hook(self, wxobj, binder, target=None):
         if not target:
             return partial(self.hook, wxobj, binder)
+        if isinstance(binder, int):
+            binder = next(item for item in ew._eventBinders if binder in item.evtType)
         @wraps(target)
         def _hook(*args, **kwargs):
             self.debug(target, *args, **kwargs)
@@ -3456,9 +3473,6 @@ Flaky nutshell:
         return target
     
     def debug(self, target, *args, **kwargs):
-        if isinstance(target, wx.Window):
-            self.debugger.dump(target)
-            return
         if not callable(target):
             raise TypeError("{} is not callable".format(target))
         if inspect.isbuiltin(target):
@@ -3926,17 +3940,8 @@ class Debugger(Pdb):
     @staticmethod
     def dump(wxobj):
         """Dump all event handlers bound to wxobj"""
-        if not hasattr(wxobj, '__deb__handler__'):
-            print("  No handler information to dump.")
-            return
-        for event, actions in wxobj.__deb__handler__.items():
-            name = ew._eventIdMap[event]
-            print("  {}: {!r}".format(event, name))
-            for act in actions:
-                file = inspect.getsourcefile(act)
-                lines = inspect.getsourcelines(act)
-                print("{}{}:{}:{}".format(
-                      ' '*9, file, lines[1], lines[0][0].rstrip()))
+        if hasattr(wxobj, '__deb__handler__'):
+            return wxobj.__deb__handler__
 
 
 def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
