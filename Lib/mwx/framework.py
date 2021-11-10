@@ -25,6 +25,7 @@ import re
 import wx
 from wx import aui
 from wx import stc
+from wx import core
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 from wx.py.filling import FillingFrame
@@ -3444,6 +3445,16 @@ Flaky nutshell:
     ## Debug functions of the shell
     ## --------------------------------
     
+    def hook(self, wxobj, binder, target=None):
+        if not target:
+            return partial(self.hook, wxobj, binder)
+        @wraps(target)
+        def _hook(*args, **kwargs):
+            self.debug(target, *args, **kwargs)
+            wxobj.Unbind(binder, handler=_hook) # release hook once called
+        wxobj.Bind(binder, _hook) # add hook for the event-binder
+        return target
+    
     def debug(self, target, *args, **kwargs):
         if not callable(target):
             raise TypeError("{} is not callable".format(target))
@@ -3766,7 +3777,7 @@ class Debugger(Pdb):
       - cmd:postloop
     [EOF]
     """
-    prefix = "  "
+    indent = "  "
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
@@ -3774,7 +3785,7 @@ class Debugger(Pdb):
     def __init__(self, logger, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.prompt = self.prefix + '(Pdb) '
+        self.prompt = self.indent + '(Pdb) '
         self.logger = logger
         self.module = None
         self.namespace = {}
@@ -3785,7 +3796,7 @@ class Debugger(Pdb):
     
     def message(self, msg, indent=-1, **kwargs):
         """(override) Add indent to msg"""
-        prefix = self.prefix if indent < 0 else ' ' * indent
+        prefix = self.indent if indent < 0 else ' ' * indent
         print(prefix + str(msg), file=self.stdout, **kwargs)
     
     def open(self, frame=None, verbose=False):
@@ -3807,12 +3818,13 @@ class Debugger(Pdb):
         if not self.verbose:
             return
         if prompt_prefix is None:
-            prompt_prefix = '\n' + self.prefix + self.prefix2
+            prompt_prefix = '\n' + self.indent + self.prefix2
         ## Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
-        prefix = self.prefix
         frame, lineno = frame_lineno
         if frame is self.curframe:
-            prefix += self.prefix1
+            prefix = self.indent + self.prefix1
+        else:
+            prefix = self.indent
         self.message(prefix +
             self.format_stack_entry(frame_lineno, prompt_prefix), indent=0)
     
@@ -3901,6 +3913,46 @@ class Debugger(Pdb):
         self.logger.MarkerDeleteAll(0)
         self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
+
+
+def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+    """
+    Bind an event to an event handler.
+    (override) to return handler
+    """
+    assert isinstance(event, wx.PyEventBinder)
+    if handler is None:
+        return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
+    assert source is None or hasattr(source, 'GetId')
+    if source is not None:
+        id  = source.GetId()
+    event.Bind(self, id, id2, handler)
+    ## record all handlers: single state machine
+    if not hasattr(self, '__deb__handler__'):
+        self.__deb__handler__ = SSM()
+    if event.typeId in self.__deb__handler__:
+        self.__deb__handler__[event.typeId] += [handler]
+    else:
+        self.__deb__handler__[event.typeId] = [handler]
+    return handler
+core.EvtHandler.Bind = _EvtHandler_Bind
+
+
+def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+    """
+    Disconnects the event handler binding for event from `self`.
+    Returns ``True`` if successful.
+    (override) to remove handler
+    """
+    if source is not None:
+        id  = source.GetId()
+    ## remove the specified handler or all handlers
+    if handler is None:
+        self.__deb__handler__[event.typeId].clear()
+    else:
+        self.__deb__handler__[event.typeId].remove(handler)
+    return event.Unbind(self, id, id2, handler)
+core.EvtHandler.Unbind = _EvtHandler_Unbind
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
