@@ -40,7 +40,7 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint, pformat
 from six.moves import builtins
 ## from six import PY3
-from pdb import Pdb
+from pdb import Pdb, bdb
 import linecache
 try:
     from importlib import reload
@@ -2537,7 +2537,6 @@ Flaky nutshell:
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
         self.__root = None
-        self.debugger = None
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2800,7 +2799,7 @@ Flaky nutshell:
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
-        self.debugger = Debugger(logger=self.parent.Log,
+        self.debugger = Debugger(parent=self.parent,
                                  stdin=self.interp.stdin,
                                  stdout=self.interp.stdout)
         
@@ -3473,7 +3472,7 @@ Flaky nutshell:
             self.handler("debug_begin", target, *args, **kwargs)
             self.debugger.open(inspect.currentframe())
             target(*args, **kwargs)
-        except Exception: # bdb.BdbQuit
+        except bdb.BdbQuit:
             pass
         finally:
             self.debugger.close()
@@ -3783,14 +3782,15 @@ class Debugger(Pdb):
     prefix2 = "--> "
     verbose = False
     
-    def __init__(self, logger, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.prompt = self.indent + '(Pdb) '
-        self.logger = logger
+        self.prompt = self.indent + '(Pdb) ' # (overwrite)
+        self.parent = parent
+        self.logger = parent.Log
+        self.viewer = None
         self.module = None
         self.namespace = {}
-        self.viewer = None
     
     def __del__(self):
         self.close()
