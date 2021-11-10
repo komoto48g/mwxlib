@@ -29,6 +29,7 @@ from wx import core
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 from wx.py.filling import FillingFrame
+import wx.lib.eventwatcher as ew
 import numpy as np
 import fnmatch
 import pkgutil
@@ -3455,6 +3456,9 @@ Flaky nutshell:
         return target
     
     def debug(self, target, *args, **kwargs):
+        if isinstance(target, wx.Window):
+            self.debugger.dump(target)
+            return
         if not callable(target):
             raise TypeError("{} is not callable".format(target))
         if inspect.isbuiltin(target):
@@ -3914,6 +3918,22 @@ class Debugger(Pdb):
         self.logger.MarkerDeleteAll(0)
         self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
+    
+    ew.buildWxEventMap()
+    ew.addModuleEvents(wx.aui)
+    ew.addModuleEvents(wx.stc)
+    
+    @staticmethod
+    def dump(wxobj):
+        """Dump all event handlers bound to wxobj"""
+        for event, actions in wxobj.__deb__handler__.items():
+            name = ew._eventIdMap[event]
+            print("  {}: {!r}".format(event, name))
+            for act in actions:
+                file = inspect.getsourcefile(act)
+                lines = inspect.getsourcelines(act)
+                print("{}{}:{}:{}".format(
+                      ' '*9, file, lines[1], lines[0][0].rstrip()))
 
 
 def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
