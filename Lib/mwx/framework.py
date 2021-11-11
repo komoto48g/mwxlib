@@ -577,11 +577,14 @@ Attributes:
             print(traceback.format_exc(), file=o)
     
     @staticmethod
-    def copy(context):
-        """Copy the transaction:list in the context
+    def duplicate(context):
+        """Duplicate the transaction:list in the context
         
         This method is used for the contexts given to :append and :update
-        so that those elements (if they are lists) is not removed when unbound.
+        so that the original transaction (if they are lists) is not removed.
+        
+        このメソッドはオリジナルのコンテキストテンプレートに含まれる
+        トランザクションリストを消さないようにするために使用される
         """
         return {event:transaction[:] for event, transaction in context.items()}
     
@@ -606,9 +609,9 @@ Attributes:
         """Update each context or Add new contexts"""
         for k,v in contexts.items():
             if k in self:
-                self[k].update(self.copy(v))
+                self[k].update(self.duplicate(v))
             else:
-                self[k] = SSM(self.copy(v))
+                self[k] = SSM(self.duplicate(v))
             self.validate(k)
     
     def append(self, contexts):
@@ -619,7 +622,7 @@ Attributes:
                     for act in transaction[1:]:
                         self.bind(event, act, k, transaction[0])
             else:
-                self[k] = SSM(self.copy(v))
+                self[k] = SSM(self.duplicate(v))
             self.validate(k)
     
     def remove(self, contexts):
@@ -1027,7 +1030,7 @@ class KeyCtrlInterfaceMixin(object):
     This interface class defines extended keymaps for inherited class handler.
     The class that mixes this in must have,
       - handler <FSM>
-      - message <statusbar>
+      - statusbar
     
     keymap : event key name that excluds 'pressed'
         global-map : 0 (default)
@@ -1035,7 +1038,11 @@ class KeyCtrlInterfaceMixin(object):
           spec-map : 'C-c'
            esc-map : 'escape'
     """
-    message = print
+    def message(self, msg):
+        try:
+            self.statusbar.write(msg)
+        except AttributeError:
+            print(msg)
     
     def make_keymap(self, keymap, state=0, default=0):
         """Make a basis of extension map in the handler.
@@ -3489,14 +3496,14 @@ Flaky nutshell:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
+        self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
+        self.parent.Log.clear()
+        self.parent.Log.Show()
+        self.redirectStdin()
+        self.redirectStdout()
+        wx.CallAfter(self.Execute, 'step') # step into the target
+        wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
         try:
-            self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
-            self.parent.Log.clear()
-            self.parent.Log.Show()
-            self.redirectStdin()
-            self.redirectStdout()
-            wx.CallAfter(self.Execute, 'step') # step into the target
-            wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
             self.handler("debug_begin", target, *args, **kwargs)
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
@@ -4109,7 +4116,7 @@ if 1:
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.shell.handler.debug = 4
+    frm.inspector.shell.handler.debug = 0
     frm.inspector.shell.Execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
     frm.inspector.shell.wrap(1)
