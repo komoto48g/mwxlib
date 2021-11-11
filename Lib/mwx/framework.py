@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.7"
+__version__ = "0.47.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1529,7 +1529,7 @@ class ShellFrame(MiniFrame):
      target : Inspection target `self, any wx.Object, otherwise __main__
       shell : Nautilus Inspector shell based on <wx.py.shell.Shell>
       ghost : Notebook <Editor> as an tooltip ghost in the shell
-    scratch : temporary buffer for scratch text
+    Scratch : temporary buffer for scratch text
        Help : temporary buffer for help
         Log : logging buffer
     History : shell history (read only)
@@ -1554,7 +1554,7 @@ Global bindings:
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        self.scratch = Editor(self)
+        self.Scratch = Editor(self)
         self.Help = Editor(self)
         self.Log = Editor(self)
         self.History = Editor(self)
@@ -1568,7 +1568,7 @@ Global bindings:
             style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
                   &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
-        self.ghost.AddPage(self.scratch, "*scratch*")
+        self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.History, "History")
@@ -1604,7 +1604,7 @@ Global bindings:
             },
         })
         
-        @self.define_key('C-x j', win=self.scratch, doc="Show scratch window")
+        @self.define_key('C-x j', win=self.Scratch, doc="Show Scratch window")
         @self.define_key('C-x l', win=self.Log, doc="Show Log window")
         @self.define_key('C-x h', win=self.Help, doc="Show Help window")
         @self.define_key('C-x S-h', win=self.History, doc="Show History")
@@ -2167,10 +2167,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## Goto, Skip, Selection, etc.
     ## --------------------------------
     
-    def clear(self):
-        """Delete all text"""
-        self.ClearAll()
-    
     def goto_char(self, pos):
         if pos < 0:
             pos += self.TextLength + 1 # end-of-buffer (+1:\0)
@@ -2285,6 +2281,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## Edit /eat /kill
     ## --------------------------------
     
+    def clear(self):
+        """Delete all text"""
+        self.ClearAll()
+    
     def eat_white_forward(self):
         p = self.cur
         q = self.skip_chars_forward(r'\s')
@@ -2381,6 +2381,27 @@ class Editor(EditWindow, EditorInterface):
         self.SetDropTarget(None)
         
         self.set_style(self.PALETTE_STYLE)
+    
+    Shown = property(
+        lambda self: self.IsShown(),
+        lambda self,v: self.Show(v))
+    
+    def IsShown(self):
+        """Return True if shown on the screen"""
+        shown = EditWindow.IsShown(self)
+        try:
+            return shown and self.parent.ghost.IsShown()
+        except AttributeError:
+            return shown
+    
+    def Show(self, show=True):
+        """Show on the screen"""
+        try:
+            shown = self.IsShown()
+            self.parent.PopupWindow(self, show)
+            return shown != self.IsShown()
+        except AttributeError:
+            return EditWindow.Show(self, show)
 
 
 class Nautilus(Shell, EditorInterface):
@@ -2797,8 +2818,11 @@ Flaky nutshell:
         self.SetMarginSensitive(2, True)
         self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
         self.SetFoldMarginHiColour(True, "#c0c0c0")
-        self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
-        self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
+        try:
+            self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+            self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
+        except AttributeError:
+            pass
         
         self.debugger = Debugger(parent=self.parent,
                                  stdin=self.interp.stdin,
@@ -3243,7 +3267,7 @@ Flaky nutshell:
         self.__eolc_marks = []
     
     def write(self, text, pos=None):
-        """Display text in the shell (override) with :option pos"""
+        """Display text in the shell (override) :option pos"""
         if pos is not None:
             self.goto_char(pos)
         if self.CanEdit():
@@ -3354,9 +3378,8 @@ Flaky nutshell:
         doc = inspect.getdoc(obj)\
           or "No information about {}".format(obj)
         try:
-            ed = self.parent.Help
-            ed.SetValue(doc)
-            self.parent.PopupWindow(ed)
+            self.parent.Help.SetValue(doc)
+            self.parent.Help.Show()
         except AttributeError:
             print(doc)
     
@@ -3369,9 +3392,8 @@ Flaky nutshell:
         doc = pydoc.plain(pydoc.render_doc(obj))\
           or "No description about {}".format(obj)
         try:
-            ed = self.parent.Help
-            ed.SetValue(doc)
-            self.parent.PopupWindow(ed)
+            self.parent.Help.SetValue(doc)
+            self.parent.Help.Show()
         except AttributeError:
             print(doc)
     
@@ -3446,19 +3468,25 @@ Flaky nutshell:
     ## Debug functions of the shell
     ## --------------------------------
     
-    def dump(self, wxobj, verbose=False):
-        if hasattr(wxobj, '__deb__handler__'):
-            db = wxobj.__deb__handler__
-            if verbose:
-                for event, actions in db.items():
-                    name = ew._eventIdMap[event]
-                    print("  {}: {!r}".format(event, name))
-                    for act in actions:
-                        file = inspect.getsourcefile(act)
-                        lines = inspect.getsourcelines(act)
-                        print("{}{}:{}:{}".format(' '*9, file, lines[1], typename(act)))
-            return db
-        print("- {} has no handler information to dump.".format(wxobj))
+    def dump(self, wxobj, verbose=True):
+        if not hasattr(wxobj, '__deb__handler__'):
+            self.message("- {} has no handler information to dump.".format(wxobj))
+            return
+        db = wxobj.__deb__handler__
+        if verbose:
+            stdlog = self.parent.Log
+            stdlog.clear()
+            stdlog.Show()
+            print(self, file=stdlog)
+            for event, actions in db.items():
+                name = ew._eventIdMap[event]
+                print("{:8d}: {!r}".format(event, name), file=stdlog)
+                for act in actions:
+                    src = inspect.getsourcefile(act)
+                    lines = inspect.getsourcelines(act)
+                    print("{:8}  {}:{}".format(' ',
+                          src, lines[1], typename(act)), file=stdlog)
+        return db
     
     def hook(self, wxobj, binder, target=None):
         if not target:
@@ -3479,7 +3507,7 @@ Flaky nutshell:
             print("- cannot break {!r}".format(target))
             return
         try:
-            self.write("#>> starting debugger (Enter n(ext) to continue)\n", -1)
+            self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
             self.parent.Show()
             self.parent.Log.clear()
             self.parent.PopupWindow(self.parent.Log)
@@ -3502,11 +3530,11 @@ Flaky nutshell:
     ## --------------------------------
     
     def CallTipShow(self, pos, tip):
-        """Call standard ToolTip (override) and write the tips to scratch"""
+        """Call standard ToolTip (override) and write the tips to Scratch"""
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.scratch.SetValue(tip)
+                self.parent.Scratch.SetValue(tip)
         except AttributeError:
             pass
     

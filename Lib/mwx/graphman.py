@@ -257,8 +257,8 @@ unloadable : flag to set the Layer to be unloadable
         else:
             self._remove_artists(*args)
     
-    def set_artists(self, target, *args): # to be deprecated
-        self.attach_artists(target.axes, *args)
+    ## def set_artists(self, target, *args): # to be deprecated
+    ##     self.attach_artists(target.axes, *args)
     
     def _add_artists(self, axes, *args): # to be deprecated
         for art in args:
@@ -392,12 +392,20 @@ unloadable : flag to set the Layer to be unloadable
             self.parent.load_plug(self.__module__,
                 force=1, session=current_session or None)
     
+    Shown = property(
+        lambda self: self.IsShown(),
+        lambda self,v: self.Show(v))
+    
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
     
     @mwx.postcall
     def Show(self, show=True):
         self.parent.show_pane(self, show)
+    
+    Drawn = property(
+        lambda self: self.IsDrawn(),
+        lambda self,v: self.Draw(v))
     
     def IsDrawn(self):
         return any(art.get_visible() for art in self.Arts)
