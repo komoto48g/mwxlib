@@ -1473,7 +1473,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     def Destroy(self):
         try:
             self.timer.Stop()
-            ## del self.timer
             self.inspector.Destroy() # inspector is not my child
         finally:
             return wx.Frame.Destroy(self)
@@ -1653,9 +1652,10 @@ Global bindings:
         f = os.path.expanduser("~/.deb/deb-logging.log")
         if os.path.exists(f):
             with self.fopen(f) as i:
-                self.Log.Value = i.read()
+                self.Log.SetText(i.read())
     
-    def fopen(self, f, *args):
+    @staticmethod
+    def fopen(f, *args):
         try:
             return open(f, *args, newline='') # PY3
         except TypeError:
@@ -1676,7 +1676,7 @@ Global bindings:
             return MiniFrame.Destroy(self)
     
     def About(self, evt=None):
-        self.Help.SetValue('\n\n'.join((
+        self.Help.SetText('\n\n'.join((
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
@@ -2608,8 +2608,6 @@ Flaky nutshell:
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-        
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
         self.SetDropTarget(None)
@@ -2842,9 +2840,6 @@ Flaky nutshell:
         self.__start = 0
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
-    
-    def OnDestroy(self, evt):
-        evt.Skip()
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -3388,7 +3383,7 @@ Flaky nutshell:
         doc = inspect.getdoc(obj)\
           or "No information about {}".format(obj)
         try:
-            self.parent.Help.SetValue(doc)
+            self.parent.Help.SetText(doc)
             self.parent.Help.Show()
         except AttributeError:
             print(doc)
@@ -3402,7 +3397,7 @@ Flaky nutshell:
         doc = pydoc.plain(pydoc.render_doc(obj))\
           or "No description about {}".format(obj)
         try:
-            self.parent.Help.SetValue(doc)
+            self.parent.Help.SetText(doc)
             self.parent.Help.Show()
         except AttributeError:
             print(doc)
@@ -3484,8 +3479,17 @@ Flaky nutshell:
             return
         actions = wxobj.__deb__handler__[binder.typeId]
         def _hook(evt):
-            for target in actions:
-                self.debug(target, evt)
+            try:
+                self.root.shell.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
+                self.handler('debug_begin')
+                self.debugger.open(inspect.currentframe(), verbose=0)
+                for target in actions:
+                    target(evt)
+            except bdb.BdbQuit:
+                pass
+            finally:
+                self.debugger.close()
+                self.handler('debug_end')
             wxobj.Unbind(binder, handler=_hook) # release hook once called
         wxobj.Bind(binder, _hook) # add hook for the event-binder
         return actions
@@ -3497,14 +3501,8 @@ Flaky nutshell:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
-        self.parent.Log.clear()
-        self.parent.Log.Show()
-        self.redirectStdin()
-        self.redirectStdout()
-        wx.CallAfter(self.Execute, 'step') # step into the target
-        wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
         try:
+            self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
             self.handler('debug_begin')
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
@@ -3523,7 +3521,7 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.Scratch.SetValue(tip)
+                self.parent.Scratch.SetText(tip)
         except AttributeError:
             pass
     
@@ -3816,13 +3814,14 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
+    logger = property(lambda self: self.parent.Log)
+    shell = property(lambda self: self.parent.shell)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.parent = parent
-        self.logger = parent.Log
         self.viewer = None
         self.module = None
         self.namespace = {}
@@ -3841,6 +3840,13 @@ class Debugger(Pdb):
     def open(self, frame=None, verbose=False):
         self.verbose = verbose
         self.viewer = filling(target=self.namespace, label='locals')
+        self.logger.clear()
+        self.logger.Show()
+        self.shell.SetFocus()
+        self.shell.redirectStdin()
+        self.shell.redirectStdout()
+        wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
+        wx.CallAfter(self.shell.Execute, 'step') # step into the target
         Pdb.set_trace(self, frame)
     
     def close(self):
