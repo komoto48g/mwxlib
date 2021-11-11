@@ -2637,6 +2637,8 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
+                 'debug_begin' : [ None, ],
+                   'debug_end' : [ None, _F(self.prompt) ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -3480,8 +3482,7 @@ Flaky nutshell:
         if not hasattr(wxobj, '__deb__handler__'):
             self.message("- {} has no handler to hook.".format(wxobj))
             return
-        db = wxobj.__deb__handler__
-        actions = db[binder.typeId]
+        actions = wxobj.__deb__handler__[binder.typeId]
         def _hook(evt):
             for target in actions:
                 self.debug(target, evt)
@@ -3491,7 +3492,7 @@ Flaky nutshell:
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
-            ## raise TypeError("{} is not callable".format(target))
+            print("- cannot break {!r} (not callable)".format(target))
             return
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
@@ -3504,15 +3505,14 @@ Flaky nutshell:
         wx.CallAfter(self.Execute, 'step') # step into the target
         wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
         try:
-            self.handler("debug_begin", target, *args, **kwargs)
+            self.handler('debug_begin')
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
         finally:
             self.debugger.close()
-            self.prompt()
-            self.handler("debug_end", target, *args, **kwargs)
+            self.handler('debug_end')
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3962,13 +3962,13 @@ class Debugger(Pdb):
         if not hasattr(wxobj, '__deb__handler__'):
             self.message("- {} has no handler information to dump.".format(wxobj))
             return
-        db = wxobj.__deb__handler__
+        ssm = wxobj.__deb__handler__
         if verbose:
             stdlog = self.logger
             stdlog.clear()
             stdlog.Show()
             print(wxobj, file=stdlog)
-            for event, actions in db.items():
+            for event, actions in ssm.items():
                 name = ew._eventIdMap[event]
                 print("{:8d}: {!r}".format(event, name), file=stdlog)
                 for act in actions:
@@ -3980,7 +3980,7 @@ class Debugger(Pdb):
                         ln = -1
                     print("{:10s}{}:{}:{}".format(
                           ' ', src, ln, typename(act)), file=stdlog)
-        return db
+        return ssm
 
 
 def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
@@ -4050,14 +4050,15 @@ Note:
     frame.shell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window
     if startup:
+        shell = frame.shell
         try:
-            startup(frame.shell)
-            frame.shell.handler.bind("shell_cloned", startup)
-        except Exception:
+            startup(shell)
+            shell.handler.bind("shell_cloned", startup)
+        except Exception as e:
+            shell.message("- Failed to startup: {!r}".format(e))
             traceback.print_exc()
-            frame.shell.write(traceback.format_exc())
-            frame.shell.prompt()
-    
+        else:
+            shell.message("The startup was completed successfully.")
     if not isinstance(app, wx.App):
         print("- deb: argument app has unexpected type {!r}".format(typename(app)))
         pass
