@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.8"
+__version__ = "0.47.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -862,8 +862,8 @@ def funcall(f, doc=None, alias=None, **kwargs):
     """Decorator as curried function
     equiv. (lambda *v: f`alias<doc:str>(*v, **kwargs))
     """
-    assert(isinstance(doc, (LITERAL_TYPE, type(None))))
-    assert(isinstance(alias, (LITERAL_TYPE, type(None))))
+    assert isinstance(doc, (LITERAL_TYPE, type(None)))
+    assert isinstance(alias, (LITERAL_TYPE, type(None)))
     
     @wraps(f)
     def _Act(*v):
@@ -1100,7 +1100,7 @@ def ID_(id):
     ## Free ID - どこで使っているか検索できるように
     ## do not use [ID_LOWEST(4999):ID_HIGHEST(5999)]
     id += wx.ID_HIGHEST
-    assert(not wx.ID_LOWEST <= id <= wx.ID_HIGHEST)
+    assert not wx.ID_LOWEST <= id <= wx.ID_HIGHEST
     return id
 
 
@@ -2490,6 +2490,7 @@ Flaky nutshell:
     target = property(lambda self: self.__target)
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
+    debugger = property(lambda self: self.__debugger)
     
     @target.setter
     def target(self, target):
@@ -2558,7 +2559,11 @@ Flaky nutshell:
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
-        self.__root = None
+        self.__root = None # reference to the root of the clone
+        
+        self.__debugger = Debugger(self.parent,
+                                   stdin=self.interp.stdin,
+                                   stdout=self.interp.stdout)
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2823,10 +2828,6 @@ Flaky nutshell:
             self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         except AttributeError:
             pass
-        
-        self.debugger = Debugger(parent=self.parent,
-                                 stdin=self.interp.stdin,
-                                 stdout=self.interp.stdout)
         
         self.__text = ''
         self.__start = 0
@@ -3103,8 +3104,8 @@ Flaky nutshell:
         def where(obj):
             try:
                 ## class, method, function, traceback, frame, or code object was expected
-                return (inspect.getsourcefile(obj),
-                        inspect.getsourcelines(obj)[1])
+                return (inspect.getsourcefile(obj),     # filename
+                        inspect.getsourcelines(obj)[1]) # (src, line)
             except TypeError:
                 return inspect.getmodule(obj)
         builtins.where = where
@@ -3117,7 +3118,7 @@ Flaky nutshell:
     
     def on_activated(self, shell):
         """Called when activated"""
-        target = shell.target # assert(shell is self)
+        target = shell.target # assert shell is self
         
         target.self = target
         target.this = inspect.getmodule(target)
@@ -3126,7 +3127,7 @@ Flaky nutshell:
         builtins.help = self.help # utilities functions to builtins (not locals)
         builtins.info = self.info # if locals could have the same name functions.
         builtins.dive = self.clone
-        builtins.dump = self.dump
+        builtins.dump = self.debugger.dump
         builtins.debug = self.debug
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
@@ -3468,55 +3469,36 @@ Flaky nutshell:
     ## Debug functions of the shell
     ## --------------------------------
     
-    def dump(self, wxobj, verbose=True):
+    def hook(self, wxobj, binder):
         if not hasattr(wxobj, '__deb__handler__'):
-            self.message("- {} has no handler information to dump.".format(wxobj))
+            self.message("- {} has no handler to hook.".format(wxobj))
             return
         db = wxobj.__deb__handler__
-        if verbose:
-            stdlog = self.parent.Log
-            stdlog.clear()
-            stdlog.Show()
-            print(self, file=stdlog)
-            for event, actions in db.items():
-                name = ew._eventIdMap[event]
-                print("{:8d}: {!r}".format(event, name), file=stdlog)
-                for act in actions:
-                    src = inspect.getsourcefile(act)
-                    lines = inspect.getsourcelines(act)
-                    print("{:8}  {}:{}".format(' ',
-                          src, lines[1], typename(act)), file=stdlog)
-        return db
-    
-    def hook(self, wxobj, binder, target=None):
-        if not target:
-            return partial(self.hook, wxobj, binder)
-        if isinstance(binder, int):
-            binder = next(item for item in ew._eventBinders if binder in item.evtType)
-        @wraps(target)
-        def _hook(*args, **kwargs):
-            self.debug(target, *args, **kwargs)
+        actions = db[binder.typeId]
+        def _hook(evt):
+            for target in actions:
+                self.debug(target, evt)
             wxobj.Unbind(binder, handler=_hook) # release hook once called
         wxobj.Bind(binder, _hook) # add hook for the event-binder
-        return target
+        return actions
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
-            raise TypeError("{} is not callable".format(target))
+            ## raise TypeError("{} is not callable".format(target))
+            return
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
         try:
             self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
-            self.parent.Show()
             self.parent.Log.clear()
-            self.parent.PopupWindow(self.parent.Log)
+            self.parent.Log.Show()
             self.redirectStdin()
             self.redirectStdout()
-            wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
             wx.CallAfter(self.Execute, 'step') # step into the target
+            wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
             self.handler("debug_begin", target, *args, **kwargs)
-            self.debugger.open(inspect.currentframe())
+            self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
@@ -3841,10 +3823,13 @@ class Debugger(Pdb):
     def __del__(self):
         self.close()
     
-    def message(self, msg, indent=-1, **kwargs):
+    def write(self, msg):
+        print(msg, file=self.stdout)
+    
+    def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
         prefix = self.indent if indent < 0 else ' ' * indent
-        print(prefix + str(msg), file=self.stdout, **kwargs)
+        print(prefix + str(msg), file=self.stdout)
     
     def open(self, frame=None, verbose=False):
         self.verbose = verbose
@@ -3965,11 +3950,30 @@ class Debugger(Pdb):
     ew.addModuleEvents(wx.aui)
     ew.addModuleEvents(wx.stc)
     
-    @staticmethod
-    def dump(wxobj):
+    def dump(self, wxobj, verbose=True):
         """Dump all event handlers bound to wxobj"""
-        if hasattr(wxobj, '__deb__handler__'):
-            return wxobj.__deb__handler__
+        if not hasattr(wxobj, '__deb__handler__'):
+            self.message("- {} has no handler information to dump.".format(wxobj))
+            return
+        db = wxobj.__deb__handler__
+        if verbose:
+            stdlog = self.logger
+            stdlog.clear()
+            stdlog.Show()
+            print(wxobj, file=stdlog)
+            for event, actions in db.items():
+                name = ew._eventIdMap[event]
+                print("{:8d}: {!r}".format(event, name), file=stdlog)
+                for act in actions:
+                    try:
+                        src = inspect.getsourcefile(act)
+                        ln = inspect.getsourcelines(act)[1]
+                    except TypeError:
+                        src = inspect.getmodule(act)
+                        ln = -1
+                    print("{:10s}{}:{}:{}".format(
+                          ' ', src, ln, typename(act)), file=stdlog)
+        return db
 
 
 def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
