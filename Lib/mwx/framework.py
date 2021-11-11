@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.9"
+__version__ = "0.48.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1468,7 +1468,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
-                        caption="About this software")
+                      "About this software")
     
     def Destroy(self):
         try:
@@ -1586,6 +1586,8 @@ Global bindings:
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0))
         self._mgr.Update()
         
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN|wx.FR_MATCHCASE)
         
@@ -1660,6 +1662,12 @@ Global bindings:
             return open(f, *args, newline='') # PY3
         except TypeError:
             return open(f, *args) # PY2
+    
+    def OnClose(self, evt):
+        if self.shell.debugger.busy:
+            wx.MessageBox("Please exit the debugger before closing.")
+        else:
+            evt.Skip()
     
     def Destroy(self):
         try:
@@ -3814,6 +3822,7 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
+    busy = False
     logger = property(lambda self: self.parent.Log)
     shell = property(lambda self: self.parent.shell)
     
@@ -3838,6 +3847,7 @@ class Debugger(Pdb):
         print(prefix + str(msg), file=self.stdout)
     
     def open(self, frame=None, verbose=False):
+        self.busy = True
         self.verbose = verbose
         self.viewer = filling(target=self.namespace, label='locals')
         self.logger.clear()
@@ -3855,6 +3865,7 @@ class Debugger(Pdb):
             self.viewer.Close()
         self.viewer = None
         self.module = None
+        self.busy = False
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
@@ -3941,13 +3952,13 @@ class Debugger(Pdb):
             wx.CallAfter(self.logger.recenter)
             
             ## Update view of the namespace
+            self.namespace.clear()
+            self.namespace.update(frame.f_locals)
             try:
-                self.namespace.clear()
-                self.namespace.update(frame.f_locals)
                 tree = self.viewer.filling.tree
                 tree.display()
                 ## tree.Expand(tree.root)
-            except RuntimeError:
+            except Exception:
                 pass
         self.module = module
         Pdb.preloop(self)
