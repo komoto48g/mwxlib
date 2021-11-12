@@ -3490,7 +3490,7 @@ Flaky nutshell:
         actions = wxobj.__event_handler__[binder.typeId]
         def _hook(evt):
             try:
-                self.root.shell.write("#>> Enter [n]ext to continue.\n", -1)
+                self.write("#>> Enter [n]ext to continue.\n", -1)
                 self.handler('debug_begin')
                 self.debugger.open(inspect.currentframe(), verbose=0)
                 for target in actions:
