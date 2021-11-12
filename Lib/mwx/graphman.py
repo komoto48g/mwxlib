@@ -100,9 +100,9 @@ Note:
             return False
         try:
             self.__flag.clear()
-            if wx.MessageBox(msg + "\n"
-                "\n Press [OK] to continue."
-                "\n Press [CANCEL] to terminate the process.",
+            if wx.MessageBox(msg + "\n\n"
+                "Press [OK] to continue.\n"
+                "Press [CANCEL] to terminate the process.",
                 style = wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
                     ## self.Stop() # 必要があれば呼び出し側で行う
                     return False
@@ -174,7 +174,8 @@ Note:
                 self.handler('thread_end', self)
         
         if self.__isRunning:
-            wx.MessageBox("The thread is running (Press C-g to quit).", style=wx.ICON_WARNING)
+            wx.MessageBox("The thread is running (Press C-g to quit).",
+                          style=wx.ICON_WARNING)
             return
         
         self.target = f
@@ -1066,7 +1067,8 @@ class Frame(mwx.Frame):
         
         except Exception as e:
             wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
+                                        "Error in loading {!r}".format(name),
+                                        style=wx.ICON_ERROR)
             return False
         
         ## --------------------------------
@@ -1176,7 +1178,8 @@ class Frame(mwx.Frame):
             
         except Exception as e:
             wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
+                                        "Error in loading {!r}".format(name),
+                                        style=wx.ICON_ERROR)
             return False
     
     def unload_plug(self, name):
@@ -1217,7 +1220,8 @@ class Frame(mwx.Frame):
             
         except Exception as e:
             wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                caption="Error in unloading {!r}".format(name), style=wx.ICON_ERROR)
+                                        "Error in unloading {!r}".format(name),
+                                        style=wx.ICON_ERROR)
             return False
     
     def edit_plug(self, name):

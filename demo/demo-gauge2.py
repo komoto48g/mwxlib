@@ -39,7 +39,10 @@ class Plugin(Layer):
                     p.reset(x % 24) # update control
                     time.sleep(0.1)
                     x += 1
-            self.thread.Start(start)
+            if p.check:
+                self.thread.Start(start)
+            else:
+                self.thread.Stop()
         self.thread = Thread(self)
 
 

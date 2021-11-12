@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.0"
+__version__ = "0.48.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1665,7 +1665,8 @@ Global bindings:
     
     def OnClose(self, evt):
         if self.shell.debugger.busy:
-            wx.MessageBox("Please exit the debugger before closing.")
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
         else:
             evt.Skip()
     
@@ -2499,6 +2500,7 @@ The most convenient way to see the details of keymaps on the shell:
      or self.shell.handler @filling
 
 Flaky nutshell:
+    With great oven by Robin Dunn,
     Half-baked by Patrik K. O'Brien,
     and the other half by K. O'moto.
     """
@@ -3482,13 +3484,13 @@ Flaky nutshell:
     ## --------------------------------
     
     def hook(self, wxobj, binder):
-        if not hasattr(wxobj, '__deb__handler__'):
+        if not hasattr(wxobj, '__event_handler__'):
             self.message("- {} has no handler to hook.".format(wxobj))
             return
-        actions = wxobj.__deb__handler__[binder.typeId]
+        actions = wxobj.__event_handler__[binder.typeId]
         def _hook(evt):
             try:
-                self.root.shell.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
+                self.root.shell.write("#>> Enter [n]ext to continue.\n", -1)
                 self.handler('debug_begin')
                 self.debugger.open(inspect.currentframe(), verbose=0)
                 for target in actions:
@@ -3510,7 +3512,7 @@ Flaky nutshell:
             print("- cannot break {!r}".format(target))
             return
         try:
-            self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
+            self.write("#>> Enter [n]ext to continue.\n", -1)
             self.handler('debug_begin')
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
@@ -3976,10 +3978,10 @@ class Debugger(Pdb):
     
     def dump(self, wxobj, verbose=True):
         """Dump all event handlers bound to wxobj"""
-        if not hasattr(wxobj, '__deb__handler__'):
+        if not hasattr(wxobj, '__event_handler__'):
             self.message("- {} has no handler information to dump.".format(wxobj))
             return
-        ssm = wxobj.__deb__handler__
+        ssm = wxobj.__event_handler__
         if verbose:
             stdlog = self.logger
             stdlog.clear()
@@ -4003,22 +4005,22 @@ class Debugger(Pdb):
 def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
     """
     Bind an event to an event handler.
-    (override) to return handler
+    (override) to recode and return handler
     """
     assert isinstance(event, wx.PyEventBinder)
+    assert source is None or hasattr(source, 'GetId')
     if handler is None:
         return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
-    assert source is None or hasattr(source, 'GetId')
     if source is not None:
         id  = source.GetId()
     event.Bind(self, id, id2, handler)
     ## record all handlers: single state machine
-    if not hasattr(self, '__deb__handler__'):
-        self.__deb__handler__ = {}
-    if event.typeId in self.__deb__handler__:
-        self.__deb__handler__[event.typeId] += [handler]
+    if not hasattr(self, '__event_handler__'):
+        self.__event_handler__ = {}
+    if event.typeId in self.__event_handler__:
+        self.__event_handler__[event.typeId] += [handler]
     else:
-        self.__deb__handler__[event.typeId] = [handler]
+        self.__event_handler__[event.typeId] = [handler]
     return handler
 core.EvtHandler.Bind = _EvtHandler_Bind
 
@@ -4033,9 +4035,9 @@ def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, ha
         id  = source.GetId()
     ## remove the specified handler or all handlers
     if handler is None:
-        self.__deb__handler__[event.typeId].clear()
+        self.__event_handler__[event.typeId].clear()
     else:
-        self.__deb__handler__[event.typeId].remove(handler)
+        self.__event_handler__[event.typeId].remove(handler)
     return event.Unbind(self, id, id2, handler)
 core.EvtHandler.Unbind = _EvtHandler_Unbind
 
