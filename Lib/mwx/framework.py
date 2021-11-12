@@ -3493,7 +3493,7 @@ Flaky nutshell:
                 self.write("#>> Enter [n]ext to continue.\n", -1)
                 self.handler('debug_begin')
                 self.debugger.open(inspect.currentframe(), verbose=0)
-                for target in actions:
+                for target in actions: # 強制的に各ハンドラを呼び出す (event-loop とは別に)
                     target(evt)
             except bdb.BdbQuit:
                 pass
@@ -3987,18 +3987,18 @@ class Debugger(Pdb):
             stdlog.clear()
             stdlog.Show()
             print(wxobj, file=stdlog)
-            for event, actions in ssm.items():
+            for event, actions in sorted(ssm.items()):
                 name = ew._eventIdMap[event]
-                print("{:8d}: {!r}".format(event, name), file=stdlog)
+                print("\n{:8d}: {!r}".format(event, name), file=stdlog)
                 for act in actions:
                     try:
-                        src = inspect.getsourcefile(act)
-                        ln = inspect.getsourcelines(act)[1]
+                        file = inspect.getsourcefile(act)
+                        src, line = inspect.getsourcelines(act)
                     except TypeError:
-                        src = inspect.getmodule(act)
-                        ln = -1
-                    print("{:10s}{}:{}:{}".format(
-                          ' ', src, ln, typename(act)), file=stdlog)
+                        file = inspect.getmodule(act)
+                        src, line = [''], -1
+                    print("{:10s}{}:{}:{}:{}".format(
+                          ' ', file, line, typename(act), src[0].rstrip()), file=stdlog)
         return ssm
 
 
@@ -4017,10 +4017,10 @@ def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=w
     ## record all handlers: single state machine
     if not hasattr(self, '__event_handler__'):
         self.__event_handler__ = {}
-    if event.typeId in self.__event_handler__:
-        self.__event_handler__[event.typeId] += [handler]
-    else:
+    if event.typeId not in self.__event_handler__:
         self.__event_handler__[event.typeId] = [handler]
+    else:
+        self.__event_handler__[event.typeId].insert(0, handler)
     return handler
 core.EvtHandler.Bind = _EvtHandler_Bind
 
@@ -4034,10 +4034,16 @@ def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, ha
     if source is not None:
         id  = source.GetId()
     ## remove the specified handler or all handlers
-    if handler is None:
-        self.__event_handler__[event.typeId].clear()
-    else:
-        self.__event_handler__[event.typeId].remove(handler)
+    try:
+        actions = self.__event_handler__[event.typeId]
+        if handler is None:
+            actions.clear()
+        else:
+            actions.remove(handler)
+        if not actions:
+            del self.__event_handler__[event.typeId]
+    except Exception:
+        pass
     return event.Unbind(self, id, id2, handler)
 core.EvtHandler.Unbind = _EvtHandler_Unbind
 

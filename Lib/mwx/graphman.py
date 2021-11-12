@@ -971,6 +971,8 @@ class Frame(mwx.Frame):
          row : dock_row position
         prop : dock_proportion < 1e6 ?
    floating_ : pos/size of floating window
+        
+        retval-> None if succeeded else False
         """
         if hasattr(root, '__file__'): #<type 'module'>
             root = root.__file__
