@@ -1,11 +1,8 @@
 #! python3
 # -*- coding: utf-8 -*-
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
-import time
 import wx
-from mwx.controls import Gauge
-from mwx.graphman import Layer, Frame, Thread
+from mwx.controls import LParam, Button, Gauge, Indicator
+from mwx.graphman import Layer, Frame
 
 
 class Plugin(Layer):
@@ -14,15 +11,24 @@ class Plugin(Layer):
     def Init(self):
         self.g1 = wx.Gauge(self, range=24, size=(100,24))
         self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE)
+        self.sig = Indicator(self, size=(-1,24))
+        
+        self.btn = Button(self, label="", icon="v")
+        self.param = LParam("value", (0,self.g1.Range,1), 0)
         
         self.layout(None, (
-            self.g1,
-            self.g2,
+            (self.btn, 0), self.g1,
+            (self.sig, 0), self.g2,
+            self.param,
             ),
-            expand=1,
+            row=2, expand=1,
+            type='slider*', style='button', tw=0, h=22
         )
-        self.g1.Value = 24
-        self.g2.Value = 24
+        @self.param.bind
+        def set(p):
+            self.g1.Value = p.value
+            self.g2.Value = p.value
+            self.sig.Value = p.value
 
 
 if __name__ == '__main__':
