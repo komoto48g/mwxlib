@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.1"
+__version__ = "0.48.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1439,18 +1439,18 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         
-        @partial(self.Bind, wx.EVT_TIMER)
         def on_timer(evt):
             self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1)
+        self.Bind(wx.EVT_TIMER, on_timer)
         
         ## AcceleratorTable mimic
-        @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
             """Called when key down"""
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
                 self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
+        self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         def close(v):
             """Close the window"""
@@ -1497,19 +1497,17 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.statusbar.Show(0)
         self.SetStatusBar(self.statusbar)
         
-        ## To default close,
-        ## >>> self.Unbind(wx.EVT_CLOSE)
-        
-        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only
-        
         ## AcceleratorTable mimic
-        @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
             """Called when key down"""
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
                 self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
+        self.Bind(wx.EVT_CHAR_HOOK, hook_char)
+        
+        ## To default close >>> self.Unbind(wx.EVT_CLOSE)
+        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only
         
         def close(v):
             """Close the window"""
@@ -1581,12 +1579,14 @@ Global bindings:
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
+        self._mgr.SetDockSizeConstraint(0.4, 0.5)
+        
         self._mgr.AddPane(self.shell, aui.AuiPaneInfo().Name("shell").CenterPane())
         self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right().Show(0)
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0))
         self._mgr.Update()
         
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN|wx.FR_MATCHCASE)
@@ -1663,7 +1663,7 @@ Global bindings:
         except TypeError:
             return open(f, *args) # PY2
     
-    def OnClose(self, evt):
+    def OnCloseFrame(self, evt):
         if self.shell.debugger.busy:
             wx.MessageBox("The debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
@@ -1912,12 +1912,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b1000) # default: no symbols
-        self.SetMarginWidth(1, 0) # default: no margin
+        ## self.SetMarginWidth(1, 0) # default: no margin
+        self.SetMarginWidth(1, 32)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
-        self.SetMarginWidth(2, 0) # default: no margin
+        ## self.SetMarginWidth(2, 0) # default: no margin
+        self.SetMarginWidth(2, 1)
+        self.SetMarginSensitive(2, False)
         
+        self.SetProperty('fold', '1') # Enable folder at margin=2
         self.SetMarginLeft(2) # +1 margin at the left
         
         ## Custom markers (cf. MarkerAdd)
@@ -1997,13 +2001,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if "STC_STYLE_LINENUMBER" in spec:
             lsc = _map(spec.get("STC_STYLE_LINENUMBER"))
             
-            self.SetMarginWidth(1, 32)
-            self.SetMarginWidth(2, 1)
-            self.SetProperty('fold', '0')
             ## Set colors used as a chequeboard pattern.
             ## Being one pixel solid line, the back and fore should be the same.
-            self.SetFoldMarginColour(True, lsc.get('fore')) # back: one of the colors
-            self.SetFoldMarginHiColour(True, lsc.get('fore')) # fore: the other color
+            if self.GetMarginSensitive(2):
+                self.SetFoldMarginColour(True, lsc.get('back'))
+                self.SetFoldMarginHiColour(True, 'light gray')
+            else:
+                self.SetFoldMarginColour(True, lsc.get('fore')) # back: one of the colors
+                self.SetFoldMarginHiColour(True, lsc.get('fore')) # fore: the other color
         
         ## Custom style for caret and line colour
         if "STC_STYLE_CARETLINE" in spec:
@@ -2832,14 +2837,11 @@ Flaky nutshell:
             },
         })
         
-        self.set_style(self.PALETTE_STYLE)
-        
-        ## Enable folder at margin=2
-        self.SetProperty('fold', '1')
         self.SetMarginWidth(2, 12)
         self.SetMarginSensitive(2, True)
-        self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
-        self.SetFoldMarginHiColour(True, "#c0c0c0")
+        ## self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
+        ## self.SetFoldMarginHiColour(True, "#c0c0c0") # fore:black is a bit strong
+        self.set_style(self.PALETTE_STYLE)
         try:
             self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
             self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
