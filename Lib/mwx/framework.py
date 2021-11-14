@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.47.9"
+__version__ = "0.48.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -25,7 +25,6 @@ import re
 import wx
 from wx import aui
 from wx import stc
-from wx import core
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 from wx.py.filling import FillingFrame
@@ -238,6 +237,21 @@ def typename(obj, docp=False, qualp=False):
     if docp and callable(obj) and obj.__doc__:
         name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
     return name
+
+
+def pp(x):
+    ## pprint(x, **pp.__dict__)
+    pprint(x, indent=pp.indent,
+              width=pp.width,
+              depth=pp.depth,
+              compact=pp.compact,
+              sort_dicts=pp.sort_dicts)
+if 1:
+    pp.indent = 1
+    pp.width = 100 # default 80
+    pp.depth = None
+    pp.compact = False
+    pp.sort_dicts = True
 
 
 def get_words_hint(cmd):
@@ -1439,18 +1453,18 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         
-        @partial(self.Bind, wx.EVT_TIMER)
         def on_timer(evt):
             self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1)
+        self.Bind(wx.EVT_TIMER, on_timer)
         
         ## AcceleratorTable mimic
-        @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
             """Called when key down"""
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
                 self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
+        self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         def close(v):
             """Close the window"""
@@ -1468,12 +1482,11 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
-                        caption="About this software")
+                      "About this software")
     
     def Destroy(self):
         try:
             self.timer.Stop()
-            ## del self.timer
             self.inspector.Destroy() # inspector is not my child
         finally:
             return wx.Frame.Destroy(self)
@@ -1498,19 +1511,17 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.statusbar.Show(0)
         self.SetStatusBar(self.statusbar)
         
-        ## To default close,
-        ## >>> self.Unbind(wx.EVT_CLOSE)
-        
-        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only
-        
         ## AcceleratorTable mimic
-        @partial(self.Bind, wx.EVT_CHAR_HOOK)
         def hook_char(evt):
             """Called when key down"""
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
                 self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
+        self.Bind(wx.EVT_CHAR_HOOK, hook_char)
+        
+        ## To default close >>> self.Unbind(wx.EVT_CLOSE)
+        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only
         
         def close(v):
             """Close the window"""
@@ -1582,10 +1593,14 @@ Global bindings:
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
+        self._mgr.SetDockSizeConstraint(0.4, 0.5)
+        
         self._mgr.AddPane(self.shell, aui.AuiPaneInfo().Name("shell").CenterPane())
         self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right().Show(0)
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0))
         self._mgr.Update()
+        
+        self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN|wx.FR_MATCHCASE)
@@ -1653,13 +1668,21 @@ Global bindings:
         f = os.path.expanduser("~/.deb/deb-logging.log")
         if os.path.exists(f):
             with self.fopen(f) as i:
-                self.Log.Value = i.read()
+                self.Log.SetText(i.read())
     
-    def fopen(self, f, *args):
+    @staticmethod
+    def fopen(f, *args):
         try:
             return open(f, *args, newline='') # PY3
         except TypeError:
             return open(f, *args) # PY2
+    
+    def OnCloseFrame(self, evt):
+        if self.shell.debugger.busy:
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
+        evt.Skip()
     
     def Destroy(self):
         try:
@@ -1676,7 +1699,7 @@ Global bindings:
             return MiniFrame.Destroy(self)
     
     def About(self, evt=None):
-        self.Help.SetValue('\n\n'.join((
+        self.Help.SetText('\n\n'.join((
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
@@ -1903,12 +1926,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b1000) # default: no symbols
-        self.SetMarginWidth(1, 0) # default: no margin
+        ## self.SetMarginWidth(1, 0) # default: no margin
+        self.SetMarginWidth(1, 32)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
-        self.SetMarginWidth(2, 0) # default: no margin
+        ## self.SetMarginWidth(2, 0) # default: no margin
+        self.SetMarginWidth(2, 1)
+        self.SetMarginSensitive(2, False)
         
+        self.SetProperty('fold', '1') # Enable folder at margin=2
         self.SetMarginLeft(2) # +1 margin at the left
         
         ## Custom markers (cf. MarkerAdd)
@@ -1988,13 +2015,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if "STC_STYLE_LINENUMBER" in spec:
             lsc = _map(spec.get("STC_STYLE_LINENUMBER"))
             
-            self.SetMarginWidth(1, 32)
-            self.SetMarginWidth(2, 1)
-            self.SetProperty('fold', '0')
             ## Set colors used as a chequeboard pattern.
             ## Being one pixel solid line, the back and fore should be the same.
-            self.SetFoldMarginColour(True, lsc.get('fore')) # back: one of the colors
-            self.SetFoldMarginHiColour(True, lsc.get('fore')) # fore: the other color
+            if self.GetMarginSensitive(2):
+                self.SetFoldMarginColour(True, lsc.get('back'))
+                self.SetFoldMarginHiColour(True, 'light gray')
+            else:
+                self.SetFoldMarginColour(True, lsc.get('fore')) # back: one of the colors
+                self.SetFoldMarginHiColour(True, lsc.get('fore')) # fore: the other color
         
         ## Custom style for caret and line colour
         if "STC_STYLE_CARETLINE" in spec:
@@ -2491,6 +2519,7 @@ The most convenient way to see the details of keymaps on the shell:
      or self.shell.handler @filling
 
 Flaky nutshell:
+    With great oven by Robin Dunn,
     Half-baked by Patrik K. O'Brien,
     and the other half by K. O'moto.
     """
@@ -2608,8 +2637,6 @@ Flaky nutshell:
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-        
         ## テキストドラッグの禁止
         ## We never allow DnD of text, file, etc.
         self.SetDropTarget(None)
@@ -2637,6 +2664,8 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
+                 'debug_begin' : [ None, ],
+                   'debug_end' : [ None, _F(self.prompt) ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -2822,14 +2851,11 @@ Flaky nutshell:
             },
         })
         
-        self.set_style(self.PALETTE_STYLE)
-        
-        ## Enable folder at margin=2
-        self.SetProperty('fold', '1')
         self.SetMarginWidth(2, 12)
         self.SetMarginSensitive(2, True)
-        self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
-        self.SetFoldMarginHiColour(True, "#c0c0c0")
+        ## self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
+        ## self.SetFoldMarginHiColour(True, "#c0c0c0") # fore:black is a bit strong
+        self.set_style(self.PALETTE_STYLE)
         try:
             self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
             self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
@@ -2840,9 +2866,6 @@ Flaky nutshell:
         self.__start = 0
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
-    
-    def OnDestroy(self, evt):
-        evt.Skip()
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -3100,7 +3123,7 @@ Flaky nutshell:
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
-        ## builtins.pp = pprint # see below; optional args.
+        builtins.pp = pp
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
@@ -3116,12 +3139,6 @@ Flaky nutshell:
             except TypeError:
                 return inspect.getmodule(obj)
         builtins.where = where
-        
-        def pp(x):
-            pprint(x, width=pp.width, compact=pp.compact)
-        pp.width = 100 # default 80
-        pp.compact = False
-        builtins.pp = pp
     
     def on_activated(self, shell):
         """Called when activated"""
@@ -3386,7 +3403,7 @@ Flaky nutshell:
         doc = inspect.getdoc(obj)\
           or "No information about {}".format(obj)
         try:
-            self.parent.Help.SetValue(doc)
+            self.parent.Help.SetText(doc)
             self.parent.Help.Show()
         except AttributeError:
             print(doc)
@@ -3400,12 +3417,14 @@ Flaky nutshell:
         doc = pydoc.plain(pydoc.render_doc(obj))\
           or "No description about {}".format(obj)
         try:
-            self.parent.Help.SetValue(doc)
+            self.parent.Help.SetText(doc)
             self.parent.Help.Show()
         except AttributeError:
             print(doc)
     
     def eval(self, text):
+        if self.debugger.busy:
+            return eval(text, self.debugger.locals)
         ## return eval(text, self.target.__dict__)
         return eval(text, self.interp.locals)
     
@@ -3477,42 +3496,51 @@ Flaky nutshell:
     ## --------------------------------
     
     def hook(self, wxobj, binder):
-        if not hasattr(wxobj, '__deb__handler__'):
+        if not hasattr(wxobj, '__event_handler__'):
             self.message("- {} has no handler to hook.".format(wxobj))
             return
-        db = wxobj.__deb__handler__
-        actions = db[binder.typeId]
+        if self.debugger.busy:
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
+        actions = wxobj.__event_handler__[binder.typeId]
         def _hook(evt):
-            for target in actions:
-                self.debug(target, evt)
+            try:
+                self.write("#>> Enter [n]ext to continue.\n", -1)
+                self.handler('debug_begin')
+                self.debugger.open(inspect.currentframe(), verbose=0)
+                for target in actions:
+                    target(evt)
+                self.debugger.close()
+            except bdb.BdbQuit:
+                self.debugger.close()
+            finally:
+                self.handler('debug_end')
             wxobj.Unbind(binder, handler=_hook) # release hook once called
         wxobj.Bind(binder, _hook) # add hook for the event-binder
         return actions
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
-            ## raise TypeError("{} is not callable".format(target))
+            print("- cannot break {!r} (not callable)".format(target))
             return
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        self.write("#>> starting debugger (Enter [n]ext to continue)\n", -1)
-        self.parent.Log.clear()
-        self.parent.Log.Show()
-        self.redirectStdin()
-        self.redirectStdout()
-        wx.CallAfter(self.Execute, 'step') # step into the target
-        wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
+        if self.debugger.busy:
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
         try:
-            self.handler("debug_begin", target, *args, **kwargs)
+            self.write("#>> Enter [n]ext to continue.\n", -1)
+            self.handler('debug_begin')
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
-        except bdb.BdbQuit:
-            pass
-        finally:
             self.debugger.close()
-            self.prompt()
-            self.handler("debug_end", target, *args, **kwargs)
+        except bdb.BdbQuit as e:
+            self.debugger.close()
+        finally:
+            self.handler('debug_end')
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3523,7 +3551,7 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.Scratch.SetValue(tip)
+                self.parent.Scratch.SetText(tip)
         except AttributeError:
             pass
     
@@ -3816,19 +3844,19 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
+    busy = False
+    logger = property(lambda self: self.parent.Log)
+    shell = property(lambda self: self.parent.shell)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.parent = parent
-        self.logger = parent.Log
         self.viewer = None
         self.module = None
-        self.namespace = {}
-    
-    def __del__(self):
-        self.close()
+        self.locals = {}
+        self.globals = {}
     
     def write(self, msg):
         print(msg, file=self.stdout)
@@ -3839,16 +3867,28 @@ class Debugger(Pdb):
         print(prefix + str(msg), file=self.stdout)
     
     def open(self, frame=None, verbose=False):
+        if self.busy:
+            return
+        self.busy = True
         self.verbose = verbose
-        self.viewer = filling(target=self.namespace, label='locals')
+        self.viewer = filling(target=self.locals, label='locals')
+        self.logger.clear()
+        self.logger.Show()
+        self.shell.SetFocus()
+        self.shell.redirectStdin()
+        self.shell.redirectStdout()
+        wx.CallLater(1000, wx.EndBusyCursor) # cancel the egg timer
+        wx.CallAfter(self.shell.Execute, 'step') # step into the target
         Pdb.set_trace(self, frame)
     
     def close(self):
-        self.set_quit()
+        if self.busy:
+            self.set_quit()
         if self.viewer:
             self.viewer.Close()
         self.viewer = None
         self.module = None
+        self.busy = False
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
@@ -3934,14 +3974,17 @@ class Debugger(Pdb):
             self.logger.goto_char(self.logger.PositionFromLine(lc-1))
             wx.CallAfter(self.logger.recenter)
             
+            self.globals.clear()
+            self.globals.update(frame.f_globals)
+            
             ## Update view of the namespace
+            self.locals.clear()
+            self.locals.update(frame.f_locals)
             try:
-                self.namespace.clear()
-                self.namespace.update(frame.f_locals)
                 tree = self.viewer.filling.tree
                 tree.display()
                 ## tree.Expand(tree.root)
-            except RuntimeError:
+            except Exception:
                 pass
         self.module = module
         Pdb.preloop(self)
@@ -3959,68 +4002,82 @@ class Debugger(Pdb):
     
     def dump(self, wxobj, verbose=True):
         """Dump all event handlers bound to wxobj"""
-        if not hasattr(wxobj, '__deb__handler__'):
+        if not hasattr(wxobj, '__event_handler__'):
             self.message("- {} has no handler information to dump.".format(wxobj))
             return
-        db = wxobj.__deb__handler__
+        ssm = wxobj.__event_handler__
         if verbose:
             stdlog = self.logger
             stdlog.clear()
             stdlog.Show()
             print(wxobj, file=stdlog)
-            for event, actions in db.items():
+            for event, actions in sorted(ssm.items()):
                 name = ew._eventIdMap[event]
-                print("{:8d}: {!r}".format(event, name), file=stdlog)
+                print("\n{:8d}: {!r}".format(event, name), file=stdlog)
                 for act in actions:
                     try:
-                        src = inspect.getsourcefile(act)
-                        ln = inspect.getsourcelines(act)[1]
+                        file = inspect.getsourcefile(act)
+                        src, line = inspect.getsourcelines(act)
                     except TypeError:
-                        src = inspect.getmodule(act)
-                        ln = -1
-                    print("{:10s}{}:{}:{}".format(
-                          ' ', src, ln, typename(act)), file=stdlog)
-        return db
+                        file = inspect.getmodule(act)
+                        src, line = [''], -1
+                    print("{:10s}{}:{}:{}:{}".format(
+                          ' ', file, line, typename(act), src[0].rstrip()), file=stdlog)
+        return ssm
 
 
-def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
-    """
-    Bind an event to an event handler.
-    (override) to return handler
-    """
-    assert isinstance(event, wx.PyEventBinder)
-    if handler is None:
-        return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
-    assert source is None or hasattr(source, 'GetId')
-    if source is not None:
-        id  = source.GetId()
-    event.Bind(self, id, id2, handler)
-    ## record all handlers: single state machine
-    if not hasattr(self, '__deb__handler__'):
-        self.__deb__handler__ = {}
-    if event.typeId in self.__deb__handler__:
-        self.__deb__handler__[event.typeId] += [handler]
-    else:
-        self.__deb__handler__[event.typeId] = [handler]
-    return handler
-core.EvtHandler.Bind = _EvtHandler_Bind
+try:
+    from wx import core # PY3 only
 
+    def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """
+        Bind an event to an event handler.
+        (override) to recode and return handler
+        """
+        assert isinstance(event, wx.PyEventBinder)
+        assert source is None or hasattr(source, 'GetId')
+        if handler is None:
+            return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
+        if source is not None:
+            id  = source.GetId()
+        event.Bind(self, id, id2, handler)
+        ## record all handlers: single state machine
+        if not hasattr(self, '__event_handler__'):
+            self.__event_handler__ = {}
+        if event.typeId not in self.__event_handler__:
+            self.__event_handler__[event.typeId] = [handler]
+        else:
+            self.__event_handler__[event.typeId].insert(0, handler)
+        return handler
+    core.EvtHandler.Bind = _EvtHandler_Bind
+    del _EvtHandler_Bind
 
-def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
-    """
-    Disconnects the event handler binding for event from `self`.
-    Returns ``True`` if successful.
-    (override) to remove handler
-    """
-    if source is not None:
-        id  = source.GetId()
-    ## remove the specified handler or all handlers
-    if handler is None:
-        self.__deb__handler__[event.typeId].clear()
-    else:
-        self.__deb__handler__[event.typeId].remove(handler)
-    return event.Unbind(self, id, id2, handler)
-core.EvtHandler.Unbind = _EvtHandler_Unbind
+    def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+        """
+        Disconnects the event handler binding for event from `self`.
+        Returns ``True`` if successful.
+        (override) to remove handler
+        """
+        if source is not None:
+            id  = source.GetId()
+        ## remove the specified handler or all handlers
+        try:
+            actions = self.__event_handler__[event.typeId]
+            if handler is None:
+                actions.clear()
+            else:
+                actions.remove(handler)
+            if not actions:
+                del self.__event_handler__[event.typeId]
+        except Exception:
+            pass
+        return event.Unbind(self, id, id2, handler)
+    core.EvtHandler.Unbind = _EvtHandler_Unbind
+    del _EvtHandler_Unbind
+    del core
+
+except ImportError:
+    pass
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
@@ -4050,14 +4107,15 @@ Note:
     frame.shell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window
     if startup:
+        shell = frame.shell
         try:
-            startup(frame.shell)
-            frame.shell.handler.bind("shell_cloned", startup)
-        except Exception:
+            startup(shell)
+            shell.handler.bind("shell_cloned", startup)
+        except Exception as e:
+            shell.message("- Failed to startup: {!r}".format(e))
             traceback.print_exc()
-            frame.shell.write(traceback.format_exc())
-            frame.shell.prompt()
-    
+        else:
+            shell.message("The startup was completed successfully.")
     if not isinstance(app, wx.App):
         print("- deb: argument app has unexpected type {!r}".format(typename(app)))
         pass

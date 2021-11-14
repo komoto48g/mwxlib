@@ -100,10 +100,10 @@ Note:
             return False
         try:
             self.__flag.clear()
-            if wx.MessageBox(msg + "\n"
-                "\n Press [OK] to continue."
-                "\n Press [CANCEL] to terminate the process.",
-                style = wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
+            if wx.MessageBox(msg + "\n\n"
+                "Press [OK] to continue.\n"
+                "Press [CANCEL] to terminate the process.",
+                style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
                     ## self.Stop() # 必要があれば呼び出し側で行う
                     return False
             return True
@@ -174,7 +174,8 @@ Note:
                 self.handler('thread_end', self)
         
         if self.__isRunning:
-            wx.MessageBox("The thread is running (Press C-g to quit).", style=wx.ICON_WARNING)
+            wx.MessageBox("The thread is running (Press C-g to quit).",
+                          style=wx.ICON_WARNING)
             return
         
         self.target = f
@@ -570,9 +571,15 @@ class Frame(mwx.Frame):
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
         
         ## self._mgr.SetAutoNotebookStyle(
-        ##     agwStyle = aui.AUI_NB_SMART_TABS|aui.AUI_NB_TAB_MOVE|aui.AUI_NB_TAB_SPLIT
-        ##       |aui.AUI_NB_TAB_FLOAT|aui.AUI_NB_TAB_EXTERNAL_MOVE|aui.AUI_NB_SCROLL_BUTTONS
-        ##     &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_CLOSE_BUTTON|aui.AUI_NB_SUB_NOTEBOOK)
+        ##     agwStyle = ( aui.AUI_NB_SMART_TABS
+        ##                | aui.AUI_NB_TAB_MOVE
+        ##                | aui.AUI_NB_TAB_SPLIT
+        ##                | aui.AUI_NB_TAB_FLOAT
+        ##                | aui.AUI_NB_TAB_EXTERNAL_MOVE
+        ##                | aui.AUI_NB_SCROLL_BUTTONS )
+        ##                &~( aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        ##                  | aui.AUI_NB_CLOSE_BUTTON
+        ##                  | aui.AUI_NB_SUB_NOTEBOOK )
         ## )
         
         self.__plugins = OrderedDict() # modules in the order of load/save
@@ -970,6 +977,8 @@ class Frame(mwx.Frame):
          row : dock_row position
         prop : dock_proportion < 1e6 ?
    floating_ : pos/size of floating window
+        
+        retval-> None if succeeded else False
         """
         if hasattr(root, '__file__'): #<type 'module'>
             root = root.__file__
@@ -1066,7 +1075,8 @@ class Frame(mwx.Frame):
         
         except Exception as e:
             wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
+                                        "Error in loading {!r}".format(name),
+                                        style=wx.ICON_ERROR)
             return False
         
         ## --------------------------------
@@ -1176,7 +1186,8 @@ class Frame(mwx.Frame):
             
         except Exception as e:
             wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                caption="Error in loading {!r}".format(name), style=wx.ICON_ERROR)
+                                        "Error in loading {!r}".format(name),
+                                        style=wx.ICON_ERROR)
             return False
     
     def unload_plug(self, name):
@@ -1217,7 +1228,8 @@ class Frame(mwx.Frame):
             
         except Exception as e:
             wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                caption="Error in unloading {!r}".format(name), style=wx.ICON_ERROR)
+                                        "Error in unloading {!r}".format(name),
+                                        style=wx.ICON_ERROR)
             return False
     
     def edit_plug(self, name):
