@@ -3497,6 +3497,10 @@ Flaky nutshell:
         if not hasattr(wxobj, '__event_handler__'):
             self.message("- {} has no handler to hook.".format(wxobj))
             return
+        if self.debugger.busy:
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
         actions = wxobj.__event_handler__[binder.typeId]
         def _hook(evt):
             try:
@@ -3520,6 +3524,10 @@ Flaky nutshell:
             return
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
+            return
+        if self.debugger.busy:
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
             return
         try:
             self.write("#>> Enter [n]ext to continue.\n", -1)
@@ -3847,9 +3855,6 @@ class Debugger(Pdb):
         self.module = None
         self.namespace = {}
     
-    def __del__(self):
-        self.close()
-    
     def write(self, msg):
         print(msg, file=self.stdout)
     
@@ -3859,6 +3864,8 @@ class Debugger(Pdb):
         print(prefix + str(msg), file=self.stdout)
     
     def open(self, frame=None, verbose=False):
+        if self.busy:
+            return
         self.busy = True
         self.verbose = verbose
         self.viewer = filling(target=self.namespace, label='locals')
@@ -3872,7 +3879,8 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def close(self):
-        self.set_quit()
+        if self.busy:
+            self.set_quit()
         if self.viewer:
             self.viewer.Close()
         self.viewer = None
