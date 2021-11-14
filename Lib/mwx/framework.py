@@ -25,7 +25,6 @@ import re
 import wx
 from wx import aui
 from wx import stc
-from wx import core
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 from wx.py.filling import FillingFrame
@@ -1682,8 +1681,8 @@ Global bindings:
         if self.shell.debugger.busy:
             wx.MessageBox("The debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
-        else:
-            evt.Skip()
+            return
+        evt.Skip()
     
     def Destroy(self):
         try:
@@ -3504,12 +3503,12 @@ Flaky nutshell:
                 self.write("#>> Enter [n]ext to continue.\n", -1)
                 self.handler('debug_begin')
                 self.debugger.open(inspect.currentframe(), verbose=0)
-                for target in actions: # 強制的に各ハンドラを呼び出す (event-loop とは別に)
+                for target in actions:
                     target(evt)
-            except bdb.BdbQuit:
-                pass
-            finally:
                 self.debugger.close()
+            except bdb.BdbQuit:
+                self.debugger.close()
+            finally:
                 self.handler('debug_end')
             wxobj.Unbind(binder, handler=_hook) # release hook once called
         wxobj.Bind(binder, _hook) # add hook for the event-binder
@@ -3527,10 +3526,10 @@ Flaky nutshell:
             self.handler('debug_begin')
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
-        except bdb.BdbQuit:
-            pass
-        finally:
             self.debugger.close()
+        except bdb.BdbQuit as e:
+            self.debugger.close()
+        finally:
             self.handler('debug_end')
     
     ## --------------------------------
@@ -4013,50 +4012,58 @@ class Debugger(Pdb):
         return ssm
 
 
-def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
-    """
-    Bind an event to an event handler.
-    (override) to recode and return handler
-    """
-    assert isinstance(event, wx.PyEventBinder)
-    assert source is None or hasattr(source, 'GetId')
-    if handler is None:
-        return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
-    if source is not None:
-        id  = source.GetId()
-    event.Bind(self, id, id2, handler)
-    ## record all handlers: single state machine
-    if not hasattr(self, '__event_handler__'):
-        self.__event_handler__ = {}
-    if event.typeId not in self.__event_handler__:
-        self.__event_handler__[event.typeId] = [handler]
-    else:
-        self.__event_handler__[event.typeId].insert(0, handler)
-    return handler
-core.EvtHandler.Bind = _EvtHandler_Bind
+try:
+    from wx import core # PY3 only
 
-
-def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
-    """
-    Disconnects the event handler binding for event from `self`.
-    Returns ``True`` if successful.
-    (override) to remove handler
-    """
-    if source is not None:
-        id  = source.GetId()
-    ## remove the specified handler or all handlers
-    try:
-        actions = self.__event_handler__[event.typeId]
+    def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """
+        Bind an event to an event handler.
+        (override) to recode and return handler
+        """
+        assert isinstance(event, wx.PyEventBinder)
+        assert source is None or hasattr(source, 'GetId')
         if handler is None:
-            actions.clear()
+            return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
+        if source is not None:
+            id  = source.GetId()
+        event.Bind(self, id, id2, handler)
+        ## record all handlers: single state machine
+        if not hasattr(self, '__event_handler__'):
+            self.__event_handler__ = {}
+        if event.typeId not in self.__event_handler__:
+            self.__event_handler__[event.typeId] = [handler]
         else:
-            actions.remove(handler)
-        if not actions:
-            del self.__event_handler__[event.typeId]
-    except Exception:
-        pass
-    return event.Unbind(self, id, id2, handler)
-core.EvtHandler.Unbind = _EvtHandler_Unbind
+            self.__event_handler__[event.typeId].insert(0, handler)
+        return handler
+    core.EvtHandler.Bind = _EvtHandler_Bind
+    del _EvtHandler_Bind
+
+    def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+        """
+        Disconnects the event handler binding for event from `self`.
+        Returns ``True`` if successful.
+        (override) to remove handler
+        """
+        if source is not None:
+            id  = source.GetId()
+        ## remove the specified handler or all handlers
+        try:
+            actions = self.__event_handler__[event.typeId]
+            if handler is None:
+                actions.clear()
+            else:
+                actions.remove(handler)
+            if not actions:
+                del self.__event_handler__[event.typeId]
+        except Exception:
+            pass
+        return event.Unbind(self, id, id2, handler)
+    core.EvtHandler.Unbind = _EvtHandler_Unbind
+    del _EvtHandler_Unbind
+    del core
+
+except ImportError:
+    pass
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
