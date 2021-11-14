@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.2"
+__version__ = "0.48.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3423,6 +3423,8 @@ Flaky nutshell:
             print(doc)
     
     def eval(self, text):
+        if self.debugger.busy:
+            return eval(text, self.debugger.locals)
         ## return eval(text, self.target.__dict__)
         return eval(text, self.interp.locals)
     
@@ -3853,7 +3855,8 @@ class Debugger(Pdb):
         self.parent = parent
         self.viewer = None
         self.module = None
-        self.namespace = {}
+        self.locals = {}
+        self.globals = {}
     
     def write(self, msg):
         print(msg, file=self.stdout)
@@ -3868,7 +3871,7 @@ class Debugger(Pdb):
             return
         self.busy = True
         self.verbose = verbose
-        self.viewer = filling(target=self.namespace, label='locals')
+        self.viewer = filling(target=self.locals, label='locals')
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
@@ -3971,9 +3974,12 @@ class Debugger(Pdb):
             self.logger.goto_char(self.logger.PositionFromLine(lc-1))
             wx.CallAfter(self.logger.recenter)
             
+            self.globals.clear()
+            self.globals.update(frame.f_globals)
+            
             ## Update view of the namespace
-            self.namespace.clear()
-            self.namespace.update(frame.f_locals)
+            self.locals.clear()
+            self.locals.update(frame.f_locals)
             try:
                 tree = self.viewer.filling.tree
                 tree.display()
