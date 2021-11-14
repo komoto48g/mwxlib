@@ -240,6 +240,21 @@ def typename(obj, docp=False, qualp=False):
     return name
 
 
+def pp(x):
+    ## pprint(x, **pp.__dict__)
+    pprint(x, indent=pp.indent,
+              width=pp.width,
+              depth=pp.depth,
+              compact=pp.compact,
+              sort_dicts=pp.sort_dicts)
+if 1:
+    pp.indent = 1
+    pp.width = 100 # default 80
+    pp.depth = None
+    pp.compact = False
+    pp.sort_dicts = True
+
+
 def get_words_hint(cmd):
     text = get_words_backward(cmd)
     return text.rpartition('.')
@@ -3109,7 +3124,7 @@ Flaky nutshell:
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
-        ## builtins.pp = pprint # see below; optional args.
+        builtins.pp = pp
         builtins.p = print
         builtins.watch = watch
         builtins.filling = filling
@@ -3125,12 +3140,6 @@ Flaky nutshell:
             except TypeError:
                 return inspect.getmodule(obj)
         builtins.where = where
-        
-        def pp(x):
-            pprint(x, width=pp.width, compact=pp.compact)
-        pp.width = 100 # default 80
-        pp.compact = False
-        builtins.pp = pp
     
     def on_activated(self, shell):
         """Called when activated"""
