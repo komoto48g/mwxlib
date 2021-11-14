@@ -3505,6 +3505,7 @@ Flaky nutshell:
             return
         actions = wxobj.__event_handler__[binder.typeId]
         def _hook(evt):
+            wxobj.Unbind(binder, handler=_hook) # release hook once called
             try:
                 self.write("#>> Enter [n]ext to continue.\n", -1)
                 self.handler('debug_begin')
@@ -3516,7 +3517,6 @@ Flaky nutshell:
                 self.debugger.close()
             finally:
                 self.handler('debug_end')
-            wxobj.Unbind(binder, handler=_hook) # release hook once called
         wxobj.Bind(binder, _hook) # add hook for the event-binder
         return actions
     
