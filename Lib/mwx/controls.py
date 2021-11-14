@@ -411,7 +411,6 @@ Args:
                 (self.label, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, lw and 1),
                 (self.text, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, tw and 1),
                 (self.ctrl, cw and 1, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, cw and 1),
-                orient = wx.HORIZONTAL,
             )
         )
         self.update_range()
@@ -946,25 +945,6 @@ Note:
         self.icon = icon
 
 
-## class Label(wx.Panel):
-##     """Label (widget complex of bitmap and label) readonly.
-##     """
-##     def __init__(self, parent, label, icon=None, tip='', **kwargs):
-##         wx.Panel.__init__(self, parent, **kwargs)
-##         
-##         txt = wx.StaticText(self, label=label)
-##         bmp = wx.StaticBitmap(self, bitmap=Icon(icon)) if icon else (0,0)
-##         
-##         self.SetSizer(
-##             mwx.pack(self,
-##                 (bmp, 0, wx.ALIGN_CENTER|wx.ALL, 0),
-##                 (txt, 0, wx.ALIGN_CENTER|wx.ALL, 0),
-##                 orient=wx.HORIZONTAL,
-##             )
-##         )
-##         txt.SetToolTip(tip)
-
-
 class TextCtrl(wx.Panel):
     """Text panel
     
@@ -1003,8 +983,9 @@ Args:
         self.btn = Button(self, label, icon=icon, tip=tip,
                                 size=(-1,-1) if label or icon else (0,0))
         
-        kwargs['style'] = kwargs.get('style', 0)
-        kwargs['style'] |= wx.TE_PROCESS_ENTER|(wx.TE_READONLY if readonly else 0)
+        kwargs['style'] = (kwargs.get('style', 0)
+                            | wx.TE_PROCESS_ENTER
+                            | (wx.TE_READONLY if readonly else 0))
         
         self.ctrl = wx.TextCtrl(self, **kwargs)
         ## self.ctrl.Hint = hint
@@ -1013,7 +994,6 @@ Args:
             mwx.pack(self,
                 (self.btn, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 0),
                 (self.ctrl, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 0),
-                orient=wx.HORIZONTAL,
             )
         )
         if handler:
@@ -1071,8 +1051,9 @@ Note:
         self.btn = Button(self, label, icon=icon, tip=tip,
                                 size=(-1,-1) if label or icon else (0,0))
         
-        kwargs['style'] = kwargs.get('style', 0)
-        kwargs['style'] |= wx.TE_PROCESS_ENTER|(wx.CB_READONLY if readonly else 0)
+        kwargs['style'] = (kwargs.get('style', 0)
+                            | wx.TE_PROCESS_ENTER
+                            | (wx.CB_READONLY if readonly else 0))
         
         self.ctrl = wx.ComboBox(self, **kwargs)
         ## self.ctrl.Hint = hint
@@ -1081,7 +1062,6 @@ Note:
             mwx.pack(self,
                 (self.btn, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 0),
                 (self.ctrl, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 0),
-                orient=wx.HORIZONTAL,
             )
         )
         if handler:
