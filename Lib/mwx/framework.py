@@ -877,7 +877,8 @@ def regulate_key(key):
 
 def funcall(f, doc=None, alias=None, **kwargs):
     """Decorator as curried function
-    equiv. (lambda *v: f`alias<doc:str>(*v, **kwargs))
+    
+    retval-> (lambda *v: f`alias<doc:str>(*v, **kwargs))
     """
     assert isinstance(doc, (LITERAL_TYPE, type(None)))
     assert isinstance(alias, (LITERAL_TYPE, type(None)))
@@ -893,14 +894,14 @@ def funcall(f, doc=None, alias=None, **kwargs):
     ## Check if the event argument etc. can be omitted,
     ## If it can be (if required arguments are given by kwargs) return the function.
     ## 
-    def explicit_args(args, defaults):
-        ## k = len(args) - n - len(kwargs) # NG
+    def explicit_args(argv, defaults):
+        ## k = len(argv) - n - len(kwargs) # NG
         ## defaults と kwargs がかぶることがある．次のようにして引数を数える
         n = len(defaults or ())
-        xargs = args[:-n] if n else args # explicit, non-default args that must be given
+        xargs = argv[:-n] if n else argv # explicit, non-default argv that must be given
         k = len(xargs)                   # if k > 0: kwargs must give the rest (xargs)
         for kw in kwargs:
-            if kw not in args:
+            if kw not in argv:
                 raise TypeError("{} got an unexpected keyword {!r}".format(f, kw))
             if kw in xargs:
                 k -= 1
@@ -908,12 +909,12 @@ def funcall(f, doc=None, alias=None, **kwargs):
     
     if not inspect.isbuiltin(f):
         try:
-            args, _varargs, _keywords, defaults,\
+            argv, _varargs, _keywords, defaults,\
               _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) # PY3
         except AttributeError:
-            args, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
+            argv, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
         
-        k = explicit_args(args, defaults)
+        k = explicit_args(argv, defaults)
         if k == 0 or inspect.ismethod(f) and k == 1: # 暗黙の引数 'self' は除く
             @wraps(f)
             def _Act2(*v):
@@ -925,9 +926,9 @@ def funcall(f, doc=None, alias=None, **kwargs):
         try:
             m = re.search(r"(\w+)\((.*)\)", inspect.getdoc(f))
             name, argspec = m.groups()
-            args = [x for x in argspec.strip().split(',') if x]
+            argv = [x for x in argspec.strip().split(',') if x]
             defaults = re.findall(r"\w+\s*=(\w+)", argspec)
-            k = explicit_args(args, defaults)
+            k = explicit_args(argv, defaults)
             if k == 0:
                 @wraps(f)
                 def _Act3(*v):
@@ -1847,12 +1848,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                     '* pressed' : (0, skip),
                    '* released' : (0, skip),
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
-               'insert pressed' : (0, _F(lambda v: self.over(None), "toggle-over")),
-                   'f9 pressed' : (0, _F(lambda v: self.wrap(None), "toggle-fold-type")),
-                  'C-l pressed' : (0, _F(lambda v: self.recenter(), "recenter")),
-                'C-S-l pressed' : (0, _F(lambda v: self.recenter(-1), "recenter-bottom")),
-               'C-M-up pressed' : (0, _F(lambda v: self.ScrollLines(-2), "scroll-up")),
-             'C-M-down pressed' : (0, _F(lambda v: self.ScrollLines(+2), "scroll-down")),
+               'insert pressed' : (0, _F(lambda v: self.over(None), doc="toggle-over")),
+                   'f9 pressed' : (0, _F(lambda v: self.wrap(None), doc="toggle-fold-type")),
+                  'C-l pressed' : (0, _F(lambda v: self.recenter(), doc="recenter")),
+                'C-S-l pressed' : (0, _F(lambda v: self.recenter(-1), doc="recenter-bottom")),
+               'C-M-up pressed' : (0, _F(lambda v: self.ScrollLines(-2), doc="scroll-up")),
+             'C-M-down pressed' : (0, _F(lambda v: self.ScrollLines(+2), doc="scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
@@ -2664,8 +2665,8 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
-                 'debug_begin' : [ None, ],
-                   'debug_end' : [ None, _F(self.prompt) ],
+                 'debug_begin' : [ None, lambda: self.write("#>> Enter [n]ext to continue.\n", -1) ],
+                   'debug_end' : [ None, self.prompt ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -2685,8 +2686,8 @@ Flaky nutshell:
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
-                 ## 'C-up pressed' : (0, _F(lambda v: self.OnHistoryReplace(+1), "prev-command")),
-               ## 'C-down pressed' : (0, _F(lambda v: self.OnHistoryReplace(-1), "next-command")),
+                 ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
+               ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark)),
@@ -3507,7 +3508,6 @@ Flaky nutshell:
         def _hook(evt):
             wxobj.Unbind(binder, handler=_hook) # release hook once called
             try:
-                self.write("#>> Enter [n]ext to continue.\n", -1)
                 self.handler('debug_begin')
                 self.debugger.open(inspect.currentframe(), verbose=0)
                 for target in actions:
@@ -3532,7 +3532,6 @@ Flaky nutshell:
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            self.write("#>> Enter [n]ext to continue.\n", -1)
             self.handler('debug_begin')
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
