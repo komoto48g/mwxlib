@@ -129,23 +129,23 @@ Note:
             self.Stop()
     
     def __enter__(self):
-        f = inspect.currentframe().f_back
-        m = inspect.getmodule(f)
+        frame = inspect.currentframe().f_back
+        module = inspect.getmodule(frame)
         if not self.is_active:
             raise AssertionError("cannot enter {} "
-                "unless the thread is running".format(f.f_code.co_name))
+                "unless the thread is running".format(frame.f_code.co_name))
         
-        event = "{}:{}:enter".format(m.__name__, f.f_code.co_name)
+        event = "{}:{}:enter".format(module.__name__, frame.f_code.co_name)
         self.handler(event, self)
     
     def __exit__(self, t, v, tb):
-        f = inspect.currentframe().f_back
-        m = inspect.getmodule(f)
+        frame = inspect.currentframe().f_back
+        module = inspect.getmodule(frame)
         if t:
-            event = "{}:{}:error".format(m.__name__, f.f_code.co_name)
+            event = "{}:{}:error".format(module.__name__, frame.f_code.co_name)
             self.handler(event, self)
         
-        event = "{}:{}:exit".format(m.__name__, f.f_code.co_name)
+        event = "{}:{}:exit".format(module.__name__, frame.f_code.co_name)
         self.handler(event, self)
     
     def __call__(self, f, *args, **kwargs):

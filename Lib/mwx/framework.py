@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.3"
+__version__ = "0.48.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3537,7 +3537,7 @@ Flaky nutshell:
             self.debugger.open(inspect.currentframe(), verbose=0)
             target(*args, **kwargs)
             self.debugger.close()
-        except bdb.BdbQuit as e:
+        except bdb.BdbQuit:
             self.debugger.close()
         finally:
             self.handler('debug_end')
@@ -3858,9 +3858,6 @@ class Debugger(Pdb):
         self.locals = {}
         self.globals = {}
     
-    def write(self, msg):
-        print(msg, file=self.stdout)
-    
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
         prefix = self.indent if indent < 0 else ' ' * indent
@@ -3922,7 +3919,10 @@ class Debugger(Pdb):
     
     def user_call(self, frame, argument_list):
         """--Call--"""
-        print(frame)
+        filename = frame.f_code.co_filename
+        lineno = frame.f_code.co_firstlineno
+        name = frame.f_code.co_name
+        print("{}:{}:{}".format(filename, lineno, name))
         self.message("$(argument_list) = {!r}".format((argument_list)))
         Pdb.user_call(self, frame, argument_list)
     
