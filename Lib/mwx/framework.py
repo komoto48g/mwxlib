@@ -633,6 +633,9 @@ Attributes:
         for k,v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
+                    if event not in self[k]:
+                        self[k][event] = transaction[:] # copy the event:transaction
+                        continue
                     for act in transaction[1:]:
                         self.bind(event, act, k, transaction[0])
             else:
@@ -644,7 +647,7 @@ Attributes:
         for k,v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
-                    if self[k].get(event) is transaction: # remove the event
+                    if self[k].get(event) == transaction: # remove the event:transaction
                         self[k].pop(event)
                         continue
                     for act in transaction[1:]:
@@ -694,12 +697,13 @@ Attributes:
             ##     pass
             context[event] = [state2] # new event:transaction
         
-        if action not in context[event]:
+        transaction = context[event]
+        if action not in transaction:
             try:
-                context[event].append(action)
+                transaction.append(action)
             except AttributeError:
-                warn("- FSM:warning - appending action to context"
-                     "({!r} : {!r}) must be a list, not tuple".format(state, event))
+                warn("- FSM:warning - appending action to context ({!r} : {!r})\n"
+                     "  The transaction must be a list, not a tuple".format(state, event))
         return action
     
     def unbind(self, event, action, state=None):
@@ -714,14 +718,18 @@ Attributes:
             return
         
         context = self[state]
-        if event in context and action in context[event]:
+        if event not in context:
+            return
+        
+        transaction = context[event]
+        if action in transaction:
             try:
-                context[event].remove(action)
-                if len(context[event]) == 1:
+                transaction.remove(action)
+                if len(transaction) == 1:
                     context.pop(event)
             except AttributeError:
-                warn("- FSM:warning - removing action from context"
-                     "({!r} : {!r}) must be a list, not tuple".format(state, event))
+                warn("- FSM:warning - removing action from context ({!r} : {!r})\n"
+                     "  The transaction must be a list, not a tuple".format(state, event))
 
 
 ## --------------------------------

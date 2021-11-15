@@ -283,7 +283,7 @@ unloadable : flag to set the Layer to be unloadable
         
         _F = mwx.funcall
         
-        self.handler.update({ #<graphman.Layer handler>
+        self.handler.append({ #<graphman.Layer handler>
             None : {
                  'thread_begin' : [ None ], # begin processing
                    'thread_end' : [ None ], # end processing
@@ -730,7 +730,7 @@ class Frame(mwx.Frame):
                'frame_modified' : [ None, lambda v: self.show_pane("graph") ],
                'frame_selected' : [ None, self.OnShowFrame ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
-            }
+            },
         })
         self.output.handler.append({ #<Graph handler>
             None : {
@@ -739,7 +739,7 @@ class Frame(mwx.Frame):
                'frame_modified' : [ None, lambda v: self.show_pane("output") ],
                'frame_selected' : [ None, self.OnShowFrame ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.output, self.graph) ],
-            }
+            },
         })
         
         ## コンテキストメニューに追加
