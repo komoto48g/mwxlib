@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.4"
+__version__ = "0.48.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -883,35 +883,42 @@ def regulate_key(key):
 ## Interfaces of Controls
 ## --------------------------------
 
-def funcall(f, doc=None, alias=None, **kwargs):
+## def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3-only
+def funcall(f, *args, **kwargs):
     """Decorator as curried function
     
-    retval-> (lambda *v: f`alias<doc:str>(*v, **kwargs))
+    event 引数などが省略できるかどうかチェックし，
+    省略できる場合 (kwargs で必要な引数が与えられる場合) その関数を返す．
+    Check if the event argument etc. can be omitted,
+    If it can be omitted (if required arguments are given by kwargs),
+    return the decorated function.
+    
+    kwargs: `doc` and `alias` are reserved as kw-only-args,
+        and cannot used as kwargs of given function f.
+    
+    retval-> (lambda *v: f`alias<doc:str>(*v, *args, **kwargs))
     """
+    doc = kwargs.pop('doc') if 'doc' in kwargs else ''
+    alias = kwargs.pop('alias') if 'alias' in kwargs else ''
+    
     assert isinstance(doc, (LITERAL_TYPE, type(None)))
     assert isinstance(alias, (LITERAL_TYPE, type(None)))
     
     @wraps(f)
     def _Act(*v):
-        return f(*v, **kwargs) # ufunc with one event args
+        return f(*v+args, **kwargs) # ufunc with one event args
     action = _Act
     
-    ## event 引数などが省略できるかどうかチェックし，
-    ## 省略できる場合 (kwargs で必要な引数が与えられる場合) その関数を返す
-    ## 
-    ## Check if the event argument etc. can be omitted,
-    ## If it can be (if required arguments are given by kwargs) return the function.
-    ## 
     def explicit_args(argv, defaults):
-        ## k = len(argv) - n - len(kwargs) # NG
-        ## defaults と kwargs がかぶることがある．次のようにして引数を数える
-        n = len(defaults or ())
-        xargs = argv[:-n] if n else argv # explicit, non-default argv that must be given
-        k = len(xargs)                   # if k > 0: kwargs must give the rest (xargs)
+        ## 明示的に与えなければならない引数の数を数える
+        ## defaults と kwargs はかぶることがあるので，次のようにする
+        n = len(args) + len(defaults or ())
+        rest = argv[:-n] if n else argv # explicit, non-default argv that must be given
+        k = len(rest)                   # if k > 0: kwargs must give the rest of args
         for kw in kwargs:
             if kw not in argv:
                 raise TypeError("{} got an unexpected keyword {!r}".format(f, kw))
-            if kw in xargs:
+            if kw in rest:
                 k -= 1
         return k
     
@@ -926,7 +933,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
         if k == 0 or inspect.ismethod(f) and k == 1: # 暗黙の引数 'self' は除く
             @wraps(f)
             def _Act2(*v):
-                return f(**kwargs) # function with no explicit args
+                return f(*args, **kwargs) # function with no explicit args
             action = _Act2
     else:
         ## Builtin functions don't have an argspec that we can get.
@@ -940,7 +947,7 @@ def funcall(f, doc=None, alias=None, **kwargs):
             if k == 0:
                 @wraps(f)
                 def _Act3(*v):
-                    return f(**kwargs) # function with no explicit args
+                    return f(*args, **kwargs) # function with no explicit args
                 action = _Act3
         except TypeError:
             raise
@@ -1099,10 +1106,13 @@ class KeyCtrlInterfaceMixin(object):
             return
         self.message(evt.key + '-')
     
-    def define_key(self, keymap, action=None, doc=None, alias=None, **kwargs):
+    def define_key(self, keymap, action=None, *args, **kwargs):
         """Define [map key] action at default state
+        
         If no action, invalidates the key and returns @decor(key-binder).
         key must be in C-M-S order (ctrl + alt(meta) + shift).
+        
+        kwargs: `doc` and `alias` are reserved as kw-only-args.
         """
         state = self.handler.default_state
         map, sep, key = regulate_key(keymap).rpartition(' ')
@@ -1117,9 +1127,9 @@ class KeyCtrlInterfaceMixin(object):
         self.handler[map][key+' pressed'] = transaction = [state] # overwrite transaction
         self.handler.validate(map)
         if action:
-            transaction.append(funcall(action, doc, alias, **kwargs))
+            transaction.append(funcall(action, *args, **kwargs))
             return action
-        return lambda f: self.define_key(keymap, f, doc, alias, **kwargs)
+        return lambda f: self.define_key(keymap, f, *args, **kwargs)
 
 
 ## --------------------------------
@@ -1134,7 +1144,7 @@ def ID_(id):
     return id
 
 
-## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None):
+## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None): # PY3-only
 def pack(self, *args, **kwargs):
     """Do layout
 
@@ -1860,8 +1870,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                    'f9 pressed' : (0, _F(lambda v: self.wrap(None), doc="toggle-fold-type")),
                   'C-l pressed' : (0, _F(lambda v: self.recenter(), doc="recenter")),
                 'C-S-l pressed' : (0, _F(lambda v: self.recenter(-1), doc="recenter-bottom")),
-               'C-M-up pressed' : (0, _F(lambda v: self.ScrollLines(-2), doc="scroll-up")),
-             'C-M-down pressed' : (0, _F(lambda v: self.ScrollLines(+2), doc="scroll-down")),
+                 'M-up pressed' : (0, _F(self.ScrollLines, lines=-2, doc="scroll-up")),
+               'M-down pressed' : (0, _F(self.ScrollLines, lines=+2, doc="scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
@@ -2554,6 +2564,12 @@ Flaky nutshell:
         except AttributeError:
             pass
     
+    @property
+    def locals(self):
+        if self.__debugger.busy:
+            return self.__debugger.locals
+        return self.interp.locals # (self.__target.__dict__)
+    
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
     ## SHELLSTARTUP = ""
@@ -3099,8 +3115,8 @@ Flaky nutshell:
                 cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(r)).groups()
                 
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
-                        "pred={3!r}, locals=self.shell.interp.locals)".format(
-                        head, hint.strip(), len(cc) < 2, pred or None))
+                        "pred={3!r}, locals=self.shell.locals)".format(
+                        head, hint.strip(), len(cc)<2, pred or None))
             
             if c == sys.ps2.strip():
                 s = ''
@@ -3152,13 +3168,13 @@ Flaky nutshell:
     def on_activated(self, shell):
         """Called when activated"""
         target = shell.target # assert shell is self
-        
         target.self = target
         target.this = inspect.getmodule(target)
         target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
-        builtins.help = self.help # utilities functions to builtins (not locals)
-        builtins.info = self.info # if locals could have the same name functions.
+        ## Add utility functions to builtins
+        builtins.help = self.help
+        builtins.info = self.info
         builtins.dive = self.clone
         builtins.dump = self.debugger.dump
         builtins.debug = self.debug
@@ -3432,10 +3448,7 @@ Flaky nutshell:
             print(doc)
     
     def eval(self, text):
-        if self.debugger.busy:
-            return eval(text, self.debugger.locals)
-        ## return eval(text, self.target.__dict__)
-        return eval(text, self.interp.locals)
+        return eval(text, self.locals)
     
     def Execute(self, text):
         """Replace selection with text, run commands,
