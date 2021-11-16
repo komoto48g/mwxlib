@@ -463,13 +463,15 @@ Attributes:
     def __init__(self, contexts=None, default=None):
         dict.__init__(self) # update dict, however, it does not clear
         dict.clear(self)    # if and when __init__ is called, all contents are cleared
+        if contexts is None:
+            contexts = {}
+        if default is None: # if no default given, reset the first state as the default
+            if FSM.default_state is None:
+                keys = list(contexts)
+                if keys:
+                    default = keys[0]
         self.clear(default) # the first clear creates object localvars
-        self.update(contexts or {}) # this may do the next clear
-        
-        ## if there is only one state, reset that state as the default
-        keys = list(self)
-        if len(keys) == 1 and default is None:
-            self.clear(keys[0])
+        self.update(contexts)
     
     def __missing__(self, key):
         raise Exception("FSM:logical error - undefined state {!r}".format(key))
