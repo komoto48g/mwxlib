@@ -103,7 +103,7 @@ class MagicInterpreter(object):
             },
         }, default=0)
         
-        self.handler.debug = 4
+        ## self.handler.debug = 4
     
     def __call__(self, tokens):
         """Called before push
