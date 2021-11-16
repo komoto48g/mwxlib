@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.4"
+__version__ = "0.48.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2554,6 +2554,12 @@ Flaky nutshell:
         except AttributeError:
             pass
     
+    @property
+    def locals(self):
+        if self.__debugger.busy:
+            return self.__debugger.locals
+        return self.interp.locals # (self.__target.__dict__)
+    
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
     ## SHELLSTARTUP = ""
@@ -3099,8 +3105,8 @@ Flaky nutshell:
                 cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(r)).groups()
                 
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
-                        "pred={3!r}, locals=self.shell.interp.locals)".format(
-                        head, hint.strip(), len(cc) < 2, pred or None))
+                        "pred={3!r}, locals=self.shell.locals)".format(
+                        head, hint.strip(), len(cc)<2, pred or None))
             
             if c == sys.ps2.strip():
                 s = ''
@@ -3152,13 +3158,13 @@ Flaky nutshell:
     def on_activated(self, shell):
         """Called when activated"""
         target = shell.target # assert shell is self
-        
         target.self = target
         target.this = inspect.getmodule(target)
         target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         
-        builtins.help = self.help # utilities functions to builtins (not locals)
-        builtins.info = self.info # if locals could have the same name functions.
+        ## Add utility functions to builtins
+        builtins.help = self.help
+        builtins.info = self.info
         builtins.dive = self.clone
         builtins.dump = self.debugger.dump
         builtins.debug = self.debug
@@ -3432,10 +3438,7 @@ Flaky nutshell:
             print(doc)
     
     def eval(self, text):
-        if self.debugger.busy:
-            return eval(text, self.debugger.locals)
-        ## return eval(text, self.target.__dict__)
-        return eval(text, self.interp.locals)
+        return eval(text, self.locals)
     
     def Execute(self, text):
         """Replace selection with text, run commands,
