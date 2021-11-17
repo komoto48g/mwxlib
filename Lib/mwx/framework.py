@@ -3866,9 +3866,9 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
-    busy = False
     logger = property(lambda self: self.parent.Log)
     shell = property(lambda self: self.parent.shell)
+    busy = property(lambda self: self.module is not None)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
@@ -3888,9 +3888,9 @@ class Debugger(Pdb):
     def open(self, frame=None, verbose=False):
         if self.busy:
             return
-        self.busy = True
         self.verbose = verbose
         self.viewer = filling(target=self.locals, label='locals')
+        ## self.module = inspect.getmodule(frame) # the first enter-frame
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
@@ -3907,7 +3907,6 @@ class Debugger(Pdb):
             self.viewer.Close()
         self.viewer = None
         self.module = None
-        self.busy = False
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
@@ -3935,6 +3934,7 @@ class Debugger(Pdb):
         ##     print("stacked frame")
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
+        self.module = None
         return Pdb.set_quit(self)
     
     ## Override Bdb methods
