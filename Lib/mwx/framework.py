@@ -2505,12 +2505,12 @@ Shell built-in utility:
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
-    @edit       open with your editor (undefined)
+    @edit       open file with your editor (undefined)
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
     @where      (filename, lineno) or the module
-    @debug      pdb in the shell
+    @debug      open pdb in the shell
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
@@ -3179,7 +3179,7 @@ Flaky nutshell:
         builtins.info = self.info
         builtins.dive = self.clone
         builtins.dump = self.debugger.dump
-        builtins.debug = self.debug
+        builtins.debug = self.debugger.debug
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
@@ -3516,55 +3516,6 @@ Flaky nutshell:
         return frame.shell
     
     ## --------------------------------
-    ## Debug functions of the shell
-    ## --------------------------------
-    
-    def hook(self, wxobj, binder):
-        if not hasattr(wxobj, '__event_handler__'):
-            self.message("- {} has no handler to hook.".format(wxobj))
-            return
-        if self.debugger.busy:
-            wx.MessageBox("The debugger is running\n\n"
-                          "Enter [q]uit to exit before closing.")
-            return
-        actions = wxobj.__event_handler__[binder.typeId]
-        def _hook(evt):
-            wxobj.Unbind(binder, handler=_hook) # release hook once called
-            try:
-                self.handler('debug_begin')
-                self.debugger.open(inspect.currentframe(), verbose=0)
-                for target in actions:
-                    target(evt)
-                self.debugger.close()
-            except bdb.BdbQuit:
-                self.debugger.close()
-            finally:
-                self.handler('debug_end')
-        wxobj.Bind(binder, _hook) # add hook for the event-binder
-        return actions
-    
-    def debug(self, target, *args, **kwargs):
-        if not callable(target):
-            print("- cannot break {!r} (not callable)".format(target))
-            return
-        if inspect.isbuiltin(target):
-            print("- cannot break {!r}".format(target))
-            return
-        if self.debugger.busy:
-            wx.MessageBox("The debugger is running\n\n"
-                          "Enter [q]uit to exit before closing.")
-            return
-        try:
-            self.handler('debug_begin')
-            self.debugger.open(inspect.currentframe(), verbose=0)
-            target(*args, **kwargs)
-            self.debugger.close()
-        except bdb.BdbQuit:
-            self.debugger.close()
-        finally:
-            self.handler('debug_end')
-    
-    ## --------------------------------
     ## Auto-comp actions of the shell
     ## --------------------------------
     
@@ -3880,11 +3831,6 @@ class Debugger(Pdb):
         self.locals = {}
         self.globals = {}
     
-    def message(self, msg, indent=-1):
-        """(override) Add indent to msg"""
-        prefix = self.indent if indent < 0 else ' ' * indent
-        print(prefix + str(msg), file=self.stdout)
-    
     def open(self, frame=None, verbose=False):
         if self.busy:
             return
@@ -3907,6 +3853,32 @@ class Debugger(Pdb):
             self.viewer.Close()
         self.viewer = None
         self.module = None
+    
+    def debug(self, target, *args, **kwargs):
+        if not callable(target):
+            print("- cannot break {!r} (not callable)".format(target))
+            return
+        if inspect.isbuiltin(target):
+            print("- cannot break {!r}".format(target))
+            return
+        if self.busy:
+            wx.MessageBox("Debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
+        try:
+            self.shell.handler('debug_begin')
+            self.open(inspect.currentframe(), verbose=0)
+            target(*args, **kwargs)
+        except bdb.BdbQuit:
+            pass
+        finally:
+            self.close()
+            self.shell.handler('debug_end')
+    
+    def message(self, msg, indent=-1):
+        """(override) Add indent to msg"""
+        prefix = self.indent if indent < 0 else ' ' * indent
+        print(prefix + str(msg), file=self.stdout)
     
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
