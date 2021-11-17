@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.5"
+__version__ = "0.48.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2691,8 +2691,8 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
-                 'debug_begin' : [ None, lambda: self.write("#>> Enter [n]ext to continue.\n", -1) ],
-                   'debug_end' : [ None, self.prompt ],
+                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
+                   'debug_end' : [ None, _F(self.write, "#>> Debugger ended sucessfully.", -1) ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
