@@ -400,9 +400,9 @@ unloadable : flag to set the Layer to be unloadable
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
     
-    @mwx.postcall
     def Show(self, show=True):
-        self.parent.show_pane(self, show)
+        ## self.parent.show_pane(self, show)
+        wx.CallAfter(self.parent.show_pane, self, show)
     
     Drawn = property(
         lambda self: self.IsDrawn(),
