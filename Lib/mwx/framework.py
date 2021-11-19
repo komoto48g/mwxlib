@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.6"
+__version__ = "0.48.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -240,18 +240,15 @@ def typename(obj, docp=False, qualp=False):
 
 
 def pp(x):
-    ## pprint(x, **pp.__dict__)
-    pprint(x, indent=pp.indent,
-              width=pp.width,
-              depth=pp.depth,
-              compact=pp.compact,
-              sort_dicts=pp.sort_dicts)
-if 1:
+    pprint(x, **pp.__dict__)
+if pp:
     pp.indent = 1
     pp.width = 100 # default 80
     pp.depth = None
-    pp.compact = False
-    pp.sort_dicts = True
+    if sys.version_info >= (3,6):
+        pp.compact = False
+    if sys.version_info >= (3,8):
+        pp.sort_dicts = True
 
 
 def get_words_hint(cmd):
@@ -2691,8 +2688,10 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
-                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
-                   'debug_end' : [ None, _F(self.write, "#>> Debugger ended sucessfully.", -1) ],
+                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1),
+                                         _F(self.parent.Show), ],
+                   'debug_end' : [ None, _F(self.write, "#>> Debugger ended sucessfully.", -1),
+                                         _F(self.prompt), ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -3169,7 +3168,8 @@ Flaky nutshell:
     
     def on_activated(self, shell):
         """Called when activated"""
-        target = shell.target # assert shell is self
+        assert shell is self
+        target = shell.target
         target.self = target
         target.this = inspect.getmodule(target)
         target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
@@ -3178,7 +3178,6 @@ Flaky nutshell:
         builtins.help = self.help
         builtins.info = self.info
         builtins.dive = self.clone
-        builtins.dump = self.debugger.dump
         builtins.debug = self.debugger.debug
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
@@ -3993,31 +3992,6 @@ class Debugger(Pdb):
     ew.buildWxEventMap()
     ew.addModuleEvents(wx.aui)
     ew.addModuleEvents(wx.stc)
-    
-    def dump(self, wxobj, verbose=True):
-        """Dump all event handlers bound to wxobj"""
-        if not hasattr(wxobj, '__event_handler__'):
-            self.message("- {} has no handler information to dump.".format(wxobj))
-            return
-        ssm = wxobj.__event_handler__
-        if verbose:
-            stdlog = self.logger
-            stdlog.clear()
-            stdlog.Show()
-            print(wxobj, file=stdlog)
-            for event, actions in sorted(ssm.items()):
-                name = ew._eventIdMap[event]
-                print("\n{:8d}: {!r}".format(event, name), file=stdlog)
-                for act in actions:
-                    try:
-                        file = inspect.getsourcefile(act)
-                        src, line = inspect.getsourcelines(act)
-                    except TypeError:
-                        file = inspect.getmodule(act)
-                        src, line = [''], -1
-                    print("{:10s}{}:{}:{}:{}".format(
-                          ' ', file, line, typename(act), src[0].rstrip()), file=stdlog)
-        return ssm
 
 
 try:
