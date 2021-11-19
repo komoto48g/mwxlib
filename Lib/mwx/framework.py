@@ -1035,6 +1035,7 @@ class CtrlInterface(object):
             p = 'up' if evt.WheelRotation > 0 else 'down'
         evt.key = self.__key + "wheel{}".format(p)
         self.handler('{} pressed'.format(evt.key), evt) or evt.Skip()
+        self.__key = ''
     
     def mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called when mouse event
@@ -1048,6 +1049,7 @@ class CtrlInterface(object):
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
+        self.__key = ''
     
     def window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
         self.handler(event, evt) or evt.Skip()
@@ -1630,6 +1632,12 @@ Global bindings:
         _F = funcall
         
         self.handler.update({ #<ShellFrame handler>
+            None : {
+                  'add_scratch' : [ None, self.Scratch.SetText ],
+                     'add_help' : [ None, self.Help.SetText, _F(self.Help.Show) ],
+                      'add_log' : [ None, self.Log.SetText ],
+                  'add_history' : [ None, self.add_history ],
+            },
             0 : {
                    'f1 pressed' : (0, self.About),
                   'M-f pressed' : (0, self.OnFilterText),
@@ -1637,7 +1645,6 @@ Global bindings:
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.PopupWindow, show=None, doc="Toggle the ghost")),
-                'S-f11 pressed' : (0, _F(self.PopupWindow, show=True, doc="Show the ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.shell.clear)),
                 'C-f12 pressed' : (0, _F(self.shell.clone)),
@@ -1648,10 +1655,9 @@ Global bindings:
         @self.define_key('C-x l', win=self.Log, doc="Show Log window")
         @self.define_key('C-x h', win=self.Help, doc="Show Help window")
         @self.define_key('C-x S-h', win=self.History, doc="Show History")
-        def popup(v, win, show=True):
-            self.PopupWindow(win, show)
+        def popup(v, win):
+            self.PopupWindow(win)
         
-        @self.define_key('S-f11', loop=True)
         @self.define_key('Xbutton1', p=-1)
         @self.define_key('Xbutton2', p=+1)
         @self.define_key('C-x p', p=-1)
@@ -1706,12 +1712,12 @@ Global bindings:
         try:
             f = os.path.expanduser("~/.deb/deb-logging.log")
             with self.fopen(f, 'w') as o:
-                o.write(self.Log.Value)
+                o.write(self.Log.Text)
             
             f = os.path.expanduser("~/.deb/deb-history.log")
             with self.fopen(f, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
-                o.write(self.History.Value)
+                o.write(self.History.Text)
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
@@ -1754,6 +1760,17 @@ Global bindings:
             j = self.ghost.GetPageIndex(win) # win=None -> -1
             self.ghost.SetSelection(j)
             self.shell.SetFocus()
+    
+    def add_history(self, command, noerr):
+        ed = self.History
+        ed.ReadOnly = 0
+        ed.write(command + os.linesep)
+        ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
+        if noerr:
+            ed.MarkerAdd(ln, 1) # white-marker
+        else:
+            ed.MarkerAdd(ln, 2) # error-marker
+        ed.ReadOnly = 1
     
     ## --------------------------------
     ## Find text dialog
@@ -1913,7 +1930,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
-        self.SetKeyWords(1, ' '.join(builtins.__dict__))
+        self.SetKeyWords(1, ' '.join(builtins.__dict__) + ' self this')
         
         ## Global style for all languages
         ## wx.Font style
@@ -2430,7 +2447,7 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
         ## To prevent @filling from *HARD-CRASH*
-        ## We never allow DnD of text, file, etc.
+        ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
         self.set_style(self.PALETTE_STYLE)
@@ -2652,17 +2669,13 @@ Flaky nutshell:
         
         self.on_activated(self) # call once manually
         
-        ## Keywords(2) setting for *STC_P_WORD*
-        self.SetKeyWords(0, ' '.join(keyword.kwlist))
-        self.SetKeyWords(1, ' '.join(builtins.__dict__) + ' self this')
-        
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        ## テキストドラッグの禁止
-        ## We never allow DnD of text, file, etc.
+        ## To prevent @filling from *HARD-CRASH*
+        ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
         ## some AutoComp settings
@@ -3254,23 +3267,14 @@ Flaky nutshell:
             output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
             
             input = self.regulate_cmd(input).lstrip()
-            
             repeat = (self.history and self.history[0] == input)
             if not repeat and input:
                 Shell.addHistory(self, input)
             
             noerr = self.on_text_output(output.strip(os.linesep))
-            
-            ed = self.parent.History
-            ed.ReadOnly = 0
-            ed.write(command + os.linesep)
-            ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
             if noerr:
-                ed.MarkerAdd(ln, 1) # white-marker
                 self.fragmwords |= set(re.findall(r"\b[a-zA-Z_][\w.]+", input + output))
-            else:
-                ed.MarkerAdd(ln, 2) # error-marker
-            ed.ReadOnly = 1
+            self.parent.handler('add_history', command, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             pass
@@ -3429,8 +3433,7 @@ Flaky nutshell:
         doc = inspect.getdoc(obj)\
           or "No information about {}".format(obj)
         try:
-            self.parent.Help.SetText(doc)
-            self.parent.Help.Show()
+            self.parent.handler('add_help', doc)
         except AttributeError:
             print(doc)
     
@@ -3443,8 +3446,7 @@ Flaky nutshell:
         doc = pydoc.plain(pydoc.render_doc(obj))\
           or "No description about {}".format(obj)
         try:
-            self.parent.Help.SetText(doc)
-            self.parent.Help.Show()
+            self.parent.handler('add_help', doc)
         except AttributeError:
             print(doc)
     
@@ -3523,7 +3525,7 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.Scratch.SetText(tip)
+                self.parent.handler('add_scratch', tip)
         except AttributeError:
             pass
     
