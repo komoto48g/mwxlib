@@ -124,13 +124,13 @@ class MagicInterpreter(object):
         return ''.join(tokens)
     
     def fork(self, l, r):
-        c = self.handler.current_event
+        c = self.handler.event
         while r and r[0] in SEP2: # eat whites, seps, and ops
             c += r.pop(0)
         return self.handler(c, l, r)
     
     def feed(self, l, r):
-        c = self.handler.current_event
+        c = self.handler.event
         while r and r[0].isspace(): # eat whites
             c += r.pop(0)
         l[:] = [''.join(l) + c]
@@ -179,18 +179,18 @@ def init_shell(self):
             self.Anchor = self.mark
             self.Copy()
     
-    @self.define_key('C-x [', pos=0, doc="beginning-of-buffer")
-    @self.define_key('C-x ]', pos=-1, doc="end-of-buffer")
-    def goto(pos):
-        self.goto_char(pos)
-    
-    @self.define_key('M-enter')
-    def duplicate_command(clear=True):
-        cmd = self.getMultilineCommand()
-        if cmd:
-            if clear:
-                self.clearCommand()
-            self.write(cmd, -1)
+    ## @self.define_key('C-x [', pos=0, doc="beginning-of-buffer")
+    ## @self.define_key('C-x ]', pos=-1, doc="end-of-buffer")
+    ## def goto(pos):
+    ##     self.goto_char(pos)
+    ## 
+    ## @self.define_key('M-enter')
+    ## def duplicate_command(clear=True):
+    ##     cmd = self.getMultilineCommand()
+    ##     if cmd:
+    ##         if clear:
+    ##             self.clearCommand()
+    ##         self.write(cmd, -1)
     
     ## Theme: 'Dive into the night'
     self.set_style({

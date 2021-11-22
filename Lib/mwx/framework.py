@@ -27,8 +27,6 @@ from wx import aui
 from wx import stc
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
-from wx.py.filling import FillingFrame
-import wx.lib.eventwatcher as ew
 import numpy as np
 import fnmatch
 import pkgutil
@@ -437,13 +435,12 @@ Attributes:
         If there is only one state, that state will be the default.
     current_state : referred as the current state
    previous_state : (read-only, internal use only)
-    current_event : (read-only, internal use only)
     """
     debug = 0
     default_state = None
-    current_event = property(lambda self: self.__event)
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
+    event = property(lambda self: self.__event)
     
     @current_state.setter
     def current_state(self, state):
@@ -454,8 +451,10 @@ Attributes:
     def clear(self, state):
         """Reset current and previous states"""
         self.default_state = state
-        self.__state = self.__prev_state = state
-        self.__event = self.__prev_event = None
+        self.__state = state
+        self.__prev_state = state
+        self.__event = None
+        self.__prev_event = None
     
     def __init__(self, contexts=None, default=None):
         dict.__init__(self) # update dict, however, it does not clear
@@ -497,7 +496,7 @@ Attributes:
         if self.__state is not None:
             ret += self.call(event, *args) # normal process
         
-        ## self.__prev_state = self.__state
+        self.__prev_state = self.__state
         self.__prev_event = event
         return ret
     
@@ -568,7 +567,7 @@ Attributes:
             actions = ', '.join(typename(a) for a in transaction[1:])
             if (v > 4 and actions
              or v > 5):
-                self.log("\t& {0!r} {a}".format(
+                self.log("\t| {0!r} {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         
@@ -1045,11 +1044,11 @@ class CtrlInterface(object):
         key, sep, st = event.rpartition(' ') # removes st:'pressed/released/dclick'
         evt.key = key or st
         self.handler(event, evt) or evt.Skip()
+        self.__key = ''
         try:
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
-        self.__key = ''
     
     def window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
         self.handler(event, evt) or evt.Skip()
@@ -1600,16 +1599,17 @@ Global bindings:
         self.shell = Nautilus(self, target, **kwargs)
         
         ## self.Log.ViewEOL = True
-        self.Log.ViewWhiteSpace = True
+        ## self.Log.ViewWhiteSpace = True
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
-            style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
-                  &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+            style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                  &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.History, "History")
+        self.ghost.TabCtrlHeight = -1
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
@@ -1648,46 +1648,22 @@ Global bindings:
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.shell.clear)),
                 'C-f12 pressed' : (0, _F(self.shell.clone)),
+             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1)),
+             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
+                  'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
+                'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
+            },
+            'C-x' : {
+                    'l pressed' : (0, _F(self.PopupWindow, self.Log, doc="Show Log")),
+                    'h pressed' : (0, _F(self.PopupWindow, self.Help, doc="Show Help")),
+                  'S-h pressed' : (0, _F(self.PopupWindow, self.History, doc="Show History")),
+                    'j pressed' : (0, _F(self.PopupWindow, self.Scratch, doc="Show Scratch")),
+                    'p pressed' : (0, _F(self.other_editor, p=-1)),
+                    'n pressed' : (0, _F(self.other_editor, p=+1)),
+                 'left pressed' : (0, _F(self.other_window, p=-1)),
+                'right pressed' : (0, _F(self.other_window, p=+1)),
             },
         })
-        
-        @self.define_key('C-x j', win=self.Scratch, doc="Show Scratch window")
-        @self.define_key('C-x l', win=self.Log, doc="Show Log window")
-        @self.define_key('C-x h', win=self.Help, doc="Show Help window")
-        @self.define_key('C-x S-h', win=self.History, doc="Show History")
-        def popup(v, win):
-            self.PopupWindow(win)
-        
-        @self.define_key('Xbutton1', p=-1)
-        @self.define_key('Xbutton2', p=+1)
-        @self.define_key('C-x p', p=-1)
-        @self.define_key('C-x n', p=1)
-        def other_editor(v, p=1, loop=False):
-            "Focus moves to other editor"
-            j = self.ghost.Selection + p
-            if loop:
-                j %= self.ghost.PageCount
-            self.ghost.SetSelection(j)
-        
-        @self.define_key('C-x left', p=-1)
-        @self.define_key('C-x right', p=1)
-        def other_window(v, p=1):
-            "Focus moves to other window"
-            pages = [w for w in self.all_pages if w.IsShownOnScreen()]
-            j = (pages.index(self.current_editor) + p) % len(pages)
-            pages[j].SetFocus()
-        
-        @self.define_key('C-S-d', clear=0)
-        @self.define_key('C-d', clear=1)
-        def duplicate(v, clear):
-            """Duplicate an expression at the caret-line"""
-            win = self.current_editor
-            text = win.SelectedText or win.expr_at_caret
-            if text:
-                if clear:
-                    self.shell.clearCommand()
-                self.shell.write(text, -1)
-            self.shell.SetFocus()
         
         f = os.path.expanduser("~/.deb/deb-logging.log")
         if os.path.exists(f):
@@ -1771,6 +1747,29 @@ Global bindings:
         else:
             ed.MarkerAdd(ln, 2) # error-marker
         ed.ReadOnly = 1
+    
+    def other_editor(self, p=1, loop=False):
+        "Focus moves to other editor"
+        j = self.ghost.Selection + p
+        if loop:
+            j %= self.ghost.PageCount
+        self.ghost.SetSelection(j)
+    
+    def other_window(self, p=1):
+        "Focus moves to other window"
+        pages = [w for w in self.all_pages if w.IsShownOnScreen()]
+        j = (pages.index(self.current_editor) + p) % len(pages)
+        pages[j].SetFocus()
+    
+    def duplicate_line(self, clear=True):
+        """Duplicate an expression at the caret-line"""
+        win = self.current_editor
+        text = win.SelectedText or win.expr_at_caret
+        if text:
+            if clear:
+                self.shell.clearCommand()
+            self.shell.write(text, -1)
+        self.shell.SetFocus()
     
     ## --------------------------------
     ## Find text dialog
@@ -1859,13 +1858,17 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        def fork_parent(v):
+        def fork(v):
+            ## used to fork mouse events to the parent
             try:
-                self.parent.handler(self.handler.current_event, v)
+                self.parent.handler(self.handler.event, v)
             except AttributeError:
                 pass
         
         _F = funcall
+        
+        self.make_keymap('C-x')
+        self.make_keymap('C-c')
         
         self.handler.update({ #<Editor handler>
             -1 : {  # original action of the Editor
@@ -1875,10 +1878,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                '*shift pressed' : (-1, ),
              '*[LR]win pressed' : (-1, ),
             },
+            None : {
+             '*button* pressed' : [ None, skip, fork ],
+            '*button* released' : [ None, skip, fork ],
+                     '* dclick' : [ None, skip, fork ],
+            },
             0 : {
-             '*button* pressed' : (0, skip, fork_parent),
-            '*button* released' : (0, skip, fork_parent),
-                     '* dclick' : (0, skip, fork_parent),
                     '* pressed' : (0, skip),
                    '* released' : (0, skip),
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
@@ -1909,19 +1914,18 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   ## 'C-d pressed' : (0, ),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                ## 'M-S-, pressed' : (0, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
-                ## 'M-S-. pressed' : (0, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+            },
+            'C-x' : {
+                    '* pressed' : (0, skip),
+                    '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
+                    '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+            },
+            'C-c' : {
+                    '* pressed' : (0, skip),
+                  'C-c pressed' : (0, _F(self.goto_matched_paren)),
             },
         })
         self.handler.clear(0)
-        
-        self.make_keymap('C-x')
-        self.define_key('C-x *', skip) # skip to parent frame always
-        
-        self.make_keymap('C-c')
-        self.define_key('C-c *', skip) # skip to parent frame always
-        
-        self.define_key('C-c C-c', self.goto_matched_paren)
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -2136,7 +2140,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if ln=0, the cursor goes top of the screen. ln=-1 the bottom
         """
         n = self.LinesOnScreen() # lines completely visible
-        lc = self.lcur - (n//2 if ln is None else ln%n if ln < n else n)
+        m = n//2 if ln is None else ln % n if ln < n else n
+        lc = self.lcur - m
         self.ScrollToLine(lc)
     
     ## --------------------------------
@@ -2724,6 +2729,7 @@ Flaky nutshell:
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
+              'M-enter pressed' : (0, _F(self.duplicate_command)),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
                ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
@@ -2746,7 +2752,7 @@ Flaky nutshell:
                   'M-m pressed' : (5, self.call_module_autocomp),
             },
             1 : { # history auto completion S-mode
-                         'quit' : (0, clear),
+                         'quit' : (0, clear, _F(self.indent_line)),
                     '* pressed' : (0, fork),
                   '*up pressed' : (1, self.on_completion_forward), # 古いヒストリへ進む
                 '*down pressed' : (1, self.on_completion_backward), # 新しいヒストリへ戻る
@@ -3071,6 +3077,7 @@ Flaky nutshell:
         
         if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
+            pass
         elif st in (1,2,5,8,9,12): # comment, num, word, class, def
             self.handler('quit', evt)
             pass
@@ -3081,6 +3088,13 @@ Flaky nutshell:
         
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
+    
+    def duplicate_command(self, clear=True):
+        cmd = self.getMultilineCommand()
+        if cmd:
+            if clear:
+                self.clearCommand()
+            self.write(cmd, -1)
     
     ## --------------------------------
     ## Magic caster of the shell
@@ -3191,7 +3205,7 @@ Flaky nutshell:
         builtins.help = self.help
         builtins.info = self.info
         builtins.dive = self.clone
-        builtins.debug = self.debugger.debug
+        builtins.debug = self.debugger.trace
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
@@ -3634,7 +3648,6 @@ Flaky nutshell:
             hint = self.cmdlc
             if hint.isspace() or self.bol != self.bolc:
                 self.handler('quit', evt)
-                self.indent_line()
                 return
             
             hint = hint.strip()
@@ -3732,8 +3745,8 @@ Flaky nutshell:
             obj = self.eval(text)
             
             if isinstance(obj, (bool,int,float,type(None))):
+                ## self.message("- Nothing to complete")
                 self.handler('quit', evt)
-                self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
@@ -3767,8 +3780,8 @@ Flaky nutshell:
             obj = self.eval(text)
             
             if isinstance(obj, (bool,int,float,type(None))):
+                ## self.message("- Nothing to complete")
                 self.handler('quit', evt)
-                self.message("- Nothing to complete")
                 return
             
             P = re.compile(hint)
@@ -3855,7 +3868,7 @@ class Debugger(Pdb):
         self.viewer = None
         self.module = None
     
-    def debug(self, target, *args, **kwargs):
+    def trace(self, target, *args, **kwargs):
         if not callable(target):
             print("- cannot break {!r} (not callable)".format(target))
             return
@@ -3990,10 +4003,6 @@ class Debugger(Pdb):
         self.logger.MarkerDeleteAll(0)
         self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
-    
-    ew.buildWxEventMap()
-    ew.addModuleEvents(wx.aui)
-    ew.addModuleEvents(wx.stc)
 
 
 try:
