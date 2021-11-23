@@ -933,6 +933,7 @@ def funcall(f, *args, **kwargs):
             def _Act2(*v):
                 return f(*args, **kwargs) # function with no explicit args
             action = _Act2
+            action.__name__ += "~"
     else:
         ## Builtin functions don't have an argspec that we can get.
         ## Try alalyzing the doc:str to get argspec info.
@@ -947,12 +948,15 @@ def funcall(f, *args, **kwargs):
                 def _Act3(*v):
                     return f(*args, **kwargs) # function with no explicit args
                 action = _Act3
+                action.__name__ += "~~"
         except TypeError:
             raise
         except Exception:
             pass
     
-    action.__name__ = str(alias or f.__name__)
+    ## action.__name__ = str(alias or f.__name__)
+    if alias:
+        action.__name__ = str(alias)
     action.__doc__ = doc or f.__doc__
     return action
 
@@ -1596,10 +1600,15 @@ Global bindings:
         self.Log = Editor(self)
         self.History = Editor(self)
         
-        self.shell = Nautilus(self, target, **kwargs)
+        self.shell = Nautilus(self, target,
+            style=wx.CLIP_CHILDREN | wx.BORDER_NONE, **kwargs)
         
-        ## self.Log.ViewEOL = True
-        ## self.Log.ViewWhiteSpace = True
+        self.console = aui.AuiNotebook(self, size=(600,400),
+            style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                  &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+        )
+        self.console.AddPage(self.shell, "root")
+        self.console.TabCtrlHeight = 0
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
@@ -1615,7 +1624,7 @@ Global bindings:
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.4, 0.5)
         
-        self._mgr.AddPane(self.shell, aui.AuiPaneInfo().Name("shell").CenterPane())
+        self._mgr.AddPane(self.console, aui.AuiPaneInfo().CenterPane())
         self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right().Show(0)
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0))
         self._mgr.Update()
@@ -1623,7 +1632,7 @@ Global bindings:
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         
         self.findDlg = None
-        self.findData = wx.FindReplaceData(wx.FR_DOWN|wx.FR_MATCHCASE)
+        self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
         
         self.Bind(wx.EVT_FIND, self.OnFindNext)
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
@@ -1777,8 +1786,10 @@ Global bindings:
     
     @property
     def all_pages(self):
-        return [self.shell] + [self.ghost.GetPage(i)
-                                for i in range(self.ghost.PageCount)]
+        def filt(nb):
+            ls = (nb.GetPage(i) for i in range(nb.PageCount))
+            return [x for x in ls if isinstance(x, EditorInterface)]
+        return filt(self.console) + filt(self.ghost)
     
     @property
     def current_editor(self):
@@ -1826,7 +1837,7 @@ Global bindings:
         win = self.current_editor
         self.findData.FindString = win.topic_at_caret
         self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
-                            style=wx.FR_NOWHOLEWORD|wx.FR_NOUPDOWN)
+                            style=wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN)
         self.findDlg.Show()
     
     def OnFindNext(self, evt, backward=False): #<wx._core.FindDialogEvent>
@@ -2623,14 +2634,18 @@ Flaky nutshell:
         "STC_P_NUMBER"          : "fore:#ffc080",
     }
     
-    def __init__(self, parent, target, locals=None,
-                        introText = None,
-                    startupScript = None,
-                execStartupScript = True):
-        Shell.__init__(self, parent, locals=target.__dict__,
-                        introText = introText,
-                    startupScript = startupScript,
-                execStartupScript = execStartupScript) # if True, executes ~/.py
+    def __init__(self, parent, target,
+                 locals=None,
+                 introText=None,
+                 startupScript=None,
+                 execStartupScript=True,
+                 **kwargs):
+        Shell.__init__(self, parent,
+                 locals=target.__dict__,
+                 introText=introText,
+                 startupScript=startupScript,
+                 execStartupScript=execStartupScript, # if True, executes ~/.py
+                 **kwargs)
         EditorInterface.__init__(self)
         
         if locals:
