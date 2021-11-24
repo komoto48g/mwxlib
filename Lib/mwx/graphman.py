@@ -1129,24 +1129,26 @@ class Frame(mwx.Frame):
                         style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
                               &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE))
                     
-                    ## nb.SetTabCtrlHeight(22)
                     nb.AddPage(plug, caption)
+                    ## nb.TabCtrlHeight = -1
                     
                     self._mgr.AddPane(nb, aui.AuiPaneInfo()
                         .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
                     
+                    #<wx._aui.AuiNotebookEvent> Event binder
+                    
                     @partial(nb.Bind, aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN)
-                    def show_menu(evt): #<wx._aui.AuiNotebookEvent>
+                    def show_menu(evt):
                         plug = nb.GetPage(evt.Selection)
                         mwx.Menu.Popup(nb, plug.Menu)
                     
                     @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGED)
-                    def on_page_changed(evt): #<wx._aui.AuiNotebookEvent>
+                    def on_page_changed(evt):
                         nb.CurrentPage.handler('pane_shown')
                         evt.Skip()
                     
                     @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGING)
-                    def on_page_changing(evt): #<wx._aui.AuiNotebookEvent>
+                    def on_page_changing(evt):
                         plug = nb.GetPage(evt.Selection)
                         if nb.CurrentPage:
                             if nb.CurrentPage is not plug:

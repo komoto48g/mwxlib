@@ -1584,6 +1584,8 @@ Global bindings:
         C-f : Find text
         M-f : Filter text
     """
+    shell = property(lambda self: self.__shell)
+    
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
@@ -1601,8 +1603,8 @@ Global bindings:
         self.Log = Editor(self)
         self.History = Editor(self)
         
-        self.shell = Nautilus(self, target,
-            style=wx.CLIP_CHILDREN | wx.BORDER_NONE, **kwargs)
+        self.__shell = Nautilus(self, target,
+            style = wx.CLIP_CHILDREN | wx.BORDER_NONE, **kwargs)
         
         self.console = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
@@ -2578,16 +2580,23 @@ Flaky nutshell:
     
     @target.setter
     def target(self, target):
+        """Reset the shell->target; Rename the parent title
+        cf. on_activated/on_inactivated
+        """
         if not hasattr(target, '__dict__'):
             raise TypeError("cannot target primitive objects")
-        target.self = target
-        target.this = inspect.getmodule(target)
-        target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        try:
+            target.self = target
+            target.this = inspect.getmodule(target)
+            target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        except AttributeError as e:
+            ## print("- Failed to set vars: {}".format(e))
+            pass
         
         self.__target = target
         self.interp.locals.update(target.__dict__)
         try:
-            self.parent.Title = re.sub("(.*) - (.*)",
+            self.parent.Title = re.sub("(.*) - (.*)", # Clone of ...
                                        "\\1 - {!r}".format(target),
                                        self.parent.Title)
         except AttributeError:
@@ -3206,12 +3215,18 @@ Flaky nutshell:
         builtins.where = where
     
     def on_activated(self, shell):
-        """Called when activated"""
-        assert shell is self
+        """Called when shell:self is activated
+        Reset localvars and builtins assigned for the shell->target.
+        Note: the target could be referred from other shells.
+        """
         target = shell.target
-        target.self = target
-        target.this = inspect.getmodule(target)
-        target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        try:
+            target.self = target
+            target.this = inspect.getmodule(target)
+            target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        except AttributeError as e:
+            ## print("- Failed to set vars: {}".format(e))
+            pass
         
         ## Add utility functions to builtins
         builtins.help = self.help
@@ -3223,7 +3238,9 @@ Flaky nutshell:
         builtins.puts = postcall(lambda v: self.write(str(v)))
     
     def on_inactivated(self, shell):
-        """Called when inactivated"""
+        """Called when shell:self is inactivated
+        Remove target localvars and builtins assigned for the shell->target.
+        """
         del builtins.help
         del builtins.info
         del builtins.dive
