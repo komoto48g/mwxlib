@@ -5,6 +5,8 @@
 Test for snippets of code, syntax, semantics, interface,
   everything one can imagine
 """
+__version__ = "1.0"
+__author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 from six.moves import builtins
 from functools import partial, reduce
 import operator as op
@@ -233,7 +235,8 @@ def dive(*args):
     mwx.deb(*args,
             startup=init_shell,
             execStartupScript=True,
-            introText="""
+            ## quote unqoute
+            introText=f"""deb v{__version__}
             Anything one man can imagine, other man can make real.
             --- Jules Verne (1828--1905)
             """,
