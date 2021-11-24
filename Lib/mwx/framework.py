@@ -1643,9 +1643,9 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame handler>
             None : {
-                  'add_scratch' : [ None, self.Scratch.SetText ],
-                     'add_help' : [ None, self.Help.SetText, _F(self.Help.Show) ],
-                      'add_log' : [ None, self.Log.SetText ],
+             'add_text_scratch' : [ None, self.Scratch.SetText ],
+                'add_text_help' : [ None, self.Help.SetText, _F(self.Help.Show) ],
+                 'add_text_log' : [ None, self.Log.SetText ],
                   'add_history' : [ None, self.add_history ],
             },
             0 : {
@@ -2475,11 +2475,7 @@ class Editor(EditWindow, EditorInterface):
     
     def IsShown(self):
         """Return True if shown on the screen"""
-        shown = EditWindow.IsShown(self)
-        try:
-            return shown and self.parent.ghost.IsShown()
-        except AttributeError:
-            return shown
+        return EditWindow.IsShown(self) and self.Parent.IsShown()
     
     def Show(self, show=True):
         """Show on the screen"""
@@ -3463,7 +3459,7 @@ Flaky nutshell:
         doc = inspect.getdoc(obj)\
           or "No information about {}".format(obj)
         try:
-            self.parent.handler('add_help', doc)
+            self.parent.handler('add_text_help', doc)
         except AttributeError:
             print(doc)
     
@@ -3476,7 +3472,7 @@ Flaky nutshell:
         doc = pydoc.plain(pydoc.render_doc(obj))\
           or "No description about {}".format(obj)
         try:
-            self.parent.handler('add_help', doc)
+            self.parent.handler('add_text_help', doc)
         except AttributeError:
             print(doc)
     
@@ -3555,7 +3551,7 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.handler('add_scratch', tip)
+                self.parent.handler('add_text_scratch', tip)
         except AttributeError:
             pass
     
