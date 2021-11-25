@@ -1,5 +1,13 @@
 #! python3
 # -*- coding: utf-8 -*-
+"""Graphical debugger
+ of the phoenix, by the phoenix, for the phoenix
+
+Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""
+from __future__ import division, print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
 from functools import wraps
 from pdb import Pdb, bdb
 import linecache
@@ -19,9 +27,22 @@ echo.debug = 0
 
 
 class Debugger(Pdb):
-    """Graphical debugger
-    of the phoenix, by the phoenix, for the phoenix
+    """Graphical debugger with extended Pdb
     
+Attributes:
+    viewer : Py.filling frame to display locals
+    logger : ShellFrame Log
+     shell : Nautilus in the ShellFrame
+      busy : The flag of being running now (eq. when module is not None)
+   verbose : Activates verbose mode in which default messages are output from Pdb.
+    module : The module of the currently stacked frame on Pdb
+    locals : The namespace of the currently stacked frame on Pdb
+   globals : (ditto)
+
+Args:
+    inspector : Inspector frame of the shell
+
+Note:
     + set_trace -> reset -> set_step -> sys.settrace
                    reset -> forget
     > user_line
@@ -42,20 +63,20 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
-    logger = property(lambda self: self.parent.Log)
-    shell = property(lambda self: self.parent.shell)
+    logger = property(lambda self: self.inspector.Log)
+    shell = property(lambda self: self.inspector.shell)
     busy = property(lambda self: self.module is not None)
     
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, inspector, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
+        self.inspector = inspector
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
-        self.parent = parent
-        self.viewer = None
-        self.module = None
         self.locals = {}
         self.globals = {}
+        self.viewer = None
+        self.module = None
     
     def open(self, frame=None):
         if self.busy:
@@ -72,6 +93,8 @@ class Debugger(Pdb):
         self.shell.SetFocus()
         self.shell.redirectStdin()
         self.shell.redirectStdout()
+        ## wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
+        ## wx.CallAfter(self.shell.Execute, 'step') # step into the target
         self.set_trace(frame)
     
     def close(self):
@@ -136,7 +159,9 @@ class Debugger(Pdb):
         self.message(prefix
           + self.format_stack_entry(frame_lineno, prompt_prefix), indent=0)
     
+    ## --------------------------------
     ## Override Bdb methods
+    ## --------------------------------
     
     ## @echo
     ## def trace_dispatch(self, frame, event, arg):
@@ -182,11 +207,15 @@ class Debugger(Pdb):
     @echo
     def set_quit(self):
         ## if self.verbose:
-        ##     print("stacked frame")
+        ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
         self.module = None
         return Pdb.set_quit(self)
+    
+    ## --------------------------------
+    ## Override Pdb methods
+    ## --------------------------------
     
     @echo
     def user_call(self, frame, argument_list):
@@ -220,6 +249,10 @@ class Debugger(Pdb):
     @echo
     def bp_commands(self, frame):
         """--Break--"""
+        ## filename = frame.f_code.co_filename
+        ## line = linecache.getline(filename, frame.f_lineno, frame.f_globals)
+        ## if filename == __file__ and 'self.close()' in line:
+        ##     wx.CallAfter(self.shell.Execute, 'next')
         return Pdb.bp_commands(self, frame)
     
     @echo
@@ -272,3 +305,14 @@ class Debugger(Pdb):
         self.logger.MarkerDeleteAll(0)
         self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
+
+
+if __name__ == "__main__":
+    import mwx
+    app = wx.App()
+    frm = mwx.Frame(None)
+    if 1:
+        self = frm.inspector
+        frm.dbg = Debugger(self)
+    frm.Show()
+    app.MainLoop()

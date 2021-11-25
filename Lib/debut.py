@@ -223,7 +223,6 @@ def init_shell(self):
     self.wrap(1)
     self.parent.About()
     self.magic_interpret = MagicInterpreter(self)
-    self.parent.About()
 
 
 def dive(*args):

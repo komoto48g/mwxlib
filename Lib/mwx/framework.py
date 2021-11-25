@@ -27,7 +27,6 @@ from wx import aui
 from wx import stc
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
-from .wxpdb import Debugger
 import numpy as np
 import fnmatch
 import pkgutil
@@ -905,7 +904,7 @@ def funcall(f, *args, **kwargs):
     
     @wraps(f)
     def _Act(*v):
-        return f(*v+args, **kwargs) # ufunc with one event args
+        return f(*(v+args), **kwargs)
     action = _Act
     
     def explicit_args(argv, defaults):
@@ -1645,9 +1644,9 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame handler>
             None : {
-             'add_text_scratch' : [ None, self.Scratch.SetText ],
-                'add_text_help' : [ None, self.Help.SetText, _F(self.Help.Show) ],
-                 'add_text_log' : [ None, self.Log.SetText ],
+             'add_text_scratch' : [ None, _F(self.set_text, win=self.Scratch) ],
+                'add_text_help' : [ None, _F(self.set_text, win=self.Help, show=True) ],
+                 'add_text_log' : [ None, _F(self.set_text, win=self.Log) ],
                   'add_history' : [ None, self.add_history ],
             },
             0 : {
@@ -1748,6 +1747,11 @@ Global bindings:
             j = self.ghost.GetPageIndex(win) # win=None -> -1
             self.ghost.SetSelection(j)
             self.shell.SetFocus()
+    
+    def set_text(self, text, win, show=None):
+        win.SetText(text)
+        if show is not None:
+            self.PopupWindow(win, show)
     
     def add_history(self, command, noerr):
         ed = self.History
@@ -1901,10 +1905,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                     '* pressed' : (0, skip),
                    '* released' : (0, skip),
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
-               'insert pressed' : (0, _F(lambda v: self.over(None), doc="toggle-over")),
-                   'f9 pressed' : (0, _F(lambda v: self.wrap(None), doc="toggle-fold-type")),
-                  'C-l pressed' : (0, _F(lambda v: self.recenter(), doc="recenter")),
-                'C-S-l pressed' : (0, _F(lambda v: self.recenter(-1), doc="recenter-bottom")),
+               'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
+                   'f9 pressed' : (0, _F(self.wrap, None, doc="toggle-fold-type")),
+                  'C-l pressed' : (0, _F(self.recenter, None, doc="recenter")),
+                'C-S-l pressed' : (0, _F(self.recenter, -1, doc="recenter-bottom")),
                  'M-up pressed' : (0, _F(self.ScrollLines, lines=-2, doc="scroll-up")),
                'M-down pressed' : (0, _F(self.ScrollLines, lines=+2, doc="scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
@@ -2139,13 +2143,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.BraceHighlight(-1,-1) # no highlight
     
     def over(self, mode=1):
-        """Set overwt(insertion) mode. toggle when mode is None"""
+        """Set insert or overtype
+        mode in {0:insert, 1:over, None:toggle}
+        """
         self.Overtype = mode if mode is not None else not self.Overtype
         self.Refresh()
     
     def wrap(self, mode=1):
         """Set fold type (override) of wrap
-        mode in {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
+        mode in {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
@@ -2663,6 +2669,11 @@ Flaky nutshell:
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
         self.__root = None # reference to the root of the clone
+        
+        try:
+            from .wxpdb import Debugger
+        except ImportError:
+            from wxpdb import Debugger
         
         self.__debugger = Debugger(self.parent,
                                    stdin=self.interp.stdin,
