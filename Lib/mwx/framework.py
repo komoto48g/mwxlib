@@ -27,7 +27,6 @@ from wx import aui
 from wx import stc
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
-from .wxpdb import Debugger
 import numpy as np
 import fnmatch
 import pkgutil
@@ -905,7 +904,7 @@ def funcall(f, *args, **kwargs):
     
     @wraps(f)
     def _Act(*v):
-        return f(*v+args, **kwargs) # ufunc with one event args
+        return f(*(v+args), **kwargs)
     action = _Act
     
     def explicit_args(argv, defaults):
@@ -1645,9 +1644,9 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame handler>
             None : {
-             'add_text_scratch' : [ None, self.Scratch.SetText ],
-                'add_text_help' : [ None, self.Help.SetText, _F(self.Help.Show) ],
-                 'add_text_log' : [ None, self.Log.SetText ],
+             'add_text_scratch' : [ None, _F(self.set_text, win=self.Scratch) ],
+                'add_text_help' : [ None, _F(self.set_text, win=self.Help, show=True) ],
+                 'add_text_log' : [ None, _F(self.set_text, win=self.Log) ],
                   'add_history' : [ None, self.add_history ],
             },
             0 : {
@@ -1748,6 +1747,11 @@ Global bindings:
             j = self.ghost.GetPageIndex(win) # win=None -> -1
             self.ghost.SetSelection(j)
             self.shell.SetFocus()
+    
+    def set_text(self, text, win, show=None):
+        win.SetText(text)
+        if show is not None:
+            self.PopupWindow(win, show)
     
     def add_history(self, command, noerr):
         ed = self.History
@@ -2663,6 +2667,11 @@ Flaky nutshell:
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
         self.__root = None # reference to the root of the clone
+        
+        try:
+            from .wxpdb import Debugger
+        except ImportError:
+            from wxpdb import Debugger
         
         self.__debugger = Debugger(self.parent,
                                    stdin=self.interp.stdin,
