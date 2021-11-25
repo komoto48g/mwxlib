@@ -1905,10 +1905,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                     '* pressed' : (0, skip),
                    '* released' : (0, skip),
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
-               'insert pressed' : (0, _F(lambda v: self.over(None), doc="toggle-over")),
-                   'f9 pressed' : (0, _F(lambda v: self.wrap(None), doc="toggle-fold-type")),
-                  'C-l pressed' : (0, _F(lambda v: self.recenter(), doc="recenter")),
-                'C-S-l pressed' : (0, _F(lambda v: self.recenter(-1), doc="recenter-bottom")),
+               'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
+                   'f9 pressed' : (0, _F(self.wrap, None, doc="toggle-fold-type")),
+                  'C-l pressed' : (0, _F(self.recenter, None, doc="recenter")),
+                'C-S-l pressed' : (0, _F(self.recenter, -1, doc="recenter-bottom")),
                  'M-up pressed' : (0, _F(self.ScrollLines, lines=-2, doc="scroll-up")),
                'M-down pressed' : (0, _F(self.ScrollLines, lines=+2, doc="scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
@@ -2143,13 +2143,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.BraceHighlight(-1,-1) # no highlight
     
     def over(self, mode=1):
-        """Set overwt(insertion) mode. toggle when mode is None"""
+        """Set insert or overtype
+        mode in {0:insert, 1:over, None:toggle}
+        """
         self.Overtype = mode if mode is not None else not self.Overtype
         self.Refresh()
     
     def wrap(self, mode=1):
         """Set fold type (override) of wrap
-        mode in {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
+        mode in {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
