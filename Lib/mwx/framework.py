@@ -2617,7 +2617,7 @@ Flaky nutshell:
     @target.setter
     def target(self, target):
         """Reset the shell->target; Rename the parent title
-        cf. on_activated/on_inactivated
+        cf. activated/inactivated
         """
         if not hasattr(target, '__dict__'):
             raise TypeError("cannot target primitive objects")
@@ -2626,7 +2626,7 @@ Flaky nutshell:
             target.this = inspect.getmodule(target)
             target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError as e:
-            ## print("- Failed to set vars: {}".format(e))
+            print("- Failed to set vars: {}".format(e))
             pass
         
         self.__target = target
@@ -2640,9 +2640,8 @@ Flaky nutshell:
     
     @property
     def locals(self):
-        if self.__debugger.busy:
-            return self.__debugger.locals
-        return self.interp.locals # (self.__target.__dict__)
+        return self.debugger.locals\
+            or self.interp.locals # (self.__target.__dict__)
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -3266,7 +3265,7 @@ Flaky nutshell:
             target.this = inspect.getmodule(target)
             target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError as e:
-            ## print("- Failed to set vars: {}".format(e))
+            print("- Failed to set vars: {}".format(e))
             pass
         
         ## Add utility functions to builtins
@@ -3797,10 +3796,8 @@ Flaky nutshell:
             self.gen_autocomp(len(hint), words)
             self.message("[module] {} candidates matched"
                          " with {!r} in {}".format(len(words), hint, text))
-            
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-            
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
     
@@ -3832,10 +3829,8 @@ Flaky nutshell:
             self.gen_autocomp(len(hint), words)
             self.message("[word] {} candidates matched"
                          " with {!r} in {}".format(len(words), hint, text))
-            
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-            
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
     
@@ -3867,10 +3862,8 @@ Flaky nutshell:
             self.gen_autocomp(len(hint), words)
             self.message("[apropos] {} candidates matched"
                          " with {!r} in {}".format(len(words), hint, text))
-            
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-            
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
 

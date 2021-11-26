@@ -77,6 +77,8 @@ Note:
         self.globals = {}
         self.viewer = None
         self.module = None
+        ## self.stdin = self.shell.interp.stdin
+        ## self.stdiout = self.shell.interp.stdout
     
     def open(self, frame=None):
         if self.busy:
@@ -104,6 +106,8 @@ Note:
             self.viewer.Close()
         self.viewer = None
         self.module = None
+        self.locals.clear()
+        self.globals.clear()
     
     def trace(self, target, *args, **kwargs):
         if not callable(target):
