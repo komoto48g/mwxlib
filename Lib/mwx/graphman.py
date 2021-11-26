@@ -1149,7 +1149,7 @@ class Frame(mwx.Frame):
                     
                     @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGING)
                     def on_page_changing(evt):
-                        plug = nb.GetPage(evt.Selection)
+                        plug = nb.GetPage(evt.Selection) #<-- nb.CurrentPage
                         if nb.CurrentPage:
                             if nb.CurrentPage is not plug:
                                 nb.CurrentPage.handler('pane_hidden')
