@@ -93,7 +93,7 @@ Note:
         self.shell.SetFocus()
         self.shell.redirectStdin()
         self.shell.redirectStdout()
-        ## wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
+        wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
         ## wx.CallAfter(self.shell.Execute, 'step') # step into the target
         self.set_trace(frame)
     
@@ -119,7 +119,6 @@ Note:
         try:
             self.shell.handler('debug_begin')
             self.open(inspect.currentframe())
-            wx.EndBusyCursor() # cancel the egg timer
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
@@ -252,7 +251,7 @@ Note:
         ## filename = frame.f_code.co_filename
         ## line = linecache.getline(filename, frame.f_lineno, frame.f_globals)
         ## if filename == __file__ and 'self.close()' in line:
-        ##     wx.CallAfter(self.shell.Execute, 'next')
+        ##     wx.CallAfter(self.shell.Execute, 'next') # step over closing
         return Pdb.bp_commands(self, frame)
     
     @echo
