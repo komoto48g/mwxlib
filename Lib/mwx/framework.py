@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.48.9"
+__version__ = "0.49.0rc1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1612,6 +1612,15 @@ Global bindings:
         self.console.AddPage(self.shell, "root")
         self.console.TabCtrlHeight = 0
         
+        @self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED)
+        def on_page_changed(evt):
+            nb = self.console
+            if nb.CurrentPage is self.shell:
+                nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            else:
+                nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            evt.Skip()
+        
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
                   &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
@@ -1644,9 +1653,9 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame handler>
             None : {
-             'add_text_scratch' : [ None, _F(self.set_text, win=self.Scratch) ],
-                'add_text_help' : [ None, _F(self.set_text, win=self.Help, show=True) ],
-                 'add_text_log' : [ None, _F(self.set_text, win=self.Log) ],
+             'add_text_scratch' : [ None, _F(self.add_text, win=self.Scratch) ],
+                'add_text_help' : [ None, _F(self.add_text, win=self.Help, show=True) ],
+                 'add_text_log' : [ None, _F(self.add_text, win=self.Log) ],
                   'add_history' : [ None, self.add_history ],
             },
             0 : {
@@ -1748,7 +1757,27 @@ Global bindings:
             self.ghost.SetSelection(j)
             self.shell.SetFocus()
     
-    def set_text(self, text, win, show=None):
+    def add_console(self, win, title):
+        nb = self.console
+        if win in nb.Children:
+            j = nb.GetPageIndex(win)
+            nb.SetSelection(j)
+            self.statusbar("- the {}:{} is already added.".format(j, win))
+            return
+        nb.AddPage(win, title)
+        nb.TabCtrlHeight = -1
+    
+    def remove_console(self, win):
+        if win is self.shell:
+            self.statusbar("- Don't remove the root shell.")
+            return
+        nb = self.console
+        j = nb.GetPageIndex(win)
+        nb.RemovePage(j)
+        if nb.PageCount == 1:
+            nb.TabCtrlHeight = 0
+    
+    def add_text(self, text, win, show=None):
         win.SetText(text)
         if show is not None:
             self.PopupWindow(win, show)
@@ -1794,8 +1823,9 @@ Global bindings:
     @property
     def all_pages(self):
         def filt(nb):
-            ls = (nb.GetPage(i) for i in range(nb.PageCount))
-            return [x for x in ls if isinstance(x, EditorInterface)]
+            ## ls = (nb.GetPage(i) for i in range(nb.PageCount))
+            ## return [x for x in ls if isinstance(x, EditorInterface)]
+            return [x for x in nb.Children if isinstance(x, EditorInterface)]
         return filt(self.console) + filt(self.ghost)
     
     @property
@@ -3585,10 +3615,9 @@ Flaky nutshell:
     
     def gen_autocomp(self, offset, words):
         """Call AutoCompShow for the specified words"""
-        try:
-            self.AutoCompShow(offset, ' '.join(words))
-        except AssertionError: # for phoenix >= 4.1.1
-            pass
+        listr = ' '.join(words) # make itemlist:str
+        if listr:
+            self.AutoCompShow(offset, listr)
     
     def gen_tooltip(self, text):
         """Call ToolTip of the selected word or focused line"""
@@ -3870,7 +3899,7 @@ try:
             self.__event_handler__[event.typeId].insert(0, handler)
         return handler
     core.EvtHandler.Bind = _EvtHandler_Bind
-    del _EvtHandler_Bind
+    ## del _EvtHandler_Bind
 
     def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
         """
@@ -3893,7 +3922,8 @@ try:
             pass
         return event.Unbind(self, id, id2, handler)
     core.EvtHandler.Unbind = _EvtHandler_Unbind
-    del _EvtHandler_Unbind
+    ## del _EvtHandler_Unbind
+
     del core
 
 except ImportError:
