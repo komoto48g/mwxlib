@@ -52,9 +52,17 @@ Args:
             wx.EVT_UPDATE_UI,
             wx.EVT_UPDATE_UI_RANGE,
             wx.EVT_TOOL,
-            wx.EVT_TOOL_RANGE, # menu items
+            wx.EVT_TOOL_RANGE, # menu items (typeId=10018)
+            wx.EVT_MENU,
+            10018, # other command menu?
         ]
         self.__watchedWidget = None
+        
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+    
+    def OnDestroy(self, evt):
+        self.unwatch()
+        evt.Skip()
     
     ## --------------------------------
     ## event-watcher interface
@@ -75,7 +83,10 @@ Args:
         """All watched events except noWatchList"""
         if not self.target:
             return []
-        return filter(lambda v:v not in self.__noWatchList, ew._eventBinders)
+        def watch_only(v):
+            return (v not in self.__noWatchList
+                and v.typeId not in self.__noWatchList)
+        return filter(watch_only, ew._eventBinders)
     
     def boundHandlers(self, event):
         """Wx.PyEventBinder and the handlers"""
@@ -89,6 +100,7 @@ Args:
     def watch(self, widget):
         """Begin watching"""
         self.unwatch()
+        self.lctr.clear()
         self.__watchedWidget = widget
         ssmap = self.dump(widget, verbose=1)
         for binder in self.watchedEvents():
@@ -99,20 +111,20 @@ Args:
     def unwatch(self):
         """End watching"""
         for binder in self.watchedEvents():
-            self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent)
+            if not self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent):
+                print("- Failed to unbind {}:{}".format(binder.typeId, binder))
         self.__watchedWidget = None
-        self.lctr.clear()
     
     def onWatchedEvent(self, evt):
         if self:
             self.lctr(evt)
         evt.Skip()
     
-    def dump(self, widget, verbose=True):
+    @staticmethod
+    def dump(widget, verbose=True):
         """Dump all event handlers bound to the watched widget"""
         if not hasattr(widget, '__event_handler__'):
-            ## if verbose:
-            ##     print("- No handler bound to {}".format(widget))
+            ## print("- No handler bound to {}".format(widget))
             return {}
         def _where(obj):
             filename = inspect.getsourcefile(obj)
@@ -120,7 +132,8 @@ Args:
             return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
         ssmap = {}
         for event, actions in sorted(widget.__event_handler__.items()):
-            la = [a for a in actions if a != self.onWatchedEvent]
+            ## la = [a for a in actions if a != self.onWatchedEvent]
+            la = [a for a in actions if a.__name__ != 'onWatchedEvent']
             if la:
                 ssmap[event] = la
                 if verbose:
@@ -193,6 +206,8 @@ class EventLogger(wx.ListCtrl):
         
         self.parent = parent
         
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
+        
         self.EnableCheckBoxes() # wx4.1.0 or later,
                                 # below 4.0.7 use CheckListCtrlMixin
         self.alist = ( # assoc list of column names
@@ -230,7 +245,9 @@ class EventLogger(wx.ListCtrl):
         event = evt.EventType
         obj = evt.EventObject
         name = ew._eventIdMap.get(event, 'Unknown')
-        source = ew._makeSourceString(obj)
+        ## source = ew._makeSourceString(obj)
+        source = "{} {!r}".format(obj.__class__.__name__,
+                                  obj.Name if hasattr(obj, 'Name') else '')
         attribs = ew._makeAttribString(evt)
         
         for i, item in enumerate(self.__items):
@@ -246,15 +263,16 @@ class EventLogger(wx.ListCtrl):
             self.SetItem(i, j, str(v))
         self.parent.handler('item_updated', item)
         
-        if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
-            self.SetItemBackgroundColour(i, "yellow")
-            ## Don't run out of all timers and get warnings
-            wx.CallAfter(
-                wx.CallLater, 1000,
-                    self.SetItemBackgroundColour, i, 'white')
-        
         if i == self.FocusedItem:
             self.parent.handler('item_selected', item)
+        
+        if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
+            ## Don't run out of all timers and get warnings
+            self.SetItemBackgroundColour(i, "yellow")
+            def reset_color():
+                if self:
+                    self.SetItemBackgroundColour(i, 'white')
+            wx.CallLater(1000, reset_color)
     
     def clear(self):
         self.DeleteAllItems()
