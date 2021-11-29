@@ -975,6 +975,9 @@ def postcall(f):
 def skip(v):
     v.Skip()
 
+def Pass(v):
+    pass
+
 
 class CtrlInterface(object):
     """Mouse/Key event interface class
@@ -1309,7 +1312,7 @@ class Menu(wx.Menu):
             icons =  [x for x in item if isinstance(x, wx.Bitmap)]
             argv = [x for x in item if x not in handlers and x not in icons]
             if isinstance(id, int):
-                menu_item = wx.MenuItem(self, *argv)
+                menu_item = wx.MenuItem(self, *argv) # <- menu_item.Id
                 if icons:
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
@@ -1354,28 +1357,31 @@ class MenuBar(wx.MenuBar, TreeList):
         wx.MenuBar.__init__(self, *args, **kwargs)
         TreeList.__init__(self)
     
-    def getmenu(self, root, key):
-        key = key.replace('\\','/')
+    def getmenu(self, key, root=None):
+        key = key.replace('\\', '/')
         if '/' in key:
             a, b = key.split('/', 1)
-            branch = self.getmenu(root, a)
-            return self.getmenu(branch, b)
+            branch = self.getmenu(a, root)
+            return self.getmenu(b, branch)
         if root is None:
             return next((menu for menu,label in self.Menus if menu.Title == key), None)
         ## return next((item.SubMenu for item in root.MenuItems if item.Text == key), None)
         return next((item.SubMenu for item in root.MenuItems if item.ItemLabel == key), None)
     
     def update(self, key):
-        """Call when the menulist is changed,
-        Updates items of the menu that has specified `key: root/branch
+        """Update items of the menu that has specified key:root/branch
+        Call when the menulist is changed.
         """
         if self.Parent:
-            menu = self.getmenu(None, key)
+            menu = self.getmenu(key)
             if not menu:     # 新規のメニューアイテムを挿入する
                 self.reset() # リセットして終了
                 return
             
-            for item in menu.MenuItems: # remove and delete all items
+            for item in menu.MenuItems: # delete all items
+                self.Parent.Unbind(wx.EVT_MENU, id=item.Id)
+                self.Parent.Unbind(wx.EVT_UPDATE_UI, id=item.Id)
+                self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, id=item.Id)
                 menu.Delete(item)
             
             menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
@@ -1386,12 +1392,20 @@ class MenuBar(wx.MenuBar, TreeList):
                 self.Enable(menu.Id, menu.MenuItemCount > 0) # 空のサブメニューは無効にする
     
     def reset(self):
-        """Call when the menulist is changed,
-        Recreates menubar if the Parent were attached by SetMenuBar
+        """Recreates menubar if the Parent were attached by SetMenuBar
+        Call when the menulist is changed.
         """
         if self.Parent:
+            ## self.Parent.Unbind(wx.EVT_MENU)
+            ## self.Parent.Unbind(wx.EVT_UPDATE_UI)
+            ## self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT)
+            
             for j in range(self.GetMenuCount()): # remove and del all top-level menu
                 menu = self.Remove(0)
+                for item in menu.MenuItems: # delete all items
+                    self.Parent.Unbind(wx.EVT_MENU, id=item.Id)
+                    self.Parent.Unbind(wx.EVT_UPDATE_UI, id=item.Id)
+                    self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, id=item.Id)
                 menu.Destroy()
             
             for j, (key, values) in enumerate(self):
@@ -1959,7 +1973,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
               'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
-                  ## 'C-d pressed' : (0, ),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
             },
@@ -2593,6 +2606,7 @@ Autocomp key bindings:
 
 Enter key bindings:
      C-enter : insert-line-break
+     M-enter : duplicate-command
 
 This module is based on the implementation of wx.py.shell.
     Some of the original key bindings are overridden in the FSM framework.
@@ -2786,7 +2800,7 @@ Flaky nutshell:
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
                 '*left pressed' : (0, self.OnBackspace),
-               '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
+               '*enter pressed' : (0, Pass), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
@@ -3272,10 +3286,28 @@ Flaky nutshell:
         builtins.help = self.help
         builtins.info = self.info
         builtins.dive = self.clone
-        builtins.debug = self.debugger.trace
+        ## builtins.debug = self.debugger.trace
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
+        
+        try:
+            from .wxmon import EventMonitor
+        except ImportError:
+            from wxmon import EventMonitor
+        
+        def debug(obj):
+            if callable(obj):
+                self.debugger.trace(obj)
+            elif isinstance(obj, wx.Object):
+                self.monitor = EventMonitor(self.parent,
+                                            self.parent,)
+                self.parent.add_console(self.monitor, "root:mon")
+                self.monitor.watch(obj)
+            else:
+                print("- cannot debug {!r}".format(obj))
+        builtins.debug = debug
+        builtins.dump = EventMonitor.dump
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
@@ -3902,18 +3934,20 @@ try:
         """
         if source is not None:
             id  = source.GetId()
+        retval = event.Unbind(self, id, id2, handler)
         ## remove the specified handler or all handlers
-        try:
-            actions = self.__event_handler__[event.typeId]
-            if handler is None:
-                actions.clear()
-            else:
-                actions.remove(handler)
-            if not actions:
-                del self.__event_handler__[event.typeId]
-        except Exception:
-            pass
-        return event.Unbind(self, id, id2, handler)
+        if retval:
+            try:
+                actions = self.__event_handler__[event.typeId]
+                if handler is None:
+                    actions.clear()
+                else:
+                    actions.remove(handler)
+                if not actions:
+                    del self.__event_handler__[event.typeId]
+            except Exception:
+                pass
+        return retval
     core.EvtHandler.Unbind = _EvtHandler_Unbind
     ## del _EvtHandler_Unbind
 
@@ -3991,7 +4025,8 @@ def filling(target=None, label=None, **kwargs):
                          rootLabel=label or typename(target),
                          static=False, # update each time pushed
                          **kwargs)
-    frame.filling.text.WrapMode = 0
+    frame.filling.text.WrapMode = 0 # no wrap
+    frame.filling.text.Zoom = -1 # zoom level of size of fonts
     frame.Show()
     return frame
 

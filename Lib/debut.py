@@ -220,7 +220,7 @@ def init_shell(self):
         "STC_P_OPERATOR"        : "",
         "STC_P_NUMBER"          : "fore:#ffc080",
     })
-    self.wrap(1)
+    self.wrap(0)
     self.parent.About()
     self.magic_interpret = MagicInterpreter(self)
 

@@ -89,6 +89,7 @@ Note:
                                    static=False, # update each time pushed
                                    )
         self.viewer.filling.text.WrapMode = 0
+        self.viewer.filling.text.Zoom = -1
         self.viewer.Show()
         self.logger.clear()
         self.logger.Show()
