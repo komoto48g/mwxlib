@@ -1,6 +1,9 @@
 #! python3
 # -*- coding: utf-8 -*-
 import wx
+import mwx
+import mwx.controls
+mwx.reload(mwx.controls)
 from mwx.controls import LParam, Button, Gauge, Indicator
 from mwx.graphman import Layer, Frame
 

@@ -2,9 +2,12 @@
 # -*- coding: shift-jis -*-
 from __future__ import (division, print_function,
                         absolute_import, unicode_literals)
-import wx
 import numpy as np
 from numpy import pi,exp,sin,cos
+import wx
+import mwx
+import mwx.controls
+mwx.reload(mwx.controls)
 from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 

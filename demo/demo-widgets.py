@@ -5,6 +5,8 @@ from __future__ import (division, print_function,
 from numpy import inf
 import wx
 import mwx
+import mwx.controls
+mwx.reload(mwx.controls)
 from mwx.controls import Param, LParam
 from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame
