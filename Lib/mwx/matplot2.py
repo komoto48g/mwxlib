@@ -234,7 +234,7 @@ class MatplotPanel(wx.Panel):
         def fork(v):
             self.handler.fork(v)
         
-        self.__handler = mwx.FSM({
+        self.__handler = mwx.FSM({ #<MatplotPanel.handler>
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
                 #'canvas_drawn' : [ None, ],             # after canvas.draw :deprecated

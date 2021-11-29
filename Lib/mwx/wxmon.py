@@ -29,7 +29,7 @@ Args:
         self.SplitVertically(self.lctr, self.text,
                              self.lctr.MinWidth) # no scrollbar padding +20
         
-        self.__handler = mwx.FSM({
+        self.__handler = mwx.FSM({ #<EventMonitor.handler>
             None: {
                 'pane_unloaded' : [ None, self.unwatch ],
             },

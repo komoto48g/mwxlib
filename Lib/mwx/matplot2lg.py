@@ -26,7 +26,7 @@ class LinePlot(MatplotPanel):
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        self.handler.update({ #<LinePlot handler>
+        self.handler.update({ #<LinePlot.handler>
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
@@ -205,14 +205,14 @@ class Histogram(LinePlot):
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
         
-        self.handler.update({ #<Histogram handler>
+        self.handler.update({ #<Histogram.handler>
             NORMAL : {
                  'ctrl pressed' : (NORMAL, ), # Pan prohibits
                 'space pressed' : (NORMAL, ), # 〃
                     'z pressed' : (NORMAL, ), # Zoom prohibits
             },
         })
-        self.context = {
+        self.context = { #<GraphPlot.handler>
             None: {
                  'frame_shown' : [ None, self.hreplot ],
               'frame_selected' : [ None, self.hreplot ],
@@ -377,7 +377,7 @@ class LineProfile(LinePlot):
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
         
-        self.handler.update({ #<LineProfile handler>
+        self.handler.update({ #<LineProfile.handler>
             None : {
                  'left pressed' : [ None, self.OnRegionShift ],
                 'right pressed' : [ None, self.OnRegionShift ],
@@ -416,7 +416,7 @@ class LineProfile(LinePlot):
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
         })
-        self.context = {
+        self.context = { #<GraphPlot.handler>
             None: {
                     'line_draw' : [ None, self.linplot ],
                    'line_drawn' : [ None, self.linplot ],

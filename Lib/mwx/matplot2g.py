@@ -401,7 +401,7 @@ Constants:
         def draw_idle(v):
             self.canvas.draw_idle()
         
-        self.handler.update({ #<GraphPlot handler>
+        self.handler.update({ #<GraphPlot.handler>
             None : {
                   'frame_shown' : [ None ], # show
                  'frame_hidden' : [ None ], # show

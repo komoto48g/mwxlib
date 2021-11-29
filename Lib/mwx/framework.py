@@ -1090,7 +1090,7 @@ class KeyCtrlInterfaceMixin(object):
         
         keyevent = keymap +' pressed'
         
-        self.handler.update({ #<KeyCtrlInterfaceMixin handler>
+        self.handler.update({ #<KeyCtrlInterfaceMixin.handler>
             state : {
                        keyevent : [ keymap, self.prefix_command_hook, skip ],
             },
@@ -1507,7 +1507,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             """Close the window"""
             self.Close()
         
-        self.__handler = FSM({ #<Frame handler>
+        self.__handler = FSM({ #<Frame.handler>
                 0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
@@ -1564,7 +1564,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             """Close the window"""
             self.Close()
         
-        self.__handler = FSM({ #<MiniFrame handler>
+        self.__handler = FSM({ #<MiniFrame.handler>
                 0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
@@ -1665,7 +1665,7 @@ Global bindings:
         
         _F = funcall
         
-        self.handler.update({ #<ShellFrame handler>
+        self.handler.update({ #<ShellFrame.handler>
             None : {
              'add_text_scratch' : [ None, _F(self.add_text, win=self.Scratch) ],
                 'add_text_help' : [ None, _F(self.add_text, win=self.Help, show=True) ],
@@ -1932,18 +1932,18 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.handler.update({ #<Editor handler>
+        self.handler.update({ #<Editor.handler>
+            None : {
+             '*button* pressed' : [ None, skip, fork ],
+            '*button* released' : [ None, skip, fork ],
+                     '* dclick' : [ None, skip, fork ],
+            },
             -1 : {  # original action of the Editor
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
                  '*alt pressed' : (-1, ),
                 '*ctrl pressed' : (-1, ),
                '*shift pressed' : (-1, ),
              '*[LR]win pressed' : (-1, ),
-            },
-            None : {
-             '*button* pressed' : [ None, skip, fork ],
-            '*button* released' : [ None, skip, fork ],
-                     '* dclick' : [ None, skip, fork ],
             },
             0 : {
                     '* pressed' : (0, skip),
@@ -2776,7 +2776,7 @@ Flaky nutshell:
         
         _F = funcall
         
-        self.handler.update({ #<Shell handler>
+        self.handler.update({ #<Nautilus.handler>
             None : {
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
