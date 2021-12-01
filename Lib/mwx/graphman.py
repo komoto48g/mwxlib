@@ -296,7 +296,6 @@ unloadable : flag to set the Layer to be unloadable
                   'pane_hidden' : [ None, _F(self.Draw, show=False) ], # when hidden (not closed)
             },
             0 : {
-                   ## 'f5 pressed' : (0, _F(self.reload_safe)),
                   'C-c pressed' : (0, _F(self.copy_to_clipboard)),
                   'C-v pressed' : (0, _F(self.paste_from_clipboard)),
                   'C-n pressed' : (0, _F(self.Draw, show=False), _F(self.reset_params)),
@@ -323,7 +322,7 @@ unloadable : flag to set the Layer to be unloadable
                 lambda v: v.Enable(self.editable)),
                 
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
-                lambda v: self.reload_safe(),
+                lambda v: self.parent.reload_plug(self.__module__),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.is_active))),
                 
@@ -349,11 +348,9 @@ unloadable : flag to set the Layer to be unloadable
             session = kwargs.get('session')
             if session:
                 wx.CallAfter(self.init_session, session)
-            
         except RuntimeError:
             if parent: # unless stand-alone Layer <wx.Window> object is intended ?
                 raise
-            
         except Exception as e:
             traceback.print_exc()
             if parent:
@@ -385,13 +382,6 @@ unloadable : flag to set the Layer to be unloadable
     def set_current_session(self, session):
         """Restore settings from a session file (to be deprecated)"""
         pass
-    
-    def reload_safe(self):
-        if self.reloadable and not (self.thread and self.thread.is_active):
-            current_session = {}
-            self.save_session(current_session)
-            self.parent.load_plug(self.__module__,
-                force=1, session=current_session or None)
     
     Shown = property(
         lambda self: self.IsShown(),
@@ -1233,6 +1223,17 @@ class Frame(mwx.Frame):
                                         "Error in unloading {!r}".format(name),
                                         style=wx.ICON_ERROR)
             return False
+    
+    def reload_plug(self, name):
+        plug = self.get_plug(name)
+        if plug.reloadable:
+            ## if plug.thread and plug.thread.is_active:
+            ##     wx.MessageBox("The thread is running (Press C-g to quit).",
+            ##                   style=wx.ICON_WARNING)
+            ##     return
+            current_session = {}
+            plug.save_session(current_session)
+            self.load_plug(plug.__module__, force=1, session=current_session)
     
     def edit_plug(self, name):
         plug = self.get_plug(name)
