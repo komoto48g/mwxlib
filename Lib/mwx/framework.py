@@ -1635,6 +1635,24 @@ Global bindings:
                 nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             evt.Skip()
         
+        ## @self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE)
+        @self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON)
+        def on_page_close(evt):
+            win = self.console.GetPage(evt.Selection)
+            if win is self.monitor:
+                self.monitor.unwatch()
+                self.remove_console(win)
+                return
+            evt.Skip()
+        
+        try:
+            from .wxmon import EventMonitor
+        except ImportError:
+            from wxmon import EventMonitor
+        
+        self.monitor = EventMonitor(self)
+        self.monitor.Show(0)
+        
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
                   &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
@@ -1671,6 +1689,8 @@ Global bindings:
                 'add_text_help' : [ None, _F(self.add_text, win=self.Help, show=True) ],
                  'add_text_log' : [ None, _F(self.add_text, win=self.Log) ],
                   'add_history' : [ None, self.add_history ],
+                  'add_console' : [ None, self.add_console ],
+               'remove_console' : [ None, self.remove_console ],
             },
             0 : {
                    'f1 pressed' : (0, self.About),
@@ -1766,30 +1786,29 @@ Global bindings:
             self.ghost.Show(show) # when floating ghost, has the Shown flag no effect?
         self._mgr.GetPane(self.ghost).Show(show)
         self._mgr.Update()
-        if win:
-            j = self.ghost.GetPageIndex(win) # win=None -> -1
+        
+        j = self.ghost.GetPageIndex(win) # win=None -> -1
+        if j != -1:
             self.ghost.SetSelection(j)
-            self.shell.SetFocus()
+        self.shell.SetFocus()
     
-    def add_console(self, win, title):
-        nb = self.console
-        if win in nb.Children:
-            j = nb.GetPageIndex(win)
-            nb.SetSelection(j)
-            self.statusbar("- the {}:{} is already added.".format(j, win))
-            return
-        nb.AddPage(win, title)
-        nb.TabCtrlHeight = -1
+    def add_console(self, win, title=None):
+        j = self.console.GetPageIndex(win)
+        if j != -1:
+            self.console.SetSelection(j)
+        else:
+            self.console.AddPage(win, title or typename(win))
+            self.console.TabCtrlHeight = -1
     
     def remove_console(self, win):
         if win is self.shell:
             self.statusbar("- Don't remove the root shell.")
             return
-        nb = self.console
-        j = nb.GetPageIndex(win)
-        nb.RemovePage(j)
-        if nb.PageCount == 1:
-            nb.TabCtrlHeight = 0
+        j = self.console.GetPageIndex(win)
+        if j != -1:
+            self.console.RemovePage(j)
+        if self.console.PageCount == 1:
+            self.console.TabCtrlHeight = 0
     
     def add_text(self, text, win, show=None):
         win.SetText(text)
@@ -1836,11 +1855,9 @@ Global bindings:
     
     @property
     def all_pages(self):
-        def filt(nb):
-            ## ls = (nb.GetPage(i) for i in range(nb.PageCount))
-            ## return [x for x in ls if isinstance(x, EditorInterface)]
+        def filtered(nb):
             return [x for x in nb.Children if isinstance(x, EditorInterface)]
-        return filt(self.console) + filt(self.ghost)
+        return filtered(self.console) + filtered(self.ghost)
     
     @property
     def current_editor(self):
@@ -2626,6 +2643,7 @@ Flaky nutshell:
     target = property(lambda self: self.__target)
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
+    monitor = property(lambda self: self.__parent.monitor)
     debugger = property(lambda self: self.__debugger)
     
     @target.setter
@@ -3286,28 +3304,25 @@ Flaky nutshell:
         builtins.help = self.help
         builtins.info = self.info
         builtins.dive = self.clone
-        ## builtins.debug = self.debugger.trace
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
         
-        try:
-            from .wxmon import EventMonitor
-        except ImportError:
-            from wxmon import EventMonitor
-        
-        def debug(obj):
+        def debug(obj, *args, **kwargs):
             if callable(obj):
-                self.debugger.trace(obj)
+                self.debugger.trace(obj, *args, **kwargs)
             elif isinstance(obj, wx.Object):
-                self.monitor = EventMonitor(self.parent,
-                                            self.parent,)
-                self.parent.add_console(self.monitor, "root:mon")
                 self.monitor.watch(obj)
             else:
                 print("- cannot debug {!r}".format(obj))
         builtins.debug = debug
-        builtins.dump = EventMonitor.dump
+        
+        def dump(obj):
+            if isinstance(obj, wx.Object):
+                self.monitor.dump(obj)
+            else:
+                print("- cannot dump {!r}".format(obj))
+        builtins.dump = dump
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
@@ -3317,6 +3332,7 @@ Flaky nutshell:
         del builtins.info
         del builtins.dive
         del builtins.debug
+        del builtins.dump
         del builtins.timeit
         del builtins.execute
         del builtins.puts

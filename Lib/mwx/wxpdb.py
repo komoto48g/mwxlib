@@ -63,14 +63,14 @@ Note:
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
-    logger = property(lambda self: self.inspector.Log)
-    shell = property(lambda self: self.inspector.shell)
+    logger = property(lambda self: self.__inspector.Log)
+    shell = property(lambda self: self.__inspector.shell)
     busy = property(lambda self: self.module is not None)
     
     def __init__(self, inspector, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.inspector = inspector
+        self.__inspector = inspector
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.locals = {}
@@ -122,14 +122,14 @@ Note:
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            self.shell.handler('debug_begin')
+            self.shell.handler('debug_begin', target)
             self.open(inspect.currentframe())
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
         finally:
             self.close()
-            self.shell.handler('debug_end')
+            self.shell.handler('debug_end', target)
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""

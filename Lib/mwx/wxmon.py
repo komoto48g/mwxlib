@@ -16,12 +16,12 @@ Args:
     inspector : Inspector frame of the shell
     """
     handler = property(lambda self: self.__handler)
-    shell = property(lambda self: self.inspector.shell)
+    shell = property(lambda self: self.__inspector.shell)
     
-    def __init__(self, parent, inspector, *args, **kwargs):
-        wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
+    def __init__(self, inspector, *args, **kwargs):
+        wx.SplitterWindow.__init__(self, inspector, *args, **kwargs)
         
-        self.inspector = inspector
+        self.__inspector = inspector
         
         self.lctr = EventLogger(self, size=(512,-1))
         self.text = wx.TextCtrl(self, size=(200,-1),
@@ -30,9 +30,6 @@ Args:
                              self.lctr.MinWidth) # no scrollbar padding +20
         
         self.__handler = mwx.FSM({ #<EventMonitor.handler>
-            None: {
-                'pane_unloaded' : [ None, self.unwatch ],
-            },
             0 : {
                   'item_motion' : [ 0, self.on_item_motion ],
                  'item_updated' : [ 0, self.on_item_updated ],
@@ -107,9 +104,14 @@ Args:
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
                 self.lctr.add_event(binder.typeId)
+        self.__inspector.handler("add_console", self)
+        self.shell.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
+        if self.target:
+            self.shell.handler("monitor_end", self.target)
+            ## self.__inspector.handler("remove_console", self)
         for binder in self.watchedEvents():
             if not self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
@@ -145,6 +147,8 @@ Args:
     def hook(self, event):
         """Add hook for all events bound to the target"""
         binder, actions = self.boundHandlers(event)
+        if not binder:
+            return
         for f in actions:
             def _hook(v):
                 if self.target.Unbind(binder, handler=_hook):
@@ -157,6 +161,8 @@ Args:
     def unhook(self, event):
         """Remove hook from all events bound to the target"""
         binder, actions = self.boundHandlers(event)
+        if not binder:
+            return
         for f in actions[::-1]:
             if f.__name__ == '_hook':
                 if not self.target.Unbind(binder, handler=f):

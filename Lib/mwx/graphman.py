@@ -336,12 +336,12 @@ unloadable : flag to set the Layer to be unloadable
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
         
-        @partial(self.Bind, wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
             if self.thread and self.thread.is_active:
                 self.thread.Stop()
             del self.Arts
             evt.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         try:
             self.Init()
