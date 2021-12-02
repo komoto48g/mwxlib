@@ -232,20 +232,20 @@ class EventLogger(wx.ListCtrl):
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         
-        def disptach(binder, signal):
+        def dispatch(binder, signal):
             def _dispatch(evt):
                 i = evt.Index
                 item = self.__items[i]
                 self.parent.handler(signal, item)
             self.Bind(binder, _dispatch)
         
-        disptach(wx.EVT_LIST_ITEM_CHECKED, 'item_checked')
-        disptach(wx.EVT_LIST_ITEM_UNCHECKED, 'item_unchecked')
-        disptach(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')
-        disptach(wx.EVT_LIST_ITEM_DESELECTED, 'item_deselected')
-        disptach(wx.EVT_LIST_ITEM_RIGHT_CLICK, 'item_right_clicked')
-        disptach(wx.EVT_LIST_ITEM_MIDDLE_CLICK, 'item_middle_clicked')
-        disptach(wx.EVT_LIST_ITEM_ACTIVATED, 'item_activated')
+        dispatch(wx.EVT_LIST_ITEM_CHECKED, 'item_checked')
+        dispatch(wx.EVT_LIST_ITEM_UNCHECKED, 'item_unchecked')
+        dispatch(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')
+        dispatch(wx.EVT_LIST_ITEM_DESELECTED, 'item_deselected')
+        dispatch(wx.EVT_LIST_ITEM_RIGHT_CLICK, 'item_right_clicked')
+        dispatch(wx.EVT_LIST_ITEM_MIDDLE_CLICK, 'item_middle_clicked')
+        dispatch(wx.EVT_LIST_ITEM_ACTIVATED, 'item_activated')
     
     def __call__(self, evt):
         event = evt.EventType
