@@ -369,18 +369,10 @@ unloadable : flag to set the Layer to be unloadable
     
     def init_session(self, session):
         """Restore settings from a session file (to be overridden)"""
-        self.set_current_session(session)
+        pass
     
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
-        session.update(self.get_current_session() or {})
-    
-    def get_current_session(self):
-        """Return settings to be saved in a session file (to be deprecated)"""
-        pass
-    
-    def set_current_session(self, session):
-        """Restore settings from a session file (to be deprecated)"""
         pass
     
     Shown = property(
@@ -1037,7 +1029,7 @@ class Frame(mwx.Frame):
             if pane.IsOk():
                 nb = pane.window
                 if not isinstance(nb, aui.AuiNotebook):
-                    ## AuiManager .Name をダブって登録することはできない
+                    ## AuiManager:Name をダブって登録することはできない
                     ## Notebook.title (category) はどのプラグインとも別名にすること
                     raise NameError("Notebook name must not be the same as any other plugins")
             
