@@ -10,18 +10,18 @@ import mwx
 
 
 class EventMonitor(wx.SplitterWindow):
-    """Event watcher plugin
+    """Event monitor of the inspector
     
 Args:
-    inspector : Inspector frame of the shell
+    parent : inspector of the shell
     """
     handler = property(lambda self: self.__handler)
     shell = property(lambda self: self.__inspector.shell)
     
-    def __init__(self, inspector, *args, **kwargs):
-        wx.SplitterWindow.__init__(self, inspector, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
         
-        self.__inspector = inspector
+        self.__inspector = parent
         
         self.lctr = EventLogger(self, size=(512,-1))
         self.text = wx.TextCtrl(self, size=(200,-1),

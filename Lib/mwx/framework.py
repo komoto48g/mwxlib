@@ -1776,20 +1776,21 @@ Global bindings:
         self.PopupWindow(self.Help)
     
     def PopupWindow(self, win=None, show=True):
-        """Popup ghost window
-        win : the editor window in the gohst
+        """Popup window in the ghost; console;
+        win : window to popup
        show : True, False, otherwise None:toggle
         """
+        books = self.console, self.ghost
+        for nb in books:
+            j = nb.GetPageIndex(win)
+            if j != -1:
+                nb.SetSelection(j)
+                break
+        ## nb: notebook window to be shown (default is ghost)
         if show is None:
-            show = not self.ghost.IsShown()
-            self.ghost.Show(show) # when floating ghost, has the Shown flag no effect?
-        self._mgr.GetPane(self.ghost).Show(show)
+            show = not nb.IsShown()
+        self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
-        
-        j = self.ghost.GetPageIndex(win) # win=None -> -1
-        if j != -1:
-            self.ghost.SetSelection(j)
-        self.shell.SetFocus()
     
     def add_console(self, win, title=None, show=False):
         nb = self.console
@@ -2738,7 +2739,7 @@ Flaky nutshell:
         except ImportError:
             from wxpdb import Debugger
         
-        self.__debugger = Debugger(self.parent,
+        self.__debugger = Debugger(self,
                                    stdin=self.interp.stdin,
                                    stdout=self.interp.stdout)
         
@@ -2770,7 +2771,7 @@ Flaky nutshell:
             evt.Skip()
         
         @self.Bind(wx.EVT_KILL_FOCUS) # cf. focus_kill
-        def inactivate(evt):
+        def deactivate(evt):
             self.handler('shell_inactivated', self)
             evt.Skip()
         
@@ -2808,9 +2809,8 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
-                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1),
-                                         _F(self.parent.Show), ],
-                   'debug_end' : [ None, _F(self.write, "#>> Debugger closed sucessfully.", -1),
+                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
+                   'debug_end' : [ None, _F(self.write, "#>> Debugger closed successfully.", -1),
                                          _F(self.prompt), ],
             },
             -1 : { # original action of the wx.py.shell
@@ -3653,13 +3653,9 @@ Flaky nutshell:
         ## return frame.shell
         
         ## Make shell:clone in the console
-        shell = Nautilus(self.parent, target,
-            style = wx.CLIP_CHILDREN | wx.BORDER_NONE)
-        
+        shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
         self.parent.handler('add_console', shell,
-            ## title = "clone@{}".format(len(self.parent.all_pages) - 4),
-            title = target.__class__.__name__,
-            show = True)
+                            target.__class__.__name__, show=True)
         self.handler('shell_cloned', shell)
         shell.__root = self
         return shell
