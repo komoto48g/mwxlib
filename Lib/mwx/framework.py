@@ -478,7 +478,7 @@ Attributes:
     def __str__(self):
         return '\n'.join("[ {!r} ]\n{!s}".format(k,v) for k,v in self.items())
     
-    def __call__(self, event, *args):
+    def __call__(self, event, *args, **kwargs):
         self.__event = event
         
         ret = []
@@ -487,26 +487,26 @@ Attributes:
             prg = self.__prev_state
             try:
                 self.__state = None
-                ret += self.call(event, *args) # `None` process
+                ret += self.call(event, *args, **kwargs) # `None` process
             finally:
                 if self.__state is None: # restore original
                     self.__state = org
                     self.__prev_state = prg
         
         if self.__state is not None:
-            ret += self.call(event, *args) # normal process
+            ret += self.call(event, *args, **kwargs) # normal process
         
         self.__prev_state = self.__state
         self.__prev_event = event
         return ret
     
-    def fork(self, *args):
+    def fork(self, *args, **kwargs):
         """Invoke the current event"""
         if self.__state == self.__prev_state: # possibly results in an infinite loop
             raise Exception("FSM:logic error - a fork cannot fork itself")
-        return self.call(self.__event, *args)
+        return self.call(self.__event, *args, **kwargs)
     
-    def call(self, event, *args):
+    def call(self, event, *args, **kwargs):
         context = self[self.__state]
         
         if event in context:
@@ -515,12 +515,12 @@ Attributes:
             self.__prev_state = self.__state # save previous state
             self.__state = transaction[0] # the state transits here
             
-            self.__debcall__(event, *args) # check after transition
+            self.__debcall__(event, *args, **kwargs) # check after transition
             
             retvals = []
             for act in transaction[1:]:
                 try:
-                    ret = act(*args) # try actions after transition
+                    ret = act(*args, **kwargs) # try actions after transition
                     retvals.append(ret)
                     
                 except RuntimeError as e:
@@ -543,12 +543,12 @@ Attributes:
             ## matching test using fnmatch ファイル名規約によるマッチングテスト
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
-                    return self.call(pat, *args) # recursive call with matched pattern
+                    return self.call(pat, *args, **kwargs) # recursive call with matched pattern
         
-        self.__debcall__(event, *args) # check when no transition
+        self.__debcall__(event, *args, **kwargs) # check when no transition
         return []
     
-    def __debcall__(self, pattern, *args):
+    def __debcall__(self, pattern, *args, **kwargs):
         v = self.debug
         if v and self.__state is not None:
             transaction = self[self.__prev_state].get(pattern) or []
@@ -572,7 +572,7 @@ Attributes:
                     a = '' if not actions else ('=> ' + actions)))
         
         if v > 7: # max verbose level puts all args
-            self.log(*args)
+            self.log(args, kwargs)
     
     @staticmethod
     def log(*args):
@@ -963,7 +963,6 @@ def funcall(f, *args, **kwargs):
 
 def postcall(f):
     """A decorator of wx.CallAfter
-    Post event message to call `f in app.
     Wx posts the message that forces calling `f to take place in the main thread.
     """
     @wraps(f)
@@ -1792,23 +1791,27 @@ Global bindings:
             self.ghost.SetSelection(j)
         self.shell.SetFocus()
     
-    def add_console(self, win, title=None):
-        j = self.console.GetPageIndex(win)
+    def add_console(self, win, title=None, show=False):
+        nb = self.console
+        j = nb.GetPageIndex(win)
         if j != -1:
-            self.console.SetSelection(j)
+            nb.SetSelection(j)
         else:
-            self.console.AddPage(win, title or typename(win))
-            self.console.TabCtrlHeight = -1
+            nb.AddPage(win, title or win.__class__.__name__)
+            nb.TabCtrlHeight = -1
+            if show:
+                nb.SetSelection(nb.PageCount - 1)
     
     def remove_console(self, win):
         if win is self.shell:
             self.statusbar("- Don't remove the root shell.")
             return
-        j = self.console.GetPageIndex(win)
+        nb = self.console
+        j = nb.GetPageIndex(win)
         if j != -1:
-            self.console.RemovePage(j)
-        if self.console.PageCount == 1:
-            self.console.TabCtrlHeight = 0
+            nb.RemovePage(j)
+            if nb.PageCount == 1:
+                nb.TabCtrlHeight = 0
     
     def add_text(self, text, win, show=None):
         win.SetText(text)
@@ -3639,10 +3642,7 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
-        frame = deb(target,
-             ## size=self.Size,
-             title="Clone of Nautilus - {!r}".format(target))
-        
+        frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
         self.handler('shell_cloned', frame.shell)
         frame.shell.__root = self
         return frame.shell
@@ -4071,7 +4071,6 @@ if 1:
     frm.inspector.shell.handler.debug = 0
     frm.inspector.shell.Execute(SHELLSTARTUP)
     frm.inspector.shell.SetFocus()
-    frm.inspector.shell.wrap(1)
     frm.inspector.Show()
     frm.Show()
     app.MainLoop()

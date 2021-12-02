@@ -331,8 +331,9 @@ if __name__ == "__main__":
     frm = mwx.Frame(None)
     if 1:
         self = frm.inspector
-        frm.mon = EventMonitor(self, self, style=wx.BORDER_NONE)
-        self.add_console(frm.mon, "root:mon")
+        frm.mon = EventMonitor(self)
+        ## self.add_console(frm.mon, "root:mon")
+        self.shell.write("self.mon.watch(self)")
         self.Show()
     frm.Show()
     app.MainLoop()
