@@ -3646,16 +3646,19 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
+        ## Make debshell outside
         ## frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
         ## self.handler('shell_cloned', frame.shell)
         ## frame.shell.__root = self
         ## return frame.shell
         
+        ## Make shell:clone in the console
         shell = Nautilus(self.parent, target,
             style = wx.CLIP_CHILDREN | wx.BORDER_NONE)
         
         self.parent.handler('add_console', shell,
-            title = "clone@{}".format(len(self.parent.all_pages) - 4),
+            ## title = "clone@{}".format(len(self.parent.all_pages) - 4),
+            title = target.__class__.__name__,
             show = True)
         self.handler('shell_cloned', shell)
         shell.__root = self
