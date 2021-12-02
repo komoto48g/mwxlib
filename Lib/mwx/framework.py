@@ -1801,6 +1801,7 @@ Global bindings:
             nb.TabCtrlHeight = -1
             if show:
                 nb.SetSelection(nb.PageCount - 1)
+                self.Show()
     
     def remove_console(self, win):
         if win is self.shell:
@@ -2598,7 +2599,6 @@ Shell built-in utility:
     @info   @?  short info
     @help   @?? full description
     @dive       clone the shell with new target
-    @debug      debug the callable object using pdb
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
@@ -2652,7 +2652,6 @@ Flaky nutshell:
     @target.setter
     def target(self, target):
         """Reset the shell->target; Rename the parent title
-        cf. activated/inactivated
         """
         if not hasattr(target, '__dict__'):
             raise TypeError("cannot target primitive objects")
@@ -2747,7 +2746,7 @@ Flaky nutshell:
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
         ## このシェルはプロセス内で何度もコールされることが想定されます．
-        ## デバッグポイントとして使用される場合，また，クローンされる場合がそうです．
+        ## ブレークポイントとして使用される場合，また，クローンされる場合がそうです．
         ## ビルトインがデッドオブジェクトを参照することにならないように以下の方法で回避します．
         ## 
         ## This shell is expected to be called many times in the process,
@@ -2756,17 +2755,24 @@ Flaky nutshell:
         ## 
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
+        ## def activate(evt):
+        ##     if self.IsShown():
+        ##         if evt.Active:
+        ##             self.handler('shell_activated', self)
+        ##         else:
+        ##             self.handler('shell_inactivated', self)
+        ##     evt.Skip()
+        ## self.parent.Bind(wx.EVT_ACTIVATE, activate)
+        
+        @self.Bind(wx.EVT_SET_FOCUS) # cf. focus_set
         def activate(evt):
-            if evt.Active:
-                self.handler('shell_activated', self)
-            else:
-                self.handler('shell_inactivated', self)
-                if self.AutoCompActive():
-                    self.AutoCompCancel()
-                if self.CallTipActive():
-                    self.CallTipCancel()
+            self.handler('shell_activated', self)
             evt.Skip()
-        self.parent.Bind(wx.EVT_ACTIVATE, activate)
+        
+        @self.Bind(wx.EVT_KILL_FOCUS) # cf. focus_kill
+        def inactivate(evt):
+            self.handler('shell_inactivated', self)
+            evt.Skip()
         
         self.on_activated(self) # call once manually
         
@@ -3294,14 +3300,7 @@ Flaky nutshell:
         Reset localvars and builtins assigned for the shell->target.
         Note: the target could be referred from other shells.
         """
-        target = shell.target
-        try:
-            target.self = target
-            target.this = inspect.getmodule(target)
-            target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-        except AttributeError as e:
-            print("- Failed to set vars: {}".format(e))
-            pass
+        self.target = shell.target # => @target.setter
         
         ## Add utility functions to builtins
         builtins.help = self.help
@@ -3331,6 +3330,11 @@ Flaky nutshell:
         """Called when shell:self is inactivated
         Remove target localvars and builtins assigned for the shell->target.
         """
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
         del builtins.help
         del builtins.info
         del builtins.dive
@@ -3642,10 +3646,20 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
-        frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
-        self.handler('shell_cloned', frame.shell)
-        frame.shell.__root = self
-        return frame.shell
+        ## frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
+        ## self.handler('shell_cloned', frame.shell)
+        ## frame.shell.__root = self
+        ## return frame.shell
+        
+        shell = Nautilus(self.parent, target,
+            style = wx.CLIP_CHILDREN | wx.BORDER_NONE)
+        
+        self.parent.handler('add_console', shell,
+            title = "clone@{}".format(len(self.parent.all_pages) - 4),
+            show = True)
+        self.handler('shell_cloned', shell)
+        shell.__root = self
+        return shell
     
     ## --------------------------------
     ## Auto-comp actions of the shell
