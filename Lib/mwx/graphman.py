@@ -369,18 +369,10 @@ unloadable : flag to set the Layer to be unloadable
     
     def init_session(self, session):
         """Restore settings from a session file (to be overridden)"""
-        self.set_current_session(session)
+        pass
     
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
-        session.update(self.get_current_session() or {})
-    
-    def get_current_session(self):
-        """Return settings to be saved in a session file (to be deprecated)"""
-        pass
-    
-    def set_current_session(self, session):
-        """Restore settings from a session file (to be deprecated)"""
         pass
     
     Shown = property(
@@ -1037,7 +1029,7 @@ class Frame(mwx.Frame):
             if pane.IsOk():
                 nb = pane.window
                 if not isinstance(nb, aui.AuiNotebook):
-                    ## AuiManager .Name をダブって登録することはできない
+                    ## AuiManager:Name をダブって登録することはできない
                     ## Notebook.title (category) はどのプラグインとも別名にすること
                     raise NameError("Notebook name must not be the same as any other plugins")
             
@@ -1064,9 +1056,10 @@ class Frame(mwx.Frame):
             return False
         
         except Exception as e:
-            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                                        "Error in loading {!r}".format(name),
-                                        style=wx.ICON_ERROR)
+            wx.CallAfter(
+                wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
+                               "Error in loading {!r}".format(name),
+                               style=wx.ICON_ERROR)
             return False
         
         ## --------------------------------
@@ -1177,9 +1170,10 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             
         except Exception as e:
-            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                                        "Error in loading {!r}".format(name),
-                                        style=wx.ICON_ERROR)
+            wx.CallAfter(
+                wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
+                               "Error in loading {!r}".format(name),
+                               style=wx.ICON_ERROR)
             return False
     
     def unload_plug(self, name):
@@ -1227,10 +1221,6 @@ class Frame(mwx.Frame):
     def reload_plug(self, name):
         plug = self.get_plug(name)
         if plug.reloadable:
-            ## if plug.thread and plug.thread.is_active:
-            ##     wx.MessageBox("The thread is running (Press C-g to quit).",
-            ##                   style=wx.ICON_WARNING)
-            ##     return
             current_session = {}
             plug.save_session(current_session)
             self.load_plug(plug.__module__, force=1, session=current_session)

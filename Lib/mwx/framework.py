@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.0"
+__version__ = "0.49.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -881,7 +881,7 @@ def regulate_key(key):
 ## Interfaces of Controls
 ## --------------------------------
 
-## def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3-only
+## def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
 def funcall(f, *args, **kwargs):
     """Decorator as curried function
     
@@ -1150,7 +1150,7 @@ def ID_(id):
     return id
 
 
-## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None): # PY3-only
+## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None): # PY3
 def pack(self, *args, **kwargs):
     """Do layout
 
@@ -1634,13 +1634,17 @@ Global bindings:
                 nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             evt.Skip()
         
-        ## @self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE)
         @self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON)
         def on_page_close(evt):
-            win = self.console.GetPage(evt.Selection)
+            tab = evt.EventObject #<wx._aui.AuiTabCtrl>
+            win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
+            ## win = self.console.GetPage(evt.Selection)
             if win is self.monitor:
                 self.monitor.unwatch()
-                self.remove_console(win)
+                self.remove_page_console(win)
+                return
+            if win is self.shell:
+                self.statusbar("- Don't remove the root shell.")
                 return
             evt.Skip()
         
@@ -1684,12 +1688,15 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame.handler>
             None : {
-             'add_text_scratch' : [ None, _F(self.add_text, win=self.Scratch) ],
-                'add_text_help' : [ None, _F(self.add_text, win=self.Help, show=True) ],
-                 'add_text_log' : [ None, _F(self.add_text, win=self.Log) ],
+                  'put_scratch' : [ None, self.Scratch.SetText ],
+                     'put_help' : [ None, self.Help.SetText,
+                                          _F(self.PopupWindow, self.Help) ],
+                      'put_log' : [ None, self.Log.SetText ],
                   'add_history' : [ None, self.add_history ],
-                  'add_console' : [ None, self.add_console ],
-               'remove_console' : [ None, self.remove_console ],
+                     'add_page' : [ None, self.add_page_console ],
+                  'remove_page' : [ None, self.remove_page_console ],
+                 'popup_window' : [ None, self.PopupWindow ],
+             'set_title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
                    'f1 pressed' : (0, self.About),
@@ -1701,10 +1708,12 @@ Global bindings:
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.shell.clear)),
                 'C-f12 pressed' : (0, _F(self.shell.clone)),
-             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1)),
-             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
+               'M-left pressed' : (0, _F(self.other_window, p=-1)),
+              'M-right pressed' : (0, _F(self.other_window, p=+1)),
+             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1)),
+             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
             },
             'C-x' : {
                     'l pressed' : (0, _F(self.PopupWindow, self.Log, doc="Show Log")),
@@ -1713,8 +1722,6 @@ Global bindings:
                     'j pressed' : (0, _F(self.PopupWindow, self.Scratch, doc="Show Scratch")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
-                 'left pressed' : (0, _F(self.other_window, p=-1)),
-                'right pressed' : (0, _F(self.other_window, p=+1)),
             },
         })
         
@@ -1776,22 +1783,27 @@ Global bindings:
         self.PopupWindow(self.Help)
     
     def PopupWindow(self, win=None, show=True):
-        """Popup ghost window
-        win : the editor window in the gohst
+        """Popup window in the ghost; console;
+        win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle
         """
+        books = self.console, self.ghost
+        for nb in books:
+            j = nb.GetPageIndex(win)
+            if j != -1:
+                nb.SetSelection(j)
+                break
+        ## nb: notebook window to be shown (default is ghost)
         if show is None:
-            show = not self.ghost.IsShown()
-            self.ghost.Show(show) # when floating ghost, has the Shown flag no effect?
-        self._mgr.GetPane(self.ghost).Show(show)
+            show = not nb.IsShown()
+        self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
-        
-        j = self.ghost.GetPageIndex(win) # win=None -> -1
-        if j != -1:
-            self.ghost.SetSelection(j)
-        self.shell.SetFocus()
     
-    def add_console(self, win, title=None, show=False):
+    def SetTitleWindow(self, win):
+        self.Title = re.sub("(.*) - (.*)", # Clone of ...
+                            "\\1 - {!r}".format(win), self.Title)
+    
+    def add_page_console(self, win, title=None, show=False):
         nb = self.console
         j = nb.GetPageIndex(win)
         if j != -1:
@@ -1801,8 +1813,9 @@ Global bindings:
             nb.TabCtrlHeight = -1
             if show:
                 nb.SetSelection(nb.PageCount - 1)
+                self.Show()
     
-    def remove_console(self, win):
+    def remove_page_console(self, win):
         if win is self.shell:
             self.statusbar("- Don't remove the root shell.")
             return
@@ -1812,11 +1825,6 @@ Global bindings:
             nb.RemovePage(j)
             if nb.PageCount == 1:
                 nb.TabCtrlHeight = 0
-    
-    def add_text(self, text, win, show=None):
-        win.SetText(text)
-        if show is not None:
-            self.PopupWindow(win, show)
     
     def add_history(self, command, noerr):
         ed = self.History
@@ -2534,7 +2542,7 @@ class Editor(EditWindow, EditorInterface):
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
-        ## To prevent @filling from *HARD-CRASH*
+        ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
@@ -2552,7 +2560,7 @@ class Editor(EditWindow, EditorInterface):
         """Show on the screen"""
         try:
             shown = self.IsShown()
-            self.parent.PopupWindow(self, show)
+            self.parent.handler('popup_window', self, show)
             return shown != self.IsShown()
         except AttributeError:
             return EditWindow.Show(self, show)
@@ -2598,7 +2606,6 @@ Shell built-in utility:
     @info   @?  short info
     @help   @?? full description
     @dive       clone the shell with new target
-    @debug      debug the callable object using pdb
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
@@ -2652,7 +2659,6 @@ Flaky nutshell:
     @target.setter
     def target(self, target):
         """Reset the shell->target; Rename the parent title
-        cf. activated/inactivated
         """
         if not hasattr(target, '__dict__'):
             raise TypeError("cannot target primitive objects")
@@ -2666,12 +2672,7 @@ Flaky nutshell:
         
         self.__target = target
         self.interp.locals.update(target.__dict__)
-        try:
-            self.parent.Title = re.sub("(.*) - (.*)", # Clone of ...
-                                       "\\1 - {!r}".format(target),
-                                       self.parent.Title)
-        except AttributeError:
-            pass
+        self.parent.handler('set_title_window', target)
     
     @property
     def locals(self):
@@ -2739,34 +2740,22 @@ Flaky nutshell:
         except ImportError:
             from wxpdb import Debugger
         
-        self.__debugger = Debugger(self.parent,
+        self.__debugger = Debugger(self,
                                    stdin=self.interp.stdin,
                                    stdout=self.interp.stdout)
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
-        ## このシェルはプロセス内で何度もコールされることが想定されます．
-        ## デバッグポイントとして使用される場合，また，クローンされる場合がそうです．
-        ## ビルトインがデッドオブジェクトを参照することにならないように以下の方法で回避します．
-        ## 
-        ## This shell is expected to be called many times in the process,
-        ## e.g., when used as a break-point and when cloned.
-        ## To prevent the builtins from referring dead objects, we use the following method.
-        ## 
-        ## Assign objects each time it is activated so that the target
-        ## does not refer to dead objects in the shell clones (to be deleted).
+        @self.Bind(wx.EVT_SET_FOCUS) # cf. focus_set
         def activate(evt):
-            if evt.Active:
-                self.handler('shell_activated', self)
-            else:
-                self.handler('shell_inactivated', self)
-                if self.AutoCompActive():
-                    self.AutoCompCancel()
-                if self.CallTipActive():
-                    self.CallTipCancel()
+            self.handler('shell_activated', self)
             evt.Skip()
-        self.parent.Bind(wx.EVT_ACTIVATE, activate)
+        
+        @self.Bind(wx.EVT_KILL_FOCUS) # cf. focus_kill
+        def deactivate(evt):
+            self.handler('shell_inactivated', self)
+            evt.Skip()
         
         self.on_activated(self) # call once manually
         
@@ -2775,7 +2764,7 @@ Flaky nutshell:
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        ## To prevent @filling from *HARD-CRASH*
+        ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
@@ -2802,9 +2791,8 @@ Flaky nutshell:
                 'shell_cloned' : [ None, ],
              'shell_activated' : [ None, self.on_activated ],
            'shell_inactivated' : [ None, self.on_inactivated ],
-                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1),
-                                         _F(self.parent.Show), ],
-                   'debug_end' : [ None, _F(self.write, "#>> Debugger closed sucessfully.", -1),
+                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
+                   'debug_end' : [ None, _F(self.write, "#>> Debugger closed successfully.", -1),
                                          _F(self.prompt), ],
             },
             -1 : { # original action of the wx.py.shell
@@ -2815,17 +2803,19 @@ Flaky nutshell:
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-             ## '*f[0-9]* pressed' : (0, ), # -> function keys skip to the parent
                     '* pressed' : (0, skip),
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-                '*left pressed' : (0, self.OnBackspace),
                '*enter pressed' : (0, Pass), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
+                 'left pressed' : (0, self.OnBackspace),
+               'C-left pressed' : (0, self.OnBackspace),
+               'S-left pressed' : (0, self.OnBackspace),
+             'C-S-left pressed' : (0, self.OnBackspace),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
                ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
@@ -3111,12 +3101,12 @@ Flaky nutshell:
         evt.Skip()
     
     def OnBackspace(self, evt):
-        """Called when backspace pressed"""
+        """Called when backspace (or *left) pressed
+        Backspace-guard from Autocomp eating over a prompt white
+        """
         if self.cur == self.bolc:
-            ## do not skip to prevent autocomp eats prompt
-            ##      so not to backspace over the latest non-continuation prompt
-            if self.AutoCompActive():
-                self.AutoCompCancel()
+            ## do not skip to prevent autocomp eats prompt,
+            ## so not to backspace over the latest non-continuation prompt
             return
         evt.Skip()
     
@@ -3294,16 +3284,12 @@ Flaky nutshell:
         Reset localvars and builtins assigned for the shell->target.
         Note: the target could be referred from other shells.
         """
-        target = shell.target
-        try:
-            target.self = target
-            target.this = inspect.getmodule(target)
-            target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-        except AttributeError as e:
-            print("- Failed to set vars: {}".format(e))
-            pass
+        self.target = shell.target # => @target.setter
         
-        ## Add utility functions to builtins
+        ## This shell is expected to be called many times,
+        ## e.g., when used as a break-point and when cloned.
+        ## To prevent the builtins from referring dead objects,
+        ## Add utility functions to builtins each time when activated.
         builtins.help = self.help
         builtins.info = self.info
         builtins.dive = self.clone
@@ -3331,6 +3317,11 @@ Flaky nutshell:
         """Called when shell:self is inactivated
         Remove target localvars and builtins assigned for the shell->target.
         """
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
         del builtins.help
         del builtins.info
         del builtins.dive
@@ -3565,9 +3556,9 @@ Flaky nutshell:
         if obj is None:
             obj = self
         doc = inspect.getdoc(obj)\
-          or "No information about {}".format(obj)
+                or "No information about {}".format(obj)
         try:
-            self.parent.handler('add_text_help', doc)
+            self.parent.handler('put_help', doc) or print(doc)
         except AttributeError:
             print(doc)
     
@@ -3578,9 +3569,9 @@ Flaky nutshell:
         ##     wx.CallAfter(pydoc.help)
         ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
-          or "No description about {}".format(obj)
+                or "No description about {}".format(obj)
         try:
-            self.parent.handler('add_text_help', doc)
+            self.parent.handler('put_help', doc) or print(doc)
         except AttributeError:
             print(doc)
     
@@ -3642,10 +3633,18 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
-        frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
-        self.handler('shell_cloned', frame.shell)
-        frame.shell.__root = self
-        return frame.shell
+        if 0:
+            ## Make new deb/shell outside
+            frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
+            shell = frame.shell
+        else:
+            ## Make shell:clone in the console
+            shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
+            self.parent.handler('add_page', shell,
+                                target.__class__.__name__, show=True)
+        self.handler('shell_cloned', shell)
+        shell.__root = self
+        return shell
     
     ## --------------------------------
     ## Auto-comp actions of the shell
@@ -3656,7 +3655,7 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.handler('add_text_scratch', tip)
+                self.parent.handler('put_scratch', tip)
         except AttributeError:
             pass
     
@@ -3717,15 +3716,14 @@ Flaky nutshell:
         self.message("")
     
     def skipback_autocomp(self, evt):
-        """Backspace-guard from Autocomp eating over a prompt white"""
+        """Don't eat backward prompt white"""
         if self.cur == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
-            if self.AutoCompActive():
-                self.AutoCompCancel()
             self.handler('quit', evt)
     
     def decrback_autocomp(self, evt):
+        """Move forward Anchor point to the word right during autocomp"""
         if self.following_char.isalnum() and self.preceding_char == '.':
             pos = self.cur
             self.WordRight()

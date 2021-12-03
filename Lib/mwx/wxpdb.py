@@ -40,7 +40,7 @@ Attributes:
    globals : (ditto)
 
 Args:
-    inspector : Inspector frame of the shell
+    parent : shell
 
 Note:
     + set_trace -> reset -> set_step -> sys.settrace
@@ -63,14 +63,14 @@ Note:
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
-    logger = property(lambda self: self.__inspector.Log)
-    shell = property(lambda self: self.__inspector.shell)
+    logger = property(lambda self: self.__shell.parent.Log)
+    shell = property(lambda self: self.__shell)
     busy = property(lambda self: self.module is not None)
     
-    def __init__(self, inspector, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.__inspector = inspector
+        self.__shell = parent
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.locals = {}
@@ -94,10 +94,10 @@ Note:
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
-        self.shell.redirectStdin()
-        self.shell.redirectStdout()
-        wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
+        ## self.shell.redirectStdin()
+        ## self.shell.redirectStdout()
         ## wx.CallAfter(self.shell.Execute, 'step') # step into the target
+        wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
         self.set_trace(frame)
     
     def close(self):
