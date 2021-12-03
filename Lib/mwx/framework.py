@@ -1634,13 +1634,17 @@ Global bindings:
                 nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             evt.Skip()
         
-        ## @self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE)
         @self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON)
         def on_page_close(evt):
-            win = self.console.GetPage(evt.Selection)
+            tab = evt.EventObject #<wx._aui.AuiTabCtrl>
+            win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
+            ## win = self.console.GetPage(evt.Selection)
             if win is self.monitor:
                 self.monitor.unwatch()
                 self.remove_page_console(win)
+                return
+            if win is self.shell:
+                self.statusbar("- Don't remove the root shell.")
                 return
             evt.Skip()
         
