@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.1"
+__version__ = "0.49.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -933,7 +933,7 @@ def funcall(f, *args, **kwargs):
             def _Act2(*v):
                 return f(*args, **kwargs) # function with no explicit args
             action = _Act2
-            action.__name__ += "~"
+            action.__name__ += str("~")
     else:
         ## Builtin functions don't have an argspec that we can get.
         ## Try alalyzing the doc:str to get argspec info.
@@ -948,7 +948,7 @@ def funcall(f, *args, **kwargs):
                 def _Act3(*v):
                     return f(*args, **kwargs) # function with no explicit args
                 action = _Act3
-                action.__name__ += "~~"
+                action.__name__ += str("~~")
         except TypeError:
             raise
         except Exception:
@@ -1618,6 +1618,14 @@ Global bindings:
         self.__shell = Nautilus(self, target,
             style = wx.CLIP_CHILDREN | wx.BORDER_NONE, **kwargs)
         
+        try:
+            from wxmon import EventMonitor
+        except ImportError:
+            from .wxmon import EventMonitor
+        
+        self.monitor = EventMonitor(self)
+        self.monitor.Show(0)
+        
         self.console = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
                   &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
@@ -1625,36 +1633,8 @@ Global bindings:
         self.console.AddPage(self.shell, "root")
         self.console.TabCtrlHeight = 0
         
-        @self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED)
-        def on_page_changed(evt):
-            nb = self.console
-            if nb.CurrentPage is self.shell:
-                nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-            else:
-                nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-            evt.Skip()
-        
-        @self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON)
-        def on_page_close(evt):
-            tab = evt.EventObject #<wx._aui.AuiTabCtrl>
-            win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
-            ## win = self.console.GetPage(evt.Selection)
-            if win is self.monitor:
-                self.monitor.unwatch()
-                self.remove_page_console(win)
-                return
-            if win is self.shell:
-                self.statusbar("- Don't remove the root shell.")
-                return
-            evt.Skip()
-        
-        try:
-            from .wxmon import EventMonitor
-        except ImportError:
-            from wxmon import EventMonitor
-        
-        self.monitor = EventMonitor(self)
-        self.monitor.Show(0)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleTabClose)
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
@@ -1671,8 +1651,8 @@ Global bindings:
         self._mgr.SetDockSizeConstraint(0.4, 0.5)
         
         self._mgr.AddPane(self.console, aui.AuiPaneInfo().CenterPane())
-        self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right().Show(0)
-            .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0))
+        self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right()
+            .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0).Show(0))
         self._mgr.Update()
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
@@ -1802,6 +1782,27 @@ Global bindings:
     def SetTitleWindow(self, win):
         self.Title = re.sub("(.*) - (.*)", # Clone of ...
                             "\\1 - {!r}".format(win), self.Title)
+    
+    def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
+        nb = self.console
+        if nb.CurrentPage is self.shell:
+            nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        else:
+            nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        evt.Skip()
+    
+    def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
+        tab = evt.EventObject #<wx._aui.AuiTabCtrl>
+        win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
+        ## win = self.console.GetPage(evt.Selection)
+        if win is self.monitor:
+            self.monitor.unwatch()
+            self.remove_page_console(win)
+            return
+        if win is self.shell:
+            self.statusbar("- Don't remove the root shell.")
+            return
+        evt.Skip()
     
     def add_page_console(self, win, title=None, show=False):
         nb = self.console
@@ -2736,9 +2737,9 @@ Flaky nutshell:
         self.__root = None # reference to the root of the clone
         
         try:
-            from .wxpdb import Debugger
-        except ImportError:
             from wxpdb import Debugger
+        except ImportError:
+            from .wxpdb import Debugger
         
         self.__debugger = Debugger(self,
                                    stdin=self.interp.stdin,
@@ -2758,6 +2759,11 @@ Flaky nutshell:
             evt.Skip()
         
         self.on_activated(self) # call once manually
+        
+        @self.Bind(wx.EVT_WINDOW_DESTROY)
+        def destroy(evt):
+            del self.__target.shell # delete refernce
+            evt.Skip()
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
@@ -3967,7 +3973,8 @@ try:
 
     del core
 
-except ImportError:
+except ImportError as e:
+    print("- {!r}".format(e))
     pass
 
 

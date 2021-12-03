@@ -547,7 +547,7 @@ class Frame(mwx.Frame):
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
-        #<wx.aui.AuiManager> <wx.aui.AuiPaneInfo>
+        #<wx.aui.AuiManager>
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
@@ -737,7 +737,7 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         
         ## self.Bind(wx.EVT_ACTIVATE,
-        ##     lambda v: self.OnShowFrame(self.selected_view.frame))
+        ##           lambda v: self.OnShowFrame(self.selected_view.frame))
         
         ## Custom Key Bindings:
         self.define_key('C-g', self.Quit)
