@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.0"
+__version__ = "0.49.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -881,7 +881,7 @@ def regulate_key(key):
 ## Interfaces of Controls
 ## --------------------------------
 
-## def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3-only
+## def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
 def funcall(f, *args, **kwargs):
     """Decorator as curried function
     
@@ -1150,7 +1150,7 @@ def ID_(id):
     return id
 
 
-## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None): # PY3-only
+## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None): # PY3
 def pack(self, *args, **kwargs):
     """Do layout
 
@@ -1640,7 +1640,7 @@ Global bindings:
             win = self.console.GetPage(evt.Selection)
             if win is self.monitor:
                 self.monitor.unwatch()
-                self.remove_console(win)
+                self.remove_page_console(win)
                 return
             evt.Skip()
         
@@ -1684,12 +1684,15 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame.handler>
             None : {
-             'add_text_scratch' : [ None, _F(self.add_text, win=self.Scratch) ],
-                'add_text_help' : [ None, _F(self.add_text, win=self.Help, show=True) ],
-                 'add_text_log' : [ None, _F(self.add_text, win=self.Log) ],
+                  'put_scratch' : [ None, self.Scratch.SetText ],
+                     'put_help' : [ None, self.Help.SetText,
+                                          _F(self.PopupWindow, self.Help) ],
+                      'put_log' : [ None, self.Log.SetText ],
                   'add_history' : [ None, self.add_history ],
-                  'add_console' : [ None, self.add_console ],
-               'remove_console' : [ None, self.remove_console ],
+                     'add_page' : [ None, self.add_page_console ],
+                  'remove_page' : [ None, self.remove_page_console ],
+                 'popup_window' : [ None, self.PopupWindow ],
+             'set_title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
                    'f1 pressed' : (0, self.About),
@@ -1777,7 +1780,7 @@ Global bindings:
     
     def PopupWindow(self, win=None, show=True):
         """Popup window in the ghost; console;
-        win : window to popup
+        win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle
         """
         books = self.console, self.ghost
@@ -1792,7 +1795,11 @@ Global bindings:
         self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
     
-    def add_console(self, win, title=None, show=False):
+    def SetTitleWindow(self, win):
+        self.Title = re.sub("(.*) - (.*)", # Clone of ...
+                            "\\1 - {!r}".format(win), self.Title)
+    
+    def add_page_console(self, win, title=None, show=False):
         nb = self.console
         j = nb.GetPageIndex(win)
         if j != -1:
@@ -1804,7 +1811,7 @@ Global bindings:
                 nb.SetSelection(nb.PageCount - 1)
                 self.Show()
     
-    def remove_console(self, win):
+    def remove_page_console(self, win):
         if win is self.shell:
             self.statusbar("- Don't remove the root shell.")
             return
@@ -1814,11 +1821,6 @@ Global bindings:
             nb.RemovePage(j)
             if nb.PageCount == 1:
                 nb.TabCtrlHeight = 0
-    
-    def add_text(self, text, win, show=None):
-        win.SetText(text)
-        if show is not None:
-            self.PopupWindow(win, show)
     
     def add_history(self, command, noerr):
         ed = self.History
@@ -2536,7 +2538,7 @@ class Editor(EditWindow, EditorInterface):
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
-        ## To prevent @filling from *HARD-CRASH*
+        ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
@@ -2554,7 +2556,7 @@ class Editor(EditWindow, EditorInterface):
         """Show on the screen"""
         try:
             shown = self.IsShown()
-            self.parent.PopupWindow(self, show)
+            self.parent.handler('popup_window', self, show)
             return shown != self.IsShown()
         except AttributeError:
             return EditWindow.Show(self, show)
@@ -2666,12 +2668,7 @@ Flaky nutshell:
         
         self.__target = target
         self.interp.locals.update(target.__dict__)
-        try:
-            self.parent.Title = re.sub("(.*) - (.*)", # Clone of ...
-                                       "\\1 - {!r}".format(target),
-                                       self.parent.Title)
-        except AttributeError:
-            pass
+        self.parent.handler('set_title_window', target)
     
     @property
     def locals(self):
@@ -2746,25 +2743,6 @@ Flaky nutshell:
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
-        ## このシェルはプロセス内で何度もコールされることが想定されます．
-        ## ブレークポイントとして使用される場合，また，クローンされる場合がそうです．
-        ## ビルトインがデッドオブジェクトを参照することにならないように以下の方法で回避します．
-        ## 
-        ## This shell is expected to be called many times in the process,
-        ## e.g., when used as a break-point and when cloned.
-        ## To prevent the builtins from referring dead objects, we use the following method.
-        ## 
-        ## Assign objects each time it is activated so that the target
-        ## does not refer to dead objects in the shell clones (to be deleted).
-        ## def activate(evt):
-        ##     if self.IsShown():
-        ##         if evt.Active:
-        ##             self.handler('shell_activated', self)
-        ##         else:
-        ##             self.handler('shell_inactivated', self)
-        ##     evt.Skip()
-        ## self.parent.Bind(wx.EVT_ACTIVATE, activate)
-        
         @self.Bind(wx.EVT_SET_FOCUS) # cf. focus_set
         def activate(evt):
             self.handler('shell_activated', self)
@@ -2782,7 +2760,7 @@ Flaky nutshell:
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        ## To prevent @filling from *HARD-CRASH*
+        ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
@@ -3302,7 +3280,10 @@ Flaky nutshell:
         """
         self.target = shell.target # => @target.setter
         
-        ## Add utility functions to builtins
+        ## This shell is expected to be called many times,
+        ## e.g., when used as a break-point and when cloned.
+        ## To prevent the builtins from referring dead objects,
+        ## Add utility functions to builtins each time when activated.
         builtins.help = self.help
         builtins.info = self.info
         builtins.dive = self.clone
@@ -3571,7 +3552,7 @@ Flaky nutshell:
         doc = inspect.getdoc(obj)\
           or "No information about {}".format(obj)
         try:
-            self.parent.handler('add_text_help', doc)
+            self.parent.handler('put_help', doc)
         except AttributeError:
             print(doc)
     
@@ -3584,7 +3565,7 @@ Flaky nutshell:
         doc = pydoc.plain(pydoc.render_doc(obj))\
           or "No description about {}".format(obj)
         try:
-            self.parent.handler('add_text_help', doc)
+            self.parent.handler('put_help', doc)
         except AttributeError:
             print(doc)
     
@@ -3646,16 +3627,15 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
-        ## Make debshell outside
-        ## frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
-        ## self.handler('shell_cloned', frame.shell)
-        ## frame.shell.__root = self
-        ## return frame.shell
-        
-        ## Make shell:clone in the console
-        shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
-        self.parent.handler('add_console', shell,
-                            target.__class__.__name__, show=True)
+        if 0:
+            ## Make new deb/shell outside
+            frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
+            shell = frame.shell
+        else:
+            ## Make shell:clone in the console
+            shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
+            self.parent.handler('add_page', shell,
+                                target.__class__.__name__, show=True)
         self.handler('shell_cloned', shell)
         shell.__root = self
         return shell
@@ -3669,7 +3649,7 @@ Flaky nutshell:
         Shell.CallTipShow(self, pos, tip)
         try:
             if tip:
-                self.parent.handler('add_text_scratch', tip)
+                self.parent.handler('put_scratch', tip)
         except AttributeError:
             pass
     

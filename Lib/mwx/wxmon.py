@@ -104,14 +104,14 @@ Args:
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
                 self.lctr.add_event(binder.typeId)
-        self.__inspector.handler("add_console", self)
+        self.__inspector.handler("add_page", self)
         self.shell.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
         if self.target:
             self.shell.handler("monitor_end", self.target)
-            ## self.__inspector.handler("remove_console", self)
+            ## self.__inspector.handler("remove_page", self)
         for binder in self.watchedEvents():
             if not self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
@@ -332,7 +332,6 @@ if __name__ == "__main__":
     if 1:
         self = frm.inspector
         frm.mon = EventMonitor(self)
-        ## self.add_console(frm.mon, "root:mon")
         self.shell.write("self.mon.watch(self)")
         self.Show()
     frm.Show()
