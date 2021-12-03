@@ -3556,9 +3556,9 @@ Flaky nutshell:
         if obj is None:
             obj = self
         doc = inspect.getdoc(obj)\
-          or "No information about {}".format(obj)
+                or "No information about {}".format(obj)
         try:
-            self.parent.handler('put_help', doc)
+            self.parent.handler('put_help', doc) or print(doc)
         except AttributeError:
             print(doc)
     
@@ -3569,9 +3569,9 @@ Flaky nutshell:
         ##     wx.CallAfter(pydoc.help)
         ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
-          or "No description about {}".format(obj)
+                or "No description about {}".format(obj)
         try:
-            self.parent.handler('put_help', doc)
+            self.parent.handler('put_help', doc) or print(doc)
         except AttributeError:
             print(doc)
     
