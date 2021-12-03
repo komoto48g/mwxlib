@@ -1056,9 +1056,10 @@ class Frame(mwx.Frame):
             return False
         
         except Exception as e:
-            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                                        "Error in loading {!r}".format(name),
-                                        style=wx.ICON_ERROR)
+            wx.CallAfter(
+                wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
+                               "Error in loading {!r}".format(name),
+                               style=wx.ICON_ERROR)
             return False
         
         ## --------------------------------
@@ -1169,9 +1170,10 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             
         except Exception as e:
-            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                                        "Error in loading {!r}".format(name),
-                                        style=wx.ICON_ERROR)
+            wx.CallAfter(
+                wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
+                               "Error in loading {!r}".format(name),
+                               style=wx.ICON_ERROR)
             return False
     
     def unload_plug(self, name):
@@ -1219,10 +1221,6 @@ class Frame(mwx.Frame):
     def reload_plug(self, name):
         plug = self.get_plug(name)
         if plug.reloadable:
-            ## if plug.thread and plug.thread.is_active:
-            ##     wx.MessageBox("The thread is running (Press C-g to quit).",
-            ##                   style=wx.ICON_WARNING)
-            ##     return
             current_session = {}
             plug.save_session(current_session)
             self.load_plug(plug.__module__, force=1, session=current_session)

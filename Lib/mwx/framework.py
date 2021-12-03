@@ -1704,10 +1704,12 @@ Global bindings:
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.shell.clear)),
                 'C-f12 pressed' : (0, _F(self.shell.clone)),
-             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1)),
-             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
+               'M-left pressed' : (0, _F(self.other_window, p=-1)),
+              'M-right pressed' : (0, _F(self.other_window, p=+1)),
+             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1)),
+             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
             },
             'C-x' : {
                     'l pressed' : (0, _F(self.PopupWindow, self.Log, doc="Show Log")),
@@ -1716,8 +1718,6 @@ Global bindings:
                     'j pressed' : (0, _F(self.PopupWindow, self.Scratch, doc="Show Scratch")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
-                 'left pressed' : (0, _F(self.other_window, p=-1)),
-                'right pressed' : (0, _F(self.other_window, p=+1)),
             },
         })
         
@@ -2799,17 +2799,19 @@ Flaky nutshell:
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-             ## '*f[0-9]* pressed' : (0, ), # -> function keys skip to the parent
                     '* pressed' : (0, skip),
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-                '*left pressed' : (0, self.OnBackspace),
                '*enter pressed' : (0, Pass), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
+                 'left pressed' : (0, self.OnBackspace),
+               'C-left pressed' : (0, self.OnBackspace),
+               'S-left pressed' : (0, self.OnBackspace),
+             'C-S-left pressed' : (0, self.OnBackspace),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
                ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
@@ -3095,12 +3097,12 @@ Flaky nutshell:
         evt.Skip()
     
     def OnBackspace(self, evt):
-        """Called when backspace pressed"""
+        """Called when backspace (or *left) pressed
+        Backspace-guard from Autocomp eating over a prompt white
+        """
         if self.cur == self.bolc:
-            ## do not skip to prevent autocomp eats prompt
-            ##      so not to backspace over the latest non-continuation prompt
-            if self.AutoCompActive():
-                self.AutoCompCancel()
+            ## do not skip to prevent autocomp eats prompt,
+            ## so not to backspace over the latest non-continuation prompt
             return
         evt.Skip()
     
@@ -3710,15 +3712,14 @@ Flaky nutshell:
         self.message("")
     
     def skipback_autocomp(self, evt):
-        """Backspace-guard from Autocomp eating over a prompt white"""
+        """Don't eat backward prompt white"""
         if self.cur == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
-            if self.AutoCompActive():
-                self.AutoCompCancel()
             self.handler('quit', evt)
     
     def decrback_autocomp(self, evt):
+        """Move forward Anchor point to the word right during autocomp"""
         if self.following_char.isalnum() and self.preceding_char == '.':
             pos = self.cur
             self.WordRight()
