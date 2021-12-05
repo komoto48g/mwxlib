@@ -1597,6 +1597,8 @@ Global bindings:
         M-f : Filter text
     """
     shell = property(lambda self: self.__shell)
+    monitor = property(lambda self: self.__monitor)
+    debugger = property(lambda self: self.__debugger)
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
@@ -1619,12 +1621,18 @@ Global bindings:
             style = wx.CLIP_CHILDREN | wx.BORDER_NONE, **kwargs)
         
         try:
+            from wxpdb import Debugger
             from wxmon import EventMonitor
         except ImportError:
+            from .wxpdb import Debugger
             from .wxmon import EventMonitor
         
-        self.monitor = EventMonitor(self)
-        self.monitor.Show(0)
+        self.__debugger = Debugger(self,
+                                   stdin=self.shell.interp.stdin,
+                                   stdout=self.shell.interp.stdout)
+        
+        self.__monitor = EventMonitor(self)
+        self.__monitor.Show(0)
         
         self.console = aui.AuiNotebook(self, size=(600,400),
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
@@ -1656,6 +1664,7 @@ Global bindings:
         self._mgr.Update()
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroyFrame)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -1718,10 +1727,13 @@ Global bindings:
             return open(f, *args) # PY2
     
     def OnCloseFrame(self, evt):
-        if self.shell.debugger.busy:
+        if self.debugger.busy:
             wx.MessageBox("The debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
+        evt.Skip()
+    
+    def OnDestroyFrame(self, evt):
         evt.Skip()
     
     def Destroy(self):
@@ -1795,12 +1807,12 @@ Global bindings:
         tab = evt.EventObject #<wx._aui.AuiTabCtrl>
         win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
         ## win = self.console.GetPage(evt.Selection)
+        if win is self.shell:
+            self.statusbar("- Don't remove the root shell.")
+            return
         if win is self.monitor:
             self.monitor.unwatch()
             self.remove_page_console(win)
-            return
-        if win is self.shell:
-            self.statusbar("- Don't remove the root shell.")
             return
         evt.Skip()
     
@@ -1838,11 +1850,9 @@ Global bindings:
             ed.MarkerAdd(ln, 2) # error-marker
         ed.ReadOnly = 1
     
-    def other_editor(self, p=1, loop=False):
-        "Focus moves to other editor"
-        j = self.ghost.Selection + p
-        if loop:
-            j %= self.ghost.PageCount
+    def other_editor(self, p=1):
+        "Focus moves to another ghost editor (no loop)"
+        j = (self.ghost.Selection + p) #% self.ghost.PageCount
         self.ghost.SetSelection(j)
     
     def other_window(self, p=1):
@@ -1867,9 +1877,9 @@ Global bindings:
     
     @property
     def all_pages(self):
-        def filtered(nb):
+        def _filtered(nb):
             return [x for x in nb.Children if isinstance(x, EditorInterface)]
-        return filtered(self.console) + filtered(self.ghost)
+        return _filtered(self.console) + _filtered(self.ghost)
     
     @property
     def current_editor(self):
@@ -2654,8 +2664,6 @@ Flaky nutshell:
     target = property(lambda self: self.__target)
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
-    monitor = property(lambda self: self.__parent.monitor)
-    debugger = property(lambda self: self.__debugger)
     
     @target.setter
     def target(self, target):
@@ -2677,8 +2685,13 @@ Flaky nutshell:
     
     @property
     def locals(self):
-        return self.debugger.locals\
-            or self.interp.locals # (self.__target.__dict__)
+        try:
+            if self.parent.debugger.busy:
+                if self is self.parent.shell:
+                    return self.parent.debugger.locals
+        except AttributeError:
+            pass
+        return self.interp.locals
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2736,15 +2749,6 @@ Flaky nutshell:
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
         self.__root = None # reference to the root of the clone
         
-        try:
-            from wxpdb import Debugger
-        except ImportError:
-            from .wxpdb import Debugger
-        
-        self.__debugger = Debugger(self,
-                                   stdin=self.interp.stdin,
-                                   stdout=self.interp.stdout)
-        
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
@@ -2762,7 +2766,10 @@ Flaky nutshell:
         
         @self.Bind(wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
-            del self.__target.shell # delete refernce
+            try:
+                del self.__target.shell # delete reference
+            except AttributeError:
+                pass
             evt.Skip()
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
@@ -3305,16 +3312,16 @@ Flaky nutshell:
         
         def debug(obj, *args, **kwargs):
             if callable(obj):
-                self.debugger.trace(obj, *args, **kwargs)
+                self.parent.debugger.trace(obj, *args, **kwargs)
             elif isinstance(obj, wx.Object):
-                self.monitor.watch(obj)
+                self.parent.monitor.watch(obj)
             else:
                 print("- cannot debug {!r}".format(obj))
         builtins.debug = debug
         
         def dump(obj):
             if isinstance(obj, wx.Object):
-                self.monitor.dump(obj)
+                self.parent.monitor.dump(obj)
             else:
                 print("- cannot dump {!r}".format(obj))
         builtins.dump = dump
@@ -3408,6 +3415,7 @@ Flaky nutshell:
             self.parent.handler('add_history', command, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
+            ## shell.__init__ で定義するアトリビュートも存在しない
             pass
     
     @staticmethod
@@ -3563,10 +3571,7 @@ Flaky nutshell:
             obj = self
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
-        try:
-            self.parent.handler('put_help', doc) or print(doc)
-        except AttributeError:
-            print(doc)
+        self.parent.handler('put_help', doc) or print(doc)
     
     def help(self, obj=None):
         """Full description"""
@@ -3576,10 +3581,7 @@ Flaky nutshell:
         ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
-        try:
-            self.parent.handler('put_help', doc) or print(doc)
-        except AttributeError:
-            print(doc)
+        self.parent.handler('put_help', doc) or print(doc)
     
     def eval(self, text):
         return eval(text, self.locals)
@@ -3639,7 +3641,7 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
-        if 0:
+        if not isinstance(self.parent, ShellFrame):
             ## Make new deb/shell outside
             frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
             shell = frame.shell
@@ -3655,15 +3657,6 @@ Flaky nutshell:
     ## --------------------------------
     ## Auto-comp actions of the shell
     ## --------------------------------
-    
-    def CallTipShow(self, pos, tip):
-        """Call standard ToolTip (override) and write the tips to Scratch"""
-        Shell.CallTipShow(self, pos, tip)
-        try:
-            if tip:
-                self.parent.handler('put_scratch', tip)
-        except AttributeError:
-            pass
     
     def gen_autocomp(self, offset, words):
         """Call AutoCompShow for the specified words"""
@@ -3682,7 +3675,9 @@ Flaky nutshell:
                 text = cmd
             except Exception as e:
                 obj = self.eval(text)
-            self.CallTipShow(self.cur, pformat(obj))
+            tip = pformat(obj)
+            self.CallTipShow(self.cur, tip)
+            self.parent.handler('put_scratch', tip)
             self.message(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))

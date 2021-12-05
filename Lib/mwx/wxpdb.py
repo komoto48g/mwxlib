@@ -65,14 +65,14 @@ Note:
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
-    logger = property(lambda self: self.__shell.parent.Log)
-    shell = property(lambda self: self.__shell)
+    logger = property(lambda self: self.__inspector.Log)
+    shell = property(lambda self: self.__inspector.shell)
     busy = property(lambda self: self.module)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.__shell = parent
+        self.__inspector = parent
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.locals = {}
@@ -94,6 +94,8 @@ Note:
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
+        self.shell.redirectStdin()
+        self.shell.redirectStdout()
         def _continue():
             try:
                 ## self.shell.Execute('next') # step in the target
@@ -318,7 +320,6 @@ if __name__ == "__main__":
     import mwx
     app = wx.App()
     frm = mwx.Frame(None)
-    shell = mwx.Nautilus(frm, target=frm)
-    frm.dbg = Debugger(shell)
+    frm.dbg = Debugger(frm.inspector)
     frm.Show()
     app.MainLoop()

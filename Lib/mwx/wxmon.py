@@ -27,7 +27,6 @@ Args:
     parent : inspector of the shell
     """
     handler = property(lambda self: self.__handler)
-    shell = property(lambda self: self.__inspector.shell)
     
     def __init__(self, parent, *args, **kwargs):
         wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
@@ -115,13 +114,13 @@ Args:
             if binder.typeId in ssmap:
                 self.lctr.add_event(binder.typeId)
         self.__inspector.handler("add_page", self)
-        self.shell.handler("monitor_begin", self.target)
+        self.__inspector.shell.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
         if self.target:
-            self.shell.handler("monitor_end", self.target)
             ## self.__inspector.handler("remove_page", self)
+            self.__inspector.shell.handler("monitor_end", self.target)
         for binder in self.watchedEvents():
             if not self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
@@ -163,7 +162,7 @@ Args:
             def _hook(v):
                 if self.target.Unbind(binder, handler=_hook):
                     self.lctr.check_event(event, False)
-                self.shell.debugger.trace(f, v)
+                self.__inspector.debugger.trace(f, v)
             self.target.Bind(binder, _hook)
         self.lctr.check_event(event, True)
         return actions
