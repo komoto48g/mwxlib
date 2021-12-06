@@ -41,6 +41,8 @@ Attributes:
 
 Args:
     parent : shell
+     stdin : shell.interp.stdin
+   stdiout : shell.interp.stdout
 
 Note:
     + set_trace -> reset -> set_step -> sys.settrace
@@ -63,27 +65,25 @@ Note:
     prefix1 = "> "
     prefix2 = "--> "
     verbose = False
-    logger = property(lambda self: self.__shell.parent.Log)
-    shell = property(lambda self: self.__shell)
-    busy = property(lambda self: self.module is not None)
+    logger = property(lambda self: self.__inspector.Log)
+    shell = property(lambda self: self.__inspector.shell)
+    busy = property(lambda self: self.module)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.__shell = parent
+        self.__inspector = parent
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.locals = {}
         self.globals = {}
-        self.viewer = None
         self.module = None
-        ## self.stdin = self.shell.interp.stdin
-        ## self.stdiout = self.shell.interp.stdout
+        self.viewer = None
     
     def open(self, frame=None):
-        if self.busy:
+        if self.module is not None:
             return
-        self.module = None # inspect.getmodule(frame)
+        self.module = inspect.getmodule(frame)
         self.viewer = FillingFrame(rootObject=self.locals,
                                    rootLabel='locals',
                                    static=False, # update each time pushed
@@ -94,19 +94,24 @@ Note:
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
-        ## self.shell.redirectStdin()
-        ## self.shell.redirectStdout()
-        ## wx.CallAfter(self.shell.Execute, 'step') # step into the target
-        wx.CallAfter(wx.EndBusyCursor) # cancel the egg timer
+        self.shell.redirectStdin()
+        self.shell.redirectStdout()
+        def _continue():
+            try:
+                ## self.shell.Execute('next') # step in the target
+                wx.EndBusyCursor() # cancel the egg timer
+            except Exception:
+                pass
+        wx.CallAfter(_continue)
         self.set_trace(frame)
     
     def close(self):
-        if self.busy:
+        if self.module is not None:
             self.set_quit()
-        if self.viewer:
+        if self.viewer is not None:
             self.viewer.Close()
-        self.viewer = None
         self.module = None
+        self.viewer = None
         self.locals.clear()
         self.globals.clear()
     
@@ -117,7 +122,7 @@ Note:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        if self.busy:
+        if self.module is not None:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
@@ -315,8 +320,6 @@ if __name__ == "__main__":
     import mwx
     app = wx.App()
     frm = mwx.Frame(None)
-    if 1:
-        self = frm.inspector
-        frm.dbg = Debugger(self)
+    frm.dbg = Debugger(frm.inspector)
     frm.Show()
     app.MainLoop()

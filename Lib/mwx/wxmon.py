@@ -6,8 +6,19 @@ import wx
 from wx import aui
 from wx import stc
 import wx.lib.eventwatcher as ew
-import mwx
+from mwx.framework import FSM
 
+if wx.VERSION < (4,1):
+    from wx.lib.mixins.listctrl import CheckListCtrlMixin
+    class _ListCtrl(wx.ListCtrl, CheckListCtrlMixin):
+        def __init__(self, *args, **kwargs):
+            wx.ListCtrl.__init__(self, *args, **kwargs)
+            CheckListCtrlMixin.__init__(self)
+else:
+    class _ListCtrl(wx.ListCtrl):
+        def __init__(self, *args, **kwargs):
+            wx.ListCtrl.__init__(self, *args, **kwargs)
+            self.EnableCheckBoxes()
 
 class EventMonitor(wx.SplitterWindow):
     """Event monitor of the inspector
@@ -16,7 +27,6 @@ Args:
     parent : inspector of the shell
     """
     handler = property(lambda self: self.__handler)
-    shell = property(lambda self: self.__inspector.shell)
     
     def __init__(self, parent, *args, **kwargs):
         wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
@@ -29,9 +39,8 @@ Args:
         self.SplitVertically(self.lctr, self.text,
                              self.lctr.MinWidth) # no scrollbar padding +20
         
-        self.__handler = mwx.FSM({ #<EventMonitor.handler>
+        self.__handler = FSM({ #<EventMonitor.handler>
             0 : {
-                  'item_motion' : [ 0, self.on_item_motion ],
                  'item_updated' : [ 0, self.on_item_updated ],
                 'item_selected' : [ 0, self.on_item_selected ],
                  'item_checked' : [ 0, self.on_item_checked ],
@@ -105,13 +114,13 @@ Args:
             if binder.typeId in ssmap:
                 self.lctr.add_event(binder.typeId)
         self.__inspector.handler("add_page", self)
-        self.shell.handler("monitor_begin", self.target)
+        self.__inspector.shell.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
         if self.target:
-            self.shell.handler("monitor_end", self.target)
             ## self.__inspector.handler("remove_page", self)
+            self.__inspector.shell.handler("monitor_end", self.target)
         for binder in self.watchedEvents():
             if not self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
@@ -153,7 +162,7 @@ Args:
             def _hook(v):
                 if self.target.Unbind(binder, handler=_hook):
                     self.lctr.check_event(event, False)
-                self.shell.debugger.trace(f, v)
+                self.__inspector.debugger.trace(f, v)
             self.target.Bind(binder, _hook)
         self.lctr.check_event(event, True)
         return actions
@@ -178,9 +187,6 @@ Args:
         tip = pformat(actions or None)
         wx.CallAfter(wx.TipWindow, self, tip, 512)
     
-    def on_item_motion(self, item):
-        pass
-    
     def on_item_updated(self, item):
         binder, actions = self.boundHandlers(item[0])
         if actions:
@@ -195,13 +201,12 @@ Args:
             wx.MessageBox("No specific handlers\n\n"
                           "{} has no specifc handlers for {}".format(
                           self.target, item[0]))
-            self.lctr.check_event(item[0], False)
     
     def on_item_unchecked(self, item):
         self.unhook(item[0])
 
 
-class EventLogger(wx.ListCtrl):
+class EventLogger(_ListCtrl):
     """Event notify logger
     """
     data = property(lambda self: self.__items)
@@ -214,20 +219,18 @@ class EventLogger(wx.ListCtrl):
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.EnableCheckBoxes() # wx4.1.0 or later,
-                                # below 4.0.7 use CheckListCtrlMixin
         self.alist = ( # assoc list of column names
-            ("typeId", 60),
+            ("typeId",    62),
             ("typeName", 200),
-            ("stats", 50),
-            ("source", 200),
+            ("stats",     50),
+            ("source",   200),
             # item[-1]: attributes,
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
         
-        self.__dir = True
-        self.__items = []
+        self.__dir = True # sort direction
+        self.__items = [] # data holder
         
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
@@ -327,6 +330,7 @@ class EventLogger(wx.ListCtrl):
 
 
 if __name__ == "__main__":
+    import mwx
     app = wx.App()
     frm = mwx.Frame(None)
     if 1:
