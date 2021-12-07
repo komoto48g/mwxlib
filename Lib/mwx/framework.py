@@ -2142,7 +2142,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def set_mark(self, pos=None):
         if pos is None:
-            pos = self.cur
+            pos = self.point
         self.__mark = pos
         self.MarkerDeleteAll(0) # exclusive mark (like emacs)
         self.MarkerAdd(self.LineFromPosition(pos), 0)
@@ -2214,10 +2214,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ##     self.IndicatorClearRange(0, self.TextLength)
     ##     p = self._match_paren()
     ##     if p:
-    ##         self.IndicatorFillRange(p, self.cur-p)
+    ##         self.IndicatorFillRange(p, self.point-p)
     
     def match_paren(self):
-        cur = self.cur
+        cur = self.point
         if self.following_char in "({[<":
             pos = self.BraceMatch(cur)
             if pos != -1:
@@ -2259,23 +2259,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
-    following_char = property(lambda self: chr(self.GetCharAt(self.cur)))
-    preceding_char = property(lambda self: chr(self.GetCharAt(self.cur-1)))
+    following_char = property(lambda self: chr(self.GetCharAt(self.point)))
+    preceding_char = property(lambda self: chr(self.GetCharAt(self.point-1)))
     
     @property
     def following_symbol(self):
         """Similar to following_char, but skips whites"""
-        ln = self.GetTextRange(self.cur, self.eol)
+        ln = self.GetTextRange(self.point, self.eol)
         return next((c for c in ln if not c.isspace()), '')
     
     @property
     def preceding_symbol(self):
         """Similar to preceding_char, but skips whites"""
-        ln = self.GetTextRange(self.bol, self.cur)[::-1]
+        ln = self.GetTextRange(self.bol, self.point)[::-1]
         return next((c for c in ln if not c.isspace()), '')
     
     ## CurrentPos, cf. Anchor
-    cur = property(
+    point = property(
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
     
@@ -2288,7 +2288,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def bol(self):
         """beginning of line"""
         text, lp = self.CurLine
-        return self.cur - lp
+        return self.point - lp
     
     @property
     def eol(self):
@@ -2296,7 +2296,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         text, lp = self.CurLine
         if text.endswith(os.linesep):
             lp += len(os.linesep)
-        return (self.cur - lp + len(text.encode()))
+        return (self.point - lp + len(text.encode()))
     
     @property
     def expr_at_caret(self):
@@ -2319,33 +2319,33 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @property
     def right_paren(self):
         if self.following_char in "({[<":
-            return self.BraceMatch(self.cur) # (0 <= cur < pos+1)
+            return self.BraceMatch(self.point) # (0 <= cur < pos+1)
         return -1
     
     @property
     def left_paren(self):
         if self.preceding_char in ")}]>":
-            return self.BraceMatch(self.cur-1) # (0 <= pos < cur-1)
+            return self.BraceMatch(self.point-1) # (0 <= pos < cur-1)
         return -1
     
     @property
     def right_quotation(self):
-        text = self.GetTextRange(self.cur, self.TextLength)
+        text = self.GetTextRange(self.point, self.TextLength)
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return self.cur + len(lexer.get_token())
+                return self.point + len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
     
     @property
     def left_quotation(self):
-        text = self.GetTextRange(0, self.cur)[::-1]
+        text = self.GetTextRange(0, self.point)[::-1]
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return self.cur - len(lexer.get_token())
+                return self.point - len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
@@ -2358,31 +2358,31 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if pos < 0:
             pos += self.TextLength + 1 # end-of-buffer (+1:\0)
         self.GotoPos(pos)
-        return self.cur
+        return self.point
     
     def goto_line(self, ln):
         if ln < 0:
             ln += self.LineCount
         self.GotoLine(ln)
-        return self.cur
+        return self.point
     
     def skip_chars_forward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.following_char):
-            c = self.cur
+            c = self.point
             if c == self.TextLength:
                 break
             self.GotoPos(c + 1)
-        return self.cur
+        return self.point
     
     def skip_chars_backward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.preceding_char):
-            c = self.cur
+            c = self.point
             if c == 0:
                 break
             self.GotoPos(c - 1)
-        return self.cur
+        return self.point
     
     def back_to_indentation(self):
         self.ScrollToColumn(0)
@@ -2392,11 +2392,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def beggining_of_line(self):
         self.GotoPos(self.bol)
         self.ScrollToColumn(0)
-        return self.cur
+        return self.point
     
     def end_of_line(self):
         self.GotoPos(self.eol)
-        return self.cur
+        return self.point
     
     def goto_matched_paren(self):
         p = self.right_paren
@@ -2436,14 +2436,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if topic:
             return topic
         with self.save_excursion():
-            ## org = self.cur # save-excursion
-            p = q = self.cur
+            ## org = self.point # save-excursion
+            p = q = self.point
             if not self.preceding_char.isspace():
                 self.WordLeft()
-                p = self.cur
+                p = self.point
             if not self.following_char.isspace():
                 self.WordRightEnd()
-                q = self.cur
+                q = self.point
             ## self.GotoPos(org) # restore-excursion
             return self.GetTextRange(p, q)
     
@@ -2473,12 +2473,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.ClearAll()
     
     def eat_white_forward(self):
-        p = self.cur
+        p = self.point
         q = self.skip_chars_forward(r'\s')
         self.Replace(p, q, '')
     
     def eat_white_backward(self):
-        p = self.cur
+        p = self.point
         q = self.skip_chars_backward(r'\s')
         self.Replace(max(q, self.bol), p, '')
     
@@ -2486,10 +2486,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if self.CanEdit():
             p = self.eol
             text, lp = self.CurLine
-            if p == self.cur:
+            if p == self.point:
                 if self.GetTextRange(p, p+2) == '\r\n': p += 2
                 elif self.GetTextRange(p, p+1) == '\n': p += 1
-            self.Replace(self.cur, p, '')
+            self.Replace(self.point, p, '')
     
     def backward_kill_line(self):
         if self.CanEdit():
@@ -2499,7 +2499,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 p -= len(os.linesep)
             elif text[:lp] == sys.ps2: # caret at the prompt head
                 p -= len(sys.ps2)
-            self.Replace(p, self.cur, '')
+            self.Replace(p, self.point, '')
     
     def insert_space_like_tab(self):
         """Enter half-width spaces forward as if feeling like a tab
@@ -2516,10 +2516,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.eat_white_forward()
         _text, lp = self.CurLine
         for i in range(lp % 4 or 4):
-            p = self.cur
+            p = self.point
             if self.preceding_char != ' ' or p == self.bol:
                 break
-            self.cur = p-1
+            self.point = p-1
         self.ReplaceSelection('')
 
 
@@ -3024,7 +3024,7 @@ Flaky nutshell:
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             text, lp = self.CurLine
-            self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.cur), pane=1)
+            self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.point), pane=1)
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
                 if text != self.__text:
@@ -3127,7 +3127,7 @@ Flaky nutshell:
         """Called when backspace (or *left) pressed
         Backspace-guard from Autocomp eating over a prompt white
         """
-        if self.cur == self.bolc:
+        if self.point == self.bolc:
             ## do not skip to prevent autocomp eats prompt,
             ## so not to backspace over the latest non-continuation prompt
             return
@@ -3182,7 +3182,7 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        st = self.GetStyleAt(self.cur-1)
+        st = self.GetStyleAt(self.point-1)
         
         if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
@@ -3449,13 +3449,13 @@ Flaky nutshell:
     
     def goto_previous_mark(self):
         marks = self.__bolc_marks + [self.bolc]
-        j = np.searchsorted(marks, self.cur, 'left')
+        j = np.searchsorted(marks, self.point, 'left')
         if j > 0:
             self.goto_char(marks[j-1])
     
     def goto_next_mark(self):
         marks = self.__bolc_marks + [self.bolc]
-        j = np.searchsorted(marks, self.cur, 'right')
+        j = np.searchsorted(marks, self.point, 'right')
         if j < len(marks):
             self.goto_char(marks[j])
     
@@ -3496,14 +3496,14 @@ Flaky nutshell:
             if text.startswith(p):
                 lp -= len(p)
                 break
-        return (self.cur - lp)
+        return (self.point - lp)
     
     ## cf. getCommand(), getMultilineCommand() ... caret-line-text that has a prompt (>>>)
     
     @property
     def cmdlc(self):
         """cull command-line (with no prompt)"""
-        return self.GetTextRange(self.bol, self.cur)
+        return self.GetTextRange(self.bol, self.point)
     
     ## @property
     ## def cmdln(self):
@@ -3523,7 +3523,7 @@ Flaky nutshell:
         lstr = line.strip()
         indent = self.calc_indent()
         pos = max(self.bol + len(indent),
-                  self.cur + len(indent) - (len(line) - len(lstr)))
+                  self.point + len(indent) - (len(line) - len(lstr)))
         self.Replace(self.bol, self.eol, indent + lstr)
         self.goto_char(pos)
     
@@ -3686,7 +3686,7 @@ Flaky nutshell:
             except Exception as e:
                 obj = self.eval(text)
             tip = pformat(obj)
-            self.CallTipShow(self.cur, tip)
+            self.CallTipShow(self.point, tip)
             self.parent.handler('put_scratch', tip)
             self.message(text)
         except Exception as e:
@@ -3728,7 +3728,7 @@ Flaky nutshell:
     
     def skipback_autocomp(self, evt):
         """Don't eat backward prompt white"""
-        if self.cur == self.bolc:
+        if self.point == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
             self.handler('quit', evt)
@@ -3736,10 +3736,10 @@ Flaky nutshell:
     def decrback_autocomp(self, evt):
         """Move forward Anchor point to the word right during autocomp"""
         if self.following_char.isalnum() and self.preceding_char == '.':
-            pos = self.cur
+            pos = self.point
             self.WordRight()
-            self.cur = pos # backward selection to anchor point
-        elif self.cur == self.bol:
+            self.point = pos # backward selection to anchor point
+        elif self.point == self.bol:
             self.handler('quit', evt)
     
     def on_completion_forward(self, evt):
@@ -3757,9 +3757,9 @@ Flaky nutshell:
             j = 0 if j < 0 else j if j < N else N-1
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
-            pos = self.cur
+            pos = self.point
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.cur = pos # backward selection to anchor point
+            self.point = pos # backward selection to anchor point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
