@@ -2254,8 +2254,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """
         n = self.LinesOnScreen() # lines completely visible
         m = n//2 if ln is None else ln % n if ln < n else n
-        lc = self.lcur - m
-        self.ScrollToLine(lc)
+        self.ScrollToLine(self.lineno - m)
     
     ## --------------------------------
     ## Attributes of the editor
@@ -2281,7 +2280,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         lambda self,v: self.SetCurrentPos(v))
     
     ## CurrentLine
-    lcur = property(
+    lineno = property(
         lambda self: self.GetCurrentLine(),
         lambda self,v: self.SetCurrentLine(v))
     
@@ -3025,7 +3024,7 @@ Flaky nutshell:
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             text, lp = self.CurLine
-            self.message("{:>6d}:{} ({})".format(self.lcur, lp, self.cur), pane=1)
+            self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.cur), pane=1)
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
                 if text != self.__text:
@@ -3062,7 +3061,7 @@ Flaky nutshell:
     def toggle_fold(self, lc=None):
         """Toggle fold/unfold the header including the given line"""
         if lc is None:
-            lc = self.lcur
+            lc = self.lineno
         while 1:
             lp = self.GetFoldParent(lc)
             if lp == -1:
@@ -3531,7 +3530,7 @@ Flaky nutshell:
     def calc_indent(self):
         """Calculate indent spaces from prefious line"""
         ## cf. wx.py.shell.Shell.prompt
-        line = self.GetLine(self.lcur - 1)
+        line = self.GetLine(self.lineno - 1)
         for p in (sys.ps1, sys.ps2, sys.ps3):
             if line.startswith(p):
                 line = line[len(p):]
