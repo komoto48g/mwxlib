@@ -1239,7 +1239,7 @@ class Frame(mwx.Frame):
         self.__class__.l = property(lambda self: self.get_plug(name))
         self.__class__.lm = property(lambda self: self.plugins.get(name))
         
-        shell = self.inspector.shell
+        shell = self.inspector.rootshell
         shell.clearCommand()
         shell.SetFocus()
         shell.write(
@@ -1248,7 +1248,7 @@ class Frame(mwx.Frame):
             "<-- self.lm : {!r}\n".format(name, self.l, self.lm))
         shell.prompt()
         
-        shell = self.inspector.shell.clone(self.l)
+        shell = self.inspector.rootshell.clone(self.l)
         
         @shell.handler.bind("shell_activated")
         def init(shell):
@@ -1623,7 +1623,7 @@ class Frame(mwx.Frame):
         self.statusbar("Loading session from {!r}...".format(f))
         
         with open(f) as i:
-            self.inspector.shell.Execute(i.read())
+            self.inspector.rootshell.Execute(i.read())
             self.menubar.reset()
             dirname = os.path.dirname(f)
             if dirname:
@@ -1657,8 +1657,8 @@ class Frame(mwx.Frame):
                 "self.SetSize({})".format(self.Size),
                 "self.inspector.SetSize({})".format(self.inspector.Size),
                 "self.inspector.Show({})".format(self.inspector.IsShown()),
-                "self.inspector.shell.wrap({})".format(self.inspector.shell.WrapMode),
-            "")))
+                ""
+            )))
             for name in ('output', 'histogram'): # save built-in window layout
                 pane = self.get_pane(name)
                 o.write("self.update_pane('{name}', show={show}, dock={dock}, "

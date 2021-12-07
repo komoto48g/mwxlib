@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.2"
+__version__ = "0.49.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1466,7 +1466,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.menubar["File"] = [
             (ID_(1), "&Inspector\tF12", "Shell for object inspection", wx.ITEM_CHECK,
                 lambda v: (self.inspector.Show(),
-                           self.inspector.shell.SetFocus()),
+                           self.inspector.rootshell.SetFocus()),
                 lambda v: v.Check(self.inspector.IsShown())),
             (),
             (wx.ID_EXIT, "E&xit\tCtrl-w", "Exit the program",
@@ -1581,7 +1581,9 @@ class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break `target
 -------------------------------------------------------------------
      target : Inspection target `self, any wx.Object, otherwise __main__
-      shell : Nautilus Inspector shell based on <wx.py.shell.Shell>
+  rootshell : Nautilus in the shell
+   debugger : wxmon.EventMonitor
+    monitor : wxpdb.Debugger
       ghost : Notebook <Editor> as an tooltip ghost in the shell
     Scratch : temporary buffer for scratch text
        Help : temporary buffer for help
@@ -1596,9 +1598,11 @@ Global bindings:
         C-f : Find text
         M-f : Filter text
     """
-    shell = property(lambda self: self.__shell)
-    monitor = property(lambda self: self.__monitor)
+    rootshell = property(lambda self: self.__shell)
     debugger = property(lambda self: self.__debugger)
+    monitor = property(lambda self: self.__monitor)
+    
+    shell = rootshell # for backward-compatibility
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
@@ -1628,8 +1632,8 @@ Global bindings:
             from .wxmon import EventMonitor
         
         self.__debugger = Debugger(self,
-                                   stdin=self.shell.interp.stdin,
-                                   stdout=self.shell.interp.stdout)
+                                   stdin=self.__shell.interp.stdin,
+                                   stdout=self.__shell.interp.stdout)
         
         self.__monitor = EventMonitor(self)
         self.__monitor.Show(0)
@@ -1638,7 +1642,7 @@ Global bindings:
             style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
                   &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
-        self.console.AddPage(self.shell, "root")
+        self.console.AddPage(self.__shell, "root")
         self.console.TabCtrlHeight = 0
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
@@ -1695,8 +1699,8 @@ Global bindings:
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.PopupWindow, show=None, doc="Toggle the ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
-                'S-f12 pressed' : (0, _F(self.shell.clear)),
-                'C-f12 pressed' : (0, _F(self.shell.clone)),
+                'S-f12 pressed' : (0, _F(self.current_shell.clear)),
+                'C-f12 pressed' : (0, _F(self.current_shell.clone)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1757,7 +1761,7 @@ Global bindings:
             "Version: {!s}".format(__version__),
             ## __doc__,
             self.__doc__,
-            self.shell.__doc__,
+            self.__shell.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
             "#{!r}".format(wx.py.shell),
@@ -1797,7 +1801,7 @@ Global bindings:
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
-        if nb.CurrentPage is self.shell:
+        if nb.CurrentPage is self.__shell:
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
@@ -1807,7 +1811,7 @@ Global bindings:
         tab = evt.EventObject #<wx._aui.AuiTabCtrl>
         win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
         ## win = self.console.GetPage(evt.Selection)
-        if win is self.shell:
+        if win is self.__shell:
             self.statusbar("- Don't remove the root shell.")
             return
         if win is self.monitor:
@@ -1829,7 +1833,7 @@ Global bindings:
                 self.Show()
     
     def remove_page_console(self, win):
-        if win is self.shell:
+        if win is self.__shell:
             self.statusbar("- Don't remove the root shell.")
             return
         nb = self.console
@@ -1867,9 +1871,9 @@ Global bindings:
         text = win.SelectedText or win.expr_at_caret
         if text:
             if clear:
-                self.shell.clearCommand()
-            self.shell.write(text, -1)
-        self.shell.SetFocus()
+                self.current_shell.clearCommand()
+            self.current_shell.write(text, -1)
+        self.current_shell.SetFocus()
     
     ## --------------------------------
     ## Find text dialog
@@ -1877,9 +1881,11 @@ Global bindings:
     
     @property
     def all_pages(self):
-        def _filtered(nb):
+        ## def _pages(nb):
+        ##     return [nb.GetPage(i) for i in range(nb.PageCount)]
+        def _pages(nb):
             return [x for x in nb.Children if isinstance(x, EditorInterface)]
-        return _filtered(self.console) + _filtered(self.ghost)
+        return _pages(self.console) + _pages(self.ghost)
     
     @property
     def current_editor(self):
@@ -1888,8 +1894,13 @@ Global bindings:
             return win
         if win.Parent:
             if self.ghost in win.Parent.Children: # floating ghost ?
-                return self.ghost.CurrentPage # select the Editor window
-        return self.shell # otherwise, select the default editor
+                return self.ghost.CurrentPage # select the ghost editor
+        return self.__shell # otherwise, select the default editor
+    
+    @property
+    def current_shell(self):
+        return next((x for x in self.console.Children
+            if isinstance(x, Nautilus) and x.IsShownOnScreen()), self.__shell)
     
     def OnFilterText(self, evt):
         win = self.current_editor
@@ -2676,7 +2687,7 @@ Flaky nutshell:
             target.this = inspect.getmodule(target)
             target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError as e:
-            print("- Failed to set vars: {}".format(e))
+            print("- cannot set target vars: {!r}".format(e))
             pass
         
         self.__target = target
@@ -3970,6 +3981,8 @@ try:
 
 except ImportError as e:
     print("- {!r}".format(e))
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
     pass
 
 
@@ -4052,7 +4065,7 @@ if __name__ == '__main__':
 if 1:
     self
     self.inspector
-    root = self.inspector.shell
+    root = self.inspector.rootshell
     """
     from scipy import constants as const
     np.set_printoptions(linewidth=256) # default 75
@@ -4068,9 +4081,9 @@ if 1:
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.shell.handler.debug = 0
-    frm.inspector.shell.Execute(SHELLSTARTUP)
-    frm.inspector.shell.SetFocus()
+    frm.inspector.rootshell.handler.debug = 0
+    frm.inspector.rootshell.Execute(SHELLSTARTUP)
+    frm.inspector.rootshell.SetFocus()
     frm.inspector.Show()
     frm.Show()
     app.MainLoop()

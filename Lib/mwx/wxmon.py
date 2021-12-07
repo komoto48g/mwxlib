@@ -242,8 +242,13 @@ class EventLogger(_ListCtrl):
                 self.parent.handler(signal, item)
             self.Bind(binder, _dispatch)
         
-        dispatch(wx.EVT_LIST_ITEM_CHECKED, 'item_checked')
-        dispatch(wx.EVT_LIST_ITEM_UNCHECKED, 'item_unchecked')
+        try:
+            ## wx 4.1.0 or later
+            dispatch(wx.EVT_LIST_ITEM_CHECKED, 'item_checked')
+            dispatch(wx.EVT_LIST_ITEM_UNCHECKED, 'item_unchecked')
+        except:
+            ## wx.4.0.7 - PY35 CheckListCtrlMixin ではチェックイベントがとれない？
+            pass
         dispatch(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')
         dispatch(wx.EVT_LIST_ITEM_DESELECTED, 'item_deselected')
         dispatch(wx.EVT_LIST_ITEM_RIGHT_CLICK, 'item_right_clicked')
@@ -336,7 +341,7 @@ if __name__ == "__main__":
     if 1:
         self = frm.inspector
         frm.mon = EventMonitor(self)
-        self.shell.write("self.mon.watch(self)")
+        self.shell.write("self.mon.watch(self.mon)")
         self.Show()
     frm.Show()
     app.MainLoop()

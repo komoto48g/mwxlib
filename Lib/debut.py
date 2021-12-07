@@ -171,7 +171,7 @@ class MagicInterpreter(object):
 
 
 def init_shell(self):
-    """Initialize shell/editor and the environs
+    """Initialize shell/editor environs
     """
     @self.define_key('M-w')
     def copy_region():
