@@ -805,7 +805,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif hasattr(name, 'category'): #<type 'Layer'>
+        elif hasattr(name, 'category'): # isinstance(name, Layer):<type 'Layer'>
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -941,7 +941,7 @@ class Frame(mwx.Frame):
         """Find named plug window in registered plugins"""
         if name in self.plugins:
             return self.plugins[name].__plug__
-        elif hasattr(name, 'category'): #<type 'Layer'>
+        elif hasattr(name, 'category'): # isinstance(name, Layer):<type 'Layer'>
             return name
     
     def load_plug(self, root, show=False,
@@ -965,7 +965,7 @@ class Frame(mwx.Frame):
         if hasattr(root, '__file__'): #<type 'module'>
             root = root.__file__
             
-        elif hasattr(root, '__module__'): #<type 'Layer'>
+        elif hasattr(root, '__module__'): # isinstance(root, Layer):<type 'Layer'>
             root = root.__module__
             
             ## If the name of root has been loaded,

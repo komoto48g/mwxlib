@@ -232,14 +232,14 @@ def dive(*args):
     Then, call post-startup function defined above.
     """
     mwx.deb(*args,
-            startup=init_shell,
-            execStartupScript=True,
-            ## quote unqoute
-            introText=f"""deb v{__version__}
-            Anything one man can imagine, other man can make real.
-            --- Jules Verne (1828--1905)
-            """,
-            size=(854,480))
+        startup=init_shell,
+        execStartupScript=True,
+        ## quote unqoute
+        introText=f"""deb v{__version__}
+        Anything one man can imagine, other man can make real.
+        --- Jules Verne (1828--1905)
+        """,
+        size=(854,480))
 
 
 if __name__ == '__main__':

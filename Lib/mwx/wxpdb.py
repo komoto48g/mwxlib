@@ -66,8 +66,8 @@ Note:
     prefix2 = "--> "
     verbose = False
     logger = property(lambda self: self.__inspector.Log)
-    shell = property(lambda self: self.__inspector.shell)
-    busy = property(lambda self: self.module)
+    shell = property(lambda self: self.__inspector.rootshell)
+    busy = property(lambda self: self.module is not None)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
