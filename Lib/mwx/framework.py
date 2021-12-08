@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.3"
+__version__ = "0.49.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2330,22 +2330,24 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def right_quotation(self):
-        text = self.GetTextRange(self.point, self.TextLength)
+        cur = self.point
+        text = self.GetTextRange(cur, self.TextLength)
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return self.point + len(lexer.get_token())
+                return cur + len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
     
     @property
     def left_quotation(self):
-        text = self.GetTextRange(0, self.point)[::-1]
+        cur = self.point
+        text = self.GetTextRange(0, cur)[::-1]
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return self.point - len(lexer.get_token())
+                return cur - len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
@@ -2453,7 +2455,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self._win = win
             
             def __enter__(self):
-                self.pos = self._win.cur
+                self.pos = self._win.point
                 self.vpos = self._win.GetScrollPos(wx.VERTICAL)
                 self.hpos = self._win.GetScrollPos(wx.HORIZONTAL)
             
@@ -2838,7 +2840,6 @@ Flaky nutshell:
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
                'S-left pressed' : (0, self.OnBackspace),
-             'C-S-left pressed' : (0, self.OnBackspace),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
                ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
@@ -3735,11 +3736,11 @@ Flaky nutshell:
     
     def decrback_autocomp(self, evt):
         """Move forward Anchor point to the word right during autocomp"""
+        c = self.point
         if self.following_char.isalnum() and self.preceding_char == '.':
-            pos = self.point
             self.WordRight()
-            self.point = pos # backward selection to anchor point
-        elif self.point == self.bol:
+            self.point = c # backward selection to anchor point
+        elif c == self.bol:
             self.handler('quit', evt)
     
     def on_completion_forward(self, evt):
@@ -3757,9 +3758,9 @@ Flaky nutshell:
             j = 0 if j < 0 else j if j < N else N-1
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
-            pos = self.point
+            c = self.point
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.point = pos # backward selection to anchor point
+            self.point = c # backward selection to anchor point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
