@@ -109,7 +109,8 @@ Note:
         if self.module is not None:
             self.set_quit()
         if self.viewer is not None:
-            self.viewer.Close()
+            if self.viewer:
+                self.viewer.Close()
         self.module = None
         self.viewer = None
         self.locals.clear()

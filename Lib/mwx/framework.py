@@ -420,13 +420,15 @@ class FSM(dict):
         
     If no action, FSM carries out only a transition.
     The transition is always done before actions.
+    
+    Note: There is no enter/exit event handler.
 
 Attributes:
     debug : verbose level
         [1] dump when state transits
         [2] + different event comes
-        [3] + executed actions (excepting None-state)
-        [4] + executed actions (including None-state)
+        [3] + executed actions (excepting state:None)
+        [4] + executed actions (including state:None)
         [5] ++ all events and actions (if any)
         [6] ++ all events (even if no actions)
         [8] +++ max verbose level to put all args
@@ -479,34 +481,54 @@ Attributes:
         return '\n'.join("[ {!r} ]\n{!s}".format(k,v) for k,v in self.items())
     
     def __call__(self, event, *args, **kwargs):
-        self.__event = event
+        """Dispatch the given event
+        First, call with the state:None, then call with the current state.
         
-        ret = []
+        The retval dppends on the context:
+            process the event (with transition or actions) -> list
+            no event:transaction -> None
+        """
+        self.__event = event
+        result = False
+        retvals = []
         if None in self:
             org = self.__state
             prg = self.__prev_state
             try:
                 self.__state = None
-                ret += self.call(event, *args, **kwargs) # `None` process
+                ret = self.call(event, *args, **kwargs) # `None` process
+                if ret is not None:
+                    result = True
+                    retvals += ret
             finally:
                 if self.__state is None: # restore original
                     self.__state = org
                     self.__prev_state = prg
         
         if self.__state is not None:
-            ret += self.call(event, *args, **kwargs) # normal process
+            ret = self.call(event, *args, **kwargs) # normal process
+            if ret is not None:
+                result = True
+                retvals += ret
         
         self.__prev_state = self.__state
         self.__prev_event = event
-        return ret
+        if result:
+            return retvals
     
     def fork(self, *args, **kwargs):
-        """Invoke the current event"""
+        """Dispatch the current event"""
         if self.__state == self.__prev_state: # possibly results in an infinite loop
             raise Exception("FSM:logic error - a fork cannot fork itself")
         return self.call(self.__event, *args, **kwargs)
     
     def call(self, event, *args, **kwargs):
+        """Invoke the event handler
+        Process:
+            1. transit the state
+            2. try actions after transition
+        retval-> list or None
+        """
         context = self[self.__state]
         
         if event in context:
@@ -546,7 +568,8 @@ Attributes:
                     return self.call(pat, *args, **kwargs) # recursive call with matched pattern
         
         self.__debcall__(event, *args, **kwargs) # check when no transition
-        return []
+        ## return []
+        return None # no event, no action
     
     def __debcall__(self, pattern, *args, **kwargs):
         v = self.debug
@@ -974,7 +997,8 @@ def postcall(f):
 def skip(v):
     v.Skip()
 
-def Pass(v):
+
+def noskip(v):
     pass
 
 
@@ -2834,7 +2858,7 @@ Flaky nutshell:
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-               '*enter pressed' : (0, Pass), # -> OnShowCompHistory 無効
+               '*enter pressed' : (0, noskip), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
@@ -2910,6 +2934,7 @@ Flaky nutshell:
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, self.skipback_autocomp, skip),
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
+        'C-S-backspace pressed' : (2, noskip),
                   'M-j pressed' : (2, self.call_tooltip2),
                   'C-j pressed' : (2, self.call_tooltip),
                   'M-h pressed' : (2, self.call_helpTip2),
@@ -2943,6 +2968,7 @@ Flaky nutshell:
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, self.skipback_autocomp, skip),
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
+        'C-S-backspace pressed' : (3, noskip),
                   'M-j pressed' : (3, self.call_tooltip2),
                   'C-j pressed' : (3, self.call_tooltip),
                   'M-h pressed' : (3, self.call_helpTip2),
@@ -2976,6 +3002,7 @@ Flaky nutshell:
               '*delete pressed' : (4, skip),
            '*backspace pressed' : (4, self.skipback_autocomp, skip),
           '*backspace released' : (4, self.call_text_autocomp),
+        'C-S-backspace pressed' : (4, noskip),
                   'M-j pressed' : (4, self.call_tooltip2),
                   'C-j pressed' : (4, self.call_tooltip),
                   'M-h pressed' : (4, self.call_helpTip2),
@@ -3008,6 +3035,7 @@ Flaky nutshell:
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
            '*backspace pressed' : (5, self.skipback_autocomp, skip),
           '*backspace released' : (5, self.call_module_autocomp),
+        'C-S-backspace pressed' : (5, noskip),
                  '*alt pressed' : (5, ),
                 '*ctrl pressed' : (5, ),
                '*shift pressed' : (5, ),
@@ -3118,8 +3146,9 @@ Flaky nutshell:
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-        if self.eolc < self.bolc: # check if prompt is in valid state
-            self.prompt()
+        ## if self.eolc < self.bolc: # check if prompt is in valid state
+        ##     self.prompt() # ここでは機能しない？
+        ##     evt.Skip()
         self.message("ESC-")
     
     def OnSpace(self, evt):
@@ -3148,21 +3177,19 @@ Flaky nutshell:
         """Called when enter pressed"""
         if not self.CanEdit(): # go back to the end of command line
             self.goto_char(-1)
+            if self.eolc < self.bolc: # check if prompt is in valid state
+                self.prompt()
+                evt.Skip()
             return
         
         if self.AutoCompActive(): # skip to auto completion
             evt.Skip()
             return
         
-        if self.eolc < self.bolc: # check if prompt is in valid state
-            self.prompt()
-            evt.Skip()
-            return
-        
-        text = self.GetTextRange(self.bolc, self.eolc) #.lstrip()
-        
         if self.CallTipActive():
             self.CallTipCancel()
+        
+        text = self.GetTextRange(self.bolc, self.eolc) #.lstrip()
         
         ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
         if not text or text[0] in '!?':
@@ -3750,8 +3777,6 @@ Flaky nutshell:
         if self.following_char.isalnum() and self.preceding_char == '.':
             self.WordRight()
             self.point = c # backward selection to anchor point
-        elif c == self.bol:
-            self.handler('quit', evt)
     
     def skip_autocomp(self, evt):
         """Feel like pressing {tab}"""
@@ -4095,7 +4120,7 @@ if 1:
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
     frm.inspector.handler.debug = 0
-    frm.inspector.rootshell.handler.debug = 0
+    frm.inspector.rootshell.handler.debug = 4
     frm.inspector.rootshell.Execute(SHELLSTARTUP)
     frm.inspector.rootshell.SetFocus()
     frm.inspector.Show()
