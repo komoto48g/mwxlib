@@ -1810,7 +1810,7 @@ Global bindings:
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject #<wx._aui.AuiTabCtrl>
         win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
-        ## win = self.console.GetPage(evt.Selection)
+        ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
             self.statusbar("- Don't remove the root shell.")
             return
@@ -1818,6 +1818,11 @@ Global bindings:
             self.monitor.unwatch()
             self.remove_page_console(win)
             return
+        def on_close():
+            nb = self.console
+            if nb.PageCount == 1:
+                nb.TabCtrlHeight = 0
+        wx.CallAfter(on_close)
         evt.Skip()
     
     def add_page_console(self, win, title=None, show=False):
@@ -1833,9 +1838,6 @@ Global bindings:
                 self.Show()
     
     def remove_page_console(self, win):
-        if win is self.__shell:
-            self.statusbar("- Don't remove the root shell.")
-            return
         nb = self.console
         j = nb.GetPageIndex(win)
         if j != -1:
@@ -2893,6 +2895,8 @@ Flaky nutshell:
                     '* pressed' : (0, self.clear_autocomp, fork),
                    'up pressed' : (2, self.on_completion_backward, skip),
                  'down pressed' : (2, self.on_completion_forward, skip),
+                 'left pressed' : (2, skip),
+                'right pressed' : (2, self.skip_autocomp),
                'S-left pressed' : (2, skip),
               'S-right pressed' : (2, skip),
               'shift* released' : (2, self.call_word_autocomp),
@@ -2924,6 +2928,8 @@ Flaky nutshell:
                     '* pressed' : (0, self.clear_autocomp, fork),
                    'up pressed' : (3, self.on_completion_backward, skip),
                  'down pressed' : (3, self.on_completion_forward, skip),
+                 'left pressed' : (3, skip),
+                'right pressed' : (3, self.skip_autocomp),
                'S-left pressed' : (3, skip),
               'S-right pressed' : (3, skip),
               'shift* released' : (3, self.call_apropos_autocomp),
@@ -2955,6 +2961,8 @@ Flaky nutshell:
                     '* pressed' : (0, self.clear_autocomp, fork),
                    'up pressed' : (4, self.on_completion_backward, skip),
                  'down pressed' : (4, self.on_completion_forward, skip),
+                 'left pressed' : (4, skip),
+                'right pressed' : (4, self.skip_autocomp),
                'S-left pressed' : (4, skip),
               'S-right pressed' : (4, skip),
               'shift* released' : (4, self.call_text_autocomp),
@@ -2986,6 +2994,8 @@ Flaky nutshell:
                     '* pressed' : (0, self.clear_autocomp, fork),
                    'up pressed' : (5, self.on_completion_backward, skip),
                  'down pressed' : (5, self.on_completion_forward, skip),
+                 'left pressed' : (5, skip),
+                'right pressed' : (5, self.skip_autocomp),
                'S-left pressed' : (5, skip),
               'S-right pressed' : (5, skip),
               'shift* released' : (5, self.call_module_autocomp),
@@ -3742,6 +3752,10 @@ Flaky nutshell:
             self.point = c # backward selection to anchor point
         elif c == self.bol:
             self.handler('quit', evt)
+    
+    def skip_autocomp(self, evt):
+        """Feel like pressing {tab}"""
+        wx.UIActionSimulator().KeyDown(wx.WXK_TAB)
     
     def on_completion_forward(self, evt):
         self.on_completion(evt, 1)
