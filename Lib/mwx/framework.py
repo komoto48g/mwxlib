@@ -1723,8 +1723,8 @@ Global bindings:
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.PopupWindow, show=None, doc="Toggle the ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
-                'S-f12 pressed' : (0, _F(self.current_shell.clear)),
-                'C-f12 pressed' : (0, _F(self.current_shell.clone)),
+                'S-f12 pressed' : (0, _F(lambda v: self.current_shell.clear(), doc="Clear shell")),
+                'C-f12 pressed' : (0, _F(lambda v: self.current_shell.clone(), doc="Clone shell")),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1836,7 +1836,7 @@ Global bindings:
         win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
         ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
-            self.statusbar("- Don't remove the root shell.")
+            self.statusbar("- Don't remove the rootshell.")
             return
         if win is self.monitor:
             self.monitor.unwatch()
@@ -1895,11 +1895,12 @@ Global bindings:
         """Duplicate an expression at the caret-line"""
         win = self.current_editor
         text = win.SelectedText or win.expr_at_caret
+        shell = self.current_shell
         if text:
             if clear:
-                self.current_shell.clearCommand()
-            self.current_shell.write(text, -1)
-        self.current_shell.SetFocus()
+                shell.clearCommand()
+            shell.write(text, -1)
+        shell.SetFocus()
     
     ## --------------------------------
     ## Find text dialog
@@ -2725,7 +2726,7 @@ Flaky nutshell:
     def locals(self):
         try:
             if self.parent.debugger.busy:
-                if self is self.parent.shell:
+                if self is self.parent.rootshell:
                     return self.parent.debugger.locals
         except AttributeError:
             pass
@@ -2790,6 +2791,20 @@ Flaky nutshell:
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
+        ## This shell is expected to be created many times in the process,
+        ## e.g., when used as a break-point and when cloned.
+        ## Assign objects each time it is activated so that the target
+        ## does not refer to dead objects in the shell clones (to be deleted).
+        
+        ## @self.parent.Bind(wx.EVT_ACTIVATE)
+        ## def activate(evt):
+        ##     if self and self.IsShown():
+        ##         if evt.Active:
+        ##             self.handler('shell_activated', self)
+        ##         else:
+        ##             self.handler('shell_inactivated', self)
+        ##     evt.Skip()
+        
         @self.Bind(wx.EVT_SET_FOCUS) # cf. focus_set
         def activate(evt):
             self.handler('shell_activated', self)
@@ -2804,10 +2819,11 @@ Flaky nutshell:
         
         @self.Bind(wx.EVT_WINDOW_DESTROY)
         def destroy(evt):
-            try:
-                del self.__target.shell # delete reference
-            except AttributeError:
-                pass
+            if evt.EventObject is self:
+                try:
+                    del self.__target.shell # delete reference
+                except AttributeError:
+                    pass
             evt.Skip()
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
@@ -3347,8 +3363,6 @@ Flaky nutshell:
         """
         self.target = shell.target # => @target.setter
         
-        ## This shell is expected to be called many times,
-        ## e.g., when used as a break-point and when cloned.
         ## To prevent the builtins from referring dead objects,
         ## Add utility functions to builtins each time when activated.
         builtins.help = self.help
@@ -3692,7 +3706,7 @@ Flaky nutshell:
         if not isinstance(self.parent, ShellFrame):
             ## Make new deb/shell outside
             frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
-            shell = frame.shell
+            shell = frame.rootshell
         else:
             ## Make shell:clone in the console
             shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
@@ -4049,10 +4063,10 @@ Note:
     
     frame = ShellFrame(None, target, **kwargs)
     frame.Show()
-    frame.shell.SetFocus()
+    frame.rootshell.SetFocus()
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window
     if startup:
-        shell = frame.shell
+        shell = frame.rootshell
         try:
             startup(shell)
             shell.handler.bind("shell_cloned", startup)
@@ -4106,6 +4120,9 @@ if 1:
     self.inspector
     root = self.inspector.rootshell
     """
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
+    
     from scipy import constants as const
     np.set_printoptions(linewidth=256) # default 75
     
