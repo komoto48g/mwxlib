@@ -10,9 +10,14 @@ from __future__ import absolute_import
 import traceback
 import sys
 import wx
-from . import framework as mwx
-from .matplot2 import MatplotPanel
-from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
+try:
+    import framework as mwx
+    from matplot2 import MatplotPanel
+    from matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
+except ImportError:
+    from . import framework as mwx
+    from .matplot2 import MatplotPanel
+    from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 from matplotlib import patches
 from matplotlib import cm
 from PIL import Image
@@ -1691,8 +1696,8 @@ if __name__ == '__main__':
     frm = mwx.Frame(None)
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=(.1,.1,.9,.9), size=(300,240))
     
-    frm.handler.debug = 2
-    frm.graph.handler.debug = 2
+    frm.handler.debug = 0
+    frm.graph.handler.debug = 4
     
     def _imread(path):
         if sys.version_info < (3,0):

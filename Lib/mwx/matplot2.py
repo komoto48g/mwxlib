@@ -9,7 +9,10 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 import numpy as np
 import wx
-from . import framework as mwx
+try:
+    import framework as mwx
+except ImportError:
+    from . import framework as mwx
 import matplotlib
 matplotlib.use('wxagg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
@@ -783,12 +786,14 @@ class MatplotPanel(wx.Panel):
     
     def OnPanBegin(self, evt):
         """Toolbar pan - While panning, press x/y to constrain the direction"""
-        self.toolbar.set_cursor(0)
+        ## self.toolbar.set_cursor(2)
+        self.set_wxcursor(wx.CURSOR_HAND)
         self.toolbar.pan()
         self.__prev = self.handler.previous_state # PAN 前の状態を記録する
     
     def OnPanEnd(self, evt):
-        self.toolbar.set_cursor(1)
+        ## self.toolbar.set_cursor(1)
+        self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
         ## self.draw()
         self.handler.current_state = self.__prev  # PAN 前の状態に戻す
@@ -796,12 +801,14 @@ class MatplotPanel(wx.Panel):
     
     def OnZoomBegin(self, evt):
         """Toolbar zoom - While zooming, press x/y to constrain the direction"""
-        self.toolbar.set_cursor(2)
+        ## self.toolbar.set_cursor(3)
+        self.set_wxcursor(wx.CURSOR_CROSS)
         self.toolbar.zoom()
         self.__prev = self.handler.previous_state # ZOOM 前状態を記録する
     
     def OnZoomEnd(self, evt):
-        self.toolbar.set_cursor(1)
+        ## self.toolbar.set_cursor(1)
+        self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
         ## self.draw()
         self.handler.current_state = self.__prev  # ZOOM 前の状態に戻す
@@ -968,7 +975,7 @@ if __name__ == '__main__':
     frm = mwx.Frame(None)
     frm.graph = MatplotPanel(frm, log=frm.statusbar, size=(300,240))
     
-    frm.handler.debug = 4
+    frm.handler.debug = 0
     frm.graph.handler.debug = 4
     
     axes = frm.graph.axes
