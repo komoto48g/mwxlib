@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.5"
+__version__ = "0.49.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1705,6 +1705,11 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame.handler>
             None : {
+                'shell_cleared' : [ None, ],
+                 'shell_cloned' : [ None, ],
+                 'shell_closed' : [ None, ],
+              'shell_activated' : [ None, ],
+            'shell_inactivated' : [ None, ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,
                                           _F(self.PopupWindow, self.Help) ],
@@ -1723,8 +1728,9 @@ Global bindings:
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.PopupWindow, show=None, doc="Toggle the ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
-                'S-f12 pressed' : (0, _F(lambda v: self.current_shell.clear(), doc="Clear shell")),
-                'C-f12 pressed' : (0, _F(lambda v: self.current_shell.clone(), doc="Clone shell")),
+                'S-f12 pressed' : (0, _F(self.clear_shell)),
+                'C-f12 pressed' : (0, _F(self.clone_shell)),
+                'M-f12 pressed' : (0, _F(self.close_shell)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1761,7 +1767,13 @@ Global bindings:
             return
         evt.Skip()
     
+    def OnCloseShell(self, evt=None):
+        nb = self.console
+        if nb and nb.PageCount == 1:
+            nb.TabCtrlHeight = 0
+    
     def OnDestroyFrame(self, evt):
+        self.OnCloseShell()
         evt.Skip()
     
     def Destroy(self):
@@ -1813,7 +1825,6 @@ Global bindings:
             if j != -1:
                 nb.SetSelection(j)
                 break
-        ## nb: notebook window to be shown (default is ghost)
         if show is None:
             show = not nb.IsShown()
         self._mgr.GetPane(nb).Show(show)
@@ -1842,11 +1853,7 @@ Global bindings:
             self.monitor.unwatch()
             self.remove_page_console(win)
             return
-        def on_close():
-            nb = self.console
-            if nb.PageCount == 1:
-                nb.TabCtrlHeight = 0
-        wx.CallAfter(on_close)
+        wx.CallAfter(self.OnCloseShell)
         evt.Skip()
     
     def add_page_console(self, win, title=None, show=False):
@@ -1902,6 +1909,30 @@ Global bindings:
             shell.write(text, -1)
         shell.SetFocus()
     
+    def clear_shell(self):
+        """Clear the current shell"""
+        shell = self.current_shell
+        shell.clear()
+        self.handler('shell_cleared', shell)
+    
+    def clone_shell(self):
+        """Clone the current shell"""
+        shell = self.current_shell
+        shell.clone()
+        self.handler('shell_cloned', shell)
+    
+    def close_shell(self):
+        """Close the current shell"""
+        shell = self.current_shell
+        if shell is self.__shell:
+            self.statusbar("- Don't remove the rootshell.")
+            return
+        nb = self.console
+        j = nb.GetPageIndex(shell)
+        if j != -1:
+            nb.DeletePage(j)
+            self.handler('shell_closed', None)
+    
     ## --------------------------------
     ## Find text dialog
     ## --------------------------------
@@ -1922,12 +1953,15 @@ Global bindings:
         if win.Parent:
             if self.ghost in win.Parent.Children: # floating ghost ?
                 return self.ghost.CurrentPage # select the ghost editor
-        return self.__shell # otherwise, select the default editor
+        return self.__shell
     
     @property
     def current_shell(self):
-        return next((x for x in self.console.Children
-            if isinstance(x, Nautilus) and x.IsShownOnScreen()), self.__shell)
+        win = wx.Window.FindFocus()
+        pages = (x for x in self.console.Children if isinstance(x, Nautilus))
+        if win in pages:
+            return win
+        return self.__shell
     
     def OnFilterText(self, evt):
         win = self.current_editor
@@ -2796,15 +2830,6 @@ Flaky nutshell:
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
         
-        ## @self.parent.Bind(wx.EVT_ACTIVATE)
-        ## def activate(evt):
-        ##     if self and self.IsShown():
-        ##         if evt.Active:
-        ##             self.handler('shell_activated', self)
-        ##         else:
-        ##             self.handler('shell_inactivated', self)
-        ##     evt.Skip()
-        
         @self.Bind(wx.EVT_SET_FOCUS) # cf. focus_set
         def activate(evt):
             self.handler('shell_activated', self)
@@ -2817,14 +2842,14 @@ Flaky nutshell:
         
         self.on_activated(self) # call once manually
         
-        @self.Bind(wx.EVT_WINDOW_DESTROY)
-        def destroy(evt):
-            if evt.EventObject is self:
-                try:
-                    del self.__target.shell # delete reference
-                except AttributeError:
-                    pass
-            evt.Skip()
+        ## @self.Bind(wx.EVT_WINDOW_DESTROY)
+        ## def destroy(evt):
+        ##     if evt.EventObject is self:
+        ##         try:
+        ##             del self.__target.shell # delete reference
+        ##         except AttributeError:
+        ##             pass
+        ##     evt.Skip()
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
@@ -2855,12 +2880,12 @@ Flaky nutshell:
         
         self.handler.update({ #<Nautilus.handler>
             None : {
-                'shell_cloned' : [ None, ],
-             'shell_activated' : [ None, self.on_activated ],
-           'shell_inactivated' : [ None, self.on_inactivated ],
-                 'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
-                   'debug_end' : [ None, _F(self.write, "#>> Debugger closed successfully.", -1),
-                                         _F(self.prompt), ],
+                  'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
+                    'debug_end' : [ None, _F(self.write, "#>> Debugger closed successfully.", -1),
+                                          _F(self.prompt), ],
+                 'shell_cloned' : [ None, ],
+              'shell_activated' : [ None, self.on_activated ],
+            'shell_inactivated' : [ None, self.on_inactivated ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -4069,7 +4094,7 @@ Note:
         shell = frame.rootshell
         try:
             startup(shell)
-            shell.handler.bind("shell_cloned", startup)
+            frame.handler.bind("shell_cloned", startup)
         except Exception as e:
             shell.message("- Failed to startup: {!r}".format(e))
             traceback.print_exc()
