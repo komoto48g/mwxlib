@@ -8,9 +8,6 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from itertools import chain
-import numpy as np
-from scipy import signal
-## from scipy import ndimage as ndi
 import wx
 try:
     import framework as mwx
@@ -21,6 +18,9 @@ except ImportError:
     from .matplot2 import MatplotPanel
     from .matplot2 import NORMAL, DRAGGING, MARK, LINE, REGION
 from matplotlib import patches
+import numpy as np
+from scipy import signal
+## from scipy import ndimage as ndi
 
 
 class LinePlot(MatplotPanel):

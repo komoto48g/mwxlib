@@ -11,13 +11,19 @@ import subprocess
 import tempfile
 import sys
 import os
-import numpy as np
 import wx
-from . import framework as mwx
-from .controls import ControlPanel
+try:
+    import framework as mwx
+    from controls import ControlPanel
+except:
+    from . import framework as mwx
+    from .controls import ControlPanel
+import numpy as np
 
-if sys.version_info < (3,0):
-    input = raw_input
+try:
+    input = raw_input # PY2
+except:
+    pass
 
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 

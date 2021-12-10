@@ -22,20 +22,27 @@ import re
 import wx
 from wx import aui
 ## import wx.lib.agw.aui as aui
-import numpy as np
-from . import framework as mwx
-from .controls import Icon
-from .controls import ControlPanel
-from .matplot2g import GraphPlot
-from .matplot2lg import Histogram
-## from matplotlib import pyplot as plt
-from matplotlib import colors
+try:
+    import framework as mwx
+    from controls import Icon
+    from controls import ControlPanel
+    from matplot2g import GraphPlot
+    from matplot2lg import Histogram
+except ImportError:
+    from . import framework as mwx
+    from .controls import Icon
+    from .controls import ControlPanel
+    from .matplot2g import GraphPlot
+    from .matplot2lg import Histogram
+import matplotlib
 from matplotlib import cm
+from matplotlib import colors
+## from matplotlib import pyplot as plt
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
-
+import numpy as np
 try:
     from importlib import reload
 except ImportError:
@@ -1048,7 +1055,7 @@ class Frame(mwx.Frame):
                     pos = pane.dock_pos,
                     row = pane.dock_row,
                     prop = pane.dock_proportion,
-                    floating_pos = floating_pos or pane.floating_pos[:], # copy (!pane is to be unloaded)
+                    floating_pos = floating_pos or pane.floating_pos[:], # copy (pane unloaded)
                     floating_size = floating_size or pane.floating_size[:], # copy
                 )
         except ImportError as e:
@@ -1722,6 +1729,10 @@ class Frame(mwx.Frame):
 
 
 if __name__ == '__main__':
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
+    print("matplotlib {}".format(matplotlib.__version__))
+    
     app = wx.App()
     frm = Frame(None)
     

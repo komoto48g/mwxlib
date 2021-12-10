@@ -18,14 +18,15 @@ except ImportError:
     from . import framework as mwx
     from .matplot2 import MatplotPanel
     from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
-from matplotlib import patches
+import matplotlib
 from matplotlib import cm
+from matplotlib import patches
 from PIL import Image
 from PIL import ImageFile
+import cv2
 import numpy as np
 from numpy import pi, nan
 from scipy import ndimage as ndi
-import cv2
 
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
@@ -1692,6 +1693,10 @@ Constants:
 
 
 if __name__ == '__main__':
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
+    print("matplotlib {}".format(matplotlib.__version__))
+    
     app = wx.App()
     frm = mwx.Frame(None)
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=(.1,.1,.9,.9), size=(300,240))

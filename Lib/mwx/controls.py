@@ -13,8 +13,12 @@ import wx
 import numpy as np
 from numpy import pi
 from numpy import nan, inf
-from . import framework as mwx
-from . import images as images
+try:
+    import framework as mwx
+    import images
+except ImportError:
+    from . import framework as mwx
+    from . import images
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
@@ -1189,7 +1193,6 @@ class Gauge(wx.Panel):
 
 
 if __name__ == '__main__':
-    
     class TestPanel(ControlPanel, mwx.CtrlInterface):
         def __init__(self, *args, **kwargs):
             ControlPanel.__init__(self, *args, **kwargs)

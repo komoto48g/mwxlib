@@ -37,9 +37,6 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator)
 from pprint import pprint, pformat
 from six.moves import builtins
-## from six import PY3
-from pdb import Pdb, bdb
-import linecache
 try:
     from importlib import reload
 except ImportError:
@@ -339,7 +336,7 @@ def find_modules(force=False, verbose=True):
     """
     try:
         reload(sys)
-        sys.setdefaultencoding('utf-8') # <= PY2
+        sys.setdefaultencoding('utf-8') # PY2
     except AttributeError:
         pass
     
@@ -2689,7 +2686,7 @@ Shell built-in utility:
     @pp         synonym of pprint
     @info   @?  short info
     @help   @?? full description
-    @dive       clone the shell with new target
+    @clone      clone the shell with new target
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
@@ -3392,7 +3389,7 @@ Flaky nutshell:
         ## Add utility functions to builtins each time when activated.
         builtins.help = self.help
         builtins.info = self.info
-        builtins.dive = self.clone
+        builtins.clone = self.clone
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
@@ -3424,7 +3421,7 @@ Flaky nutshell:
         
         del builtins.help
         del builtins.info
-        del builtins.dive
+        del builtins.clone
         del builtins.debug
         del builtins.dump
         del builtins.timeit
@@ -3760,7 +3757,7 @@ Flaky nutshell:
                 cmd = self.magic_interpret(split_tokens(text))
                 obj = self.eval(cmd)
                 text = cmd
-            except Exception as e:
+            except Exception:
                 obj = self.eval(text)
             tip = pformat(obj)
             self.CallTipShow(self.point, tip)

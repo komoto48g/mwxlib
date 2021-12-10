@@ -7,7 +7,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
-import numpy as np
+import sys
 import wx
 try:
     import framework as mwx
@@ -23,6 +23,7 @@ from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
 from matplotlib.widgets import Cursor
 from matplotlib.figure import Figure
 from matplotlib import cm
+import numpy as np
 
 ## state constants
 NORMAL = 'Normal'
@@ -930,6 +931,10 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     from matplotlib import patches
     from numpy import pi
+    
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
+    print("matplotlib {}".format(matplotlib.__version__))
     
     def _plot(axes):
         t = np.arange(0,1,0.01)*2*pi

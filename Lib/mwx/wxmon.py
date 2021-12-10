@@ -247,7 +247,7 @@ class EventLogger(_ListCtrl):
             ## wx 4.1.0 or later
             dispatch(wx.EVT_LIST_ITEM_CHECKED, 'item_checked')
             dispatch(wx.EVT_LIST_ITEM_UNCHECKED, 'item_unchecked')
-        except:
+        except AttributeError:
             ## wx.4.0.7 - PY35 CheckListCtrlMixin ではチェックイベントがとれない？
             pass
         dispatch(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')

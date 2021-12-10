@@ -142,7 +142,7 @@ See [key bindings](key-bindings.md) for more information.
     @puts       same as p but put it into the prompt
     @info   @?  short info
     @help   @?? full description
-    @dive       clone the shell with new target
+    @clone      clone the shell with new target
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
