@@ -1687,11 +1687,6 @@ Global bindings:
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0).Show(0))
         self._mgr.Update()
         
-        def on_show(evt):
-            if evt.IsShown():
-                self.console.CurrentPage.SetFocus()
-        
-        self.Bind(wx.EVT_SHOW, on_show)
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroyFrame)
         
@@ -1814,6 +1809,15 @@ Global bindings:
             ))
         )
         self.PopupWindow(self.Help)
+    
+    def Show(self, show=True):
+        """Show or hide the window,
+        (override) move focus on the current console when shown.
+        """
+        ret = MiniFrame.Show(self, show)
+        if show:
+            self.console.CurrentPage.SetFocus()
+        return ret
     
     def PopupWindow(self, win=None, show=True):
         """Popup window in the ghost; console;
@@ -2642,7 +2646,7 @@ class Editor(EditWindow, EditorInterface):
         return EditWindow.IsShown(self) and self.Parent.IsShown()
     
     def Show(self, show=True):
-        """Show on the screen"""
+        """Show or hide the window"""
         try:
             shown = self.IsShown()
             self.parent.handler('popup_window', self, show)
