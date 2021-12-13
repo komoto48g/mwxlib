@@ -94,8 +94,8 @@ Note:
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
-        self.shell.redirectStdin()
-        self.shell.redirectStdout()
+        ## self.shell.redirectStdin()
+        ## self.shell.redirectStdout()
         def _continue():
             try:
                 ## self.shell.Execute('next') # step in the target

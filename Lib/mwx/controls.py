@@ -71,6 +71,7 @@ Args:
         self.__check = 0
         self.__callback = mwx.SSM({
             'control' : [ handler ] if handler else [],
+             'update' : [ updater ] if updater else [],
               'check' : [ updater ] if updater else [],
            'overflow' : [],
           'underflow' : [],
@@ -564,7 +565,8 @@ Args:
         evt.Skip()
     
     def OnPress(self, evt): #<wx._core.CommandEvent>
-        self.__par.check = True
+        ## self.__par.check = True
+        self.__par.callback('update', self.__par)
         evt.Skip()
     
     def Enable(self, p=True):
@@ -734,10 +736,14 @@ class ControlPanel(scrolled.ScrolledPanel):
     def parameters(self):
         return [p.value for p in chain(*self.__params)]
     
+    def get_params(self, checked_only=False):
+        params = chain(*self.__params)
+        if not checked_only:
+            return params
+        return filter((lambda c: hasattr(c, 'check') and c.check), params)
+    
     def reset_params(self, argv=None, checked_only=False, **kwargs):
-        ## params = chain(*self.__params)
-        params = filter((lambda c: hasattr(c, 'check') and c.check)
-                        if checked_only else None, chain(*self.__params))
+        params = self.get_params(checked_only)
         if not argv:
             for p in params:
                 try:
@@ -747,7 +753,6 @@ class ControlPanel(scrolled.ScrolledPanel):
         else:
             for p,v in zip(params, argv):
                 try:
-                    ## p.reset(eval(v), **kwargs) # eval v:str -> value
                     p.reset(v, **kwargs) # eval v:str -> value
                 except AttributeError:
                     p.value = v
@@ -756,12 +761,9 @@ class ControlPanel(scrolled.ScrolledPanel):
                     pass
     
     def copy_to_clipboard(self, checked_only=False):
-        ## params = chain(*self.__params)
-        params = filter((lambda c: hasattr(c, 'check') and c.check)
-                        if checked_only else None, chain(*self.__params))
-        
-        ## text = '\t'.join(str(p.value) for p in params) # repr value -> v:str
-        text = '\t'.join(str(p) if isinstance(p, Param) else str(p.value) for p in params)
+        params = self.get_params(checked_only)
+        text = '\t'.join(str(p) if isinstance(p, Param)
+                         else str(p.value) for p in params)
         Clipboard.write(text)
     
     def paste_from_clipboard(self, checked_only=False, **kwargs):
@@ -892,7 +894,8 @@ Args:
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
             if handler.__doc__:
-                tip += "\nPress: " + handler.__doc__
+                ## tip += "\nPress: " + handler.__doc__
+                tip += '\n' + handler.__doc__
         
         self.SetToolTip(tip.strip())
         self.icon = icon
