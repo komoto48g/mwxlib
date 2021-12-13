@@ -1246,22 +1246,21 @@ class Frame(mwx.Frame):
         self.__class__.l = property(lambda self: self.get_plug(name))
         self.__class__.lm = property(lambda self: self.plugins.get(name))
         
-        shell = self.inspector.rootshell
-        shell.clearCommand()
-        shell.SetFocus()
-        shell.write(
+        rootshell = self.inspector.rootshell
+        rootshell.clearCommand()
+        rootshell.write(
             "#include plug {!r} as propperty:\n"
             "<-- self.l : {!r}\n"
             "<-- self.lm : {!r}\n".format(name, self.l, self.lm))
-        shell.prompt()
+        rootshell.prompt()
         
-        shell = self.inspector.rootshell.clone(self.l)
+        shell = rootshell.clone(self.l)
+        shell.SetFocus()
         
         @shell.handler.bind("shell_activated")
         def init(shell):
-            shell.target = self.get_plug(name) or self # reset when unloaded
+            shell.target = self.l or self # reset when unloaded
         init(shell)
-        ## shell.run("self, this")
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",

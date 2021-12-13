@@ -1486,8 +1486,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.menubar = MenuBar()
         self.menubar["File"] = [
             (ID_(1), "&Inspector\tF12", "Shell for object inspection", wx.ITEM_CHECK,
-                lambda v: (self.inspector.Show(),
-                           self.inspector.rootshell.SetFocus()),
+                lambda v: self.inspector.Show(),
                 lambda v: v.Check(self.inspector.IsShown())),
             (),
             (wx.ID_EXIT, "E&xit\tCtrl-w", "Exit the program",
@@ -1623,7 +1622,7 @@ Global bindings:
     debugger = property(lambda self: self.__debugger)
     monitor = property(lambda self: self.__monitor)
     
-    shell = rootshell # for backward-compatibility
+    ## shell = rootshell # for backward-compatibility
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
@@ -1688,6 +1687,11 @@ Global bindings:
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0).Show(0))
         self._mgr.Update()
         
+        def on_show(evt):
+            if evt.IsShown():
+                self.console.CurrentPage.SetFocus()
+        
+        self.Bind(wx.EVT_SHOW, on_show)
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroyFrame)
         
