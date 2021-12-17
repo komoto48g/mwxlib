@@ -1365,12 +1365,10 @@ class Frame(mwx.Frame):
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
-            ## To evaluate attributes:tuple in locals,
-            ## datetime, nan, inf must be imported.
-            from numpy import nan, inf
-            import datetime
-            
             with codecs.open(f, encoding='utf-8') as i:
+                ## temporary for evaluation of attributes:tuple in locals,
+                from numpy import nan, inf
+                import datetime
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
@@ -1629,7 +1627,10 @@ class Frame(mwx.Frame):
         self.statusbar("Loading session from {!r}...".format(f))
         
         with open(f) as i:
+            ## temporary for evaluation of array in locals,
+            self.array = np.array
             self.inspector.rootshell.Execute(i.read())
+            del self.array
             self.menubar.reset()
             dirname = os.path.dirname(f)
             if dirname:
@@ -1656,6 +1657,9 @@ class Frame(mwx.Frame):
         
         self.session_file = os.path.abspath(f)
         self.statusbar("Saving session to {!r}...".format(f))
+        
+        options = np.get_printoptions()
+        np.set_printoptions(linewidth=256, threshold=np.inf) # printing all(inf) elements
         
         with open(f, 'w') as o:
             o.write('\n'.join((
@@ -1723,6 +1727,7 @@ class Frame(mwx.Frame):
                 o.write("self.graph.select({!r})\n".format(self.graph.frame.name))
             o.write('# end of session\n')
             
+        np.set_printoptions(**options)
         self.statusbar("\b done.")
         return True
 
