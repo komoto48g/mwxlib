@@ -76,7 +76,10 @@ Args:
            'overflow' : [],
           'underflow' : [],
         })
-        self.tip = tip
+        ## self.tip = tip
+        self.tip = '\n'.join(filter(None, (tip,
+                             handler and handler.__doc__,
+                             updater and updater.__doc__)))
     
     def __str__(self, v=None):
         v = self.__value if v is None else v
@@ -894,7 +897,6 @@ Args:
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
             if handler.__doc__:
-                ## tip += "\nPress: " + handler.__doc__
                 tip += '\n' + handler.__doc__
         
         self.SetToolTip(tip.strip())
@@ -946,7 +948,7 @@ Note:
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, handler)
             if handler.__doc__:
-                tip += "\nToggle: " + handler.__doc__
+                tip += '\n' + handler.__doc__
         
         self.SetToolTip(tip.strip())
         self.icon = icon
