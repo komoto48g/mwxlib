@@ -139,9 +139,12 @@ Args:
             ## print("- No handler bound to {}".format(widget))
             return {}
         def _where(obj):
-            filename = inspect.getsourcefile(obj)
-            src, lineno = inspect.getsourcelines(obj)
-            return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+            try:
+                filename = inspect.getsourcefile(obj)
+                src, lineno = inspect.getsourcelines(obj)
+                return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+            except TypeError:
+                return repr(obj)
         ssmap = {}
         for event, actions in sorted(widget.__event_handler__.items()):
             ## la = [a for a in actions if a != self.onWatchedEvent]
