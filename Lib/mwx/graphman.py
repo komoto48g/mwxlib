@@ -53,6 +53,8 @@ LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 if sys.version_info < (3,0):
     FileNotFoundError = IOError
 
+_F = mwx.funcall
+
 
 class Thread(object):
     """Thread for graphman.Layer
@@ -288,8 +290,6 @@ unloadable : flag to set the Layer to be unloadable
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
         
-        _F = mwx.funcall
-        
         self.handler.append({ #<Layer.handler>
             None : {
                  'thread_begin' : [ None ], # begin processing
@@ -424,8 +424,6 @@ class Graph(GraphPlot):
         
         self.__parent = parent
         self.__loader = loader or parent
-        
-        _F = mwx.funcall
         
         self.handler.append({ #<Graph.handler>
             None : {
