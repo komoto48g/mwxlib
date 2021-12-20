@@ -166,6 +166,8 @@ class MatplotPanel(wx.Panel):
         #<matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
         self.canvas = FigureCanvas(self, -1, self.figure)
         
+        ## EVT_CHAR_HOOK is not triggered when mouse is captured.
+        ## So, we change it to EVT_KEY_DOWN (like matplotlib 3.0)
         self.canvas.Unbind(wx.EVT_CHAR_HOOK)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.canvas._onKeyDown)
         
