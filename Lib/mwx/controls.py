@@ -79,7 +79,7 @@ Args:
         ## self.tip = tip
         self.tip = '\n'.join(filter(None, (tip,
                              handler and handler.__doc__,
-                             updater and updater.__doc__)))
+                             updater and updater.__doc__))).strip()
     
     def __str__(self, v=None):
         v = self.__value if v is None else v
@@ -893,12 +893,10 @@ Args:
         kwargs['style'] = kwargs.get('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
-        tip = tip or ''
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
-            if handler.__doc__:
-                tip += '\n' + handler.__doc__
-        
+        tip = '\n  '.join(filter(None, (tip,
+                          handler and handler.__doc__)))
         self.SetToolTip(tip.strip())
         self.icon = icon
     
@@ -944,12 +942,10 @@ Note:
     def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
-        tip = tip or ''
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, handler)
-            if handler.__doc__:
-                tip += '\n' + handler.__doc__
-        
+        tip = '\n  '.join(filter(None, (tip,
+                          handler and handler.__doc__)))
         self.SetToolTip(tip.strip())
         self.icon = icon
 
@@ -990,7 +986,7 @@ Args:
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
-                                size=(-1,-1) if label or icon else (0,0))
+                          size=(-1,-1) if label or icon else (0,0))
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
@@ -1058,7 +1054,7 @@ Note:
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         self.btn = Button(self, label, icon=icon, tip=tip,
-                                size=(-1,-1) if label or icon else (0,0))
+                          size=(-1,-1) if label or icon else (0,0))
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
