@@ -3382,8 +3382,8 @@ Flaky nutshell:
                 ## class, method, function, traceback, frame, or code object was expected
                 return (inspect.getsourcefile(obj),     # filename
                         inspect.getsourcelines(obj)[1]) # (src, line)
-            except TypeError:
-                return inspect.getmodule(obj)
+            except Exception:
+                return (inspect.getmodule(obj), None)
         builtins.where = where
     
     def on_activated(self, shell):
