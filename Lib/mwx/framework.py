@@ -1629,7 +1629,7 @@ Global bindings:
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         if target is None:
-            target = __import__('__main__')
+            target = parent or __import__('__main__')
         
         self.Title = title or "Nautilus - {!r}".format(target)
         
