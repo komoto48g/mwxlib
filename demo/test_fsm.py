@@ -5,8 +5,6 @@
 Usage: Input 'coin' or 'pass' to the prompt.
     Press [C-c] to terminate the loop.
 """
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 import mwx
 
 

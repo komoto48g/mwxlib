@@ -1,7 +1,5 @@
 #! python3
 # -*- coding: shift-jis -*-
-from __future__ import (division, print_function,
-                        absolute_import, unicode_literals)
 import wx
 import cv2
 import numpy as np

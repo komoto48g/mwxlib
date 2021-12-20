@@ -235,7 +235,7 @@ def dive(*args):
         startup=init_shell,
         execStartupScript=True,
         ## quote unqoute
-        introText=f"""deb v{__version__}
+        introText=f"""deb {__version__}
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
         """,
