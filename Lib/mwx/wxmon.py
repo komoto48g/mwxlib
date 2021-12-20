@@ -51,18 +51,6 @@ Args:
         })
         self.handler.clear(0)
         
-        self.__noWatchList = [
-            wx.EVT_PAINT,
-            wx.EVT_NC_PAINT,
-            wx.EVT_ERASE_BACKGROUND,
-            wx.EVT_IDLE,
-            wx.EVT_UPDATE_UI,
-            wx.EVT_UPDATE_UI_RANGE,
-            wx.EVT_TOOL,
-            wx.EVT_TOOL_RANGE, # menu items (typeId=10018)
-            wx.EVT_MENU,
-            10018, # other command menu?
-        ]
         self.__watchedWidget = None
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
@@ -80,6 +68,20 @@ Args:
     ew.addModuleEvents(aui) # + some additives
     ew.addModuleEvents(stc)
     
+    ## Events that should not be watched by default
+    _noWatchList = [
+        wx.EVT_PAINT,
+        wx.EVT_NC_PAINT,
+        wx.EVT_ERASE_BACKGROUND,
+        wx.EVT_IDLE,
+        wx.EVT_UPDATE_UI,
+        wx.EVT_UPDATE_UI_RANGE,
+        wx.EVT_TOOL,
+        wx.EVT_TOOL_RANGE, # menu items (typeId=10018)
+        wx.EVT_MENU,
+        10018, # other command menu?
+    ]
+    
     target = property(
         lambda self: self.__watchedWidget,
         lambda self,v: self.watch(v),
@@ -91,8 +93,8 @@ Args:
         if not self.target:
             return []
         def watch_only(v):
-            return (v not in self.__noWatchList
-                and v.typeId not in self.__noWatchList)
+            return (v not in self._noWatchList
+                and v.typeId not in self._noWatchList)
         return filter(watch_only, ew._eventBinders)
     
     def boundHandlers(self, event):
@@ -345,7 +347,7 @@ if __name__ == "__main__":
     if 1:
         self = frm.inspector
         frm.mon = EventMonitor(self)
-        self.shell.write("self.mon.watch(self.mon)")
+        self.rootshell.write("self.mon.watch(self)")
         self.Show()
     frm.Show()
     app.MainLoop()
