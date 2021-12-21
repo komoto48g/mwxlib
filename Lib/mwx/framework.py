@@ -234,18 +234,6 @@ def typename(obj, docp=False, qualp=False):
     return name
 
 
-def pp(x):
-    pprint(x, **pp.__dict__)
-if pp:
-    pp.indent = 1
-    pp.width = 100 # default 80
-    pp.depth = None
-    if sys.version_info >= (3,6):
-        pp.compact = False
-    if sys.version_info >= (3,8):
-        pp.sort_dicts = True
-
-
 def get_words_hint(cmd):
     text = get_words_backward(cmd)
     return text.rpartition('.')
@@ -3369,21 +3357,14 @@ Flaky nutshell:
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
-        builtins.pp = pp
         builtins.p = print
+        builtins.pp = pp
+        builtins.mro = mro
         builtins.watch = watch
         builtins.filling = filling
         builtins.file = inspect.getfile
         builtins.code = inspect.getsource
         builtins.module = inspect.getmodule
-        
-        def where(obj):
-            try:
-                ## class, method, function, traceback, frame, or code object was expected
-                return (inspect.getsourcefile(obj),     # filename
-                        inspect.getsourcelines(obj)[1]) # (src, line)
-            except Exception:
-                return (inspect.getmodule(obj), None)
         builtins.where = where
     
     def on_activated(self, shell):
@@ -4067,6 +4048,49 @@ except ImportError as e:
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
     pass
+
+
+def pp(x):
+    pprint(x, **pp.__dict__)
+
+if pp:
+    pp.indent = 1
+    pp.width = 100 # default 80
+    pp.depth = None
+    if sys.version_info >= (3,6):
+        pp.compact = False
+    if sys.version_info >= (3,8):
+        pp.sort_dicts = True
+
+
+def where(obj):
+    """Show the location (filename, lineno) where the obj is defined
+    
+    A class, method, function, traceback, frame, or code object is expected.
+    Otherwse, the module will be returned if it exists.
+    """
+    try:
+        return (inspect.getsourcefile(obj),     # filename
+                inspect.getsourcelines(obj)[1]) # src, lineno (0:whole)
+    except Exception:
+        return (inspect.getmodule(obj), None)
+
+
+def mro(obj):
+    """Show mro (method resolution order) of obj:class
+    
+    A list of filenames and lineno, or the module-names
+    """
+    print("{}".format(typename(obj)))
+    if not isinstance(obj, type):
+        obj = type(obj)
+    for base in obj.__mro__:
+        fn, ln = where(base)
+        if hasattr(fn, '__file__'): #<class 'module'>
+            fn = fn.__file__
+        elif hasattr(fn, '__name__'): #<module 'builtins'>
+            fn = fn.__name__
+        print("  {}:{}:{!s}".format(fn, ln or '', base))
 
 
 def deb(target=None, app=None, startup=None, **kwargs):
