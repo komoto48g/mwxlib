@@ -225,8 +225,8 @@ class MatplotPanel(wx.Panel):
         ## self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         ## mpl が取りこぼすイベントを捕まえる
-        ## self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
-        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
+        self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
+        ## self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
         self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.handler('Xbutton1 pressed', v))
@@ -628,7 +628,7 @@ class MatplotPanel(wx.Panel):
         """Catch the event that mpl won't catch"""
         key = hotkey(evt)
         if key:
-            self.handler('{} pressed'.format(key), evt)
+            self.handler('{} pressed'.format(key), evt) or evt.Skip()
         else:
             evt.Skip() # skip to mpl:on_key_press
     
@@ -636,7 +636,7 @@ class MatplotPanel(wx.Panel):
         """Catch the event that mpl won't catch"""
         key = hotkey(evt)
         if key:
-            self.handler('{} released'.format(key), evt)
+            self.handler('{} released'.format(key), evt) or evt.Skip()
         else:
             evt.Skip() # skip to mpl:on_key_release
     
