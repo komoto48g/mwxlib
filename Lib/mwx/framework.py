@@ -411,12 +411,11 @@ class FSM(dict):
 Attributes:
     debug : verbose level
         [1] dump when state transits
-        [2] + different event comes
-        [3] + executed actions (excepting state:None)
-        [4] + executed actions (including state:None)
-        [5] ++ all events and actions (if any)
-        [6] ++ all events (even if no actions)
-        [8] +++ max verbose level to put all args
+        [2] + when different event comes
+        [3] + all events and actions
+        [4] ++ all events (+ including state:None)
+        [5] ++ all events (even if no actions + state:None)
+        [8] +++ max verbose level to put all args and kwargs
     default_state : referred as default state sucn as global-map
         default=None is given as an argument of the init.
         If there is only one state, that state will be the default.
@@ -573,8 +572,7 @@ Attributes:
         elif v > 3: # state is None
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a) for a in transaction[1:])
-            if (v > 4 and actions
-             or v > 5):
+            if actions or v > 4:
                 self.log("\t| {0!r} {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
