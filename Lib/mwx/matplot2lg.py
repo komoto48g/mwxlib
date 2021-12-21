@@ -22,6 +22,8 @@ import numpy as np
 from scipy import signal
 ## from scipy import ndimage as ndi
 
+_F = mwx.funcall
+
 
 class LinePlot(MatplotPanel):
     """Line plot 1D base panel
@@ -425,9 +427,11 @@ class LineProfile(LinePlot):
             None: {
                     'line_draw' : [ None, self.linplot ],
                    'line_drawn' : [ None, self.linplot ],
-                  'frame_shown' : [ None, self.linplot ],
-               'frame_selected' : [ None, self.linplot_ex ],
-               'frame_modified' : [ None, self.linplot ],
+                    'line_move' : [ None, _F(self.linplot, fit=0) ],
+                   'line_moved' : [ None, _F(self.linplot, fit=0) ],
+                  'frame_shown' : [ None, _F(self.linplot, fit=0) ],
+               'frame_modified' : [ None, _F(self.linplot, fit=0) ],
+               'frame_selected' : [ None, _F(self.linplot, fit=0, force=0) ],
             }
         }
         self.modeline.Show(1)
@@ -515,11 +519,10 @@ class LineProfile(LinePlot):
         """plotted `(xdata, ydata) in single plot"""
         return self.__plot.get_data(orig=0)
     
-    def linplot_ex(self, frame):
-        if frame is not self.__frame:
-            self.linplot(frame)
-    
-    def linplot(self, frame, fit=True):
+    def linplot(self, frame, fit=True, force=True):
+        if not force:
+            if frame is self.__frame:
+                return
         self.__frame = frame # update reference of the frame
         if frame:
             sel = frame.selector
@@ -735,10 +738,10 @@ if __name__ == '__main__':
     app = wx.App()
     frm = mwx.Frame(None, title="Graph", size=(300,300))
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=None)
-    frm.graph.handler.debug = 0
+    frm.graph.handler.debug = 4
     
     frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
-    ## frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample_circ.bmp"), "circ")
+    frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample_diff.bmp"), "circ")
     frm.graph.unit = 0.1
     ## frm.graph.frame.aspect_ratio = 2
     frm.Show()

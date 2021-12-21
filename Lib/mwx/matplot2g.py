@@ -30,6 +30,8 @@ from scipy import ndimage as ndi
 
 LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
+_F = mwx.funcall
+
 
 def imbuffer(img):
     if isinstance(img, (Image.Image, ImageFile.ImageFile)):
@@ -402,8 +404,6 @@ Constants:
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        _F = mwx.funcall
-        
         def draw_idle(v):
             self.canvas.draw_idle()
         
@@ -420,6 +420,8 @@ Constants:
                 'frame_cmapped' : [ None ], # cmap
                     'line_draw' : [ None ],
                    'line_drawn' : [ None, draw_idle ],
+                    'line_move' : [ None ],
+                   'line_moved' : [ None, draw_idle ],
                  'line_removed' : [ None, draw_idle ],
                     'mark_draw' : [ None ],
                    'mark_drawn' : [ None, draw_idle ],
@@ -1266,28 +1268,36 @@ Constants:
         xc, yc = self.__lastpoint
         xo, yo = self.__orgpoints
         j = self.__linesel
-        if j is not None:
+        if j:
             if shift:
                 i = j-1 if j else 1
                 xo, yo = xo[i], yo[i] # となりの点を基準とする
                 x, y = self.calc_shiftpoint(xo, yo, x, y)
             xs, ys = self.Selector
             xs[j], ys[j] = x, y
+            self.Selector = (xs, ys)
+            self.handler('line_draw', self.frame)
         else:
             xs = xo + (x - xc)
             ys = yo + (y - yc)
-        self.Selector = (xs, ys)
-        self.handler('line_draw', self.frame)
+            self.Selector = (xs, ys)
+            self.handler('line_move', self.frame)
     
     def OnLineDragShiftMove(self, evt):
         self.OnLineDragMove(evt, shift=True)
     
     def OnLineDragEscape(self, evt):
         self.Selector = self.__orgpoints
-        self.handler('line_drawn', self.frame)
-        
+        if self.__linesel:
+            self.handler('line_drawn', self.frame)
+        else:
+            self.handler('line_moved', self.frame)
+    
     def OnLineDragEnd(self, evt):
-        self.handler('line_drawn', self.frame)
+        if self.__linesel:
+            self.handler('line_drawn', self.frame)
+        else:
+            self.handler('line_moved', self.frame)
     
     def OnLineShift(self, evt):
         if self.Selector.size and self.frame:
@@ -1299,10 +1309,10 @@ Constants:
              'right' : ( ux, 0.),
             }
             self.Selector += np.resize(du[evt.key], (2,1))
-            self.handler('line_draw', self.frame)
+            self.handler('line_move', self.frame)
     
     def OnLineShiftEnd(self, evt):
-        self.handler('line_drawn', self.frame)
+        self.handler('line_moved', self.frame)
     
     ## --------------------------------
     ## Region interface
