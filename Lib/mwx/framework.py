@@ -472,32 +472,33 @@ Attributes:
             process the event (with transition or actions) -> list
             no event:transaction -> None
         """
-        self.__event = event
-        result = False
-        retvals = []
+        perf = False # Is transaction performed?
+        retvals = [] # retvals of actions
         if None in self:
             org = self.__state
             prg = self.__prev_state
             try:
+                self.__event = event
                 self.__state = None
                 ret = self.call(event, *args, **kwargs) # `None` process
                 if ret is not None:
-                    result = True
+                    perf = True
                     retvals += ret
             finally:
                 if self.__state is None: # restore original
                     self.__state = org
                     self.__prev_state = prg
         
+        self.__event = event
         if self.__state is not None:
             ret = self.call(event, *args, **kwargs) # normal process
             if ret is not None:
-                result = True
+                perf = True
                 retvals += ret
         
         self.__prev_state = self.__state
         self.__prev_event = event
-        if result:
+        if perf:
             return retvals
     
     def fork(self, *args, **kwargs):
@@ -552,7 +553,6 @@ Attributes:
                     return self.call(pat, *args, **kwargs) # recursive call with matched pattern
         
         self.__debcall__(event, *args, **kwargs) # check when no transition
-        ## return []
         return None # no event, no action
     
     def __debcall__(self, pattern, *args, **kwargs):
