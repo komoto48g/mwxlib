@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.49.9"
+__version__ = "0.50.0rc"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -191,9 +191,9 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
                     word = word[:80] + '...' # truncate words +3 ellipsis
                 print("    {}.{:<36s} {}".format(name, key, word))
             if pred:
-                print("... found {} of {} words with :{}".format(n, len(keys), typename(pred)))
+                print("found {} of {} words with :{}".format(n, len(keys), typename(pred)))
             else:
-                print("... found {} words.".format(len(keys)))
+                print("found {} words.".format(len(keys)))
         except re.error as e:
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
@@ -1615,7 +1615,7 @@ Global bindings:
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         if target is None:
-            target = parent or __import__('__main__')
+            target = parent or self #__import__('__main__')
         
         self.Title = title or "Nautilus - {!r}".format(target)
         
@@ -3729,6 +3729,17 @@ Flaky nutshell:
     ## Auto-comp actions of the shell
     ## --------------------------------
     
+    def CallTipShow(self, pos, tip):
+        """Show a call tip containing a definition near position pos.
+        (override) Snip it if the tip is too big
+        """
+        N = 48
+        lines = tip.splitlines()
+        if len(lines) > N:
+            lines[N:] = ["\n...(snip) This tips are too long. "
+                         "See the scratch buffer for more details..."]
+        Shell.CallTipShow(self, pos, '\n'.join(lines))
+    
     def gen_autocomp(self, offset, words):
         """Call AutoCompShow for the specified words"""
         listr = ' '.join(words) # make itemlist:str
@@ -4068,10 +4079,11 @@ def where(obj):
     Otherwse, the module will be returned if it exists.
     """
     try:
-        return (inspect.getsourcefile(obj),     # filename
+        return "{}:{}".format(
+                inspect.getsourcefile(obj),     # filename
                 inspect.getsourcelines(obj)[1]) # src, lineno (0:whole)
     except Exception:
-        return (inspect.getmodule(obj), None)
+        return inspect.getmodule(obj)
 
 
 def mro(obj):
@@ -4083,12 +4095,12 @@ def mro(obj):
     if not isinstance(obj, type):
         obj = type(obj)
     for base in obj.__mro__:
-        fn, ln = where(base)
-        if hasattr(fn, '__file__'): #<class 'module'>
-            fn = fn.__file__
-        elif hasattr(fn, '__name__'): #<module 'builtins'>
-            fn = fn.__name__
-        print("  {}:{}:{!s}".format(fn, ln or '', base))
+        f = where(base)
+        if hasattr(f, '__file__'): #<class 'module'>
+            f = f.__file__
+        elif hasattr(f, '__name__'): #<module 'builtins'>
+            f = f.__name__
+        print("  {}:{!s}".format(f, base))
 
 
 def deb(target=None, app=None, startup=None, **kwargs):

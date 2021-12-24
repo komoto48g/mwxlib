@@ -971,8 +971,6 @@ Args:
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
     
-    value = Value # internal use only
-    
     @property
     def icon(self):
         return self.btn.icon
