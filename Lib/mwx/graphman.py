@@ -826,14 +826,12 @@ class Frame(mwx.Frame):
             w, h = self.graph.GetClientSize()
             pane.best_size = (w//2, h) # サイズはドッキング時に再計算される
         
-        if wx.GetKeyState(wx.WXK_SHIFT) and name != "graph":
+        if wx.GetKeyState(wx.WXK_SHIFT):
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
-                try:
-                    self.load_plug(name, show=1, force=pane.window.reloadable)
+                if hasattr(name, 'category'): # isinstance(name, Layer):<type 'Layer'>
+                    self.reload_plug(name)
                     pane = self.get_pane(name)
-                except AttributeError:
-                    pass
             ## (ctrl + shift + menu) reset floating position of a stray window
             if wx.GetKeyState(wx.WXK_CONTROL):
                 pane.floating_pos = wx.GetMousePosition()
@@ -1228,7 +1226,8 @@ class Frame(mwx.Frame):
         if plug.reloadable:
             current_session = {}
             plug.save_session(current_session)
-            self.load_plug(plug.__module__, force=1, session=current_session)
+            return self.load_plug(plug.__module__, force=1, session=current_session)
+        return False
     
     def edit_plug(self, name):
         plug = self.get_plug(name)
@@ -1750,8 +1749,8 @@ if __name__ == '__main__':
     ## frm.load_plug('demo.template.py', show=1, force=1)
     frm.load_plug('demo/template.py', show=1, force=1)
     
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
-    frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
+    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
+    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
     
