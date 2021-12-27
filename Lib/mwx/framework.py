@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.0rc"
+__version__ = "0.50.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1457,7 +1457,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     menubar : MenuBar
   statusbar : StatusBar
-  inspector : Inspector frame of the shell
+  inspector : mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
     
@@ -1471,8 +1471,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         
         self.menubar = MenuBar()
         self.menubar["File"] = [
-            (ID_(1), "&Inspector\tF12", "Shell for object inspection", wx.ITEM_CHECK,
-                lambda v: self.inspector.Show(),
+            (ID_(1), "&Shell\tF12", "Shell for inspection", wx.ITEM_CHECK,
+                lambda v: (self.inspector.Show(),
+                           self.inspector.console.CurrentPage.SetFocus()),
                 lambda v: v.Check(self.inspector.IsShown())),
             (),
             (wx.ID_EXIT, "E&xit\tCtrl-w", "Exit the program",
@@ -1796,15 +1797,6 @@ Global bindings:
         )
         self.PopupWindow(self.Help)
     
-    def Show(self, show=True):
-        """Show or hide the window,
-        (override) move focus on the current console when shown.
-        """
-        ret = MiniFrame.Show(self, show)
-        if show:
-            self.console.CurrentPage.SetFocus()
-        return ret
-    
     def PopupWindow(self, win=None, show=True):
         """Popup window in the ghost; console;
         win : page or window to popup (default:None is ghost)
@@ -1812,7 +1804,9 @@ Global bindings:
         """
         books = self.console, self.ghost
         for nb in books:
-            j = nb.GetPageIndex(win)
+            if nb.CurrentPage is win:
+                break
+            j = nb.GetPageIndex(win) # check if nb has win
             if j != -1:
                 nb.SetSelection(j)
                 break
@@ -1857,7 +1851,6 @@ Global bindings:
             nb.TabCtrlHeight = -1
             if show:
                 nb.SetSelection(nb.PageCount - 1)
-                self.Show()
     
     def remove_page_console(self, win):
         nb = self.console
@@ -2821,19 +2814,19 @@ Flaky nutshell:
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
         
-        @self.Bind(wx.EVT_SET_FOCUS) # cf. focus_set
         def activate(evt):
             self.handler('shell_activated', self)
             evt.Skip()
         
-        @self.Bind(wx.EVT_KILL_FOCUS) # cf. focus_kill
         def deactivate(evt):
             self.handler('shell_inactivated', self)
             evt.Skip()
         
+        self.Bind(wx.EVT_SET_FOCUS, activate) # cf. focus_set
+        self.Bind(wx.EVT_KILL_FOCUS, deactivate) # cf. focus_kill
+        
         self.on_activated(self) # call once manually
         
-        ## @self.Bind(wx.EVT_WINDOW_DESTROY)
         ## def destroy(evt):
         ##     if evt.EventObject is self:
         ##         try:
@@ -2841,6 +2834,7 @@ Flaky nutshell:
         ##         except AttributeError:
         ##             pass
         ##     evt.Skip()
+        ## self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
@@ -3733,11 +3727,12 @@ Flaky nutshell:
         """Show a call tip containing a definition near position pos.
         (override) Snip it if the tip is too big
         """
-        N = 48
+        N = 11
         lines = tip.splitlines()
         if len(lines) > N:
-            lines[N:] = ["\n...(snip) This tips are too long. "
-                         "See the scratch buffer for more details..."]
+            lines[N+1:] = ["\n...(snip) This tips are too long..."
+                          #"Show Help buffer for more details..."
+                          ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
     def gen_autocomp(self, offset, words):

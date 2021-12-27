@@ -10,15 +10,18 @@ from mwx.framework import FSM
 
 if wx.VERSION < (4,1):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
+    
     class _ListCtrl(wx.ListCtrl, CheckListCtrlMixin):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
+
 else:
     class _ListCtrl(wx.ListCtrl):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             self.EnableCheckBoxes()
+
 
 class EventMonitor(wx.SplitterWindow):
     """Event monitor of the inspector
