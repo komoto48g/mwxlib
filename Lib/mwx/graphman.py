@@ -1258,6 +1258,7 @@ class Frame(mwx.Frame):
         def init(shell):
             shell.target = self.l or self # reset when unloaded
         init(shell)
+        self.inspector.Show()
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
