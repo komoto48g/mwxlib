@@ -429,7 +429,7 @@ class Graph(GraphPlot):
             None : {
                     'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
-              'shift+a pressed' : [ None, _F(self.toggle_infobar) ],
+                  'S-a pressed' : [ None, _F(self.toggle_infobar) ],
                    'f5 pressed' : [ None, _F(self.refresh) ],
             },
         })

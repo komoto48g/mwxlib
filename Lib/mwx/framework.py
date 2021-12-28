@@ -2557,7 +2557,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.write(' ' * (4 - lp % 4))
     
     def delete_backward_space_like_tab(self):
-        """Delete half-width spaces backward as if feeling like a shift+tab
+        """Delete half-width spaces backward as if feeling like a S-tab
         シフト+タブの気持ちになって半角スペースを後ろ向きに消す
         """
         self.eat_white_forward()
