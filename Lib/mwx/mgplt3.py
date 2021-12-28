@@ -8,6 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 import subprocess
+import warnings
 import tempfile
 import sys
 import os
@@ -40,7 +41,6 @@ class Gplot(object):
     startupfile = None
     tempfile = tempfile.mktemp()
     data_format = "{:e}".format
-    ## default_style = "w l"
     
     @staticmethod
     def init_path(path):
@@ -49,9 +49,9 @@ class Gplot(object):
         os.environ['PATH'] = ';'.join((path, os.environ['PATH']))
     
     def __init__(self, startup="__init__.plt", debug=0):
-        self.gnuplot = subprocess.Popen(['pgnuplot'], shell=True, stdin=subprocess.PIPE)
-        
-        print("Launching new gnuplot...", self.gnuplot)
+        self.__gnuplot = subprocess.Popen(['pgnuplot'],
+                            shell=True, stdin=subprocess.PIPE)
+        print("Launching new gnuplot...")
         self.startupfile = startup or ""
         self.debug = debug
         self.reset()
@@ -66,10 +66,10 @@ class Gplot(object):
         for t in text.splitlines():
             cmd = t.strip()
             if cmd:
-                self.gnuplot.stdin.write((cmd + '\n').encode())
+                self.__gnuplot.stdin.write((cmd + '\n').encode())
                 if self.debug:
                     print("pgnupot>", cmd)
-        self.gnuplot.stdin.flush()
+        self.__gnuplot.stdin.flush()
         return self
     
     def plot(self, *args):
@@ -115,12 +115,15 @@ class Gplot(object):
         self("plot " + ', '.join(pcmd))
     
     def terminate(self):
-        if self.gnuplot is not None:
-            try:
-                self('q')
-            except Exception:
-                pass
-            self.gnuplot = None
+        if self.__gnuplot is not None:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ResourceWarning)
+                try:
+                    self('q')
+                    ## self.__gnuplot.kill()
+                except Exception:
+                    pass
+                self.__gnuplot = None
     
     def restart(self):
         self.terminate()
@@ -135,7 +138,7 @@ class Gplot(object):
         set grid y2tics my2tics lt 13, lt 0
         """)
         if startup is not None:
-            self.startupfile = startup # startupfile の変更を行う
+            self.startupfile = startup # startupfile を変更する
         
         if self.startupfile:
             self("load '{}'".format(self.startupfile))
@@ -151,52 +154,8 @@ class Gplot(object):
         return subprocess.Popen("notepad {}".format(self.startupfile))
 
 
-class GplotFrame(mwx.Frame):
-    """gnuplot プロット専用のフレーム
-    
-    gnuplot : single class object
-    """
-    gnuplot = None
-    
-    def __init__(self, *args, **kwargs):
-        mwx.Frame.__init__(self, *args, **kwargs)
-        
-        self.gnuplot = Gplot()
-        self.panel = ControlPanel(self)
-        
-        self.menubar["Edit"] = [
-            (wx.ID_COPY, "&Copy params\tCtrl-c", "Copy params to clipboard",
-                lambda v: self.panel.copy_to_clipboard()),
-                
-            (wx.ID_PASTE, "&Paste params\tCtrl-v", "Read params from clipboard",
-                lambda v: self.panel.paste_from_clipboard()),
-            (),
-            (wx.ID_RESET, "&Reset params\tCtrl-n", "Reset params to ini-value",
-                lambda v: self.panel.reset_params()),
-        ]
-        self.menubar["Gnuplot"] = [
-            (mwx.ID_(80), "&Gnuplot setting\tCtrl-g", "Edit settings",
-                lambda v: self.gnuplot.edit(),
-                lambda v: v.Enable(self.gnuplot is not None)),
-                
-            (mwx.ID_(81), "&Reset gnuplot\tCtrl-r", "Reset setting",
-                lambda v: (self.gnuplot.reset(),
-                           self.gnuplot("replot")),
-                lambda v: v.Enable(self.gnuplot is not None)),
-            (),
-            (mwx.ID_(82), "Restart gnuplot", "Restart process",
-                lambda v: (self.gnuplot.restart(),
-                           self.gnuplot("replot")),
-                lambda v: v.Enable(self.gnuplot is not None)),
-        ]
-        self.menubar.reset()
-    
-    def Destroy(self):
-        del self.gnuplot
-        return mwx.Frame.Destroy(self)
-
-
-if __name__ == "__main__":
+## if __name__ == "__main__":
+if 0:
     from numpy import pi,sin,cos
     
     Gplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
@@ -251,8 +210,54 @@ if __name__ == "__main__":
     gp.wait()
 
 
+class GplotFrame(mwx.Frame):
+    """gnuplot プロット専用のフレーム
+    
+    gnuplot : single class object
+    """
+    ## gnuplot = None
+    gnuplot = property(lambda self: self.__gplot)
+    
+    def __init__(self, *args, **kwargs):
+        mwx.Frame.__init__(self, *args, **kwargs)
+        
+        self.__gplot = Gplot()
+        self.panel = ControlPanel(self)
+        
+        self.menubar["Edit"] = [
+            (wx.ID_COPY, "&Copy params\tCtrl-c", "Copy params to clipboard",
+                lambda v: self.panel.copy_to_clipboard()),
+                
+            (wx.ID_PASTE, "&Paste params\tCtrl-v", "Read params from clipboard",
+                lambda v: self.panel.paste_from_clipboard()),
+            (),
+            (wx.ID_RESET, "&Reset params\tCtrl-n", "Reset params to ini-value",
+                lambda v: self.panel.reset_params()),
+        ]
+        self.menubar["Gnuplot"] = [
+            (mwx.ID_(80), "&Gnuplot setting\tCtrl-g", "Edit settings",
+                lambda v: self.__gplot.edit(),
+                lambda v: v.Enable(self.__gplot is not None)),
+                
+            (mwx.ID_(81), "&Reset gnuplot\tCtrl-r", "Reset setting",
+                lambda v: (self.__gplot.reset(),
+                           self.__gplot("replot")),
+                lambda v: v.Enable(self.__gplot is not None)),
+            (),
+            (mwx.ID_(82), "Restart gnuplot", "Restart process",
+                lambda v: (self.__gplot.restart(),
+                           self.__gplot("replot")),
+                lambda v: v.Enable(self.__gplot is not None)),
+        ]
+        self.menubar.reset()
+    
+    def Destroy(self):
+        del self.__gplot
+        return mwx.Frame.Destroy(self)
+
+
 if __name__ == "__main__":
-    from numpy import pi,sin,cos
+    from numpy import pi
     from mwx.controls import LParam
     
     class TestFrame(GplotFrame):
@@ -271,8 +276,14 @@ if __name__ == "__main__":
                 row=1, expand=1, type='slider', cw=-1, lw=32)
             
         def plot(self, par):
-            a,k,p = [x.value for x in self.params]
-            self.gnuplot("plot [:] [-1:1] {:f} * sin({:f} * (x - {:f}))".format(a,k,p))
+            a, k, p = [x.value for x in self.params]
+            try:
+                self.gnuplot("plot [:] [-1:1] "
+                             "{:f} * sin({:f} * (x - {:f}))".format(a,k,p))
+            except Exception as e:
+                print(e)
+                self.statusbar.write("gnuplot fail, try to restart.")
+                self.gnuplot.restart()
     
     app = wx.App()
     frm = TestFrame(None)
