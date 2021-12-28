@@ -716,8 +716,7 @@ class MatplotPanel(wx.Panel):
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
         key = mpl_hotkey(evt)
-        if key:
-            key = mwx.regulate_key(key + '+')
+        key = mwx.regulate_key(key + '+') if key else ''
         key = '{}wheel{}'.format(key, evt.button) # up/down
         self.handler('{} pressed'.format(key), evt)
         self.p_event = None
