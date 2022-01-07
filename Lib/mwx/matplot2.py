@@ -110,7 +110,7 @@ class MatplotPanel(wx.Panel):
         
         ## mpl が取りこぼすイベントを捕まえる
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
-        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_key_drag_press)
+        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_ndrag)
         self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.handler('Xbutton1 pressed', v))
@@ -512,8 +512,8 @@ class MatplotPanel(wx.Panel):
         self.__key = mwx.regulate_key(key + '+')
         self.handler('{} pressed'.format(key), evt) or evt.Skip()
     
-    def on_key_drag_press(self, evt): #<wx._core.KeyEvent>
-        """Called when key down especially in dragging"""
+    def on_hotkey_ndrag(self, evt): #<wx._core.KeyEvent>
+        """Called when key down while dragging"""
         if self.__isDragging:
             self.on_hotkey_press(evt)
     
@@ -524,6 +524,7 @@ class MatplotPanel(wx.Panel):
         self.handler('{} released'.format(key), evt) or evt.Skip()
     
     def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        """Called when the mouse button is pressed"""
         self.p_event = evt
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
@@ -540,6 +541,7 @@ class MatplotPanel(wx.Panel):
             self.handler('{}button pressed'.format(key), evt)
     
     def on_button_release(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        """Called when the mouse button is released"""
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
@@ -558,6 +560,7 @@ class MatplotPanel(wx.Panel):
         self.p_event = None
     
     def on_motion_notify(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        """Called when the mouse is moved"""
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
@@ -584,6 +587,7 @@ class MatplotPanel(wx.Panel):
             self.handler('{} motion'.format(event), evt)
     
     def on_scroll(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        """Called when scrolling the mouse wheel"""
         self.p_event = evt
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
