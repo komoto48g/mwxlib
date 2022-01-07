@@ -32,9 +32,6 @@ PAN, ZOOM = 'Pan', 'Zoom'
 XAXIS, YAXIS = 'Xaxis', 'Yaxis'
 MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 
-hotkey = mwx.hotkey
-regulate_key = mwx.regulate_key
-
 
 class MatplotPanel(wx.Panel):
     """MPL panel for general graph
@@ -113,7 +110,7 @@ class MatplotPanel(wx.Panel):
         
         ## mpl が取りこぼすイベントを捕まえる
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
-        ## self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
+        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_key_drag_press)
         self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.handler('Xbutton1 pressed', v))
@@ -511,13 +508,18 @@ class MatplotPanel(wx.Panel):
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
-        key = hotkey(evt)
-        self.__key = regulate_key(key + '+')
+        key = mwx.hotkey(evt)
+        self.__key = mwx.regulate_key(key + '+')
         self.handler('{} pressed'.format(key), evt) or evt.Skip()
+    
+    def on_key_drag_press(self, evt): #<wx._core.KeyEvent>
+        """Called when key down especially in dragging"""
+        if self.__isDragging:
+            self.on_hotkey_press(evt)
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up"""
-        key = hotkey(evt)
+        key = mwx.hotkey(evt)
         self.__key = ''
         self.handler('{} released'.format(key), evt) or evt.Skip()
     
@@ -526,7 +528,6 @@ class MatplotPanel(wx.Panel):
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
-        ## key = mpl_mousekey(evt)
         key = self.__key
         if evt.button in (1,2,3):
             key += "LMR"[evt.button-1] #{1:L,2:M,3:R}
@@ -542,7 +543,6 @@ class MatplotPanel(wx.Panel):
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
-        ## key = mpl_mousekey(evt)
         key = self.__key
         if evt.button in (1,2,3):
             key += "LMR"[evt.button-1] #{1:L,2:M,3:R}
@@ -562,7 +562,6 @@ class MatplotPanel(wx.Panel):
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
         if evt.button in (1,2,3):
-            ## key = mpl_mousekey(evt)
             key = self.__key + "LMR"[evt.button-1] #{1:L,2:M,3:R}
             
             if self.__isDragging:
