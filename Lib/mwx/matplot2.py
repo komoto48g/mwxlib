@@ -78,10 +78,10 @@ class MatplotPanel(wx.Panel):
         
         self.SetSizer(
             mwx.pack(self,
-                (self.canvas, 1, wx.EXPAND|wx.ALL, 0),
-                (self.infobar, 0, wx.EXPAND|wx.ALL, 0),
-                (self.modeline, 0, wx.EXPAND|wx.ALL, 2),
-                (self.toolbar, 0, wx.EXPAND|wx.ALL, 2),
+                (self.canvas,   1, wx.EXPAND | wx.ALL, 0),
+                (self.infobar,  0, wx.EXPAND | wx.ALL, 0),
+                (self.modeline, 0, wx.EXPAND | wx.ALL, 2),
+                (self.toolbar,  0, wx.EXPAND | wx.ALL, 2),
                 orient = wx.VERTICAL,
             )
         )
@@ -387,7 +387,7 @@ class MatplotPanel(wx.Panel):
     ##     """Save canvas image to file"""
     ##     if not path:
     ##         with wx.FileDialog(self, 'Save Figure as',
-    ##             style = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+    ##             style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
     ##             if dlg.ShowModal() != wx.ID_OK:
     ##                 return
     ##             path = dlg.Path
