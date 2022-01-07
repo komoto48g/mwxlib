@@ -72,16 +72,14 @@ class Plugin(Layer):
             type='slider', style='chkbox', lw=20, tw=40, cw=100, h=22,
         )
         
-        self.textctrl = TextCtrl(self, '',
-                handler=lambda v: self.statusline(v.Value, "enter"),
-                updater=lambda v: self.statusline(v.Value, "update"),
-                value = TextCtrl.__doc__,
-                    tip="this is a textctrl",
-                    icon='v',
-                    size=(200,100),
-                    style=wx.TE_MULTILINE|wx.TE_PROCESS_TAB
-                         |wx.TE_RICH|wx.TE_AUTO_URL)
-        
+        self.textctrl = wx.TextCtrl(self,
+                value=TextCtrl.__doc__,
+                size=(200,100),
+                style=wx.TE_MULTILINE
+                    | wx.TE_PROCESS_TAB
+                    | wx.TE_RICH
+                    | wx.TE_AUTO_URL
+        )
         self.statusline = mwx.StatusBar(self, style=wx.STB_DEFAULT_STYLE)
         
         self.layout(None, (

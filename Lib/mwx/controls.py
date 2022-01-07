@@ -346,7 +346,7 @@ Args:
             if lw > 0:
                 lw += 16
             self.label = pb.PlateButton(self, label=label, size=(lw,-1),
-                            style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
+                            style=pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
             self.label.Bind(wx.EVT_BUTTON, self.OnPress)
             
         elif not style:
@@ -411,14 +411,15 @@ Args:
         else:
             raise Exception("unknown type: {!r}".format(type))
         
-        self.ctrl.Enable(cw)
+        c = bool(cw)
+        self.ctrl.Enable(c)
         self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
         self.SetSizer(
             mwx.pack(self,
-                (self.label, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, lw and 1),
-                (self.text, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, tw and 1),
-                (self.ctrl, cw and 1, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, cw and 1),
+                (self.label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
+                (self.text,  0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, tw and 1),
+                (self.ctrl,  c, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, cw and 1),
             )
         )
         self.update_range()
@@ -700,7 +701,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
         
         objs = [ (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
-            else (c, 1, wx.EXPAND|wx.ALL, 1) if isinstance(c, wx.StaticLine)
+            else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
             else c if c is None
             else c if isinstance(c, tuple)
             else c if isinstance(c, wx.Object)
@@ -719,14 +720,14 @@ class ControlPanel(scrolled.ScrolledPanel):
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 1:
             objs = [mwx.pack(self, *objs[i:i+row], orient=wx.HORIZONTAL,
-                        style=(expand>0, p|wx.LEFT|wx.RIGHT, hspacing))
+                        style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
                             for i in range(0, len(objs), row)]
         
         p = wx.EXPAND if expand > 0 else align
         sizer = mwx.pack(self, *objs, label=title, orient=wx.VERTICAL,
-                    style=(expand>1, p|wx.BOTTOM|wx.TOP, vspacing))
+                    style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
         
-        self.Sizer.Add(sizer, expand>1, p|wx.ALL, border)
+        self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         if fix:
             self.Sizer.Fit(self)
         self.show(-1, visible)
@@ -971,6 +972,8 @@ Args:
         lambda self: self.ctrl.GetValue(),
         lambda self,v: self.ctrl.SetValue(v))
     
+    value = Value # internal use only
+    
     @property
     def icon(self):
         return self.btn.icon
@@ -995,8 +998,8 @@ Args:
         
         self.SetSizer(
             mwx.pack(self,
-                (self.btn, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 0),
-                (self.ctrl, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 0),
+                (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
+                (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             )
         )
         if handler:
@@ -1063,8 +1066,8 @@ Note:
         
         self.SetSizer(
             mwx.pack(self,
-                (self.btn, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 0),
-                (self.ctrl, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 0),
+                (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
+                (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             )
         )
         if handler:
@@ -1226,7 +1229,7 @@ if __name__ == '__main__':
             
             self.layout("V1",
                 self.params,
-                row=1, expand=1, hspacing=1, vspacing=1, show=1, visible=1,
+                row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22, editable=1
             )
             self.layout("V2",

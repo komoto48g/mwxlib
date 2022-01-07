@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.1"
+__version__ = "0.50.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1164,21 +1164,21 @@ def pack(self, *args, **kwargs):
 Usage:
     self.SetSizer(
         pack(self,
-            (label, 0, wx.ALIGN_CENTER|wx.LEFT, 4),
-            ( ctrl, 1, wx.ALIGN_CENTER|wx.LEFT, 4),
+            (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
+            ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
         )
     )
     *args : wx objects `obj (with some packing directives)
           - (obj, 1) -> sized with ratio 1 (orient と同方向)
                         他に 0 以外を指定しているオブジェクトとエリアを分け合う
           - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
-          - (obj, 0, wx.ALIGN_CENTER|wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
+          - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
           - ((-1,-1), 1, wx.EXPAND) -> stretched space
           - (-1,-1) -> padding space
           - None -> phantom
  **kwargs : 
    orient : HORIZONTAL or VERTICAL
-    style : (proportion, flag, border) :default (0, wx.EXPAND|wx.ALL, 0)
+    style : (proportion, flag, border) :default (0, wx.EXPAND | wx.ALL, 0)
             flag-expansion -> EXPAND, SHAPED
             flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
             flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
@@ -1186,7 +1186,7 @@ Usage:
     label : label of StaticBox
     """
     orient = kwargs.get("orient") or wx.HORIZONTAL
-    style = kwargs.get("style") or (0, wx.EXPAND|wx.ALL, 0)
+    style = kwargs.get("style") or (0, wx.EXPAND | wx.ALL, 0)
     label = kwargs.get("label")
     
     if label is not None:
@@ -4188,7 +4188,7 @@ if 1:
     app = wx.App()
     frm = Frame(None,
         title = repr(Frame),
-        style = wx.DEFAULT_FRAME_STYLE, #&~(wx.MINIMIZE_BOX|wx.MAXIMIZE_BOX),
+        style = wx.DEFAULT_FRAME_STYLE, #&~(wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX),
         size=(200,80),
     )
     frm.editor = Editor(frm)
