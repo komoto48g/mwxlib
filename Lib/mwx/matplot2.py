@@ -32,119 +32,8 @@ PAN, ZOOM = 'Pan', 'Zoom'
 XAXIS, YAXIS = 'Xaxis', 'Yaxis'
 MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 
-
-speckeys = {
-    wx.WXK_CANCEL           : 'break',
-    wx.WXK_UP               : 'up',
-    wx.WXK_DOWN             : 'down',
-    wx.WXK_LEFT             : 'left',
-    wx.WXK_RIGHT            : 'right',
-    wx.WXK_RETURN           : 'enter',
-    wx.WXK_TAB              : 'tab',
-    wx.WXK_NUMPAD_UP        : 'up',
-    wx.WXK_NUMPAD_DOWN      : 'down',
-    wx.WXK_NUMPAD_LEFT      : 'left',
-    wx.WXK_NUMPAD_RIGHT     : 'right',
-    wx.WXK_NUMPAD_ENTER     : 'enter',
-    wx.WXK_WINDOWS_LEFT     : 'Lwin',
-    wx.WXK_WINDOWS_RIGHT    : 'Rwin',
-}
-
-## speckeys = mwx.speckeys
-
-def hotkey(evt):
-    """mpl が取りこぼすイベントを捕まえるとそのキーを mpl 形式で返す
-    特殊キー (speckeys) のみに対応し，それ以外は Skip.
-    """
-    key = evt.GetKeyCode()
-    if key not in speckeys:
-        return
-    mod = ""
-    for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
-                (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                (wx.WXK_CONTROL, 'C-'),
-                (wx.WXK_ALT,     'M-'),
-                (wx.WXK_SHIFT,   'S-')):
-        if key != k and wx.GetKeyState(k):
-            mod += v
-    
-    key = speckeys.get(key) or chr(key).lower()
-    evt.key = mod + key
-    return evt.key
-
-
-def mpl_hotkey(evt):
-    """key = A+B+C+K where A,B,C prefix and K the last pressed/released key
-    The modifier key is in [LR]win+C-M-S order (matplotlib)
-        *pressed*           *released*          *mod*
-        -------------------------------------------------------
-    C   ctrl+control        control         ->  ctrl
-    M   alt+alt             alt             ->  alt
-    S   shift               shift           ->  shift
-  C-M   ctrl+alt+alt        ctrl+alt        ->  ctrl+alt
-  M-C   ctrl+alt+control    alt+control     ->  alt+ctrl
-  C-S   ctrl+shift          ctrl+shift      ->  ctrl+shift
-  M-S   alt+shift           alt+shift       ->  alt+shift
-C-M-S   ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
-        -------------------------------------------------------
-    Note: key = shift+M (M:modifier) => M
-    Note: matplotlib (>= 3.4.x) changed the mod order to S-M-C.
-    """
-    key = evt.key
-    
-    if key is not None:
-        ## matplot 3.2.x --> 3.4.x 対応
-        if key.startswith('shift+'):
-            key = key[6:]
-        if key == 'alt+ctrl+alt':
-            key = 'ctrl+alt'
-    
-    if   key == 'control':          key = 'ctrl'
-    elif key == 'ctrl+control':     key = 'ctrl'
-    elif key == 'alt+alt':          key = 'alt'
-    elif key == 'ctrl+alt+alt':     key = 'ctrl+alt'
-    elif key == 'ctrl+alt+control': key = 'alt+ctrl'
-    elif key == 'alt+control':      key = 'alt+ctrl'
-    
-    if key is not None:
-        if key[-1:] == '\0': return None
-        if key[-1:] == '\t': key = key[:-1] + 'tab'
-        if key[-1:] == ' ' : key = key[:-1] + 'space'
-        
-        if key[-4:] in ('none', 'None'): # when alt+ win, appskey, etc.
-            key = key[:-4] + '?'
-        
-        ## shift キーが押されている場合 `shift+(小文字)` に変換する
-        if wx.GetKeyState(wx.WXK_SHIFT) and 'shift' not in key:
-            if key and key[-1] == '+':
-                key = key[:-1] + 'shift++'
-            else:
-                j = key.rfind('+') + 1
-                key = key[:j] + 'shift+' + key[j:].lower()
-        
-        if wx.GetKeyState(wx.WXK_WINDOWS_RIGHT) and 'Rwin' not in key:
-            key = 'Rwin-' + key
-        
-        if wx.GetKeyState(wx.WXK_WINDOWS_LEFT) and 'Lwin' not in key:
-            key = 'Lwin-' + key
-        
-        ## matplot 3.2.x --> 3.4.x 対応
-        key = key.replace("alt+ctrl+", "ctrl+alt+")
-        
-        ## 0.51rc 暫定対応
-        key = mwx.regulate_key(key)
-        
-    evt.key = key
-    return key
-
-
-def mpl_mousekey(evt):
-    if evt.button in (1,2,3):
-        btn = "LMR"[evt.button-1] #{1:L,2:M,3:R}
-        key = mpl_hotkey(evt)
-        if key:
-            return mwx.regulate_key(key + '+') + btn
-        return btn
+hotkey = mwx.hotkey
+regulate_key = mwx.regulate_key
 
 
 class MatplotPanel(wx.Panel):
@@ -168,17 +57,6 @@ class MatplotPanel(wx.Panel):
         
         #<matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
         self.canvas = FigureCanvas(self, -1, self.figure)
-        
-        ## EVT_CHAR_HOOK is not triggered when mouse is captured.
-        ## We should change it to EVT_KEY_DOWN (matplotlib < 3.4)
-        try:
-            ## from packaging.version import parse
-            parse = matplotlib.parse_version
-            if parse(matplotlib.__version__) >= parse('3.4'):
-                self.canvas.Unbind(wx.EVT_CHAR_HOOK)
-                self.canvas.Bind(wx.EVT_KEY_DOWN, self.canvas._onKeyDown)
-        except AttributeError:
-            pass
         
         ## To avoid AssertionError('self._cachedRenderer is not None')
         ## To avoid AttributeError("draw_artist can only be used after an "
@@ -220,8 +98,8 @@ class MatplotPanel(wx.Panel):
         ## 後方優先でイベントハンドラが呼び出される
         self.canvas.mpl_connect('pick_event', self.on_pick)
         self.canvas.mpl_connect('scroll_event', self.on_scroll)
-        self.canvas.mpl_connect('key_press_event', self.on_key_press)
-        self.canvas.mpl_connect('key_release_event', self.on_key_release)
+        ## self.canvas.mpl_connect('key_press_event', self.on_key_press)
+        ## self.canvas.mpl_connect('key_release_event', self.on_key_release)
         self.canvas.mpl_connect('button_press_event', self.on_button_press)
         self.canvas.mpl_connect('button_release_event', self.on_button_release)
         self.canvas.mpl_connect('motion_notify_event', self.on_motion_notify)
@@ -252,6 +130,7 @@ class MatplotPanel(wx.Panel):
         
         def fork(v):
             self.handler.fork(v)
+            v.Skip()
         
         self.__handler = mwx.FSM({ #<MatplotPanel.handler>
                 None : {
@@ -379,6 +258,7 @@ class MatplotPanel(wx.Panel):
             ##     lambda v: self.save_to_file()),
         ]
         
+        self.__key = ''
         self.__isMenu = None
         self.__isPressed = None
         self.__isDragging = False # True if dragging. (None if dblclicked)
@@ -630,39 +510,27 @@ class MatplotPanel(wx.Panel):
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
-        """Catch the event that mpl won't catch"""
+        """Called when key down"""
         key = hotkey(evt)
-        if key:
-            self.handler('{} pressed'.format(key), evt) or evt.Skip()
-        else:
-            evt.Skip() # skip to mpl:on_key_press
+        self.__key = regulate_key(key + '+')
+        self.handler('{} pressed'.format(key), evt) or evt.Skip()
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
-        """Catch the event that mpl won't catch"""
+        """Called when key up"""
         key = hotkey(evt)
-        if key:
-            self.handler('{} released'.format(key), evt) or evt.Skip()
-        else:
-            evt.Skip() # skip to mpl:on_key_release
-    
-    def on_key_press(self, evt): #<matplotlib.backend_bases.KeyEvent>
-        """mpl key_press_event"""
-        key = mpl_hotkey(evt)
-        if key:
-            self.handler('{} pressed'.format(key), evt)
-    
-    def on_key_release(self, evt): #<matplotlib.backend_bases.KeyEvent>
-        """mpl key_release_event"""
-        key = mpl_hotkey(evt)
-        if key:
-            self.handler('{} released'.format(key), evt)
+        self.__key = ''
+        self.handler('{} released'.format(key), evt) or evt.Skip()
     
     def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
         self.p_event = evt
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
-        key = mpl_mousekey(evt)
+        ## key = mpl_mousekey(evt)
+        key = self.__key
+        if evt.button in (1,2,3):
+            key += "LMR"[evt.button-1] #{1:L,2:M,3:R}
+        
         if evt.dblclick:
             self.__isDragging = None
             self.handler('{}button dclick'.format(key), evt)
@@ -674,7 +542,11 @@ class MatplotPanel(wx.Panel):
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
-        key = mpl_mousekey(evt)
+        ## key = mpl_mousekey(evt)
+        key = self.__key
+        if evt.button in (1,2,3):
+            key += "LMR"[evt.button-1] #{1:L,2:M,3:R}
+        
         if self.__isDragging:
             self.__isDragging = False
             self.handler('{}drag end'.format(key), evt)
@@ -690,7 +562,9 @@ class MatplotPanel(wx.Panel):
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
         if evt.button in (1,2,3):
-            key = mpl_mousekey(evt)
+            ## key = mpl_mousekey(evt)
+            key = self.__key + "LMR"[evt.button-1] #{1:L,2:M,3:R}
+            
             if self.__isDragging:
                 self.handler('{}drag move'.format(key), evt)
             else:
@@ -715,11 +589,10 @@ class MatplotPanel(wx.Panel):
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
-        key = mpl_hotkey(evt)
-        key = mwx.regulate_key(key + '+') if key else ''
-        key = '{}wheel{}'.format(key, evt.button) # up/down
+        key = self.__key + 'wheel{}'.format(evt.button) # up/down
         self.handler('{} pressed'.format(key), evt)
         self.p_event = None
+        self.__key = ''
     
     ## --------------------------------
     ## Pan/Zoom actions 
