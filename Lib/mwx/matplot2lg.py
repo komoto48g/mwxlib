@@ -389,36 +389,36 @@ class LineProfile(LinePlot):
                  'left pressed' : [ None, self.OnRegionShift ],
                 'right pressed' : [ None, self.OnRegionShift ],
                  '[+-] pressed' : [ None, self.OnLineWidth ], # [+-] using numpad
-           'shift+[;-] pressed' : [ None, self.OnLineWidth ], # [+-] using JP-keyboard
+               'S-[;-] pressed' : [ None, self.OnLineWidth ], # [+-] using JP-keyboard
             },
             NORMAL : {
-        'shift+Lbutton pressed' : (LINE, self.OnDragLock, self.OnRegionLock),
-          'alt+Lbutton pressed' : (MARK, self.OnDragLock, self.OnMarkPeaks),
+            'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnRegionLock),
+            'M-Lbutton pressed' : (MARK, self.OnDragLock, self.OnMarkPeaks),
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },
             REGION : {
                 'shift pressed' : (REGION+LINE, self.OnRegionLock),
-             'shift+Ldrag move' : (REGION+LINE, self.OnRegionLock),
-               'alt+Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
+                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
+                 'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
                   '*Ldrag move' : (REGION, self.OnDragMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             LINE: {
                    '* released' : (NORMAL, ),
-            'shift+Ldrag begin' : (REGION+LINE, self.OnDragLineBegin),
+                'S-Ldrag begin' : (REGION+LINE, self.OnDragLineBegin),
             },
             REGION+LINE : {
-             'shift+Ldrag move' : (REGION+LINE, self.OnRegionLock),
+                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
                   '*Ldrag move' : (REGION, self.OnDragMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             MARK : {
                    '* released' : (NORMAL, self.OnMarkErase),
-              'alt+Ldrag begin' : (REGION+MARK, self.OnMarkSelectionBegin),
+                'M-Ldrag begin' : (REGION+MARK, self.OnMarkSelectionBegin),
             },
             REGION+MARK : {
-               'alt+Ldrag move' : (REGION+MARK, self.OnMarkSelectionMove),
+                 'M-Ldrag move' : (REGION+MARK, self.OnMarkSelectionMove),
                   '*Ldrag move' : (REGION, self.OnDragMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },

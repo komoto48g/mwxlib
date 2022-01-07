@@ -62,9 +62,9 @@ def hotkey(evt):
     mod = ""
     for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
                 (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                (wx.WXK_CONTROL, 'ctrl+'),
-                (wx.WXK_ALT,     'alt+'),
-                (wx.WXK_SHIFT,   'shift+')):
+                (wx.WXK_CONTROL, 'C-'),
+                (wx.WXK_ALT,     'M-'),
+                (wx.WXK_SHIFT,   'S-')):
         if key != k and wx.GetKeyState(k):
             mod += v
     
@@ -131,6 +131,9 @@ C-M-S   ctrl+alt+shift      ctrl+alt+shift  ->  ctrl+alt+shift
         ## matplot 3.2.x --> 3.4.x 対応
         key = key.replace("alt+ctrl+", "ctrl+alt+")
         
+        ## 0.51rc 暫定対応
+        key = mwx.regulate_key(key)
+        
     evt.key = key
     return key
 
@@ -140,7 +143,7 @@ def mpl_mousekey(evt):
         btn = "LMR"[evt.button-1] #{1:L,2:M,3:R}
         key = mpl_hotkey(evt)
         if key:
-            return key + '+' + btn
+            return mwx.regulate_key(key + '+') + btn
         return btn
 
 
@@ -263,11 +266,11 @@ class MatplotPanel(wx.Panel):
                    'axes_leave' : [ None, ],
                  'home pressed' : [ None, self.OnHomePosition ],
             'backspace pressed' : [ None, self.OnBackPosition ],
-        'alt+backspace pressed' : [ None, self.OnForwardPosition ],
+          'M-backspace pressed' : [ None, self.OnForwardPosition ],
              'Xbutton1 pressed' : [ None, self.OnBackPosition ],
              'Xbutton2 pressed' : [ None, self.OnForwardPosition ],
-                'alt+p pressed' : [ None, self.OnBackPosition ],
-                'alt+n pressed' : [ None, self.OnForwardPosition ],
+                  'M-p pressed' : [ None, self.OnBackPosition ],
+                  'M-n pressed' : [ None, self.OnForwardPosition ],
                 },
                 NORMAL : {
                    'art_picked' : (NORMAL, ),
@@ -283,14 +286,10 @@ class MatplotPanel(wx.Panel):
                 'y2axis motion' : (YAXIS, self.OnAxisEnter),
                 },
                 PAN : {
-          'ctrl+wheel* pressed' : (PAN, self.OnScrollZoom),
-              ## 'ctrl+up pressed' : (PAN, self.OnShiftLimit),
-            ## 'ctrl+down pressed' : (PAN, self.OnShiftLimit),
-            ## 'ctrl+left pressed' : (PAN, self.OnShiftLimit),
-           ## 'ctrl+right pressed' : (PAN, self.OnShiftLimit),
-           'ctrl+[+;-] pressed' : (PAN, self.OnZoom),
-     'ctrl+shift+[+;-] pressed' : (PAN, self.OnZoom),
-     'ctrl+*[LR]button pressed' : (PAN+DRAGGING, ),
+             'C-wheel* pressed' : (PAN, self.OnScrollZoom),
+              'C-[+;-] pressed' : (PAN, self.OnZoom),
+            'C-S-[+;-] pressed' : (PAN, self.OnZoom),
+        'C-*[LR]button pressed' : (PAN+DRAGGING, ),
      'space+[LR]button pressed' : (PAN+DRAGGING, ),
               '*[LR]drag begin' : (PAN+DRAGGING, ),
                 'ctrl released' : (NORMAL, self.OnPanEnd),
@@ -298,8 +297,8 @@ class MatplotPanel(wx.Panel):
                  'figure_leave' : (NORMAL, self.OnPanEnd),
                    'axes_leave' : (NORMAL, self.OnPanEnd),
                    'focus_kill' : (NORMAL, self.OnPanEnd),
-               'ctrl+* pressed' : (NORMAL, fork, self.OnPanEnd),
-           'ctrl+shift pressed' : (PAN, ),
+                  'C-* pressed' : (NORMAL, fork, self.OnPanEnd),
+              'C-shift pressed' : (PAN, ),
                 },
                 PAN+DRAGGING : {
                 '*[LR]drag end' : (NORMAL, self.OnPanEnd, self.draw),
@@ -327,8 +326,8 @@ class MatplotPanel(wx.Panel):
                 XAXIS+DRAGGING : {
                    'Ldrag move' : (XAXIS+DRAGGING, self.OnXAxisPanMove),
                   '*Rdrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoom),
-              'ctrl+Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoom),
-        'ctrl+shift+Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoomOrig),
+                 'C-Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoom),
+               'C-S-Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoomOrig),
                  'ctrl pressed' : (XAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                    '*Ldrag end' : (XAXIS, self.OnAxisDragEnd),
                    '*Rdrag end' : (XAXIS, self.OnAxisDragEnd),
@@ -336,8 +335,8 @@ class MatplotPanel(wx.Panel):
                 XAXIS+ZOOM+DRAGGING : {
                    'Ldrag move' : (XAXIS+DRAGGING, self.OnXAxisPanMove),
                   '*Rdrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoom),
-              'ctrl+Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoom),
-        'ctrl+shift+Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoomOrig),
+                 'C-Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoom),
+               'C-S-Ldrag move' : (XAXIS+ZOOM+DRAGGING, self.OnXAxisPanZoomOrig),
                 'ctrl released' : (XAXIS+DRAGGING, self.OnAxisDragBegin),
                    '*Ldrag end' : (XAXIS, self.OnAxisDragEnd),
                    '*Rdrag end' : (XAXIS, self.OnAxisDragEnd),
@@ -353,8 +352,8 @@ class MatplotPanel(wx.Panel):
                 YAXIS+DRAGGING : {
                    'Ldrag move' : (YAXIS+DRAGGING, self.OnYAxisPanMove),
                   '*Rdrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoom),
-              'ctrl+Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoom),
-        'ctrl+shift+Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoomOrig),
+                 'C-Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoom),
+               'C-S-Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoomOrig),
                  'ctrl pressed' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                    '*Ldrag end' : (YAXIS, self.OnAxisDragEnd),
                    '*Rdrag end' : (YAXIS, self.OnAxisDragEnd),
@@ -362,8 +361,8 @@ class MatplotPanel(wx.Panel):
                 YAXIS+ZOOM+DRAGGING : {
                    'Ldrag move' : (YAXIS+DRAGGING, self.OnYAxisPanMove),
                   '*Rdrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoom),
-              'ctrl+Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoom),
-        'ctrl+shift+Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoomOrig),
+                 'C-Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoom),
+               'C-S-Ldrag move' : (YAXIS+ZOOM+DRAGGING, self.OnYAxisPanZoomOrig),
                 'ctrl released' : (YAXIS+DRAGGING, self.OnAxisDragBegin),
                    '*Ldrag end' : (YAXIS, self.OnAxisDragEnd),
                    '*Rdrag end' : (YAXIS, self.OnAxisDragEnd),
@@ -717,7 +716,8 @@ class MatplotPanel(wx.Panel):
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
         key = mpl_hotkey(evt)
-        key = '{}wheel{}'.format((key + '+') if key else '', evt.button) # up/down
+        key = mwx.regulate_key(key + '+') if key else ''
+        key = '{}wheel{}'.format(key, evt.button) # up/down
         self.handler('{} pressed'.format(key), evt)
         self.p_event = None
     
