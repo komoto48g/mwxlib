@@ -578,7 +578,8 @@ Attributes:
                     a = '' if not actions else ('=> ' + actions)))
         
         if v > 7: # max verbose level puts all args
-            self.log(args, kwargs)
+            self.log("\t:", *args)
+            self.log("\t:", kwargs)
     
     @staticmethod
     def log(*args):
@@ -1609,14 +1610,12 @@ Global bindings:
     debugger = property(lambda self: self.__debugger)
     monitor = property(lambda self: self.__monitor)
     
-    ## shell = rootshell # for backward-compatibility
-    
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         if target is None:
-            target = parent or self #__import__('__main__')
+            target = parent or __import__('__main__')
         
         self.Title = title or "Nautilus - {!r}".format(target)
         
@@ -3378,11 +3377,16 @@ Flaky nutshell:
         def debug(obj, *args, **kwargs):
             if callable(obj):
                 self.parent.debugger.trace(obj, *args, **kwargs)
-            elif isinstance(obj, wx.Object):
-                self.parent.monitor.watch(obj)
             else:
                 print("- cannot debug {!r}".format(obj))
         builtins.debug = debug
+        
+        def monitor(obj):
+            if isinstance(obj, wx.Object):
+                self.parent.monitor.watch(obj)
+            else:
+                print("- cannot monitor {!r}".format(obj))
+        builtins.monitor = monitor
         
         def dump(obj):
             if isinstance(obj, wx.Object):
@@ -4115,7 +4119,7 @@ def deb(target=None, app=None, startup=None, **kwargs):
 
 Note:
     PyNoAppError will be raised when the App is missing in process.
-    When this may cause bad traceback, please restart.
+    When it may cause bad traceback, please restart.
     """
     if app is None:
         app = wx.GetApp() or wx.App()
