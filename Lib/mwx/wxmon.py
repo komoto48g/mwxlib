@@ -85,11 +85,7 @@ Args:
         10018, # other command menu?
     ]
     
-    target = property(
-        lambda self: self.__watchedWidget,
-        lambda self,v: self.watch(v),
-        lambda self: self.unwatch()
-    )
+    target = property(lambda self: self.__watchedWidget)
     
     def watchedEvents(self):
         """All watched events except noWatchList"""
@@ -111,6 +107,8 @@ Args:
     
     def watch(self, widget):
         """Begin watching"""
+        if not isinstance(widget, wx.Object):
+            return
         self.unwatch()
         self.lctr.clear()
         self.__watchedWidget = widget
@@ -128,7 +126,7 @@ Args:
             ## self.__inspector.handler("remove_page", self)
             self.shell.handler("monitor_end", self.target)
         for binder in self.watchedEvents():
-            if not self.__watchedWidget.Unbind(binder, handler=self.onWatchedEvent):
+            if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
         self.__watchedWidget = None
     
@@ -140,6 +138,8 @@ Args:
     @staticmethod
     def dump(widget, verbose=True):
         """Dump all event handlers bound to the watched widget"""
+        if not isinstance(widget, wx.Object):
+            return
         if not hasattr(widget, '__event_handler__'):
             ## print("- No handler bound to {}".format(widget))
             return {}
