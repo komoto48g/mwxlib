@@ -398,7 +398,6 @@ class LineProfile(LinePlot):
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },
             REGION : {
-                'shift pressed' : (REGION+LINE, self.OnRegionLock),
                  'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
                  'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
                   '*Ldrag move' : (REGION, self.OnDragMove),
@@ -738,7 +737,7 @@ if __name__ == '__main__':
     app = wx.App()
     frm = mwx.Frame(None, title="Graph", size=(300,300))
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=None)
-    frm.graph.handler.debug = 4
+    frm.graph.handler.debug = 0
     
     frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
     frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample_diff.bmp"), "circ")
@@ -748,7 +747,7 @@ if __name__ == '__main__':
     if 1:
         lfrm = mwx.Frame(None, title='Line')
         lfrm.graph = LinePlot(lfrm, log=lfrm.statusbar, size=(200,100))
-        lfrm.graph.handler.debug = 0
+        lfrm.graph.handler.debug = 4
         _plot(lfrm.graph.axes)
         lfrm.graph.update_position()
         lfrm.Show()
@@ -757,13 +756,13 @@ if __name__ == '__main__':
         hfrm.graph = Histogram(hfrm, log=hfrm.statusbar, size=(200,100))
         hfrm.graph.modeline.Show(1)
         hfrm.graph.attach(frm.graph)
-        hfrm.graph.handler.debug = 0
+        hfrm.graph.handler.debug = 4
         hfrm.Show()
     if 1:
         lpf = mwx.Frame(None, title="Line profile")
         lpf.graph = LineProfile(lpf, log=lpf.statusbar, size=(200,100))
         lpf.graph.attach(frm.graph)
-        lpf.graph.handler.debug = 0
+        lpf.graph.handler.debug = 4
         lpf.Show()
     
     app.MainLoop()
