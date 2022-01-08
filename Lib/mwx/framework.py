@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.2"
+__version__ = "0.50.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1628,7 +1628,7 @@ Global bindings:
         self.History = Editor(self)
         
         self.__shell = Nautilus(self, target,
-            style = wx.CLIP_CHILDREN | wx.BORDER_NONE, **kwargs)
+            style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
         
         try:
             from wxpdb import Debugger
@@ -1645,8 +1645,8 @@ Global bindings:
         self.__monitor.Show(0)
         
         self.console = aui.AuiNotebook(self, size=(600,400),
-            style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                  &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+            style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.console.AddPage(self.__shell, "root")
         self.console.TabCtrlHeight = 0
@@ -1655,8 +1655,8 @@ Global bindings:
         self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleTabClose)
         
         self.ghost = aui.AuiNotebook(self, size=(600,400),
-            style = (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                  &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+            style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
@@ -1982,7 +1982,7 @@ Global bindings:
         win = self.current_editor
         self.findData.FindString = win.topic_at_caret
         self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
-                            style=wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN)
+                            style=(wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN))
         self.findDlg.Show()
     
     def OnFindNext(self, evt, backward=False): #<wx._core.FindDialogEvent>
@@ -2174,7 +2174,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.__mark = None
     
     ## custom constants embedded in stc
-    stc.STC_P_WORD3 = 16
+    stc.STC_P_WORD3 = 20
     
     mark = property(
         lambda self: self.get_mark(),
@@ -2595,7 +2595,7 @@ class Editor(EditWindow, EditorInterface):
         "STC_P_STRINGEOL"       : "fore:#7f7f7f",
         "STC_P_WORD"            : "fore:#0000ff",
         "STC_P_WORD2"           : "fore:#b8007f",
-        "STC_P_WORD3"           : "fore:#ff0000,back:#ffff00", # custom style for search word
+        "STC_P_WORD3"           : "fore:#ff0000,back:#ffff00", # optional for search word
         "STC_P_DEFNAME"         : "fore:#0000ff,bold",
         "STC_P_CLASSNAME"       : "fore:#0000ff,bold",
         "STC_P_DECORATOR"       : "fore:#e08040",
@@ -4191,8 +4191,8 @@ if 1:
     
     app = wx.App()
     frm = Frame(None,
-        title = repr(Frame),
-        style = wx.DEFAULT_FRAME_STYLE, #&~(wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX),
+        title=repr(Frame),
+        style=wx.DEFAULT_FRAME_STYLE, #&~(wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX),
         size=(200,80),
     )
     frm.editor = Editor(frm)

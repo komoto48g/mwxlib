@@ -110,11 +110,11 @@ Note:
         try:
             self.__flag.clear()
             if wx.MessageBox(msg + "\n\n"
-                "Press [OK] to continue.\n"
-                "Press [CANCEL] to terminate the process.",
-                style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
-                    ## self.Stop() # 必要があれば呼び出し側で行う
-                    return False
+                    "Press [OK] to continue.\n"
+                    "Press [CANCEL] to terminate the process.",
+                    style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
+                ## self.Stop() # caller should stop if necessary
+                return False
             return True
         finally:
             self.__flag.set()
@@ -558,15 +558,15 @@ class Frame(mwx.Frame):
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
         
         ## self._mgr.SetAutoNotebookStyle(
-        ##     agwStyle = ( aui.AUI_NB_SMART_TABS
-        ##                | aui.AUI_NB_TAB_MOVE
-        ##                | aui.AUI_NB_TAB_SPLIT
-        ##                | aui.AUI_NB_TAB_FLOAT
-        ##                | aui.AUI_NB_TAB_EXTERNAL_MOVE
-        ##                | aui.AUI_NB_SCROLL_BUTTONS )
-        ##                &~( aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-        ##                  | aui.AUI_NB_CLOSE_BUTTON
-        ##                  | aui.AUI_NB_SUB_NOTEBOOK )
+        ##     agwStyle=(aui.AUI_NB_SMART_TABS
+        ##             | aui.AUI_NB_TAB_MOVE
+        ##             | aui.AUI_NB_TAB_SPLIT
+        ##             | aui.AUI_NB_TAB_FLOAT
+        ##             | aui.AUI_NB_TAB_EXTERNAL_MOVE
+        ##             | aui.AUI_NB_SCROLL_BUTTONS)
+        ##             &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        ##              | aui.AUI_NB_CLOSE_BUTTON
+        ##              | aui.AUI_NB_SUB_NOTEBOOK)
         ## )
         
         self.__plugins = OrderedDict() # modules in the order of load/save
@@ -774,17 +774,19 @@ class Frame(mwx.Frame):
         subprocess.Popen('{} "{}"'.format(self.Editor, f))
     
     def OnShowFrame(self, frame):
-        session_name,_ext = os.path.splitext(os.path.basename(self.session_file or '--'))
+        ssn = os.path.basename(self.session_file or '--')
+        session_name,_ext = os.path.splitext(ssn)
         self.SetTitle("{}@{} - [{}] {}".format(
             self.__class__.__name__, platform.node(), session_name,
             (frame.pathname or frame.name) if frame else '',
         ))
     
     def OnCloseFrame(self, evt): #<wx._core.CloseEvent>
-        with wx.MessageDialog(None, "Do you want to save session before closing program?",
-            "{}@{} - [{}]".format(self.__class__.__name__,
-                            platform.node(), os.path.basename(self.session_file or '--')),
-            style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
+        ssn = os.path.basename(self.session_file or '--')
+        with wx.MessageDialog(None,
+                "Do you want to save session before closing program?",
+                "{}@{} - [{}]".format(self.__class__.__name__, platform.node(), ssn),
+                style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
             ret = dlg.ShowModal()
             if ret == wx.ID_YES:
                 if not self.save_session():
@@ -1112,8 +1114,8 @@ class Frame(mwx.Frame):
                 else:
                     size = plug.GetSize() + (2,30)
                     nb = aui.AuiNotebook(self,
-                        style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_BOTTOM)
-                              &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+                        style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                            &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
                     
                     nb.AddPage(plug, caption)
                     ## nb.TabCtrlHeight = -1
@@ -1135,11 +1137,12 @@ class Frame(mwx.Frame):
                     
                     @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGING)
                     def on_page_changing(evt):
-                        plug = nb.GetPage(evt.Selection) #<-- nb.CurrentPage
+                        plug = nb.GetPage(evt.Selection) # <-- nb.CurrentPage
                         if nb.CurrentPage:
                             if nb.CurrentPage is not plug:
                                 nb.CurrentPage.handler('pane_hidden')
-                        evt.Skip() # must skip to the next handler, but called twice when click?
+                        evt.Skip() # skip to the next handler
+                                   # but called twice when click?
                 
                 j = nb.GetPageIndex(plug)
                 nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))

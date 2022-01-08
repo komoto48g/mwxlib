@@ -387,7 +387,7 @@ class MatplotPanel(wx.Panel):
     ##     """Save canvas image to file"""
     ##     if not path:
     ##         with wx.FileDialog(self, 'Save Figure as',
-    ##             style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
+    ##             style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
     ##             if dlg.ShowModal() != wx.ID_OK:
     ##                 return
     ##             path = dlg.Path

@@ -346,7 +346,7 @@ Args:
             if lw > 0:
                 lw += 16
             self.label = pb.PlateButton(self, label=label, size=(lw,-1),
-                            style=pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
+                            style=(pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE))
             self.label.Bind(wx.EVT_BUTTON, self.OnPress)
             
         elif not style:

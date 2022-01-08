@@ -222,7 +222,8 @@ class EventLogger(_ListCtrl):
     keys = property(lambda self: [item[0] for item in self.__items])
     
     def __init__(self, parent, **kwargs):
-        _ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        _ListCtrl.__init__(self, parent,
+                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
         self.parent = parent
         
