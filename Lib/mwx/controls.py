@@ -679,13 +679,13 @@ class ControlPanel(scrolled.ScrolledPanel):
             self.Layout()
             self.Parent.SendSizeEvent() # let parent redraw the child panel
     
-    def layout(self, title, objs,
+    def layout(self, objs, title=None,
                row=1, expand=0, border=2, hspacing=1, vspacing=1,
                show=True, visible=True, fix=True, align=wx.ALIGN_LEFT,
                **kwargs):
         """Do layout (cf. Layout) using mwx.pack
         
-        title : box header string
+        title : box header string (default is None - no box)
          objs : list of Params, wx.Objects, tuple of sizing, or None
           row : number of row to arange widgets
          show : fold or unfold the boxed group
@@ -699,6 +699,13 @@ class ControlPanel(scrolled.ScrolledPanel):
      **kwargs : extra keyword arguments given for Knob
         """
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
+        
+        ## for backward-compatibility
+        if objs is None or isinstance(objs, LITERAL_TYPE):
+            import warnings
+            warnings.warn("Use layout:objs as the first arg.",
+                          DeprecationWarning, stacklevel=2)
+            objs, title = title, objs
         
         objs = [ (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
             else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
@@ -890,7 +897,8 @@ Args:
         self.SetBitmap(Icon(v))
         self.Refresh()
     
-    def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
+    def __init__(self, parent, label='',
+                 handler=None, icon=None, tip='', **kwargs):
         kwargs['style'] = kwargs.get('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
@@ -940,7 +948,8 @@ Note:
         self.SetBitmap(Icon(v))
         self.Refresh()
     
-    def __init__(self, parent, label='', handler=None, icon=None, tip='', **kwargs):
+    def __init__(self, parent, label='',
+                 handler=None, icon=None, tip='', **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
@@ -1050,7 +1059,8 @@ Note:
     def icon(self, v):
         self.btn.icon = v
     
-    def __init__(self, parent, label='', handler=None, updater=None,
+    def __init__(self, parent, label='',
+                 handler=None, updater=None,
                  icon=None, tip='', readonly=0, selection=None, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
@@ -1227,24 +1237,24 @@ if __name__ == '__main__':
             def p(item):
                 print(item)
             
-            self.layout("V1",
-                self.params,
+            self.layout(
+                self.params, title="V1",
                 row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22, editable=1
             )
-            self.layout("V2",
-                self.params,
+            self.layout(
+                self.params, title="V2",
                 row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
                 type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
             )
-            ## self.layout("types", (
+            ## self.layout((
             ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
-            ##     for type in (
-            ##         'vspin',
-            ##         'hspin',
-            ##         'choice',
-            ##         'slider',
-            ##         )
+            ##         for type in (
+            ##             'vspin',
+            ##             'hspin',
+            ##             'choice',
+            ##             'slider',
+            ##             )
             ##     ),
             ##     row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
             ## )

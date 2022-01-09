@@ -272,7 +272,7 @@ if __name__ == "__main__":
             for lp in self.params:
                 lp.bind(self.plot)
             
-            self.panel.layout("paramtres", self.params,
+            self.panel.layout(self.params,
                 row=1, expand=1, type='slider', cw=-1, lw=32)
             
         def plot(self, par):
