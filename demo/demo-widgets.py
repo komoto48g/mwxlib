@@ -19,40 +19,41 @@ class Plugin(Layer):
             "trace event"
             print(v)
         
-        self.layout('Custom controls', (
+        self.layout((
             Button(self, label="button",
                 handler=trace,
-                    tip="this is a button",
-                    icon='v',
-                    size=(100,-1)),
+                tip="this is a button",
+                icon='v',
+                size=(100,-1)),
             
             ToggleButton(self, label="toggle-button",
                 handler=lambda v: self.statusline(v.GetInt(), v.IsChecked(), "checked"),
-                    tip="this is a toggle-button",
-                    icon=('w','v'),
-                    size=(100,-1)),
+                tip="this is a toggle-button",
+                icon=('w','v'),
+                size=(100,-1)),
             
             ## wx.StaticLine(self, size=(200,-1)),
             (),
             TextCtrl(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.Value, "enter"),
                 updater=lambda v: self.statusline(v.Value, "update"),
-                    tip="this is a textctrl",
-                    icon=wx.ART_NEW,
-                    readonly=0,
-                    value="default value",
-                    size=(200,22)),
+                tip="this is a textctrl",
+                icon=wx.ART_NEW,
+                readonly=0,
+                value="default value",
+                size=(200,22)),
             (),
             Choice(self, label="ctrl label",
                 handler=lambda v: self.statusline(v.Value, "selected"),
                 updater=lambda v: self.statusline(v.Value, "update"),
                 choices=['1','2','3'],
-                    tip="this is a choice",
-                    icon=wx.ART_NEW,
-                    readonly=0,
-                    selection=0,
-                    size=(200,22)),
+                tip="this is a choice",
+                icon=wx.ART_NEW,
+                readonly=0,
+                selection=0,
+                size=(200,22)),
             ),
+            title="Custom controls",
             row=2, expand=0,
         )
         self.LP =  LParam('L', (-1,1,0.01), 0, handler=print,
@@ -64,10 +65,11 @@ class Plugin(Layer):
         
         self.P = Param('U', (1,2,3,inf), handler=print)
         
-        self.layout('Custom param controls', (
-            self.LP,
-            self.P,
+        self.layout((
+                self.LP,
+                self.P,
             ),
+            title="Custom param controls",
             row=1, expand=1, show=1, 
             type='slider', style='chkbox', lw=20, tw=40, cw=100, h=22,
         )
@@ -82,9 +84,9 @@ class Plugin(Layer):
         )
         self.statusline = mwx.StatusBar(self, style=wx.STB_DEFAULT_STYLE)
         
-        self.layout(None, (
-            self.textctrl,
-            self.statusline,
+        self.layout((
+                self.textctrl,
+                self.statusline,
             ),
             row=1, expand=2, border=0,
         )

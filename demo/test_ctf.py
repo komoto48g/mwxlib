@@ -15,10 +15,10 @@ class Plugin(Layer):
     def Init(self):
         self.Df = LParam('df[nm]', (-500, 500, 0.1), 200.0, updater=self.sherzerf)
         self.Cs = LParam('cs[mm]', (-5, 5, 0.01), 0.0)
-        self.layout(None, (
-            self.Df,
-            self.Cs,
-            Button(self, "Run", lambda v: self.run()),
+        self.layout((
+                self.Df,
+                self.Cs,
+                Button(self, "Run", lambda v: self.run()),
             ),
             type=None, style='button', lw=40, tw=40
         )

@@ -19,10 +19,10 @@ class Plugin(Layer):
         self.btn = Button(self, label="", icon="v")
         self.param = LParam("value", (0,self.g1.Range,1), 0)
         
-        self.layout(None, (
-            (self.btn, 0), self.g1,
-            (self.sig, 0), self.g2,
-            self.param,
+        self.layout((
+                (self.btn, 0), self.g1,
+                (self.sig, 0), self.g2,
+                self.param,
             ),
             row=2, expand=1,
             type='slider*', style='button', tw=0, h=22

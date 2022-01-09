@@ -25,11 +25,13 @@ class Plugin(Layer):
         
         self.A =  LParam('A', (0, 1, 0.01), 0.5, handler=self.run)
         self.B =  LParam('B', (0, 0.1, 0.001), 0.05, handler=self.run)
-        self.layout('Params', (
-            self.A,
-            self.B,
+        
+        self.layout((
+                self.A,
+                self.B,
             ),
-            row=1, expand=0, show=1, 
+            title="Params",
+            row=1, expand=0, show=1,
             type='slider*', lw=20, tw=40, cw=100, h=22,
         )
         self.run(None)
