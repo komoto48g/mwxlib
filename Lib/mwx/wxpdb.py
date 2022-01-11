@@ -300,9 +300,7 @@ Note:
             self.locals.clear()
             self.locals.update(frame.f_locals)
             try:
-                tree = self.viewer.filling.tree
-                tree.display()
-                ## tree.Expand(tree.root)
+                self.viewer.filling.tree.display()
             except Exception:
                 pass
         self.module = module

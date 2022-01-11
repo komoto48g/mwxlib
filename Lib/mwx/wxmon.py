@@ -15,7 +15,8 @@ if wx.VERSION < (4,1):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
-
+            
+            self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
 else:
     class _ListCtrl(wx.ListCtrl):
         def __init__(self, *args, **kwargs):
@@ -45,10 +46,9 @@ Args:
         
         self.__handler = FSM({ #<EventMonitor.handler>
             0 : {
+                   'event_hook' : [ 0, self.on_event_hook ],
                  'item_updated' : [ 0, self.on_item_updated ],
                 'item_selected' : [ 0, self.on_item_selected ],
-                 'item_checked' : [ 0, self.on_item_checked ],
-               'item_unchecked' : [ 0, self.on_item_unchecked ],
                'item_activated' : [ 0, self.on_item_activated ],
             },
         })
@@ -162,34 +162,20 @@ Args:
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
     
-    def hook(self, event):
-        """Add hook for all events bound to the target"""
-        binder, actions = self.boundHandlers(event)
-        if not binder:
-            return
-        for f in actions:
-            def _hook(v):
-                if self.target.Unbind(binder, handler=_hook):
-                    self.lctr.check_event(event, False)
-                self.__inspector.debugger.trace(f, v)
-            self.target.Bind(binder, _hook)
-        self.lctr.check_event(event, True)
-        return actions
-    
-    def unhook(self, event):
-        """Remove hook from all events bound to the target"""
-        binder, actions = self.boundHandlers(event)
-        if not binder:
-            return
-        for f in actions[::-1]:
-            if f.__name__ == '_hook':
-                if not self.target.Unbind(binder, handler=f):
-                    print("- Failed to unbind hook for {}".format(event))
-        self.lctr.check_event(event, False)
-    
     ## --------------------------------
     ## Actions for event-logger
     ## --------------------------------
+    
+    def on_event_hook(self, evt):
+        event = evt.EventType
+        binder, actions = self.boundHandlers(event)
+        ## if not actions:
+        ##     wx.MessageBox("No specific handlers\n\n"
+        ##                   "{} has no specifc handlers for {}".format(
+        ##                   self.target, event))
+        self.lctr.check_event(event, False)
+        for f in actions:
+            self.__inspector.debugger.trace(f, evt)
     
     def on_item_activated(self, item):
         binder, actions = self.boundHandlers(item[0])
@@ -204,15 +190,6 @@ Args:
     
     def on_item_selected(self, item):
         self.text.SetValue(item[-1]) # => attribs
-    
-    def on_item_checked(self, item):
-        if not self.hook(item[0]):
-            wx.MessageBox("No specific handlers\n\n"
-                          "{} has no specifc handlers for {}".format(
-                          self.target, item[0]))
-    
-    def on_item_unchecked(self, item):
-        self.unhook(item[0])
 
 
 class EventLogger(_ListCtrl):
@@ -252,13 +229,6 @@ class EventLogger(_ListCtrl):
                 self.parent.handler(signal, item)
             self.Bind(binder, _dispatch)
         
-        try:
-            ## wx 4.1.0 or later
-            dispatch(wx.EVT_LIST_ITEM_CHECKED, 'item_checked')
-            dispatch(wx.EVT_LIST_ITEM_UNCHECKED, 'item_unchecked')
-        except AttributeError:
-            ## wx.4.0.7 - PY35 CheckListCtrlMixin ではチェックイベントがとれない？
-            pass
         dispatch(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')
         dispatch(wx.EVT_LIST_ITEM_DESELECTED, 'item_deselected')
         dispatch(wx.EVT_LIST_ITEM_RIGHT_CLICK, 'item_right_clicked')
@@ -287,8 +257,8 @@ class EventLogger(_ListCtrl):
             self.SetItem(i, j, str(v))
         self.parent.handler('item_updated', item)
         
-        if i == self.FocusedItem:
-            self.parent.handler('item_selected', item)
+        if self.IsItemChecked(i):
+            self.parent.handler('event_hook', evt)
         
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             ## Don't run out of all timers and get warnings
@@ -351,6 +321,7 @@ if __name__ == "__main__":
     if 1:
         self = frm.inspector
         frm.mon = EventMonitor(self)
+        frm.mon.handler.debug = 4
         self.rootshell.write("self.mon.watch(self)")
         self.Show()
     frm.Show()
