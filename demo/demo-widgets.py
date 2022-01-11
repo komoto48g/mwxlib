@@ -27,7 +27,7 @@ class Plugin(Layer):
                 size=(100,-1)),
             
             ToggleButton(self, label="toggle-button",
-                handler=lambda v: self.statusline(v.GetInt(), v.IsChecked(), "checked"),
+                handler=lambda v: self.statusline(v.GetInt(), v.IsChecked()),
                 tip="this is a toggle-button",
                 icon=('w','v'),
                 size=(100,-1)),
@@ -56,7 +56,8 @@ class Plugin(Layer):
             title="Custom controls",
             row=2, expand=0,
         )
-        self.LP =  LParam('L', (-1,1,0.01), 0, handler=print,
+        self.LP =  LParam('L', (-1,1,0.01), 0,
+            handler=print,
             tip="Linear param"
                 "\n In addition to direct key input to the textctrl,"
                 "\n [up][down][wheelup][wheeldown] keys can be used,"
