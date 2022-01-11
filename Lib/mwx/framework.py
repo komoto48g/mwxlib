@@ -1637,6 +1637,15 @@ Global bindings:
             from .wxpdb import Debugger
             from .wxmon import EventMonitor
         
+        def debug(obj, *args, **kwargs):
+            if callable(obj):
+                self.debugger.trace(obj, *args, **kwargs)
+            elif isinstance(obj, wx.Object):
+                self.monitor.watch(obj)
+            else:
+                print("- cannot debug {!r}".format(obj))
+        builtins.debug = debug
+        
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
                                    stdout=self.__shell.interp.stdout)
@@ -3373,27 +3382,6 @@ Flaky nutshell:
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
-        
-        def debug(obj, *args, **kwargs):
-            if callable(obj):
-                self.parent.debugger.trace(obj, *args, **kwargs)
-            else:
-                print("- cannot debug {!r}".format(obj))
-        builtins.debug = debug
-        
-        def monitor(obj):
-            if isinstance(obj, wx.Object):
-                self.parent.monitor.watch(obj)
-            else:
-                print("- cannot monitor {!r}".format(obj))
-        builtins.monitor = monitor
-        
-        def dump(obj):
-            if isinstance(obj, wx.Object):
-                self.parent.monitor.dump(obj)
-            else:
-                print("- cannot dump {!r}".format(obj))
-        builtins.dump = dump
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
@@ -3407,8 +3395,6 @@ Flaky nutshell:
         del builtins.help
         del builtins.info
         del builtins.clone
-        del builtins.debug
-        del builtins.dump
         del builtins.timeit
         del builtins.execute
         del builtins.puts
