@@ -1196,18 +1196,18 @@ class Frame(mwx.Frame):
             
             del self.plugins[name]
             
+            if plug.__Menu_item:
+                self.menubar[plug.menu].remove(plug.__Menu_item)
+                self.menubar.update(plug.menu)
+            
             nb = plug.__notebook
             if nb:
                 j = nb.GetPageIndex(plug)
                 nb.RemovePage(j) # just remove page
                 ## nb.DeletePage(j) # cf. destroy plug object too
-            
-            if plug.__Menu_item:
-                self.menubar[plug.menu].remove(plug.__Menu_item)
-                self.menubar.update(plug.menu)
-            
-            self._mgr.DetachPane(plug)
-            self._mgr.Update()
+            else:
+                self._mgr.DetachPane(plug)
+                self._mgr.Update()
             
             plug.handler('pane_closed')
             plug.handler('pane_unloaded')
