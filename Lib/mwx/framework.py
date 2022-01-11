@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.3"
+__version__ = "0.50.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1666,7 +1666,7 @@ Global bindings:
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
-        self._mgr.SetDockSizeConstraint(0.4, 0.5)
+        self._mgr.SetDockSizeConstraint(0.5, 0.5) # (w, h)/N
         
         self._mgr.AddPane(self.console, aui.AuiPaneInfo().CenterPane())
         self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right()
@@ -1837,7 +1837,6 @@ Global bindings:
             self.monitor.unwatch()
             self.remove_page_console(win)
             return
-        wx.CallAfter(self.OnCloseShell)
         evt.Skip()
     
     def add_page_console(self, win, title=None, show=False):
@@ -1858,6 +1857,7 @@ Global bindings:
             nb.RemovePage(j)
             if nb.PageCount == 1:
                 nb.TabCtrlHeight = 0
+        win.Show(0)
     
     def add_history(self, command, noerr):
         ed = self.History
