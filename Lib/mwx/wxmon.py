@@ -8,7 +8,7 @@ from wx import stc
 import wx.lib.eventwatcher as ew
 from mwx.framework import FSM
 
-if wx.VERSION < (4,1):
+if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
     
     class _ListCtrl(wx.ListCtrl, CheckListCtrlMixin):
@@ -260,6 +260,11 @@ class EventLogger(_ListCtrl):
         ## source = ew._makeSourceString(obj)
         attribs = ew._makeAttribString(evt)
         
+        if wx.VERSION < (4,1,0): # ignore self insert
+            if event == wx.EVT_LIST_INSERT_ITEM.typeId\
+              and obj is self:
+                return
+        
         for i, item in enumerate(self.__items):
             if item[0] == event:
                 item[1:] = [name, item[2]+1, source, attribs]
@@ -340,7 +345,7 @@ if __name__ == "__main__":
         self = frm.inspector
         frm.mon = EventMonitor(self)
         frm.mon.handler.debug = 0
-        self.rootshell.write("self.mon.watch(self)")
+        self.rootshell.write("self.mon.watch(self.mon)")
         self.Show()
     frm.Show()
     app.MainLoop()
