@@ -97,16 +97,15 @@ Args:
     def get_bound_handlers(self, event, widget=None):
         """Wx.PyEventBinder and the handlers"""
         widget = widget or self.target
-        if not widget:
-            return None, []
-        try:
-            actions = widget.__event_handler__[event]
-            handlers = [a for a in actions if a != self.onWatchedEvent]
-            ## handlers = [a for a in actions if a.__name__ != 'onWatchedEvent']
-            binder = next(x for x in self.get_watched_events() if x.typeId == event)
-            return binder, handlers
-        except KeyError:
-            print("- No such event: {}".format(event))
+        if widget:
+            try:
+                actions = widget.__event_handler__[event]
+                handlers = [a for a in actions if a != self.onWatchedEvent]
+                ## handlers = [a for a in actions if a.__name__ != 'onWatchedEvent']
+                binder = next(x for x in ew._eventBinders if x.typeId == event)
+                return binder, handlers
+            except KeyError:
+                print("- No such event: {}".format(event))
         return None, []
     
     def watch(self, widget):
@@ -307,10 +306,6 @@ class EventLogger(_ListCtrl):
             self.SetItem(i, j, str(v))
         self.SetItemFont(i, self.Font.Bold())
     
-    ## def check_event(self, event, check=True):
-    ##     i = self.keys.index(event)
-    ##     self.CheckItem(i, check)
-    
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
         lc = [self.__items[j] for j in range(n) if self.IsItemChecked(j)]
@@ -345,7 +340,7 @@ if __name__ == "__main__":
         self = frm.inspector
         frm.mon = EventMonitor(self)
         frm.mon.handler.debug = 0
-        self.rootshell.write("self.mon.watch(self.mon)")
+        self.rootshell.write("self.mon.watch(self)")
         self.Show()
     frm.Show()
     app.MainLoop()
