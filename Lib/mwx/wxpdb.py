@@ -63,7 +63,7 @@ Note:
     """
     indent = "  "
     prefix1 = "> "
-    prefix2 = "--> "
+    prefix2 = "-> "
     verbose = False
     logger = property(lambda self: self.__inspector.Log)
     shell = property(lambda self: self.__inspector.rootshell)
@@ -94,8 +94,6 @@ Note:
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
-        ## self.shell.redirectStdin()
-        ## self.shell.redirectStdout()
         def _continue():
             try:
                 ## self.shell.Execute('next') # step in the target
@@ -108,9 +106,8 @@ Note:
     def close(self):
         if self.module is not None:
             self.set_quit()
-        ## if self.viewer is not None:
-        ##     if self.viewer:
-        ##         self.viewer.Close()
+        if self.viewer:
+            self.viewer.Close()
         self.module = None
         self.viewer = None
         self.locals.clear()
@@ -142,6 +139,9 @@ Note:
         prefix = self.indent if indent < 0 else ' ' * indent
         print(prefix + str(msg), file=self.stdout)
     
+    def error(self, msg):
+        print(self.indent + "***", msg, file=self.stdout)
+    
     def trace_pointer(self, frame, lineno):
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
@@ -160,14 +160,7 @@ Note:
         if prompt_prefix is None:
             prompt_prefix = '\n' + self.indent + self.prefix2
         
-        ## Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
-        frame, lineno = frame_lineno
-        if frame is self.curframe:
-            prefix = self.indent + self.prefix1
-        else:
-            prefix = self.indent
-        self.message(prefix
-          + self.format_stack_entry(frame_lineno, prompt_prefix), indent=0)
+        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -236,7 +229,8 @@ Note:
         lineno = frame.f_code.co_firstlineno
         name = frame.f_code.co_name
         if not self.verbose:
-            print("{}{}:{}:{}".format(self.prefix1, filename, lineno, name))
+            self.message("{}{}:{}:{}".format(
+                         self.prefix1, filename, lineno, name), indent=0)
         Pdb.user_call(self, frame, argument_list)
     
     @echo
@@ -317,6 +311,15 @@ if __name__ == "__main__":
     import mwx
     app = wx.App()
     frm = mwx.Frame(None)
-    frm.dbg = Debugger(frm.inspector)
+    if 1:
+        self = frm.inspector
+        frm.dbg = Debugger(self,
+                           stdin=self.rootshell.interp.stdin,
+                           stdout=self.rootshell.interp.stdout
+                           )
+        self.rootshell.write("self.dbg.trace(self.About)")
+        frm.dbg.verbose = 1
+        echo.debug = 0
+        self.Show()
     frm.Show()
     app.MainLoop()
