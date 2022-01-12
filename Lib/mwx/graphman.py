@@ -1196,18 +1196,18 @@ class Frame(mwx.Frame):
             
             del self.plugins[name]
             
+            if plug.__Menu_item:
+                self.menubar[plug.menu].remove(plug.__Menu_item)
+                self.menubar.update(plug.menu)
+            
             nb = plug.__notebook
             if nb:
                 j = nb.GetPageIndex(plug)
                 nb.RemovePage(j) # just remove page
                 ## nb.DeletePage(j) # cf. destroy plug object too
-            
-            if plug.__Menu_item:
-                self.menubar[plug.menu].remove(plug.__Menu_item)
-                self.menubar.update(plug.menu)
-            
-            self._mgr.DetachPane(plug)
-            self._mgr.Update()
+            else:
+                self._mgr.DetachPane(plug)
+                self._mgr.Update()
             
             plug.handler('pane_closed')
             plug.handler('pane_unloaded')
@@ -1367,7 +1367,7 @@ class Frame(mwx.Frame):
             savedir = os.path.dirname(f)
             
             with codecs.open(f, encoding='utf-8') as i:
-                ## temporary for evaluation of attributes:tuple in locals,
+                ## evaluation of attributes:tuple in locals
                 from numpy import nan, inf
                 import datetime
                 res.update(eval(i.read()))
@@ -1628,10 +1628,12 @@ class Frame(mwx.Frame):
         self.statusbar("Loading session from {!r}...".format(f))
         
         with open(f) as i:
-            ## temporary for evaluation of array in locals,
-            self.array = np.array
+            ## evaluation of session in the shell
+            self.inspector.rootshell.locals.update(
+                nan = np.nan,
+                inf = np.inf,
+            )
             self.inspector.rootshell.Execute(i.read())
-            del self.array
             self.menubar.reset()
             dirname = os.path.dirname(f)
             if dirname:
@@ -1660,7 +1662,7 @@ class Frame(mwx.Frame):
         self.statusbar("Saving session to {!r}...".format(f))
         
         options = np.get_printoptions()
-        np.set_printoptions(linewidth=256, threshold=np.inf) # printing all(inf) elements
+        np.set_printoptions(linewidth=256, threshold=inf) # inf:all elements
         
         with open(f, 'w') as o:
             o.write('\n'.join((

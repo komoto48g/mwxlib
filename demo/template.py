@@ -30,7 +30,7 @@ class Plugin(Layer):
         self.btn.Bind(wx.EVT_BUTTON, lambda v: self.run())
         
         self.layout(
-            (self.ksize, self.btn,), # the list of objects stacked with the following style:
+            (self.ksize, self.btn),  # the list of objects stacked with the following style:
             title="Gaussian blur",   # subtitle of this layout group. otherwise None (no box)
             row=1, expand=0, show=1, # grouping style: row means the horizontal stack size
             type='vspin',            # control style: slider[*], [hv]spin, choice
