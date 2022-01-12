@@ -84,13 +84,13 @@ Note:
         if self.module is not None:
             return
         self.module = inspect.getmodule(frame)
-        self.viewer = FillingFrame(rootObject=self.locals,
-                                   rootLabel='locals',
-                                   static=False, # update each time pushed
-                                   )
-        self.viewer.filling.text.WrapMode = 0
-        self.viewer.filling.text.Zoom = -1
-        self.viewer.Show()
+        ## self.viewer = FillingFrame(rootObject=self.locals,
+        ##                            rootLabel='locals',
+        ##                            static=False, # update each time pushed
+        ##                            )
+        ## self.viewer.filling.text.WrapMode = 0
+        ## self.viewer.filling.text.Zoom = -1
+        ## self.viewer.Show()
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
@@ -108,9 +108,9 @@ Note:
     def close(self):
         if self.module is not None:
             self.set_quit()
-        if self.viewer is not None:
-            if self.viewer:
-                self.viewer.Close()
+        ## if self.viewer is not None:
+        ##     if self.viewer:
+        ##         self.viewer.Close()
         self.module = None
         self.viewer = None
         self.locals.clear()
@@ -299,10 +299,8 @@ Note:
             self.globals.update(frame.f_globals)
             self.locals.clear()
             self.locals.update(frame.f_locals)
-            try:
+            if self.viewer:
                 self.viewer.filling.tree.display()
-            except Exception:
-                pass
         self.module = module
         Pdb.preloop(self)
     
