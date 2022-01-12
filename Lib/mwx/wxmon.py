@@ -89,21 +89,24 @@ Args:
     
     def watchedEvents(self):
         """All watched events except noWatchList"""
-        if not self.target:
-            return []
         def watch_only(v):
             return (v not in self._noWatchList
                 and v.typeId not in self._noWatchList)
         return filter(watch_only, ew._eventBinders)
     
-    def boundHandlers(self, event):
+    def boundHandlers(self, event, widget=None):
         """Wx.PyEventBinder and the handlers"""
-        if not self.target:
+        target = widget or self.target
+        if not target:
             return None, []
-        actions = self.target.__event_handler__[event]
-        handlers = [a for a in actions if a != self.onWatchedEvent]
-        binder = next(x for x in self.watchedEvents() if x.typeId == event)
-        return binder, handlers
+        try:
+            actions = target.__event_handler__[event]
+            handlers = [a for a in actions if a != self.onWatchedEvent]
+            binder = next(x for x in self.watchedEvents() if x.typeId == event)
+            return binder, handlers
+        except KeyError:
+            print("- No such event: {}".format(event))
+            return None, []
     
     def watch(self, widget):
         """Begin watching"""
@@ -122,9 +125,10 @@ Args:
     
     def unwatch(self):
         """End watching"""
-        if self.target:
-            ## self.__inspector.handler("remove_page", self)
-            self.shell.handler("monitor_end", self.target)
+        if not self.target:
+            return
+        ## self.__inspector.handler("remove_page", self)
+        self.shell.handler("monitor_end", self.target)
         for binder in self.watchedEvents():
             if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
@@ -137,7 +141,7 @@ Args:
     
     @staticmethod
     def dump(widget, verbose=True):
-        """Dump all event handlers bound to the watched widget"""
+        """Dump all event handlers bound to the widget"""
         if not isinstance(widget, wx.Object):
             return
         if not hasattr(widget, '__event_handler__'):
@@ -162,6 +166,25 @@ Args:
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
     
+    def hook(self, event, widget):
+        """Add hook for the event bound to the widget"""
+        binder, actions = self.boundHandlers(event, widget)
+        for f in actions:
+            def _hook(v):
+                if not widget.Unbind(binder, handler=_hook):
+                    print("- Failed to unbind hook for {}".format(event))
+                self.__inspector.debugger.trace(f, v)
+            widget.Bind(binder, _hook)
+        return actions
+    
+    def unhook(self, event, widget):
+        """Remove hook from the events bound to the widget"""
+        binder, actions = self.boundHandlers(event, widget)
+        for f in actions[::-1]:
+            if f.__name__ == '_hook':
+                if not widget.Unbind(binder, handler=f):
+                    print("- Failed to unbind hook for {}".format(event))
+    
     ## --------------------------------
     ## Actions for event-logger
     ## --------------------------------
@@ -169,23 +192,20 @@ Args:
     def on_event_hook(self, evt):
         event = evt.EventType
         binder, actions = self.boundHandlers(event)
-        ## if not actions:
-        ##     wx.MessageBox("No specific handlers\n\n"
-        ##                   "{} has no specifc handlers for {}".format(
-        ##                   self.target, event))
-        self.lctr.check_event(event, False)
         for f in actions:
             self.__inspector.debugger.trace(f, evt)
     
     def on_item_activated(self, item):
-        binder, actions = self.boundHandlers(item[0])
+        event = item[0]
+        binder, actions = self.boundHandlers(event)
         tip = pformat(actions or None)
         wx.CallAfter(wx.TipWindow, self, tip, 512)
     
     def on_item_updated(self, item):
-        binder, actions = self.boundHandlers(item[0])
+        event = item[0]
+        binder, actions = self.boundHandlers(event)
         if actions:
-            i = self.lctr.keys.index(item[0])
+            i = self.lctr.keys.index(event)
             self.lctr.SetItemFont(i, self.lctr.Font.Bold())
     
     def on_item_selected(self, item):
@@ -223,7 +243,7 @@ class EventLogger(_ListCtrl):
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         
         def dispatch(binder, signal):
-            def _dispatch(evt):
+            def _dispatch(evt): #<wx._core.ListEvent>
                 i = evt.Index
                 item = self.__items[i]
                 self.parent.handler(signal, item)
@@ -239,9 +259,9 @@ class EventLogger(_ListCtrl):
         event = evt.EventType
         obj = evt.EventObject
         name = ew._eventIdMap.get(event, 'Unknown')
-        ## source = ew._makeSourceString(obj)
         source = "{} {!r}".format(obj.__class__.__name__,
                                   obj.Name if hasattr(obj, 'Name') else '')
+        ## source = ew._makeSourceString(obj)
         attribs = ew._makeAttribString(evt)
         
         for i, item in enumerate(self.__items):
@@ -253,11 +273,13 @@ class EventLogger(_ListCtrl):
             item = [event, name, 1, source, attribs] # new data:list
             self.__items.append(item)
             self.InsertItem(i, event)
+        
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
         self.parent.handler('item_updated', item)
         
         if self.IsItemChecked(i):
+            self.CheckItem(i, False)
             self.parent.handler('event_hook', evt)
         
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
@@ -284,9 +306,9 @@ class EventLogger(_ListCtrl):
             self.SetItem(i, j, str(v))
         self.SetItemFont(i, self.Font.Bold())
     
-    def check_event(self, event, check=True):
-        i = self.keys.index(event)
-        self.CheckItem(i, check)
+    ## def check_event(self, event, check=True):
+    ##     i = self.keys.index(event)
+    ##     self.CheckItem(i, check)
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
@@ -321,7 +343,7 @@ if __name__ == "__main__":
     if 1:
         self = frm.inspector
         frm.mon = EventMonitor(self)
-        frm.mon.handler.debug = 4
+        frm.mon.handler.debug = 0
         self.rootshell.write("self.mon.watch(self)")
         self.Show()
     frm.Show()
