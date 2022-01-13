@@ -87,11 +87,19 @@ Args:
     
     target = property(lambda self: self.__watchedWidget)
     
+    @staticmethod
+    def get_name(event):
+        return ew._eventIdMap.get(event, 'Unknown')
+    
+    @staticmethod
+    def get_binder(event):
+        return next((x for x in ew._eventBinders if x.typeId == event), None)
+    
     def get_watched_events(self):
         """All watched events except noWatchList"""
+        ls = self._noWatchList
         def watch_only(v):
-            return (v not in self._noWatchList
-                and v.typeId not in self._noWatchList)
+            return (v not in ls and v.typeId not in ls)
         return filter(watch_only, ew._eventBinders)
     
     def get_bound_handlers(self, event, widget=None):
@@ -119,7 +127,7 @@ Args:
         for binder in self.get_watched_events():
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
-                self.lctr.add_event(binder.typeId)
+                self.lctr.append(binder.typeId)
         self.__inspector.handler("add_page", self)
         self.shell.handler("monitor_begin", self.target)
     
@@ -156,7 +164,7 @@ Args:
             if la:
                 ssmap[event] = la
                 if verbose:
-                    name = ew._eventIdMap.get(event, 'Unknown')
+                    name = self.get_name(event)
                     values = ('\n'+' '*41).join(_where(a) for a in la)
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
@@ -197,11 +205,7 @@ Args:
         wx.CallAfter(wx.TipWindow, self, tip, 512)
     
     def on_item_updated(self, item):
-        event = item[0]
-        binder, actions = self.get_bound_handlers(event)
-        if actions:
-            i = self.lctr.keys.index(event)
-            self.lctr.SetItemFont(i, self.lctr.Font.Bold())
+        self.__inspector.message("{0}:{1}".format(*item))
     
     def on_item_selected(self, item):
         self.text.SetValue(item[-1]) # => attribs
@@ -226,7 +230,7 @@ class EventLogger(_ListCtrl):
             ("typeName", 200),
             ("stats",     50),
             ("source",   200),
-            # item[-1]: attributes,
+            #" item[-1]: attributes,
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
@@ -246,17 +250,14 @@ class EventLogger(_ListCtrl):
         
         dispatch(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')
         dispatch(wx.EVT_LIST_ITEM_DESELECTED, 'item_deselected')
-        dispatch(wx.EVT_LIST_ITEM_RIGHT_CLICK, 'item_right_clicked')
-        dispatch(wx.EVT_LIST_ITEM_MIDDLE_CLICK, 'item_middle_clicked')
-        dispatch(wx.EVT_LIST_ITEM_ACTIVATED, 'item_activated')
+        dispatch(wx.EVT_LIST_ITEM_ACTIVATED, 'item_activated') # left-dclick
     
     def update(self, evt):
         event = evt.EventType
         obj = evt.EventObject
-        name = ew._eventIdMap.get(event, 'Unknown')
+        name = self.parent.get_name(event)
         source = "{} {!r}".format(obj.__class__.__name__,
                                   obj.Name if hasattr(obj, 'Name') else '')
-        ## source = ew._makeSourceString(obj)
         attribs = ew._makeAttribString(evt)
         
         if wx.VERSION < (4,1,0): # ignore self insert
@@ -276,7 +277,11 @@ class EventLogger(_ListCtrl):
         
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
+        
         self.parent.handler('item_updated', item)
+        
+        if i == self.FocusedItem:
+            self.parent.handler('item_selected', item) # update attribs
         
         if self.IsItemChecked(i):
             self.CheckItem(i, False)
@@ -294,11 +299,12 @@ class EventLogger(_ListCtrl):
         self.DeleteAllItems()
         self.__items = []
     
-    def add_event(self, event):
+    def append(self, event):
         if event in self.keys: # no need to add
             return
+        
         i = len(self.__items)
-        name = ew._eventIdMap.get(event, 'Unknown')
+        name = self.parent.get_name(event)
         item = [event, name, 0, '', '']
         self.__items.append(item)
         self.InsertItem(i, event)
@@ -316,12 +322,18 @@ class EventLogger(_ListCtrl):
         self.__dir = not self.__dir
         self.__items.sort(key=lambda v: v[col], reverse=self.__dir) # sort data
         
+        def _bold(item):
+            event = item[0]
+            binder, actions = self.parent.get_bound_handlers(event)
+            return actions
+        
         for i, item in enumerate(self.__items):
             for j, v in enumerate(item[:-1]):
                 self.SetItem(i, j, str(v))
             self.CheckItem(i, item in lc)  # check
             self.Select(i, item in ls)     # seleciton
-            self.parent.handler('item_updated', item)
+            self.SetItemFont(i,
+                self.Font.Bold() if _bold(item) else self.Font)
         self.Focus(self.__items.index(f))  # focus (one)
     
     def OnMotion(self, evt): #<wx._core.MouseEvent>
@@ -340,7 +352,7 @@ if __name__ == "__main__":
         self = frm.inspector
         frm.mon = EventMonitor(self)
         frm.mon.handler.debug = 0
-        self.rootshell.write("self.mon.watch(self)")
+        self.rootshell.write("self.mon.watch(self.mon.lctr)")
         self.Show()
     frm.Show()
     app.MainLoop()
