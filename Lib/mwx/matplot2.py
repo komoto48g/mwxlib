@@ -33,6 +33,19 @@ XAXIS, YAXIS = 'Xaxis', 'Yaxis'
 MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 
 
+## Monkey-patch for matplotlib 3.4/WXAgg
+if 1:
+    from matplotlib.backend_bases import Event
+    
+    def __init__(self, name, canvas, guiEvent=None):
+        self.name = name
+        self.canvas = canvas
+        self.guiEvent = None
+    
+    Event.__init__ = __init__
+    del __init__
+
+
 class MatplotPanel(wx.Panel):
     """MPL panel for general graph
     
@@ -816,13 +829,13 @@ class MatplotPanel(wx.Panel):
 
 
 if __name__ == '__main__':
-    from matplotlib import pyplot as plt
-    from matplotlib import patches
-    from numpy import pi
-    
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
     print("matplotlib {}".format(matplotlib.__version__))
+    
+    from matplotlib import pyplot as plt
+    from matplotlib import patches
+    from numpy import pi
     
     def _plot(axes):
         t = np.arange(0,1,0.01)*2*pi
