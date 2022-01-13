@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.5"
+__version__ = "0.50.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1675,7 +1675,7 @@ Global bindings:
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
-        self._mgr.SetDockSizeConstraint(0.5, 0.5) # (w, h)/N
+        self._mgr.SetDockSizeConstraint(0.45, 0.5) # (w, h)/N
         
         self._mgr.AddPane(self.console, aui.AuiPaneInfo().CenterPane())
         self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right()
