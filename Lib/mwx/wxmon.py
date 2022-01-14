@@ -1,6 +1,5 @@
 #! python3
 # -*- coding: utf-8 -*-
-from pprint import pformat
 import inspect
 import wx
 from wx import aui
@@ -46,7 +45,7 @@ Args:
         
         self.__handler = FSM({ #<EventMonitor.handler>
             0 : {
-                   'event_hook' : [ 0, self.on_event_hook ],
+                   'event_hook' : [ 0, self.hook ],
                  'item_updated' : [ 0, self.on_item_updated ],
                 'item_selected' : [ 0, self.on_item_selected ],
                'item_activated' : [ 0, self.on_item_activated ],
@@ -171,21 +170,18 @@ Args:
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
     
-    ## --------------------------------
-    ## Actions for event-logger
-    ## --------------------------------
-    
-    def on_event_hook(self, evt):
+    def hook(self, evt):
         event = evt.EventType
         binder, actions = self.get_bound_handlers(event)
         for f in actions:
             self.__inspector.debugger.trace(f, evt)
     
+    ## --------------------------------
+    ## Actions for event-logger
+    ## --------------------------------
+    
     def on_item_activated(self, item):
-        event = item[0]
-        binder, actions = self.get_bound_handlers(event)
-        tip = pformat(actions or None)
-        wx.CallAfter(wx.TipWindow, self, tip, 512)
+        pass
     
     def on_item_updated(self, item):
         pass
