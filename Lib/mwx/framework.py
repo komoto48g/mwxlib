@@ -4066,10 +4066,10 @@ def where(obj):
     Otherwse, the module will be returned if it exists.
     """
     try:
-        return "{}:{}".format(
-                inspect.getsourcefile(obj),     # filename
-                inspect.getsourcelines(obj)[1]) # src, lineno (0:whole)
-    except Exception:
+        filename = inspect.getsourcefile(obj)
+        src, lineno = inspect.getsourcelines(obj)
+        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+    except TypeError:
         return inspect.getmodule(obj)
 
 

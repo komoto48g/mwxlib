@@ -23,6 +23,15 @@ else:
             self.EnableCheckBoxes()
 
 
+def where(obj):
+    try:
+        filename = inspect.getsourcefile(obj)
+        src, lineno = inspect.getsourcelines(obj)
+        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+    except TypeError:
+        return repr(obj)
+
+
 class EventMonitor(_ListCtrl):
     """Event monitor of the inspector
 *** Inspired by wx.lib.eventwatcher ***
@@ -100,19 +109,15 @@ Args:
         return filter(lambda v: v not in ew._noWatchList,
                       ew._eventBinders)
     
-    def get_bound_handlers(self, event, widget=None):
+    def get_actions(self, event, widget=None):
         """Wx.PyEventBinder and the handlers"""
         widget = widget or self.target
         if widget:
             try:
-                actions = widget.__event_handler__[event]
-                handlers = [a for a in actions if a != self.onWatchedEvent]
-                ## handlers = [a for a in actions if a.__name__ != 'onWatchedEvent']
-                binder = next(x for x in ew._eventBinders if x.typeId == event)
-                return binder, handlers
+                handlers = widget.__event_handler__[event]
+                return [a for a in handlers if a != self.onWatchedEvent]
             except KeyError:
                 print("- No such event: {}".format(event))
-        return None, []
     
     def watch(self, widget):
         """Begin watching"""
@@ -146,33 +151,21 @@ Args:
     
     def dump(self, widget, verbose=True):
         """Dump all event handlers bound to the widget"""
-        if not isinstance(widget, wx.Object):
-            return
-        def _where(obj):
-            try:
-                filename = inspect.getsourcefile(obj)
-                src, lineno = inspect.getsourcelines(obj)
-                return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-            except TypeError:
-                return repr(obj)
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
-        for event, actions in sorted(widget.__event_handler__.items()):
-            if event in exclusions:
-                continue
-            la = [a for a in actions if a != self.onWatchedEvent]
-            if la:
-                ssmap[event] = la
+        for event in sorted(widget.__event_handler__):
+            actions = self.get_actions(event)
+            if event not in exclusions and actions:
+                ssmap[event] = actions
                 if verbose:
                     name = self.get_name(event)
-                    values = ('\n'+' '*41).join(_where(a) for a in la)
+                    values = ('\n'+' '*41).join(where(a) for a in actions)
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
     
     def hook(self, evt):
-        event = evt.EventType
-        binder, actions = self.get_bound_handlers(event)
-        for f in actions:
+        actions = self.get_actions(evt.EventType)
+        for f in actions or []:
             self.__inspector.debugger.trace(f, evt)
     
     ## --------------------------------
@@ -182,9 +175,8 @@ Args:
     def OnItemActivated(self, evt):
         item = self.__items[evt.Index]
         attribs = item[-1]
-        if attribs:
-            wx.CallAfter(wx.TipWindow, self, attribs, 512)
-            self.__inspector.handler("put_scratch", attribs)
+        wx.CallAfter(wx.TipWindow, self, attribs, 512)
+        self.__inspector.handler("put_scratch", attribs)
     
     def update(self, evt):
         event = evt.EventType
@@ -211,8 +203,8 @@ Args:
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
         
-        ## if i == self.FocusedItem:
-        ##     pass
+        if i == self.FocusedItem:
+            self.__inspector.handler("put_scratch", attribs)
         
         if self.IsItemChecked(i):
             self.CheckItem(i, False)
@@ -230,18 +222,19 @@ Args:
         self.DeleteAllItems()
         self.__items = []
     
-    def append(self, event):
+    def append(self, event, bold=True):
         if event in (item[0] for item in self.__items):
             return
         
         i = len(self.__items)
         name = self.get_name(event)
-        item = [event, name, '', '']
+        item = [event, name, '-', 'no data']
         self.__items.append(item)
         self.InsertItem(i, event)
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
-        self.SetItemFont(i, self.Font.Bold())
+        if bold:
+            self.SetItemFont(i, self.Font.Bold())
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
@@ -253,18 +246,15 @@ Args:
         self.__dir = not self.__dir
         self.__items.sort(key=lambda v: v[col], reverse=self.__dir) # sort data
         
-        def _bold(item):
-            event = item[0]
-            binder, actions = self.get_bound_handlers(event)
-            return actions
-        
         for i, item in enumerate(self.__items):
             for j, v in enumerate(item[:-1]):
                 self.SetItem(i, j, str(v))
             self.CheckItem(i, item in lc)  # check
             self.Select(i, item in ls)     # seleciton
-            self.SetItemFont(i,
-                self.Font.Bold() if _bold(item) else self.Font)
+            if self.get_actions(item[0]):
+                self.SetItemFont(i, self.Font.Bold())
+            else:
+                self.SetItemFont(i, self.Font)
         self.Focus(self.__items.index(f))  # focus (one)
     
     ## def OnMotion(self, evt): #<wx._core.MouseEvent>
