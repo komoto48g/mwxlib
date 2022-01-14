@@ -23,25 +23,27 @@ else:
             self.EnableCheckBoxes()
 
 
-class EventMonitor(wx.SplitterWindow):
+class EventMonitor(wx.Panel):
     """Event monitor of the inspector
-    
+*** Inspired by wx.lib.eventwatcher ***
+
 Args:
     parent : inspector of the shell
     """
     handler = property(lambda self: self.__handler)
+    logger = property(lambda self: self.__inspector.Scratch)
     shell = property(lambda self: self.__inspector.rootshell)
     
     def __init__(self, parent, *args, **kwargs):
-        wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
+        wx.Panel.__init__(self, parent, *args, **kwargs)
         
         self.__inspector = parent
+        self.__watchedWidget = None
         
         self.lctr = EventLogger(self, size=(512,-1))
-        self.text = wx.TextCtrl(self, size=(200,-1),
-                                style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-        self.SplitVertically(self.lctr, self.text,
-                             self.lctr.MinWidth) # no scrollbar padding +20
+        
+        self.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.Sizer.Add(self.lctr, 1, wx.EXPAND | wx.ALL, 0)
         
         self.__handler = FSM({ #<EventMonitor.handler>
             0 : {
@@ -53,8 +55,6 @@ Args:
         })
         self.handler.clear(0)
         
-        self.__watchedWidget = None
-        
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
     
     def OnDestroy(self, evt):
@@ -63,7 +63,6 @@ Args:
     
     ## --------------------------------
     ## event-watcher wrapper interface
-    ## Inspired by wx.lib.eventwatcher.
     ## --------------------------------
     
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
@@ -181,13 +180,16 @@ Args:
     ## --------------------------------
     
     def on_item_activated(self, item):
-        pass
+        attribs = item[-1]
+        if attribs:
+            self.__inspector.handler("put_scratch", attribs)
+            wx.CallAfter(wx.TipWindow, self, attribs, 512)
     
     def on_item_updated(self, item):
         pass
     
     def on_item_selected(self, item):
-        self.text.SetValue(item[-1]) # => attribs
+        pass
 
 
 class EventLogger(_ListCtrl):
