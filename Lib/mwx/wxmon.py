@@ -30,8 +30,8 @@ class EventMonitor(_ListCtrl):
 Args:
     parent : inspector of the shell
     """
-    handler = property(lambda self: self.__handler)
     target = property(lambda self: self.__watchedWidget)
+    data = property(lambda self: self.__items)
     
     logger = property(lambda self: self.__inspector.Scratch)
     shell = property(lambda self: self.__inspector.rootshell)
@@ -42,16 +42,6 @@ Args:
         
         self.__inspector = parent
         self.__watchedWidget = None
-        
-        self.__handler = FSM({
-            0 : {
-                   'event_hook' : [ 0, self.hook ],
-                 'item_updated' : [ 0, self.on_item_updated ],
-                'item_selected' : [ 0, self.on_item_selected ],
-               'item_activated' : [ 0, self.on_item_activated ],
-            },
-        })
-        self.handler.clear(0)
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
@@ -66,20 +56,10 @@ Args:
         self.__dir = True # sort direction
         self.__items = []
         
-        self.Bind(wx.EVT_MOTION, self.OnMotion)
+        ## self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-        
-        def dispatch(binder, signal):
-            def _dispatch(evt): #<wx._core.ListEvent>
-                i = evt.Index
-                item = self.__items[i]
-                self.handler(signal, item)
-            self.Bind(binder, _dispatch)
-        
-        dispatch(wx.EVT_LIST_ITEM_SELECTED, 'item_selected')
-        dispatch(wx.EVT_LIST_ITEM_DESELECTED, 'item_deselected')
-        dispatch(wx.EVT_LIST_ITEM_ACTIVATED, 'item_activated') # left-dclick
     
     def OnDestroy(self, evt):
         self.unwatch()
@@ -196,20 +176,15 @@ Args:
             self.__inspector.debugger.trace(f, evt)
     
     ## --------------------------------
-    ## Actions of event-logger
+    ## Actions for event-logger items
     ## --------------------------------
     
-    def on_item_activated(self, item):
+    def OnItemActivated(self, evt):
+        item = self.__items[evt.Index]
         attribs = item[-1]
         if attribs:
             wx.CallAfter(wx.TipWindow, self, attribs, 512)
             self.__inspector.handler("put_scratch", attribs)
-    
-    def on_item_updated(self, item):
-        pass
-    
-    def on_item_selected(self, item):
-        pass
     
     def update(self, evt):
         event = evt.EventType
@@ -235,14 +210,13 @@ Args:
         
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
-        self.handler('item_updated', item)
         
-        if i == self.FocusedItem:
-            self.handler('item_selected', item)
+        ## if i == self.FocusedItem:
+        ##     pass
         
         if self.IsItemChecked(i):
             self.CheckItem(i, False)
-            self.handler('event_hook', evt)
+            self.hook(evt)
         
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             ## Don't run out of all timers and get warnings
@@ -293,12 +267,11 @@ Args:
                 self.Font.Bold() if _bold(item) else self.Font)
         self.Focus(self.__items.index(f))  # focus (one)
     
-    def OnMotion(self, evt): #<wx._core.MouseEvent>
-        i, flag = self.HitTest(evt.GetPosition())
-        if i >= 0:
-            item = self.__items[i]
-            self.handler('item_motion', item)
-        evt.Skip()
+    ## def OnMotion(self, evt): #<wx._core.MouseEvent>
+    ##     i, flag = self.HitTest(evt.Position)
+    ##     if i >= 0:
+    ##         item = self.__items[i]
+    ##     evt.Skip()
 
 
 if __name__ == "__main__":
@@ -309,7 +282,6 @@ if __name__ == "__main__":
         self = frm.inspector
         frm.mon = EventMonitor(self)
         frm.mon.Show(0)
-        frm.mon.handler.debug = 0
         self.rootshell.write("self.mon.watch(self.mon)")
         self.Show()
     frm.Show()
