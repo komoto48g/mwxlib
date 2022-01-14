@@ -135,10 +135,10 @@ Args:
         """End watching"""
         if not self.target:
             return
-        self.shell.handler("monitor_end", self.target)
         for binder in self.get_watchlist():
             if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
+        self.shell.handler("monitor_end", self.target)
         self.__watchedWidget = None
     
     def onWatchedEvent(self, evt):
@@ -170,25 +170,6 @@ Args:
                     values = ('\n'+' '*41).join(_where(a) for a in la)
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
-    
-    def hook(self, event, widget):
-        """Add hook for the event bound to the widget"""
-        binder, actions = self.get_bound_handlers(event, widget)
-        for f in actions:
-            def _hook(v):
-                if not widget.Unbind(binder, handler=_hook):
-                    print("- Failed to unbind hook for {}".format(event))
-                self.__inspector.debugger.trace(f, v)
-            widget.Bind(binder, _hook)
-        return actions
-    
-    def unhook(self, event, widget):
-        """Remove hook from the events bound to the widget"""
-        binder, actions = self.get_bound_handlers(event, widget)
-        for f in actions[::-1]:
-            if f.__name__ == '_hook':
-                if not widget.Unbind(binder, handler=f):
-                    print("- Failed to unbind hook for {}".format(event))
     
     ## --------------------------------
     ## Actions for event-logger
@@ -230,7 +211,6 @@ class EventLogger(_ListCtrl):
         self.alist = ( # assoc list of column names
             ("typeId",    62),
             ("typeName", 200),
-            ("stats",     50),
             ("source",   200),
             #" item[-1]: attributes,
         )
@@ -238,7 +218,7 @@ class EventLogger(_ListCtrl):
             self.InsertColumn(k, header, width=w)
         
         self.__dir = True # sort direction
-        self.__items = [] # data holder
+        self.__items = []
         
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
@@ -268,11 +248,11 @@ class EventLogger(_ListCtrl):
         
         for i, item in enumerate(self.__items):
             if item[0] == event:
-                item[1:] = [name, item[2]+1, source, attribs]
+                item[1:] = [name, source, attribs]
                 break
         else:
             i = len(self.__items)
-            item = [event, name, 1, source, attribs] # new data:list
+            item = [event, name, source, attribs]
             self.__items.append(item)
             self.InsertItem(i, event)
         
@@ -306,7 +286,7 @@ class EventLogger(_ListCtrl):
         
         i = len(self.__items)
         name = self.parent.get_name(event)
-        item = [event, name, 0, '', '']
+        item = [event, name, '', '']
         self.__items.append(item)
         self.InsertItem(i, event)
         for j, v in enumerate(item[:-1]):
