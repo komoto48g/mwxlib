@@ -1662,7 +1662,7 @@ class Frame(mwx.Frame):
         self.statusbar("Saving session to {!r}...".format(f))
         
         options = np.get_printoptions()
-        np.set_printoptions(linewidth=256, threshold=inf) # inf:all elements
+        np.set_printoptions(linewidth=256, threshold=np.inf) # inf:all elements
         
         with open(f, 'w') as o:
             o.write('\n'.join((
