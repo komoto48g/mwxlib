@@ -63,7 +63,7 @@ Args:
         evt.Skip()
     
     ## --------------------------------
-    ## event-watcher interface
+    ## event-watcher wrapper interface
     ## Inspired by wx.lib.eventwatcher.
     ## --------------------------------
     
@@ -72,7 +72,7 @@ Args:
     ew.addModuleEvents(stc)
     
     ## Events that should not be watched by default
-    _noWatchList = [
+    ew._noWatchList = [
         wx.EVT_PAINT,
         wx.EVT_NC_PAINT,
         wx.EVT_ERASE_BACKGROUND,
@@ -82,10 +82,7 @@ Args:
         wx.EVT_TOOL,
         wx.EVT_TOOL_RANGE, # menu items (typeId=10018)
         wx.EVT_MENU,
-        10018, # other command menu?
     ]
-    
-    target = property(lambda self: self.__watchedWidget)
     
     @staticmethod
     def get_name(event):
@@ -93,14 +90,17 @@ Args:
     
     @staticmethod
     def get_binder(event):
-        return next((x for x in ew._eventBinders if x.typeId == event), None)
+        return next(x for x in ew._eventBinders if x.typeId == event)
     
-    def get_watched_events(self):
-        """All watched events except noWatchList"""
-        ls = self._noWatchList
-        def watch_only(v):
-            return (v not in ls and v.typeId not in ls)
-        return filter(watch_only, ew._eventBinders)
+    @staticmethod
+    def get_watchlist():
+        """All watched event binders except noWatchList"""
+        return filter(lambda v: v not in ew._noWatchList,
+                      ew._eventBinders)
+    
+    @property
+    def target(self):
+        return self.__watchedWidget
     
     def get_bound_handlers(self, event, widget=None):
         """Wx.PyEventBinder and the handlers"""
@@ -124,7 +124,7 @@ Args:
         self.lctr.clear()
         self.__watchedWidget = widget
         ssmap = self.dump(widget, verbose=1)
-        for binder in self.get_watched_events():
+        for binder in self.get_watchlist():
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
                 self.lctr.append(binder.typeId)
@@ -135,9 +135,8 @@ Args:
         """End watching"""
         if not self.target:
             return
-        ## self.__inspector.handler("remove_page", self)
         self.shell.handler("monitor_end", self.target)
-        for binder in self.get_watched_events():
+        for binder in self.get_watchlist():
             if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
         self.__watchedWidget = None
@@ -158,8 +157,11 @@ Args:
                 return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
             except TypeError:
                 return repr(obj)
+        exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
         for event, actions in sorted(widget.__event_handler__.items()):
+            if event in exclusions:
+                continue
             la = [a for a in actions if a != self.onWatchedEvent]
             if la:
                 ssmap[event] = la
@@ -205,7 +207,7 @@ Args:
         wx.CallAfter(wx.TipWindow, self, tip, 512)
     
     def on_item_updated(self, item):
-        self.__inspector.message("{0}:{1}".format(*item))
+        pass
     
     def on_item_selected(self, item):
         self.text.SetValue(item[-1]) # => attribs
@@ -256,8 +258,7 @@ class EventLogger(_ListCtrl):
         event = evt.EventType
         obj = evt.EventObject
         name = self.parent.get_name(event)
-        source = "{} {!r}".format(obj.__class__.__name__,
-                                  obj.Name if hasattr(obj, 'Name') else '')
+        source = ew._makeSourceString(obj)
         attribs = ew._makeAttribString(evt)
         
         if wx.VERSION < (4,1,0): # ignore self insert

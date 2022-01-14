@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.6"
+__version__ = "0.50.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -4007,6 +4007,7 @@ try:
         else:
             self.__event_handler__[event.typeId].insert(0, handler)
         return handler
+    
     core.EvtHandler.Bind = _EvtHandler_Bind
     ## del _EvtHandler_Bind
 
@@ -4032,6 +4033,7 @@ try:
             except Exception:
                 pass
         return retval
+    
     core.EvtHandler.Unbind = _EvtHandler_Unbind
     ## del _EvtHandler_Unbind
 
