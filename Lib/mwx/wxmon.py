@@ -9,14 +9,14 @@ import wx.lib.eventwatcher as ew
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
     
-    class _ListCtrl(wx.ListCtrl, CheckListCtrlMixin):
+    class CheckList(wx.ListCtrl, CheckListCtrlMixin):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
             
             self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
 else:
-    class _ListCtrl(wx.ListCtrl):
+    class CheckList(wx.ListCtrl):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             self.EnableCheckBoxes()
@@ -31,18 +31,19 @@ def where(obj):
         return repr(obj)
 
 
-class EventMonitor(_ListCtrl):
-    """Event monitor of the inspector
+class EventMonitor(CheckList):
+    """Event monitor with check-list
 *** Inspired by wx.lib.eventwatcher ***
 
 Args:
     parent : inspector of the shell
     """
-    target = property(lambda self: self.__watchedWidget)
     data = property(lambda self: self.__items)
+    parent = property(lambda self: self.__inspector)
+    target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, **kwargs):
-        _ListCtrl.__init__(self, parent,
+        CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
         self.__inspector = parent
@@ -63,7 +64,8 @@ Args:
         
         ## self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick
+        ## self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick, space
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick) # left-dclick
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
     
     def OnDestroy(self, evt):
@@ -71,7 +73,7 @@ Args:
         evt.Skip()
     
     ## --------------------------------
-    ## Event-watcher wrapper interface 
+    ## EventWatcher wrapper interfaces 
     ## --------------------------------
     
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
@@ -163,12 +165,6 @@ Args:
     ## Actions for event-logger items
     ## --------------------------------
     
-    def OnItemActivated(self, evt):
-        item = self.__items[evt.Index]
-        attribs = item[-1]
-        wx.CallAfter(wx.TipWindow, self, attribs, 512)
-        self.__inspector.handler("put_scratch", attribs)
-    
     def update(self, evt):
         event = evt.EventType
         obj = evt.EventObject
@@ -250,6 +246,22 @@ Args:
             else:
                 self.SetItemFont(i, self.Font)
         self.Focus(self.__items.index(f))  # focus (one)
+    
+    ## def OnItemActivated(self, evt): #<wx._controls.ListEvent>
+    ##     i = evt.Index
+    ##     item = self.__items[i]
+    ##     attribs = item[-1]
+    ##     wx.CallAfter(wx.TipWindow, self, attribs, 512)
+    ##     self.__inspector.handler("put_scratch", attribs)
+    
+    def OnItemDClick(self, evt): #<wx._core.MouseEvent>
+        i, flag = self.HitTest(evt.Position)
+        if i >= 0:
+            item = self.__items[i]
+            attribs = item[-1]
+            wx.CallAfter(wx.TipWindow, self, attribs, 512)
+            self.__inspector.handler("put_scratch", attribs)
+        evt.Skip()
     
     ## def OnMotion(self, evt): #<wx._core.MouseEvent>
     ##     i, flag = self.HitTest(evt.Position)
