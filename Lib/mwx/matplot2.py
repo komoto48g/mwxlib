@@ -140,7 +140,8 @@ class MatplotPanel(wx.Panel):
         
         def fork(v):
             self.handler.fork(v)
-            v.Skip()
+            if isinstance(v, wx.Event):
+                v.Skip()
         
         self.__handler = mwx.FSM({ #<MatplotPanel.handler>
                 None : {
@@ -175,7 +176,8 @@ class MatplotPanel(wx.Panel):
                 'y2axis motion' : (YAXIS, self.OnAxisEnter),
                 },
                 PAN : {
-             'C-wheel* pressed' : (PAN, self.OnScrollZoom),
+             '*wheelup pressed' : (PAN, self.OnScrollZoom),
+           '*wheeldown pressed' : (PAN, self.OnScrollZoom),
               'C-[+;-] pressed' : (PAN, self.OnZoom),
             'C-S-[+;-] pressed' : (PAN, self.OnZoom),
         'C-*[LR]button pressed' : (PAN+DRAGGING, ),
@@ -536,16 +538,25 @@ class MatplotPanel(wx.Panel):
         self.__key = ''
         self.handler('{} released'.format(key), evt) or evt.Skip()
     
-    def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called when the mouse button is pressed"""
+    def _on_mouse_event(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        """Called in the mouse event handlers
+        Save the current event and overwrite evt.key with modifiers
+        """
         self.p_event = evt
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
-        
         key = self.__key
         if evt.button in (1,2,3):
-            key += "LMR"[evt.button-1] #{1:L,2:M,3:R}
-        
+            key += 'LMR'[evt.button-1] #{1:L,2:M,3:R}
+            evt.key = key
+        elif evt.button in ('up', 'down'):
+            key += 'wheel{}'.format(evt.button) # up/down
+            evt.key = key
+        return key
+    
+    def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
+        """Called when the mouse button is pressed"""
+        key = self._on_mouse_event(evt)
         if evt.dblclick:
             self.__isDragging = None
             self.handler('{}button dclick'.format(key), evt)
@@ -555,13 +566,7 @@ class MatplotPanel(wx.Panel):
     
     def on_button_release(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is released"""
-        if not evt.inaxes or evt.inaxes is not self.axes:
-            (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
-        
-        key = self.__key
-        if evt.button in (1,2,3):
-            key += "LMR"[evt.button-1] #{1:L,2:M,3:R}
-        
+        key = self._on_mouse_event(evt)
         if self.__isDragging:
             self.__isDragging = False
             self.handler('{}drag end'.format(key), evt)
@@ -574,23 +579,17 @@ class MatplotPanel(wx.Panel):
     
     def on_motion_notify(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when the mouse is moved"""
-        if not evt.inaxes or evt.inaxes is not self.axes:
-            (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
-        
+        key = self._on_mouse_event(evt)
         if evt.button in (1,2,3):
-            key = self.__key + "LMR"[evt.button-1] #{1:L,2:M,3:R}
-            
             if self.__isDragging:
                 self.handler('{}drag move'.format(key), evt)
             else:
                 self.__isDragging = True
                 self.handler('{}drag begin'.format(key), evt)
-            
         elif evt.inaxes is self.axes:
             self.handler('axes motion', evt)
-            
         else:
-            lx,ly = self.xlim, self.ylim
+            lx, ly = self.xlim, self.ylim
             if   evt.xdata < lx[0]: event = 'yaxis'
             elif evt.xdata > lx[1]: event = 'y2axis'
             elif evt.ydata < ly[0]: event = 'xaxis'
@@ -601,14 +600,9 @@ class MatplotPanel(wx.Panel):
     
     def on_scroll(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when scrolling the mouse wheel"""
-        self.p_event = evt
-        if not evt.inaxes or evt.inaxes is not self.axes:
-            (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
-        
-        key = self.__key + 'wheel{}'.format(evt.button) # up/down
+        key = self._on_mouse_event(evt)
         self.handler('{} pressed'.format(key), evt)
         self.p_event = None
-        self.__key = ''
     
     ## --------------------------------
     ## Pan/Zoom actions 
