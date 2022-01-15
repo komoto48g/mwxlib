@@ -8,6 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from itertools import chain
+import sys
 import wx
 try:
     import framework as mwx
@@ -17,6 +18,7 @@ except ImportError:
     from . import framework as mwx
     from .matplot2 import MatplotPanel
     from .matplot2 import NORMAL, DRAGGING, MARK, LINE, REGION
+import matplotlib
 from matplotlib import patches
 import numpy as np
 from scipy import signal

@@ -5,19 +5,18 @@ import wx
 from wx import aui
 from wx import stc
 import wx.lib.eventwatcher as ew
-from mwx.framework import FSM
 
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
     
-    class _ListCtrl(wx.ListCtrl, CheckListCtrlMixin):
+    class CheckList(wx.ListCtrl, CheckListCtrlMixin):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
             
             self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
 else:
-    class _ListCtrl(wx.ListCtrl):
+    class CheckList(wx.ListCtrl):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             self.EnableCheckBoxes()
@@ -28,29 +27,30 @@ def where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
         return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-    except TypeError:
+    except Exception:
         return repr(obj)
 
 
-class EventMonitor(_ListCtrl):
-    """Event monitor of the inspector
+class EventMonitor(CheckList):
+    """Event monitor with check-list
 *** Inspired by wx.lib.eventwatcher ***
 
 Args:
     parent : inspector of the shell
     """
-    target = property(lambda self: self.__watchedWidget)
     data = property(lambda self: self.__items)
-    
-    logger = property(lambda self: self.__inspector.Scratch)
-    shell = property(lambda self: self.__inspector.rootshell)
+    parent = property(lambda self: self.__inspector)
+    target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, **kwargs):
-        _ListCtrl.__init__(self, parent,
+        CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
         self.__inspector = parent
         self.__watchedWidget = None
+        
+        self.__dir = True # sort direction
+        self.__items = []
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
@@ -62,12 +62,10 @@ Args:
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
         
-        self.__dir = True # sort direction
-        self.__items = []
-        
         ## self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick
+        ## self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick, space
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick) # left-dclick
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
     
     def OnDestroy(self, evt):
@@ -75,7 +73,7 @@ Args:
         evt.Skip()
     
     ## --------------------------------
-    ## Event-watcher wrapper interface 
+    ## EventWatcher wrapper interfaces 
     ## --------------------------------
     
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
@@ -115,7 +113,9 @@ Args:
         if widget:
             try:
                 handlers = widget.__event_handler__[event]
-                return [a for a in handlers if a != self.onWatchedEvent]
+                ## Exclude ew:onWatchedEvent by comparing names instead of objects
+                ## return [a for a in handlers if a != self.onWatchedEvent]
+                return [a for a in handlers if a.__name__ != 'onWatchedEvent']
             except KeyError:
                 print("- No such event: {}".format(event))
     
@@ -132,7 +132,7 @@ Args:
             if binder.typeId in ssmap:
                 self.append(binder.typeId)
         self.__inspector.handler("add_page", self)
-        self.shell.handler("monitor_begin", self.target)
+        self.__inspector.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
@@ -141,7 +141,7 @@ Args:
         for binder in self.get_watchlist():
             if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
-        self.shell.handler("monitor_end", self.target)
+        self.__inspector.handler("monitor_end", self.target)
         self.__watchedWidget = None
     
     def onWatchedEvent(self, evt):
@@ -163,20 +163,9 @@ Args:
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
     
-    def hook(self, evt):
-        actions = self.get_actions(evt.EventType)
-        for f in actions or []:
-            self.__inspector.debugger.trace(f, evt)
-    
     ## --------------------------------
     ## Actions for event-logger items
     ## --------------------------------
-    
-    def OnItemActivated(self, evt):
-        item = self.__items[evt.Index]
-        attribs = item[-1]
-        wx.CallAfter(wx.TipWindow, self, attribs, 512)
-        self.__inspector.handler("put_scratch", attribs)
     
     def update(self, evt):
         event = evt.EventType
@@ -207,8 +196,11 @@ Args:
             self.__inspector.handler("put_scratch", attribs)
         
         if self.IsItemChecked(i):
-            self.CheckItem(i, False)
-            self.hook(evt)
+            actions = self.get_actions(evt.EventType)
+            if actions:
+                self.CheckItem(i, False)
+                for f in actions:
+                    self.__inspector.debugger.trace(f, evt)
         
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             ## Don't run out of all timers and get warnings
@@ -256,6 +248,22 @@ Args:
             else:
                 self.SetItemFont(i, self.Font)
         self.Focus(self.__items.index(f))  # focus (one)
+    
+    ## def OnItemActivated(self, evt): #<wx._controls.ListEvent>
+    ##     i = evt.Index
+    ##     item = self.__items[i]
+    ##     attribs = item[-1]
+    ##     wx.CallAfter(wx.TipWindow, self, attribs, 512)
+    ##     self.__inspector.handler("put_scratch", attribs)
+    
+    def OnItemDClick(self, evt): #<wx._core.MouseEvent>
+        i, flag = self.HitTest(evt.Position)
+        if i >= 0:
+            item = self.__items[i]
+            attribs = item[-1]
+            wx.CallAfter(wx.TipWindow, self, attribs, 512)
+            self.__inspector.handler("put_scratch", attribs)
+        evt.Skip()
     
     ## def OnMotion(self, evt): #<wx._core.MouseEvent>
     ##     i, flag = self.HitTest(evt.Position)
