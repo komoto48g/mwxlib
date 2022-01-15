@@ -1000,28 +1000,28 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         
-        self.Bind(wx.EVT_LEFT_UP, lambda v: self.mouse_handler('Lbutton released', v))
-        self.Bind(wx.EVT_RIGHT_UP, lambda v: self.mouse_handler('Rbutton released', v))
-        self.Bind(wx.EVT_MIDDLE_UP, lambda v: self.mouse_handler('Mbutton released', v))
-        self.Bind(wx.EVT_LEFT_DOWN, lambda v: self.mouse_handler('Lbutton pressed', v))
-        self.Bind(wx.EVT_RIGHT_DOWN, lambda v: self.mouse_handler('Rbutton pressed', v))
-        self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.mouse_handler('Mbutton pressed', v))
-        self.Bind(wx.EVT_LEFT_DCLICK, lambda v: self.mouse_handler('Lbutton dclick', v))
-        self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: self.mouse_handler('Rbutton dclick', v))
-        self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: self.mouse_handler('Mbutton dclick', v))
+        self.Bind(wx.EVT_LEFT_UP, lambda v: self._mouse_handler('Lbutton released', v))
+        self.Bind(wx.EVT_RIGHT_UP, lambda v: self._mouse_handler('Rbutton released', v))
+        self.Bind(wx.EVT_MIDDLE_UP, lambda v: self._mouse_handler('Mbutton released', v))
+        self.Bind(wx.EVT_LEFT_DOWN, lambda v: self._mouse_handler('Lbutton pressed', v))
+        self.Bind(wx.EVT_RIGHT_DOWN, lambda v: self._mouse_handler('Rbutton pressed', v))
+        self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self._mouse_handler('Mbutton pressed', v))
+        self.Bind(wx.EVT_LEFT_DCLICK, lambda v: self._mouse_handler('Lbutton dclick', v))
+        self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: self._mouse_handler('Rbutton dclick', v))
+        self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: self._mouse_handler('Mbutton dclick', v))
         
-        self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: self.mouse_handler('Xbutton1 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: self.mouse_handler('Xbutton2 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.mouse_handler('Xbutton1 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: self.mouse_handler('Xbutton2 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self.mouse_handler('Xbutton1 dclick', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self.mouse_handler('Xbutton2 dclick', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: self._mouse_handler('Xbutton1 released', v))
+        self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: self._mouse_handler('Xbutton2 released', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self._mouse_handler('Xbutton1 pressed', v))
+        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: self._mouse_handler('Xbutton2 pressed', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: self._mouse_handler('Xbutton1 dclick', v))
+        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self._mouse_handler('Xbutton2 dclick', v))
         
-        ## self.Bind(wx.EVT_MOTION, lambda v: self.window_handler('motion', v))
-        self.Bind(wx.EVT_SET_FOCUS, lambda v: self.window_handler('focus_set', v))
-        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self.window_handler('focus_kill', v))
-        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self.window_handler('window_enter', v))
-        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self.window_handler('window_leave', v))
+        ## self.Bind(wx.EVT_MOTION, lambda v: self._window_handler('motion', v))
+        self.Bind(wx.EVT_SET_FOCUS, lambda v: self._window_handler('focus_set', v))
+        self.Bind(wx.EVT_KILL_FOCUS, lambda v: self._window_handler('focus_kill', v))
+        self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self._window_handler('window_enter', v))
+        self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self._window_handler('window_leave', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
@@ -1050,7 +1050,7 @@ class CtrlInterface(object):
         self.handler('{} pressed'.format(evt.key), evt) or evt.Skip()
         self.__key = ''
     
-    def mouse_handler(self, event, evt): #<wx._core.MouseEvent>
+    def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called when mouse event
         Trigger event: 'key+[LMRX]button pressed/released/dclick'
         """
@@ -1064,7 +1064,7 @@ class CtrlInterface(object):
         except AttributeError:
             pass
     
-    def window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
+    def _window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
         self.handler(event, evt) or evt.Skip()
 
 
@@ -4069,7 +4069,7 @@ def where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
         return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-    except TypeError:
+    except Exception:
         return inspect.getmodule(obj)
 
 

@@ -37,6 +37,9 @@ class Plugin(Layer):
             cw=-1, lw=36, tw=30      # w: width of [c]ontrol, [l]abel, [t]ext
         )
     
+    def Destroy(self):
+        return Layer.Destroy(self)
+    
     def init_session(self, session):
         """Restore settings from a session file"""
         self.ksize.value = session.get('ksize')
