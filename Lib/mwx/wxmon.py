@@ -113,7 +113,9 @@ Args:
         if widget:
             try:
                 handlers = widget.__event_handler__[event]
-                return [a for a in handlers if a != self.onWatchedEvent]
+                ## Exclude ew:onWatchedEvent by comparing names instead of objects
+                ## return [a for a in handlers if a != self.onWatchedEvent]
+                return [a for a in handlers if a.__name__ != 'onWatchedEvent']
             except KeyError:
                 print("- No such event: {}".format(event))
     
