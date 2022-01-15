@@ -4150,6 +4150,14 @@ def watch(target=None, **kwargs):
     return it
 
 
+def watch_event(target=None, **kwargs):
+    from wx.lib.eventwatcher import EventWatcher
+    ew = EventWatcher(None, **kwargs)
+    ew.watch(target)
+    ew.Show()
+    return ew
+
+
 def filling(target=None, label=None, **kwargs):
     """Wx.py tool for watching ingredients of the target
     """
