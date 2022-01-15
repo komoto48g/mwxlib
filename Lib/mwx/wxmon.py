@@ -5,7 +5,6 @@ import wx
 from wx import aui
 from wx import stc
 import wx.lib.eventwatcher as ew
-from mwx.framework import FSM
 
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
@@ -28,7 +27,7 @@ def where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
         return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-    except TypeError:
+    except Exception:
         return repr(obj)
 
 
@@ -42,15 +41,15 @@ Args:
     target = property(lambda self: self.__watchedWidget)
     data = property(lambda self: self.__items)
     
-    logger = property(lambda self: self.__inspector.Scratch)
-    shell = property(lambda self: self.__inspector.rootshell)
-    
     def __init__(self, parent, **kwargs):
         _ListCtrl.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
         self.__inspector = parent
         self.__watchedWidget = None
+        
+        self.__dir = True # sort direction
+        self.__items = []
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
@@ -61,9 +60,6 @@ Args:
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
-        
-        self.__dir = True # sort direction
-        self.__items = []
         
         ## self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
@@ -132,7 +128,7 @@ Args:
             if binder.typeId in ssmap:
                 self.append(binder.typeId)
         self.__inspector.handler("add_page", self)
-        self.shell.handler("monitor_begin", self.target)
+        self.__inspector.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
@@ -141,7 +137,7 @@ Args:
         for binder in self.get_watchlist():
             if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
-        self.shell.handler("monitor_end", self.target)
+        self.__inspector.handler("monitor_end", self.target)
         self.__watchedWidget = None
     
     def onWatchedEvent(self, evt):
@@ -162,11 +158,6 @@ Args:
                     values = ('\n'+' '*41).join(where(a) for a in actions)
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
-    
-    def hook(self, evt):
-        actions = self.get_actions(evt.EventType)
-        for f in actions or []:
-            self.__inspector.debugger.trace(f, evt)
     
     ## --------------------------------
     ## Actions for event-logger items
@@ -207,8 +198,11 @@ Args:
             self.__inspector.handler("put_scratch", attribs)
         
         if self.IsItemChecked(i):
-            self.CheckItem(i, False)
-            self.hook(evt)
+            actions = self.get_actions(evt.EventType)
+            if actions:
+                self.CheckItem(i, False)
+                for f in actions:
+                    self.__inspector.debugger.trace(f, evt)
         
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             ## Don't run out of all timers and get warnings
