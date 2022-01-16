@@ -1641,15 +1641,6 @@ Global bindings:
             from .wxpdb import Debugger
             from .wxmon import EventMonitor
         
-        def debug(obj, *args, **kwargs):
-            if callable(obj):
-                self.debugger.trace(obj, *args, **kwargs)
-            elif isinstance(obj, wx.Object):
-                self.monitor.watch(obj)
-            else:
-                print("- cannot debug {!r}".format(obj))
-        builtins.debug = debug
-        
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
                                    stdout=self.__shell.interp.stdout)
@@ -1713,7 +1704,7 @@ Global bindings:
                      'add_page' : [ None, self.add_page_console ],
                   'remove_page' : [ None, self.remove_page_console ],
                  'popup_window' : [ None, self.PopupWindow ],
-             'set_title_window' : [ None, self.SetTitleWindow ],
+                 'title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
                    'f1 pressed' : (0, self.About),
@@ -1851,6 +1842,18 @@ Global bindings:
             self.remove_page_console(win)
             return
         evt.Skip()
+    
+    ## --------------------------------
+    ## Actions for handler
+    ## --------------------------------
+    
+    def debug(self, obj, *args, **kwargs):
+        if callable(obj):
+            self.debugger.trace(obj, *args, **kwargs)
+        elif isinstance(obj, wx.Object):
+            self.monitor.watch(obj)
+        else:
+            print("- cannot debug {!r}".format(obj))
     
     def add_page_console(self, win, title=None, show=False):
         nb = self.console
@@ -2750,7 +2753,7 @@ Flaky nutshell:
         
         self.__target = target
         self.interp.locals.update(target.__dict__)
-        self.parent.handler('set_title_window', target)
+        self.parent.handler('title_window', target)
     
     @property
     def locals(self):
@@ -3386,6 +3389,7 @@ Flaky nutshell:
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
+        builtins.debug = self.parent.debug
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
