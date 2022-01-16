@@ -67,6 +67,9 @@ Args:
         ## self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick, space
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick) # left-dclick
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
+        self.ew = ew
+        self.add_module = ew.addModuleEvents
     
     def OnDestroy(self, evt):
         self.unwatch()
@@ -110,7 +113,7 @@ Args:
     def get_actions(self, event, widget=None):
         """Wx.PyEventBinder and the handlers"""
         widget = widget or self.target
-        if widget:
+        if widget and hasattr(widget, '__event_handler__'):
             try:
                 handlers = widget.__event_handler__[event]
                 ## Exclude ew:onWatchedEvent by comparing names instead of objects
@@ -131,7 +134,7 @@ Args:
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
                 self.append(binder.typeId)
-        self.__inspector.handler("add_page", self)
+        self.__inspector.handler("add_page", self, show=1)
         self.__inspector.handler("monitor_begin", self.target)
     
     def unwatch(self):
@@ -153,9 +156,11 @@ Args:
         """Dump all event handlers bound to the widget"""
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
+        if not hasattr(widget, '__event_handler__'):
+            return ssmap
         for event in sorted(widget.__event_handler__):
             actions = self.get_actions(event)
-            if event not in exclusions and actions:
+            if actions and event not in exclusions:
                 ssmap[event] = actions
                 if verbose:
                     name = self.get_name(event)
