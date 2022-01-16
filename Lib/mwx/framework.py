@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.8"
+__version__ = "0.50.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1818,8 +1818,8 @@ Global bindings:
         self._mgr.Update()
     
     def SetTitleWindow(self, win):
-        self.Title = re.sub("(.*) - (.*)", # Clone of ...
-                            "\\1 - {!r}".format(win), self.Title)
+        self.Title = re.sub("(.*) - (.*)",
+                             "\\1 - {!r}".format(win), self.Title)
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
@@ -1859,7 +1859,8 @@ Global bindings:
         nb = self.console
         j = nb.GetPageIndex(win)
         if j != -1:
-            nb.SetSelection(j)
+            if show:
+                nb.SetSelection(j)
         else:
             nb.AddPage(win, title or win.__class__.__name__)
             nb.TabCtrlHeight = -1
@@ -3704,15 +3705,10 @@ Flaky nutshell:
         elif not hasattr(target, '__dict__'):
             raise TypeError("cannot dive into a primitive object")
         
-        if not isinstance(self.parent, ShellFrame):
-            ## Make new deb/shell outside
-            frame = deb(target, title="Clone of Nautilus - {!r}".format(target))
-            shell = frame.rootshell
-        else:
-            ## Make shell:clone in the console
-            shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
-            self.parent.handler('add_page', shell,
-                                target.__class__.__name__, show=True)
+        ## Make shell:clone in the console
+        shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
+        self.parent.handler('add_page', shell,
+                            target.__class__.__name__, show=True)
         self.handler('shell_cloned', shell)
         shell.__root = self
         return shell
