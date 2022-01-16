@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from .framework import __version__, __author__
 from .framework import apropos, typename
 from .framework import SSM, FSM
-from .framework import pack
+from .framework import pack, hotkey
 from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame, Editor, Nautilus
 from .framework import funcall # curry spices

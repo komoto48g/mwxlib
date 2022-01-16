@@ -674,9 +674,6 @@ Attributes:
         The transaction is exepcted to be a list (not a tuple).
         When action is not given, this does nothing, but returns @decor(event-binder).
         """
-        if not action:
-            return lambda f: self.bind(event, f, state, state2)
-        
         warn = self.log
         
         if state not in self:
@@ -703,6 +700,8 @@ Attributes:
             context[event] = [state2] # new event:transaction
         
         transaction = context[event]
+        if not action:
+            return lambda f: self.bind(event, f, state, state2)
         if action not in transaction:
             try:
                 transaction.append(action)
@@ -711,7 +710,7 @@ Attributes:
                      "  The transaction must be a list, not a tuple".format(state, event))
         return action
     
-    def unbind(self, event, action, state=None):
+    def unbind(self, event, action=None, state=None):
         """Remove a transaction from the context
         equiv. self[state] -= {event : [*, action]}
         The transaction is exepcted to be a list (not a tuple).
@@ -727,14 +726,19 @@ Attributes:
             return
         
         transaction = context[event]
+        if not action:
+            context.pop(event) # remove the transation
+            return True
         if action in transaction:
             try:
                 transaction.remove(action)
                 if len(transaction) == 1:
                     context.pop(event)
+                return True
             except AttributeError:
                 warn("- FSM:warning - removing action from context ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
+        return False
 
 
 ## --------------------------------
@@ -1806,12 +1810,11 @@ Global bindings:
         self.PopupWindow(self.Help)
     
     def PopupWindow(self, win=None, show=True):
-        """Popup window in the ghost; console;
+        """Popup window in (self.console, self.ghost)
         win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle
         """
-        books = self.console, self.ghost
-        for nb in books:
+        for nb in (self.console, self.ghost):
             if nb.CurrentPage is win:
                 break
             j = nb.GetPageIndex(win) # check if nb has win
@@ -1833,6 +1836,7 @@ Global bindings:
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        self.SetTitleWindow(nb.CurrentPage.target)
         evt.Skip()
     
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
