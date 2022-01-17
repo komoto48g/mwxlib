@@ -1650,6 +1650,7 @@ Global bindings:
     """
     rootshell = property(lambda self: self.__shell)
     debugger = property(lambda self: self.__debugger)
+    inspector = property(lambda self: self.__inspector)
     monitor = property(lambda self: self.__monitor)
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
@@ -1674,14 +1675,19 @@ Global bindings:
         
         try:
             from wxpdb import Debugger
+            from wxwit import Inspector
             from wxmon import EventMonitor
         except ImportError:
             from .wxpdb import Debugger
+            from .wxwit import Inspector
             from .wxmon import EventMonitor
         
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
                                    stdout=self.__shell.interp.stdout)
+        
+        self.__inspector = Inspector(self)
+        self.__inspector.Show(0)
         
         self.__monitor = EventMonitor(self)
         self.__monitor.Show(0)
@@ -1887,6 +1893,7 @@ Global bindings:
         if callable(obj):
             self.debugger.trace(obj, *args, **kwargs)
         elif isinstance(obj, wx.Object):
+            self.inspector.watch(obj)
             self.monitor.watch(obj)
         else:
             print("- cannot debug {!r}".format(obj))
@@ -2724,7 +2731,7 @@ Shell built-in utility:
     @pp         synonym of pprint
     @info   @?  short info
     @help   @?? full description
-    @clone      clone the shell with new target
+    @dive       clone the shell with new target
     @timeit     measure the duration cpu time
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
@@ -2734,7 +2741,7 @@ Shell built-in utility:
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
     @where      (filename, lineno) or the module
-    @debug      open pdb in the shell
+    @debug      open pdb or show event-watchlist and widget-tree
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
