@@ -40,7 +40,7 @@ Attributes:
    globals : (ditto)
 
 Args:
-    parent : shell
+    parent : shell frame
      stdin : shell.interp.stdin
    stdiout : shell.interp.stdout
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     app = wx.App()
     frm = mwx.Frame(None)
     if 1:
-        self = frm.inspector
+        self = frm.shellframe
         frm.dbg = Debugger(self,
                            stdin=self.rootshell.interp.stdin,
                            stdout=self.rootshell.interp.stdout

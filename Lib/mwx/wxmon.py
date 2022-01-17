@@ -36,7 +36,7 @@ class EventMonitor(CheckList):
 *** Inspired by wx.lib.eventwatcher ***
 
 Args:
-    parent : inspector of the shell
+    parent : shell frame
     """
     data = property(lambda self: self.__items)
     parent = property(lambda self: self.__inspector)
@@ -68,7 +68,7 @@ Args:
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick) # left-dclick
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        self.ew = ew
+        ## self.ew = ew
         self.add_module = ew.addModuleEvents
     
     def OnDestroy(self, evt):
@@ -134,8 +134,8 @@ Args:
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
                 self.append(binder.typeId)
-        self.__inspector.handler("add_page", self, show=1)
-        self.__inspector.handler("monitor_begin", self.target)
+        self.parent.handler("add_page", self, show=1)
+        self.parent.handler("monitor_begin", self.target)
     
     def unwatch(self):
         """End watching"""
@@ -144,7 +144,7 @@ Args:
         for binder in self.get_watchlist():
             if not self.target.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
-        self.__inspector.handler("monitor_end", self.target)
+        self.parent.handler("monitor_end", self.target)
         self.__watchedWidget = None
     
     def onWatchedEvent(self, evt):
@@ -198,14 +198,14 @@ Args:
             self.SetItem(i, j, str(v))
         
         if i == self.FocusedItem:
-            self.__inspector.handler("put_scratch", attribs)
+            self.parent.handler("put_scratch", attribs)
         
         if self.IsItemChecked(i):
             actions = self.get_actions(evt.EventType)
             if actions:
                 self.CheckItem(i, False)
                 for f in actions:
-                    self.__inspector.debugger.trace(f, evt)
+                    self.parent.debugger.trace(f, evt)
         
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             ## Don't run out of all timers and get warnings
@@ -259,7 +259,7 @@ Args:
     ##     item = self.__items[i]
     ##     attribs = item[-1]
     ##     wx.CallAfter(wx.TipWindow, self, attribs, 512)
-    ##     self.__inspector.handler("put_scratch", attribs)
+    ##     self.parent.handler("put_scratch", attribs)
     
     def OnItemDClick(self, evt): #<wx._core.MouseEvent>
         i, flag = self.HitTest(evt.Position)
@@ -267,7 +267,7 @@ Args:
             item = self.__items[i]
             attribs = item[-1]
             wx.CallAfter(wx.TipWindow, self, attribs, 512)
-            self.__inspector.handler("put_scratch", attribs)
+            self.parent.handler("put_scratch", attribs)
         evt.Skip()
     
     ## def OnMotion(self, evt): #<wx._core.MouseEvent>
@@ -282,10 +282,10 @@ if __name__ == "__main__":
     app = wx.App()
     frm = mwx.Frame(None)
     if 1:
-        self = frm.inspector
+        self = frm.shellframe
         frm.mon = EventMonitor(self)
         frm.mon.Show(0)
-        self.rootshell.write("self.mon.watch(self.mon)")
         self.Show()
+        self.rootshell.write("self.mon.watch(self.mon)")
     frm.Show()
     app.MainLoop()

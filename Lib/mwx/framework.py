@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.51.0"
+__version__ = "0.51.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1496,14 +1496,18 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     menubar : MenuBar
   statusbar : StatusBar
-  inspector : mini-frame of the shell
+ shellframe : mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
+    
+    shellframe = property(lambda self: self.__inspector)
+    
+    inspector = shellframe # (to be deprecated) for backward compatibility
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
-        self.inspector = ShellFrame(None, target=self)
+        self.__inspector = ShellFrame(None, target=self)
         
         ## statusbar/menubar などのカスタマイズを行う
         ## レイアウト系コマンドは statusbar/menubar の作成後
@@ -1511,9 +1515,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.menubar = MenuBar()
         self.menubar["File"] = [
             (ID_(1), "&Shell\tF12", "Shell for inspection", wx.ITEM_CHECK,
-                lambda v: (self.inspector.Show(),
-                           self.inspector.console.CurrentPage.SetFocus()),
-                lambda v: v.Check(self.inspector.IsShown())),
+                lambda v: (self.shellframe.Show(),
+                           self.shellframe.console.CurrentPage.SetFocus()),
+                lambda v: v.Check(self.shellframe.IsShown())),
             (),
             (wx.ID_EXIT, "E&xit\tCtrl-w", "Exit the program",
                 lambda v: self.Close()),
@@ -1569,7 +1573,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     def Destroy(self):
         try:
             self.timer.Stop()
-            self.inspector.Destroy() # inspector is not my child
+            self.shellframe.Destroy() # shellframe is not my child
         finally:
             return wx.Frame.Destroy(self)
 
@@ -4210,8 +4214,8 @@ if __name__ == '__main__':
     SHELLSTARTUP = """
 if 1:
     self
-    self.inspector
-    root = self.inspector.rootshell
+    self.shellframe
+    root = self.shellframe.rootshell
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
@@ -4229,10 +4233,10 @@ if 1:
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
-    frm.inspector.handler.debug = 0
-    frm.inspector.rootshell.handler.debug = 4
-    frm.inspector.rootshell.Execute(SHELLSTARTUP)
-    frm.inspector.rootshell.SetFocus()
-    frm.inspector.Show()
+    frm.shellframe.handler.debug = 0
+    frm.shellframe.rootshell.handler.debug = 4
+    frm.shellframe.rootshell.Execute(SHELLSTARTUP)
+    frm.shellframe.rootshell.SetFocus()
+    frm.shellframe.Show()
     frm.Show()
     app.MainLoop()

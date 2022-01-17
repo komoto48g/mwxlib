@@ -1246,7 +1246,7 @@ class Frame(mwx.Frame):
         self.__class__.l = property(lambda self: self.get_plug(name))
         self.__class__.lm = property(lambda self: self.plugins.get(name))
         
-        rootshell = self.inspector.rootshell
+        rootshell = self.shellframe.rootshell
         rootshell.clearCommand()
         rootshell.write(
             "#include plug {!r} as propperty:\n"
@@ -1261,7 +1261,7 @@ class Frame(mwx.Frame):
         def init(shell):
             shell.target = self.l or self # reset when unloaded
         init(shell)
-        self.inspector.Show()
+        self.shellframe.Show()
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
@@ -1629,11 +1629,11 @@ class Frame(mwx.Frame):
         
         with open(f) as i:
             ## evaluation of session in the shell
-            self.inspector.rootshell.locals.update(
+            self.shellframe.rootshell.locals.update(
                 nan = np.nan,
                 inf = np.inf,
             )
-            self.inspector.rootshell.Execute(i.read())
+            self.shellframe.rootshell.Execute(i.read())
             self.menubar.reset()
             dirname = os.path.dirname(f)
             if dirname:
@@ -1668,8 +1668,8 @@ class Frame(mwx.Frame):
             o.write('\n'.join((
                 "#! wxpyJemacs session file (This file is generated automatically)",
                 "self.SetSize({})".format(self.Size),
-                "self.inspector.SetSize({})".format(self.inspector.Size),
-                "self.inspector.Show({})".format(self.inspector.IsShown()),
+                "self.shellframe.SetSize({})".format(self.shellframe.Size),
+                "self.shellframe.Show({})".format(self.shellframe.IsShown()),
                 ""
             )))
             for name in ('output', 'histogram'): # save built-in window layout
