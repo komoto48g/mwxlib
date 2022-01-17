@@ -20,13 +20,8 @@ except:
     from . import framework as mwx
     from .controls import ControlPanel
 import numpy as np
-
-try:
-    input = raw_input # PY2
-except:
-    pass
-
-LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
+from six.moves import input
+from six import string_types
 
 
 class Gplot(object):
@@ -73,7 +68,7 @@ class Gplot(object):
         return self
     
     def plot(self, *args):
-        if isinstance(args[0], LITERAL_TYPE): # text command
+        if isinstance(args[0], string_types): # text command
             pcmd = [v.strip() for v in args]
             if pcmd[-1].endswith(','):
                 pcmd[-1] = pcmd[-1][:-1]
@@ -95,7 +90,7 @@ class Gplot(object):
             axis, args = args[0], args[1:]
             data, opts = [], []
             for v in args:
-                if not isinstance(v, LITERAL_TYPE):
+                if not isinstance(v, string_types):
                     data.append(v)
                     if len(data) - len(opts) > 1: # opts 指定が省略されたのでデフォルト指定
                         opts.append("w l")
@@ -257,6 +252,9 @@ class GplotFrame(mwx.Frame):
 
 
 if __name__ == "__main__":
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
+    
     from numpy import pi
     from mwx.controls import LParam
     

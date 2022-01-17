@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.50.9"
+__version__ = "0.51.0rc"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -37,12 +37,11 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator)
 from pprint import pprint, pformat
 from six.moves import builtins
+from six import string_types
 try:
     from importlib import reload
 except ImportError:
     pass
-
-LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
 
 
 def atom(v):
@@ -152,7 +151,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
                   .replace('\\A','[A-Z0-9]')) #\A: 
     
-    if isinstance(pred, LITERAL_TYPE):
+    if isinstance(pred, string_types):
         pred = predicate(pred, locals)
     
     if isinstance(pred, type):
@@ -910,8 +909,8 @@ def funcall(f, *args, **kwargs):
     doc = kwargs.pop('doc') if 'doc' in kwargs else ''
     alias = kwargs.pop('alias') if 'alias' in kwargs else ''
     
-    assert isinstance(doc, (LITERAL_TYPE, type(None)))
-    assert isinstance(alias, (LITERAL_TYPE, type(None)))
+    assert isinstance(doc, (string_types, type(None)))
+    assert isinstance(alias, (string_types, type(None)))
     
     @wraps(f)
     def _Act(*v):
@@ -1230,17 +1229,17 @@ class TreeList(object):
         return self.__items.__iter__()
     
     def __getitem__(self, k):
-        if isinstance(k, LITERAL_TYPE):
+        if isinstance(k, string_types):
             return self.getf(self.__items, k)
         return self.__items.__getitem__(k)
     
     def __setitem__(self, k, v):
-        if isinstance(k, LITERAL_TYPE):
+        if isinstance(k, string_types):
             return self.setf(self.__items, k, v)
         return self.__items.__setitem__(k, v)
     
     def __delitem__(self, k):
-        if isinstance(k, LITERAL_TYPE):
+        if isinstance(k, string_types):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     

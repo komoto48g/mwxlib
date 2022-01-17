@@ -48,7 +48,7 @@ try:
 except ImportError:
     pass
 
-LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
+from six import string_types
 
 if sys.version_info < (3,0):
     FileNotFoundError = IOError
@@ -454,7 +454,7 @@ class Graph(GraphPlot):
             self.infobar.ShowMessage(str(frame.annotation))
     
     def get_frame(self, j):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             return next((art for art in self.all_frames if art.name == j), None)
         return self.all_frames[j]
     
@@ -933,7 +933,7 @@ class Frame(mwx.Frame):
         Note: When called in thread, the display of AuiPane might be broken.
               Reload this from menu with [C-M-S] key after the thread exits.
         """
-        if isinstance(name, LITERAL_TYPE):
+        if isinstance(name, string_types):
             if name.endswith(".py") or name.endswith(".pyc"):
                 name,_ext = os.path.splitext(os.path.basename(name))
         plug = self.get_plug(name)
@@ -1099,7 +1099,7 @@ class Frame(mwx.Frame):
             ## create a pane or notebook pane
             title = plug.category
             caption = plug.caption
-            if not isinstance(caption, LITERAL_TYPE):
+            if not isinstance(caption, string_types):
                 caption = name
             
             if not isinstance(plug.dockable, bool):
@@ -1487,7 +1487,7 @@ class Frame(mwx.Frame):
         if view not in self.graphic_windows:
             view = self.selected_view
         
-        if isinstance(paths, LITERAL_TYPE): # for single frame:backward compatibility
+        if isinstance(paths, string_types): # for single frame:backward compatibility
             paths = [paths]
         
         if paths is None:

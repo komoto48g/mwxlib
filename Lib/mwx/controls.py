@@ -22,7 +22,7 @@ except ImportError:
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
-LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
+from six import string_types
 
 ## EPSILON = sys.float_info.epsilon
 ## EPSILON = 1e-15
@@ -165,7 +165,7 @@ Args:
                 return
         elif v == 'nan': v = nan
         elif v == 'inf': v = inf
-        elif isinstance(v, LITERAL_TYPE):
+        elif isinstance(v, string_types):
             v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
             ## v = self.__eval(v)
         self.set_value(v)
@@ -701,7 +701,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
         
         ## for backward-compatibility
-        if objs is None or isinstance(objs, LITERAL_TYPE):
+        if objs is None or isinstance(objs, string_types):
             import warnings
             warnings.warn("Use layout:objs as the first arg.",
                           DeprecationWarning, stacklevel=2)
@@ -1205,6 +1205,9 @@ class Gauge(wx.Panel):
 
 
 if __name__ == '__main__':
+    print("Python {}".format(sys.version))
+    print("wxPython {}".format(wx.version()))
+    
     class TestPanel(ControlPanel, mwx.CtrlInterface):
         def __init__(self, *args, **kwargs):
             ControlPanel.__init__(self, *args, **kwargs)

@@ -27,8 +27,7 @@ import cv2
 import numpy as np
 from numpy import pi, nan
 from scipy import ndimage as ndi
-
-LITERAL_TYPE = (str,) if sys.version_info >= (3,0) else (str,unicode)
+from six import string_types
 
 _F = mwx.funcall
 
@@ -665,7 +664,7 @@ Constants:
         return art
     
     def select(self, j):
-        if isinstance(j, (LITERAL_TYPE, AxesImagePhantom)): # given name:str or frame:art
+        if isinstance(j, (string_types, AxesImagePhantom)): # given name:str or frame:art
            j = self.index(j)
            if j is None:
                return
@@ -700,7 +699,7 @@ Constants:
         return self.frame
     
     def __getitem__(self, j):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             return self.__getitem__(self.index(j))
         
         buffers = [art.buffer for art in self.__Arts]
@@ -710,7 +709,7 @@ Constants:
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             try:
                 return self.__setitem__(self.index(j), v) # overwrite buffer
             except Exception:
@@ -728,7 +727,7 @@ Constants:
             self.select(j)
     
     def __delitem__(self, j):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             return self.__delitem__(self.index(j))
         
         if isinstance(j, list):
@@ -764,20 +763,20 @@ Constants:
         return True
     
     def __contains__(self, j):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             return j in (art.name for art in self.__Arts)
         else:
             return j in self.__Arts
     
     def index(self, j):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
             names = [art.name for art in self.__Arts]
             return names.index(j) # -> ValueError: `j' is not in list
         return self.__Arts.index(j)
     
     def find_frame(self, j):
-        if isinstance(j, LITERAL_TYPE):
+        if isinstance(j, string_types):
             return next((art for art in self.__Arts if art.name == j), None)
         return self.__Arts[j]
     
