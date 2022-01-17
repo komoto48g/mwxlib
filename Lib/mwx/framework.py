@@ -969,6 +969,7 @@ def funcall(f, *args, **kwargs):
         action.__name__ = str(alias)
     action.__doc__ = doc or f.__doc__
     return action
+_F = funcall
 
 
 def postcall(f):
@@ -1686,8 +1687,6 @@ Global bindings:
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
-        _F = funcall
-        
         self.handler.update({ #<ShellFrame.handler>
             None : {
                 'shell_cleared' : [ None, ],
@@ -1887,9 +1886,10 @@ Global bindings:
         ed.ReadOnly = 1
     
     def other_editor(self, p=1):
-        "Focus moves to another ghost editor (no loop)"
-        j = (self.ghost.Selection + p) #% self.ghost.PageCount
-        self.ghost.SetSelection(j)
+        "Focus moves to another page of ghost editor (no loop)"
+        ## j = (self.ghost.Selection + p) #% self.ghost.PageCount
+        ## self.ghost.SetSelection(j)
+        self.ghost.Selection += p
     
     def other_window(self, p=1):
         "Focus moves to other window"
@@ -2036,8 +2036,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self.parent.handler(self.handler.event, v)
             except AttributeError:
                 pass
-        
-        _F = funcall
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -2875,8 +2873,6 @@ Flaky nutshell:
         
         def fork(v):
             self.handler.fork(v) # fork event to 0=default
-        
-        _F = funcall
         
         self.handler.update({ #<Nautilus.handler>
             None : {
