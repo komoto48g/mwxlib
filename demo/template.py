@@ -41,12 +41,10 @@ class Plugin(Layer):
         return Layer.Destroy(self)
     
     def init_session(self, session):
-        """Restore settings from a session file"""
-        self.ksize.value = session.get('ksize')
+        self.reset_params(session.get('params'))
     
     def save_session(self, session):
-        """Save settings in a session file"""
-        session['ksize'] = self.ksize.value
+        session['params'] = self.parameters
     
     def run(self):
         k = self.ksize.value

@@ -3385,7 +3385,7 @@ Flaky nutshell:
         ## Add utility functions to builtins each time when activated.
         builtins.help = self.help
         builtins.info = self.info
-        builtins.clone = self.clone
+        builtins.dive = self.clone
         builtins.timeit = self.timeit
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
@@ -3402,10 +3402,11 @@ Flaky nutshell:
         
         del builtins.help
         del builtins.info
-        del builtins.clone
+        del builtins.dive
         del builtins.timeit
         del builtins.execute
         del builtins.puts
+        del builtins.debug
     
     def on_text_input(self, text):
         """Called when [Enter] text (before push)
