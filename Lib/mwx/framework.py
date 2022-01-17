@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.51.0rc"
+__version__ = "0.51.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -388,6 +388,32 @@ class SSM(OrderedDict):
             return repr(a) # index
         return '\n'.join("{:>32} : {}".format(
             k, ', '.join(name(a) for a in v)) for k,v in self.items())
+    
+    def bind(self, event, action=None):
+        """Append a transaction to the context"""
+        transaction = self[event]
+        if action is None:
+            return lambda f: self.bind(event, f)
+        if not callable(action):
+            raise TypeError("{!r} is not callable".format(action))
+        if action not in transaction:
+            transaction.append(action)
+        return action
+    
+    def unbind(self, event, action=None):
+        """Remove a transaction from the context"""
+        transaction = self[event]
+        if action is None:
+            del self[event]
+            return True
+        if not callable(action):
+            raise TypeError("{!r} is not callable".format(action))
+        if action in transaction:
+            transaction.remove(action)
+            if not any(callable(x) for x in transaction):
+                del self[event]
+            return True
+        return False
 
 
 class FSM(dict):
@@ -629,7 +655,7 @@ Attributes:
             if k in self:
                 self[k].update(self.duplicate(v))
             else:
-                self[k] = SSM(self.duplicate(v))
+                self[k] = SSM(self.duplicate(v)) # new context
             self.validate(k)
     
     def append(self, contexts):
@@ -643,7 +669,7 @@ Attributes:
                     for act in transaction[1:]:
                         self.bind(event, act, k, transaction[0])
             else:
-                self[k] = SSM(self.duplicate(v))
+                self[k] = SSM(self.duplicate(v)) # new context
             self.validate(k)
     
     def remove(self, contexts):
@@ -670,14 +696,15 @@ Attributes:
     def bind(self, event, action=None, state=None, state2=None):
         """Append a transaction to the context
         equiv. self[state] += {event : [state2, action]}
+        
         The transaction is exepcted to be a list (not a tuple).
-        When action is not given, this does nothing, but returns @decor(event-binder).
+        If no action, it creates only the transition and returns @decor(binder).
         """
         warn = self.log
         
         if state not in self:
             warn("- FSM:warning - [{!r}] context newly created.".format(state))
-            self[state] = SSM()
+            self[state] = SSM() # new context
         
         context = self[state]
         if state2 is None:
@@ -699,8 +726,10 @@ Attributes:
             context[event] = [state2] # new event:transaction
         
         transaction = context[event]
-        if not action:
+        if action is None:
             return lambda f: self.bind(event, f, state, state2)
+        if not callable(action):
+            raise TypeError("{!r} is not callable".format(action))
         if action not in transaction:
             try:
                 transaction.append(action)
@@ -712,7 +741,9 @@ Attributes:
     def unbind(self, event, action=None, state=None):
         """Remove a transaction from the context
         equiv. self[state] -= {event : [*, action]}
+        
         The transaction is exepcted to be a list (not a tuple).
+        If no action, it will remove the transaction from the context.
         """
         warn = self.log
         
@@ -722,17 +753,20 @@ Attributes:
         
         context = self[state]
         if event not in context:
+            warn("- FSM:warning - No such transaction ({!r} : {!r})".format(state, event))
             return
         
         transaction = context[event]
-        if not action:
-            context.pop(event) # remove the transation
+        if action is None:
+            del context[event]
             return True
+        if not callable(action):
+            raise TypeError("{!r} is not callable".format(action))
         if action in transaction:
             try:
                 transaction.remove(action)
-                if len(transaction) == 1:
-                    context.pop(event)
+                if not any(callable(x) for x in transaction):
+                    del context[event]
                 return True
             except AttributeError:
                 warn("- FSM:warning - removing action from context ({!r} : {!r})\n"
@@ -974,7 +1008,7 @@ _F = funcall
 
 def postcall(f):
     """A decorator of wx.CallAfter
-    Wx posts the message that forces calling `f to take place in the main thread.
+    Wx posts the message that forces `f to take place in the main thread.
     """
     @wraps(f)
     def _f(*args, **kwargs):
@@ -1127,7 +1161,7 @@ class KeyCtrlInterfaceMixin(object):
     def define_key(self, keymap, action=None, *args, **kwargs):
         """Define [map key] action at default state
         
-        If no action, invalidates the key and returns @decor(key-binder).
+        If no action, it invalidates the key and returns @decor(binder).
         key must be in C-M-S order (ctrl + alt(meta) + shift).
         
         kwargs: `doc` and `alias` are reserved as kw-only-args.
@@ -4063,7 +4097,7 @@ def where(obj):
     """Show the location (filename, lineno) where the obj is defined
     
     A class, method, function, traceback, frame, or code object is expected.
-    Otherwse, the module will be returned if it exists.
+    Otherwise, the module will be returned if it exists.
     """
     try:
         filename = inspect.getsourcefile(obj)

@@ -1385,7 +1385,7 @@ class Frame(mwx.Frame):
             print("- Failed to read attributes: {}".format(e))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
-            return res, mis # finally raise no exceptions
+            return res, mis # finally raises no exception
     
     @classmethod
     def write_attributes(self, f, frames):
@@ -1408,7 +1408,7 @@ class Frame(mwx.Frame):
             print("- Failed to write attributes: {}".format(e))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
-            return new, mis # finally raise no exceptions
+            return new, mis # finally raises no exception
     
     def load_frame(self, paths=None, view=None):
         """Load frame(s) from paths to the view window
