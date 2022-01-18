@@ -1630,7 +1630,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break `target
 -------------------------------------------------------------------
-     target : Inspection target `self, any wx.Object, otherwise __main__
+Attributes:
   rootshell : Nautilus in the shell
    debugger : wxmon.EventMonitor
     monitor : wxpdb.Debugger
@@ -1639,6 +1639,10 @@ class ShellFrame(MiniFrame):
        Help : temporary buffer for help
         Log : logging buffer
     History : shell history (read only)
+
+Args:
+     target : Inspection target (any wx.Object)
+              If the target is None, it will be __main__.
 
 Prefix:
         C-x : extension map for the frame
@@ -1733,11 +1737,14 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame.handler>
             None : {
-                'shell_cleared' : [ None, ],
-                 'shell_cloned' : [ None, ],
-                 'shell_closed' : [ None, ],
-              'shell_activated' : [ None, ],
-            'shell_inactivated' : [ None, ],
+                  'debug_begin' : [ None, _F(self.__shell.write,
+                                             "#<< Enter [n]ext to continue.\n", -1),
+                                          self.SetTitleWindow ],
+                   'debug_next' : [ None, self.SetTitleWindow ],
+                    'debug_end' : [ None, _F(self.__shell.write,
+                                             "#>> Debugger closed successfully.", -1),
+                                          _F(self.__shell.prompt),
+                                          _F(self.SetTitleWindow, self.__shell.target) ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,
                                           _F(self.PopupWindow, self.Help) ],
@@ -1859,9 +1866,10 @@ Global bindings:
         self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
     
-    def SetTitleWindow(self, win):
-        self.Title = re.sub("(.*) - (.*)",
-                             "\\1 - {!r}".format(win), self.Title)
+    def SetTitleWindow(self, target):
+        ## self.Title = re.sub("(.*) - (.*)",
+        ##                      "\\1 - {!r}".format(target), self.Title)
+        self.Title = "Nautilus - {!r}".format(target)
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
@@ -1878,12 +1886,13 @@ Global bindings:
         ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
             self.statusbar("- Don't remove the rootshell.")
-            return
-        if win is self.monitor:
+        elif win is self.monitor:
             self.monitor.unwatch()
             self.remove_page_console(win)
-            return
-        evt.Skip()
+        elif win is self.inspector:
+            self.remove_page_console(win)
+        else:
+            evt.Skip()
     
     ## --------------------------------
     ## Actions for handler
@@ -2776,16 +2785,25 @@ Flaky nutshell:
     Half-baked by Patrik K. O'Brien,
     and the other half by K. O'moto.
     """
-    target = property(lambda self: self.__target)
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
+    
+    @property
+    def target(self):
+        ## try:
+        ##     if self.parent.debugger.busy:
+        ##         if self is self.parent.rootshell:
+        ##             return self.parent.debugger.curframe
+        ## except AttributeError:
+        ##     pass
+        return self.__target
     
     @target.setter
     def target(self, target):
         """Reset the shell->target; Rename the parent title
         """
         if not hasattr(target, '__dict__'):
-            raise TypeError("cannot target primitive objects")
+            raise TypeError("Unable to target primitive object: {!r}".format(target))
         try:
             target.self = target
             target.this = inspect.getmodule(target)
@@ -2795,6 +2813,7 @@ Flaky nutshell:
             pass
         
         self.__target = target
+        ## self.interp.locals.clear()
         self.interp.locals.update(target.__dict__)
         self.parent.handler('title_window', target)
     
@@ -2806,7 +2825,7 @@ Flaky nutshell:
                     return self.parent.debugger.locals
         except AttributeError:
             pass
-        return self.interp.locals
+        return self.interp.locals # target.__dict__
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2918,12 +2937,9 @@ Flaky nutshell:
         
         def fork(v):
             self.handler.fork(v) # fork event to 0=default
-        
+            
         self.handler.update({ #<Nautilus.handler>
             None : {
-                  'debug_begin' : [ None, _F(self.write, "#<< Enter [n]ext to continue.\n", -1) ],
-                    'debug_end' : [ None, _F(self.write, "#>> Debugger closed successfully.", -1),
-                                          _F(self.prompt), ],
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
@@ -3743,8 +3759,8 @@ Flaky nutshell:
     def clone(self, target=None):
         if target is None:
             target = self.target
-        elif not hasattr(target, '__dict__'):
-            raise TypeError("cannot dive into a primitive object")
+        if not hasattr(target, '__dict__'):
+            raise TypeError("Unable to target primitive object: {!r}".format(target))
         
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
