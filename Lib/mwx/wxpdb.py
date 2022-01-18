@@ -65,6 +65,7 @@ Note:
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
+    parent = property(lambda self: self.__inspector)
     logger = property(lambda self: self.__inspector.Log)
     shell = property(lambda self: self.__inspector.rootshell)
     busy = property(lambda self: self.module is not None)
@@ -125,14 +126,14 @@ Note:
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            self.shell.handler('debug_begin', target)
+            self.parent.handler('debug_begin', target)
             self.open(inspect.currentframe())
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
         finally:
             self.close()
-            self.shell.handler('debug_end', target)
+            self.parent.handler('debug_end', target)
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -295,6 +296,7 @@ Note:
             self.locals.update(frame.f_locals)
             if self.viewer:
                 self.viewer.filling.tree.display()
+            self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
     

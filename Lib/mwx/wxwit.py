@@ -5,7 +5,22 @@ import wx
 from wx.lib import inspection as it
 
 
-class InspectionInfoList(wx.ListCtrl):
+def atomvars(obj):
+    p = re.compile('[a-zA-Z]+')
+    keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
+    attr = {}
+    for key in keys:
+        try:
+            value = getattr(obj, key)
+            if hasattr(value, '__name__'): #<atom>
+                continue
+        except Exception as e:
+            value = e
+        attr[key] = repr(value)
+    return attr
+
+
+class InfoList(wx.ListCtrl):
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                              style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
@@ -24,23 +39,28 @@ class InspectionInfoList(wx.ListCtrl):
         
         self.SetHeaderAttr(
             wx.ItemAttr('black', 'none', self.Font.Bold()))
-        
-    def UpdateInfo(self, obj):
+    
+    def clear(self):
         self.DeleteAllItems()
         self.attr = {}
+    
+    def UpdateInfo(self, obj):
         if not obj:
             return
-        p = re.compile('[a-zA-Z]+')
-        keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
-        for key in keys:
-            try:
-                value = getattr(obj, key)
-                if hasattr(value, '__name__')\
-                  or re.match(r"<(.+) object at \w+>", repr(value)):
+        self.clear()
+        attr = atomvars(obj)
+        for key, vstr in attr.items():
+            if key == 'ContainingSizer':
+                sizer = obj.ContainingSizer
+                if sizer:
+                    _attr = atomvars(sizer.GetItem(obj)) #<wx.SizerItem>
+                    self.attr[key] = vstr
+                    self.attr.update(("-> SizerItem.{}".format(k), v)
+                                      for k,v in _attr.items())
                     continue
-            except Exception as e:
-                value = e
-            self.attr[key] = repr(value)
+            if re.match(r"<(.+) object at \w+>", vstr): #<instance>
+                continue
+            self.attr[key] = vstr
         
         for i, (k, v) in enumerate(self.attr.items()):
             self.InsertItem(i, k)
@@ -66,7 +86,7 @@ Args:
         self.tree = it.InspectionTree(self, size=(300,-1))
         ## self.info = it.InspectionInfoPanel(self, size=(200,-1))
         ## self.info.DropTarget = None
-        self.info = InspectionInfoList(self, size=(200,-1))
+        self.info = InfoList(self, size=(200,-1))
         
         self.SplitVertically(
             self.tree, self.info, self.tree.MinWidth)
@@ -80,6 +100,8 @@ Args:
     it.INCLUDE_INSPECTOR = True
     it.USE_CUSTOMTREECTRL = False
     
+    includeSizers = False
+    
     def SetObj(self, obj):
         """Called from tree.OnSelectionChanged"""
         ## self.parent.rootshell.locals['obj'] = obj
@@ -87,7 +109,7 @@ Args:
             self.__watchedWidget = obj
             self.info.UpdateInfo(obj)
         if not self.tree.built:
-            self.tree.BuildTree(obj, includeSizers=True)
+            self.tree.BuildTree(obj, self.includeSizers)
         else:
             self.tree.SelectObj(obj)
         self.parent.handler('title_window', obj)
