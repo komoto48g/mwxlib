@@ -38,13 +38,16 @@ class InfoList(wx.ListCtrl):
         
         self.alist = ( # assoc list of column names
             ("key",   200),
-            ("value", 400),
+            ("value", 200),
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
         
-        self.SetHeaderAttr(
-            wx.ItemAttr('black', 'none', self.Font.Bold()))
+        try:
+            self.SetHeaderAttr(
+                wx.ItemAttr('black', '', self.Font.Bold()))
+        except AttributeError:
+            pass
     
     def clear(self):
         self.DeleteAllItems()
@@ -130,12 +133,14 @@ Args:
     
     def OnRightDown(self, evt):
         item, flags = self.tree.HitTest(evt.Position)
-        if item.IsOk(): # flags & (0x10 | 0x20 | 0x40 | 0x80):
+        if item.IsOk():
+            # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.tree.SelectItem(item)
             Menu.Popup(self, (
-                (1, "dive",
+                (1, "&Dive", "Dive", Icon('core'),
                     lambda v: self.parent.rootshell.clone(self.target)),
-                (2, "debug",
+                    
+                (2, "&Debug", "Debug", Icon('inspect'),
                     lambda v: self.parent.debug(self.target)),
             ))
         evt.Skip()
