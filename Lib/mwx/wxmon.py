@@ -36,7 +36,7 @@ class EventMonitor(CheckList):
 *** Inspired by wx.lib.eventwatcher ***
 
 Args:
-    parent : shell frame
+    parent : shellframe
     """
     data = property(lambda self: self.__items)
     parent = property(lambda self: self.__inspector)

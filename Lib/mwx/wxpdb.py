@@ -13,7 +13,7 @@ from pdb import Pdb, bdb
 import linecache
 import inspect
 import wx
-from wx.py.filling import FillingFrame
+## from wx.py.filling import FillingFrame
 
 
 def echo(f):
@@ -30,9 +30,7 @@ class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
 Attributes:
-    viewer : Py.filling frame to display locals
     logger : ShellFrame Log
-     shell : Nautilus in the ShellFrame
       busy : The flag of being running now (eq. when module is not None)
    verbose : Activates verbose mode in which default messages are output from Pdb.
     module : The module of the currently stacked frame on Pdb
@@ -40,7 +38,7 @@ Attributes:
    globals : (ditto)
 
 Args:
-    parent : shell frame
+    parent : shellframe
      stdin : shell.interp.stdin
    stdiout : shell.interp.stdout
 
@@ -79,7 +77,7 @@ Note:
         self.locals = {}
         self.globals = {}
         self.module = None
-        self.viewer = None
+        ## self.viewer = None
     
     def open(self, frame=None):
         if self.module is not None:
@@ -107,10 +105,10 @@ Note:
     def close(self):
         if self.module is not None:
             self.set_quit()
-        if self.viewer:
-            self.viewer.Close()
-        self.module = None
-        self.viewer = None
+            self.module = None
+        ## if self.viewer:
+        ##     self.viewer.Close()
+        ##     self.viewer = None
         self.locals.clear()
         self.globals.clear()
     
@@ -294,8 +292,8 @@ Note:
             self.globals.update(frame.f_globals)
             self.locals.clear()
             self.locals.update(frame.f_locals)
-            if self.viewer:
-                self.viewer.filling.tree.display()
+            ## if self.viewer:
+            ##     self.viewer.filling.tree.display()
             self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)

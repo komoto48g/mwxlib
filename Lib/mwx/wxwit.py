@@ -72,7 +72,7 @@ class Inspector(wx.SplitterWindow):
 *** Inspired by wx.lib.inspection ***
 
 Args:
-    parent : shell frame
+    parent : shellframe
     """
     parent = property(lambda self: self.__inspector)
     target = property(lambda self: self.__watchedWidget)
