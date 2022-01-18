@@ -519,6 +519,32 @@ class MyFileDropLoader(wx.FileDropTarget):
         return True
 
 
+class AuiNotebook(aui.AuiNotebook):
+    def __init__(self, *args, **kwargs):
+        aui.AuiNotebook.__init__(self, *args, **kwargs)
+        
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
+    
+    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
+        plug = self.GetPage(evt.Selection)
+        mwx.Menu.Popup(self, plug.Menu)
+        evt.Skip()
+    
+    def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
+        self.CurrentPage.handler('pane_shown')
+        evt.Skip()
+    
+    def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
+        plug = self.GetPage(evt.Selection) # <-- CurrentPage
+        if self.CurrentPage:
+            if self.CurrentPage is not plug:
+                self.CurrentPage.handler('pane_hidden')
+        evt.Skip() # skip to the next handler
+                   # but called twice when click?
+
+
 class Frame(mwx.Frame):
     """Graph and Plug manager frame
     
@@ -975,9 +1001,8 @@ class Frame(mwx.Frame):
             
             ## If the name of root has been loaded,
             ## we reload it referring to the file-name, not module-name
-            module = self.plugins.get(root)
-            if module:
-                root = module.__file__
+            if root in self.plugins:
+                root = self.plugins[root].__file__
         
         name = os.path.basename(root)
         if name.endswith(".py") or name.endswith(".pyc"):
@@ -1027,6 +1052,11 @@ class Frame(mwx.Frame):
             else:
                 module = __import__(name, fromlist=[''])
             
+        except ImportError as e:
+            print("-", self.statusbar("\b failed to import: {}".format(e)))
+            return False
+        
+        try:
             title = module.Plugin.category
             pane = self._mgr.GetPane(title)
             
@@ -1056,15 +1086,11 @@ class Frame(mwx.Frame):
                     floating_pos = floating_pos or pane.floating_pos[:], # copy (pane unloaded)
                     floating_size = floating_size or pane.floating_size[:], # copy
                 )
-        except ImportError as e:
-            print("-", self.statusbar("\b failed to import: {}".format(e)))
-            return False
-        
-        except Exception as e:
-            wx.CallAfter(
-                wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                               "Error in loading {!r}".format(name),
-                               style=wx.ICON_ERROR)
+        except NameError as e:
+            wx.CallAfter(wx.MessageBox,
+                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "Error in loading {!r}".format(name),
+                         style=wx.ICON_ERROR)
             return False
         
         ## --------------------------------
@@ -1081,22 +1107,27 @@ class Frame(mwx.Frame):
             ## Create a plug and register to plugins list プラグインのロード開始
             ## The module must have a class Plugin
             plug = module.Plugin(self, **kwargs)
-            
             plug.__notebook = None
             plug.__Menu_item = None
-            
-            ## rename when if root:module is a package
-            ## name = plug.__module__
             
             ## set reference of a plug (one module, one plugin)
             module.__plug__ = plug
             
             ## Add to the list after the plug is created successfully.
             self.plugins[name] = module
-            
             plug.handler('pane_loaded')
             
-            ## create a pane or notebook pane
+        except Exception as e:
+            wx.CallAfter(wx.MessageBox,
+                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "Error in loading {!r}".format(name),
+                         style=wx.ICON_ERROR)
+            return False
+        
+        ## --------------------------------
+        ## 3. create pane or notebook pane
+        ## --------------------------------
+        try:
             title = plug.category
             caption = plug.caption
             if not isinstance(caption, string_types):
@@ -1113,37 +1144,12 @@ class Frame(mwx.Frame):
                     props.update(show = show or pane.IsShown())
                 else:
                     size = plug.GetSize() + (2,30)
-                    nb = aui.AuiNotebook(self,
+                    nb = AuiNotebook(self,
                         style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
                             &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
-                    
                     nb.AddPage(plug, caption)
-                    ## nb.TabCtrlHeight = -1
-                    
                     self._mgr.AddPane(nb, aui.AuiPaneInfo()
                         .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
-                    
-                    #<wx._aui.AuiNotebookEvent> Event binder
-                    
-                    @partial(nb.Bind, aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN)
-                    def show_menu(evt):
-                        plug = nb.GetPage(evt.Selection)
-                        mwx.Menu.Popup(nb, plug.Menu)
-                    
-                    @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGED)
-                    def on_page_changed(evt):
-                        nb.CurrentPage.handler('pane_shown')
-                        evt.Skip()
-                    
-                    @partial(nb.Bind, aui.EVT_AUINOTEBOOK_PAGE_CHANGING)
-                    def on_page_changing(evt):
-                        plug = nb.GetPage(evt.Selection) # <-- nb.CurrentPage
-                        if nb.CurrentPage:
-                            if nb.CurrentPage is not plug:
-                                nb.CurrentPage.handler('pane_hidden')
-                        evt.Skip() # skip to the next handler
-                                   # but called twice when click?
-                
                 j = nb.GetPageIndex(plug)
                 nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
             else:
@@ -1176,10 +1182,10 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             
         except Exception as e:
-            wx.CallAfter(
-                wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                               "Error in loading {!r}".format(name),
-                               style=wx.ICON_ERROR)
+            wx.CallAfter(wx.MessageBox,
+                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "Error in loading {!r}".format(name),
+                         style=wx.ICON_ERROR)
             return False
     
     def unload_plug(self, name):
@@ -1219,9 +1225,10 @@ class Frame(mwx.Frame):
                 nb.Destroy()
             
         except Exception as e:
-            wx.CallAfter(wx.MessageBox, "{}\n\n{}".format(e, traceback.format_exc()),
-                                        "Error in unloading {!r}".format(name),
-                                        style=wx.ICON_ERROR)
+            wx.CallAfter(wx.MessageBox,
+                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "Error in unloading {!r}".format(name),
+                         style=wx.ICON_ERROR)
             return False
     
     def reload_plug(self, name):
@@ -1743,9 +1750,9 @@ if __name__ == '__main__':
     app = wx.App()
     frm = Frame(None)
     
-    frm.handler.debug = 2
-    frm.graph.handler.debug = 2
-    frm.output.handler.debug = 2
+    frm.handler.debug = 4
+    frm.graph.handler.debug = 0
+    frm.output.handler.debug = 0
     
     frm.load_buffer(u"demo/sample.bmp")
     frm.load_buffer(u"demo/sample2.tif")
