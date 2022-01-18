@@ -1204,6 +1204,22 @@ class Gauge(wx.Panel):
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
 
 
+if wx.VERSION < (4,1,0):
+    from wx.lib.mixins.listctrl import CheckListCtrlMixin
+    
+    class CheckList(wx.ListCtrl, CheckListCtrlMixin):
+        def __init__(self, *args, **kwargs):
+            wx.ListCtrl.__init__(self, *args, **kwargs)
+            CheckListCtrlMixin.__init__(self)
+            
+            self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
+else:
+    class CheckList(wx.ListCtrl):
+        def __init__(self, *args, **kwargs):
+            wx.ListCtrl.__init__(self, *args, **kwargs)
+            self.EnableCheckBoxes()
+
+
 if __name__ == '__main__':
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))

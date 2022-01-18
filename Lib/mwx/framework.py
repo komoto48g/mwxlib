@@ -233,6 +233,54 @@ def typename(obj, docp=False, qualp=False):
     return name
 
 
+def where(obj):
+    """Show the location (filename, lineno) where the obj is defined
+    
+    A class, method, function, traceback, frame, or code object is expected.
+    Otherwise, the module will be returned if it exists.
+    """
+    try:
+        filename = inspect.getsourcefile(obj)
+        src, lineno = inspect.getsourcelines(obj)
+        if not lineno:
+            return filename
+        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+    except Exception:
+        ## TypeError: module, class, method, function, traceback, frame, or code object was expected
+        ## OSError (No such file)
+        return inspect.getmodule(obj)
+
+
+def mro(obj):
+    """Show mro (method resolution order) of obj:class
+    
+    A list of filenames and lineno, or the module-names
+    """
+    print("{}".format(typename(obj)))
+    if not isinstance(obj, type):
+        obj = type(obj)
+    for base in obj.__mro__:
+        f = where(base)
+        if hasattr(f, '__file__'): #<class 'module'>
+            f = f.__file__
+        elif hasattr(f, '__name__'): #<module 'builtins'>
+            f = f.__name__
+        print("  {}:{!s}".format(f, base))
+
+
+def pp(obj):
+    pprint(obj, **pp.__dict__)
+
+if pp:
+    pp.indent = 1
+    pp.width = 100 # default 80
+    pp.depth = None
+    if sys.version_info >= (3,6):
+        pp.compact = False
+    if sys.version_info >= (3,8):
+        pp.sort_dicts = True
+
+
 def get_words_hint(cmd):
     text = get_words_backward(cmd)
     return text.rpartition('.')
@@ -1337,12 +1385,12 @@ class Menu(wx.Menu):
     
     item: (id, text, hint, style, icon,  ... Menu.Append arguments
              action, updater, highlight) ... Menu Event handlers
-    where,
-      style -> menu style (ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO)
-       icon -> menu icon (bitmap)
-     action -> EVT_MENU handler
-    updater -> EVT_UPDATE_UI handler
-  highlight -> EVT_MENU_HIGHLIGHT handler
+        
+        style -> menu style (ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO)
+         icon -> menu icon (bitmap)
+       action -> EVT_MENU handler
+      updater -> EVT_UPDATE_UI handler
+    highlight -> EVT_MENU_HIGHLIGHT handler
     """
     def __init__(self, owner, values):
         wx.Menu.__init__(self)
@@ -4107,50 +4155,6 @@ except ImportError as e:
     pass
 
 
-def pp(x):
-    pprint(x, **pp.__dict__)
-
-if pp:
-    pp.indent = 1
-    pp.width = 100 # default 80
-    pp.depth = None
-    if sys.version_info >= (3,6):
-        pp.compact = False
-    if sys.version_info >= (3,8):
-        pp.sort_dicts = True
-
-
-def where(obj):
-    """Show the location (filename, lineno) where the obj is defined
-    
-    A class, method, function, traceback, frame, or code object is expected.
-    Otherwise, the module will be returned if it exists.
-    """
-    try:
-        filename = inspect.getsourcefile(obj)
-        src, lineno = inspect.getsourcelines(obj)
-        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-    except Exception:
-        return inspect.getmodule(obj)
-
-
-def mro(obj):
-    """Show mro (method resolution order) of obj:class
-    
-    A list of filenames and lineno, or the module-names
-    """
-    print("{}".format(typename(obj)))
-    if not isinstance(obj, type):
-        obj = type(obj)
-    for base in obj.__mro__:
-        f = where(base)
-        if hasattr(f, '__file__'): #<class 'module'>
-            f = f.__file__
-        elif hasattr(f, '__name__'): #<module 'builtins'>
-            f = f.__name__
-        print("  {}:{!s}".format(f, base))
-
-
 def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
@@ -4211,7 +4215,9 @@ def watch(target=None, **kwargs):
     return it
 
 
-def watch_event(target=None, **kwargs):
+def monitor(target=None, **kwargs):
+    """Wx.py tool for watching events of the target
+    """
     from wx.lib.eventwatcher import EventWatcher
     ew = EventWatcher(None, **kwargs)
     ew.watch(target)

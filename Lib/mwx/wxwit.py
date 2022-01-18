@@ -3,6 +3,12 @@
 import re
 import wx
 from wx.lib import inspection as it
+try:
+    from framework import Menu
+    from controls import Icon
+except ImportError:
+    from .framework import Menu
+    from .controls import Icon
 
 
 def atomvars(obj):
@@ -72,7 +78,7 @@ class Inspector(wx.SplitterWindow):
 *** Inspired by wx.lib.inspection ***
 
 Args:
-    parent : shell frame
+    parent : shellframe
     """
     parent = property(lambda self: self.__inspector)
     target = property(lambda self: self.__watchedWidget)
@@ -84,6 +90,8 @@ Args:
         self.__watchedWidget = None
         
         self.tree = it.InspectionTree(self, size=(300,-1))
+        self.tree.toolFrame = self # override tree
+        
         ## self.info = it.InspectionInfoPanel(self, size=(200,-1))
         ## self.info.DropTarget = None
         self.info = InfoList(self, size=(200,-1))
@@ -91,7 +99,7 @@ Args:
         self.SplitVertically(
             self.tree, self.info, self.tree.MinWidth)
         
-        self.tree.toolFrame = self # override tree
+        self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
     
     ## --------------------------------
     ## InspectionTool wrapper methods
@@ -101,6 +109,7 @@ Args:
     it.USE_CUSTOMTREECTRL = False
     
     includeSizers = False
+    expandFrame = True
     
     def SetObj(self, obj):
         """Called from tree.OnSelectionChanged"""
@@ -109,7 +118,8 @@ Args:
             self.__watchedWidget = obj
             self.info.UpdateInfo(obj)
         if not self.tree.built:
-            self.tree.BuildTree(obj, self.includeSizers)
+            self.tree.BuildTree(obj, self.includeSizers,
+                                     self.expandFrame)
         else:
             self.tree.SelectObj(obj)
         self.parent.handler('title_window', obj)
@@ -117,6 +127,18 @@ Args:
     def watch(self, obj):
         self.SetObj(obj)
         self.parent.handler("add_page", self, show=1)
+    
+    def OnRightDown(self, evt):
+        item, flags = self.tree.HitTest(evt.Position)
+        if item.IsOk(): # flags & (0x10 | 0x20 | 0x40 | 0x80):
+            self.tree.SelectItem(item)
+            Menu.Popup(self, (
+                (1, "dive",
+                    lambda v: self.parent.rootshell.clone(self.target)),
+                (2, "debug",
+                    lambda v: self.parent.debug(self.target)),
+            ))
+        evt.Skip()
 
 
 if __name__ == "__main__":
