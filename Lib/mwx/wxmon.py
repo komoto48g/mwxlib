@@ -5,30 +5,12 @@ import wx
 from wx import aui
 from wx import stc
 import wx.lib.eventwatcher as ew
-
-if wx.VERSION < (4,1,0):
-    from wx.lib.mixins.listctrl import CheckListCtrlMixin
-    
-    class CheckList(wx.ListCtrl, CheckListCtrlMixin):
-        def __init__(self, *args, **kwargs):
-            wx.ListCtrl.__init__(self, *args, **kwargs)
-            CheckListCtrlMixin.__init__(self)
-            
-            self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
-else:
-    class CheckList(wx.ListCtrl):
-        def __init__(self, *args, **kwargs):
-            wx.ListCtrl.__init__(self, *args, **kwargs)
-            self.EnableCheckBoxes()
-
-
-def where(obj):
-    try:
-        filename = inspect.getsourcefile(obj)
-        src, lineno = inspect.getsourcelines(obj)
-        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-    except Exception:
-        return repr(obj)
+try:
+    from framework import where
+    from controls import CheckList
+except ImportError:
+    from .framework import where
+    from .controls import CheckList
 
 
 class EventMonitor(CheckList):
