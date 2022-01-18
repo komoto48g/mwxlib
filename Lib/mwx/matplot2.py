@@ -369,9 +369,10 @@ class MatplotPanel(wx.Panel):
     def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
         pos = self.modeline.ScreenToClient(wx.GetMousePosition())
         flag = self.modeline.HitTest(pos)
-        tip = self.modeline.ToolTip
+        ## tip = self.modeline.ToolTip
         if flag == wx.HT_WINDOW_INSIDE:
-            tip.SetTip(self.modeline.read())
+            ## tip.SetTip(self.modeline.read())
+            self.modeline.ToolTip = self.modeline.read()
         evt.Skip()
     
     def on_focus_set(self, evt): #<wx._core.FocusEvent>

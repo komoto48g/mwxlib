@@ -76,10 +76,10 @@ Args:
            'overflow' : [],
           'underflow' : [],
         })
-        ## self.tip = tip
-        self.tip = '\n'.join(filter(None, (tip,
-                             handler and handler.__doc__,
-                             updater and updater.__doc__))).strip()
+        tip = '\n'.join(filter(None, (tip,
+                                      handler and handler.__doc__,
+                                      updater and updater.__doc__)))
+        self.tip = tip.strip()
     
     def __str__(self, v=None):
         v = self.__value if v is None else v
@@ -905,8 +905,8 @@ Args:
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
         tip = '\n  '.join(filter(None, (tip,
-                          handler and handler.__doc__)))
-        self.SetToolTip(tip.strip())
+                                        handler and handler.__doc__)))
+        self.ToolTip = tip.strip()
         self.icon = icon
     
     def SetBitmap(self, bmp):
@@ -955,8 +955,8 @@ Note:
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, handler)
         tip = '\n  '.join(filter(None, (tip,
-                          handler and handler.__doc__)))
-        self.SetToolTip(tip.strip())
+                                        handler and handler.__doc__)))
+        self.ToolTip = tip.strip()
         self.icon = icon
 
 
@@ -1123,8 +1123,9 @@ class Indicator(wx.Panel):
         wx.Panel.__init__(self, parent, size=size, **kwargs)
         
         self.__value = value
+        self.ToolTip = tip.strip()
+        
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.SetToolTip(tip)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
@@ -1168,11 +1169,11 @@ class Gauge(wx.Panel):
         
         self.__range = range
         self.__value = value
+        self.ToolTip = tip.strip()
         self.canvas = wx.Bitmap(self.ClientSize)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.SetToolTip(tip)
     
     def OnSize(self, evt):
         self.canvas = wx.Bitmap(self.ClientSize)
@@ -1212,11 +1213,15 @@ if wx.VERSION < (4,1,0):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
             
+            self.ToolTip = ''
             self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
 else:
     class CheckList(wx.ListCtrl):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
+            
+            ## To avoid $BUG wx 4.1.1 (but default Tooltip will disappear)
+            self.ToolTip = ''
             self.EnableCheckBoxes()
 
 

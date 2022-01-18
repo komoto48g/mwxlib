@@ -1947,11 +1947,11 @@ Global bindings:
     ## --------------------------------
     
     def debug(self, obj, *args, **kwargs):
-        if callable(obj):
-            self.debugger.trace(obj, *args, **kwargs)
-        elif isinstance(obj, wx.Object):
+        if isinstance(obj, wx.Object):
             self.inspector.watch(obj)
             self.monitor.watch(obj)
+        elif callable(obj):
+            self.debugger.trace(obj, *args, **kwargs)
         else:
             print("- cannot debug {!r}".format(obj))
     
@@ -2266,11 +2266,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
         ## Custom indicator for search-word
-        if wx.VERSION < (4,1,0):
-            self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
-            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
-        else:
+        try:
             self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
+            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+        except AttributeError:
+            self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
@@ -2366,15 +2366,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ##     else:
     ##         self.StartStyling(pos)
     ##     self.SetStyling(length, stc.STC_P_WORD3)
-    
-    ## def match_paren(self):
-    ##     if wx.VERSION < (4,1,0):
-    ##         return self._match_paren()
-    ##     self.SetIndicatorCurrent(2)
-    ##     self.IndicatorClearRange(0, self.TextLength)
-    ##     p = self._match_paren()
-    ##     if p:
-    ##         self.IndicatorFillRange(p, self.point-p)
     
     def match_paren(self):
         cur = self.point
