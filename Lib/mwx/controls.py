@@ -845,15 +845,18 @@ if 1:
 def Icon(key, size=None):
     if key:
         try:
-            bmp = getattr(images, key).GetBitmap()
-            if size:
-                img = bmp.ConvertToImage()
-                img = img.Scale(*size)
-                bmp = img.ConvertToBitmap()
-            return bmp
+            art = getattr(images, key)
+            if not size:
+                bmp = art.GetBitmap()
+            else:
+                bmp = (art.GetImage()
+                          .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
+                          .ConvertToBitmap())
         except Exception:
-            return wx.ArtProvider.GetBitmap(
-                provided_arts.get(key) or key, size=size or (16,16)) #<wx._core.Bitmap> IsOk ?
+            bmp = wx.ArtProvider.GetBitmap(
+                    provided_arts.get(key) or key,
+                    size=size or (16,16))
+        return bmp
     
     ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.0
     if key == '':
@@ -865,7 +868,6 @@ def Icon(key, size=None):
             del dc
         bmp.SetMaskColour('black') # return dummy-sized blank bitmap
         return bmp
-    
     return wx.NullBitmap # The standard wx controls accept this,
 
 Icon.provided_arts = provided_arts
