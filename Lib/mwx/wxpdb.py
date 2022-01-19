@@ -277,7 +277,9 @@ Note:
             lx = self.tb_lineno.get(frame) # exception
             
             ## Update logger (text and marker)
-            if self.module is not module:
+            eol = lines[-1].endswith('\n')
+            if self.module is not module\
+              or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
             
             for ln in breaklist:
