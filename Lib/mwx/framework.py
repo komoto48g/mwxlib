@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.51.1"
+__version__ = "0.51.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -246,9 +246,10 @@ def where(obj):
             return filename
         return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
     except Exception:
-        ## TypeError: module, class, method, function, traceback, frame, or code object was expected
-        ## OSError (No such file)
-        return inspect.getmodule(obj)
+        try:
+            return inspect.getfile(obj.__class__)
+        except Exception:
+            return inspect.getmodule(obj)
 
 
 def mro(obj):
@@ -359,8 +360,8 @@ def extract_words_from_tokens(tokens, sep=None, reverse=False):
         j = None
         if stack: # error("unclosed-paren", ''.join(stack))
             pass
-    del tokens[:j] # 取り出したトークンは消す
-    return words   # 取り出したトークンリスト (to be ''.joined to make a pyrepr)
+    del tokens[:j] # Erase the extracted token
+    return words   # Extracted token list (to be ''.joined to make a pyrepr)
 
 
 def find_modules(force=False, verbose=True):
@@ -415,7 +416,7 @@ def find_modules(force=False, verbose=True):
 ## --------------------------------
 ## Finite State Machine
 ## --------------------------------
-if not os.path.exists(os.path.expanduser("~/.deb")): # deb 専ディレクトリをホームに作成します
+if not os.path.exists(os.path.expanduser("~/.deb")): # Create deb directory
     os.mkdir(os.path.expanduser("~/.deb"))
 
 
@@ -1489,10 +1490,6 @@ class MenuBar(wx.MenuBar, TreeList):
         Call when the menulist is changed.
         """
         if self.Parent:
-            ## self.Parent.Unbind(wx.EVT_MENU)
-            ## self.Parent.Unbind(wx.EVT_UPDATE_UI)
-            ## self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT)
-            
             for j in range(self.GetMenuCount()): # remove and del all top-level menu
                 menu = self.Remove(0)
                 for item in menu.MenuItems: # delete all items
@@ -1557,8 +1554,8 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         
         self.__inspector = ShellFrame(None, target=self)
         
-        ## statusbar/menubar などのカスタマイズを行う
-        ## レイアウト系コマンドは statusbar/menubar の作成後
+        ## statusbar/menubar customization
+        ## Do layout after statusbar/menubar is created
         
         self.menubar = MenuBar()
         self.menubar["File"] = [
@@ -1576,12 +1573,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.SetMenuBar(self.menubar)
         self.menubar.reset()
         
-        ## ステータスバーを作成し，起動されたタイマーのカウントを出力する
         self.statusbar = StatusBar(self)
         self.statusbar.resize((-1,78))
         self.SetStatusBar(self.statusbar)
         
-        ## ステータスバーに時刻表示 (/msec)
         ## self.timer = wx.PyTimer(
         ##     lambda: self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1))
         self.timer = wx.Timer(self)
@@ -1902,17 +1897,20 @@ Global bindings:
         win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle
         """
-        for nb in (self.console, self.ghost):
-            if nb.CurrentPage is win:
-                break
-            j = nb.GetPageIndex(win) # check if nb has win
-            if j != -1:
-                nb.SetSelection(j)
-                break
+        win = win or self.ghost
+        if win in (self.console, self.ghost):
+            nb = win
+        else:
+            for nb in (self.console, self.ghost):
+                j = nb.GetPageIndex(win) # check if nb has win
+                if j != -1:
+                    nb.SetSelection(j)
+                    break
         if show is None:
             show = not nb.IsShown()
         self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
+        self.Show(show)
     
     def SetTitleWindow(self, target):
         ## self.Title = re.sub("(.*) - (.*)",
@@ -1958,14 +1956,10 @@ Global bindings:
     def add_page_console(self, win, title=None, show=False):
         nb = self.console
         j = nb.GetPageIndex(win)
-        if j != -1:
-            if show:
-                nb.SetSelection(j)
-        else:
+        if j == -1:
             nb.AddPage(win, title or win.__class__.__name__)
             nb.TabCtrlHeight = -1
-            if show:
-                nb.SetSelection(nb.PageCount - 1)
+        self.PopupWindow(win, show)
     
     def remove_page_console(self, win):
         nb = self.console
@@ -1995,7 +1989,7 @@ Global bindings:
     
     def other_window(self, p=1):
         "Focus moves to other window"
-        pages = [w for w in self.all_pages if w.IsShownOnScreen()]
+        pages = [w for w in self.all_editors() if w.IsShownOnScreen()]
         j = (pages.index(self.current_editor) + p) % len(pages)
         pages[j].SetFocus()
     
@@ -2038,18 +2032,16 @@ Global bindings:
     ## Find text dialog
     ## --------------------------------
     
-    @property
-    def all_pages(self):
-        ## def _pages(nb):
-        ##     return [nb.GetPage(i) for i in range(nb.PageCount)]
-        def _pages(nb):
-            return [x for x in nb.Children if isinstance(x, EditorInterface)]
-        return _pages(self.console) + _pages(self.ghost)
+    def all_editors(self):
+        for nb in (self.console, self.ghost):
+            for x in nb.Children:
+                if isinstance(x, EditorInterface):
+                    yield x
     
     @property
     def current_editor(self):
         win = wx.Window.FindFocus()
-        if win in self.all_pages:
+        if win in self.all_editors():
             return win
         if win.Parent:
             if self.ghost in win.Parent.Children: # floating ghost ?
@@ -2781,6 +2773,7 @@ Shell built-in utility:
     @help   @?? full description
     @dive       clone the shell with new target
     @timeit     measure the duration cpu time
+    @profile    profile the func(*args, **kwargs)
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
@@ -2788,8 +2781,8 @@ Shell built-in utility:
     @file       inspect.getfile -> str
     @code       inspect.getsource -> str
     @module     inspect.getmodule -> module
-    @where      (filename, lineno) or the module
-    @debug      open pdb or show event-watchlist and widget-tree
+    @where      filename and lineno or module
+    @debug      open pdb or show eventwatcher and widget-tree
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
@@ -3483,6 +3476,7 @@ Flaky nutshell:
         builtins.info = self.info
         builtins.dive = self.clone
         builtins.timeit = self.timeit
+        builtins.profile = self.profile
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
         builtins.debug = self.parent.debug
@@ -3500,6 +3494,7 @@ Flaky nutshell:
         del builtins.info
         del builtins.dive
         del builtins.timeit
+        del builtins.profile
         del builtins.execute
         del builtins.puts
         del builtins.debug
@@ -3794,6 +3789,12 @@ Flaky nutshell:
     def timeit(self, *args, **kwargs):
         t = self.clock()
         print("... duration time: {:g} s".format(t-self.__start), file=self)
+    
+    def profile(self, obj, *args, **kwargs):
+        from profile import Profile
+        pr = Profile()
+        pr.runcall(obj, *args, **kwargs)
+        pr.print_stats()
     
     def clone(self, target=None):
         if target is None:
