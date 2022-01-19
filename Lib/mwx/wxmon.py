@@ -193,7 +193,7 @@ Args:
             ## Don't run out of all timers and get warnings
             self.SetItemBackgroundColour(i, "yellow")
             def reset_color():
-                if self:
+                if self and i < self.ItemCount:
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallLater(1000, reset_color)
     
