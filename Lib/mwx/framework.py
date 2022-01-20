@@ -997,7 +997,7 @@ def funcall(f, *args, **kwargs):
     
     @wraps(f)
     def _Act(*v):
-        return f(*(v+args), **kwargs)
+        return f(*(args + v), **kwargs)
     action = _Act
     
     def explicit_args(argv, defaults):
@@ -1910,7 +1910,8 @@ Global bindings:
             show = not nb.IsShown()
         self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
-        self.Show(show)
+        if nb is self.console:
+            self.Show(show)
     
     def SetTitleWindow(self, target):
         ## self.Title = re.sub("(.*) - (.*)",
@@ -2116,6 +2117,15 @@ Global bindings:
         self.findDlg = None
 
 
+def editable(f):
+    @wraps(f)
+    def _f(self, *args, **kwargs):
+        if self.CanEdit():
+            return f(self, *args, **kwargs)
+        ## self.message("- cannot edit")
+    return _f
+
+
 class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     """Python code editor interface with Keymap
     """
@@ -2155,8 +2165,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                    'f9 pressed' : (0, _F(self.wrap, None, doc="toggle-fold-type")),
                   'C-l pressed' : (0, _F(self.recenter, None, doc="recenter")),
                 'C-S-l pressed' : (0, _F(self.recenter, -1, doc="recenter-bottom")),
-                 'M-up pressed' : (0, _F(self.ScrollLines, lines=-2, doc="scroll-up")),
-               'M-down pressed' : (0, _F(self.ScrollLines, lines=+2, doc="scroll-down")),
+                 ## 'M-up pressed' : (0, _F(self.ScrollLines, -2, doc="fast-scroll-up")),
+               ## 'M-down pressed' : (0, _F(self.ScrollLines, +2, doc="fast-scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
@@ -2617,43 +2627,47 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Delete all text"""
         self.ClearAll()
     
+    @editable
     def eat_white_forward(self):
         p = self.point
         q = self.skip_chars_forward(r'\s')
         self.Replace(p, q, '')
     
+    @editable
     def eat_white_backward(self):
         p = self.point
         q = self.skip_chars_backward(r'\s')
         self.Replace(max(q, self.bol), p, '')
     
+    @editable
     def kill_line(self):
-        if self.CanEdit():
-            p = self.eol
-            text, lp = self.CurLine
-            if p == self.point:
-                if self.GetTextRange(p, p+2) == '\r\n': p += 2
-                elif self.GetTextRange(p, p+1) == '\n': p += 1
-            self.Replace(self.point, p, '')
+        p = self.eol
+        text, lp = self.CurLine
+        if p == self.point:
+            if self.GetTextRange(p, p+2) == '\r\n': p += 2
+            elif self.GetTextRange(p, p+1) == '\n': p += 1
+        self.Replace(self.point, p, '')
     
+    @editable
     def backward_kill_line(self):
-        if self.CanEdit():
-            p = self.bol
-            text, lp = self.CurLine
-            if text[:lp] == '' and p: # caret at the beginning of the line
-                p -= len(os.linesep)
-            elif text[:lp] == sys.ps2: # caret at the prompt head
-                p -= len(sys.ps2)
-            self.Replace(p, self.point, '')
+        p = self.bol
+        text, lp = self.CurLine
+        if text[:lp] == '' and p: # caret at the beginning of the line
+            p -= len(os.linesep)
+        elif text[:lp] == sys.ps2: # caret at the prompt head
+            p -= len(sys.ps2)
+        self.Replace(p, self.point, '')
     
+    @editable
     def insert_space_like_tab(self):
         """Enter half-width spaces forward as if feeling like a tab
         タブの気持ちになって半角スペースを前向きに入力する
         """
         self.eat_white_forward()
         _text, lp = self.CurLine
-        self.write(' ' * (4 - lp % 4))
+        self.WriteText(' ' * (4 - lp % 4))
     
+    @editable
     def delete_backward_space_like_tab(self):
         """Delete half-width spaces backward as if feeling like a S-tab
         シフト+タブの気持ちになって半角スペースを後ろ向きに消す

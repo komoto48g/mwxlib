@@ -225,7 +225,7 @@ def init_shell(self):
     self.magic_interpret = MagicInterpreter(self)
 
 
-def dive(*args):
+def deb(*args):
     """Dive into the process, from your diving point.
     Divers:
     This executes your startup script ($PYTHONSTARTUP:~/.py).
@@ -243,4 +243,4 @@ def dive(*args):
 
 
 if __name__ == '__main__':
-    dive()
+    deb()
