@@ -4,10 +4,10 @@ import re
 import wx
 from wx.lib import inspection as it
 try:
-    from framework import Menu
+    from framework import Menu, watch
     from controls import Icon
 except ImportError:
-    from .framework import Menu
+    from .framework import Menu, watch
     from .controls import Icon
 
 
@@ -103,6 +103,9 @@ Args:
             self.tree, self.info, self.tree.MinWidth)
         
         self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
+        
+        self.highlighter = it._InspectionHighlighter()
+        self.highlighter.highlightTime = 2000
     
     ## --------------------------------
     ## InspectionTool wrapper methods
@@ -114,6 +117,11 @@ Args:
     includeSizers = False
     expandFrame = True
     
+    def RefreshTree(self):
+        self.tree.BuildTree(self.__watchedWidget,
+                            self.includeSizers,
+                            self.expandFrame)
+    
     def SetObj(self, obj):
         """Called from tree.OnSelectionChanged"""
         ## self.parent.rootshell.locals['obj'] = obj
@@ -121,8 +129,7 @@ Args:
             self.__watchedWidget = obj
             self.info.UpdateInfo(obj)
         if not self.tree.built:
-            self.tree.BuildTree(obj, self.includeSizers,
-                                     self.expandFrame)
+            self.RefreshTree()
         else:
             self.tree.SelectObj(obj)
         self.parent.handler('title_window', obj)
@@ -137,13 +144,27 @@ Args:
             # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.tree.SelectItem(item)
             Menu.Popup(self, (
-                (1, "&Dive", "Dive", Icon('core'),
+                (1, "&Dive into the shell", Icon('core'),
                     lambda v: self.parent.rootshell.clone(self.target)),
                     
-                (2, "&Debug", "Debug", Icon('inspect'),
-                    lambda v: self.parent.debug(self.target)),
+                (2, "&Watch the event", Icon('proc'),
+                    lambda v: self.parent.monitor.watch(self.target)),
+                (),
+                (10, "&Inspection Tool", Icon('inspect'),
+                     lambda v: watch(self.target)),
+                
+                (11, "Refresh", miniIcon('Refresh'),
+                     lambda v: self.RefreshTree()),
+                
+                (12, "Highlight", miniIcon('HighlightItem'),
+                     lambda v: self.highlighter.HighlightCurrentItem(self.tree)),
             ))
         evt.Skip()
+
+
+def miniIcon(key, size=(16,16)):
+    art = getattr(it, key)
+    return art.GetImage().Scale(*size).ConvertToBitmap()
 
 
 if __name__ == "__main__":

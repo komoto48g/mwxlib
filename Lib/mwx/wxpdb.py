@@ -13,7 +13,7 @@ from pdb import Pdb, bdb
 import linecache
 import inspect
 import wx
-## from wx.py.filling import FillingFrame
+from wx.py.filling import FillingFrame
 
 
 def echo(f):
@@ -77,19 +77,12 @@ Note:
         self.locals = {}
         self.globals = {}
         self.module = None
-        ## self.viewer = None
+        self.viewer = None
     
     def open(self, frame=None):
         if self.module is not None:
             return
         self.module = inspect.getmodule(frame)
-        ## self.viewer = FillingFrame(rootObject=self.locals,
-        ##                            rootLabel='locals',
-        ##                            static=False, # update each time pushed
-        ##                            )
-        ## self.viewer.filling.text.WrapMode = 0
-        ## self.viewer.filling.text.Zoom = -1
-        ## self.viewer.Show()
         self.logger.clear()
         self.logger.Show()
         self.shell.SetFocus()
@@ -106,9 +99,9 @@ Note:
         if self.module is not None:
             self.set_quit()
             self.module = None
-        ## if self.viewer:
-        ##     self.viewer.Close()
-        ##     self.viewer = None
+        if self.viewer:
+            self.viewer.Close()
+            self.viewer = None
         self.locals.clear()
         self.globals.clear()
     
@@ -132,6 +125,16 @@ Note:
         finally:
             self.close()
             self.parent.handler('debug_end', target)
+    
+    def view(self):
+        self.viewer = FillingFrame(rootObject=self.locals,
+                                   rootLabel='locals',
+                                   static=False, # update each time pushed
+                                   )
+        self.viewer.filling.text.WrapMode = 0
+        self.viewer.filling.text.Zoom = -1
+        self.viewer.filling.tree.display()
+        self.viewer.Show()
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -277,7 +280,9 @@ Note:
             lx = self.tb_lineno.get(frame) # exception
             
             ## Update logger (text and marker)
-            if self.module is not module:
+            eol = lines[-1].endswith('\n')
+            if self.module is not module\
+              or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
             
             for ln in breaklist:
@@ -292,8 +297,8 @@ Note:
             self.globals.update(frame.f_globals)
             self.locals.clear()
             self.locals.update(frame.f_locals)
-            ## if self.viewer:
-            ##     self.viewer.filling.tree.display()
+            if self.viewer:
+                self.viewer.filling.tree.display()
             self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
