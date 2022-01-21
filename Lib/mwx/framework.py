@@ -1937,6 +1937,7 @@ Global bindings:
             self.monitor.unwatch()
             self.remove_page_console(win)
         elif win is self.inspector:
+            self.inspector.unwatch()
             self.remove_page_console(win)
         else:
             evt.Skip()

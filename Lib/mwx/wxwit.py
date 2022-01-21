@@ -104,8 +104,17 @@ Args:
         
         self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         
+        self.timer = wx.Timer(self)
+        
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
+    
+    def OnDestroy(self, evt):
+        self.unwatch()
+        evt.Skip()
     
     ## --------------------------------
     ## InspectionTool wrapper methods
@@ -123,8 +132,7 @@ Args:
                             self.expandFrame)
     
     def SetObj(self, obj):
-        """Called from tree.OnSelectionChanged"""
-        ## self.parent.rootshell.locals['obj'] = obj
+        """Called from tree.toolFrame -> SetObj"""
         if self.__watchedWidget is not obj:
             self.__watchedWidget = obj
             self.info.UpdateInfo(obj)
@@ -132,11 +140,20 @@ Args:
             self.RefreshTree()
         else:
             self.tree.SelectObj(obj)
-        self.parent.handler('title_window', obj)
     
     def watch(self, obj):
         self.SetObj(obj)
+        self.timer.Start(500)
         self.parent.handler("add_page", self, show=1)
+    
+    def unwatch(self):
+        self.timer.Stop()
+    
+    def OnTimer(self, evt):
+        ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
+        wnd = wx.Window.FindFocus()
+        if wnd not in self.Children:
+            self.SetObj(wnd)
     
     def OnRightDown(self, evt):
         item, flags = self.tree.HitTest(evt.Position)
