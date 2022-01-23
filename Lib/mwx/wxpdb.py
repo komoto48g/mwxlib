@@ -30,8 +30,8 @@ class Debugger(Pdb):
     
 Attributes:
     logger : ShellFrame Log
-      busy : The flag of being running now (eq. when module is not None)
-   verbose : Activates verbose mode in which default messages are output from Pdb.
+      busy : The flag of being running now
+   verbose : Verbose messages are output from Pdb
     module : The module of the currently stacked frame on Pdb
     locals : The namespace of the currently stacked frame on Pdb
    globals : (ditto)
@@ -39,24 +39,7 @@ Attributes:
 Args:
     parent : shellframe
      stdin : shell.interp.stdin
-   stdiout : shell.interp.stdout
-
-Note:
-    + set_trace -> reset -> set_step -> sys.settrace
-                   reset -> forget
-    > user_line
-    > bp_commands
-    > interaction -> setup -> execRcLines
-    > print_stack_entry
-    > preloop
-        - cmd:cmdloop --> stdin.readline
-    (Pdb)
-    > postloop
-        - user_line
-        - user_call
-        - user_return
-        - user_exception -> interaction
-    [EOF]
+    stdout : shell.interp.stdout
     """
     indent = "  "
     prefix1 = "> "
@@ -64,8 +47,7 @@ Note:
     verbose = False
     parent = property(lambda self: self.__inspector)
     logger = property(lambda self: self.__inspector.Log)
-    shell = property(lambda self: self.__inspector.rootshell)
-    busy = property(lambda self: self.module is not None)
+    busy = property(lambda self: self.target is not None)
     locals = property(lambda self: self.curframe.f_locals) # cf. curframe_locals
     globals = property(lambda self: self.curframe.f_globals)
     
@@ -73,32 +55,10 @@ Note:
         Pdb.__init__(self, *args, **kwargs)
         
         self.__inspector = parent
-        self.prompt = self.indent + '(Pdb) ' # (overwrite)
+        self.prompt = self.indent + '(Pdb) ' # (overwrite) pdb prompt
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.target = None
         self.module = None
-    
-    def open(self, frame=None):
-        if self.module is not None:
-            return
-        self.module = inspect.getmodule(frame)
-        self.logger.clear()
-        self.logger.Show()
-        self.shell.SetFocus()
-        def _continue():
-            try:
-                ## self.shell.Execute('next') # step in the target
-                wx.EndBusyCursor() # cancel the egg timer
-            except Exception:
-                pass
-        wx.CallAfter(_continue)
-        self.set_trace(frame)
-    
-    def close(self):
-        if self.module is not None:
-            self.set_quit()
-            self.module = None
-        self.target = None
     
     def trace(self, target, *args, **kwargs):
         if not callable(target):
@@ -107,20 +67,35 @@ Note:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        if self.module is not None:
+        if self.target is not None:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
-        self.target = target
         try:
-            self.parent.handler('debug_begin', target)
-            self.open(inspect.currentframe())
+            self.target = target
+            self.parent.handler('debug_begin', self.target)
+            frame = inspect.currentframe()
+            self.logger.clear()
+            self.logger.Show()
+            def _continue():
+                try:
+                    wx.EndBusyCursor() # cancel the egg timer
+                except Exception:
+                    pass
+            wx.CallAfter(_continue)
+            self.set_trace(frame)
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
         finally:
-            self.close()
-            self.parent.handler('debug_end', target)
+            self.quit()
+    
+    def quit(self):
+        if self.target:
+            self.set_quit()
+            self.module = None
+            self.target = None
+            self.parent.handler('debug_end', self.target)
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -151,10 +126,6 @@ Note:
     ## --------------------------------
     ## Override Bdb methods
     ## --------------------------------
-    
-    ## @echo
-    ## def trace_dispatch(self, frame, event, arg):
-    ##     return Pdb.trace_dispatch(self, frame, event, arg)
     
     @echo
     def set_until(self, frame, lineno=None):
@@ -199,7 +170,6 @@ Note:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
-        self.module = None
         return Pdb.set_quit(self)
     
     ## --------------------------------
@@ -208,9 +178,8 @@ Note:
     
     @echo
     def user_call(self, frame, argument_list):
-        """--Call--
-        Note: argument_list(=None) is no longer used
-        """
+        """--Call--"""
+        ## Note: argument_list(=None) is no longer used
         filename = frame.f_code.co_filename
         lineno = frame.f_code.co_firstlineno
         name = frame.f_code.co_name
@@ -239,10 +208,6 @@ Note:
     @echo
     def bp_commands(self, frame):
         """--Break--"""
-        ## filename = frame.f_code.co_filename
-        ## line = linecache.getline(filename, frame.f_lineno, frame.f_globals)
-        ## if filename == __file__ and 'self.close()' in line:
-        ##     wx.CallAfter(self.shell.Execute, 'next') # step over closing
         return Pdb.bp_commands(self, frame)
     
     @echo

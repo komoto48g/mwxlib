@@ -1946,9 +1946,11 @@ Global bindings:
             self.debugger.trace(obj, *args, **kwargs)
         else:
             print("- cannot debug {!r}".format(obj))
+            print("  the target must be callable or wx.Object.")
     
     def on_debug_begin(self, frame):
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
+        self.__shell.SetFocus()
         self.__target = self.__shell.target # save locals
         self.SetTitleWindow(frame)
     
@@ -2853,6 +2855,8 @@ Flaky nutshell:
         """
         if not hasattr(target, '__dict__'):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
+        
+        ## Note: [self, this, shell] :args are set or overwritten.
         try:
             target.self = target
             target.this = inspect.getmodule(target)
@@ -2860,7 +2864,6 @@ Flaky nutshell:
         except AttributeError as e:
             print("- cannot set target vars: {!r}".format(e))
             pass
-        
         self.__target = target
         self.interp.locals = target.__dict__
         ## self.interp.locals.update(target.__dict__)
