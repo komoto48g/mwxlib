@@ -1769,7 +1769,7 @@ Global bindings:
         self._mgr.Update()
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroyFrame)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -1840,7 +1840,7 @@ Global bindings:
             return
         evt.Skip()
     
-    def OnDestroyFrame(self, evt):
+    def OnDestroy(self, evt):
         nb = self.console
         if nb and nb.PageCount == 1:
             nb.TabCtrlHeight = 0

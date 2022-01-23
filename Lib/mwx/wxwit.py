@@ -83,13 +83,13 @@ class Inspector(wx.SplitterWindow):
 Args:
     parent : shellframe
     """
-    parent = property(lambda self: self.__inspector)
+    parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, *args, **kwargs):
         wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
         
-        self.__inspector = parent
+        self.__shellframe = parent
         self.__watchedWidget = None
         
         self.tree = it.InspectionTree(self, size=(300,-1))

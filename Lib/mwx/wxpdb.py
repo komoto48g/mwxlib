@@ -45,8 +45,8 @@ Args:
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
-    parent = property(lambda self: self.__inspector)
-    logger = property(lambda self: self.__inspector.Log)
+    parent = property(lambda self: self.__shellframe)
+    logger = property(lambda self: self.__shellframe.Log)
     busy = property(lambda self: self.target is not None)
     locals = property(lambda self: self.curframe.f_locals) # cf. curframe_locals
     globals = property(lambda self: self.curframe.f_globals)
@@ -54,7 +54,7 @@ Args:
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.__inspector = parent
+        self.__shellframe = parent
         self.prompt = self.indent + '(Pdb) ' # (overwrite) pdb prompt
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.target = None

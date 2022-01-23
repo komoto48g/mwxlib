@@ -21,14 +21,14 @@ Args:
     parent : shellframe
     """
     data = property(lambda self: self.__items)
-    parent = property(lambda self: self.__inspector)
+    parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
-        self.__inspector = parent
+        self.__shellframe = parent
         self.__watchedWidget = None
         
         self.__dir = True # sort direction
