@@ -13,7 +13,6 @@ from pdb import Pdb, bdb
 import linecache
 import inspect
 import wx
-from wx.py.filling import FillingFrame
 
 
 def echo(f):
@@ -67,6 +66,8 @@ Note:
     logger = property(lambda self: self.__inspector.Log)
     shell = property(lambda self: self.__inspector.rootshell)
     busy = property(lambda self: self.module is not None)
+    locals = property(lambda self: self.curframe.f_locals) # cf. curframe_locals
+    globals = property(lambda self: self.curframe.f_globals)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
@@ -74,10 +75,8 @@ Note:
         self.__inspector = parent
         self.prompt = self.indent + '(Pdb) ' # (overwrite)
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
-        self.locals = {}
-        self.globals = {}
+        self.target = None
         self.module = None
-        self.viewer = None
     
     def open(self, frame=None):
         if self.module is not None:
@@ -99,11 +98,7 @@ Note:
         if self.module is not None:
             self.set_quit()
             self.module = None
-        if self.viewer:
-            self.viewer.Close()
-            self.viewer = None
-        self.locals.clear()
-        self.globals.clear()
+        self.target = None
     
     def trace(self, target, *args, **kwargs):
         if not callable(target):
@@ -116,6 +111,7 @@ Note:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
+        self.target = target
         try:
             self.parent.handler('debug_begin', target)
             self.open(inspect.currentframe())
@@ -125,16 +121,6 @@ Note:
         finally:
             self.close()
             self.parent.handler('debug_end', target)
-    
-    def view(self):
-        self.viewer = FillingFrame(rootObject=self.locals,
-                                   rootLabel='locals',
-                                   static=False, # update each time pushed
-                                   )
-        self.viewer.filling.text.WrapMode = 0
-        self.viewer.filling.text.Zoom = -1
-        self.viewer.filling.tree.display()
-        self.viewer.Show()
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -156,12 +142,10 @@ Note:
         (override) Change prompt_prefix; Add trace pointer.
         """
         self.trace_pointer(*frame_lineno) # for jump
-        
         if not self.verbose:
             return
         if prompt_prefix is None:
             prompt_prefix = '\n' + self.indent + self.prefix2
-        
         Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
     
     ## --------------------------------
@@ -291,14 +275,6 @@ Note:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
             self.trace_pointer(frame, lineno)  # (->) pointer
-            
-            ## Update view (namespace)
-            self.globals.clear()
-            self.globals.update(frame.f_globals)
-            self.locals.clear()
-            self.locals.update(frame.f_locals)
-            if self.viewer:
-                self.viewer.filling.tree.display()
             self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
@@ -322,6 +298,7 @@ if __name__ == "__main__":
                            stdin=self.rootshell.interp.stdin,
                            stdout=self.rootshell.interp.stdout
                            )
+        self.rootshell.Execute("dive(self.dbg)")
         self.rootshell.write("self.dbg.trace(self.About)")
         frm.dbg.verbose = 1
         echo.debug = 0
