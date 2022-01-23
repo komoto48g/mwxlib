@@ -1780,14 +1780,9 @@ Global bindings:
         
         self.handler.update({ #<ShellFrame.handler>
             None : {
-                  'debug_begin' : [ None, _F(self.__shell.write,
-                                             "#<< Enter [n]ext to continue.\n", -1),
-                                          self.SetTitleWindow ],
-                   'debug_next' : [ None, self.SetTitleWindow ],
-                    'debug_end' : [ None, _F(self.__shell.write,
-                                             "#>> Debugger closed successfully.", -1),
-                                          _F(self.__shell.prompt),
-                                          _F(self.SetTitleWindow, self.__shell.target) ],
+                  'debug_begin' : [ None, self.on_debug_begin ],
+                   'debug_next' : [ None, self.on_debug_next ],
+                    'debug_end' : [ None, self.on_debug_end ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,
                                           _F(self.PopupWindow, self.Help) ],
@@ -1845,13 +1840,10 @@ Global bindings:
             return
         evt.Skip()
     
-    def OnCloseShell(self, evt=None):
+    def OnDestroyFrame(self, evt):
         nb = self.console
         if nb and nb.PageCount == 1:
             nb.TabCtrlHeight = 0
-    
-    def OnDestroyFrame(self, evt):
-        self.OnCloseShell()
         evt.Skip()
     
     def Destroy(self):
@@ -1955,6 +1947,22 @@ Global bindings:
         else:
             print("- cannot debug {!r}".format(obj))
     
+    def on_debug_begin(self, frame):
+        self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
+        self.__target = self.__shell.target # save locals
+        self.SetTitleWindow(frame)
+    
+    def on_debug_next(self, frame):
+        if 'self' in frame.f_locals:
+            self.__shell.target = frame.f_locals.get('self')
+        self.SetTitleWindow(frame)
+    
+    def on_debug_end(self, frame):
+        self.__shell.write("#>> Debugger closed successfully.", -1)
+        self.__shell.prompt()
+        self.__shell.target = self.__target # restore locals
+        self.SetTitleWindow(self.__shell.target)
+    
     def add_page_console(self, win, title=None, show=False):
         nb = self.console
         j = nb.GetPageIndex(win)
@@ -2012,10 +2020,10 @@ Global bindings:
         shell.clear()
         self.handler('shell_cleared', shell)
     
-    def clone_shell(self):
+    def clone_shell(self, target=None):
         """Clone the current shell"""
         shell = self.current_shell
-        shell.clone()
+        shell.clone(target)
         self.handler('shell_cloned', shell)
     
     def close_shell(self):
@@ -2837,12 +2845,6 @@ Flaky nutshell:
     
     @property
     def target(self):
-        ## try:
-        ##     if self.parent.debugger.busy:
-        ##         if self is self.parent.rootshell:
-        ##             return self.parent.debugger.curframe
-        ## except AttributeError:
-        ##     pass
         return self.__target
     
     @target.setter
@@ -2860,19 +2862,13 @@ Flaky nutshell:
             pass
         
         self.__target = target
-        ## self.interp.locals.clear()
-        self.interp.locals.update(target.__dict__)
+        self.interp.locals = target.__dict__
+        ## self.interp.locals.update(target.__dict__)
         self.parent.handler('title_window', target)
     
     @property
     def locals(self):
-        try:
-            if self.parent.debugger.busy:
-                if self is self.parent.rootshell:
-                    return self.parent.debugger.locals
-        except AttributeError:
-            pass
-        return self.interp.locals # target.__dict__
+        return self.interp.locals
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)

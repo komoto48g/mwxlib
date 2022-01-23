@@ -162,7 +162,7 @@ Args:
             self.tree.SelectItem(item)
             Menu.Popup(self, (
                 (1, "&Dive into the shell", Icon('core'),
-                    lambda v: self.parent.rootshell.clone(self.target)),
+                    lambda v: self.parent.clone_shell(self.target)),
                     
                 (2, "&Watch the event", Icon('proc'),
                     lambda v: self.parent.monitor.watch(self.target)),
