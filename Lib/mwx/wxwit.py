@@ -1,5 +1,11 @@
 #! python3
 # -*- coding: utf-8 -*-
+"""Widget inspection tool
+*** Inspired by wx.lib.inspection ***
+
+Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""
+import warnings
 import re
 import wx
 from wx.lib import inspection as it
@@ -12,18 +18,20 @@ except ImportError:
 
 
 def atomvars(obj):
-    p = re.compile('[a-zA-Z]+')
-    keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
-    attr = {}
-    for key in keys:
-        try:
-            value = getattr(obj, key)
-            if hasattr(value, '__name__'): #<atom>
-                continue
-        except Exception as e:
-            value = e
-        attr[key] = repr(value)
-    return attr
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        p = re.compile('[a-zA-Z]+')
+        keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
+        attr = {}
+        for key in keys:
+            try:
+                value = getattr(obj, key)
+                if hasattr(value, '__name__'): #<atom>
+                    continue
+            except Exception as e:
+                value = e
+            attr[key] = repr(value)
+        return attr
 
 
 class InfoList(wx.ListCtrl):
@@ -78,7 +86,6 @@ class InfoList(wx.ListCtrl):
 
 class Inspector(wx.SplitterWindow):
     """Widget inspection tool with check-list
-*** Inspired by wx.lib.inspection ***
 
 Args:
     parent : shellframe
