@@ -1,13 +1,10 @@
 #! python3
 # -*- coding: utf-8 -*-
 """Graphical debugger
- of the phoenix, by the phoenix, for the phoenix
+   of the phoenix, by the phoenix, for the phoenix
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from functools import wraps
 from pdb import Pdb, bdb
 import linecache
@@ -67,23 +64,22 @@ Args:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        if self.target is not None:
+        if self.target:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            self.target = target
-            self.parent.handler('debug_begin', self.target)
-            frame = inspect.currentframe()
-            self.logger.clear()
-            self.logger.Show()
             def _continue():
                 try:
                     wx.EndBusyCursor() # cancel the egg timer
                 except Exception:
                     pass
             wx.CallAfter(_continue)
-            self.set_trace(frame)
+            self.logger.clear()
+            self.logger.Show()
+            self.target = target
+            self.parent.handler('debug_begin', self.target)
+            self.set_trace(inspect.currentframe())
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
