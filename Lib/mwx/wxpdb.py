@@ -1,19 +1,15 @@
 #! python3
 # -*- coding: utf-8 -*-
 """Graphical debugger
- of the phoenix, by the phoenix, for the phoenix
+   of the phoenix, by the phoenix, for the phoenix
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from functools import wraps
 from pdb import Pdb, bdb
 import linecache
 import inspect
 import wx
-from wx.py.filling import FillingFrame
 
 
 def echo(f):
@@ -31,8 +27,8 @@ class Debugger(Pdb):
     
 Attributes:
     logger : ShellFrame Log
-      busy : The flag of being running now (eq. when module is not None)
-   verbose : Activates verbose mode in which default messages are output from Pdb.
+      busy : The flag of being running now
+   verbose : Verbose messages are output from Pdb
     module : The module of the currently stacked frame on Pdb
     locals : The namespace of the currently stacked frame on Pdb
    globals : (ditto)
@@ -40,70 +36,26 @@ Attributes:
 Args:
     parent : shellframe
      stdin : shell.interp.stdin
-   stdiout : shell.interp.stdout
-
-Note:
-    + set_trace -> reset -> set_step -> sys.settrace
-                   reset -> forget
-    > user_line
-    > bp_commands
-    > interaction -> setup -> execRcLines
-    > print_stack_entry
-    > preloop
-        - cmd:cmdloop --> stdin.readline
-    (Pdb)
-    > postloop
-        - user_line
-        - user_call
-        - user_return
-        - user_exception -> interaction
-    [EOF]
+    stdout : shell.interp.stdout
     """
     indent = "  "
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
-    parent = property(lambda self: self.__inspector)
-    logger = property(lambda self: self.__inspector.Log)
-    shell = property(lambda self: self.__inspector.rootshell)
-    busy = property(lambda self: self.module is not None)
+    parent = property(lambda self: self.__shellframe)
+    logger = property(lambda self: self.__shellframe.Log)
+    busy = property(lambda self: self.target is not None)
+    locals = property(lambda self: self.curframe.f_locals) # cf. curframe_locals
+    globals = property(lambda self: self.curframe.f_globals)
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.__inspector = parent
-        self.prompt = self.indent + '(Pdb) ' # (overwrite)
+        self.__shellframe = parent
+        self.prompt = self.indent + '(Pdb) ' # (overwrite) pdb prompt
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
-        self.locals = {}
-        self.globals = {}
+        self.target = None
         self.module = None
-        self.viewer = None
-    
-    def open(self, frame=None):
-        if self.module is not None:
-            return
-        self.module = inspect.getmodule(frame)
-        self.logger.clear()
-        self.logger.Show()
-        self.shell.SetFocus()
-        def _continue():
-            try:
-                ## self.shell.Execute('next') # step in the target
-                wx.EndBusyCursor() # cancel the egg timer
-            except Exception:
-                pass
-        wx.CallAfter(_continue)
-        self.set_trace(frame)
-    
-    def close(self):
-        if self.module is not None:
-            self.set_quit()
-            self.module = None
-        if self.viewer:
-            self.viewer.Close()
-            self.viewer = None
-        self.locals.clear()
-        self.globals.clear()
     
     def trace(self, target, *args, **kwargs):
         if not callable(target):
@@ -112,29 +64,34 @@ Note:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        if self.module is not None:
+        if self.target:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            self.parent.handler('debug_begin', target)
-            self.open(inspect.currentframe())
+            def _continue():
+                try:
+                    wx.EndBusyCursor() # cancel the egg timer
+                except Exception:
+                    pass
+            wx.CallAfter(_continue)
+            self.logger.clear()
+            self.logger.Show()
+            self.target = target
+            self.parent.handler('debug_begin', self.target)
+            self.set_trace(inspect.currentframe())
             target(*args, **kwargs)
         except bdb.BdbQuit:
             pass
         finally:
-            self.close()
-            self.parent.handler('debug_end', target)
+            self.quit()
     
-    def view(self):
-        self.viewer = FillingFrame(rootObject=self.locals,
-                                   rootLabel='locals',
-                                   static=False, # update each time pushed
-                                   )
-        self.viewer.filling.text.WrapMode = 0
-        self.viewer.filling.text.Zoom = -1
-        self.viewer.filling.tree.display()
-        self.viewer.Show()
+    def quit(self):
+        if self.target:
+            self.set_quit()
+            self.module = None
+            self.target = None
+            self.parent.handler('debug_end', self.target)
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -156,21 +113,15 @@ Note:
         (override) Change prompt_prefix; Add trace pointer.
         """
         self.trace_pointer(*frame_lineno) # for jump
-        
         if not self.verbose:
             return
         if prompt_prefix is None:
             prompt_prefix = '\n' + self.indent + self.prefix2
-        
         Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
     
     ## --------------------------------
     ## Override Bdb methods
     ## --------------------------------
-    
-    ## @echo
-    ## def trace_dispatch(self, frame, event, arg):
-    ##     return Pdb.trace_dispatch(self, frame, event, arg)
     
     @echo
     def set_until(self, frame, lineno=None):
@@ -215,7 +166,6 @@ Note:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
-        self.module = None
         return Pdb.set_quit(self)
     
     ## --------------------------------
@@ -224,9 +174,8 @@ Note:
     
     @echo
     def user_call(self, frame, argument_list):
-        """--Call--
-        Note: argument_list(=None) is no longer used
-        """
+        """--Call--"""
+        ## Note: argument_list(=None) is no longer used
         filename = frame.f_code.co_filename
         lineno = frame.f_code.co_firstlineno
         name = frame.f_code.co_name
@@ -255,10 +204,6 @@ Note:
     @echo
     def bp_commands(self, frame):
         """--Break--"""
-        ## filename = frame.f_code.co_filename
-        ## line = linecache.getline(filename, frame.f_lineno, frame.f_globals)
-        ## if filename == __file__ and 'self.close()' in line:
-        ##     wx.CallAfter(self.shell.Execute, 'next') # step over closing
         return Pdb.bp_commands(self, frame)
     
     @echo
@@ -291,14 +236,6 @@ Note:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
             self.trace_pointer(frame, lineno)  # (->) pointer
-            
-            ## Update view (namespace)
-            self.globals.clear()
-            self.globals.update(frame.f_globals)
-            self.locals.clear()
-            self.locals.update(frame.f_locals)
-            if self.viewer:
-                self.viewer.filling.tree.display()
             self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
@@ -322,6 +259,7 @@ if __name__ == "__main__":
                            stdin=self.rootshell.interp.stdin,
                            stdout=self.rootshell.interp.stdout
                            )
+        self.rootshell.Execute("dive(self.dbg)")
         self.rootshell.write("self.dbg.trace(self.About)")
         frm.dbg.verbose = 1
         echo.debug = 0

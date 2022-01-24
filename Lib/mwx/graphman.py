@@ -1020,17 +1020,19 @@ class Frame(mwx.Frame):
                 print("- No such directory {!r}".format(dirname))
                 return False
         
+        ## --------------------------------
+        ## 0. Check if already plugged in
+        ## --------------------------------
         if docking is not None:
             dock = docking # to be deprecated
-            
+        
         props = dict(show=show,
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
         
-        ## Check if already plugged in
         plug = self.get_plug(name)
         
-        ## [name] がすでに登録されている
+        ## [name] がすでに登録されている (OK)
         if plug:
             if not force:
                 if not isinstance(plug.dockable, bool):
@@ -1040,7 +1042,7 @@ class Frame(mwx.Frame):
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
                     plug.init_session(session)
-                return
+                return #<plug>
         
         ## --------------------------------
         ## 1. import the module
@@ -1180,7 +1182,8 @@ class Frame(mwx.Frame):
                 self.menubar.update(plug.menu)
             
             self.statusbar("\b done.")
-            
+            return #<plug>
+        
         except Exception as e:
             wx.CallAfter(wx.MessageBox,
                          "{}\n\n{}".format(e, traceback.format_exc()),

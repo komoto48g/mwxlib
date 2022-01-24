@@ -1,6 +1,11 @@
 #! python3
 # -*- coding: utf-8 -*-
-import inspect
+"""Widget minitor
+*** Inspired by wx.lib.eventwatcher ***
+
+Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""
+import warnings
 import wx
 from wx import aui
 from wx import stc
@@ -15,20 +20,19 @@ except ImportError:
 
 class EventMonitor(CheckList):
     """Event monitor with check-list
-*** Inspired by wx.lib.eventwatcher ***
 
 Args:
     parent : shellframe
     """
     data = property(lambda self: self.__items)
-    parent = property(lambda self: self.__inspector)
+    parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
-        self.__inspector = parent
+        self.__shellframe = parent
         self.__watchedWidget = None
         
         self.__dir = True # sort direction
@@ -159,7 +163,10 @@ Args:
         obj = evt.EventObject
         name = self.get_name(event)
         source = ew._makeSourceString(obj)
-        attribs = ew._makeAttribString(evt)
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            attribs = ew._makeAttribString(evt)
         
         if wx.VERSION < (4,1,0): # ignore self insert
             if event == wx.EVT_LIST_INSERT_ITEM.typeId\

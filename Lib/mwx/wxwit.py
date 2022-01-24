@@ -1,5 +1,11 @@
 #! python3
 # -*- coding: utf-8 -*-
+"""Widget inspection tool
+*** Inspired by wx.lib.inspection ***
+
+Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""
+import warnings
 import re
 import wx
 from wx.lib import inspection as it
@@ -12,18 +18,20 @@ except ImportError:
 
 
 def atomvars(obj):
-    p = re.compile('[a-zA-Z]+')
-    keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
-    attr = {}
-    for key in keys:
-        try:
-            value = getattr(obj, key)
-            if hasattr(value, '__name__'): #<atom>
-                continue
-        except Exception as e:
-            value = e
-        attr[key] = repr(value)
-    return attr
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        p = re.compile('[a-zA-Z]+')
+        keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
+        attr = {}
+        for key in keys:
+            try:
+                value = getattr(obj, key)
+                if hasattr(value, '__name__'): #<atom>
+                    continue
+            except Exception as e:
+                value = e
+            attr[key] = repr(value)
+        return attr
 
 
 class InfoList(wx.ListCtrl):
@@ -78,18 +86,17 @@ class InfoList(wx.ListCtrl):
 
 class Inspector(wx.SplitterWindow):
     """Widget inspection tool with check-list
-*** Inspired by wx.lib.inspection ***
 
 Args:
     parent : shellframe
     """
-    parent = property(lambda self: self.__inspector)
+    parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, *args, **kwargs):
         wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
         
-        self.__inspector = parent
+        self.__shellframe = parent
         self.__watchedWidget = None
         
         self.tree = it.InspectionTree(self, size=(300,-1))
@@ -104,8 +111,17 @@ Args:
         
         self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         
+        self.timer = wx.Timer(self)
+        
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
+    
+    def OnDestroy(self, evt):
+        self.unwatch()
+        evt.Skip()
     
     ## --------------------------------
     ## InspectionTool wrapper methods
@@ -123,8 +139,7 @@ Args:
                             self.expandFrame)
     
     def SetObj(self, obj):
-        """Called from tree.OnSelectionChanged"""
-        ## self.parent.rootshell.locals['obj'] = obj
+        """Called from tree.toolFrame -> SetObj"""
         if self.__watchedWidget is not obj:
             self.__watchedWidget = obj
             self.info.UpdateInfo(obj)
@@ -132,11 +147,20 @@ Args:
             self.RefreshTree()
         else:
             self.tree.SelectObj(obj)
-        self.parent.handler('title_window', obj)
     
     def watch(self, obj):
         self.SetObj(obj)
+        self.timer.Start(500)
         self.parent.handler("add_page", self, show=1)
+    
+    def unwatch(self):
+        self.timer.Stop()
+    
+    def OnTimer(self, evt):
+        ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
+        wnd = wx.Window.FindFocus()
+        if wnd not in self.Children:
+            self.SetObj(wnd)
     
     def OnRightDown(self, evt):
         item, flags = self.tree.HitTest(evt.Position)
@@ -145,7 +169,7 @@ Args:
             self.tree.SelectItem(item)
             Menu.Popup(self, (
                 (1, "&Dive into the shell", Icon('core'),
-                    lambda v: self.parent.rootshell.clone(self.target)),
+                    lambda v: self.parent.clone_shell(self.target)),
                     
                 (2, "&Watch the event", Icon('proc'),
                     lambda v: self.parent.monitor.watch(self.target)),
