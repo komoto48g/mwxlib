@@ -6,7 +6,7 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
-from pdb import Pdb, bdb
+from pdb import Pdb
 import pdb
 import linecache
 import inspect
@@ -70,25 +70,18 @@ Args:
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            def _continue():
-                try:
-                    wx.EndBusyCursor() # cancel the egg timer
-                except Exception:
-                    pass
-            wx.CallAfter(_continue)
             self.logger.clear()
             self.logger.Show()
             self.target = target
             self.parent.handler('debug_begin', self.target)
-            self.set_trace(inspect.currentframe())
+            self.set_trace()
             target(*args, **kwargs)
-        except bdb.BdbQuit:
-            pass
         finally:
             self.set_quit()
             self.module = None
             self.target = None
             self.parent.handler('debug_end', self.target)
+            return # no raise
     
     def help(self, cmd=None):
         if cmd is None:
@@ -111,7 +104,7 @@ Args:
     def error(self, msg):
         print(self.indent + "***", msg, file=self.stdout)
     
-    def trace_pointer(self, frame, lineno):
+    def mark_pointer(self, frame, lineno):
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
@@ -122,7 +115,7 @@ Args:
         """Print the stack entry frame_lineno (frame, lineno).
         (override) Change prompt_prefix; Add trace pointer.
         """
-        self.trace_pointer(*frame_lineno) # for jump
+        self.mark_pointer(*frame_lineno) # for jump
         if not self.verbose:
             return
         if prompt_prefix is None:
@@ -151,6 +144,12 @@ Args:
     
     @echo
     def set_trace(self, frame=None):
+        def _continue():
+            try:
+                wx.EndBusyCursor() # cancel the egg timer
+            except Exception:
+                pass
+        wx.CallAfter(_continue)
         return Pdb.set_trace(self, frame)
     
     @echo
@@ -239,23 +238,23 @@ Args:
             if self.module is not module\
               or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
+                self.logger.MarkerDeleteAll(0)
+                self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
             
             for ln in breaklist:
                 self.logger.MarkerAdd(ln-1, 1) # (B ) breakpoints
             if lx is not None:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
-            self.trace_pointer(frame, lineno)  # (->) pointer
-            self.parent.handler('debug_next', frame)
+            self.mark_pointer(frame, lineno) # (->) pointer
+            if self.target:
+                self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
     
     @echo
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""
-        lineno = self.curframe.f_lineno
-        self.logger.MarkerDeleteAll(0)
-        self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
 
 
@@ -269,7 +268,6 @@ if __name__ == "__main__":
                            stdin=self.rootshell.interp.stdin,
                            stdout=self.rootshell.interp.stdout
                            )
-        self.rootshell.Execute("dive(self.dbg)")
         self.rootshell.write("self.dbg.trace(self.About)")
         frm.dbg.verbose = 1
         echo.debug = 0
