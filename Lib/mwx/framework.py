@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.51.3"
+__version__ = "0.51.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1558,8 +1558,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     shellframe = property(lambda self: self.__inspector)
     
-    inspector = shellframe # (to be deprecated) for backward compatibility
-    
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
@@ -2086,6 +2084,7 @@ Global bindings:
         text = win.topic_at_caret
         if not text:
             ## win.apply_filter(0, 0)
+            self.message("- No word to filter")
             for i in range(2):
                 win.SetIndicatorCurrent(i)
                 win.IndicatorClearRange(0, win.TextLength)
@@ -2598,20 +2597,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.WordLeftExtend() # otherwise, extend selection backward word
     
     def get_selection_or_topic(self):
-        """selected substring or topic word at the caret"""
+        """Selected substring or topic word at the caret
+        Note: there is no specific definition of the `word` boundary.
+        """
         topic = self.SelectedText
         if topic:
             return topic
         with self.save_excursion():
-            ## org = self.point # save-excursion
+            boundaries = "({[<>]}),:;"
             p = q = self.point
-            if not self.preceding_char.isspace():
+            c = self.preceding_char
+            if not c.isspace() and c not in boundaries:
                 self.WordLeft()
                 p = self.point
-            if not self.following_char.isspace():
+            c = self.following_char
+            if not c.isspace() and c not in boundaries:
                 self.WordRightEnd()
                 q = self.point
-            ## self.GotoPos(org) # restore-excursion
             return self.GetTextRange(p, q)
     
     def save_excursion(self):
