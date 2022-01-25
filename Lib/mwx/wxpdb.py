@@ -7,6 +7,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
 from pdb import Pdb, bdb
+import pdb
 import linecache
 import inspect
 import wx
@@ -84,14 +85,23 @@ Args:
         except bdb.BdbQuit:
             pass
         finally:
-            self.quit()
-    
-    def quit(self):
-        if self.target:
             self.set_quit()
             self.module = None
             self.target = None
             self.parent.handler('debug_end', self.target)
+    
+    def help(self, cmd=None):
+        if cmd is None:
+            self.parent.handler('put_help', pdb.__doc__)
+        else:
+            self.input('h {}'.format(cmd)) # individual command help
+    
+    def quit(self):
+        self.input('q') # quit interactively
+    
+    def input(self, c):
+        if self.target:
+            self.stdin.input = c
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
