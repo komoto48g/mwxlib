@@ -376,7 +376,7 @@ def find_modules(force=False, verbose=True):
     except AttributeError:
         pass
     
-    f = os.path.expanduser("~/.deb/deb-modules-{}.log".format(sys.winver))
+    f = get_path("deb-modules-{}.log".format(sys.winver))
     if not force and os.path.exists(f):
         with open(f, 'r') as o:
             return eval(o.read()) # read and eval a list of modules
@@ -416,8 +416,14 @@ def find_modules(force=False, verbose=True):
 ## --------------------------------
 ## Finite State Machine
 ## --------------------------------
-if not os.path.exists(os.path.expanduser("~/.deb")): # Create deb directory
-    os.mkdir(os.path.expanduser("~/.deb"))
+def get_path(f):
+    """Return pathname ~/.deb/logfile
+    If ~/.deb/ does not exist, it will be created.
+    """
+    home = os.path.expanduser("~/.deb")
+    if not os.path.exists(home): # Create ~/.deb directory
+        os.mkdir(home)
+    return os.path.join(home, f)
 
 
 class SSM(OrderedDict):
@@ -663,7 +669,7 @@ Attributes:
     def dump(*args):
         print(*args, file=sys.__stderr__, sep='\n')
         
-        f = os.path.expanduser("~/.deb/deb-dump.log")
+        f = get_path("deb-dump.log")
         with open(f, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
             print(*args, sep='\n', end='\n\n', file=o)
@@ -1831,7 +1837,7 @@ Global bindings:
             },
         })
         
-        f = os.path.expanduser("~/.deb/deb-logging.log")
+        f = get_path("deb-logging.log")
         if os.path.exists(f):
             with self.fopen(f) as i:
                 self.Log.SetText(i.read())
@@ -1858,11 +1864,11 @@ Global bindings:
     
     def Destroy(self):
         try:
-            f = os.path.expanduser("~/.deb/deb-logging.log")
+            f = get_path("deb-logging.log")
             with self.fopen(f, 'w') as o:
                 o.write(self.Log.Text)
             
-            f = os.path.expanduser("~/.deb/deb-history.log")
+            f = get_path("deb-history.log")
             with self.fopen(f, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
@@ -1962,6 +1968,9 @@ Global bindings:
         self.__target = self.__shell.target # save locals
         self.SetTitleWindow(frame)
         self.Show()
+        f = get_path("deb-debugger.log")
+        self.__logger = self.fopen(f, 'w')
+        self.__lpoint = self.__shell.point
     
     def on_debug_next(self, frame):
         try:
@@ -1970,6 +1979,9 @@ Global bindings:
             self.__shell.target = inspect.getmodule(frame)
         self.SetTitleWindow(frame)
         self.Log.target = "File {}".format(frame.f_code.co_filename)
+        self.__logger.write(self.__shell.GetTextRange(self.__lpoint, self.__shell.point))
+        self.__logger.flush()
+        self.__lpoint = self.__shell.point
     
     def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
@@ -1977,6 +1989,10 @@ Global bindings:
         self.__shell.target = self.__target # restore locals
         self.SetTitleWindow(self.__shell.target)
         del self.Log.target
+        self.__logger.write(self.__shell.GetTextRange(self.__lpoint, self.__shell.point))
+        self.__logger.close()
+        del self.__logger
+        del self.__lpoint
     
     def add_page_console(self, win, title=None, show=False):
         nb = self.console
