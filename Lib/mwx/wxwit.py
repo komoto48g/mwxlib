@@ -41,16 +41,13 @@ class InfoList(wx.ListCtrl):
         
         ## self.Font = wx.Font(9, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        
         self.attr = {}
-        
         self.alist = ( # assoc list of column names
-            ("key",   200),
-            ("value", 200),
+            ("key",   140),
+            ("value", 160),
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
-        
         try:
             self.SetHeaderAttr(
                 wx.ItemAttr('black', '', self.Font.Bold()))
@@ -101,9 +98,10 @@ Args:
         
         self.tree = it.InspectionTree(self, size=(300,-1))
         self.tree.toolFrame = self # override tree
+        self.tree.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         
         ## self.info = it.InspectionInfoPanel(self, size=(200,-1))
-        ## self.info.DropTarget = None
+        ## self.info.DropTarget = None # to prevent filling from crash
         self.info = InfoList(self, size=(200,-1))
         
         self.SplitVertically(
