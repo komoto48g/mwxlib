@@ -2752,7 +2752,7 @@ class Editor(EditWindow, EditorInterface):
              '*button* pressed' : [ None, skip, fork ],
             '*button* released' : [ None, skip, fork ],
                      '* dclick' : [ None, skip, fork ],
-                    'focus_set' : [ None, self.on_focus_set ],
+                    'focus_set' : [ None, self.on_focus_set, skip ],
             },
         })
         
