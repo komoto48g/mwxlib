@@ -8,7 +8,7 @@ from __future__ import division, print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__version__ = "0.51.2"
+__version__ = "0.51.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1065,6 +1065,17 @@ def postcall(f):
     return _f
 
 
+def wait(f):
+    @wraps(f)
+    def _f(self, *args, **kwargs):
+        try:
+            busy = wx.BusyCursor()
+            return f(self, *args, **kwargs)
+        finally:
+            del busy
+    return _f
+
+
 def skip(v):
     v.Skip()
 
@@ -1804,6 +1815,7 @@ Global bindings:
                 'S-f12 pressed' : (0, _F(self.clear_shell)),
                 'C-f12 pressed' : (0, _F(self.clone_shell)),
                 'M-f12 pressed' : (0, _F(self.close_shell)),
+                  'C-g pressed' : (0, _F(self.debugger.quit)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1877,7 +1889,7 @@ Global bindings:
             wx.py.shell.__doc__,
             "*original{}".format(wx.py.shell.HELP_TEXT.lower()),
             
-            "================================\n" # Thanks are also due to phoenix
+            "================================\n" # Thanks are also due to Phoenix/wxWidgets
             "#{!r}".format(wx),
             "To show the credit, press C-M-Mbutton.",
             ))
@@ -1885,9 +1897,9 @@ Global bindings:
         self.PopupWindow(self.Help)
     
     def PopupWindow(self, win=None, show=True):
-        """Popup window in (self.console, self.ghost)
+        """Popup window in notebooks (console, ghost)
         win : page or window to popup (default:None is ghost)
-       show : True, False, otherwise None:toggle
+       show : True, False, otherwise None:toggle (in the notebook)
         """
         win = win or self.ghost
         if win in (self.console, self.ghost):
@@ -1896,19 +1908,17 @@ Global bindings:
             for nb in (self.console, self.ghost):
                 j = nb.GetPageIndex(win) # check if nb has win
                 if j != -1:
-                    nb.SetSelection(j)
+                    nb.Selection = j # move focus to AuiTab?
                     break
         if show is None:
             show = not nb.IsShown()
         self._mgr.GetPane(nb).Show(show)
         self._mgr.Update()
-        if nb is self.console:
-            self.Show(show)
     
     def SetTitleWindow(self, target):
         ## self.Title = re.sub("(.*) - (.*)",
         ##                      "\\1 - {!r}".format(target), self.Title)
-        self.Title = "Nautilus - {!r}".format(target)
+        self.Title = "Nautilus - {}".format(target)
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
@@ -1953,17 +1963,22 @@ Global bindings:
         self.__shell.SetFocus()
         self.__target = self.__shell.target # save locals
         self.SetTitleWindow(frame)
+        self.Show()
     
     def on_debug_next(self, frame):
-        if 'self' in frame.f_locals:
+        try:
             self.__shell.target = frame.f_locals.get('self')
+        except Exception:
+            self.__shell.target = inspect.getmodule(frame)
         self.SetTitleWindow(frame)
+        self.Log.target = "File {}".format(frame.f_code.co_filename)
     
     def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore locals
         self.SetTitleWindow(self.__shell.target)
+        del self.Log.target
     
     def add_page_console(self, win, title=None, show=False):
         nb = self.console
@@ -1995,8 +2010,6 @@ Global bindings:
     
     def other_editor(self, p=1):
         "Focus moves to another page of ghost editor (no loop)"
-        ## j = (self.ghost.Selection + p) #% self.ghost.PageCount
-        ## self.ghost.SetSelection(j)
         self.ghost.Selection += p
     
     def other_window(self, p=1):
@@ -2145,22 +2158,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        def fork(v):
-            ## used to fork mouse events to the parent
-            try:
-                self.parent.handler(self.handler.event, v)
-            except AttributeError:
-                pass
-        
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
         self.handler.update({ #<Editor.handler>
-            None : {
-             '*button* pressed' : [ None, skip, fork ],
-            '*button* released' : [ None, skip, fork ],
-                     '* dclick' : [ None, skip, fork ],
-            },
             -1 : {  # original action of the Editor
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
                  '*alt pressed' : (-1, ),
@@ -2737,7 +2738,29 @@ class Editor(EditWindow, EditorInterface):
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
+        def fork(v):
+            ## used to fork mouse events to the parent
+            try:
+                self.parent.handler(self.handler.event, v)
+            except AttributeError:
+                pass
+        
+        self.handler.update({ #<Editor.handler>
+            None : {
+             '*button* pressed' : [ None, skip, fork ],
+            '*button* released' : [ None, skip, fork ],
+                     '* dclick' : [ None, skip, fork ],
+                    'focus_set' : [ None, self.on_focus_set ],
+            },
+        })
+        
         self.set_style(self.PALETTE_STYLE)
+    
+    def on_focus_set(self, evt):
+        try:
+            self.parent.handler('title_window', self.target)
+        except AttributeError:
+            pass
     
     Shown = property(
         lambda self: self.IsShown(),
@@ -2866,7 +2889,6 @@ Flaky nutshell:
             pass
         self.__target = target
         self.interp.locals = target.__dict__
-        ## self.interp.locals.update(target.__dict__)
         self.parent.handler('title_window', target)
     
     @property
@@ -2937,16 +2959,15 @@ Flaky nutshell:
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
         
+        @self.handler.bind('focus_set')
         def activate(evt):
             self.handler('shell_activated', self)
             evt.Skip()
         
+        @self.handler.bind('focus_kill')
         def deactivate(evt):
             self.handler('shell_inactivated', self)
             evt.Skip()
-        
-        self.Bind(wx.EVT_SET_FOCUS, activate) # cf. focus_set
-        self.Bind(wx.EVT_KILL_FOCUS, deactivate) # cf. focus_kill
         
         self.on_activated(self) # call once manually
         
@@ -2983,7 +3004,7 @@ Flaky nutshell:
         
         def fork(v):
             self.handler.fork(v) # fork event to 0=default
-            
+        
         self.handler.update({ #<Nautilus.handler>
             None : {
                  'shell_cloned' : [ None, ],
@@ -3785,13 +3806,13 @@ Flaky nutshell:
             self.write(c.replace(lf, os.linesep + sys.ps2))
             self.processLine()
     
-    def run(self, command, **kwargs):
+    def run(self, command, prompt=True, verbose=True):
         """Execute command as if it was typed in directly
         (override) and check the clock time
         """
         self.__start = self.clock()
         
-        return Shell.run(self, command, **kwargs)
+        return Shell.run(self, command, prompt, verbose)
     
     @staticmethod
     def clock():
@@ -4251,6 +4272,9 @@ if 1:
     self
     self.shellframe
     root = self.shellframe.rootshell
+    debug(self)
+    dive(self.shellframe.rootshell)
+    dive(self.shellframe.debugger)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
