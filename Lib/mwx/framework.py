@@ -1791,6 +1791,8 @@ Global bindings:
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
                     'debug_end' : [ None, self.on_debug_end ],
+                'monitor_begin' : [ None, ],
+                  'monitor_end' : [ None, ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,
                                           _F(self.PopupWindow, self.Help) ],
@@ -1904,7 +1906,7 @@ Global bindings:
         else:
             for nb in (self.console, self.ghost):
                 j = nb.GetPageIndex(win) # check if nb has win
-                if j != -1:
+                if j != -1 and j != nb.Selection:
                     nb.Selection = j # move focus to AuiTab?
                     break
         if show is None:
@@ -2019,9 +2021,11 @@ Global bindings:
     
     def other_window(self, p=1):
         "Focus moves to other window"
+        win = self.current_editor
         pages = [w for w in self.all_editors() if w.IsShownOnScreen()]
-        j = (pages.index(self.current_editor) + p) % len(pages)
-        pages[j].SetFocus()
+        if win in pages:
+            j = (pages.index(self.current_editor) + p) % len(pages)
+            pages[j].SetFocus()
     
     def duplicate_line(self, clear=True):
         """Duplicate an expression at the caret-line"""
