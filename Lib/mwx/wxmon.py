@@ -58,7 +58,8 @@ Args:
         self.add_module = ew.addModuleEvents
     
     def OnDestroy(self, evt):
-        self.unwatch()
+        if evt.EventObject is self:
+            self.unwatch()
         evt.Skip()
     
     ## --------------------------------

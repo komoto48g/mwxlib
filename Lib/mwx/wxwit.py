@@ -118,7 +118,8 @@ Args:
         self.highlighter.highlightTime = 2000
     
     def OnDestroy(self, evt):
-        self.unwatch()
+        if evt.EventObject is self:
+            self.unwatch()
         evt.Skip()
     
     ## --------------------------------
