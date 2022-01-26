@@ -2791,6 +2791,8 @@ class Editor(EditWindow, EditorInterface):
         try:
             shown = self.IsShown()
             self.parent.handler('popup_window', self, show)
+            if show:
+                self.SetFocus()
             return shown != self.IsShown()
         except AttributeError:
             return EditWindow.Show(self, show)

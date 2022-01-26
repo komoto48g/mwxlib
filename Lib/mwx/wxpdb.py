@@ -71,18 +71,12 @@ Args:
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            self.logger.clear()
-            self.logger.Show()
             self.target = target
-            self.parent.handler('debug_begin', self.target)
             self.set_trace()
             target(*args, **kwargs)
         finally:
             self.set_quit()
-            self.module = None
-            self.target = None
-            self.parent.handler('debug_end', self.target)
-            return # no raise
+            return
     
     def help(self, cmd=None):
         if cmd is None:
@@ -119,20 +113,22 @@ Args:
         binder, widget = next(item for item in self.__binders
                               if item[0].typeId == evt.EventType)
         self.unhook(binder, widget)
-        ## self.verbose = True
         self.target = widget
-        self.parent.handler('debug_begin', self.target)
         self.set_trace()
         evt.Skip()
         ## go away, but no chance to send [debug_end]...
     
     def hook(self, binder, widget):
-        if binder not in self.__binders:
+        item = (binder, widget)
+        if item not in self.__binders:
             widget.Bind(binder, self._hook)
-            self.__binders.append((binder, widget))
+            self.__binders.append(item)
     
     def unhook(self, binder, widget):
-        widget.Unbind(binder, handler=self._hook)
+        item = (binder, widget)
+        if item in self.__binders:
+            widget.Unbind(binder, handler=self._hook)
+            self.__binders.remove(item)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -162,6 +158,10 @@ Args:
             except Exception:
                 pass
         wx.CallAfter(_continue)
+        self.logger.clear()
+        self.logger.Show()
+        if self.target:
+            self.parent.handler('debug_begin', self.target)
         return Pdb.set_trace(self, frame)
     
     @echo
@@ -187,7 +187,11 @@ Args:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
-        return Pdb.set_quit(self)
+        Pdb.set_quit(self)
+        if self.target:
+            self.parent.handler('debug_end', self.target)
+            self.target = None
+            self.module = None
     
     ## --------------------------------
     ## Override Pdb methods
@@ -294,6 +298,7 @@ if __name__ == "__main__":
                            stdout=self.rootshell.interp.stdout
                            )
         self.rootshell.write("self.dbg.trace(self.About)")
+        frm.shellframe.handler.debug = 4
         frm.dbg.verbose = 1
         echo.debug = 1
         self.Show()
