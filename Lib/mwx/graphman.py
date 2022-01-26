@@ -4,9 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from collections import OrderedDict
 from functools import partial
 from functools import wraps
@@ -38,20 +35,17 @@ import matplotlib
 from matplotlib import cm
 from matplotlib import colors
 ## from matplotlib import pyplot as plt
+import numpy as np
+from numpy import nan, inf
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
-import numpy as np
-try:
-    from importlib import reload
-except ImportError:
-    pass
-
+from importlib import reload
 from six import string_types
 
-if sys.version_info < (3,0):
-    FileNotFoundError = IOError
+## if sys.version_info < (3,0):
+##     FileNotFoundError = IOError
 
 _F = mwx.funcall
 

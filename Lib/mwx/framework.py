@@ -4,11 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
-
-__version__ = "0.51.4"
+__version__ = "0.51.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -38,10 +34,7 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint, pformat
 from six.moves import builtins
 from six import string_types
-try:
-    from importlib import reload
-except ImportError:
-    pass
+from importlib import reload
 
 
 def atom(v):

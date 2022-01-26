@@ -4,9 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 import sys
 import wx
 try:

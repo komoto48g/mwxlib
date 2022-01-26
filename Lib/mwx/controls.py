@@ -4,14 +4,10 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 from itertools import chain
 import sys
 import wx
 import numpy as np
-from numpy import pi
 from numpy import nan, inf
 try:
     import framework as mwx
@@ -1230,6 +1226,8 @@ else:
 if __name__ == '__main__':
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
+    
+    from numpy import pi
     
     class TestPanel(ControlPanel, mwx.CtrlInterface):
         def __init__(self, *args, **kwargs):

@@ -2,10 +2,6 @@
 # -*- coding: utf-8 -*-
 """mwxlib (based on matplotlib/wx)
 """
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
-
 ## from . import framework
 from .framework import __version__, __author__
 from .framework import apropos, typename
@@ -31,7 +27,5 @@ from .matplot2lg import LineProfile
 from .mgplt3 import Gplot
 from .mgplt3 import GplotFrame
 
-try:
-    from importlib import reload
-except ImportError:
-    reload = reload
+## mwx.reload
+from importlib import reload
