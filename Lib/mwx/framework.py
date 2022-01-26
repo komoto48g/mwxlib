@@ -1658,7 +1658,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         ## To default close >>> self.Unbind(wx.EVT_CLOSE)
-        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0)) # hide only
+        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
         def close(v):
             """Close the window"""
@@ -1776,6 +1776,7 @@ Global bindings:
             .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0).Show(0))
         self._mgr.Update()
         
+        self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -1849,7 +1850,7 @@ Global bindings:
             wx.MessageBox("The debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
-        evt.Skip()
+        self.Show(0) # Don't destroy the window
     
     def OnDestroy(self, evt):
         nb = self.console
@@ -4220,9 +4221,9 @@ Note:
         app = wx.GetApp() or wx.App()
     
     frame = ShellFrame(None, target, **kwargs)
+    frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close the window
     frame.Show()
     frame.rootshell.SetFocus()
-    frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close window
     if startup:
         shell = frame.rootshell
         try:
