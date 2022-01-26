@@ -1966,7 +1966,6 @@ Global bindings:
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
         self.__target = self.__shell.target # save locals
-        self.SetTitleWindow(frame)
         self.Show()
         f = get_path("deb-debugger.log")
         self.__logger = self.fopen(f, 'w')
@@ -1983,11 +1982,10 @@ Global bindings:
         self.__logger.flush()
         self.__lpoint = self.__shell.point
     
-    def on_debug_end(self, frame):
+    def on_debug_end(self, frame=None):
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore locals
-        self.SetTitleWindow(self.__shell.target)
         del self.Log.target
         self.__logger.write(self.__shell.GetTextRange(self.__lpoint, self.__shell.point))
         self.__logger.close()
@@ -4310,8 +4308,8 @@ if 1:
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 0
-    frm.shellframe.rootshell.handler.debug = 4
+    frm.shellframe.handler.debug = 4
+    frm.shellframe.rootshell.handler.debug = 0
     frm.shellframe.rootshell.Execute(SHELLSTARTUP)
     frm.shellframe.rootshell.SetFocus()
     frm.shellframe.Show()

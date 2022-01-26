@@ -53,6 +53,7 @@ Args:
         Pdb.__init__(self, *args, **kwargs)
         
         self.__shellframe = parent
+        self.__binders = []
         self.prompt = self.indent + '(Pdb) ' # (overwrite) pdb prompt
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.target = None
@@ -104,23 +105,34 @@ Args:
     def error(self, msg):
         print(self.indent + "***", msg, file=self.stdout)
     
-    def mark_pointer(self, frame, lineno):
+    def mark(self, frame, lineno):
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
         wx.CallAfter(self.logger.recenter)
     
-    @echo
-    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
-        """Print the stack entry frame_lineno (frame, lineno).
-        (override) Change prompt_prefix; Add trace pointer.
-        """
-        self.mark_pointer(*frame_lineno) # for jump
-        if not self.verbose:
-            return
-        if prompt_prefix is None:
-            prompt_prefix = '\n' + self.indent + self.prefix2
-        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
+    ## --------------------------------
+    ## wx.Event hook interfaces
+    ## --------------------------------
+    
+    def _hook(self, evt):
+        binder, widget = next(item for item in self.__binders
+                              if item[0].typeId == evt.EventType)
+        self.unhook(binder, widget)
+        ## self.verbose = True
+        self.target = widget
+        self.parent.handler('debug_begin', self.target)
+        self.set_trace()
+        evt.Skip()
+        ## go away, but no chance to send [debug_end]...
+    
+    def hook(self, binder, widget):
+        if binder not in self.__binders:
+            widget.Bind(binder, self._hook)
+            self.__binders.append((binder, widget))
+    
+    def unhook(self, binder, widget):
+        widget.Unbind(binder, handler=self._hook)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -180,6 +192,19 @@ Args:
     ## --------------------------------
     ## Override Pdb methods
     ## --------------------------------
+    
+    @echo
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        """Print the stack entry frame_lineno (frame, lineno).
+        (override) Change prompt_prefix;
+                   Add trace pointer when jump is called.
+        """
+        self.mark(*frame_lineno) # for jump
+        if not self.verbose:
+            return
+        if prompt_prefix is None:
+            prompt_prefix = '\n' + self.indent + self.prefix2
+        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
     
     @echo
     def user_call(self, frame, argument_list):
@@ -242,11 +267,11 @@ Args:
                 self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
             
             for ln in breaklist:
-                self.logger.MarkerAdd(ln-1, 1) # (B ) breakpoints
+                self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
             if lx is not None:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
-            self.mark_pointer(frame, lineno) # (->) pointer
+            self.mark(frame, lineno) # (->) pointer
             if self.target:
                 self.parent.handler('debug_next', frame)
         self.module = module
@@ -270,7 +295,7 @@ if __name__ == "__main__":
                            )
         self.rootshell.write("self.dbg.trace(self.About)")
         frm.dbg.verbose = 1
-        echo.debug = 0
+        echo.debug = 1
         self.Show()
     frm.Show()
     app.MainLoop()
