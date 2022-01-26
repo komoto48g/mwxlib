@@ -6,7 +6,7 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
-from pdb import Pdb, bdb
+from pdb import Pdb
 import pdb
 import linecache
 import inspect
@@ -53,6 +53,7 @@ Args:
         Pdb.__init__(self, *args, **kwargs)
         
         self.__shellframe = parent
+        self.__binders = []
         self.prompt = self.indent + '(Pdb) ' # (overwrite) pdb prompt
         self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
         self.target = None
@@ -70,25 +71,12 @@ Args:
                           "Enter [q]uit to exit before closing.")
             return
         try:
-            def _continue():
-                try:
-                    wx.EndBusyCursor() # cancel the egg timer
-                except Exception:
-                    pass
-            wx.CallAfter(_continue)
-            self.logger.clear()
-            self.logger.Show()
             self.target = target
-            self.parent.handler('debug_begin', self.target)
-            self.set_trace(inspect.currentframe())
+            self.set_trace()
             target(*args, **kwargs)
-        except bdb.BdbQuit:
-            pass
         finally:
             self.set_quit()
-            self.module = None
-            self.target = None
-            self.parent.handler('debug_end', self.target)
+            return
     
     def help(self, cmd=None):
         if cmd is None:
@@ -111,23 +99,36 @@ Args:
     def error(self, msg):
         print(self.indent + "***", msg, file=self.stdout)
     
-    def trace_pointer(self, frame, lineno):
+    def mark(self, frame, lineno):
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
         wx.CallAfter(self.logger.recenter)
     
-    @echo
-    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
-        """Print the stack entry frame_lineno (frame, lineno).
-        (override) Change prompt_prefix; Add trace pointer.
-        """
-        self.trace_pointer(*frame_lineno) # for jump
-        if not self.verbose:
-            return
-        if prompt_prefix is None:
-            prompt_prefix = '\n' + self.indent + self.prefix2
-        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
+    ## --------------------------------
+    ## wx.Event hook interfaces
+    ## --------------------------------
+    
+    def _hook(self, evt):
+        binder, widget = next(item for item in self.__binders
+                              if item[0].typeId == evt.EventType)
+        self.unhook(binder, widget)
+        self.target = widget
+        self.set_trace()
+        evt.Skip()
+        ## go away, but no chance to send [debug_end]...
+    
+    def hook(self, binder, widget):
+        item = (binder, widget)
+        if item not in self.__binders:
+            widget.Bind(binder, self._hook)
+            self.__binders.append(item)
+    
+    def unhook(self, binder, widget):
+        item = (binder, widget)
+        if item in self.__binders:
+            widget.Unbind(binder, handler=self._hook)
+            self.__binders.remove(item)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -151,6 +152,16 @@ Args:
     
     @echo
     def set_trace(self, frame=None):
+        def _continue():
+            try:
+                wx.EndBusyCursor() # cancel the egg timer
+            except Exception:
+                pass
+        wx.CallAfter(_continue)
+        self.logger.clear()
+        self.logger.Show()
+        if self.target:
+            self.parent.handler('debug_begin', self.target)
         return Pdb.set_trace(self, frame)
     
     @echo
@@ -176,11 +187,28 @@ Args:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
-        return Pdb.set_quit(self)
+        Pdb.set_quit(self)
+        if self.target:
+            self.parent.handler('debug_end', self.target)
+            self.target = None
+            self.module = None
     
     ## --------------------------------
     ## Override Pdb methods
     ## --------------------------------
+    
+    @echo
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        """Print the stack entry frame_lineno (frame, lineno).
+        (override) Change prompt_prefix;
+                   Add trace pointer when jump is called.
+        """
+        self.mark(*frame_lineno) # for jump
+        if not self.verbose:
+            return
+        if prompt_prefix is None:
+            prompt_prefix = '\n' + self.indent + self.prefix2
+        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
     
     @echo
     def user_call(self, frame, argument_list):
@@ -239,23 +267,23 @@ Args:
             if self.module is not module\
               or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
+                self.logger.MarkerDeleteAll(0)
+                self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
             
             for ln in breaklist:
-                self.logger.MarkerAdd(ln-1, 1) # (B ) breakpoints
+                self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
             if lx is not None:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
-            self.trace_pointer(frame, lineno)  # (->) pointer
-            self.parent.handler('debug_next', frame)
+            self.mark(frame, lineno) # (->) pointer
+            if self.target:
+                self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
     
     @echo
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""
-        lineno = self.curframe.f_lineno
-        self.logger.MarkerDeleteAll(0)
-        self.logger.MarkerAdd(lineno-1, 0) # (=>) last pointer
         Pdb.postloop(self)
 
 
@@ -269,10 +297,10 @@ if __name__ == "__main__":
                            stdin=self.rootshell.interp.stdin,
                            stdout=self.rootshell.interp.stdout
                            )
-        self.rootshell.Execute("dive(self.dbg)")
         self.rootshell.write("self.dbg.trace(self.About)")
+        frm.shellframe.handler.debug = 4
         frm.dbg.verbose = 1
-        echo.debug = 0
+        echo.debug = 1
         self.Show()
     frm.Show()
     app.MainLoop()
