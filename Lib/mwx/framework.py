@@ -1739,7 +1739,9 @@ Global bindings:
         
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
-                                   stdout=self.__shell.interp.stdout)
+                                   stdout=self.__shell.interp.stdout,
+                                   skip=(Debugger.__module__,
+                                         EventMonitor.__module__))
         
         self.__inspector = Inspector(self)
         self.__inspector.Show(0)
@@ -1792,7 +1794,7 @@ Global bindings:
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
                     'debug_end' : [ None, self.on_debug_end ],
-                'monitor_begin' : [ None, ],
+                'monitor_begin' : [ None, _F(self.PopupWindow, self.Scratch) ],
                   'monitor_end' : [ None, ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,

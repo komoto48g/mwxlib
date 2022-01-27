@@ -54,8 +54,10 @@ Args:
         
         self.__shellframe = parent
         self.__binders = []
-        self.prompt = self.indent + '(Pdb) ' # (overwrite) pdb prompt
-        self.skip = [self.__module__, 'bdb', 'pdb'] # (overwrite) skip this module
+        self.prompt = self.indent + '(Pdb) ' # default pdb prompt
+        if not self.skip:
+            self.skip = set()
+        self.skip |= {self.__module__, 'bdb', 'pdb'} # skip this module
         self.target = None
         self.module = None
     
