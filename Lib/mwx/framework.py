@@ -1925,7 +1925,7 @@ Global bindings:
         win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
         ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
-            self.statusbar("- Don't remove the rootshell.")
+            self.statusbar("- Don't remove the root shell.")
         elif win is self.monitor:
             self.monitor.unwatch()
             self.remove_page_console(win)
@@ -2046,7 +2046,7 @@ Global bindings:
         """Close the current shell"""
         shell = self.current_shell
         if shell is self.__shell:
-            self.statusbar("- Don't remove the rootshell.")
+            self.statusbar("- Don't remove the root shell.")
             return
         nb = self.console
         j = nb.GetPageIndex(shell)
@@ -3024,6 +3024,12 @@ Flaky nutshell:
                 '*ctrl pressed' : (-1, ),
                '*shift pressed' : (-1, ),
              '*[LR]win pressed' : (-1, ),
+                 '*f12 pressed' : (-2, self.on_enter_notemode),
+            },
+            -2 : {
+                  'C-g pressed' : (0, self.on_exit_notemode),
+                 '*f12 pressed' : (0, self.on_exit_notemode),
+               'escape pressed' : (0, self.on_exit_notemode),
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -3414,6 +3420,17 @@ Flaky nutshell:
             if clear:
                 self.clearCommand()
             self.write(cmd, -1)
+    
+    def on_enter_notemode(self, evt):
+        self.noteMode = True
+        self.SetCaretForeground("red")
+        self.SetCaretWidth(4)
+    
+    def on_exit_notemode(self, evt):
+        self.noteMode = False
+        self.set_style(self.PALETTE_STYLE)
+        self.goto_char(-1)
+        self.prompt()
     
     ## --------------------------------
     ## Magic caster of the shell
@@ -4278,8 +4295,9 @@ if __name__ == '__main__':
 if 1:
     self
     self.shellframe
-    root = self.shellframe.rootshell
+    self.shellframe.rootshell
     debug(self)
+    dive(self.shellframe)
     dive(self.shellframe.rootshell)
     dive(self.shellframe.debugger)
     """
