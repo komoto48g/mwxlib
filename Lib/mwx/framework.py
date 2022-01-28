@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.51.5"
+__version__ = "0.51.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1778,6 +1778,17 @@ Global bindings:
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
+        self.__shell.handler.update({
+            0 : {
+                  'C-h pressed' : (0, _F(self.debugger.help)),
+                  'C-g pressed' : (0, _F(self.debugger.quit)),
+                  'C-q pressed' : (0, _F(self.debugger.quit)),
+                  'C-n pressed' : (0, _F(self.debugger.input, 'n')),
+                  'C-s pressed' : (0, _F(self.debugger.input, 's')),
+                  'C-r pressed' : (0, _F(self.debugger.input, 'r')),
+            }
+        })
+        
         self.handler.update({ #<ShellFrame.handler>
             None : {
                   'debug_begin' : [ None, self.on_debug_begin ],
@@ -1790,9 +1801,9 @@ Global bindings:
                                           _F(self.PopupWindow, self.Help) ],
                       'put_log' : [ None, self.Log.SetText ],
                   'add_history' : [ None, self.add_history ],
-                     'add_page' : [ None, self.add_page_console ],
-                  'remove_page' : [ None, self.remove_page_console ],
-                 'popup_window' : [ None, self.PopupWindow ],
+                     'add_page' : [ None, self.add_page ],
+                  'remove_page' : [ None, self.remove_page ],
+                  'popup_window' : [ None, self.PopupWindow ],
                  'title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
@@ -1801,12 +1812,14 @@ Global bindings:
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.PopupWindow, show=None, doc="Toggle the ghost")),
+                  'f11 pressed' : (0, _F(self.PopupWindow, self.ghost, None, doc="Toggle the ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.clear_shell)),
                 'C-f12 pressed' : (0, _F(self.clone_shell)),
                 'M-f12 pressed' : (0, _F(self.close_shell)),
-                  'C-g pressed' : (0, _F(self.debugger.quit)),
+                  'C-w pressed' : (0, _F(self.close_shell)),
+                  'C-m pressed' : (0, _F(self.add_page, self.monitor, doc="Show monitor")),
+                  'C-i pressed' : (0, _F(self.add_page, self.inspector, doc="Show wit")),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1887,12 +1900,11 @@ Global bindings:
         )
         self.PopupWindow(self.Help)
     
-    def PopupWindow(self, win=None, show=True):
+    def PopupWindow(self, win, show=True):
         """Popup window in notebooks (console, ghost)
         win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle (in the notebook)
         """
-        win = win or self.ghost
         if win in (self.console, self.ghost):
             nb = win
         else:
@@ -1928,10 +1940,10 @@ Global bindings:
             self.statusbar("- Don't remove the root shell.")
         elif win is self.monitor:
             self.monitor.unwatch()
-            self.remove_page_console(win)
+            self.remove_page(win)
         elif win is self.inspector:
             self.inspector.unwatch()
-            self.remove_page_console(win)
+            self.remove_page(win)
         else:
             evt.Skip()
     
@@ -1979,7 +1991,7 @@ Global bindings:
         del self.__logger
         del self.__lpoint
     
-    def add_page_console(self, win, title=None, show=False):
+    def add_page(self, win, title=None, show=True):
         nb = self.console
         j = nb.GetPageIndex(win)
         if j == -1:
@@ -1987,7 +1999,7 @@ Global bindings:
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
-    def remove_page_console(self, win):
+    def remove_page(self, win):
         nb = self.console
         j = nb.GetPageIndex(win)
         if j != -1:
