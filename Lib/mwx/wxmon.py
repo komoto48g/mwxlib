@@ -50,8 +50,9 @@ Args:
         
         ## self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
+        self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnItemFocused)
         ## self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick, space
-        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick) # left-dclick
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         ## self.ew = ew
@@ -251,20 +252,18 @@ Args:
     ##     wx.CallAfter(wx.TipWindow, self, attribs, 512)
     ##     self.parent.handler("put_scratch", attribs)
     
+    def OnItemFocused(self, evt): #<wx._controls.ListEvent>
+        i = evt.Index
+        item = self.__items[i]
+        self.parent.handler("put_scratch", item[-1]) # attribs
+        evt.Skip()
+    
     def OnItemDClick(self, evt): #<wx._core.MouseEvent>
         i, flag = self.HitTest(evt.Position)
         if i >= 0:
             item = self.__items[i]
-            attribs = item[-1]
-            wx.CallAfter(wx.TipWindow, self, attribs, 512)
-            self.parent.handler("put_scratch", attribs)
+            wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
         evt.Skip()
-    
-    ## def OnMotion(self, evt): #<wx._core.MouseEvent>
-    ##     i, flag = self.HitTest(evt.Position)
-    ##     if i >= 0:
-    ##         item = self.__items[i]
-    ##     evt.Skip()
 
 
 if __name__ == "__main__":
