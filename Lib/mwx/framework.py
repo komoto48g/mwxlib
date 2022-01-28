@@ -11,6 +11,7 @@ from collections import OrderedDict
 from functools import partial
 from functools import wraps
 import traceback
+import warnings
 import datetime
 import keyword
 import shlex
@@ -27,7 +28,6 @@ import numpy as np
 import fnmatch
 import pkgutil
 import pydoc
-import warnings
 import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator)
@@ -1061,17 +1061,6 @@ def postcall(f):
     @wraps(f)
     def _f(*args, **kwargs):
         wx.CallAfter(f, *args, **kwargs)
-    return _f
-
-
-def wait(f):
-    @wraps(f)
-    def _f(self, *args, **kwargs):
-        try:
-            busy = wx.BusyCursor()
-            return f(self, *args, **kwargs)
-        finally:
-            del busy
     return _f
 
 

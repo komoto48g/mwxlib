@@ -143,7 +143,9 @@ class Gplot(object):
         self("pause {} '{}'".format(dur, msg))
     
     def edit(self):
-        return subprocess.Popen("notepad {}".format(self.startupfile))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
+            subprocess.Popen("notepad {}".format(self.startupfile))
 
 
 ## if __name__ == "__main__":

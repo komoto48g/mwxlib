@@ -10,6 +10,7 @@ from functools import wraps
 import subprocess
 import threading
 import traceback
+import warnings
 import inspect
 import codecs
 import sys
@@ -48,6 +49,16 @@ from six import string_types
 ##     FileNotFoundError = IOError
 
 _F = mwx.funcall
+
+def wait(f):
+    @wraps(f)
+    def _f(self, *args, **kwargs):
+        try:
+            busy = wx.BusyCursor()
+            return f(self, *args, **kwargs)
+        finally:
+            del busy
+    return _f
 
 
 class Thread(object):
@@ -791,7 +802,9 @@ class Frame(mwx.Frame):
         if hasattr(f, '__file__'):
             name,_ext = os.path.splitext(f.__file__)
             f = name + '.py'
-        subprocess.Popen('{} "{}"'.format(self.Editor, f))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
+            subprocess.Popen('{} "{}"'.format(self.Editor, f))
     
     def OnShowFrame(self, frame):
         ssn = os.path.basename(self.session_file or '--')
