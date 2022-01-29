@@ -51,6 +51,7 @@ Args:
         ## self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnItemFocused)
+        ## self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemFocused)
         ## self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick, space
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
@@ -113,6 +114,8 @@ Args:
     def watch(self, widget):
         """Begin watching"""
         if not isinstance(widget, wx.Object):
+            wx.MessageBox("Cannot watch the widget.\n\n"
+                          "- {!r} is not a wx.Object.".format(widget))
             return
         self.unwatch()
         self.clear()

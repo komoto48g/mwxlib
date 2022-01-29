@@ -53,6 +53,7 @@ Args:
         Pdb.__init__(self, *args, **kwargs)
         
         self.__shellframe = parent
+        self.__interactive = None
         self.__binders = []
         self.prompt = self.indent + '(Pdb) ' # default pdb prompt
         if not self.skip:
@@ -92,6 +93,7 @@ Args:
     def input(self, c):
         if self.target:
             self.stdin.input = c
+            self.__interactive = self.parent.rootshell.point
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -282,6 +284,20 @@ Args:
                 self.parent.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
+        
+        if self.__interactive is not None: # check input
+            shell = self.parent.rootshell
+            pos = self.__interactive
+            def post():
+                cur = shell.point
+                out = shell.GetTextRange(pos, cur)
+                if out == self.prompt:
+                    shell.point = pos # backward selection to anchor point
+                    shell.ReplaceSelection('') # remove prompt
+                    shell.goto_char(-1)
+                    shell.prompt()
+            wx.CallAfter(post)
+            self.__interactive = None
     
     @echo
     def postloop(self):
