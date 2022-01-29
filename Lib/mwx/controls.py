@@ -697,11 +697,12 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
         
         ## for backward-compatibility
-        if objs is None or isinstance(objs, string_types):
-            import warnings
-            warnings.warn("Use layout:objs as the first arg.",
-                          DeprecationWarning, stacklevel=2)
-            objs, title = title, objs
+        ## if objs is None or isinstance(objs, string_types):
+        ##     import warnings
+        ##     warnings.warn("Use layout:objs as the first arg.",
+        ##                   DeprecationWarning, stacklevel=2)
+        ##     objs, title = title, objs
+        assert not isinstance(objs, string_types)
         
         objs = [ (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
             else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
