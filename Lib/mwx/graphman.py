@@ -1771,7 +1771,7 @@ if __name__ == '__main__':
     
     ## 次の二つは別モジュール
     ## frm.load_plug('demo.template.py', show=1, force=1)
-    frm.load_plug('demo/template.py', show=1, force=1)
+    frm.load_plug('demo/template.py', show=1, force=1, dock=4)
     
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
