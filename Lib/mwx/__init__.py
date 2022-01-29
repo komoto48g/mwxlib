@@ -5,7 +5,7 @@
 ## from . import framework
 from .framework import __version__, __author__
 from .framework import apropos, typename
-from .framework import SSM, FSM
+from .framework import FSM
 from .framework import pack, hotkey
 from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame, Editor, Nautilus

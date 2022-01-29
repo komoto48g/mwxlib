@@ -422,9 +422,9 @@ def get_path(f):
 class SSM(OrderedDict):
     """Single State Machine/Context of FSM
     """
-    def __call__(self, event, *args):
+    def __call__(self, event, *args, **kwargs):
         for act in self[event]:
-            act(*args)
+            act(*args, **kwargs)
     
     def __repr__(self):
         return "<{} object at 0x{:X}>".format(typename(self), id(self))
@@ -483,7 +483,7 @@ class FSM(dict):
 
 Attributes:
     debug : verbose level
-        [1] dump when state transits
+        [1] trace when state transits
         [2] + when different event comes
         [3] + all events and actions
         [4] ++ all events (+ including state:None)
@@ -576,8 +576,8 @@ Attributes:
     
     def fork(self, *args, **kwargs):
         """Dispatch the current event"""
-        if self.__state == self.__prev_state: # possibly results in an infinite loop
-            raise Exception("FSM:logic error - a fork cannot fork itself")
+        ## if self.__state == self.__prev_state: # possibly results in an infinite loop
+        ##     raise Exception("FSM:logic error - a fork cannot fork itself")
         return self.call(self.__event, *args, **kwargs)
     
     def call(self, event, *args, **kwargs):
@@ -588,35 +588,24 @@ Attributes:
         retval-> list or None
         """
         context = self[self.__state]
-        
         if event in context:
             transaction = context[event]
-            
             self.__prev_state = self.__state # save previous state
-            self.__state = transaction[0] # the state transits here
-            
+            self.__state = transaction[0]    # the state transits here
             self.__debcall__(event, *args, **kwargs) # check after transition
-            
             retvals = []
             for act in transaction[1:]:
                 try:
                     ret = act(*args, **kwargs) # try actions after transition
                     retvals.append(ret)
-                    
-                except RuntimeError as e:
-                    self.dump("- FSM:runtime error {!r}".format(e),
-                              "   event : {}".format(event),
-                              "    from : {}".format(self.__prev_state),
-                              "   state : {}".format(self.__state),
-                              "  action : {}".format(typename(act)))
-                    traceback.print_exc()
-                    
                 except Exception as e:
                     self.dump("- FSM:exception {!r}".format(e),
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
-                              "  action : {}".format(typename(act)))
+                              "  action : {}".format(typename(act)),
+                              "    args : {}".format(args),
+                              "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
             return retvals
         else:
@@ -660,8 +649,7 @@ Attributes:
     
     @staticmethod
     def dump(*args):
-        print(*args, file=sys.__stderr__, sep='\n')
-        
+        print(*args, sep='\n', file=sys.__stderr__)
         f = get_path("deb-dump.log")
         with open(f, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
@@ -1803,7 +1791,7 @@ Global bindings:
                   'add_history' : [ None, self.add_history ],
                      'add_page' : [ None, self.add_page ],
                   'remove_page' : [ None, self.remove_page ],
-                  'popup_window' : [ None, self.PopupWindow ],
+                 'popup_window' : [ None, self.PopupWindow ],
                  'title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
@@ -1818,6 +1806,7 @@ Global bindings:
                 'C-f12 pressed' : (0, _F(self.clone_shell)),
                 'M-f12 pressed' : (0, _F(self.close_shell)),
                   'C-w pressed' : (0, _F(self.close_shell)),
+               'C-home pressed' : (0, _F(self.add_page, self.rootshell, doc="Show root shell")),
                   'C-m pressed' : (0, _F(self.add_page, self.monitor, doc="Show monitor")),
                   'C-i pressed' : (0, _F(self.add_page, self.inspector, doc="Show wit")),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
@@ -2767,7 +2756,7 @@ class Editor(EditWindow, EditorInterface):
              '*button* pressed' : [ None, skip, fork ],
             '*button* released' : [ None, skip, fork ],
                      '* dclick' : [ None, skip, fork ],
-                    'focus_set' : [ None, self.on_focus_set, skip ],
+                    'focus_set' : [ None, skip, self.on_focus_set ],
             },
         })
         
