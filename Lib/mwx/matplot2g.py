@@ -123,7 +123,8 @@ Args:
   localunit : initial localunit
  attributes : additional info:dict
     """
-    def __init__(self, parent, buf, name, show, localunit, aspect=1.0, **attributes):
+    def __init__(self, parent, buf, name, show=True,
+                 localunit=None, aspect=1.0, **attributes):
         self.__owner = parent
         self.__name = name
         self.__localunit = localunit or None # [+] value, no assertion
@@ -651,7 +652,6 @@ Constants:
         
         ## 最初のロード axes.imshow (=> self.axes.axis 表示を更新する)
         art = AxesImagePhantom(self, buf, name, show, localunit, aspect, **attributes)
-        wx.Yield()
         
         j = len(self) if pos is None else pos
         self.__Arts.insert(j, art)

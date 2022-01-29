@@ -983,8 +983,9 @@ class Frame(mwx.Frame):
             return name
     
     def load_plug(self, root, show=False,
-            docking=None, dock=False, layer=0, pos=0, row=0, prop=10000,
-            floating_pos=None, floating_size=None, force=False, **kwargs):
+                  dock=False, layer=0, pos=0, row=0, prop=10000,
+                  floating_pos=None, floating_size=None, force=False,
+                  **kwargs):
         """Load plugin module
         The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
         
@@ -1030,9 +1031,6 @@ class Frame(mwx.Frame):
         ## --------------------------------
         ## 0. Check if already plugged in
         ## --------------------------------
-        if docking is not None:
-            dock = docking # to be deprecated
-        
         props = dict(show=show,
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
@@ -1521,7 +1519,9 @@ class Frame(mwx.Frame):
                 f = os.path.basename(path)
                 self.statusbar("Loading {!r} ({} of {})...".format(f, i+1, len(paths)))
                 try:
-                    buf, info = self.read_buffer(path)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", ResourceWarning)
+                        buf, info = self.read_buffer(path)
                     
                 except Image.UnidentifiedImageError:
                     retvals = self.handler('unknown_format', path)
@@ -1530,8 +1530,9 @@ class Frame(mwx.Frame):
                     raise # no contexts or handlers
                 
                 frame = view.load(buf, f, show=0, # do not show while loading
-                                    pathname=path, **info)
+                                  pathname=path, **info)
                 frames.append(frame)
+                wx.GetApp().Yield()
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
