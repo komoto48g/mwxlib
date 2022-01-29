@@ -15,7 +15,7 @@ class Plugin(Layer):
     
     def Init(self):
         axes = self.graph.axes
-        axes.clear()
+        ## axes.clear()
         axes.set_title("Nautilus")
         axes.set_xlabel("x")
         axes.set_ylabel("y")
