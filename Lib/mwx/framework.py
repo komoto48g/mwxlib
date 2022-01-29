@@ -529,7 +529,7 @@ Attributes:
         self.update(contexts)
     
     def __missing__(self, key):
-        raise Exception("FSM:logical error - undefined state {!r}".format(key))
+        raise Exception("FSM:logic-error - undefined state {!r}".format(key))
     
     def __repr__(self):
         return "<{} object at 0x{:X}>".format(typename(self), id(self))
@@ -574,11 +574,12 @@ Attributes:
         if perf:
             return retvals
     
-    def fork(self, *args, **kwargs):
-        """Dispatch the current event"""
-        ## if self.__state == self.__prev_state: # possibly results in an infinite loop
-        ##     raise Exception("FSM:logic error - a fork cannot fork itself")
-        return self.call(self.__event, *args, **kwargs)
+    ## def fork(self, *args, **kwargs):
+    ##     """Dispatch the current event"""
+    ##     ## Note: it possibly results in an infinite loop
+    ##     if self.__state == self.__prev_state:
+    ##         raise Exception("FSM:logic-error - a fork cannot fork itself")
+    ##     return self.call(self.__event, *args, **kwargs)
     
     def call(self, event, *args, **kwargs):
         """Invoke the event handler
@@ -599,7 +600,7 @@ Attributes:
                     ret = act(*args, **kwargs) # try actions after transition
                     retvals.append(ret)
                 except Exception as e:
-                    self.dump("- FSM:exception {!r}".format(e),
+                    self.dump("- FSM:exception - {!r}".format(e),
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
@@ -2745,7 +2746,7 @@ class Editor(EditWindow, EditorInterface):
         self.SetDropTarget(None)
         
         def fork(v):
-            ## used to fork mouse events to the parent
+            """Fork mouse events to the parent"""
             try:
                 self.parent.handler(self.handler.event, v)
             except AttributeError:
@@ -3011,7 +3012,7 @@ Flaky nutshell:
             self.message("")
         
         def fork(v):
-            self.handler.fork(v) # fork event to 0=default
+            self.handler(self.handler.event, v)
         
         self.handler.update({ #<Nautilus.handler>
             None : {
