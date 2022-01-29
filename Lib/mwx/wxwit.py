@@ -116,6 +116,8 @@ Args:
         
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
+        
+        self.SetObj(None)
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -147,10 +149,13 @@ Args:
         else:
             self.tree.SelectObj(obj)
     
-    def watch(self, obj):
-        self.SetObj(obj)
-        self.timer.Start(500)
-        self.parent.handler("add_page", self, show=1)
+    def watch(self, widget):
+        if widget:
+            self.SetObj(widget)
+            self.timer.Start(500)
+            self.parent.handler("add_page", self, show=1)
+        else:
+            self.unwatch()
     
     def unwatch(self):
         self.timer.Stop()

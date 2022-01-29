@@ -114,6 +114,8 @@ Args:
     def watch(self, widget):
         """Begin watching"""
         if not isinstance(widget, wx.Object):
+            wx.MessageBox("Cannot watch the widget.\n\n"
+                          "- {!r} is not a wx.Object.".format(widget))
             return
         self.unwatch()
         self.clear()
