@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.51.6"
+__version__ = "0.51.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1745,6 +1745,8 @@ Global bindings:
         self.ghost.AddPage(self.Help,    "*Help*")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.History, "History")
+        self.ghost.AddPage(self.monitor, "Monitor")
+        self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
         
         self._mgr = aui.AuiManager()
@@ -1782,16 +1784,16 @@ Global bindings:
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
                     'debug_end' : [ None, self.on_debug_end ],
-                'monitor_begin' : [ None, _F(self.PopupWindow, self.Scratch) ],
+                'monitor_begin' : [ None, ],
                   'monitor_end' : [ None, ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,
-                                          _F(self.PopupWindow, self.Help) ],
+                                          _F(self.show_page, self.Help) ],
                       'put_log' : [ None, self.Log.SetText ],
                   'add_history' : [ None, self.add_history ],
                      'add_page' : [ None, self.add_page ],
+                    'show_page' : [ None, self.show_page ],
                   'remove_page' : [ None, self.remove_page ],
-                 'popup_window' : [ None, self.PopupWindow ],
                  'title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
@@ -1806,9 +1808,6 @@ Global bindings:
                 'C-f12 pressed' : (0, _F(self.clone_shell)),
                 'M-f12 pressed' : (0, _F(self.close_shell)),
                   'C-w pressed' : (0, _F(self.close_shell)),
-               'C-home pressed' : (0, _F(self.add_page, self.rootshell, doc="Show root shell")),
-                  'C-m pressed' : (0, _F(self.add_page, self.monitor, doc="Show monitor")),
-                  'C-i pressed' : (0, _F(self.add_page, self.inspector, doc="Show wit")),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1817,10 +1816,13 @@ Global bindings:
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
             },
             'C-x' : {
-                    'l pressed' : (0, _F(self.PopupWindow, self.Log, doc="Show Log")),
-                    'h pressed' : (0, _F(self.PopupWindow, self.Help, doc="Show Help")),
-                  'S-h pressed' : (0, _F(self.PopupWindow, self.History, doc="Show History")),
-                    'j pressed' : (0, _F(self.PopupWindow, self.Scratch, doc="Show Scratch")),
+                    'l pressed' : (0, _F(self.show_page, self.Log, doc="Show Log")),
+                    'h pressed' : (0, _F(self.show_page, self.Help, doc="Show Help")),
+                  'S-h pressed' : (0, _F(self.show_page, self.History, doc="Show History")),
+                    'j pressed' : (0, _F(self.show_page, self.Scratch, doc="Show Scratch")),
+                    'm pressed' : (0, _F(self.show_page, self.monitor, doc="Show monitor")),
+                    'i pressed' : (0, _F(self.show_page, self.inspector, doc="Show wit")),
+                    'r pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
             },
@@ -1972,11 +1974,13 @@ Global bindings:
         if target:
             self.__shell.target = target
         self.SetTitleWindow(frame)
+        ## self.Log.target = "File {}".format(frame.f_code.co_filename)
     
     def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore locals
+        ## del self.Log.target
     
     def add_page(self, win, title=None, show=True):
         nb = self.console
@@ -1984,6 +1988,9 @@ Global bindings:
         if j == -1:
             nb.AddPage(win, title or win.__class__.__name__)
             nb.TabCtrlHeight = -1
+        self.PopupWindow(win, show)
+    
+    def show_page(self, win, show=True):
         self.PopupWindow(win, show)
     
     def remove_page(self, win):
@@ -2785,7 +2792,7 @@ class Editor(EditWindow, EditorInterface):
         """Show or hide the window"""
         try:
             shown = self.IsShown()
-            self.parent.handler('popup_window', self, show)
+            self.parent.handler('show_page', self, show)
             if show:
                 self.SetFocus()
             return shown != self.IsShown()

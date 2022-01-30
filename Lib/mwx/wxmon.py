@@ -125,7 +125,7 @@ Args:
             widget.Bind(binder, self.onWatchedEvent)
             if binder.typeId in ssmap:
                 self.append(binder.typeId)
-        self.parent.handler("add_page", self, show=1)
+        self.parent.handler("show_page", self)
         self.parent.handler("monitor_begin", self.target)
     
     def unwatch(self):
