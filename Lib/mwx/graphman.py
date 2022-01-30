@@ -515,7 +515,7 @@ class MyFileDropLoader(wx.FileDropTarget):
                                         force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
                 self.loader.load_session(path)
-            elif ext == '.results':
+            elif ext == '.index' or ext == '.results':
                 self.loader.import_index(path, self.target)
             else:
                 paths.append(path) # image file just stacks to be loaded
@@ -1307,7 +1307,8 @@ class Frame(mwx.Frame):
         if not f:
             with wx.FileDialog(self, "Select path to import",
                 defaultFile=self.ATTRIBUTESFILE,
-                wildcard="Index (*.results)|*.results",
+                wildcard="Index (*.index)|*.index|"
+                         "ALL files (*.*)|*.*",
                 style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
@@ -1341,7 +1342,7 @@ class Frame(mwx.Frame):
             with wx.FileDialog(self, "Select path to export",
                 defaultDir=os.path.dirname(next(ls, '')),
                 defaultFile=self.ATTRIBUTESFILE,
-                wildcard="Index (*.results)|*.results",
+                wildcard="Index (*.index)|*.index",
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
@@ -1371,7 +1372,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save frames and attributes 
     ## --------------------------------
-    ATTRIBUTESFILE = "index.results"
+    ATTRIBUTESFILE = "results.index"
     
     @classmethod
     def read_attributes(self, f):
