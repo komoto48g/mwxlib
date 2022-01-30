@@ -11,6 +11,10 @@ import pdb
 import linecache
 import inspect
 import wx
+try:
+    from framework import FSM
+except ImportError:
+    from .framework import FSM
 
 
 def echo(f):
@@ -45,6 +49,7 @@ Args:
     verbose = False
     parent = property(lambda self: self.__shellframe)
     logger = property(lambda self: self.__shellframe.Log)
+    handler = property(lambda self: self.__handler)
     busy = property(lambda self: self.target is not None)
     locals = property(lambda self: self.curframe.f_locals) # cf. curframe_locals
     globals = property(lambda self: self.curframe.f_globals)
@@ -61,6 +66,52 @@ Args:
         self.skip |= {self.__module__, 'bdb', 'pdb'} # skip this module
         self.target = None
         self.module = None
+        
+        self.__handler = FSM({
+            0 : {
+                  'debug_begin' : (1, self.on_debug_begin),
+            },
+            1 : {
+                    'debug_end' : (0, self.on_debug_end),
+                   'debug_next' : (1, self.on_debug_next),
+                  'C-h pressed' : (1, lambda v: self.help()),
+                  'C-g pressed' : (1, lambda v: self.input('q')),
+                  'C-q pressed' : (1, lambda v: self.input('q')),
+                  'C-n pressed' : (1, lambda v: self.input('n')),
+                  'C-s pressed' : (1, lambda v: self.input('s')),
+                  'C-r pressed' : (1, lambda v: self.input('r')),
+            }
+        })
+    
+    def on_debug_begin(self, frame):
+        shell = self.parent.rootshell
+        out = shell.GetTextRange(shell.bolc, shell.point)
+        self.parent.handler('add_history', out, noerr=1)
+        self.parent.handler('debug_begin', frame)
+        self.__interactive = shell.point
+    
+    def on_debug_next(self, frame):
+        shell = self.parent.rootshell
+        pos = self.__interactive
+        def post():
+            out = shell.GetTextRange(pos, shell.point)
+            if out == self.prompt:
+                shell.point = pos # backward selection to anchor point
+                shell.ReplaceSelection('') # remove prompt
+                shell.goto_char(-1)
+                shell.prompt()
+            else:
+                self.parent.handler('add_history', out)
+            self.__interactive = shell.point
+        wx.CallAfter(post)
+        self.parent.handler('debug_next', frame)
+    
+    def on_debug_end(self, frame):
+        shell = self.parent.rootshell
+        out = shell.GetTextRange(self.__interactive, shell.point) + '\n'
+        self.parent.handler('add_history', out)
+        self.parent.handler('debug_end', frame)
+        self.__interactive = None
     
     def trace(self, target, *args, **kwargs):
         if not callable(target):
@@ -69,7 +120,7 @@ Args:
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
             return
-        if self.target:
+        if self.busy:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
@@ -87,13 +138,8 @@ Args:
         else:
             self.input('h {}'.format(cmd)) # individual command help
     
-    def quit(self):
-        self.input('q') # quit interactively
-    
     def input(self, c):
-        if self.target:
-            self.stdin.input = c
-            self.__interactive = self.parent.rootshell.point
+        self.stdin.input = c
     
     def message(self, msg, indent=-1):
         """(override) Add indent to msg"""
@@ -104,6 +150,9 @@ Args:
         print(self.indent + "***", msg, file=self.stdout)
     
     def mark(self, frame, lineno):
+        module = inspect.getmodule(frame)
+        if module is None:
+            return
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
@@ -164,8 +213,7 @@ Args:
         wx.CallAfter(_continue)
         self.logger.clear()
         self.logger.Show()
-        if self.target:
-            self.parent.handler('debug_begin', self.target)
+        self.handler('debug_begin', self.target)
         return Pdb.set_trace(self, frame)
     
     @echo
@@ -192,10 +240,9 @@ Args:
         ##     for frame_lineno in self.stack:
         ##         self.message(self.format_stack_entry(frame_lineno))
         Pdb.set_quit(self)
-        if self.target:
-            self.parent.handler('debug_end', self.target)
-            self.target = None
-            self.module = None
+        self.handler('debug_end', self.target)
+        self.target = None
+        self.module = None
     
     ## --------------------------------
     ## Override Pdb methods
@@ -267,6 +314,7 @@ Args:
             lx = self.tb_lineno.get(frame) # exception
             
             ## Update logger (text and marker)
+            ## + when module or the line count is differnt
             eol = lines[-1].endswith('\n')
             if self.module is not module\
               or self.logger.LineCount != len(lines) + eol: # add +1
@@ -280,24 +328,10 @@ Args:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
             self.mark(frame, lineno) # (->) pointer
-            if self.target:
-                self.parent.handler('debug_next', frame)
+            
+        self.handler('debug_next', frame)
         self.module = module
         Pdb.preloop(self)
-        
-        if self.__interactive is not None: # check input
-            shell = self.parent.rootshell
-            pos = self.__interactive
-            def post():
-                cur = shell.point
-                out = shell.GetTextRange(pos, cur)
-                if out == self.prompt:
-                    shell.point = pos # backward selection to anchor point
-                    shell.ReplaceSelection('') # remove prompt
-                    shell.goto_char(-1)
-                    shell.prompt()
-            wx.CallAfter(post)
-            self.__interactive = None
     
     @echo
     def postloop(self):
@@ -311,14 +345,21 @@ if __name__ == "__main__":
     frm = mwx.Frame(None)
     if 1:
         self = frm.shellframe
-        frm.dbg = Debugger(self,
-                           stdin=self.rootshell.interp.stdin,
-                           stdout=self.rootshell.interp.stdout
-                           )
-        self.rootshell.write("self.dbg.trace(self.About)")
-        frm.shellframe.handler.debug = 4
-        frm.dbg.verbose = 1
+        shell = frm.shellframe.rootshell
+        dbg = Debugger(self,
+                       stdin=shell.interp.stdin,
+                       stdout=shell.interp.stdout,
+                       )
+        dbg.handler.debug = 4
+        dbg.verbose = 1
         echo.debug = 1
+        shell.handler.update({
+            None : {
+                '* pressed' : [None, lambda v: dbg.handler(shell.handler.event, v)],
+            },
+        })
+        frm.dbg = dbg
+        shell.write("self.dbg.trace(self.About)")
         self.Show()
     frm.Show()
     app.MainLoop()

@@ -369,7 +369,7 @@ def find_modules(force=False, verbose=True):
     except AttributeError:
         pass
     
-    f = get_path("deb-modules-{}.log".format(sys.winver))
+    f = get_rootpath("deb-modules-{}.log".format(sys.winver))
     if not force and os.path.exists(f):
         with open(f, 'r') as o:
             return eval(o.read()) # read and eval a list of modules
@@ -409,7 +409,7 @@ def find_modules(force=False, verbose=True):
 ## --------------------------------
 ## Finite State Machine
 ## --------------------------------
-def get_path(f):
+def get_rootpath(f):
     """Return pathname ~/.deb/logfile
     If ~/.deb/ does not exist, it will be created.
     """
@@ -651,7 +651,7 @@ Attributes:
     @staticmethod
     def dump(*args):
         print(*args, sep='\n', file=sys.__stderr__)
-        f = get_path("deb-dump.log")
+        f = get_rootpath("deb-dump.log")
         with open(f, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
             print(*args, sep='\n', end='\n\n', file=o)
@@ -1767,15 +1767,14 @@ Global bindings:
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
+        def fork(v):
+            """Fork key events to the debugger"""
+            self.debugger.handler(self.__shell.handler.event, v)
+        
         self.__shell.handler.update({
             0 : {
-                  'C-h pressed' : (0, _F(self.debugger.help)),
-                  'C-g pressed' : (0, _F(self.debugger.quit)),
-                  'C-q pressed' : (0, _F(self.debugger.quit)),
-                  'C-n pressed' : (0, _F(self.debugger.input, 'n')),
-                  'C-s pressed' : (0, _F(self.debugger.input, 's')),
-                  'C-r pressed' : (0, _F(self.debugger.input, 'r')),
-            }
+                    '* pressed' : (0, skip, fork),
+            },
         })
         
         self.handler.update({ #<ShellFrame.handler>
@@ -1827,10 +1826,18 @@ Global bindings:
             },
         })
         
-        f = get_path("deb-logging.log")
+        f = get_rootpath("deb-logging.log")
         if os.path.exists(f):
             with self.fopen(f) as i:
                 self.Log.SetText(i.read())
+        
+        f = get_rootpath("deb-history.log")
+        if os.path.exists(f):
+            with self.fopen(f, 'a') as o:
+                o.write("\r\n#! Edit: <{}>\r\n".format(datetime.datetime.now()))
+        else:
+            with self.fopen(f, 'w') as o:
+                pass
     
     @staticmethod
     def fopen(f, *args):
@@ -1854,11 +1861,11 @@ Global bindings:
     
     def Destroy(self):
         try:
-            f = get_path("deb-logging.log")
+            f = get_rootpath("deb-logging.log")
             with self.fopen(f, 'w') as o:
                 o.write(self.Log.Text)
             
-            f = get_path("deb-history.log")
+            f = get_rootpath("deb-history.log")
             with self.fopen(f, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
@@ -1956,30 +1963,20 @@ Global bindings:
         self.__shell.SetFocus()
         self.__target = self.__shell.target # save locals
         self.Show()
-        f = get_path("deb-debugger.log")
-        self.__logger = self.fopen(f, 'w')
-        self.__lpoint = self.__shell.point
     
     def on_debug_next(self, frame):
         try:
-            self.__shell.target = frame.f_locals.get('self')
-        except Exception:
-            self.__shell.target = inspect.getmodule(frame)
+            target = frame.f_locals['self']
+        except KeyError:
+            target = inspect.getmodule(frame)
+        if target:
+            self.__shell.target = target
         self.SetTitleWindow(frame)
-        self.Log.target = "File {}".format(frame.f_code.co_filename)
-        self.__logger.write(self.__shell.GetTextRange(self.__lpoint, self.__shell.point))
-        self.__logger.flush()
-        self.__lpoint = self.__shell.point
     
-    def on_debug_end(self, frame=None):
+    def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore locals
-        del self.Log.target
-        self.__logger.write(self.__shell.GetTextRange(self.__lpoint, self.__shell.point))
-        self.__logger.close()
-        del self.__logger
-        del self.__lpoint
     
     def add_page(self, win, title=None, show=True):
         nb = self.console
@@ -1998,16 +1995,23 @@ Global bindings:
                 nb.TabCtrlHeight = 0
         win.Show(0)
     
-    def add_history(self, command, noerr):
+    def add_history(self, command, noerr=None):
         ed = self.History
         ed.ReadOnly = 0
-        ed.write(command + os.linesep)
+        ## ed.write(command + os.linesep)
+        ed.write(command)
         ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
-        if noerr:
-            ed.MarkerAdd(ln, 1) # white-marker
-        else:
-            ed.MarkerAdd(ln, 2) # error-marker
+        if noerr is not None:
+            if noerr:
+                ed.MarkerAdd(ln, 1) # white-marker
+            else:
+                ed.MarkerAdd(ln, 2) # error-marker
         ed.ReadOnly = 1
+        
+        f = get_rootpath("deb-history.log")
+        if os.path.exists(f):
+            with self.fopen(f, 'a') as o:
+                o.write(command)
     
     def other_editor(self, p=1):
         "Focus moves to another page of ghost editor (no loop)"
@@ -2754,9 +2758,9 @@ class Editor(EditWindow, EditorInterface):
         
         self.handler.update({ #<Editor.handler>
             None : {
+              '*button* dclick' : [ None, skip, fork ],
              '*button* pressed' : [ None, skip, fork ],
             '*button* released' : [ None, skip, fork ],
-                     '* dclick' : [ None, skip, fork ],
                     'focus_set' : [ None, skip, self.on_focus_set ],
             },
         })
@@ -3583,7 +3587,7 @@ Flaky nutshell:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
             self.MarkerAdd(ln, 2) # error-arrow
-        return not err
+        return (not err)
     
     ## --------------------------------
     ## Attributes of the shell
@@ -3628,7 +3632,7 @@ Flaky nutshell:
             noerr = self.on_text_output(output.strip(os.linesep))
             if noerr:
                 self.fragmwords |= set(re.findall(r"\b[a-zA-Z_][\w.]+", input + output))
-            self.parent.handler('add_history', command, noerr)
+            self.parent.handler('add_history', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             ## shell.__init__ で定義するアトリビュートも存在しない
@@ -3704,7 +3708,7 @@ Flaky nutshell:
                 break
         return (self.point - lp)
     
-    ## cf. getCommand(), getMultilineCommand() ... caret-line-text that has a prompt (>>>)
+    ## cf. getCommand(), getMultilineCommand() -> caret-line-text that has a prompt (>>>)
     
     @property
     def cmdlc(self):
@@ -3713,7 +3717,7 @@ Flaky nutshell:
     
     ## @property
     ## def cmdln(self):
-    ##     """full command-(multi-)line (with prompts)"""
+    ##     """full command-(multi-)line (with no prompt)"""
     ##     return self.GetTextRange(self.bolc, self.eolc)
     
     ## def beggining_of_command_line(self):
