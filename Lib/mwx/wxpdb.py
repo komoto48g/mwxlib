@@ -74,7 +74,7 @@ Args:
             1 : {
                     'debug_end' : (0, self.on_debug_end),
                    'debug_next' : (1, self.on_debug_next),
-                  'C-h pressed' : (1, lambda v: self.help()),
+                'C-S-h pressed' : (1, lambda v: self.help()),
                   'C-g pressed' : (1, lambda v: self.input('q')),
                   'C-q pressed' : (1, lambda v: self.input('q')),
                   'C-n pressed' : (1, lambda v: self.input('n')),
@@ -187,24 +187,9 @@ Args:
     ## Override Bdb methods
     ## --------------------------------
     
-    @echo
-    def set_until(self, frame, lineno=None):
-        return Pdb.set_until(self, frame, lineno)
-    
-    @echo
-    def set_step(self):
-        return Pdb.set_step(self)
-    
-    @echo
-    def set_next(self, frame):
-        return Pdb.set_next(self, frame)
-    
-    @echo
-    def set_return(self, frame):
-        return Pdb.set_return(self, frame)
-    
-    @echo
     def set_trace(self, frame=None):
+        if self.target is None:
+            self.target = pdb.sys._getframe().f_back
         def _continue():
             try:
                 wx.EndBusyCursor() # cancel the egg timer
@@ -217,18 +202,6 @@ Args:
         return Pdb.set_trace(self, frame)
     
     @echo
-    def set_continue(self):
-        return Pdb.set_continue(self)
-    
-    @echo
-    def clear_break(self, filename, lineno):
-        return Pdb.clear_break(self, filename, lineno)
-    
-    @echo
-    def clear_all_breaks(self):
-        return Pdb.clear_all_breaks(self)
-    
-    @echo
     def set_break(self, filename, lineno, *args, **kwargs):
         self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
@@ -238,7 +211,7 @@ Args:
         ## if self.verbose:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
-        ##         self.message(self.format_stack_entry(frame_lineno))
+        ##         print("-->", self.format_stack_entry(frame_lineno))
         Pdb.set_quit(self)
         self.handler('debug_end', self.target)
         self.target = None
