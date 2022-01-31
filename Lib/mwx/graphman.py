@@ -892,9 +892,9 @@ class Frame(mwx.Frame):
         self._mgr.Update()
     
     def update_pane(self, name, show=False, **kwargs):
-        """Update the layout of pane
+        """Update the layout of the pane
         
-        Note: This is called automatically from load_plug,
+        Note: This is called automatically from load_plug and load_session,
               and should not be called directly from user.
         """
         pane = self.get_pane(name)
@@ -906,14 +906,19 @@ class Frame(mwx.Frame):
         pane.floating_pos = kwargs.get('floating_pos') or pane.floating_pos
         pane.floating_size = kwargs.get('floating_size') or pane.floating_size
         
+        plug = self.get_plug(name)
+        try:
+            if not isinstance(plug.dockable, bool): # prior to kwargs
+                kwargs.update(dock = plug.dockable)
+        except AttributeError:
+            pass
+        
         dock = kwargs.get('dock')
         if dock:
             pane.dock_direction = dock
             pane.Dock()
         else:
             pane.Float()
-        
-        plug = self.get_plug(name)
         
         try:
             ## for Layers only (has some special constants)
@@ -1027,15 +1032,11 @@ class Frame(mwx.Frame):
         ## <plug:rootname> is already registered
         if plug:
             if not force:
-                ## if not isinstance(plug.dockable, bool):
-                ##     props.update(dock = plug.dockable)
-                
                 self.update_pane(rootname, **props)
-                
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
                     plug.init_session(session)
-                return #<plug>
+                return None
         
         ## --------------------------------
         ## 1. import the module
@@ -1110,20 +1111,18 @@ class Frame(mwx.Frame):
         ## 3. register the plugin
         ## --------------------------------
         try:
-            ## Add to the list in advance to refer the module in Plugin.Init.
+            ## Add module to the list in advance to refer it in Plugin.Init.
             ## However, it's uncertain that the Init will end successfully.
-            ## self.plugins[name] = module
+            self.plugins[name] = module
             
             ## Create a plug and register to plugins list プラグインのロード開始
             plug = module.Plugin(self, **kwargs)
-            plug.__notebook = None
-            plug.__Menu_item = None
             
             ## set reference of a plug (one module, one plugin)
             module.__plug__ = plug
             
             ## Add to the list after the plug is created successfully.
-            self.plugins[name] = module
+            ## self.plugins[name] = module
             plug.handler('pane_loaded')
             
         except Exception as e:
@@ -1131,20 +1130,18 @@ class Frame(mwx.Frame):
                          "{}\n\n{}".format(e, traceback.format_exc()),
                          "Error in loading {!r}".format(name),
                          style=wx.ICON_ERROR)
+            del self.plugins[name]
             return False
         
         ## --------------------------------
-        ## 3. create pane or notebook pane
+        ## 4. create pane or notebook pane
         ## --------------------------------
         try:
-            title = plug.category
             caption = plug.caption
             if not isinstance(caption, string_types):
                 caption = name
             
-            if not isinstance(plug.dockable, bool):
-                props.update(dock = plug.dockable)
-            
+            title = plug.category
             if title:
                 pane = self._mgr.GetPane(title)
                 if pane.IsOk():
@@ -1169,6 +1166,7 @@ class Frame(mwx.Frame):
             
             ## set reference of notebook (optional)
             plug.__notebook = nb
+            plug.__Menu_item = None
             
             self.update_pane(name, **props)
             
@@ -1189,7 +1187,7 @@ class Frame(mwx.Frame):
                 self.menubar.update(plug.menu)
             
             self.statusbar("\b done.")
-            return #<plug>
+            return None
         
         except Exception as e:
             wx.CallAfter(wx.MessageBox,
