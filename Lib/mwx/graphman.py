@@ -535,7 +535,6 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         plug = self.GetPage(evt.Selection)
         mwx.Menu.Popup(self, plug.Menu)
-        evt.Skip()
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
         self.CurrentPage.handler('pane_shown')
@@ -989,7 +988,7 @@ class Frame(mwx.Frame):
         """Load plugin module
         The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
         
-        root : Layer object, module, or `name of module
+        root : Layer object, module, or name of module
         show : the pane is to be shown when loaded
        force : force loading even when it were already loaded
         dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
@@ -1007,26 +1006,14 @@ class Frame(mwx.Frame):
         elif hasattr(root, '__module__'): # isinstance(root, Layer):<type 'Layer'>
             root = root.__module__
             
-            ## If the name of root has been loaded,
-            ## we reload it referring to the file-name, not module-name
+            ## If the rootname has been loaded,
+            ## we reload it referring to the filename, not modulename
             if root in self.plugins:
                 root = self.plugins[root].__file__
         
-        name = os.path.basename(root)
-        if name.endswith(".py") or name.endswith(".pyc"):
-            name,_ext = os.path.splitext(name)
-        
-        ## 正しくロードできるようにインクルードパスを更新する
-        root = os.path.normpath(root)
-        dirname = os.path.dirname(root)
-        if dirname:
-            if os.path.isdir(dirname):
-                if dirname in sys.path:
-                    sys.path.remove(dirname) # インクルードパスの先頭に移動するため削除
-                sys.path.insert(0, dirname) # インクルードパスの先頭に追加する
-            else:
-                print("- No such directory {!r}".format(dirname))
-                return False
+        rootname = os.path.basename(root)
+        if rootname.endswith(".py"):
+            rootname,_ext = os.path.splitext(rootname)
         
         ## --------------------------------
         ## 0. Check if already plugged in
@@ -1035,14 +1022,15 @@ class Frame(mwx.Frame):
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
         
-        plug = self.get_plug(name)
+        plug = self.get_plug(rootname)
         
-        ## [name] がすでに登録されている (OK)
+        ## <plug:rootname> is already registered
         if plug:
             if not force:
-                if not isinstance(plug.dockable, bool):
-                    props.update(dock = plug.dockable)
-                self.update_pane(name, **props)
+                ## if not isinstance(plug.dockable, bool):
+                ##     props.update(dock = plug.dockable)
+                
+                self.update_pane(rootname, **props)
                 
                 session = kwargs.get('session') # session が指定されていれば優先
                 if session:
@@ -1052,22 +1040,37 @@ class Frame(mwx.Frame):
         ## --------------------------------
         ## 1. import the module
         ## --------------------------------
-        try:
-            self.statusbar("Loading plugin {!r}...".format(name))
-            if name in sys.modules:
-                module = reload(sys.modules[name])
+        ## 正しくロードできるようにインクルードパスを更新する
+        dirname = os.path.dirname(root)
+        if dirname:
+            if os.path.isdir(dirname):
+                if dirname in sys.path:
+                    sys.path.remove(dirname) # インクルードパスの先頭に移動するため削除
+                sys.path.insert(0, dirname)  # インクルードパスの先頭に追加する
             else:
-                module = __import__(name, fromlist=[''])
+                print("- No such directory {!r}".format(dirname))
+                return False
+            
+        try:
+            self.statusbar("Loading plugin {!r}...".format(rootname))
+            if rootname in sys.modules:
+                module = reload(sys.modules[rootname])
+            else:
+                module = __import__(rootname, fromlist=[''])
             
         except ImportError as e:
             print("-", self.statusbar("\b failed to import: {}".format(e)))
             return False
         
+        ## --------------------------------
+        ## 2. Setup the configuration
+        ##    The module must have a class `Plugin`.
+        ## --------------------------------
         try:
             title = module.Plugin.category
             pane = self._mgr.GetPane(title)
             
-            ## [category] がすでに登録されている
+            ## <pane:category> is already registered
             if pane.IsOk():
                 nb = pane.window
                 if not isinstance(nb, aui.AuiNotebook):
@@ -1078,7 +1081,7 @@ class Frame(mwx.Frame):
             name = module.Plugin.__module__ # rename as module plugin name
             pane = self.get_pane(name)
             
-            ## [name] がすでに登録されている
+            ## <pane:name> is already registered
             if pane.IsOk():
                 if name not in self.plugins:
                     raise NameError("Plugin name must not be the same as any other panes")
@@ -1100,19 +1103,18 @@ class Frame(mwx.Frame):
                          style=wx.ICON_ERROR)
             return False
         
+        if pane.IsOk():
+            self.unload_plug(name) # unload once right here
+        
         ## --------------------------------
-        ## 2. register the plugin
+        ## 3. register the plugin
         ## --------------------------------
         try:
-            if pane.IsOk():
-                self.unload_plug(name) # unload once right here
-            
             ## Add to the list in advance to refer the module in Plugin.Init.
             ## However, it's uncertain that the Init will end successfully.
             ## self.plugins[name] = module
             
             ## Create a plug and register to plugins list プラグインのロード開始
-            ## The module must have a class Plugin
             plug = module.Plugin(self, **kwargs)
             plug.__notebook = None
             plug.__Menu_item = None
@@ -1148,7 +1150,7 @@ class Frame(mwx.Frame):
                 if pane.IsOk():
                     nb = pane.window
                     nb.AddPage(plug, caption)
-                    props.update(show = show or pane.IsShown())
+                    ## props.update(show = show or pane.IsShown())
                 else:
                     size = plug.GetSize() + (2,30)
                     nb = AuiNotebook(self,
@@ -1766,13 +1768,15 @@ if __name__ == '__main__':
     frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     
-    frm.load_buffer(u"demo/sample.bmp")
-    frm.load_buffer(u"demo/sample2.tif")
-    frm.graph.load(np.random.randn(1024,1024))
+    ## frm.load_buffer(u"demo/sample.bmp")
+    ## frm.load_buffer(u"demo/sample2.tif")
+    ## frm.graph.load(np.random.randn(1024,1024))
     
-    ## 次の二つは別モジュール
+    ## Note: 次の二つは別モジュール
     ## frm.load_plug('demo.template.py', show=1, force=1)
-    frm.load_plug('demo/template.py', show=1, force=1, dock=4)
+    ## frm.load_plug('demo/template.py', show=1, force=1, dock=4)
+    
+    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1)
     
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
     ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')

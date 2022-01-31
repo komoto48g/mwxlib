@@ -18,10 +18,6 @@ class Plugin(Layer):
     menustr = "&template ver.1"
     category = "Test"
     caption = True
-    dockable = True
-    editable = True
-    reloadable = True
-    unloadable = True
     
     def Init(self):
         self.ksize = LParam("ksize", (1,99,2), 13, tip="kernel window size")
