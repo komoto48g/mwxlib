@@ -24,7 +24,6 @@ class EventMonitor(CheckList):
 Args:
     parent : shellframe
     """
-    data = property(lambda self: self.__items)
     parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)
     
@@ -113,6 +112,9 @@ Args:
     
     def watch(self, widget):
         """Begin watching"""
+        if not widget:
+            self.unwatch()
+            return
         if not isinstance(widget, wx.Object):
             wx.MessageBox("Cannot watch the widget.\n\n"
                           "- {!r} is not a wx.Object.".format(widget))
@@ -229,6 +231,8 @@ Args:
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
+        if n < 2:
+            return
         lc = [self.__items[j] for j in range(n) if self.IsItemChecked(j)]
         ls = [self.__items[j] for j in range(n) if self.IsSelected(j)]
         f = self.__items[self.FocusedItem]

@@ -150,13 +150,13 @@ Args:
             self.tree.SelectObj(obj)
     
     def watch(self, widget):
-        if widget:
-            self.RefreshTree()
-            self.SetObj(widget)
-            self.timer.Start(500)
-            self.parent.handler("show_page", self)
-        else:
+        if not widget:
             self.unwatch()
+            return
+        self.RefreshTree()
+        self.SetObj(widget)
+        self.timer.Start(500)
+        self.parent.handler("show_page", self)
     
     def unwatch(self):
         self.timer.Stop()

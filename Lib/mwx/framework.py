@@ -1937,12 +1937,6 @@ Global bindings:
         ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
             self.statusbar("- Don't remove the root shell.")
-        elif win is self.monitor:
-            self.monitor.unwatch()
-            self.remove_page(win)
-        elif win is self.inspector:
-            self.inspector.unwatch()
-            self.remove_page(win)
         else:
             evt.Skip()
     
@@ -1951,7 +1945,7 @@ Global bindings:
     ## --------------------------------
     
     def debug(self, obj, *args, **kwargs):
-        if isinstance(obj, wx.Object):
+        if isinstance(obj, wx.Object) or obj is None:
             self.inspector.watch(obj)
             self.monitor.watch(obj)
         elif callable(obj):
@@ -4309,7 +4303,7 @@ if 1:
     self
     self.shellframe
     self.shellframe.rootshell
-    debug(self)
+    ## debug(self)
     dive(self.shellframe)
     dive(self.shellframe.rootshell)
     dive(self.shellframe.debugger)
