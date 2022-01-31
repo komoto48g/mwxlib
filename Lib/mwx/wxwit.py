@@ -10,10 +10,10 @@ import re
 import wx
 from wx.lib import inspection as it
 try:
-    from framework import Menu, watch
+    from framework import Menu, watchit
     from controls import Icon
 except ImportError:
-    from .framework import Menu, watch
+    from .framework import Menu, watchit
     from .controls import Icon
 
 
@@ -180,7 +180,7 @@ Args:
                     lambda v: self.parent.monitor.watch(self.target)),
                 (),
                 (10, "&Inspection Tool", Icon('inspect'),
-                     lambda v: watch(self.target)),
+                     lambda v: watchit(self.target)),
                 
                 (11, "Refresh", miniIcon('Refresh'),
                      lambda v: self.RefreshTree()),

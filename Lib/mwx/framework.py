@@ -227,7 +227,7 @@ def typename(obj, docp=False, qualp=False):
 
 
 def where(obj):
-    """Show the location (filename, lineno) where the obj is defined
+    """Show @where (filename, lineno) the obj is defined
     
     A class, method, function, traceback, frame, or code object is expected.
     Otherwise, the module will be returned if it exists.
@@ -246,7 +246,7 @@ def where(obj):
 
 
 def mro(obj):
-    """Show mro (method resolution order) of obj:class
+    """Show @mro (method resolution order) of obj:class
     
     A list of filenames and lineno, or the module-names
     """
@@ -2840,9 +2840,6 @@ Shell built-in utility:
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
     @edit       open file with your editor (undefined)
-    @file       inspect.getfile -> str
-    @code       inspect.getsource -> str
-    @module     inspect.getmodule -> module
     @where      filename and lineno or module
     @debug      open pdb or show eventwatcher and widget-tree
 
@@ -3514,7 +3511,7 @@ Flaky nutshell:
         """Create pseudo keywords as part of builtins (override)"""
         Shell.setBuiltinKeywords(self)
         
-        ## Add some useful global abbreviations to builtins
+        ## Add more useful global abbreviations to builtins
         builtins.typename = typename
         builtins.apropos = apropos
         builtins.reload = reload
@@ -3522,12 +3519,9 @@ Flaky nutshell:
         builtins.p = print
         builtins.pp = pp
         builtins.mro = mro
-        builtins.watch = watch
-        builtins.filling = filling
-        builtins.file = inspect.getfile
-        builtins.code = inspect.getsource
-        builtins.module = inspect.getmodule
         builtins.where = where
+        builtins.watch = watchit
+        builtins.filling = filling
     
     def on_activated(self, shell):
         """Called when shell:self is activated
@@ -4257,7 +4251,7 @@ Note:
     return frame
 
 
-def watch(target=None, **kwargs):
+def watchit(target=None, **kwargs):
     """Diver's watch to go deep into the wx process to inspect the target
     Wx.py tool for watching tree structure and events across the wx.Objects
     
