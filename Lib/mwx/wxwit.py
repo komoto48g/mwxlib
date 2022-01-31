@@ -117,7 +117,7 @@ Args:
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
         
-        self.SetObj(None)
+        ## wx.CallAfter(self.SetObj, None)
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -132,7 +132,7 @@ Args:
     it.USE_CUSTOMTREECTRL = False
     
     includeSizers = False
-    expandFrame = True
+    expandFrame = False
     
     def RefreshTree(self):
         self.tree.BuildTree(self.__watchedWidget,
@@ -150,12 +150,13 @@ Args:
             self.tree.SelectObj(obj)
     
     def watch(self, widget):
-        if widget:
-            self.SetObj(widget)
-            self.timer.Start(500)
-            self.parent.handler("add_page", self, show=1)
-        else:
+        if not widget:
             self.unwatch()
+            return
+        self.RefreshTree()
+        self.SetObj(widget)
+        self.timer.Start(500)
+        self.parent.handler("show_page", self)
     
     def unwatch(self):
         self.timer.Stop()
