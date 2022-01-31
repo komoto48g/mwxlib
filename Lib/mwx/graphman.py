@@ -67,9 +67,8 @@ class Thread(object):
     The worker:thread runs the given target:f of owner:object.
     
 Attributes:
-     target : A method bound to an instance of Layer.
-     result : A variable that retains the last retval of f.
-
+     target : A target method of the Layer
+     result : A variable that retains the last retval of f
      worker : reference of the worker thread
       owner : reference of the handler owner (was typ. f.__self__)
               if None, the thread_event is handled by its own handler
@@ -247,6 +246,11 @@ unloadable : flag to set the Layer to be unloadable
     
     thread_type = Thread
     thread = None # worker <Thread>
+    
+    @staticmethod
+    def instancep(obj):
+        ## return isinstance(obj, Layer) # Note: False if __main__.Layer
+        return hasattr(obj, 'category') #<type 'Layer'>
     
     @property
     def Arts(self):
@@ -844,7 +848,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif hasattr(name, 'category'): # isinstance(name, Layer):<type 'Layer'>
+        elif Layer.instancep(name):
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -863,7 +867,7 @@ class Frame(mwx.Frame):
         if wx.GetKeyState(wx.WXK_SHIFT):
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
-                if hasattr(name, 'category'): # isinstance(name, Layer):<type 'Layer'>
+                if Layer.instancep(name):
                     self.reload_plug(name)
                     pane = self.get_pane(name)
             ## (ctrl + shift + menu) reset floating position of a stray window
@@ -983,7 +987,7 @@ class Frame(mwx.Frame):
         """Find named plug window in registered plugins"""
         if name in self.plugins:
             return self.plugins[name].__plug__
-        elif hasattr(name, 'category'): # isinstance(name, Layer):<type 'Layer'>
+        elif Layer.instancep(name):
             return name
     
     def load_plug(self, root, show=False,
@@ -1008,7 +1012,7 @@ class Frame(mwx.Frame):
         if hasattr(root, '__file__'): #<type 'module'>
             root = root.__file__
             
-        elif hasattr(root, '__module__'): # isinstance(root, Layer):<type 'Layer'>
+        elif hasattr(root, '__module__'):
             root = root.__module__
             
             ## If the rootname has been loaded,
@@ -1020,9 +1024,6 @@ class Frame(mwx.Frame):
         if rootname.endswith(".py"):
             rootname,_ext = os.path.splitext(rootname)
         
-        ## --------------------------------
-        ## 0. Check if already plugged in
-        ## --------------------------------
         props = dict(show=show,
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
@@ -1033,15 +1034,15 @@ class Frame(mwx.Frame):
         if plug:
             if not force:
                 self.update_pane(rootname, **props)
-                session = kwargs.get('session') # session が指定されていれば優先
+                session = kwargs.get('session')
                 if session:
                     plug.init_session(session)
                 return None
         
         ## --------------------------------
-        ## 1. import the module
+        ## 1. Import the module
+        ##    Update the include path to load correctly.
         ## --------------------------------
-        ## 正しくロードできるようにインクルードパスを更新する
         dirname = os.path.dirname(root)
         if dirname:
             if os.path.isdir(dirname):
@@ -1051,16 +1052,14 @@ class Frame(mwx.Frame):
             else:
                 print("- No such directory {!r}".format(dirname))
                 return False
-            
         try:
-            self.statusbar("Loading plugin {!r}...".format(rootname))
             if rootname in sys.modules:
                 module = reload(sys.modules[rootname])
             else:
                 module = __import__(rootname, fromlist=[''])
             
         except ImportError as e:
-            print("-", self.statusbar("\b failed to import: {}".format(e)))
+            print("- Failed to import: {}".format(e))
             return False
         
         ## --------------------------------
@@ -1075,8 +1074,6 @@ class Frame(mwx.Frame):
             if pane.IsOk():
                 nb = pane.window
                 if not isinstance(nb, aui.AuiNotebook):
-                    ## AuiManager:Name をダブって登録することはできない
-                    ## Notebook.title (category) はどのプラグインとも別名にすること
                     raise NameError("Notebook name must not be the same as any other plugins")
             
             name = module.Plugin.__module__ # rename as module plugin name
@@ -1134,72 +1131,61 @@ class Frame(mwx.Frame):
             return False
         
         ## --------------------------------
-        ## 4. create pane or notebook pane
+        ## 4. Create pane or notebook pane 
         ## --------------------------------
-        try:
-            caption = plug.caption
-            if not isinstance(caption, string_types):
-                caption = name
-            
-            title = plug.category
-            if title:
-                pane = self._mgr.GetPane(title)
-                if pane.IsOk():
-                    nb = pane.window
-                    nb.AddPage(plug, caption)
-                    ## props.update(show = show or pane.IsShown())
-                else:
-                    size = plug.GetSize() + (2,30)
-                    nb = AuiNotebook(self,
-                        style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                            &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
-                    nb.AddPage(plug, caption)
-                    self._mgr.AddPane(nb, aui.AuiPaneInfo()
-                        .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
-                j = nb.GetPageIndex(plug)
-                nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
-            else:
-                nb = None
-                size = plug.GetSize() + (2,2)
-                self._mgr.AddPane(plug, aui.AuiPaneInfo()
-                    .Name(name).Caption(caption).FloatingSize(size).MinSize(size).Show(0))
-            
-            ## set reference of notebook (optional)
-            plug.__notebook = nb
-            plug.__Menu_item = None
-            
-            self.update_pane(name, **props)
-            
-            ## register menu item
-            if not hasattr(module, 'ID_'): # give a unique index to the module
-                module.ID_ = Frame.__new_ID_
-                Frame.__new_ID_ += 1
-            
-            if plug.menu:
-                doc = (plug.__doc__ or name).strip().splitlines()[0]
-                plug.__Menu_item = (
-                    module.ID_, plug.menustr, doc, wx.ITEM_CHECK, Icon(plug.menuicon),
-                    lambda v: self.show_pane(name, v.IsChecked()),
-                    lambda v: v.Check(self.get_pane(name).IsShown()),
-                )
-                menu = self.menubar[plug.menu] or []
-                self.menubar[plug.menu] = menu + [plug.__Menu_item]
-                self.menubar.update(plug.menu)
-            
-            self.statusbar("\b done.")
-            return None
+        caption = plug.caption
+        if not isinstance(caption, string_types):
+            caption = name
         
-        except Exception as e:
-            wx.CallAfter(wx.MessageBox,
-                         "{}\n\n{}".format(e, traceback.format_exc()),
-                         "Error in loading {!r}".format(name),
-                         style=wx.ICON_ERROR)
-            return False
+        title = plug.category
+        if title:
+            pane = self._mgr.GetPane(title)
+            if pane.IsOk():
+                nb = pane.window
+                nb.AddPage(plug, caption)
+                ## props.update(show = show or pane.IsShown())
+            else:
+                size = plug.GetSize() + (2,30)
+                nb = AuiNotebook(self,
+                    style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                        &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+                nb.AddPage(plug, caption)
+                self._mgr.AddPane(nb, aui.AuiPaneInfo()
+                    .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
+            j = nb.GetPageIndex(plug)
+            nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
+        else:
+            nb = None
+            size = plug.GetSize() + (2,2)
+            self._mgr.AddPane(plug, aui.AuiPaneInfo()
+                .Name(name).Caption(caption).FloatingSize(size).MinSize(size).Show(0))
+        
+        ## set reference of notebook (optional)
+        plug.__notebook = nb
+        plug.__Menu_item = None
+        
+        self.update_pane(name, **props)
+        
+        ## register menu item
+        if not hasattr(module, 'ID_'): # give a unique index to the module
+            module.ID_ = Frame.__new_ID_
+            Frame.__new_ID_ += 1
+        
+        if plug.menu:
+            doc = (plug.__doc__ or name).strip().splitlines()[0]
+            plug.__Menu_item = (
+                module.ID_, plug.menustr, doc, wx.ITEM_CHECK, Icon(plug.menuicon),
+                lambda v: self.show_pane(name, v.IsChecked()),
+                lambda v: v.Check(self.get_pane(name).IsShown()),
+            )
+            menu = self.menubar[plug.menu] or []
+            self.menubar[plug.menu] = menu + [plug.__Menu_item]
+            self.menubar.update(plug.menu)
+        return None
     
     def unload_plug(self, name):
         """Unload plugin module and detach the pane from UI manager"""
         try:
-            ## self.statusbar("Unloading plugin {!r}...".format(name))
             plug = self.get_plug(name)
             if not plug:
                 return False
