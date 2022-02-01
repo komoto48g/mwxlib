@@ -95,9 +95,10 @@ Args:
         pos = self.__interactive
         def post():
             out = shell.GetTextRange(pos, shell.point)
-            if out == self.prompt:
-                shell.point = pos # backward selection to anchor point
-                shell.ReplaceSelection('') # remove prompt
+            if out == self.prompt or out.endswith(self.prompt*2):
+                ## shell.point = pos # backward selection to anchor point
+                shell.point -= len(self.prompt)
+                shell.ReplaceSelection('')
                 shell.goto_char(-1)
                 shell.prompt()
             else:
@@ -201,12 +202,10 @@ Args:
         self.handler('debug_begin', self.target)
         return Pdb.set_trace(self, frame)
     
-    @echo
     def set_break(self, filename, lineno, *args, **kwargs):
         self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
-    @echo
     def set_quit(self):
         ## if self.verbose:
         ##     print("+ all stacked frame")
