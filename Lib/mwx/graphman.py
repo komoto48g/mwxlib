@@ -208,6 +208,11 @@ Note:
             ## sys.exit(1)
 
 
+def islayer(obj):
+    ## return isinstance(obj, Layer) # Note: False if __main__.Layer
+    return hasattr(obj, 'category') #<type 'Layer'>
+
+
 class Layer(ControlPanel, mwx.CtrlInterface):
     """Graphman.Layer
     
@@ -246,11 +251,6 @@ unloadable : flag to set the Layer to be unloadable
     
     thread_type = Thread
     thread = None # worker <Thread>
-    
-    @staticmethod
-    def instancep(obj):
-        ## return isinstance(obj, Layer) # Note: False if __main__.Layer
-        return hasattr(obj, 'category') #<type 'Layer'>
     
     @property
     def Arts(self):
@@ -848,7 +848,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif Layer.instancep(name):
+        elif islayer(name):
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -867,7 +867,7 @@ class Frame(mwx.Frame):
         if wx.GetKeyState(wx.WXK_SHIFT):
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
-                if Layer.instancep(name):
+                if islayer(name):
                     self.reload_plug(name)
                     pane = self.get_pane(name)
             ## (ctrl + shift + menu) reset floating position of a stray window
@@ -987,7 +987,7 @@ class Frame(mwx.Frame):
         """Find named plug window in registered plugins"""
         if name in self.plugins:
             return self.plugins[name].__plug__
-        elif Layer.instancep(name):
+        elif islayer(name):
             return name
     
     def load_plug(self, root, show=False,

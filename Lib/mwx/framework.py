@@ -574,13 +574,6 @@ Attributes:
         if perf:
             return retvals
     
-    ## def fork(self, *args, **kwargs):
-    ##     """Dispatch the current event"""
-    ##     ## Note: it possibly results in an infinite loop
-    ##     if self.__state == self.__prev_state:
-    ##         raise Exception("FSM:logic-error - a fork cannot fork itself")
-    ##     return self.call(self.__event, *args, **kwargs)
-    
     def call(self, event, *args, **kwargs):
         """Invoke the event handler
         Process:
@@ -1771,13 +1764,7 @@ Global bindings:
         
         def fork(v):
             """Fork key events to the debugger"""
-            self.debugger.handler(self.__shell.handler.event, v)
-        
-        self.__shell.handler.update({
-            0 : {
-                    '* pressed' : (0, skip, fork),
-            },
-        })
+            self.debugger.handler(self.handler.event, v)
         
         self.handler.update({ #<ShellFrame.handler>
             None : {
@@ -1797,6 +1784,7 @@ Global bindings:
                  'title_window' : [ None, self.SetTitleWindow ],
             },
             0 : {
+                    '* pressed' : (0, skip, fork), # -> debugger
                    'f1 pressed' : (0, self.About),
                   'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
@@ -1823,6 +1811,7 @@ Global bindings:
                     'm pressed' : (0, _F(self.show_page, self.monitor, doc="Show monitor")),
                     'i pressed' : (0, _F(self.show_page, self.inspector, doc="Show wit")),
                     'r pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
+                 'home pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
             },
@@ -1968,6 +1957,7 @@ Global bindings:
         if target:
             self.__shell.target = target
         self.SetTitleWindow(frame)
+        ## self.Log.Show()
         ## self.Log.target = "File {}".format(frame.f_code.co_filename)
     
     def on_debug_end(self, frame):
@@ -1986,6 +1976,8 @@ Global bindings:
     
     def show_page(self, win, show=True):
         self.PopupWindow(win, show)
+        if win.Shown:
+            win.SetFocus()
     
     def remove_page(self, win):
         nb = self.console
@@ -2309,6 +2301,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.UseTabs = False
         self.WrapMode = 0
         self.WrapIndentMode = 1
+        self.IndentationGuides = 1
         
         self.__mark = None
     
@@ -2787,8 +2780,6 @@ class Editor(EditWindow, EditorInterface):
         try:
             shown = self.IsShown()
             self.parent.handler('show_page', self, show)
-            if show:
-                self.SetFocus()
             return shown != self.IsShown()
         except AttributeError:
             return EditWindow.Show(self, show)

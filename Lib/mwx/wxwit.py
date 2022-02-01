@@ -153,8 +153,8 @@ Args:
         if not widget:
             self.unwatch()
             return
-        self.RefreshTree()
         self.SetObj(widget)
+        self.RefreshTree()
         self.timer.Start(500)
         self.parent.handler("show_page", self)
     
