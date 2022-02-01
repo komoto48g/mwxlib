@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.51.7"
+__version__ = "0.51.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -4207,6 +4207,12 @@ except ImportError as e:
     pass
 
 
+## quote unqoute
+introText = f"""mwx {__version__}
+    Anything one man can imagine, other man can make real.
+    --- Jules Verne (1828--1905)
+    """
+
 def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
@@ -4215,6 +4221,7 @@ def deb(target=None, app=None, startup=None, **kwargs):
     target : object or module. Default None sets target as __main__.
        app : an instance of App.
                 Default None may create a local App and the mainloop.
+                If app is True, neither the app nor the mainloop will be created.
                 If app is given and not started the mainloop yet,
                 the app will enter the mainloop herein.
    startup : called after started up (not before)
@@ -4226,9 +4233,10 @@ Note:
     PyNoAppError will be raised when the App is missing in process.
     When it may cause bad traceback, please restart.
     """
-    if app is None:
-        app = wx.GetApp() or wx.App()
+    if 'introText' not in kwargs:
+        kwargs['introText'] = introText
     
+    app = app or wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close the window
     frame.Show()
@@ -4243,10 +4251,7 @@ Note:
             traceback.print_exc()
         else:
             shell.message("The startup was completed successfully.")
-    if not isinstance(app, wx.App):
-        print("- deb: argument app has unexpected type {!r}".format(typename(app)))
-        pass
-    elif not app.GetMainLoop():
+    if isinstance(app, wx.App) and not app.GetMainLoop():
         app.MainLoop()
     return frame
 
