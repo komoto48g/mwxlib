@@ -1057,7 +1057,6 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[rootname])
             else:
                 module = __import__(rootname, fromlist=[''])
-            
         except ImportError as e:
             print("- Failed to import: {}".format(e))
             return False
@@ -1108,31 +1107,24 @@ class Frame(mwx.Frame):
         ## 3. register the plugin
         ## --------------------------------
         try:
-            ## Add module to the list in advance to refer it in Plugin.Init.
-            ## However, it's uncertain that the Init will end successfully.
-            self.plugins[name] = module
-            
-            ## Create a plug and register to plugins list プラグインのロード開始
             plug = module.Plugin(self, **kwargs)
-            
-            ## set reference of a plug (one module, one plugin)
-            module.__plug__ = plug
-            
-            ## Add to the list after the plug is created successfully.
-            ## self.plugins[name] = module
-            plug.handler('pane_loaded')
             
         except Exception as e:
             wx.CallAfter(wx.MessageBox,
                          "{}\n\n{}".format(e, traceback.format_exc()),
                          "Error in loading {!r}".format(name),
                          style=wx.ICON_ERROR)
-            del self.plugins[name]
             return False
         
-        ## --------------------------------
-        ## 4. Create pane or notebook pane 
-        ## --------------------------------
+        ## Add to the list after the plug is created successfully.
+        self.plugins[name] = module
+        
+        ## set reference of a plug (one module, one plugin)
+        module.__plug__ = plug
+        
+        plug.handler('pane_loaded')
+        
+        ## Create pane or notebook pane
         caption = plug.caption
         if not isinstance(caption, string_types):
             caption = name
