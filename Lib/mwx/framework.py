@@ -3424,8 +3424,9 @@ Flaky nutshell:
     def on_exit_notemode(self, evt):
         self.noteMode = False
         self.set_style(self.PALETTE_STYLE)
-        self.goto_char(-1)
-        self.prompt()
+        ## self.goto_char(-1)
+        ## self.prompt()
+        self.promptPosEnd = self.TextLength
     
     ## --------------------------------
     ## Magic caster of the shell
@@ -4198,12 +4199,6 @@ except ImportError as e:
     pass
 
 
-## quote unqoute
-introText = f"""mwx {__version__}
-    Anything one man can imagine, other man can make real.
-    --- Jules Verne (1828--1905)
-    """
-
 def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
@@ -4224,8 +4219,13 @@ Note:
     PyNoAppError will be raised when the App is missing in process.
     When it may cause bad traceback, please restart.
     """
+    quote_unqoute = """
+        Anything one man can imagine, other man can make real.
+        --- Jules Verne (1828--1905)
+        """
+    
     if 'introText' not in kwargs:
-        kwargs['introText'] = introText
+        kwargs['introText'] = "mwx {}".format(__version__) + quote_unqoute
     
     app = app or wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
