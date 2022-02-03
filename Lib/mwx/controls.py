@@ -59,10 +59,10 @@ Args:
         self.__value = value if value is not None else self.min
         self.__std_value = value
         if fmt is hex:
-            self.__eval = lambda v: int(v,16)
+            self.__eval = lambda v: int(v, 16)
             self.__format = lambda v: '{:04X}'.format(int(v))
         else:
-            self.__eval = lambda v: float(v)
+            self.__eval = lambda v: eval(v)
             self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
         self.__check = 0
         self.__callback = mwx.SSM({
