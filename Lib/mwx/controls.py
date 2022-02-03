@@ -55,7 +55,7 @@ Args:
                  handler=None, updater=None, tip=None):
         self.__knobs = []
         self.__name = name
-        self.range = range if range is not None else [0]
+        self.range = range if range is not None else []
         self.__value = value if value is not None else self.min
         self.__std_value = value
         if fmt is hex:
@@ -83,15 +83,6 @@ Args:
             return self.__format(v)
         except ValueError:
             return str(v)
-    
-    def __int__(self):
-        return int(self.__value)
-    
-    def __long__(self):
-        return long(self.__value)
-    
-    def __float__(self):
-        return float(self.__value)
     
     def __len__(self):
         return len(self.__range)
@@ -240,7 +231,7 @@ Args:
         return int(np.searchsorted(self.__range, v))
     
     def set_index(self, j):
-        n = len(self.__range)
+        n = len(self)
         i = (0 if j<0 else j if j<n else -1)
         return self.set_value(self.__range[i])
 
@@ -261,6 +252,8 @@ class LParam(Param):
         return np.arange(self.min, self.max + self.step, self.step)
     
     def set_range(self, v):
+        if not v:
+            v = (0, 0)
         self.__min = v[0]
         self.__max = v[1]
         self.__step = v[2] if len(v)>2 else 1
@@ -711,13 +704,20 @@ class ControlPanel(scrolled.ScrolledPanel):
             else c if isinstance(c, wx.Object)
             else Knob(self, c, **kwargs) for c in objs ]
         
+        def flatten(a):
+            for y in a:
+                for x in (flatten(y) if isinstance(y, tuple) else (y,)):
+                    yield x
+        
+        self.__groups.append(list(c for c in flatten(objs)
+                                          if isinstance(c, wx.Object)))
+        
         def var(c):
             if isinstance(c, Knob):
                 return c.param
             elif hasattr(c, 'value'):
                 return c
         
-        self.__groups.append([c for c in objs if isinstance(c, wx.Object)])
         self.__params.append(list(filter(None, (var(c) for c in objs))))
         
         ## do layout in row
@@ -873,6 +873,12 @@ Icon.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
                           if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
 
 
+def _bmpIcon(v):
+    if isinstance(v, string_types):
+        return Icon(v)
+    return v
+
+
 class Button(pb.PlateButton):
     """Flat button
     
@@ -893,7 +899,7 @@ Args:
     @icon.setter
     def icon(self, v):
         self.__icon = v
-        self.SetBitmap(Icon(v))
+        self.SetBitmap(_bmpIcon(v))
         self.Refresh()
     
     def __init__(self, parent, label='',
@@ -943,8 +949,8 @@ Note:
         self.__icon = v
         if isinstance(v, tuple):
             v, w = v
-            self.SetBitmapPressed(Icon(w))
-        self.SetBitmap(Icon(v))
+            self.SetBitmapPressed(_bmpIcon(w))
+        self.SetBitmap(_bmpIcon(v))
         self.Refresh()
     
     def __init__(self, parent, label='',
