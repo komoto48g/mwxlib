@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.51.8"
+__version__ = "0.51.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1264,19 +1264,24 @@ Usage:
     else:
         sizer = wx.BoxSizer(orient)
     
-    def flatten(a):
-        return (x for y in a for x in (flatten(y) if isinstance(y, list) else (y,)))
-    
-    for item in flatten(args):
+    for item in args:
         if not item:
             if item is None:
                 item = (0,0), 0,0,0, # dummy spacing with null style
             else:
                 item = (0,0) # padding with specified style
         try:
-            sizer.Add(item, *style) # using style
-        except TypeError:
-            sizer.Add(*item) # using item-specific style
+            try:
+                sizer.Add(item, *style) # using style
+            except TypeError:
+                sizer.Add(*item) # using item-specific style
+        except TypeError as e:
+            traceback.print_exc()
+            bmp = wx.ArtProvider.GetBitmap(wx.ART_ERROR, size=(16,16))
+            err = wx.StaticBitmap(self, bitmap=bmp)
+            err.SetToolTip("Pack failure\n{}".format(e))
+            sizer.Add(err, *style)
+            wx.Bell()
     return sizer
 
 

@@ -50,16 +50,6 @@ from six import string_types
 
 _F = mwx.funcall
 
-def wait(f):
-    @wraps(f)
-    def _f(self, *args, **kwargs):
-        try:
-            busy = wx.BusyCursor()
-            return f(self, *args, **kwargs)
-        finally:
-            del busy
-    return _f
-
 
 class Thread(object):
     """Thread for graphman.Layer
@@ -373,6 +363,7 @@ unloadable : flag to set the Layer to be unloadable
                 bmp = wx.StaticBitmap(self, bitmap=Icon('!!!'))
                 txt = wx.StaticText(self, label="Exception")
                 txt.SetToolTip(repr(e))
+                self.layout(((),), expand=2)
                 self.layout((bmp, txt), row=2)
     
     def Init(self):
