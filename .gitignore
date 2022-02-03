@@ -12,7 +12,7 @@ doc/
 etc/
 icon*/
 test*/
-wiki/
+vclip/
 !Lib/mwx/
 
 # Byte-compiled / optimized / DLL files
