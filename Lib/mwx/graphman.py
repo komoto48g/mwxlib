@@ -1318,18 +1318,21 @@ class Frame(mwx.Frame):
                 f = dlg.Path
         
         savedir = os.path.dirname(f)
+        output_frames = []
         for frame in frames:
             try:
+                self.statusbar("Export index of {!r}...".format(frame.name))
                 path = os.path.join(savedir, frame.name)
                 if not os.path.exists(path):
                     if not path.endswith('.tif'):
                         path += '.tif'
                     self.write_buffer(path, frame.buffer)
-            except (PermissionError, OSError) as e:
-                print("- Failed to save {!r}".format(path))
-                print("  {!r}".format((e)))
+                output_frames.append(frame)
+                print(" ", self.statusbar("\b done."))
+            except (PermissionError, OSError):
+                print("-", self.statusbar("\b failed. pass."))
                 pass
-        
+        frames = output_frames
         res, mis = self.write_attributes(f, frames)
         n = len(frames)
         self.statusbar(
@@ -1735,20 +1738,21 @@ if __name__ == '__main__':
     frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     
-    ## frm.load_buffer(u"demo/sample.bmp")
-    ## frm.load_buffer(u"demo/sample2.tif")
-    ## frm.graph.load(np.random.randn(1024,1024))
+    frm.load_buffer(u"demo/sample.bmp")
+    frm.load_buffer(u"demo/sample2.tif")
+    frm.graph.load(np.random.randn(1024,1024))
     
-    ## Note: 次の二つは別モジュール
-    ## frm.load_plug('demo.template.py', show=1, force=1)
-    ## frm.load_plug('demo/template.py', show=1, force=1, dock=4)
+    ## Note: 次の二つは別モジュール扱い
+    ## frm.load_plug("demo.template.py", show=1, force=1)
+    ## frm.load_plug("demo/template.py", show=1, force=1)
     
-    frm.load_plug('C:/usr/home/lib/python/demo/template.py', show=1)
+    frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
+    frm.load_plug(r"C:\usr\home\lib\python\Layer\ffmpeg_viewer.py")
     
-    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py')
-    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py')
-    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template.py', show=1)
-    ## frm.load_plug('C:/usr/home/workspace/tem13/gdk/templates/template2.py', show=1)
+    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
+    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
+    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
+    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
     frm.Show()
     app.MainLoop()
