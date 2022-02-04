@@ -1711,8 +1711,6 @@ if __name__ == '__main__':
     frm.graph.handler.debug = 4
     
     def _imread(path):
-        if sys.version_info < (3,0):
-            path = path.encode('shift-jis') # using Windows file encoding
         return Image.open(path)
     
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample.bmp"), "sample")

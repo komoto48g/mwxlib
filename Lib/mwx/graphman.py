@@ -12,7 +12,6 @@ import threading
 import traceback
 import warnings
 import inspect
-import codecs
 import sys
 import os
 import platform
@@ -44,9 +43,6 @@ from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
 from importlib import reload
 from six import string_types
-
-## if sys.version_info < (3,0):
-##     FileNotFoundError = IOError
 
 _F = mwx.funcall
 
@@ -1354,7 +1350,7 @@ class Frame(mwx.Frame):
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
-            with codecs.open(f, encoding='utf-8') as i:
+            with open(f, encoding='utf-8') as i:
                 ## evaluation of attributes:tuple in locals
                 from numpy import nan, inf
                 import datetime
@@ -1389,7 +1385,7 @@ class Frame(mwx.Frame):
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
-            with codecs.open(f, 'w', encoding='utf-8') as o:
+            with open(f, 'w', encoding='utf-8') as o:
                 pprint(tuple(new.items()), stream=o) # save all attributes
             
         except Exception as e:
@@ -1441,9 +1437,6 @@ class Frame(mwx.Frame):
     @staticmethod
     def read_buffer(path):
         """Read buffer from `path file (to be overridden)"""
-        if sys.version_info < (3,0):
-            path = path.encode('shift-jis') # using Windows file encoding
-        
         buf = Image.open(path)
         info = {}
         if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
@@ -1749,6 +1742,7 @@ if __name__ == '__main__':
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
     frm.load_plug(r"C:\usr\home\lib\python\Layer\ffmpeg_viewer.py")
     
+    frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewfft.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
