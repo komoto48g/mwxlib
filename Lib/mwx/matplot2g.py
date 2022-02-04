@@ -930,11 +930,11 @@ Constants:
                 
             elif type == REGION: # N-Selector trace polygon (called from Region:setter)
                 nx, ny = self.frame.xytopixel(x, y)
-                xo, xr = min(nx), max(nx)
-                yo, yr = min(ny), max(ny)
+                xo, yo = min(nx), min(ny) # top-left
+                xr, yr = max(nx), max(ny) # bottom-right
                 self.message("[Region]"
-                    " Shape: [{:4d}, {:4d}]"
-                    " Region: [{}:{}, {}:{}]".format(xr-xo, yr-yo, xo, xr, yo, yr))
+                    " Shape: [{0:4d}, {1:4d}]"
+                    " crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline"""
