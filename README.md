@@ -21,18 +21,18 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Installing
 
-Beofre installing, you can check how mwxlib works.
-Enter the src directory (mwxlib/Lib), and type (cf. framework is the mastar source of mwxlib)
+If you want to check how mwxlib works before installation,
+enter the directory ~/Lib/mwx/ and type:
 ```
-$ py -3 -m framework 
+py -3 -m framework
 ```
-To install, type
+To install, type:
 ```
-$ py -3 -m pip install mwxlib
+py -3 -m pip install mwxlib
 ```
-To install latest version from GitHub, type
+To install latest version from GitHub, type:
 ```
-$ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
+py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 ```
 
 ### How to use
@@ -41,20 +41,27 @@ $ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 >>> import mwx; mwx.deb()
 ```
 
-:memo: mwxlib creates ~/.deb/ in your home directory.
-This includes history, logs, dump files used to report when an error occurs.
+:memo: mwxlib creates ~/.deb/ in your *HOME* directory.
+This includes history, logs, dump files used to check when an error occurs.
 
-:memo: At the first startup, it takes some time to collect module information and create a dictionary.
+:memo: At the first startup, it takes some time to collect module information and create a dictionary file.
 The collected module name is used for completion at the time of input in the shell.
-If you start the shell while pressing [C-S-], the dictionary will be recreated.
+(If you start the shell while pressing [C-S-], the dictionary file will be recreated)
 
 ### Uninstalling
 ```
-$ pip uninstall mwxlib
+pip uninstall mwxlib
 ```
 
 
 # Features
+
+![intro](doc/image/intro.gif)
+The animation shows how the Nautilus works, which is embedded in a simple PyEditor app.
+
+As you are diving into the python process,
+you can watch, inspect, and change everything in the target.
+
 
 ## Nautilus in the Shell
 
@@ -85,11 +92,6 @@ which has the following features:
 ```
 >>> self.inspector = mwx.ShellFrame(self, target=self)
 ```
-As you are diving into the python process,
-you can watch, inspect, and change everything in the target.
-
-![intro](doc/image/intro.gif)
-The animation shows how the Nautilus works, which is embedded in a simple PyEditor app.
 
 
 ## Autocomp key bindings:
@@ -107,7 +109,9 @@ The animation shows how the Nautilus works, which is embedded in a simple PyEdit
   * All completions [1--5] are incremental when pressed any alnums, and decremental when backspace.  
 See [key bindings](key-bindings.md) for more information.
 
+<!--
 ![autocomp](doc/image/autocomp.gif)
+-->
 
 
 ## Magic syntax:
@@ -131,27 +135,29 @@ See [key bindings](key-bindings.md) for more information.
     Note: The last three (*) are original syntax defined in wx.py.shell,
     at present version, enabled with USE_MAGIC switch being on
 
+<!--
 ![apropos](doc/image/apropos.gif)
+-->
+
 
 ## built-in utility:
     @p          synonym of print
     @pp         synonym of pprint
-    @puts       same as p but put it into the prompt
     @info   @?  short info
     @help   @?? full description
-    @clone      clone the shell with new target
+    @dive       clone the shell with new target
     @timeit     measure the duration cpu time
+    @profile    profile the func(*args, **kwargs)
     @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
-    @edit       open with your editor (undefined)
-    @file       inspect.getfile -> str
-    @code       inspect.getsource -> str
-    @module     inspect.getmodule -> module
-    @where      (file, line-number) or the module
-    @debug      pdb in the shell
+    @edit       open file with your editor (undefined)
+    @where      filename and lineno or module
+    @debug      open pdb or show eventwatcher and widget-tree
 
+<!--
 ![utils-mod](doc/image/utils-mod.gif)
+-->
 
 
 ## Ghost in the shell
@@ -168,8 +174,10 @@ which is a notebook-style window consists of four editors:
 - History buffer
     + read-only buffer of the input-history
 
+<!--
 ![utils-ghost](doc/image/utils-ghost.gif)
 The animation shows how to inspect *blurring*-functions of OpenCV.
+-->
 
 
 ## Authors
