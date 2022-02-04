@@ -1749,8 +1749,8 @@ if __name__ == '__main__':
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
     frm.load_plug(r"C:\usr\home\lib\python\Layer\ffmpeg_viewer.py")
     
-    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
-    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
+    frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
+    frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
