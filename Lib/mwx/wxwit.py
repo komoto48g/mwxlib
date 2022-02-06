@@ -26,63 +26,61 @@ def atomvars(obj):
         for key in keys:
             try:
                 value = getattr(obj, key)
-                if hasattr(value, '__name__'): #<atom>
+                if hasattr(value, '__name__'): # not <atom>
                     continue
+                if key == 'ContainingSizer':
+                    sizer = obj.ContainingSizer
+                    if sizer:
+                        attr[key] = value
+                        sizerItem = atomvars(sizer.GetItem(obj)) #<wx.SizerItem>
+                        attr.update(("-> SizerItem.{}".format(k), v)
+                                     for k, v in sizerItem.items())
+                        continue
             except Exception as e:
                 value = e
-            attr[key] = repr(value)
+            attr[key] = value
         return attr
 
 
 class InfoList(wx.ListCtrl):
+    """Locals info watcher
+    """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                              style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
         ## self.Font = wx.Font(9, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        self.attr = {}
+        
+        self.data = []
+        
         self.alist = ( # assoc list of column names
             ("key",   140),
             ("value", 160),
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
-        try:
-            self.SetHeaderAttr(
-                wx.ItemAttr('black', '', self.Font.Bold()))
-        except AttributeError:
-            pass
     
     def clear(self):
         self.DeleteAllItems()
-        self.attr = {}
+        del self.data[:]
     
     def UpdateInfo(self, obj):
         if not obj:
             return
         self.clear()
+        i = 0
         attr = atomvars(obj)
-        for key, vstr in attr.items():
-            if key == 'ContainingSizer':
-                sizer = obj.ContainingSizer
-                if sizer:
-                    _attr = atomvars(sizer.GetItem(obj)) #<wx.SizerItem>
-                    self.attr[key] = vstr
-                    self.attr.update(("-> SizerItem.{}".format(k), v)
-                                      for k,v in _attr.items())
-                    continue
-            if re.match(r"<(.+) object at \w+>", vstr): #<instance>
-                continue
-            self.attr[key] = vstr
-        
-        for i, (k, v) in enumerate(self.attr.items()):
-            self.InsertItem(i, k)
-            self.SetItem(i, 1, v)
+        for key, value in attr.items():
+            vstr = str(value)
+            self.data.append([key, vstr])
+            self.InsertItem(i, key)
+            self.SetItem(i, 1, vstr)
+            i += 1
 
 
 class Inspector(wx.SplitterWindow):
-    """Widget inspection tool with check-list
+    """Widget inspection tool
 
 Args:
     parent : shellframe
@@ -202,9 +200,9 @@ if __name__ == "__main__":
     frm = mwx.Frame(None)
     if 1:
         self = frm.shellframe
-        frm.wit = Inspector(self)
-        frm.wit.Show(0)
+        self.wit = Inspector(self)
         self.Show()
-        self.rootshell.write("self.wit.watch(self.wit)")
+        self.add_page(self.wit)
+        self.rootshell.write("self.shellframe.wit.watch(self.shellframe.wit)")
     frm.Show()
     app.MainLoop()
