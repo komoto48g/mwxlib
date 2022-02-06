@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.0rc"
+__version__ = "0.52.0rc2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -22,6 +22,7 @@ import re
 import wx
 from wx import aui
 from wx import stc
+from wx.py import dispatcher
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import numpy as np
@@ -1531,12 +1532,12 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """
     handler = property(lambda self: self.__handler)
     
-    shellframe = property(lambda self: self.__inspector)
+    shellframe = property(lambda self: self.__shellframe)
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
-        self.__inspector = ShellFrame(None, target=self)
+        self.__shellframe = ShellFrame(None, target=self)
         
         ## statusbar/menubar customization
         ## Do layout after statusbar/menubar is created
@@ -1683,6 +1684,7 @@ Global bindings:
     debugger = property(lambda self: self.__debugger)
     inspector = property(lambda self: self.__inspector)
     monitor = property(lambda self: self.__monitor)
+    infow = property(lambda self: self.__info)
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
@@ -1708,10 +1710,12 @@ Global bindings:
             from wxpdb import Debugger
             from wxwit import Inspector
             from wxmon import EventMonitor
+            from wxwil import LocalsWatcher
         except ImportError:
             from .wxpdb import Debugger
             from .wxwit import Inspector
             from .wxmon import EventMonitor
+            from .wxwil import LocalsWatcher
         
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
@@ -1720,10 +1724,8 @@ Global bindings:
                                          EventMonitor.__module__))
         
         self.__inspector = Inspector(self)
-        self.__inspector.Show(0)
-        
         self.__monitor = EventMonitor(self)
-        self.__monitor.Show(0)
+        self.__info = LocalsWatcher(self)
         
         self.console = aui.AuiNotebook(self, size=(600,400),
             style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
@@ -1751,9 +1753,17 @@ Global bindings:
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.45, 0.5) # (w, h)/N
         
-        self._mgr.AddPane(self.console, aui.AuiPaneInfo().CenterPane())
-        self._mgr.AddPane(self.ghost, aui.AuiPaneInfo().Name("ghost").Right()
-            .Caption("Ghost in the Shell").CaptionVisible(1).Gripper(0).Show(0))
+        self._mgr.AddPane(self.console,
+                          aui.AuiPaneInfo().CenterPane())
+        
+        self._mgr.AddPane(self.ghost,
+                          aui.AuiPaneInfo().Name("ghost")
+                             .Caption("Ghost in the Shell").Right().Show(0))
+        
+        self._mgr.AddPane(self.infow,
+                          aui.AuiPaneInfo().Name("locals")
+                             .Caption("Locals watch").Float().Show(0))
+        
         self._mgr.Update()
         
         self.Unbind(wx.EVT_CLOSE)
@@ -1795,7 +1805,7 @@ Global bindings:
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.PopupWindow, self.ghost, None, doc="Toggle the ghost")),
+                  'f11 pressed' : (0, _F(self.show_page, self.ghost, None, doc="Toggle the ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.clear_shell)),
                 'C-f12 pressed' : (0, _F(self.clone_shell)),
@@ -1898,8 +1908,10 @@ Global bindings:
         win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle (in the notebook)
         """
-        if win in (self.console, self.ghost):
-            nb = win
+        for pane in self._mgr.GetAllPanes():
+            if win is pane.window:
+                nb = win
+                break
         else:
             for nb in (self.console, self.ghost):
                 j = nb.GetPageIndex(win) # check if nb has win
@@ -1922,7 +1934,8 @@ Global bindings:
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-        self.SetTitleWindow(nb.CurrentPage.target)
+        target = nb.CurrentPage.target
+        self.SetTitleWindow(target)
         evt.Skip()
     
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -1943,7 +1956,9 @@ Global bindings:
             self.inspector.watch(obj)
             self.monitor.watch(obj)
         elif callable(obj):
-            self.debugger.trace(obj, *args, **kwargs)
+            self.__shell.clearCommand()
+            wx.CallAfter(
+                self.debugger.trace, obj, *args, **kwargs)
         else:
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
@@ -1953,6 +1968,7 @@ Global bindings:
         self.__shell.SetFocus()
         self.__target = self.__shell.target # save locals
         self.Show()
+        self.show_page(self.infow)
     
     def on_debug_next(self, frame):
         try:
@@ -1962,13 +1978,17 @@ Global bindings:
         if target:
             self.__shell.target = target
         self.SetTitleWindow(frame)
-        ## self.Log.Show()
+        self.infow.watch(self.debugger.locals)
+        self.show_page(self.Log)
+        self.__shell.SetFocus()
         ## self.Log.target = "File {}".format(frame.f_code.co_filename)
     
     def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore locals
+        self.infow.watch(None)
+        del self.__target
         ## del self.Log.target
     
     def add_page(self, win, title=None, show=True):
@@ -2897,6 +2917,8 @@ Flaky nutshell:
         self.__target = target
         self.interp.locals = target.__dict__
         self.parent.handler('title_window', target)
+        dispatcher.send(signal='Interpreter.push', sender=self,
+                        command=None, more=False, source=None)
     
     @property
     def locals(self):
@@ -3227,6 +3249,8 @@ Flaky nutshell:
         ## self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
         ## self.SetFoldMarginHiColour(True, "#c0c0c0") # fore:black is a bit strong
         self.set_style(self.PALETTE_STYLE)
+        
+        ## if wx.VERSION >= (4,1,0):
         try:
             self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
             self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
@@ -3764,7 +3788,7 @@ Flaky nutshell:
     
     def Paste(self):
         """Replace selection with clipboard contents.
-        (override) Remove ps1 and ps2 from command to be pasted
+        (override) Remove ps1 and ps2 from the multi-line command to paste
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
@@ -4298,10 +4322,9 @@ if 1:
     self
     self.shellframe
     self.shellframe.rootshell
-    ## debug(self)
     dive(self.shellframe)
-    dive(self.shellframe.rootshell)
     dive(self.shellframe.debugger)
+    debug(self)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
