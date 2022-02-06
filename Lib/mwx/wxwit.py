@@ -162,6 +162,8 @@ Args:
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
+        if wnd is self.GetTopLevelParent():
+            return
         if wnd not in self.Children:
             self.SetObj(wnd)
     
