@@ -51,8 +51,20 @@ Args:
     logger = property(lambda self: self.__shellframe.Log)
     handler = property(lambda self: self.__handler)
     busy = property(lambda self: self.target is not None)
-    locals = property(lambda self: self.curframe.f_locals) # cf. curframe_locals
-    globals = property(lambda self: self.curframe.f_globals)
+    
+    @property
+    def locals(self):
+        try:
+            return self.curframe.f_locals # cf. curframe_locals
+        except AttributeError:
+            pass
+    
+    @property
+    def globals(self):
+        try:
+            return self.curframe.f_globals
+        except AttributeError:
+            pass
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
@@ -84,13 +96,15 @@ Args:
         })
     
     def on_debug_begin(self, frame):
+        """Called before set_trace"""
         shell = self.parent.rootshell
         out = shell.GetTextRange(shell.bolc, shell.point)
-        self.parent.handler('add_history', out, noerr=1)
+        self.parent.handler('add_history', out)
         self.parent.handler('debug_begin', frame)
         self.__interactive = shell.point
     
     def on_debug_next(self, frame):
+        """Called in preloop (cmdloop)"""
         shell = self.parent.rootshell
         pos = self.__interactive
         def post():
@@ -108,6 +122,7 @@ Args:
         self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
+        """Called after set_quit"""
         shell = self.parent.rootshell
         out = shell.GetTextRange(self.__interactive, shell.point) + '\n'
         self.parent.handler('add_history', out)

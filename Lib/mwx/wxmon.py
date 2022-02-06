@@ -7,8 +7,9 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import warnings
 import wx
-from wx import aui
-from wx import stc
+import wx.aui
+import wx.stc
+import wx.media
 import wx.lib.eventwatcher as ew
 try:
     from framework import where
@@ -19,7 +20,7 @@ except ImportError:
 
 
 class EventMonitor(CheckList):
-    """Event monitor with check-list
+    """Event monitor
 
 Args:
     parent : shellframe
@@ -47,11 +48,8 @@ Args:
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
         
-        ## self.Bind(wx.EVT_MOTION, self.OnMotion)
-        self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnItemFocused)
-        ## self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemFocused)
-        ## self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated) # left-dclick, space
+        self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -68,8 +66,9 @@ Args:
     ## --------------------------------
     
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
-    ew.addModuleEvents(aui) # + some additives
-    ew.addModuleEvents(stc)
+    ew.addModuleEvents(wx.aui) # + some additives
+    ew.addModuleEvents(wx.stc)
+    ew.addModuleEvents(wx.media)
     
     ## Events that should not be watched by default
     ew._noWatchList = [
@@ -165,6 +164,10 @@ Args:
     ## Actions for event-logger items
     ## --------------------------------
     
+    def clear(self):
+        self.DeleteAllItems()
+        del self.__items[:]
+    
     def update(self, evt):
         event = evt.EventType
         obj = evt.EventObject
@@ -180,14 +183,15 @@ Args:
               and obj is self:
                 return
         
-        for i, item in enumerate(self.__items):
+        data = self.__items
+        for i, item in enumerate(data):
             if item[0] == event:
                 item[1:] = [name, source, attribs]
                 break
         else:
-            i = len(self.__items)
+            i = len(data)
             item = [event, name, source, attribs]
-            self.__items.append(item)
+            data.append(item)
             self.InsertItem(i, event)
         
         for j, v in enumerate(item[:-1]):
@@ -202,62 +206,52 @@ Args:
                 self.CheckItem(i, False)
                 for f in actions:
                     self.parent.debugger.trace(f, evt)
-        
-        if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
-            ## Don't run out of all timers and get warnings
-            self.SetItemBackgroundColour(i, "yellow")
-            def reset_color():
-                if self and i < self.ItemCount:
-                    self.SetItemBackgroundColour(i, 'white')
-            wx.CallLater(1000, reset_color)
-    
-    def clear(self):
-        self.DeleteAllItems()
-        self.__items = []
+        self.blink(i)
     
     def append(self, event, bold=True):
-        if event in (item[0] for item in self.__items):
+        data = self.__items
+        if event in (item[0] for item in data):
             return
         
-        i = len(self.__items)
+        i = len(data)
         name = self.get_name(event)
         item = [event, name, '-', 'no data']
-        self.__items.append(item)
+        data.append(item)
         self.InsertItem(i, event)
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
         if bold:
             self.SetItemFont(i, self.Font.Bold())
+        self.blink(i)
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
             return
-        lc = [self.__items[j] for j in range(n) if self.IsItemChecked(j)]
-        ls = [self.__items[j] for j in range(n) if self.IsSelected(j)]
-        f = self.__items[self.FocusedItem]
         
-        col = evt.GetColumn()
+        def _getitem(key):
+            return [data[i] for i in range(n) if key(i)]
+        
+        data = self.__items
+        ls = _getitem(self.IsSelected)
+        lc = _getitem(self.IsItemChecked)
+        lb = _getitem(lambda i: self.GetItemFont(i) == self.Font.Bold())
+        f = data[self.FocusedItem]
+        
+        col = evt.Column
         self.__dir = not self.__dir
-        self.__items.sort(key=lambda v: v[col], reverse=self.__dir) # sort data
+        data.sort(key=lambda v: v[col], reverse=self.__dir)
         
-        for i, item in enumerate(self.__items):
+        for i, item in enumerate(data):
             for j, v in enumerate(item[:-1]):
                 self.SetItem(i, j, str(v))
-            self.CheckItem(i, item in lc)  # check
-            self.Select(i, item in ls)     # seleciton
-            if self.get_actions(item[0]):
+            self.Select(i, item in ls)
+            self.CheckItem(i, item in lc)
+            self.SetItemFont(i, self.Font) # reset font
+            if item in lb:
                 self.SetItemFont(i, self.Font.Bold())
-            else:
-                self.SetItemFont(i, self.Font)
-        self.Focus(self.__items.index(f))  # focus (one)
-    
-    ## def OnItemActivated(self, evt): #<wx._controls.ListEvent>
-    ##     i = evt.Index
-    ##     item = self.__items[i]
-    ##     attribs = item[-1]
-    ##     wx.CallAfter(wx.TipWindow, self, attribs, 512)
-    ##     self.parent.handler("put_scratch", attribs)
+            if item == f:
+                self.Focus(i)
     
     def OnItemFocused(self, evt): #<wx._controls.ListEvent>
         i = evt.Index
@@ -279,9 +273,9 @@ if __name__ == "__main__":
     frm = mwx.Frame(None)
     if 1:
         self = frm.shellframe
-        frm.mon = EventMonitor(self)
-        frm.mon.Show(0)
+        self.mon = EventMonitor(self)
         self.Show()
-        self.rootshell.write("self.mon.watch(self.mon)")
+        self.add_page(self.mon)
+        self.rootshell.write("self.shellframe.mon.watch(self.shellframe.mon)")
     frm.Show()
     app.MainLoop()
