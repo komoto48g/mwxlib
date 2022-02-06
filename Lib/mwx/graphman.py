@@ -5,7 +5,6 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from collections import OrderedDict
-from functools import partial
 from functools import wraps
 import subprocess
 import threading
@@ -192,6 +191,7 @@ Note:
             self.handler('thread_quit', self)
             self.worker.join(1)
             ## sys.exit(1)
+            del busy
 
 
 def islayer(obj):
@@ -605,16 +605,19 @@ class Frame(mwx.Frame):
         self.__histogram.attach(self.graph)
         self.__histogram.attach(self.output)
         
-        self._mgr.AddPane(self.graph, aui.AuiPaneInfo().CenterPane().CloseButton(1)
-            .Name("graph").Caption("graph").CaptionVisible(1))
+        self._mgr.AddPane(self.graph,
+                          aui.AuiPaneInfo().CenterPane().CloseButton(1)
+                             .Name("graph").Caption("graph").CaptionVisible(1))
         
         size = self.output.GetSize()
-        self._mgr.AddPane(self.output, aui.AuiPaneInfo()
-            .Name("output").Caption("output").FloatingSize(size).MinSize(size).Right().Show(0))
+        self._mgr.AddPane(self.output,
+                          aui.AuiPaneInfo().Name("output").Caption("output")
+                             .FloatingSize(size).MinSize(size).Right().Show(0))
         
         size = self.histogram.GetSize()
-        self._mgr.AddPane(self.histogram, aui.AuiPaneInfo()
-            .Name("histogram").Caption("histogram").FloatingSize(size).MinSize(size).Left().Show(0))
+        self._mgr.AddPane(self.histogram,
+                          aui.AuiPaneInfo().Name("histogram").Caption("histogram")
+                             .FloatingSize(size).MinSize(size).Left().Show(0))
         
         self.menubar["File"][0:0] = [
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book_open'),
@@ -1130,14 +1133,16 @@ class Frame(mwx.Frame):
                         &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
                 nb.AddPage(plug, caption)
                 self._mgr.AddPane(nb, aui.AuiPaneInfo()
-                    .Name(title).Caption(title).FloatingSize(size).MinSize(size).Show(0))
+                                         .Name(title).Caption(title)
+                                         .FloatingSize(size).MinSize(size).Show(0))
             j = nb.GetPageIndex(plug)
             nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
         else:
             nb = None
             size = plug.GetSize() + (2,2)
             self._mgr.AddPane(plug, aui.AuiPaneInfo()
-                .Name(name).Caption(caption).FloatingSize(size).MinSize(size).Show(0))
+                                       .Name(name).Caption(caption)
+                                       .FloatingSize(size).MinSize(size).Show(0))
         
         ## set reference of notebook (optional)
         plug.__notebook = nb
@@ -1218,28 +1223,15 @@ class Frame(mwx.Frame):
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell
-        
-        The plugins and modules are to be reloaded and lost, so we accessed as property.
-        l: plugin  (cf. lm.__plug__)
-        lm: module (cf. l.__module__ @sys.modules.get)
         """
-        self.__class__.l = property(lambda self: self.get_plug(name))
-        self.__class__.lm = property(lambda self: self.plugins.get(name))
-        
-        rootshell = self.shellframe.rootshell
-        rootshell.clearCommand()
-        rootshell.write(
-            "#include plug {!r} as propperty:\n"
-            "<-- self.l : {!r}\n"
-            "<-- self.lm : {!r}\n".format(name, self.l, self.lm))
-        rootshell.prompt()
-        
-        shell = rootshell.clone(self.l)
+        plug = self.get_plug(name)
+        shell = self.shellframe.rootshell.clone(plug)
         shell.SetFocus()
         
         @shell.handler.bind("shell_activated")
         def init(shell):
-            shell.target = self.l or self # reset when unloaded
+            plug = self.get_plug(name)
+            shell.target = plug or self # reset when unloaded
         init(shell)
         self.shellframe.Show()
     
