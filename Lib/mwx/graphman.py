@@ -359,7 +359,6 @@ unloadable : flag to set the Layer to be unloadable
                 bmp = wx.StaticBitmap(self, bitmap=Icon('!!!'))
                 txt = wx.StaticText(self, label="Exception")
                 txt.SetToolTip(repr(e))
-                self.layout(((),), expand=2)
                 self.layout((bmp, txt), row=2)
     
     def Init(self):

@@ -14,13 +14,13 @@ class Plugin(Layer):
     def Init(self):
         self.layout(
             (Button(self, k, icon=k, size=(80,-1))
-                for k in sorted(Icon.provided_arts)),
+                    for k in sorted(Icon.provided_arts)),
             title="Provided art images",
             row=6, show=0
         )
         self.layout(
             (Button(self, k, icon=k, size=(80,-1))
-                for k in sorted(Icon.custom_images)),
+                    for k in sorted(Icon.custom_images)),
             title="Custom demo images",
             row=6, show=0
         )
