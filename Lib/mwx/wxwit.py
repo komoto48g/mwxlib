@@ -43,14 +43,9 @@ def atomvars(obj):
 
 
 class InfoList(wx.ListCtrl):
-    """Locals info watcher
-    """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                              style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
-        
-        ## self.Font = wx.Font(9, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
-        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.data = []
         
@@ -101,6 +96,7 @@ Args:
         ## self.info = it.InspectionInfoPanel(self, size=(200,-1))
         ## self.info.DropTarget = None # to prevent filling from crash
         self.info = InfoList(self, size=(200,-1))
+        self.info.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.SplitVertically(
             self.tree, self.info, self.tree.MinWidth)
