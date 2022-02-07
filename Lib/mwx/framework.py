@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.0"
+__version__ = "0.52.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1956,9 +1956,10 @@ Global bindings:
             self.inspector.watch(obj)
             self.monitor.watch(obj)
         elif callable(obj):
-            self.__shell.clearCommand()
-            wx.CallAfter(
-                self.debugger.trace, obj, *args, **kwargs)
+            def _trace():
+                self.__shell.clearCommand()
+                self.debugger.trace(obj, *args, **kwargs)
+            wx.CallAfter(_trace)
         else:
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
@@ -1966,29 +1967,25 @@ Global bindings:
     def on_debug_begin(self, frame):
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
-        self.__target = self.__shell.target # save locals
+        self.__target = self.__shell.target # save target
         self.Show()
         self.show_page(self.infow)
     
     def on_debug_next(self, frame):
-        try:
-            target = frame.f_locals['self']
-        except KeyError:
-            target = inspect.getmodule(frame)
-        if target:
-            self.__shell.target = target
-        self.SetTitleWindow(frame)
+        self.__shell.target = inspect.getmodule(frame) or self.__target
+        self.__shell.locals = self.debugger.locals
         self.infow.watch(self.debugger.locals)
-        self.show_page(self.Log)
-        self.__shell.SetFocus()
+        self.show_page(self.Log, focus=0)
+        self.SetTitleWindow(frame)
         ## self.Log.target = "File {}".format(frame.f_code.co_filename)
     
     def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
-        self.__shell.target = self.__target # restore locals
+        self.__shell.target = self.__target # restore target
         self.infow.watch(None)
         del self.__target
+        del self.__shell.locals
         ## del self.Log.target
     
     def add_page(self, win, title=None, show=True):
@@ -1999,10 +1996,11 @@ Global bindings:
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
-    def show_page(self, win, show=True):
+    def show_page(self, win, show=True, focus=True):
+        wnd = win if focus else wx.Window.FindFocus() # original focus
         self.PopupWindow(win, show)
         if win.Shown:
-            win.SetFocus()
+            wnd.SetFocus()
     
     def remove_page(self, win):
         nb = self.console
@@ -2924,6 +2922,14 @@ Flaky nutshell:
     def locals(self):
         return self.interp.locals
     
+    @locals.setter
+    def locals(self, v): # internal use only
+        self.interp.locals = v
+    
+    @locals.deleter
+    def locals(self): # internal use only
+        self.interp.locals = self.__target.__dict__
+    
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
     ## SHELLSTARTUP = ""
@@ -2957,7 +2963,6 @@ Flaky nutshell:
     }
     
     def __init__(self, parent, target,
-                 locals=None,
                  introText=None,
                  startupScript=None,
                  execStartupScript=True,
@@ -2969,9 +2974,6 @@ Flaky nutshell:
                  execStartupScript=execStartupScript, # if True, executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
-        
-        if locals:
-            self.interp.locals.update(locals)
         
         self.modules = find_modules(speckey_state('ctrl')
                                   & speckey_state('shift'))
@@ -2999,15 +3001,6 @@ Flaky nutshell:
             evt.Skip()
         
         self.on_activated(self) # call once manually
-        
-        ## def destroy(evt):
-        ##     if evt.EventObject is self:
-        ##         try:
-        ##             del self.__target.shell # delete reference
-        ##         except AttributeError:
-        ##             pass
-        ##     evt.Skip()
-        ## self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
@@ -3570,7 +3563,12 @@ Flaky nutshell:
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-        
+        ## try:
+        ##     del shell.target.self
+        ##     del shell.target.this
+        ##     del shell.target.shell
+        ## except AttributeError:
+        ##     pass
         del builtins.help
         del builtins.info
         del builtins.dive
