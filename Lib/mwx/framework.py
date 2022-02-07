@@ -1684,7 +1684,7 @@ Global bindings:
     debugger = property(lambda self: self.__debugger)
     inspector = property(lambda self: self.__inspector)
     monitor = property(lambda self: self.__monitor)
-    infow = property(lambda self: self.__info)
+    linfo = property(lambda self: self.__info)
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
@@ -1760,7 +1760,7 @@ Global bindings:
                           aui.AuiPaneInfo().Name("ghost")
                              .Caption("Ghost in the Shell").Right().Show(0))
         
-        self._mgr.AddPane(self.infow,
+        self._mgr.AddPane(self.linfo,
                           aui.AuiPaneInfo().Name("locals")
                              .Caption("Locals watch").Float().Show(0))
         
@@ -1969,12 +1969,12 @@ Global bindings:
         self.__shell.SetFocus()
         self.__target = self.__shell.target # save target
         self.Show()
-        self.show_page(self.infow)
+        self.show_page(self.linfo)
     
     def on_debug_next(self, frame):
         self.__shell.target = inspect.getmodule(frame) or self.__target
         self.__shell.locals = self.debugger.locals
-        self.infow.watch(self.debugger.locals)
+        self.linfo.watch(self.debugger.locals)
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
         ## self.Log.target = "File {}".format(frame.f_code.co_filename)
@@ -1983,7 +1983,7 @@ Global bindings:
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore target
-        self.infow.watch(None)
+        self.linfo.watch(None)
         del self.__target
         del self.__shell.locals
         ## del self.Log.target
@@ -3553,8 +3553,11 @@ Flaky nutshell:
         builtins.profile = self.profile
         builtins.execute = postcall(self.Execute)
         builtins.puts = postcall(lambda v: self.write(str(v)))
-        builtins.debug = self.parent.debug
-    
+        try:
+            builtins.debug = self.parent.debug
+        except AttributeError:
+            builtins.debug = monitor
+        
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
         Remove target localvars and builtins assigned for the shell->target.
