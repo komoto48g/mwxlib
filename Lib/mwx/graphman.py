@@ -1341,7 +1341,7 @@ class Frame(mwx.Frame):
             mis = OrderedDict()
             savedir = os.path.dirname(f)
             
-            with open(f, encoding='utf-8') as i:
+            with open(f) as i:
                 ## evaluation of attributes:tuple in locals
                 from numpy import nan, inf
                 import datetime
@@ -1376,7 +1376,7 @@ class Frame(mwx.Frame):
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
-            with open(f, 'w', encoding='utf-8') as o:
+            with open(f, 'w') as o:
                 pprint(tuple(new.items()), stream=o) # save all attributes
             
         except Exception as e:
