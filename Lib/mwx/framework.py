@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.1"
+__version__ = "0.52.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -339,7 +339,7 @@ def extract_words_from_tokens(tokens, sep=None, reverse=False):
         p,q = q,p
     stack = []
     words = []
-    for j,c in enumerate(tokens):
+    for j, c in enumerate(tokens):
         if c in p:
             stack.append(c)
         elif c in q:
@@ -3467,7 +3467,7 @@ Flaky nutshell:
         sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # [`] SEPARATOR_CHARS; nospace, nocomma
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # [@] SEPARATOR_CHARS;
         
-        for j,c in enumerate(tokens):
+        for j, c in enumerate(tokens):
             l, r = tokens[:j], tokens[j+1:]
             
             if c == '@':
@@ -4085,8 +4085,8 @@ Flaky nutshell:
             p = re.compile(hint, re.I)
             words = sorted([x for x in modules if p.match(x)], key=lambda s:s.upper())
             
-            j = next((k for k,w in enumerate(words) if P.match(w)),
-                next((k for k,w in enumerate(words) if p.match(w)), -1))
+            j = next((k for k, w in enumerate(words) if P.match(w)),
+                next((k for k, w in enumerate(words) if p.match(w)), -1))
             
             self.__comp_ind = j
             self.__comp_hint = hint
@@ -4118,8 +4118,8 @@ Flaky nutshell:
             p = re.compile(hint, re.I)
             words = sorted([x for x in Dir(obj) if p.match(x)], key=lambda s:s.upper())
             
-            j = next((k for k,w in enumerate(words) if P.match(w)),
-                next((k for k,w in enumerate(words) if p.match(w)), -1))
+            j = next((k for k, w in enumerate(words) if P.match(w)),
+                next((k for k, w in enumerate(words) if p.match(w)), -1))
             
             self.__comp_ind = j
             self.__comp_hint = hint
@@ -4151,8 +4151,8 @@ Flaky nutshell:
             p = re.compile(hint, re.I)
             words = sorted([x for x in Dir(obj) if p.search(x)], key=lambda s:s.upper())
             
-            j = next((k for k,w in enumerate(words) if P.match(w)),
-                next((k for k,w in enumerate(words) if p.match(w)), -1))
+            j = next((k for k, w in enumerate(words) if P.match(w)),
+                next((k for k, w in enumerate(words) if p.match(w)), -1))
             
             self.__comp_ind = j
             self.__comp_hint = hint
