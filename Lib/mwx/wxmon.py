@@ -32,13 +32,13 @@ Args:
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
+        
         self.__shellframe = parent
         self.__watchedWidget = None
         
         self.__dir = True # sort direction
         self.__items = []
-        
-        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.alist = ( # assoc list of column names
             ("typeId",    62),
