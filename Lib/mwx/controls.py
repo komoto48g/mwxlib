@@ -1212,9 +1212,6 @@ class ListCtrl(wx.ListCtrl):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
         
-        ## self.Font = wx.Font(9, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.NORMAL)
-        ## self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        
         ## if wx.VERSION < (4,1,0):
         if not hasattr(self, 'CheckItem'):
             def _Pass(*args, **kwargs):

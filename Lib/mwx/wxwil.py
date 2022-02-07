@@ -19,8 +19,6 @@ class LocalsWatcher(ListCtrl):
         ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
-        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        
         self.__dir = True # sort direction
         self.__items = []
         self.__locals = {}
