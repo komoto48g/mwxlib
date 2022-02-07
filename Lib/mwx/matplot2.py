@@ -540,20 +540,20 @@ class MatplotPanel(wx.Panel):
         """Called in the mouse event handlers
         Save the current event and overwrite evt.key with modifiers
         """
-        self.p_event = evt
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
+        
         key = self.__key
         if evt.button in (1,2,3):
             key += 'LMR'[evt.button-1] #{1:L,2:M,3:R}
-            evt.key = key
         elif evt.button in ('up', 'down'):
             key += 'wheel{}'.format(evt.button) # up/down
-            evt.key = key
+        evt.key = key
         return key
     
     def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is pressed"""
+        self.p_event = evt
         key = self._on_mouse_event(evt)
         if evt.dblclick:
             self.__isDragging = None
@@ -598,6 +598,7 @@ class MatplotPanel(wx.Panel):
     
     def on_scroll(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when scrolling the mouse wheel"""
+        self.p_event = evt
         key = self._on_mouse_event(evt)
         self.handler('{} pressed'.format(key), evt)
         self.p_event = None
