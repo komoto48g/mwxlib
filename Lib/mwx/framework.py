@@ -98,7 +98,7 @@ def _Or(p, q):
 
 
 def predicate(text, locals=None):
-    tokens = [x for x in split_into_words(text.strip()) if not x.isspace()]
+    tokens = [x for x in split_words(text.strip()) if not x.isspace()]
     j = 0
     while j < len(tokens):
         c = tokens[j]
@@ -195,31 +195,30 @@ def typename(obj, docp=False, qualp=False):
     """Typename of the obj object
     
     retval-> module:obj<doc>       when obj is callable and qualp=False
-             module:class.obj<doc> when obj is callable and qualp=True
-             module:class<doc>     when obj is a class or an instance of a class
-             repr<obj>             otherwise
+             module:class<doc>     when obj is a class or an instance object3
+             module:class.obj<doc> when obj is an atom or callable and qualp=True
+             type<obj>             otherwise
     """
+    _mod = (None, '__main__', typename.__module__)
+    
     if hasattr(obj, '__name__'): # class, module, method, function, etc.
+        name = obj.__name__
         if qualp:
             if hasattr(obj, '__qualname__'):
                 name = obj.__qualname__
-            elif hasattr(obj, 'im_class'): 
-                name = obj.im_class.__name__ + '.' + obj.__name__
-            else:
-                name = obj.__name__
-        else:
-            name = obj.__name__
         
-        if hasattr(obj, '__module__'): # module:name
-            if obj.__module__ not in (None, '__main__', 'mwx.framework'):
-                name = obj.__module__ + ':' + name
+        if hasattr(obj, '__module__'): # -> module:name
+            module = obj.__module__
+            if module not in _mod:
+                name = module + ':' + name
         
     elif hasattr(obj, '__module__'): # atom -> module.class
-        name = obj.__module__ + '.' + obj.__class__.__name__
-        
+        module = obj.__module__
+        name = obj.__class__.__name__
+        if module not in _mod:
+            name = module + '.' + name
     else:
-        ## return "{!r}<{!r}>".format(obj, pydoc.describe(obj))
-        ## return repr(obj)
+        ## return "{}<{!r}>".format(type(obj), pydoc.describe(obj))
         return str(type(obj))
     
     if docp and callable(obj) and obj.__doc__:
@@ -284,27 +283,31 @@ def get_words_hint(cmd):
 def get_words_backward(text, sep=None):
     """Get words (from text at left side of caret)"""
     tokens = split_tokens(text)[::-1]
-    words = extract_words_from_tokens(tokens, sep, reverse=1)
-    return ''.join(reversed(words))
+    return extract_words_from_tokens(tokens, sep, reverse=1)
 
 
 def get_words_forward(text, sep=None):
     """Get words (from text at right side of caret)"""
     tokens = split_tokens(text)
-    words = extract_words_from_tokens(tokens, sep)
-    return ''.join(words)
+    return extract_words_from_tokens(tokens, sep)
+
+
+def split_words(text):
+    phrases = []
+    tokens = split_tokens(text)
+    while tokens:
+        words = extract_words_from_tokens(tokens)
+        phrases.append(words or tokens.pop(0)) # extracted words or a separator
+    return phrases
 
 
 def split_tokens(text):
     lexer = shlex.shlex(text)
     lexer.wordchars += '.'
-    ## lexer.whitespace = '\r\n' # space(tab) is not a white
     lexer.whitespace = '' # nothing is white (for multiline analysis)
-    ## return list(lexer)
-    
-    p = re.compile(r"([a-zA-Z])[\"\']") # [bfru]-string, and more?
     ls = []
     n = 0
+    p = re.compile(r"([a-zA-Z])[\"\']") # check [bfru]-string
     try:
         for token in lexer:
             m = p.match(token)
@@ -316,16 +319,6 @@ def split_tokens(text):
     except ValueError:
         pass
     return ls
-
-
-def split_into_words(text):
-    phrases = []
-    tokens = split_tokens(text)
-    while tokens:
-        words = extract_words_from_tokens(tokens)
-        phrases.append(''.join(words) or tokens.pop(0)) # list extracted words or a separator
-    return phrases
-    ## return [x for x in phrases if not x.isspace()] # nospace
 
 
 def extract_words_from_tokens(tokens, sep=None, reverse=False):
@@ -355,7 +348,7 @@ def extract_words_from_tokens(tokens, sep=None, reverse=False):
         if stack: # error("unclosed-paren", ''.join(stack))
             pass
     del tokens[:j] # Erase the extracted token
-    return words   # Extracted token list (to be ''.joined to make a pyrepr)
+    return ''.join(reversed(words) if reverse else words)
 
 
 def find_modules(force=False, verbose=True):
@@ -1992,7 +1985,7 @@ Global bindings:
         nb = self.console
         j = nb.GetPageIndex(win)
         if j == -1:
-            nb.AddPage(win, title or win.__class__.__name__)
+            nb.AddPage(win, title or typename(win))
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
@@ -3392,7 +3385,8 @@ Flaky nutshell:
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
-        tokens = split_tokens(text)
+        tokens = split_words(text)
+        
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
@@ -3479,7 +3473,7 @@ Flaky nutshell:
                     r.pop(0)
                 
                 lhs = ''.join(l).strip() or '_'
-                rhs = ''.join(extract_words_from_tokens(r, sep2)).strip()
+                rhs = extract_words_from_tokens(r, sep2).strip()
                 
                 rhs = re.sub(r"(\(.*\))$",      # x@(y1,...,yn)
                              r"partial\1", rhs) # --> partial(y1,...,yn)(x)
@@ -3489,7 +3483,7 @@ Flaky nutshell:
             if c == '`':
                 f = "{rhs}={lhs}"
                 lhs = ''.join(l).strip() or '_'
-                rhs = ''.join(extract_words_from_tokens(r, sep1)).strip()
+                rhs = extract_words_from_tokens(r, sep1).strip()
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
             
             if c == '?':
@@ -3887,7 +3881,7 @@ Flaky nutshell:
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
         self.parent.handler('add_page', shell,
-                            target.__class__.__name__, show=True)
+                            typename(target), show=True)
         self.handler('shell_cloned', shell)
         shell.__root = self
         return shell
@@ -3920,7 +3914,8 @@ Flaky nutshell:
             self.CallTipCancel()
         try:
             try:
-                cmd = self.magic_interpret(split_tokens(text))
+                tokens = split_words(text)
+                cmd = self.magic_interpret(tokens)
                 obj = self.eval(cmd)
                 text = cmd
             except Exception:
