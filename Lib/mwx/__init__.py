@@ -17,11 +17,13 @@ from .framework import deb
 ## from .controls import Icon, Button, ToggleButton, TextCtrl, Choice
 
 ## matplot
-from .matplot2 import MatplotPanel
-from .matplot2g import GraphPlot
-from .matplot2lg import LinePlot
-from .matplot2lg import Histogram
-from .matplot2lg import LineProfile
+## from .matplot2 import MatplotPanel
+## from .matplot2g import GraphPlot
+## from .matplot2lg import LinePlot
+## from .matplot2lg import Histogram
+## from .matplot2lg import LineProfile
+
+## from . import graphman
 
 ## from . import mgplt3 as mgplt
 from .mgplt3 import Gplot
