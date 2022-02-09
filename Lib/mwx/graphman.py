@@ -979,6 +979,20 @@ class Frame(mwx.Frame):
         elif islayer(name):
             return name
     
+    @staticmethod
+    def register(cls):
+        """Register dummy-plug"""
+        class _Plugin(Layer):
+            def Init(self):
+                self._plug = cls(self)
+                self.layout((self._plug,), expand=0, title=None)
+        _Plugin.__module__ = cls.__module__
+        _Plugin.__name__ = cls.__name__
+        _Plugin.__doc__ = cls.__doc__
+        mod = inspect.getmodule(cls)
+        mod.Plugin = _Plugin
+        return _Plugin
+    
     def load_plug(self, root, show=False,
                   dock=False, layer=0, pos=0, row=0, prop=10000,
                   floating_pos=None, floating_size=None, force=False,
@@ -986,7 +1000,7 @@ class Frame(mwx.Frame):
         """Load plugin module
         The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
         
-        root : Layer object, module, or name of module
+        root : Layer module, or name of the module
         show : the pane is to be shown when loaded
        force : force loading even when it were already loaded
         dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
@@ -998,18 +1012,15 @@ class Frame(mwx.Frame):
         
         retval-> None if succeeded else False
         """
+        rootpath = root
         if hasattr(root, '__file__'): #<type 'module'>
-            root = root.__file__
-            
-        elif hasattr(root, '__module__'):
-            root = root.__module__
-            
-            ## If the rootname has been loaded,
-            ## we reload it referring to the filename, not modulename
-            if root in self.plugins:
-                root = self.plugins[root].__file__
+            rootpath = root.__file__
         
-        rootname = os.path.basename(root)
+        if isinstance(root, type):
+            warnings.warn("Use dummy-plug mode for debug only.", UserWarning)
+            rootpath = inspect.getsourcefile(root)
+        
+        rootname = os.path.basename(rootpath)
         if rootname.endswith(".py"):
             rootname,_ext = os.path.splitext(rootname)
         
@@ -1028,11 +1039,8 @@ class Frame(mwx.Frame):
                     plug.init_session(session)
                 return None
         
-        ## --------------------------------
-        ## 1. Import the module
-        ##    Update the include path to load correctly.
-        ## --------------------------------
-        dirname = os.path.dirname(root)
+        ## Update the include path to load the module correctly.
+        dirname = os.path.dirname(rootpath)
         if dirname:
             if os.path.isdir(dirname):
                 if dirname in sys.path:
@@ -1050,12 +1058,19 @@ class Frame(mwx.Frame):
             print("- Failed to import: {}".format(e))
             return False
         
+        ## the module must have a class `Plugin`.
+        if not hasattr(module, 'Plugin'):
+            if isinstance(root, type):
+                module.Plugin = self.register(root)
+                module.Plugin.__module__ = module.__name__ # rebase
+        
         ## --------------------------------
-        ## 2. Setup the configuration
-        ##    The module must have a class `Plugin`.
+        ## Setup the pane properties
         ## --------------------------------
         try:
+            name = module.Plugin.__module__
             title = module.Plugin.category
+            
             pane = self._mgr.GetPane(title)
             
             ## <pane:category> is already registered
@@ -1064,7 +1079,6 @@ class Frame(mwx.Frame):
                 if not isinstance(nb, aui.AuiNotebook):
                     raise NameError("Notebook name must not be the same as any other plugins")
             
-            name = module.Plugin.__module__ # rename as module plugin name
             pane = self.get_pane(name)
             
             ## <pane:name> is already registered
@@ -1082,10 +1096,10 @@ class Frame(mwx.Frame):
                     floating_pos = floating_pos or pane.floating_pos[:], # copy (pane unloaded)
                     floating_size = floating_size or pane.floating_size[:], # copy
                 )
-        except NameError as e:
+        except (AttributeError, NameError) as e:
             wx.CallAfter(wx.MessageBox,
                          "{}\n\n{}".format(e, traceback.format_exc()),
-                         "Error in loading {!r}".format(name),
+                         "Error in loading {!r}".format(module.__name__),
                          style=wx.ICON_ERROR)
             return False
         
@@ -1093,7 +1107,7 @@ class Frame(mwx.Frame):
             self.unload_plug(name) # unload once right here
         
         ## --------------------------------
-        ## 3. register the plugin
+        ## Create the plugin
         ## --------------------------------
         try:
             plug = module.Plugin(self, **kwargs)
@@ -1149,7 +1163,7 @@ class Frame(mwx.Frame):
         
         self.update_pane(name, **props)
         
-        ## register menu item
+        ## Create a menu
         if not hasattr(module, 'ID_'): # give a unique index to the module
             module.ID_ = Frame.__new_ID_
             Frame.__new_ID_ += 1
@@ -1230,7 +1244,7 @@ class Frame(mwx.Frame):
         @shell.handler.bind("shell_activated")
         def init(shell):
             plug = self.get_plug(name)
-            shell.target = plug or self # reset when unloaded
+            shell.target = plug or self # reset for unloaded plug
         init(shell)
         self.shellframe.Show()
     
@@ -1731,7 +1745,7 @@ if __name__ == '__main__':
     ## frm.load_plug("demo/template.py", show=1, force=1)
     
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
-    frm.load_plug(r"C:\usr\home\lib\python\Layer\ffmpeg_viewer.py")
+    ## frm.load_plug(r"C:\usr\home\lib\python\Layer\ffmpeg_viewer.py")
     
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewfft.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
