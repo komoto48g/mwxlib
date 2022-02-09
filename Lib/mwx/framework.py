@@ -2054,7 +2054,7 @@ Global bindings:
     def clone_shell(self, target=None):
         """Clone the current shell"""
         shell = self.current_shell
-        shell.clone(target)
+        shell.clone(target or shell.target)
         self.handler('shell_cloned', shell)
     
     def close_shell(self):
@@ -3872,16 +3872,13 @@ Flaky nutshell:
         pr.runcall(obj, *args, **kwargs)
         pr.print_stats()
     
-    def clone(self, target=None):
-        if target is None:
-            target = self.target
+    def clone(self, target):
         if not hasattr(target, '__dict__'):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
         
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
-        self.parent.handler('add_page', shell,
-                            typename(target), show=True)
+        self.parent.handler('add_page', shell, typename(target), show=True)
         self.handler('shell_cloned', shell)
         shell.__root = self
         return shell
