@@ -7,9 +7,6 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import warnings
 import wx
-import wx.aui
-import wx.stc
-import wx.media
 import wx.lib.eventwatcher as ew
 try:
     from framework import where
@@ -53,8 +50,11 @@ Args:
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        ## self.ew = ew
         self.add_module = ew.addModuleEvents
+        
+        from wx import adv, aui, stc, media
+        for module in (adv, aui, stc, media):
+            self.add_module(module)
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -66,9 +66,6 @@ Args:
     ## --------------------------------
     
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
-    ew.addModuleEvents(wx.aui) # + some additives
-    ew.addModuleEvents(wx.stc)
-    ew.addModuleEvents(wx.media)
     
     ## Events that should not be watched by default
     ew._noWatchList = [

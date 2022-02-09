@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.2"
+__version__ = "0.52.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2023,13 +2023,17 @@ Global bindings:
                 o.write(command)
     
     def other_editor(self, p=1):
-        "Focus moves to another page of ghost editor (no loop)"
-        self.ghost.Selection += p
+        "Focus moves to other page (no loop)"
+        win = wx.Window.FindFocus()
+        nb = win.Parent
+        if nb in (self.console, self.ghost):
+            nb.Selection += p
     
     def other_window(self, p=1):
         "Focus moves to other window"
-        win = self.current_editor
-        pages = [w for w in self.all_editors() if w.IsShownOnScreen()]
+        win = wx.Window.FindFocus()
+        pages = [win for win in self.all_pages()
+                 if isinstance(win, EditorInterface) and win.IsShownOnScreen()]
         if win in pages:
             j = (pages.index(self.current_editor) + p) % len(pages)
             pages[j].SetFocus()
@@ -2073,17 +2077,17 @@ Global bindings:
     ## Find text dialog
     ## --------------------------------
     
-    def all_editors(self):
+    def all_pages(self):
         for nb in (self.console, self.ghost):
-            for x in nb.Children:
-                if isinstance(x, EditorInterface):
-                    yield x
+            for j in range(nb.PageCount):
+                yield nb.GetPage(j)
     
     @property
     def current_editor(self):
         win = wx.Window.FindFocus()
-        if win in self.all_editors():
-            return win
+        if win in self.all_pages():
+            if isinstance(win, EditorInterface):
+                return win
         if win.Parent:
             if self.ghost in win.Parent.Children: # floating ghost ?
                 return self.ghost.CurrentPage # select the ghost editor
@@ -2092,9 +2096,9 @@ Global bindings:
     @property
     def current_shell(self):
         win = wx.Window.FindFocus()
-        pages = (x for x in self.console.Children if isinstance(x, Nautilus))
-        if win in pages:
-            return win
+        if win in self.all_pages():
+            if isinstance(win, Nautilus):
+                return win
         return self.__shell
     
     def OnFilterText(self, evt):
@@ -2759,7 +2763,7 @@ class Editor(EditWindow, EditorInterface):
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
-        def fork(v):
+        def fork_up(v):
             """Fork mouse events to the parent"""
             try:
                 self.parent.handler(self.handler.event, v)
@@ -2768,9 +2772,9 @@ class Editor(EditWindow, EditorInterface):
         
         self.handler.update({ #<Editor.handler>
             None : {
-              '*button* dclick' : [ None, skip, fork ],
-             '*button* pressed' : [ None, skip, fork ],
-            '*button* released' : [ None, skip, fork ],
+              '*button* dclick' : [ None, skip, fork_up ],
+             '*button* pressed' : [ None, skip, fork_up ],
+            '*button* released' : [ None, skip, fork_up ],
                     'focus_set' : [ None, skip, self.on_focus_set ],
             },
         })
@@ -3020,11 +3024,17 @@ Flaky nutshell:
         def fork(v):
             self.handler(self.handler.event, v)
         
+        def fork_up(v):
+            self.parent.handler(self.handler.event, v)
+        
         self.handler.update({ #<Nautilus.handler>
             None : {
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
+              '*button* dclick' : [ None, skip, fork_up ],
+             '*button* pressed' : [ None, skip, fork_up ],
+            '*button* released' : [ None, skip, fork_up ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
