@@ -23,11 +23,9 @@ from .framework import deb
 ## from .matplot2lg import Histogram
 ## from .matplot2lg import LineProfile
 
-## from . import graphman
-
-## from . import mgplt3 as mgplt
-from .mgplt3 import Gplot
-from .mgplt3 import GplotFrame
+## Gnuplot
+## from .mgplt import Gplot
+## from .mgplt import GplotFrame
 
 ## mwx.reload
 from importlib import reload
