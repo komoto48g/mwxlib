@@ -195,31 +195,30 @@ def typename(obj, docp=False, qualp=False):
     """Typename of the obj object
     
     retval-> module:obj<doc>       when obj is callable and qualp=False
-             module:class.obj<doc> when obj is callable and qualp=True
-             module:class<doc>     when obj is a class or an instance of a class
-             repr<obj>             otherwise
+             module:class<doc>     when obj is a class or an instance object3
+             module:class.obj<doc> when obj is an atom or callable and qualp=True
+             type<obj>             otherwise
     """
+    _mod = (None, '__main__', typename.__module__)
+    
     if hasattr(obj, '__name__'): # class, module, method, function, etc.
+        name = obj.__name__
         if qualp:
             if hasattr(obj, '__qualname__'):
                 name = obj.__qualname__
-            elif hasattr(obj, 'im_class'): 
-                name = obj.im_class.__name__ + '.' + obj.__name__
-            else:
-                name = obj.__name__
-        else:
-            name = obj.__name__
         
-        if hasattr(obj, '__module__'): # module:name
-            if obj.__module__ not in (None, '__main__', 'mwx.framework'):
-                name = obj.__module__ + ':' + name
+        if hasattr(obj, '__module__'): # -> module:name
+            module = obj.__module__
+            if module not in _mod:
+                name = module + ':' + name
         
     elif hasattr(obj, '__module__'): # atom -> module.class
-        name = obj.__module__ + '.' + obj.__class__.__name__
-        
+        module = obj.__module__
+        name = obj.__class__.__name__
+        if module not in _mod:
+            name = module + '.' + name
     else:
-        ## return "{!r}<{!r}>".format(obj, pydoc.describe(obj))
-        ## return repr(obj)
+        ## return "{}<{!r}>".format(type(obj), pydoc.describe(obj))
         return str(type(obj))
     
     if docp and callable(obj) and obj.__doc__:
@@ -1986,7 +1985,7 @@ Global bindings:
         nb = self.console
         j = nb.GetPageIndex(win)
         if j == -1:
-            nb.AddPage(win, title or win.__class__.__name__)
+            nb.AddPage(win, title or typename(win))
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
@@ -3882,7 +3881,7 @@ Flaky nutshell:
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
         self.parent.handler('add_page', shell,
-                            target.__class__.__name__, show=True)
+                            typename(target), show=True)
         self.handler('shell_cloned', shell)
         shell.__root = self
         return shell
