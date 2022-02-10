@@ -233,7 +233,7 @@ unloadable : flag to set the Layer to be unloadable
     histogram = property(lambda self: self.__parent.histogram)
     selected_view = property(lambda self: self.__parent.selected_view)
     
-    pane = property(lambda self: self.__parent.get_pane(self))
+    ## pane = property(lambda self: self.__parent.get_pane(self))
     
     thread_type = Thread
     thread = None # worker <Thread>
@@ -278,8 +278,9 @@ unloadable : flag to set the Layer to be unloadable
                 art.remove()
             self.__artists.remove(art)
     
-    def __init__(self, parent, **kwargs):
-        ControlPanel.__init__(self, parent, size=(130,24)) # keep minimum size
+    def __init__(self, parent, session=None, **kwargs):
+        kwargs.setdefault('size', (130, 240)) # keep minimum size
+        ControlPanel.__init__(self, parent, **kwargs)
         mwx.CtrlInterface.__init__(self)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
@@ -346,10 +347,9 @@ unloadable : flag to set the Layer to be unloadable
         
         try:
             self.Init()
-            
-            session = kwargs.get('session')
             if session:
-                wx.CallAfter(self.init_session, session)
+                self.init_session(session)
+                ## wx.CallAfter(self.init_session, session)
         except RuntimeError:
             if parent: # unless stand-alone Layer <wx.Window> object is intended ?
                 raise
@@ -902,7 +902,7 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         try:
             if not isinstance(plug.dockable, bool): # prior to kwargs
-                kwargs.update(dock = plug.dockable)
+                kwargs.update(dock=plug.dockable)
         except AttributeError:
             pass
         
@@ -982,21 +982,23 @@ class Frame(mwx.Frame):
     @staticmethod
     def register(cls):
         """Register dummy-plug"""
-        class _Plugin(Layer):
+        class dummyPlug(Layer):
             def Init(self):
-                self._plug = cls(self)
-                self.layout((self._plug,), expand=0, title=None)
-        _Plugin.__module__ = cls.__module__
-        _Plugin.__name__ = cls.__name__
-        _Plugin.__doc__ = cls.__doc__
+                self.plug = cls(self)
+                cls.parent = property(lambda p: self.parent)
+                cls.message = property(lambda p: self.message)
+                self.layout((self.plug,), expand=2, title=None)
+        dummyPlug.__module__ = cls.__module__
+        dummyPlug.__name__ = cls.__name__
+        dummyPlug.__doc__ = cls.__doc__
         mod = inspect.getmodule(cls)
-        mod.Plugin = _Plugin
-        return _Plugin
+        mod.Plugin = dummyPlug
+        return dummyPlug
     
     def load_plug(self, root, show=False,
                   dock=False, layer=0, pos=0, row=0, prop=10000,
                   floating_pos=None, floating_size=None, force=False,
-                  **kwargs):
+                  session=None, **kwargs):
         """Load plugin module
         The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
         
@@ -1034,7 +1036,6 @@ class Frame(mwx.Frame):
         if plug:
             if not force:
                 self.update_pane(rootname, **props)
-                session = kwargs.get('session')
                 if session:
                     plug.init_session(session)
                 return None
@@ -1107,10 +1108,10 @@ class Frame(mwx.Frame):
             self.unload_plug(name) # unload once right here
         
         ## --------------------------------
-        ## Create the plugin
+        ## Create and register the plugin
         ## --------------------------------
         try:
-            plug = module.Plugin(self, **kwargs)
+            plug = module.Plugin(self, session, **kwargs)
             
         except Exception as e:
             wx.CallAfter(wx.MessageBox,
