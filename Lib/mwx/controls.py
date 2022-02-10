@@ -900,7 +900,7 @@ Args:
     
     def __init__(self, parent, label='',
                  handler=None, icon=None, tip='', **kwargs):
-        kwargs['style'] = kwargs.get('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
+        kwargs.setdefault('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:

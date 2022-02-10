@@ -1902,15 +1902,17 @@ Global bindings:
        show : True, False, otherwise None:toggle (in the notebook)
         """
         for pane in self._mgr.GetAllPanes():
-            if win is pane.window:
-                nb = win
+            nb = pane.window
+            if nb is win:
                 break
-        else:
-            for nb in (self.console, self.ghost):
-                j = nb.GetPageIndex(win) # check if nb has win
+            if isinstance(nb, aui.AuiNotebook):
+                j = nb.GetPageIndex(win)
                 if j != -1 and j != nb.Selection:
                     nb.Selection = j # move focus to AuiTab?
                     break
+        else:
+            print("- No such window in any pane: {}.".format(win))
+            return
         if show is None:
             show = not nb.IsShown()
         self._mgr.GetPane(nb).Show(show)
@@ -1981,7 +1983,15 @@ Global bindings:
         del self.__shell.locals
         ## del self.Log.target
     
+    def show_page(self, win, show=True, focus=True):
+        """Show the notebook page and move the focus"""
+        wnd = win if focus else wx.Window.FindFocus() # original focus
+        self.PopupWindow(win, show)
+        if win.Shown:
+            wnd.SetFocus()
+    
     def add_page(self, win, title=None, show=True):
+        """Add page to the console"""
         nb = self.console
         j = nb.GetPageIndex(win)
         if j == -1:
@@ -1989,13 +1999,8 @@ Global bindings:
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
-    def show_page(self, win, show=True, focus=True):
-        wnd = win if focus else wx.Window.FindFocus() # original focus
-        self.PopupWindow(win, show)
-        if win.Shown:
-            wnd.SetFocus()
-    
     def remove_page(self, win):
+        """Remove page from the console"""
         nb = self.console
         j = nb.GetPageIndex(win)
         if j != -1:
@@ -2005,6 +2010,7 @@ Global bindings:
         win.Show(0)
     
     def add_history(self, command, noerr=None):
+        """Add command:text to the history buffer"""
         ed = self.History
         ed.ReadOnly = 0
         ## ed.write(command + os.linesep)
@@ -4255,9 +4261,7 @@ Note:
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
         """
-    
-    if 'introText' not in kwargs:
-        kwargs['introText'] = "mwx {}".format(__version__) + quote_unqoute
+    kwargs.setdefault('introText', "mwx {}".format(__version__) + quote_unqoute)
     
     app = app or wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
