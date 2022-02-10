@@ -14,11 +14,17 @@ except ImportError:
 
 class LocalsWatcher(ListCtrl):
     """Locals info watcher
+
+Args:
+    parent : shellframe
     """
+    parent = property(lambda self: self.__shellframe)
+    
     def __init__(self, parent, **kwargs):
         ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
+        self.__shellframe = parent
         self.__dir = True # sort direction
         self.__items = []
         self.__locals = {}
@@ -32,12 +38,15 @@ class LocalsWatcher(ListCtrl):
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         
-        dispatcher.connect(receiver=self.push, signal='Interpreter.push')
-    
-    def push(self, command, more):
-        """Receiver for Interpreter.push signal."""
+        dispatcher.connect(receiver=self._update, signal='Interpreter.push')
+        dispatcher.connect(receiver=self._update, signal="Shell.addHistory")
+        dispatcher.connect(receiver=self._update, signal="Shell.clearHistory")
+        
+    def _update(self, *args, **kwargs):
         if not self:
-            dispatcher.disconnect(receiver=self.push, signal='Interpreter.push')
+            dispatcher.disconnect(receiver=self._update, signal='Interpreter.push')
+            dispatcher.disconnect(receiver=self._update, signal="Shell.addHistory")
+            dispatcher.disconnect(receiver=self._update, signal="Shell.clearHistory")
             return
         self.update(self.__locals)
     
@@ -51,6 +60,7 @@ class LocalsWatcher(ListCtrl):
             return
         self.__locals = locals
         self.update(self.__locals)
+        self.parent.handler("show_page", self)
     
     def unwatch(self):
         self.__locals = None
@@ -109,3 +119,12 @@ class LocalsWatcher(ListCtrl):
             self.Select(i, item in ls)
             if item == f:
                 self.Focus(i)
+
+
+if __name__ == "__main__":
+    from graphman import Frame
+    app = wx.App()
+    frm = Frame(None)
+    frm.load_plug(LocalsWatcher, show=1) #>>> self.plug.watch(locals())
+    frm.Show()
+    app.MainLoop()
