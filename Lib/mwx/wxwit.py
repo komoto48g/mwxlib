@@ -48,9 +48,8 @@ class InfoList(wx.ListCtrl):
                              style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         
         self.data = []
-        
-        self.alist = ( # assoc list of column names
-            ("key",   140),
+        self.alist = (
+            ("object", 140),
             ("value", 160),
         )
         for k, (header, w) in enumerate(self.alist):
@@ -172,8 +171,11 @@ Args:
                 (1, "&Dive into the shell", Icon('core'),
                     lambda v: self.parent.clone_shell(self.target)),
                     
-                (2, "&Watch the event", Icon('proc'),
+                (2, "&Watch the event", Icon('ghost'),
                     lambda v: self.parent.monitor.watch(self.target)),
+                
+                (3, "&Watch the locals", Icon('info'),
+                    lambda v: self.parent.linfo.watch(self.target.__dict__)),
                 (),
                 (10, "&Inspection Tool", Icon('inspect'),
                      lambda v: watchit(self.target)),
@@ -193,14 +195,9 @@ def miniIcon(key, size=(16,16)):
 
 
 if __name__ == "__main__":
-    import mwx
+    from graphman import Frame
     app = wx.App()
-    frm = mwx.Frame(None)
-    if 1:
-        self = frm.shellframe
-        self.wit = Inspector(self)
-        self.Show()
-        self.add_page(self.wit)
-        self.rootshell.write("self.shellframe.wit.watch(self.shellframe.wit)")
+    frm = Frame(None)
+    frm.load_plug(Inspector, show=1) #>>> self.plug.watch(self.plug)
     frm.Show()
     app.MainLoop()

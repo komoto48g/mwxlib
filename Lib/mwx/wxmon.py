@@ -37,7 +37,7 @@ Args:
         self.__dir = True # sort direction
         self.__items = []
         
-        self.alist = ( # assoc list of column names
+        self.alist = (
             ("typeId",    62),
             ("typeName", 200),
             ("source",   200),
@@ -265,14 +265,9 @@ Args:
 
 
 if __name__ == "__main__":
-    import mwx
+    from graphman import Frame
     app = wx.App()
-    frm = mwx.Frame(None)
-    if 1:
-        self = frm.shellframe
-        self.mon = EventMonitor(self)
-        self.Show()
-        self.add_page(self.mon)
-        self.rootshell.write("self.shellframe.mon.watch(self.shellframe.mon)")
+    frm = Frame(None)
+    frm.load_plug(EventMonitor, show=1) #>>> self.plug.watch(self.plug)
     frm.Show()
     app.MainLoop()
