@@ -103,26 +103,6 @@ cam = PyEmbeddedImage(
     b'tKCxfQAAAABJRU5ErkJggg==')
 
 #----------------------------------------------------------------------
-cam2 = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADMElEQVR42nWSD2iUZRzHP8/t'
-    b'/rRzt727bbfb7nbO+9O1OXLFrFGaOUlFndKyKDMnFRgmHCEaEUVjDHEkZRZFwchYKY2lOIaC'
-    b'1AxXkgrZbKw1Z2xSOc+2q9s57t67e3rubKlJDy/P8/5+v+/7fb7v9/cT/M9a231p08nx2H7E'
-    b'jZyUZMJFUy/d9c1sTiz+9JdV58PxXiHhZnBmTYaCtxHb3x6m/2nPvfMd1u+zBIV7BmXHGje1'
-    b'jjtuA1dq5lviGT2F651h6h2yu3V9dXOd1RATBbvPyd4N/n9BWRHyH8mzCXmjlnldffACGcWh'
-    b'B8ueE/ltZ+XexnnZynWAQGSqmec/H2e2rA/q7P9pgs9HYgjbG9/KW4VfD2vdBdT6SinINWM0'
-    b'iGzWqPZ8Q5LpuJ7F7Dp+EZH36gk5/WeMuXdWUGm3UlmcR43TxhyTIKgZqS4yYTFCPAkD4QSD'
-    b'f+ik9DiJhM6u3iGEdccxee1aEk/AjVuzsthrJ1hipa7UTMAmONA/ytnhy9QFnTy1yMdIVHJ6'
-    b'IsHE5F+0Hf4BkRs6ImeSBioUgV/d/mStk6DdTJVmYON7X3P83K/YizUmr0Z4ZIGLzm1LGIqk'
-    b'GZ2Ks+2jPoRla5eMi1zKfS6WqNs33lNKoNDC4TMX2bn/NE2N9+OrKGH0Upgver6jvfk+Ghd6'
-    b'+XkyzhPtPQjT851St2g4vS4aq4rZpAiKrEbaewf5+NQYS+urSCvrhbL+xKkhNj8wlx2ra7gS'
-    b'01n+ehfC2Nwhk3kOypSCZf4iQvVlqn2CnoHfaT00gK1EI8dkUsbpRMMRXnv0btYtKEdPpXho'
-    b'ZyciZ8MHMlXopsLvwqs8aFvmYY7ZwFg0xd6vRuj78bJqvEF1N83DNU5CDQHm5RsJTydY+con'
-    b'qvT4PnnzxD3TtJQ9j83nwlSSkYjOmfEIV6Nxim0WFno0ApoJn93IiwcG6O45qX6t6S0pcx2Y'
-    b'y0tIpyXJNLSs9LO9wcuVmTTj02miusSm5sJjM+CwGmg5dJ43P/uS1s3LW8SzR8Ze6Ojoen92'
-    b'ZGeVbFnf8Nv2VdXCo1ksKUWco6ZxLBJP7Ds6mHq3q8+1e+u6LS+vCHz4N0CfKpPuaNm3AAAA'
-    b'AElFTkSuQmCC')
-
-#----------------------------------------------------------------------
 close = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAIAAAD9iXMrAAAABnRSTlMAAAAAAABupgeRAAAC'
     b'E0lEQVR42gEIAvf9AQAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQT/'
@@ -310,6 +290,23 @@ image = PyEmbeddedImage(
     b'0yLD298cDILuUQwR8fUMTECnfv/2j4GdlQkYjSzsAAHEuO3AVQZmfmlgamQC++nPr+9lv368'
     b'L/355RPDly9fGP7+ZQApZOAWFANa8IPhFyhMgGmfGRh4T56/+gQQYADZtXRJ8ecNFwAAAABJ'
     b'RU5ErkJggg==')
+
+#----------------------------------------------------------------------
+info = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAC'
+    b'jElEQVQ4jXWSTUgUYRzGn3nnfWedmB1TWmtclvVrT5WrqVEaGhihGZ5CrJN02ES8BB48voeo'
+    b'oG59IR2CCKOvQ2UpRGGUeCh1DTJC8CN1vYi6Xzo7szPTpcJt1+f08uf5Pfz/L4+AHeKckymj'
+    b'rlNk9JJt2UHbsRUikAQhJGxa6YEa9uUJ59zeyQh/H239Q2USoyOyLGs+n1dR3SqYRGGYacSi'
+    b'USwvrSS2dT1imOnWN9fPzmUEtPUPlTFGJ8pKS1RNO0Cwi1ZWV62F+cW45RhHXl9pnwcAwjkn'
+    b'EqMjueA8JmQEeDVNLCn1u0VBGuacEwAgU0ZdpyzLWi64t1nNGSLLed5Jo7YDAAihtNvn8yr/'
+    b'r6ubDm6/j0E3naxTfF6vQikLAQBxbLtSdatZpvaqPehtzp4DgLo3H46D6j8BjsIkmmV6Fd7K'
+    b'CQMAoxS2bSkAQAQiJEwjvas5l9JmGoSICQCghJBwNBZt8ng8uwJKagb+5GOw1C+YLj/CZiuI'
+    b'IE4AADWt9MDy0kqNx+PJ+Mi+lnwAwPnScfz8OohDDd0oLA5iPTIN9umuU7CvaO4FAIFzTqat'
+    b'Yz/8pf5yr6aJO0NUfRIVyQc43n4Dz8c3MTS+gHuXm6BIKYw9C22ZevycODo66pTXd76Nx+Jd'
+    b'IhWZ6nb/60Ng4yYOHr2AwuJKXH00Ad2wkNRN1B/2wyXns/XIVIMIALOfBzcCjR1PY5uJM2tr'
+    b'a3kiFSVGGQy2H87iQ2hlDbCEPMxFYghWeBAoMvHtw7WkmdrqyqgZ55xMGrUdVHKFHMuuti3L'
+    b'XVXwPXWiaMpV2dgjFmhBbETCmBm7lbDMVN+piy8HMnu6i97dbzkpupQ7trkdIEyeTevJntOh'
+    b'4Y8A8BuXZvYCNsW+rAAAAABJRU5ErkJggg==')
 
 #----------------------------------------------------------------------
 inspect = PyEmbeddedImage(
