@@ -905,8 +905,8 @@ Args:
         
         if handler:
             self.Bind(wx.EVT_BUTTON, handler)
-        tip = '\n  '.join(filter(None, (tip,
-                                        handler and handler.__doc__)))
+        
+        tip = '\n  '.join(filter(None, (tip, handler and handler.__doc__)))
         self.ToolTip = tip.strip()
         self.icon = icon
     
@@ -955,8 +955,8 @@ Note:
         
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, handler)
-        tip = '\n  '.join(filter(None, (tip,
-                                        handler and handler.__doc__)))
+        
+        tip = '\n  '.join(filter(None, (tip, handler and handler.__doc__)))
         self.ToolTip = tip.strip()
         self.icon = icon
 

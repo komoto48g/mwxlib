@@ -279,7 +279,7 @@ unloadable : flag to set the Layer to be unloadable
             self.__artists.remove(art)
     
     def __init__(self, parent, session=None, **kwargs):
-        kwargs.setdefault('size', (130, 240)) # keep minimum size
+        kwargs.setdefault('size', (130, 24)) # keep minimum size
         ControlPanel.__init__(self, parent, **kwargs)
         mwx.CtrlInterface.__init__(self)
         
@@ -980,20 +980,22 @@ class Frame(mwx.Frame):
             return name
     
     @staticmethod
-    def register(cls):
-        """Register dummy-plug"""
-        class dummyPlug(Layer):
+    def register(cls, rebase=None):
+        """Register dummy-plug <module.Frame.register.<locals>._Plugin>
+        """
+        module = rebase or inspect.getmodule(cls) # rebsae or __main__
+        class _Plugin(Layer):
             def Init(self):
                 self.plug = cls(self)
                 cls.parent = property(lambda p: self.parent)
                 cls.message = property(lambda p: self.message)
                 self.layout((self.plug,), expand=2, title=None)
-        dummyPlug.__module__ = cls.__module__
-        dummyPlug.__name__ = cls.__name__
-        dummyPlug.__doc__ = cls.__doc__
-        mod = inspect.getmodule(cls)
-        mod.Plugin = dummyPlug
-        return dummyPlug
+        ## _Plugin.__module__ = cls.__module__ # __main__
+        _Plugin.__module__ = module.__name__
+        _Plugin.__name__ = cls.__name__ + str("~")
+        _Plugin.__doc__ = cls.__doc__
+        module.Plugin = _Plugin
+        return _Plugin
     
     def load_plug(self, root, show=False,
                   dock=False, layer=0, pos=0, row=0, prop=10000,
@@ -1003,6 +1005,8 @@ class Frame(mwx.Frame):
         The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
         
         root : Layer module, or name of the module
+               A wx.Window object can be given (called 'dummy-plug'),
+               but don't use this mode in release versions.
         show : the pane is to be shown when loaded
        force : force loading even when it were already loaded
         dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
@@ -1019,7 +1023,6 @@ class Frame(mwx.Frame):
             rootpath = root.__file__
         
         if isinstance(root, type):
-            warnings.warn("Use dummy-plug mode for debug only.", UserWarning)
             rootpath = inspect.getsourcefile(root)
         
         rootname = os.path.basename(rootpath)
@@ -1040,6 +1043,9 @@ class Frame(mwx.Frame):
                     plug.init_session(session)
                 return None
         
+        ## --------------------------------
+        ## Do import / reload the module
+        ## --------------------------------
         ## Update the include path to load the module correctly.
         dirname = os.path.dirname(rootpath)
         if dirname:
@@ -1062,8 +1068,14 @@ class Frame(mwx.Frame):
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                module.Plugin = self.register(root)
-                module.Plugin.__module__ = module.__name__ # rebase
+                warnings.warn("Use dummy-plug mode for debug only.", UserWarning)
+                module.__dummy_plug__ = root
+                self.register(root, module)
+        else:
+            if hasattr(module, '__dummy_plug__'):
+                root = module.__dummy_plug__         # old class (imported)
+                cls = getattr(module, root.__name__) # new class (reloaded)
+                self.register(cls, module)
         
         ## --------------------------------
         ## Setup the pane properties
