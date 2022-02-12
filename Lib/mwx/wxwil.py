@@ -6,13 +6,14 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import wx
 from wx.py import dispatcher
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
     from controls import ListCtrl
 except ImportError:
     from .controls import ListCtrl
 
 
-class LocalsWatcher(ListCtrl):
+class LocalsWatcher(ListCtrl, ListCtrlAutoWidthMixin):
     """Locals info watcher
 
 Args:
@@ -23,6 +24,7 @@ Args:
     def __init__(self, parent, **kwargs):
         ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        ListCtrlAutoWidthMixin.__init__(self)
         
         self.__shellframe = parent
         self.__dir = True # sort direction
@@ -60,7 +62,7 @@ Args:
             return
         self.__locals = locals
         self.update(self.__locals)
-        self.parent.handler("show_page", self)
+        self.parent.handler("show_page", self, focus=0)
     
     def unwatch(self):
         self.__locals = None
