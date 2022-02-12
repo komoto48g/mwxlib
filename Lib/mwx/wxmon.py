@@ -8,6 +8,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import warnings
 import wx
 import wx.lib.eventwatcher as ew
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
     from framework import where
     from controls import CheckList
@@ -16,7 +17,7 @@ except ImportError:
     from .controls import CheckList
 
 
-class EventMonitor(CheckList):
+class EventMonitor(CheckList, ListCtrlAutoWidthMixin):
     """Event monitor
 
 Args:
@@ -28,6 +29,7 @@ Args:
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        ListCtrlAutoWidthMixin.__init__(self)
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
