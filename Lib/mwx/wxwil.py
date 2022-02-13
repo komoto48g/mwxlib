@@ -7,13 +7,9 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import wx
 from wx.py import dispatcher
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-try:
-    from controls import ListCtrl
-except ImportError:
-    from .controls import ListCtrl
 
 
-class LocalsWatcher(ListCtrl, ListCtrlAutoWidthMixin):
+class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
     """Locals info watcher
 
 Args:
@@ -22,7 +18,7 @@ Args:
     parent = property(lambda self: self.__shellframe)
     
     def __init__(self, parent, **kwargs):
-        ListCtrl.__init__(self, parent,
+        wx.ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         
@@ -43,7 +39,7 @@ Args:
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
         dispatcher.connect(receiver=self._update, signal="Shell.addHistory")
         dispatcher.connect(receiver=self._update, signal="Shell.clearHistory")
-        
+    
     def _update(self, *args, **kwargs):
         if not self:
             dispatcher.disconnect(receiver=self._update, signal='Interpreter.push')
@@ -98,6 +94,14 @@ Args:
             self.SetItem(i, 1, vstr)
             self.blink(i)
             ## self.EnsureVisible(i)
+    
+    def blink(self, i):
+        if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
+            self.SetItemBackgroundColour(i, "yellow")
+            def reset_color():
+                if self and i < self.ItemCount:
+                    self.SetItemBackgroundColour(i, 'white')
+            wx.CallAfter(wx.CallLater, 1000, reset_color)
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
