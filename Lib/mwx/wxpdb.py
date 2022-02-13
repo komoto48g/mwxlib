@@ -42,6 +42,14 @@ Args:
     parent : shellframe
      stdin : shell.interp.stdin
     stdout : shell.interp.stdout
+
+Key bindings:
+    C-S-h  : help(pdb)
+      C-g  : quit
+      C-q  : quit
+      C-n  : next
+      C-r  : return
+      C-s  : step
     """
     indent = "  "
     prefix1 = "> "
@@ -182,7 +190,6 @@ Args:
         binder, widget = next(item for item in self.__binders
                               if item[0].typeId == evt.EventType)
         self.unhook(binder, widget)
-        self.target = widget
         self.set_trace()
         evt.Skip()
         ## go away, but no chance to send [debug_end]...
