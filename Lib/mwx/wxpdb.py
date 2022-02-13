@@ -79,7 +79,6 @@ Key bindings:
         
         self.__shellframe = parent
         self.__interactive = None
-        self.__binders = []
         self.prompt = self.indent + '(Pdb) ' # default pdb prompt
         if not self.skip:
             self.skip = set()
@@ -181,30 +180,6 @@ Key bindings:
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
         wx.CallAfter(self.logger.recenter)
-    
-    ## --------------------------------
-    ## wx.Event hook interfaces
-    ## --------------------------------
-    
-    def _hook(self, evt):
-        binder, widget = next(item for item in self.__binders
-                              if item[0].typeId == evt.EventType)
-        self.unhook(binder, widget)
-        self.set_trace()
-        evt.Skip()
-        ## go away, but no chance to send [debug_end]...
-    
-    def hook(self, binder, widget):
-        item = (binder, widget)
-        if item not in self.__binders:
-            widget.Bind(binder, self._hook)
-            self.__binders.append(item)
-    
-    def unhook(self, binder, widget):
-        item = (binder, widget)
-        if item in self.__binders:
-            widget.Unbind(binder, handler=self._hook)
-            self.__binders.remove(item)
     
     ## --------------------------------
     ## Override Bdb methods
