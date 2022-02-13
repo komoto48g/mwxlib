@@ -1713,9 +1713,9 @@ Global bindings:
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
                                    stdout=self.__shell.interp.stdout,
-                                   skip=(Debugger.__module__,
-                                         EventMonitor.__module__))
-        
+                                   skip=['wxpdb', 'wxmon', 'warnings',
+                                         'wx.core', 'wx.lib.eventwatcher'],
+                                   )
         self.__inspector = Inspector(self)
         self.__monitor = EventMonitor(self)
         self.__info = LocalsWatcher(self)
@@ -2112,7 +2112,6 @@ Global bindings:
         win = self.current_editor
         text = win.topic_at_caret
         if not text:
-            ## win.apply_filter(0, 0)
             self.message("- No word to filter")
             for i in range(2):
                 win.SetIndicatorCurrent(i)
@@ -2127,7 +2126,6 @@ Global bindings:
             pos = raw.find(word, pos+1)
             if pos < 0:
                 break
-            ## win.apply_filter(pos, lw)
             for i in range(2):
                 win.SetIndicatorCurrent(i)
                 win.IndicatorFillRange(pos, lw)
@@ -2402,13 +2400,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         
         for key, value in spec.items():
             self.StyleSetSpec(getattr(stc, key), value)
-    
-    ## def apply_filter(self, pos, length):
-    ##     if wx.VERSION < (4,1,0):
-    ##         self.StartStyling(pos, 0x1f)
-    ##     else:
-    ##         self.StartStyling(pos)
-    ##     self.SetStyling(length, stc.STC_P_WORD3)
     
     def match_paren(self):
         cur = self.point
@@ -2984,7 +2975,6 @@ Flaky nutshell:
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__target = target # see interp <wx.py.interpreter.Interpreter>
-        self.__root = None # reference to the root of the clone
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -3897,7 +3887,6 @@ Flaky nutshell:
         shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
         self.parent.handler('add_page', shell, typename(target), show=True)
         self.handler('shell_cloned', shell)
-        shell.__root = self
         return shell
     
     ## --------------------------------

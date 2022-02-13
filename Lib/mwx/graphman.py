@@ -262,9 +262,6 @@ unloadable : flag to set the Layer to be unloadable
         else:
             self._remove_artists(*args)
     
-    ## def set_artists(self, target, *args): # to be deprecated
-    ##     self.attach_artists(target.axes, *args)
-    
     def _add_artists(self, axes, *args): # to be deprecated
         for art in args:
             if art.axes:
