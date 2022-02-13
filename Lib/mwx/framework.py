@@ -1713,8 +1713,11 @@ Global bindings:
         self.__debugger = Debugger(self,
                                    stdin=self.__shell.interp.stdin,
                                    stdout=self.__shell.interp.stdout,
-                                   skip=['wxpdb', 'wxmon', 'warnings',
-                                         'wx.core', 'wx.lib.eventwatcher'],
+                                   skip=[Debugger.__module__,
+                                         EventMonitor.__module__,
+                                         'warnings',
+                                         'wx.core',
+                                         'wx.lib.eventwatcher'],
                                    )
         self.__inspector = Inspector(self)
         self.__monitor = EventMonitor(self)
