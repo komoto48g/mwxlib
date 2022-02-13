@@ -11,20 +11,46 @@ import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
     from framework import where
-    from controls import CheckList
 except ImportError:
     from .framework import where
-    from .controls import CheckList
+
+if wx.VERSION < (4,1,0):
+    from wx.lib.mixins.listctrl import CheckListCtrlMixin
+    
+    class CheckList(wx.ListCtrl, CheckListCtrlMixin):
+        def __init__(self, *args, **kwargs):
+            wx.ListCtrl.__init__(self, *args, **kwargs)
+            CheckListCtrlMixin.__init__(self)
+            
+            self.ToolTip = ''
+            self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
+
+else:
+    class CheckList(wx.ListCtrl):
+        def __init__(self, *args, **kwargs):
+            wx.ListCtrl.__init__(self, *args, **kwargs)
+            
+            ## To avoid $BUG wx 4.1.1 (but default Tooltip will disappear)
+            self.ToolTip = ''
+            self.EnableCheckBoxes()
 
 
 class EventMonitor(CheckList, ListCtrlAutoWidthMixin):
     """Event monitor
+
+Attributes:
+    parent : shellframe
+    target : An widget to monitor
+    dummy_hook : If True, the debugger calls handlers sequentially.
+                 If False, handlers are hooked in true event-chains.
 
 Args:
     parent : shellframe
     """
     parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)
+    
+    dummy_hook = False
     
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
@@ -93,8 +119,7 @@ Args:
     @staticmethod
     def get_watchlist():
         """All watched event binders except noWatchList"""
-        return filter(lambda v: v not in ew._noWatchList,
-                      ew._eventBinders)
+        return (x for x in ew._eventBinders if x not in ew._noWatchList)
     
     def get_actions(self, event, widget=None):
         """Wx.PyEventBinder and the handlers"""
@@ -200,11 +225,15 @@ Args:
             self.parent.handler("put_scratch", attribs)
         
         if self.IsItemChecked(i):
-            actions = self.get_actions(evt.EventType)
-            if actions:
+            if self.dummy_hook:
+                actions = self.get_actions(evt.EventType)
+                if actions:
+                    self.CheckItem(i, False)
+                    for f in actions:
+                        self.parent.debugger.trace(f, evt)
+            else:
                 self.CheckItem(i, False)
-                for f in actions:
-                    self.parent.debugger.trace(f, evt)
+                self.parent.debugger.set_trace()
         self.blink(i)
     
     def append(self, event, bold=True):
@@ -222,6 +251,14 @@ Args:
         if bold:
             self.SetItemFont(i, self.Font.Bold())
         self.blink(i)
+    
+    def blink(self, i):
+        if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
+            self.SetItemBackgroundColour(i, "yellow")
+            def reset_color():
+                if self and i < self.ItemCount:
+                    self.SetItemBackgroundColour(i, 'white')
+            wx.CallAfter(wx.CallLater, 1000, reset_color)
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount

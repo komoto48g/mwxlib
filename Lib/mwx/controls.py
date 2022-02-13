@@ -1206,68 +1206,6 @@ class Gauge(wx.Panel):
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
 
 
-class ListCtrl(wx.ListCtrl):
-    """Customized ListCtrl
-    """
-    def __init__(self, *args, **kwargs):
-        wx.ListCtrl.__init__(self, *args, **kwargs)
-        
-        ## if wx.VERSION < (4,1,0):
-        if not hasattr(self, 'CheckItem'):
-            def _Pass(*args, **kwargs):
-                pass
-            self.CheckItem = _Pass
-            self.IsItemChecked = _Pass
-    
-    @property
-    def checked_items(self):
-        return [j for j in range(self.ItemCount) if self.IsItemChecked(j)]
-    
-    @property
-    def selected_items(self):
-        return [j for j in range(self.ItemCount) if self.IsSelected(j)]
-    
-    @property
-    def focused_item(self):
-        return self.FocusedItem
-    
-    @property
-    def all_textdata(self):
-        """All item-texts in [rows, cols]"""
-        rows = range(self.ItemCount)
-        cols = range(self.ColumnCount)
-        return [[self.GetItemText(j, k) for k in cols] for j in rows]
-    
-    def blink(self, i):
-        if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
-            self.SetItemBackgroundColour(i, "yellow")
-            def reset_color():
-                if self and i < self.ItemCount:
-                    self.SetItemBackgroundColour(i, 'white')
-            wx.CallAfter(wx.CallLater, 1000, reset_color)
-
-
-if wx.VERSION < (4,1,0):
-    from wx.lib.mixins.listctrl import CheckListCtrlMixin
-    
-    class CheckList(ListCtrl, CheckListCtrlMixin):
-        def __init__(self, *args, **kwargs):
-            ListCtrl.__init__(self, *args, **kwargs)
-            CheckListCtrlMixin.__init__(self)
-            
-            self.ToolTip = ''
-            self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
-
-else:
-    class CheckList(ListCtrl):
-        def __init__(self, *args, **kwargs):
-            ListCtrl.__init__(self, *args, **kwargs)
-            
-            ## To avoid $BUG wx 4.1.1 (but default Tooltip will disappear)
-            self.ToolTip = ''
-            self.EnableCheckBoxes()
-
-
 if __name__ == '__main__':
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
