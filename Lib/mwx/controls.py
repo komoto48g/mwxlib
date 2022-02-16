@@ -55,7 +55,7 @@ Args:
                  handler=None, updater=None, tip=None):
         self.__knobs = []
         self.__name = name
-        self.range = range if range is not None else []
+        self.range = range if range is not None else [nan] # dummy data
         self.__value = value if value is not None else self.min
         self.__std_value = value
         if fmt is hex:
