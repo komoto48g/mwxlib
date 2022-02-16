@@ -37,14 +37,14 @@ Args:
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
-        dispatcher.connect(receiver=self._update, signal="Shell.addHistory")
-        dispatcher.connect(receiver=self._update, signal="Shell.clearHistory")
+        ## dispatcher.connect(receiver=self._update, signal="Shell.addHistory")
+        ## dispatcher.connect(receiver=self._update, signal="Shell.clearHistory")
     
     def _update(self, *args, **kwargs):
         if not self:
             dispatcher.disconnect(receiver=self._update, signal='Interpreter.push')
-            dispatcher.disconnect(receiver=self._update, signal="Shell.addHistory")
-            dispatcher.disconnect(receiver=self._update, signal="Shell.clearHistory")
+            ## dispatcher.disconnect(receiver=self._update, signal="Shell.addHistory")
+            ## dispatcher.disconnect(receiver=self._update, signal="Shell.clearHistory")
             return
         self.update(self.__locals)
     
