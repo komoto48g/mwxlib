@@ -1977,6 +1977,7 @@ Global bindings:
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
         ## self.Log.target = "File {}".format(frame.f_code.co_filename)
+        dispatcher.send(signal='Interpreter.push', sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
         self.__shell.write("#>> Debugger closed successfully.", -1)
@@ -2913,8 +2914,6 @@ Flaky nutshell:
         self.__target = target
         self.interp.locals = target.__dict__
         self.parent.handler('title_window', target)
-        dispatcher.send(signal='Interpreter.push', sender=self,
-                        command=None, more=False, source=None)
     
     @property
     def locals(self):
@@ -2977,7 +2976,8 @@ Flaky nutshell:
                                   & speckey_state('shift'))
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
-        self.__target = target # see interp <wx.py.interpreter.Interpreter>
+        
+        self.target = target
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -3501,7 +3501,7 @@ Flaky nutshell:
                 cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(r)).groups()
                 
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
-                        "pred={3!r}, locals=self.shell.locals)".format(
+                        "pred={3!r}, locals=locals())".format(
                         head, hint.strip(), len(cc)<2, pred or None))
             
             if c == sys.ps2.strip():
@@ -3546,7 +3546,12 @@ Flaky nutshell:
         Reset localvars and builtins assigned for the shell->target.
         Note: the target could be referred from other shells.
         """
-        self.target = shell.target # => @target.setter
+        ## self.target = shell.target # => @target.setter !! Don't overwrite locals here
+        try:
+            self.target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        except AttributeError as e:
+            print("- cannot set target vars: {!r}".format(e))
+            pass
         
         ## To prevent the builtins from referring dead objects,
         ## Add utility functions to builtins each time when activated.
