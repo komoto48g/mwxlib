@@ -167,25 +167,33 @@ Args:
         if item.IsOk():
             # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.tree.SelectItem(item)
-            Menu.Popup(self, (
-                (1, "&Dive into the shell", Icon('core'),
-                    lambda v: self.parent.clone_shell(self.target)),
-                    
-                (2, "&Watch the event", Icon('ghost'),
-                    lambda v: self.parent.monitor.watch(self.target)),
+        
+        def _enable_menu(v):
+            v.Enable(self.target is not None)
+        
+        Menu.Popup(self, (
+            (1, "&Dive into the shell", Icon('core'),
+                lambda v: self.parent.clone_shell(self.target),
+                lambda v: _enable_menu(v)),
+            (),
+            (2, "&Watch the event", Icon('ghost'),
+                lambda v: self.parent.monitor.watch(self.target),
+                lambda v: _enable_menu(v)),
                 
-                (3, "&Watch the locals", Icon('info'),
-                    lambda v: self.parent.linfo.watch(self.target.__dict__)),
-                (),
-                (10, "&Inspection Tool", Icon('inspect'),
-                     lambda v: watchit(self.target)),
-                
-                (11, "Refresh", miniIcon('Refresh'),
-                     lambda v: self.RefreshTree()),
-                
-                (12, "Highlight", miniIcon('HighlightItem'),
-                     lambda v: self.highlighter.HighlightCurrentItem(self.tree)),
-            ))
+            (3, "&Watch the locals", Icon('info'),
+                lambda v: self.parent.linfo.watch(self.target.__dict__),
+                lambda v: _enable_menu(v)),
+            (),
+            (10, "&Inspection Tool", Icon('inspect'),
+                lambda v: watchit(self.target)),
+            (),
+            (11, "Refresh", miniIcon('Refresh'),
+                lambda v: self.RefreshTree()),
+                 
+            (12, "Highlight", miniIcon('HighlightItem'),
+                lambda v: self.highlighter.HighlightCurrentItem(self.tree),
+                lambda v: _enable_menu(v)),
+        ))
         evt.Skip()
 
 
