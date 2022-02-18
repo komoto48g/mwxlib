@@ -349,6 +349,8 @@ class Clipboard:
     This does not work unless wx.App exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
+    verbose = True
+    
     @staticmethod
     def imread():
         try:
@@ -358,6 +360,8 @@ class Clipboard:
             bmp = do.GetBitmap()
             img = bmp.ConvertToImage()
             buf = np.array(img.GetDataBuffer()) # do copy, don't ref
+            if Clipboard.verbose:
+                print("From clipboard {:.1f} Mb data".format(buf.nbytes/1e6))
             w, h = img.GetSize()
             return buf.reshape(h, w, 3)
         finally:
@@ -375,6 +379,8 @@ class Clipboard:
             do = wx.BitmapDataObject(bmp)
             wx.TheClipboard.Open() or print("- Unable to open the clipboard")
             wx.TheClipboard.SetData(do)
+            if Clipboard.verbose:
+                print("To clipboard: {:.1f} Mb data".format(buf.nbytes/1e6))
         finally:
             wx.TheClipboard.Close()
 

@@ -781,13 +781,18 @@ class Clipboard:
     This does not work unless wx.App instance exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
+    verbose = True
+    
     @staticmethod
     def read():
         do = wx.TextDataObject()
         wx.TheClipboard.Open() or print("- Unable to open the clipboard")
         wx.TheClipboard.GetData(do)
         wx.TheClipboard.Close()
-        return do.GetText()
+        text = do.GetText()
+        if Clipboard.verbose:
+            print("From clipboard: {}".format(text))
+        return text
     
     @staticmethod
     def write(text):
@@ -795,6 +800,8 @@ class Clipboard:
         wx.TheClipboard.Open() or print("- Unable to open the clipboard")
         wx.TheClipboard.SetData(do)
         wx.TheClipboard.Close()
+        if Clipboard.verbose:
+            print("To clipboard: {}".format(text))
 
 
 ## --------------------------------
@@ -1194,7 +1201,7 @@ class Gauge(wx.Panel):
             elif x < 0.50: rgb = (0, 1, 2-y)
             elif x < 0.75: rgb = (y-2, 1, 0)
             else:          rgb = (1, 4-y, 0)
-            return [255 * x for x in rgb]
+            return [int(round(255 * x)) for x in rgb]
         
         w, h = self.ClientSize
         N = self.__range
