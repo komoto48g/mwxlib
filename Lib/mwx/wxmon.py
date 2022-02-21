@@ -6,6 +6,7 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import warnings
+import datetime
 import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -61,13 +62,13 @@ Args:
         
         self.__shellframe = parent
         self.__watchedWidget = None
-        
         self.__dir = True # sort direction
         self.__items = []
         
         self.alist = (
             ("typeId",    62),
             ("typeName", 200),
+            ("timestamp", 80),
             ("source",   200),
         )
         for k, (header, w) in enumerate(self.alist):
@@ -197,6 +198,7 @@ Args:
         obj = evt.EventObject
         name = self.get_name(event)
         source = ew._makeSourceString(obj)
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-4]
         
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
@@ -210,11 +212,11 @@ Args:
         data = self.__items
         for i, item in enumerate(data):
             if item[0] == event:
-                item[1:] = [name, source, attribs]
+                item[1:] = [name, timestamp, source, attribs]
                 break
         else:
             i = len(data)
-            item = [event, name, source, attribs]
+            item = [event, name, timestamp, source, attribs]
             data.append(item)
             self.InsertItem(i, event)
         
@@ -243,7 +245,7 @@ Args:
         
         i = len(data)
         name = self.get_name(event)
-        item = [event, name, '-', 'no data']
+        item = [event, name, '-', '-', 'no data']
         data.append(item)
         self.InsertItem(i, event)
         for j, v in enumerate(item[:-1]):

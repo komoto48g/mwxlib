@@ -23,9 +23,9 @@ Args:
         ListCtrlAutoWidthMixin.__init__(self)
         
         self.__shellframe = parent
+        self.__locals = {} # target <dict>
         self.__dir = True # sort direction
         self.__items = []
-        self.__locals = {}
         
         self.alist = (
             ("key",   140),
