@@ -728,10 +728,10 @@ class ControlPanel(scrolled.ScrolledPanel):
                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
-        if fix:
-            self.Sizer.Fit(self)
         self.show(-1, visible)
         self.fold(-1, not show)
+        if fix:
+            self.Sizer.Fit(self)
     
     ## --------------------------------
     ## 外部入出力／クリップボード通信
@@ -739,6 +739,10 @@ class ControlPanel(scrolled.ScrolledPanel):
     @property
     def parameters(self):
         return [p.value for p in chain(*self.__params)]
+    
+    @parameters.setter
+    def parameters(self, v):
+        self.reset_params(v)
     
     def get_params(self, checked_only=False):
         params = chain(*self.__params)
@@ -1184,8 +1188,9 @@ class Gauge(wx.Panel):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def OnSize(self, evt):
-        self.canvas = wx.Bitmap(self.ClientSize)
-        self.Draw()
+        if all(self.ClientSize):
+            self.canvas = wx.Bitmap(self.ClientSize)
+            self.Draw()
     
     def OnPaint(self, evt):
         dc = wx.BufferedPaintDC(self, self.canvas)
