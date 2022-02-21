@@ -37,7 +37,7 @@ class Plugin(Layer):
         return Layer.Destroy(self)
     
     def init_session(self, session):
-        self.reset_params(session.get('params'))
+        self.parameters = session['params']
     
     def save_session(self, session):
         session['params'] = self.parameters
