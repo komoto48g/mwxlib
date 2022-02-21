@@ -1318,9 +1318,9 @@ class Frame(mwx.Frame):
                 return
         
         if not f:
-            ls = filter(None, (x.pathname for x in frames))
+            path = next((x.pathname for x in frames if x.pathname), '')
             with wx.FileDialog(self, "Select path to export",
-                defaultDir=os.path.dirname(next(ls, '')),
+                defaultDir=os.path.dirname(path),
                 defaultFile=self.ATTRIBUTESFILE,
                 wildcard="Index (*.index)|*.index",
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1333,11 +1333,15 @@ class Frame(mwx.Frame):
         for frame in frames:
             try:
                 self.statusbar("Export index of {!r}...".format(frame.name))
-                path = os.path.join(savedir, frame.name)
+                path = frame.pathname
+                if not path:
+                    path = os.path.join(savedir, frame.name) # new file
                 if not os.path.exists(path):
                     if not path.endswith('.tif'):
                         path += '.tif'
                     self.write_buffer(path, frame.buffer)
+                    frame.pathname = path
+                    frame.name = os.path.basename(path) # new name and pathname
                 output_frames.append(frame)
                 print(" ", self.statusbar("\b done."))
             except (PermissionError, OSError):
