@@ -419,7 +419,8 @@ Constants:
                'frame_selected' : [ None ], # = focus_set
              'frame_deselected' : [ None ], # = focus_kill
                'frame_modified' : [ None ], # set[],load,roi, (frame.update_buffer)
-                'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
+               #'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
+                'frame_updated' : [ None, _F(self.writeln) ],
                 'frame_cmapped' : [ None ], # cmap
                     'line_draw' : [ None ],
                    'line_drawn' : [ None, draw_idle ],

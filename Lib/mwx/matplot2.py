@@ -204,6 +204,7 @@ class MatplotPanel(wx.Panel):
                 },
                 XAXIS : {
                    'axes_enter' : (NORMAL, self.OnAxisLeave),
+                 'figure_leave' : (NORMAL, ),
                   'Ldrag begin' : (XAXIS+DRAGGING, self.OnAxisDragBegin),
                  '*Ldrag begin' : (XAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  '*Rdrag begin' : (XAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
@@ -231,6 +232,7 @@ class MatplotPanel(wx.Panel):
                 },
                 YAXIS : {
                    'axes_enter' : (NORMAL, self.OnAxisLeave),
+                 'figure_leave' : (NORMAL, ),
                   'Ldrag begin' : (YAXIS+DRAGGING, self.OnAxisDragBegin),
                  '*Ldrag begin' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  '*Rdrag begin' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
