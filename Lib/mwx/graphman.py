@@ -419,7 +419,7 @@ class Graph(GraphPlot):
         
         self.handler.append({ #<Graph.handler>
             None : {
-                    'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
+               'frame_selected' : [ None, _F(self.loader.select_view, view=self) ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
                   'S-a pressed' : [ None, _F(self.toggle_infobar) ],
                    'f5 pressed' : [ None, _F(self.refresh) ],
@@ -524,16 +524,17 @@ class AuiNotebook(aui.AuiNotebook):
         mwx.Menu.Popup(self, plug.Menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
-        self.CurrentPage.handler('pane_shown')
+        plug = self.CurrentPage
+        if plug:
+            plug.handler('pane_shown', plug)
         evt.Skip()
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        plug = self.GetPage(evt.Selection) # <-- CurrentPage
-        if self.CurrentPage:
-            if self.CurrentPage is not plug:
-                self.CurrentPage.handler('pane_hidden')
-        evt.Skip() # skip to the next handler
-                   # but called twice when click?
+        page = self.GetPage(evt.Selection) # new page <-- CurrentPage
+        plug = self.CurrentPage
+        if plug and plug is not page:
+            plug.handler('pane_hidden', plug)
+        evt.Skip() # skip to the next handler (called twice when click?)
 
 
 class Frame(mwx.Frame):
@@ -874,10 +875,10 @@ class Frame(mwx.Frame):
         if plug:
             if show:
                 if not pane.IsShown():
-                    plug.handler('pane_shown')
+                    plug.handler('pane_shown', plug)
             else:
                 if pane.IsShown():
-                    plug.handler('pane_closed')
+                    plug.handler('pane_closed', plug)
         pane.Show(show)
         self._mgr.Update()
     
@@ -924,10 +925,10 @@ class Frame(mwx.Frame):
         if plug:
             if show:
                 if not pane.IsShown():
-                    plug.handler('pane_shown')
+                    plug.handler('pane_shown', plug)
             else:
                 if pane.IsShown():
-                    plug.handler('pane_closed')
+                    plug.handler('pane_closed', plug)
         pane.Show(show)
         self._mgr.Update()
     
@@ -937,9 +938,9 @@ class Frame(mwx.Frame):
         if isinstance(win, aui.AuiNotebook):
             for j in range(win.PageCount):
                 plug = win.GetPage(j)
-                plug.handler('pane_closed')
+                plug.handler('pane_closed', plug)
         else:
-            win.handler('pane_closed')
+            win.handler('pane_closed', win)
         ## evt.Skip() # cause the same event call twice?
     
     ## --------------------------------
@@ -1135,7 +1136,7 @@ class Frame(mwx.Frame):
         ## set reference of a plug (one module, one plugin)
         module.__plug__ = plug
         
-        plug.handler('pane_loaded')
+        plug.handler('pane_loaded', plug)
         
         ## Create pane or notebook pane
         caption = plug.caption
@@ -1216,8 +1217,8 @@ class Frame(mwx.Frame):
                 self._mgr.DetachPane(plug)
                 self._mgr.Update()
             
-            plug.handler('pane_closed')
-            plug.handler('pane_unloaded')
+            plug.handler('pane_closed', plug)
+            plug.handler('pane_unloaded', plug)
             plug.Destroy()
             
             if nb and not nb.PageCount:
@@ -1764,8 +1765,8 @@ if __name__ == '__main__':
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewfft.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
-    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
-    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
+    frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
+    frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
     frm.Show()
     app.MainLoop()
