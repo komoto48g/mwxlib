@@ -82,13 +82,13 @@ Args:
     parent : shellframe
     """
     parent = property(lambda self: self.__shellframe)
-    target = property(lambda self: self.__watchedWidget)
     
     def __init__(self, parent, *args, **kwargs):
         wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
         
         self.__shellframe = parent
-        self.__watchedWidget = None
+        self.target = None
+        self.timer = wx.Timer(self)
         
         self.tree = it.InspectionTree(self, size=(280,-1))
         self.tree.toolFrame = self # override tree
@@ -103,8 +103,6 @@ Args:
         self.SplitVertically(self.tree, self.info)
         
         self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        
-        self.timer = wx.Timer(self)
         
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
@@ -138,7 +136,7 @@ Args:
         """Called from tree.toolFrame -> SetObj"""
         if self.target is obj:
             return
-        self.__watchedWidget = obj
+        self.target = obj
         self.info.UpdateInfo(obj)
         if not self.tree.built:
             self.RefreshTree()
@@ -154,18 +152,19 @@ Args:
         self.parent.handler("show_page", self)
     
     def unwatch(self):
-        self.__watchedWidget = None
+        self.target = None
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
+        root = self.GetTopLevelParent()
         if wnd:
-            if wnd in self.Children:
+            if (wnd is self.target
+              or wnd in self.Children
+              or wnd in self.Parent.Children
+              or wnd is self.GetTopLevelParent()):
                 return
-            if wnd is self.GetTopLevelParent():
-                return
-            if wnd is not self.target:
-                self.SetObj(wnd)
+            self.SetObj(wnd)
         evt.Skip()
     
     def OnShow(self, evt):
@@ -177,28 +176,28 @@ Args:
     
     def OnRightDown(self, evt):
         item, flags = self.tree.HitTest(evt.Position)
-        if item.IsOk():
-            # and flags & (0x10 | 0x20 | 0x40 | 0x80):
-            self.tree.SelectItem(item)
+        if item.IsOk(): # and flags & (0x10 | 0x20 | 0x40 | 0x80):
+            self.tree.SelectItem(item) # tree.toolFrame -> SetObj
+        obj = self.target
         
         def _enable_menu(v):
-            v.Enable(self.target is not None)
+            v.Enable(obj is not None)
         
         Menu.Popup(self, (
             (1, "&Dive into the shell", Icon('core'),
-                lambda v: self.parent.clone_shell(self.target),
+                lambda v: self.parent.clone_shell(obj),
                 lambda v: _enable_menu(v)),
             (),
             (2, "&Watch the event", Icon('ghost'),
-                lambda v: self.parent.monitor.watch(self.target),
+                lambda v: self.parent.monitor.watch(obj),
                 lambda v: _enable_menu(v)),
                 
             (3, "&Watch the locals", Icon('info'),
-                lambda v: self.parent.linfo.watch(self.target.__dict__),
+                lambda v: self.parent.linfo.watch(obj.__dict__),
                 lambda v: _enable_menu(v)),
             (),
             (10, "&Inspection Tool", Icon('inspect'),
-                lambda v: watchit(self.target)),
+                lambda v: watchit(obj)),
             (),
             (11, "Refresh", miniIcon('Refresh'),
                 lambda v: self.RefreshTree()),
