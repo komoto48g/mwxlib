@@ -28,8 +28,8 @@ Args:
         self.__items = []
         
         self.alist = (
-            ("key",   140),
-            ("value", 280),
+            ("key", 140),
+            ("value", 0),
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
