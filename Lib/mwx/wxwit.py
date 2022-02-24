@@ -8,6 +8,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import warnings
 import re
 import wx
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib import inspection as it
 try:
     from framework import Menu, watchit
@@ -42,15 +43,16 @@ def atomvars(obj):
         return attr
 
 
-class InfoList(wx.ListCtrl):
+class InfoList(wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                              style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        ListCtrlAutoWidthMixin.__init__(self)
         
         self.data = []
         self.alist = (
-            ("object", 140),
-            ("value", 160),
+            ("key", 140),
+            ("value", 0),
         )
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
@@ -88,33 +90,33 @@ Args:
         self.__shellframe = parent
         self.__watchedWidget = None
         
-        self.tree = it.InspectionTree(self, size=(300,-1))
+        self.tree = it.InspectionTree(self, size=(280,-1))
         self.tree.toolFrame = self # override tree
         self.tree.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         
         ## self.info = it.InspectionInfoPanel(self, size=(200,-1))
         ## self.info.DropTarget = None # to prevent filling from crash
-        self.info = InfoList(self, size=(200,-1))
+        self.info = InfoList(self, size=(140,-1))
         self.info.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.SplitVertically(
-            self.tree, self.info, self.tree.MinWidth)
+        self.SetMinimumPaneSize(140)
+        self.SplitVertically(self.tree, self.info)
         
         self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         
         self.timer = wx.Timer(self)
         
+        self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
-        
-        ## wx.CallAfter(self.SetObj, None)
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.unwatch()
+            self.timer.Stop()
         evt.Skip()
     
     ## --------------------------------
@@ -128,39 +130,50 @@ Args:
     expandFrame = False
     
     def RefreshTree(self):
-        self.tree.BuildTree(self.__watchedWidget,
+        self.tree.BuildTree(self.target,
                             self.includeSizers,
                             self.expandFrame)
     
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj"""
-        if self.__watchedWidget is not obj:
-            self.__watchedWidget = obj
-            self.info.UpdateInfo(obj)
+        if self.target is obj:
+            return
+        self.__watchedWidget = obj
+        self.info.UpdateInfo(obj)
         if not self.tree.built:
             self.RefreshTree()
         else:
             self.tree.SelectObj(obj)
     
-    def watch(self, widget):
-        if not widget:
+    def watch(self, obj):
+        if not obj:
             self.unwatch()
             return
-        self.SetObj(widget)
+        self.SetObj(obj)
         self.RefreshTree()
-        self.timer.Start(500)
         self.parent.handler("show_page", self)
     
     def unwatch(self):
-        self.timer.Stop()
+        self.__watchedWidget = None
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
-        if wnd is self.GetTopLevelParent():
-            return
-        if wnd not in self.Children:
-            self.SetObj(wnd)
+        if wnd:
+            if wnd in self.Children:
+                return
+            if wnd is self.GetTopLevelParent():
+                return
+            if wnd is not self.target:
+                self.SetObj(wnd)
+        evt.Skip()
+    
+    def OnShow(self, evt):
+        if evt.IsShown():
+            self.timer.Start(500)
+        else:
+            self.timer.Stop()
+        evt.Skip()
     
     def OnRightDown(self, evt):
         item, flags = self.tree.HitTest(evt.Position)
