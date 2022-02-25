@@ -2219,8 +2219,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'C-k pressed' : (0, _F(self.kill_line)),
-                'C-S-f pressed' : (0, _F(self.set_mark)), # override key
-              'C-space pressed' : (0, _F(self.set_mark)),
+                'C-S-f pressed' : (0, _F(self.set_mark_point)), # override key
+              'C-space pressed' : (0, _F(self.set_mark_point)),
               'S-space pressed' : (0, skip),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
@@ -2336,24 +2336,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     
-    mark = property(
-        lambda self: self.get_mark(),
-        lambda self,v: self.set_mark(v),
-        lambda self: self.del_mark())
-    
-    def get_mark(self):
+    @property
+    def mark(self):
         return self.__mark
     
-    def set_mark(self, pos=None):
-        if pos is None:
-            pos = self.point
-        self.__mark = pos
-        self.MarkerDeleteAll(0) # exclusive mark (like emacs)
-        self.MarkerAdd(self.LineFromPosition(pos), 0)
+    @mark.setter
+    def mark(self, v):
+        self.__mark = v
+        self.MarkerDeleteAll(0)
+        self.MarkerAdd(self.LineFromPosition(v), 0)
     
-    def del_mark(self):
+    @mark.deleter
+    def mark(self):
         self.__mark = None
         self.MarkerDeleteAll(0)
+    
+    def set_mark_point(self):
+        self.mark = self.point
     
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
