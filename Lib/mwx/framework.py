@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.6"
+__version__ = "0.52.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1027,6 +1027,7 @@ def funcall(f, *args, **kwargs):
         action.__name__ = str(alias)
     action.__doc__ = doc or f.__doc__
     return action
+
 _F = funcall
 
 
@@ -1933,8 +1934,6 @@ Global bindings:
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-        target = nb.CurrentPage.target
-        self.SetTitleWindow(target)
         evt.Skip()
     
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -2468,7 +2467,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
     
-    ## CurrentLine
+    ## CurrentLine (0-base number)
     lineno = property(
         lambda self: self.GetCurrentLine(),
         lambda self,v: self.SetCurrentLine(v))
@@ -2767,27 +2766,33 @@ class Editor(EditWindow, EditorInterface):
         
         def fork_up(v):
             """Fork mouse events to the parent"""
-            try:
-                self.parent.handler(self.handler.event, v)
-            except AttributeError:
-                pass
+            self.parent.handler(self.handler.event, v)
+        
+        def activate(v):
+            if hasattr(self, 'target'):
+                self.parent.handler('title_window', self.target)
+            self.trace_point()
         
         self.handler.update({ #<Editor.handler>
             None : {
               '*button* dclick' : [ None, skip, fork_up ],
              '*button* pressed' : [ None, skip, fork_up ],
             '*button* released' : [ None, skip, fork_up ],
-                    'focus_set' : [ None, skip, self.on_focus_set ],
+                    'focus_set' : [ None, skip, activate ],
             },
         })
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
         self.set_style(self.PALETTE_STYLE)
     
-    def on_focus_set(self, evt):
-        try:
-            self.parent.handler('title_window', self.target)
-        except AttributeError:
-            pass
+    def trace_point(self):
+        text, lp = self.CurLine
+        self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.point), pane=1)
+    
+    def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
+        if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
+            self.trace_point()
+        evt.Skip()
     
     Shown = property(
         lambda self: self.IsShown(),
@@ -2799,12 +2804,9 @@ class Editor(EditWindow, EditorInterface):
     
     def Show(self, show=True):
         """Show or hide the window"""
-        try:
-            shown = self.IsShown()
-            self.parent.handler('show_page', self, show)
-            return shown != self.IsShown()
-        except AttributeError:
-            return EditWindow.Show(self, show)
+        shown = self.IsShown()
+        self.parent.handler('show_page', self, show)
+        return shown != self.IsShown()
 
 
 class Nautilus(Shell, EditorInterface):
@@ -2987,15 +2989,13 @@ Flaky nutshell:
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
         
-        @self.handler.bind('focus_set')
-        def activate(evt):
+        def activate(v):
             self.handler('shell_activated', self)
-            evt.Skip()
+            self.parent.handler('title_window', self.target)
+            self.trace_point()
         
-        @self.handler.bind('focus_kill')
-        def deactivate(evt):
+        def inactivate(v):
             self.handler('shell_inactivated', self)
-            evt.Skip()
         
         self.on_activated(self) # call once manually
         
@@ -3029,6 +3029,8 @@ Flaky nutshell:
         
         self.handler.update({ #<Nautilus.handler>
             None : {
+                    'focus_set' : [ None, skip, activate ],
+                   'focus_kill' : [ None, skip, inactivate ],
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
@@ -3258,10 +3260,13 @@ Flaky nutshell:
         self.__bolc_marks = [self.bolc]
         self.__eolc_marks = [self.eolc]
     
+    def trace_point(self):
+        text, lp = self.CurLine
+        self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.point), pane=1)
+    
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
-            text, lp = self.CurLine
-            self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.point), pane=1)
+            self.trace_point()
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
                 if text != self.__text:

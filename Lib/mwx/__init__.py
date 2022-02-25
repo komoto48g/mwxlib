@@ -8,7 +8,7 @@ from .framework import apropos, typename
 from .framework import FSM
 from .framework import pack, hotkey
 from .framework import Menu, MenuBar, StatusBar
-from .framework import Frame, MiniFrame, ShellFrame, Editor, Nautilus
+from .framework import Frame, MiniFrame, ShellFrame, Nautilus
 from .framework import funcall # curry spices
 from .framework import deb
 
