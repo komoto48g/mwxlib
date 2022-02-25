@@ -86,6 +86,10 @@ Key bindings:
         self.target = None
         self.module = None
         
+        def jump_to_entry_point(v):
+            ln = self.logger.LineFromPosition(self.logger.mark)
+            self.input('j {}'.format(ln + 1))
+        
         self.__handler = FSM({
             0 : {
                   'debug_begin' : (1, self.on_debug_begin),
@@ -99,6 +103,7 @@ Key bindings:
                   'C-n pressed' : (1, lambda v: self.input('n')),
                   'C-s pressed' : (1, lambda v: self.input('s')),
                   'C-r pressed' : (1, lambda v: self.input('r')),
+                  'C-@ pressed' : (1, jump_to_entry_point),
             }
         })
     
@@ -288,8 +293,9 @@ Key bindings:
             if self.module is not module\
               or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
-                self.logger.MarkerDeleteAll(0)
-                self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
+                ## self.logger.MarkerDeleteAll(0)
+                ## self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
+                self.logger.mark = self.logger.PositionFromLine(lineno-1)
             
             for ln in breaklist:
                 self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
