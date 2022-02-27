@@ -2705,7 +2705,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         タブの気持ちになって半角スペースを前向きに入力する
         """
         self.eat_white_forward()
-        _text, lp = self.CurLine
+        text, lp = self.CurLine
         self.WriteText(' ' * (4 - lp % 4))
     
     @editable
@@ -2714,7 +2714,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         シフト+タブの気持ちになって半角スペースを後ろ向きに消す
         """
         self.eat_white_forward()
-        _text, lp = self.CurLine
+        text, lp = self.CurLine
         for i in range(lp % 4 or 4):
             p = self.point
             if self.preceding_char != ' ' or p == self.bol:
@@ -3075,12 +3075,16 @@ Flaky nutshell:
                'M-down pressed' : (0, _F(self.goto_next_mark)),
                   ## 'C-a pressed' : (0, _F(self.beggining_of_command_line)),
                   ## 'C-e pressed' : (0, _F(self.end_of_command_line)),
+                  'C-v pressed' : (0, _F(self.Paste)),
+                'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
+             'S-insert pressed' : (0, _F(self.Paste)),
+           'C-S-insert pressed' : (0, _F(self.Paste, rectangle=1)),
                   'M-j pressed' : (0, self.call_tooltip2),
                   'C-j pressed' : (0, self.call_tooltip),
                   'M-h pressed' : (0, self.call_helpTip2),
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
-                  'tab pressed' : (1, self.call_history_comp),
+                  'tab pressed' : (1, self.call_history_comp), # quit -> indent_line
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -3772,8 +3776,9 @@ Flaky nutshell:
         self.goto_char(pos)
     
     def calc_indent(self):
-        """Calculate indent spaces from prefious line"""
-        ## cf. wx.py.shell.Shell.prompt
+        """Calculate indent spaces from prefious line
+        (patch) `with` in wx.py.shell.Shell.prompt
+        """
         line = self.GetLine(self.lineno - 1)
         for p in (sys.ps1, sys.ps2, sys.ps3):
             if line.startswith(p):
@@ -3804,9 +3809,10 @@ Flaky nutshell:
               "#{!r}".format(wx.py.shell), sep='\n')
         return Shell.about(self)
     
-    def Paste(self):
+    def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
-        (override) Remove ps1 and ps2 from the multi-line command to paste
+        (override) Remove ps1 and ps2 from the multi-line command to paste.
+                   Add offset for paste-rectangle.
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
@@ -3815,8 +3821,12 @@ Flaky nutshell:
                 text = data.GetText()
                 text = self.lstripPrompt(text)
                 text = self.fixLineEndings(text)
-                command = self.regulate_cmd(text).rstrip()
-                self.write(command.replace('\n', os.linesep + sys.ps2))
+                command = self.regulate_cmd(text)
+                offset = ''
+                if rectangle:
+                    text, lp = self.CurLine
+                    offset = ' ' * (lp - len(sys.ps2))
+                self.write(command.replace('\n', os.linesep + sys.ps2 + offset))
             wx.TheClipboard.Close()
     
     def info(self, obj=None):
@@ -3843,6 +3853,7 @@ Flaky nutshell:
     def Execute(self, text):
         """Replace selection with text, run commands,
         (override) and check the clock time
+        (patch) `finally` miss-indentation
         """
         self.__start = self.clock()
         
