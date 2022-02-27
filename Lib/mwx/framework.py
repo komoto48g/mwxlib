@@ -276,32 +276,39 @@ if pp:
 
 
 def get_words_hint(cmd):
-    text = get_words_backward(cmd)
-    return text.rpartition('.')
+    text = _get_words_backward(cmd)
+    return text.rpartition('.') # -> text, sep, hint
 
 
-def get_words_backward(text, sep=None):
+def _get_words_backward(text, sep=None):
     """Get words (from text at left side of caret)"""
-    tokens = split_tokens(text)[::-1]
+    tokens = _split_tokens(text)[::-1]
     return extract_words_from_tokens(tokens, sep, reverse=1)
 
 
-def get_words_forward(text, sep=None):
+def _get_words_forward(text, sep=None):
     """Get words (from text at right side of caret)"""
-    tokens = split_tokens(text)
+    tokens = _split_tokens(text)
     return extract_words_from_tokens(tokens, sep)
+
+
+def extract_words(text, lp):
+    ls, rs = text[:lp], text[lp:]
+    lhs = _get_words_backward(ls) # or ls.rpartition(' ')[-1]
+    rhs = _get_words_forward(rs) # or rs.partition(' ')[0]
+    return (lhs + rhs).strip()
 
 
 def split_words(text):
     phrases = []
-    tokens = split_tokens(text)
+    tokens = _split_tokens(text)
     while tokens:
         words = extract_words_from_tokens(tokens)
         phrases.append(words or tokens.pop(0)) # extracted words or a separator
     return phrases
 
 
-def split_tokens(text):
+def _split_tokens(text):
     lexer = shlex.shlex(text)
     lexer.wordchars += '.'
     lexer.whitespace = '' # nothing is white (for multiline analysis)
@@ -313,7 +320,7 @@ def split_tokens(text):
             m = p.match(token)
             if m:
                 ls.append(m.group(1))
-                return ls + split_tokens(text[n+1:])
+                return ls + _split_tokens(text[n+1:])
             ls.append(token)
             n += len(token)
     except ValueError:
@@ -2491,10 +2498,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         The caret scouts back and forth to scoop a chunk of expression.
         """
         text, lp = self.CurLine
-        ls, rs = text[:lp], text[lp:]
-        lhs = get_words_backward(ls) # or ls.rpartition(' ')[-1]
-        rhs = get_words_forward(rs) # or rs.partition(' ')[0]
-        return (lhs + rhs).strip()
+        return extract_words(text, lp)
     
     @property
     def topic_at_caret(self):
@@ -3476,33 +3480,33 @@ Flaky nutshell:
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # [@] SEPARATOR_CHARS;
         
         for j, c in enumerate(tokens):
-            l, r = tokens[:j], tokens[j+1:]
+            ls, rs = tokens[:j], tokens[j+1:]
             
             if c == '@':
                 f = "{rhs}({lhs})"
-                if r and r[0] == '*':
+                if rs and rs[0] == '*':
                     f = "{rhs}(*{lhs})" # x@*y --> y(*x)
-                    r.pop(0)
-                while r and r[0].isspace(): # skip whites
-                    r.pop(0)
+                    rs.pop(0)
+                while rs and rs[0].isspace(): # skip whites
+                    rs.pop(0)
                 
-                lhs = ''.join(l).strip() or '_'
-                rhs = extract_words_from_tokens(r, sep2).strip()
+                lhs = ''.join(ls).strip() or '_'
+                rhs = extract_words_from_tokens(rs, sep2).strip()
                 
                 rhs = re.sub(r"(\(.*\))$",      # x@(y1,...,yn)
                              r"partial\1", rhs) # --> partial(y1,...,yn)(x)
                 
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '`':
                 f = "{rhs}={lhs}"
-                lhs = ''.join(l).strip() or '_'
-                rhs = extract_words_from_tokens(r, sep1).strip()
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + r)
+                lhs = ''.join(ls).strip() or '_'
+                rhs = extract_words_from_tokens(rs, sep1).strip()
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '?':
-                head, sep, hint = ''.join(l).rpartition('.')
-                cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(r)).groups()
+                head, sep, hint = ''.join(ls).rpartition('.')
+                cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(rs)).groups()
                 
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=locals())".format(
@@ -3510,12 +3514,12 @@ Flaky nutshell:
             
             if c == sys.ps2.strip():
                 s = ''
-                while r and r[0].isspace(): # eat whites
-                    s += r.pop(0)
-                return ''.join(l) + c + s + self.magic_interpret(r)
+                while rs and rs[0].isspace(): # eat whites
+                    s += rs.pop(0)
+                return ''.join(ls) + c + s + self.magic_interpret(rs)
             
             if c in ';\r\n':
-                return ''.join(l) + c + self.magic_interpret(r)
+                return ''.join(ls) + c + self.magic_interpret(rs)
             
         return ''.join(tokens)
     
