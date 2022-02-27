@@ -85,6 +85,13 @@ Key bindings:
         self.skip |= {self.__module__, 'bdb', 'pdb'} # skip this module
         self.target = None
         self.module = None
+        self.code = None
+        
+        def _input(msg):
+            """redirect for cl(ear)"""
+            self.message(msg, indent=0)
+            return self.stdin.readline()
+        pdb.input = _input
         
         def jump_to_entry_point(v):
             ln = self.logger.LineFromPosition(self.logger.mark)
@@ -114,12 +121,20 @@ Key bindings:
         self.parent.handler('add_history', out)
         self.parent.handler('debug_begin', frame)
         self.__interactive = shell.point
+        def _continue():
+            try:
+                wx.EndBusyCursor() # cancel the egg timer
+            except Exception:
+                pass
+        wx.CallAfter(_continue)
+        self.logger.clear()
+        self.logger.Show()
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
         shell = self.parent.rootshell
         pos = self.__interactive
-        def post():
+        def _post():
             out = shell.GetTextRange(pos, shell.point)
             if out == self.prompt or out.endswith(self.prompt*2):
                 ## shell.point = pos # backward selection to anchor point
@@ -130,7 +145,7 @@ Key bindings:
             else:
                 self.parent.handler('add_history', out)
             self.__interactive = shell.point
-        wx.CallAfter(post)
+        wx.CallAfter(_post)
         self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
@@ -193,14 +208,6 @@ Key bindings:
     def set_trace(self, frame=None):
         if self.target is None:
             self.target = pdb.sys._getframe().f_back
-        def _continue():
-            try:
-                wx.EndBusyCursor() # cancel the egg timer
-            except Exception:
-                pass
-        wx.CallAfter(_continue)
-        self.logger.clear()
-        self.logger.Show()
         self.handler('debug_begin', self.target)
         return Pdb.set_trace(self, frame)
     
@@ -217,6 +224,7 @@ Key bindings:
         self.handler('debug_end', self.target)
         self.target = None
         self.module = None
+        self.code = None
     
     ## --------------------------------
     ## Override Pdb methods
@@ -280,6 +288,7 @@ Key bindings:
         """
         frame = self.curframe
         module = inspect.getmodule(frame)
+        code = frame.f_code
         if module:
             filename = frame.f_code.co_filename
             breaklist = self.get_file_breaks(filename)
@@ -293,6 +302,7 @@ Key bindings:
             if self.module is not module\
               or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
+            if self.code != code:
                 ## self.logger.MarkerDeleteAll(0)
                 ## self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
                 self.logger.mark = self.logger.PositionFromLine(lineno-1)
@@ -306,6 +316,7 @@ Key bindings:
             
         self.handler('debug_next', frame)
         self.module = module
+        self.code = code
         Pdb.preloop(self)
     
     @echo
@@ -334,7 +345,7 @@ if __name__ == "__main__":
             },
         })
         frm.dbg = dbg
-        shell.write("self.dbg.trace(self.About)")
+        shell.write("self.dbg.trace(self.shellframe.About)")
         self.Show()
     frm.Show()
     app.MainLoop()
