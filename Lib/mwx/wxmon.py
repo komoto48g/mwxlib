@@ -121,14 +121,14 @@ Args:
         """All watched event binders except noWatchList"""
         return (x for x in ew._eventBinders if x not in ew._noWatchList)
     
-    def get_actions(self, event, widget=None):
+    @staticmethod
+    def get_actions(event, widget):
         """Wx.PyEventBinder and the handlers"""
-        widget = widget or self.target
         if widget and hasattr(widget, '__event_handler__'):
             try:
                 handlers = widget.__event_handler__[event]
                 ## Exclude ew:onWatchedEvent by comparing names instead of objects
-                ## return [a for a in handlers if a != self.onWatchedEvent]
+                ## cf. [a for a in handlers if a != self.onWatchedEvent]
                 return [a for a in handlers if a.__name__ != 'onWatchedEvent']
             except KeyError:
                 print("- No such event: {}".format(event))
@@ -147,9 +147,15 @@ Args:
         self.__watchedWidget = widget
         ssmap = self.dump(widget, verbose=1)
         for binder in self.get_watchlist():
-            widget.Bind(binder, self.onWatchedEvent)
-            if binder.typeId in ssmap:
-                self.append(binder.typeId)
+            event = binder.typeId
+            try:
+                widget.Bind(binder, self.onWatchedEvent)
+                if event in ssmap:
+                    self.append(event)
+            except Exception as e:
+                name = self.get_name(event)
+                print(" #{:6d}:{:32s}{!s}".format(event, name, e))
+                continue
         self.parent.handler("show_page", self)
         self.parent.handler("monitor_begin", self.target)
     
@@ -175,7 +181,7 @@ Args:
         if not hasattr(widget, '__event_handler__'):
             return ssmap
         for event in sorted(widget.__event_handler__):
-            actions = self.get_actions(event)
+            actions = self.get_actions(event, widget)
             if actions and event not in exclusions:
                 ssmap[event] = actions
                 if verbose:
@@ -229,7 +235,7 @@ Args:
         
         if self.IsItemChecked(i):
             if self.dummy_hook:
-                actions = self.get_actions(evt.EventType)
+                actions = self.get_actions(evt.EventType, self.target)
                 if actions:
                     self.CheckItem(i, False)
                     for f in actions:
