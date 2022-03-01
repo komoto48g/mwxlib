@@ -845,7 +845,7 @@ class Frame(mwx.Frame):
         pane = self.get_pane(name)
         
         if not pane.IsOk():
-            return False
+            return
         
         if name == "output": # set graph and output size be as half & half
             w, h = self.graph.GetClientSize()
@@ -861,18 +861,16 @@ class Frame(mwx.Frame):
             if wx.GetKeyState(wx.WXK_CONTROL):
                 pane.floating_pos = wx.GetMousePosition()
             show = True
-        
+        self._show_pane(name, show)
+    
+    def _show_pane(self, name, show=True):
+        """Show named pane window (internal use only)"""
+        pane = self.get_pane(name)
         plug = self.get_plug(name)
-        
-        try:
-            ## for Layers only (has notebook property)
-            nb = plug.__notebook
+        if plug:
+            nb = plug.__notebook # given when load_plug
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
-        except AttributeError:
-            pass
-        
-        if plug:
             if show:
                 if not pane.IsShown():
                     plug.handler('pane_shown', plug)
@@ -914,23 +912,7 @@ class Frame(mwx.Frame):
             pane.Dock()
         else:
             pane.Float()
-        
-        try:
-            nb = plug.__notebook
-            if nb and show:
-                nb.SetSelection(nb.GetPageIndex(plug))
-        except AttributeError:
-            pass
-        
-        if plug:
-            if show:
-                if not pane.IsShown():
-                    plug.handler('pane_shown', plug)
-            else:
-                if pane.IsShown():
-                    plug.handler('pane_closed', plug)
-        pane.Show(show)
-        self._mgr.Update()
+        self._show_pane(name, show)
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
@@ -965,7 +947,7 @@ class Frame(mwx.Frame):
             if name.endswith(".py") or name.endswith(".pyc"):
                 name,_ext = os.path.splitext(os.path.basename(name))
         plug = self.get_plug(name)
-        if plug is None:
+        if not plug:
             if self.load_plug(name) is not False:
                 return self.get_plug(name)
         return plug
@@ -1088,9 +1070,6 @@ class Frame(mwx.Frame):
         if not module:
             return module
         
-        ## --------------------------------
-        ## Setup the pane properties
-        ## --------------------------------
         try:
             name = module.Plugin.__module__
             title = module.Plugin.category
@@ -1127,12 +1106,12 @@ class Frame(mwx.Frame):
                          style=wx.ICON_ERROR)
             return False
         
-        if pane.IsOk():
-            self.unload_plug(name) # unload once right here
-        
         ## --------------------------------
         ## Create and register the plugin
         ## --------------------------------
+        if pane.IsOk():
+            self.unload_plug(name) # unload once right here
+        
         try:
             plug = module.Plugin(self, session, **kwargs)
             
