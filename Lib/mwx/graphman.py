@@ -499,7 +499,7 @@ class MyFileDropLoader(wx.FileDropTarget):
             name, ext = os.path.splitext(path)
             if ext == '.py' or os.path.isdir(path):
                 self.loader.load_plug(path, show=1, floating_pos=pos,
-                                        force=wx.GetKeyState(wx.WXK_ALT))
+                                      force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
                 self.loader.load_session(path)
             elif ext == '.index' or ext == '.results':
@@ -901,6 +901,10 @@ class Frame(mwx.Frame):
         try:
             if not isinstance(plug.dockable, bool): # prior to kwargs
                 kwargs.update(dock=plug.dockable)
+            if not plug.caption:
+                pane.CaptionVisible(False)
+                pane.Gripper(plug.dockable not in (0, 5)) # show grip
+            pane.Dockable(plug.dockable)
         except AttributeError:
             pass
         
@@ -912,10 +916,6 @@ class Frame(mwx.Frame):
             pane.Float()
         
         try:
-            ## for Layers only (has some special constants)
-            pane.CaptionVisible(bool(plug.caption))
-            pane.Gripper(not plug.caption and dock != 5)
-            pane.Dockable(plug.dockable)
             nb = plug.__notebook
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
@@ -995,26 +995,11 @@ class Frame(mwx.Frame):
         module.Plugin = _Plugin
         return _Plugin
     
-    def load_plug(self, root, show=False,
-                  dock=False, layer=0, pos=0, row=0, prop=10000,
-                  floating_pos=None, floating_size=None, force=False,
-                  session=None, **kwargs):
-        """Load plugin module
-        The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
+    def load_module(self, root, force, session, **props):
+        """Load module of plugin (internal use only)
         
-        root : Layer module, or name of the module
-               A wx.Window object can be given (called 'dummy-plug'),
-               but don't use this mode in release versions.
-        show : the pane is to be shown when loaded
-       force : force loading even when it were already loaded
-        dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
-       layer : dock_layer
-         pos : dock_pos
-         row : dock_row position
-        prop : dock_proportion < 1e6 ?
-   floating_ : pos/size of floating window
-        
-        retval-> None if succeeded else False
+        Note: This is called automatically from load_plug,
+              and should not be called directly from user.
         """
         rootpath = root
         if hasattr(root, '__file__'): #<type 'module'>
@@ -1027,10 +1012,6 @@ class Frame(mwx.Frame):
         if rootname.endswith(".py"):
             rootname,_ext = os.path.splitext(rootname)
         
-        props = dict(show=show,
-                     dock=dock, layer=layer, pos=pos, row=row, prop=prop,
-                     floating_pos=floating_pos, floating_size=floating_size)
-        
         plug = self.get_plug(rootname)
         
         ## <plug:rootname> is already registered
@@ -1041,9 +1022,6 @@ class Frame(mwx.Frame):
                     plug.init_session(session)
                 return None
         
-        ## --------------------------------
-        ## Do import / reload the module
-        ## --------------------------------
         ## Update the include path to load the module correctly.
         dirname = os.path.dirname(rootpath)
         if dirname:
@@ -1062,6 +1040,10 @@ class Frame(mwx.Frame):
         except ImportError as e:
             print("- Failed to import: {}".format(e))
             return False
+        except Exception as e:
+            traceback.print_exc()
+            print("- Failed to load_plug: {}".format(e))
+            return False
         
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
@@ -1074,6 +1056,37 @@ class Frame(mwx.Frame):
                 root = module.__dummy_plug__         # old class (imported)
                 cls = getattr(module, root.__name__) # new class (reloaded)
                 self.register(cls, module)
+        return module
+    
+    def load_plug(self, root, show=False,
+                  dock=False, layer=0, pos=0, row=0, prop=10000,
+                  floating_pos=None, floating_size=None,
+                  force=False, session=None, **kwargs):
+        """Load plugin
+        The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
+        
+        root : Layer module, or name of the module
+               A wx.Window object can be given (called 'dummy-plug'),
+               but don't use this mode in release versions.
+        show : the pane is shown after loaded
+       force : force loading even if it is already loaded
+     session : Conditions for initializing the plug and starting session
+        dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
+       layer : dock_layer
+         pos : dock_pos
+         row : dock_row position
+        prop : dock_proportion < 1e6 ?
+   floating_ : pos/size of floating window
+        
+        retval-> None if succeeded else False
+        """
+        props = dict(show=show,
+                     dock=dock, layer=layer, pos=pos, row=row, prop=prop,
+                     floating_pos=floating_pos, floating_size=floating_size)
+        
+        module = self.load_module(root, force, session, **props)
+        if not module:
+            return module
         
         ## --------------------------------
         ## Setup the pane properties
@@ -1149,7 +1162,6 @@ class Frame(mwx.Frame):
             if pane.IsOk():
                 nb = pane.window
                 nb.AddPage(plug, caption)
-                ## props.update(show = show or pane.IsShown())
             else:
                 size = plug.GetSize() + (2,30)
                 nb = AuiNotebook(self,
@@ -1765,8 +1777,8 @@ if __name__ == '__main__':
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewfft.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
     frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
-    frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
-    frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
+    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
+    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
     frm.Show()
     app.MainLoop()
