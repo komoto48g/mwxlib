@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.7"
+__version__ = "0.52.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -250,16 +250,14 @@ def mro(obj):
     
     A list of filenames and lineno, or the module-names
     """
-    print("{}".format(typename(obj)))
+    print(repr(obj))
     if not isinstance(obj, type):
         obj = type(obj)
     for base in obj.__mro__:
         f = where(base)
-        if hasattr(f, '__file__'): #<class 'module'>
-            f = f.__file__
-        elif hasattr(f, '__name__'): #<module 'builtins'>
-            f = f.__name__
-        print("  {}:{!s}".format(f, base))
+        print("  {:40s} {}".format(str(base),
+                        getattr(f, '__file__', None) or
+                        getattr(f, '__name__', None) or f))
 
 
 def pp(obj):
@@ -1998,7 +1996,7 @@ Global bindings:
         """Show the notebook page and move the focus"""
         wnd = win if focus else wx.Window.FindFocus() # original focus
         self.PopupWindow(win, show)
-        if win.Shown:
+        if wnd and win.Shown:
             wnd.SetFocus()
     
     def add_page(self, win, title=None, show=True):
