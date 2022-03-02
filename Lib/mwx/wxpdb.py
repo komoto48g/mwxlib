@@ -345,7 +345,7 @@ if __name__ == "__main__":
             },
         })
         frm.dbg = dbg
-        shell.write("self.dbg.trace(self.shellframe.About)")
+        shell.write("self.dbg.trace(self.About)")
         self.Show()
     frm.Show()
     app.MainLoop()
