@@ -748,7 +748,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         params = chain(*self.__params)
         if not checked_only:
             return params
-        return filter((lambda c: hasattr(c, 'check') and c.check), params)
+        return filter(lambda c: getattr(c, 'check', None), params)
     
     def reset_params(self, argv=None, checked_only=False, **kwargs):
         params = self.get_params(checked_only)

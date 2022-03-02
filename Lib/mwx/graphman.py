@@ -196,7 +196,7 @@ Note:
 
 def islayer(obj):
     ## return isinstance(obj, Layer) # Note: False if __main__.Layer
-    return hasattr(obj, 'category') #<type 'Layer'>
+    return hasattr(obj, 'category') #<class 'Layer'>
 
 
 class Layer(ControlPanel, mwx.CtrlInterface):
@@ -984,10 +984,9 @@ class Frame(mwx.Frame):
               and should not be called directly from user.
         """
         rootpath = root
-        if hasattr(root, '__file__'): #<type 'module'>
+        if hasattr(root, '__file__'): #<class 'module'>
             rootpath = root.__file__
-        
-        if isinstance(root, type):
+        elif isinstance(root, type):
             rootpath = inspect.getsourcefile(root)
         
         rootname = os.path.basename(rootpath)
@@ -995,9 +994,8 @@ class Frame(mwx.Frame):
             rootname,_ext = os.path.splitext(rootname)
         
         plug = self.get_plug(rootname)
-        
-        ## <plug:rootname> is already registered
         if plug:
+            ## <plug:rootname> is already registered
             if not force:
                 self.update_pane(rootname, **props)
                 if session:
@@ -1024,7 +1022,7 @@ class Frame(mwx.Frame):
             return False
         except Exception as e:
             traceback.print_exc()
-            print("- Failed to load_plug: {}".format(e))
+            print("- Unable to load {!r}".format(root))
             return False
         
         ## the module must have a class `Plugin`.
