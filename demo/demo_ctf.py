@@ -13,27 +13,18 @@ el = 1.968758541778089e-3 # elambda [nm] at 300kV
 
 class Plugin(Layer):
     def Init(self):
-        self.Df = LParam('df[nm]', (-500, 500, 0.1), 200.0, updater=self.sherzerf)
-        self.Cs = LParam('cs[mm]', (-5, 5, 0.01), 0.0)
+        self.Df = LParam('df[nm]', (-500, 500, 0.1), 100.0, handler=self.run)
+        self.Cs = LParam('cs[mm]', (-5, 5, 0.01), 0.0, handler=self.run)
         self.layout((
                 self.Df,
                 self.Cs,
-                Button(self, "Run", lambda v: self.run()),
+                Button(self, "Run", self.run),
             ),
             type=None, style='button', lw=40, tw=40
         )
         self.run() # first drawing
     
-    def sherzerf(self, lp):
-        """Sherzer focus
-        Defined as: sin(2*pi/3) = 0.866
-        """
-        cs = self.Cs.value * 1e6 # [mm --> nm]
-        lp.std_value = np.sqrt(4/3 * cs * el)
-        lp.reset()
-    
-    def run(self):
-        ## X, Y = 10 * np.mgrid[-N:N,-N:N]/N
+    def run(self, *v):
         r = 20 * np.arange(-N/2, N/2) / N
         X, Y = np.meshgrid(r, r)
         lu = 20 / N

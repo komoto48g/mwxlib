@@ -55,7 +55,7 @@ Args:
                  handler=None, updater=None, tip=None):
         self.__knobs = []
         self.__name = name
-        self.range = range if range is not None else [nan] # dummy data
+        self.range = range
         self.__value = value if value is not None else self.min
         self.__std_value = value
         if fmt is hex:
@@ -221,7 +221,10 @@ Args:
         return self.__range
     
     def set_range(self, v):
-        self.__range = sorted(v)
+        if v is None:
+            self.__range = [nan] # dummy data
+        else:
+            self.__range = sorted(v)
         for knob in self.knobs:
             knob.update_range() # list range of related knobs
     
@@ -252,11 +255,11 @@ class LParam(Param):
         return np.arange(self.min, self.max + self.step, self.step)
     
     def set_range(self, v):
-        if not v:
+        if v is None:
             v = (0, 0)
         self.__min = v[0]
         self.__max = v[1]
-        self.__step = v[2] if len(v)>2 else 1
+        self.__step = v[2] if len(v) > 2 else 1
         for knob in self.knobs:
             knob.update_range() # linear range of related knobs
     
@@ -1230,6 +1233,10 @@ if __name__ == '__main__':
             mwx.CtrlInterface.__init__(self)
             
             self.handler.debug = 6
+            
+            a = Param('test')
+            b = LParam('test')
+            self.layout((a,b,))
             
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0, 1, 1e-3))

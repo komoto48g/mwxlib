@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.8"
+__version__ = "0.52.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3064,7 +3064,6 @@ Flaky nutshell:
               'M-enter pressed' : (0, _F(self.duplicate_command)),
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
-               'S-left pressed' : (0, self.OnBackspace),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
                ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
@@ -3494,10 +3493,8 @@ Flaky nutshell:
                 
                 lhs = ''.join(ls).strip() or '_'
                 rhs = extract_words_from_tokens(rs, sep2).strip()
-                
                 rhs = re.sub(r"(\(.*\))$",      # x@(y1,...,yn)
                              r"partial\1", rhs) # --> partial(y1,...,yn)(x)
-                
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '`':
@@ -3515,10 +3512,9 @@ Flaky nutshell:
                         head, hint.strip(), len(cc)<2, pred or None))
             
             if c == sys.ps2.strip():
-                s = ''
                 while rs and rs[0].isspace(): # eat whites
-                    s += rs.pop(0)
-                return ''.join(ls) + c + s + self.magic_interpret(rs)
+                    c += rs.pop(0)
+                return ''.join(ls) + c + self.magic_interpret(rs)
             
             if c in ';\r\n':
                 return ''.join(ls) + c + self.magic_interpret(rs)
@@ -3804,7 +3800,8 @@ Flaky nutshell:
         print("#<module 'mwx' from {!r}>".format(__file__),
               "Author: {!r}".format(__author__),
               "Version: {!s}".format(__version__),
-              "#{!r}".format(wx.py.shell), sep='\n')
+              "#{!r}".format(wx.py.shell),
+            sep='\n')
         return Shell.about(self)
     
     def Paste(self, rectangle=False):
