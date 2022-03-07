@@ -8,6 +8,8 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from functools import wraps
 from pdb import Pdb
 import pdb
+import re
+import importlib
 import linecache
 import inspect
 import wx
@@ -84,7 +86,6 @@ Key bindings:
             self.skip = set()
         self.skip |= {self.__module__, 'bdb', 'pdb'} # skip this module
         self.target = None
-        self.module = None
         self.code = None
         
         def _input(msg):
@@ -197,9 +198,9 @@ Key bindings:
         print(self.indent + "***", msg, file=self.stdout)
     
     def mark(self, frame, lineno):
-        module = inspect.getmodule(frame)
-        if module is None:
-            return
+        ## module = inspect.getmodule(frame)
+        ## if module is None:
+        ##     return
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
@@ -227,7 +228,6 @@ Key bindings:
         Pdb.set_quit(self)
         self.handler('debug_end', self.target)
         self.target = None
-        self.module = None
         self.code = None
     
     ## --------------------------------
@@ -291,35 +291,39 @@ Key bindings:
         (override) output buffer to the logger (cf. pdb._print_lines)
         """
         frame = self.curframe
-        module = inspect.getmodule(frame)
         code = frame.f_code
-        if module:
-            filename = frame.f_code.co_filename
-            breaklist = self.get_file_breaks(filename)
-            lines = linecache.getlines(filename, frame.f_globals)
-            lineno = frame.f_lineno # current line number
-            lx = self.tb_lineno.get(frame) # exception
-            
-            ## Update logger (text and marker)
-            ## + when module or the line count is differnt
+        filename = frame.f_code.co_filename
+        ## module = inspect.getmodule(frame)
+        m = re.match("<frozen (.*)>", filename)
+        if m:
+            module = importlib.import_module(m.group(1))
+            filename = inspect.getfile(module)
+        lineno = frame.f_lineno
+        lines = linecache.getlines(filename, frame.f_globals)
+        lbps = self.get_file_breaks(filename) # breakpoints
+        lx = self.tb_lineno.get(frame) # exception
+        
+        if lines:
+            ## Update logger text
             eol = lines[-1].endswith('\n')
-            if self.module is not module\
+            if self.code and self.code.co_filename != filename\
               or self.logger.LineCount != len(lines) + eol: # add +1
                 self.logger.Text = ''.join(lines)
+            
+            ## Update logger marker
             if self.code != code:
                 ## self.logger.MarkerDeleteAll(0)
                 ## self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
                 self.logger.mark = self.logger.PositionFromLine(lineno-1)
             
-            for ln in breaklist:
+            for ln in lbps:
                 self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
             if lx is not None:
                 self.logger.MarkerAdd(lx-1, 2) # (>>) exception
             
             self.mark(frame, lineno) # (->) pointer
-            
+        
         self.handler('debug_next', frame)
-        self.module = module
         self.code = code
         Pdb.preloop(self)
     
