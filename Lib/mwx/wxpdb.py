@@ -159,13 +159,17 @@ Key bindings:
     def trace(self, target, *args, **kwargs):
         if not callable(target):
             print("- cannot break {!r} (not callable)".format(target))
+            wx.MessageBox("Not callable object\n\n"
+                          "Unable to trace {!r}".format(target))
             return
         if inspect.isbuiltin(target):
             print("- cannot break {!r}".format(target))
+            wx.MessageBox("Built-in object\n\n"
+                          "Unable to trace {!r}".format(target))
             return
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
-                          "Enter [q]uit to exit before closing.")
+                          "Enter [q]uit to exit.")
             return
         try:
             self.target = target
