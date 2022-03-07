@@ -141,7 +141,13 @@ Args:
         if not self.tree.built:
             self.RefreshTree()
         else:
-            self.tree.SelectObj(obj)
+            ## self.tree.SelectObj(obj)
+            item = self.tree.FindWidgetItem(obj)
+            if item:
+                self.tree.EnsureVisible(item)
+                self.tree.SelectItem(item)
+            else:
+                self.RefreshTree()
     
     def watch(self, obj):
         if not obj:
@@ -170,6 +176,8 @@ Args:
     def OnShow(self, evt):
         if evt.IsShown():
             self.timer.Start(500)
+            if not self.tree.built:
+                self.RefreshTree()
         else:
             self.timer.Stop()
         evt.Skip()
