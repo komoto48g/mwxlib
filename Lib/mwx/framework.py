@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.9"
+__version__ = "0.53.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1987,7 +1987,7 @@ Global bindings:
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore target
-        self.linfo.watch(None)
+        self.linfo.unwatch()
         del self.__target
         del self.__shell.locals
         ## del self.Log.target
