@@ -4308,7 +4308,7 @@ def watchit(target=None, **kwargs):
     it = InspectionTool()
     it.Init(**kwargs)
     it.Show(target)
-    return it
+    return it._frame
 
 
 def monitor(target=None, **kwargs):
@@ -4343,7 +4343,7 @@ if 1:
     self.shellframe.rootshell
     dive(self.shellframe)
     dive(self.shellframe.debugger)
-    debug(self)
+    ## debug(self)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))

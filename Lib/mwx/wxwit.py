@@ -121,16 +121,8 @@ Args:
     ## InspectionTool wrapper methods
     ## --------------------------------
     
-    it.INCLUDE_INSPECTOR = True
-    it.USE_CUSTOMTREECTRL = False
-    
-    includeSizers = False
-    expandFrame = False
-    
     def RefreshTree(self):
-        self.tree.BuildTree(self.target,
-                            self.includeSizers,
-                            self.expandFrame)
+        self.tree.BuildTree(self.target)
     
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj"""
@@ -138,23 +130,18 @@ Args:
             return
         self.target = obj
         self.info.UpdateInfo(obj)
-        if not self.tree.built:
-            self.RefreshTree()
+        item = self.tree.FindWidgetItem(obj)
+        if item:
+            self.tree.EnsureVisible(item)
+            self.tree.SelectItem(item)
         else:
-            ## self.tree.SelectObj(obj)
-            item = self.tree.FindWidgetItem(obj)
-            if item:
-                self.tree.EnsureVisible(item)
-                self.tree.SelectItem(item)
-            else:
-                self.RefreshTree()
+            self.RefreshTree()
     
     def watch(self, obj):
         if not obj:
             self.unwatch()
             return
         self.SetObj(obj)
-        self.RefreshTree()
         self.parent.handler("show_page", self)
     
     def unwatch(self):
@@ -184,7 +171,7 @@ Args:
     
     def OnRightDown(self, evt):
         item, flags = self.tree.HitTest(evt.Position)
-        if item.IsOk(): # and flags & (0x10 | 0x20 | 0x40 | 0x80):
+        if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.tree.SelectItem(item) # tree.toolFrame -> SetObj
         obj = self.target
         
