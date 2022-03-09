@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.0"
+__version__ = "0.53.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -3118,10 +3118,10 @@ Flaky nutshell:
             2 : { # word auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (2, self.on_completion_backward, skip),
-                 'down pressed' : (2, self.on_completion_forward, skip),
+                   'up pressed' : (2, self.on_completion_backward),
+                 'down pressed' : (2, self.on_completion_forward),
                  'left pressed' : (2, skip),
-                'right pressed' : (2, self.skip_autocomp),
+                'right pressed' : (2, self.process_autocomp),
                'S-left pressed' : (2, skip),
               'S-right pressed' : (2, skip),
               'shift* released' : (2, self.call_word_autocomp),
@@ -3133,7 +3133,7 @@ Flaky nutshell:
             'S-[a-z\\] pressed' : (2, skip),
            'S-[a-z\\] released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
-           '*backspace pressed' : (2, self.skipback_autocomp, skip),
+           '*backspace pressed' : (2, self.skipback_autocomp),
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
         'C-S-backspace pressed' : (2, noskip),
                   'M-j pressed' : (2, self.call_tooltip2),
@@ -3152,10 +3152,10 @@ Flaky nutshell:
             3 : { # apropos auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (3, self.on_completion_backward, skip),
-                 'down pressed' : (3, self.on_completion_forward, skip),
+                   'up pressed' : (3, self.on_completion_backward),
+                 'down pressed' : (3, self.on_completion_forward),
                  'left pressed' : (3, skip),
-                'right pressed' : (3, self.skip_autocomp),
+                'right pressed' : (3, self.process_autocomp),
                'S-left pressed' : (3, skip),
               'S-right pressed' : (3, skip),
               'shift* released' : (3, self.call_apropos_autocomp),
@@ -3167,7 +3167,7 @@ Flaky nutshell:
             'S-[a-z\\] pressed' : (3, skip),
            'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
-           '*backspace pressed' : (3, self.skipback_autocomp, skip),
+           '*backspace pressed' : (3, self.skipback_autocomp),
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
         'C-S-backspace pressed' : (3, noskip),
                   'M-j pressed' : (3, self.call_tooltip2),
@@ -3186,10 +3186,10 @@ Flaky nutshell:
             4 : { # text auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (4, self.on_completion_backward, skip),
-                 'down pressed' : (4, self.on_completion_forward, skip),
+                   'up pressed' : (4, self.on_completion_backward),
+                 'down pressed' : (4, self.on_completion_forward),
                  'left pressed' : (4, skip),
-                'right pressed' : (4, self.skip_autocomp),
+                'right pressed' : (4, self.process_autocomp),
                'S-left pressed' : (4, skip),
               'S-right pressed' : (4, skip),
               'shift* released' : (4, self.call_text_autocomp),
@@ -3201,7 +3201,7 @@ Flaky nutshell:
             'S-[a-z\\] pressed' : (4, skip),
            'S-[a-z\\] released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
-           '*backspace pressed' : (4, self.skipback_autocomp, skip),
+           '*backspace pressed' : (4, self.skipback_autocomp),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, noskip),
                   'M-j pressed' : (4, self.call_tooltip2),
@@ -3220,10 +3220,10 @@ Flaky nutshell:
             5 : { # module auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (5, self.on_completion_backward, skip),
-                 'down pressed' : (5, self.on_completion_forward, skip),
+                   'up pressed' : (5, self.on_completion_backward),
+                 'down pressed' : (5, self.on_completion_forward),
                  'left pressed' : (5, skip),
-                'right pressed' : (5, self.skip_autocomp),
+                'right pressed' : (5, self.process_autocomp),
                'S-left pressed' : (5, skip),
               'S-right pressed' : (5, skip),
               'shift* released' : (5, self.call_module_autocomp),
@@ -3234,7 +3234,7 @@ Flaky nutshell:
           '[a-z0-9_.] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
-           '*backspace pressed' : (5, self.skipback_autocomp, skip),
+           '*backspace pressed' : (5, self.skipback_autocomp),
           '*backspace released' : (5, self.call_module_autocomp),
         'C-S-backspace pressed' : (5, noskip),
                  '*alt pressed' : (5, ),
@@ -3991,6 +3991,7 @@ Flaky nutshell:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
             self.handler('quit', evt)
+        evt.Skip()
     
     def decrback_autocomp(self, evt):
         """Move forward Anchor point to the word right during autocomp"""
@@ -3998,19 +3999,24 @@ Flaky nutshell:
         if self.following_char.isalnum() and self.preceding_char == '.':
             self.WordRight()
             self.point = c # backward selection to anchor point
+        evt.Skip()
     
-    def skip_autocomp(self, evt):
+    def process_autocomp(self, evt):
         """Feel like pressing {tab}"""
         if self.AutoCompActive():
             wx.UIActionSimulator().KeyDown(wx.WXK_TAB)
+        else:
+            evt.Skip()
     
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, 1)
+        evt.Skip()
     
     def on_completion_backward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, -1)
+        evt.Skip()
     
     def on_completion_forward_history(self, evt):
         self.on_completion(evt, 1) # 古いヒストリへ進む
