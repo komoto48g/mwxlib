@@ -762,8 +762,8 @@ class Frame(mwx.Frame):
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
         
-        ## self.Bind(wx.EVT_ACTIVATE,
-        ##           lambda v: self.OnShowFrame(self.selected_view.frame))
+        self.Bind(wx.EVT_ACTIVATE,
+                  lambda v: self.OnShowFrame(self.selected_view.frame))
         
         ## Custom Key Bindings:
         self.define_key('C-g', self.Quit)
