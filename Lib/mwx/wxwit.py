@@ -27,6 +27,7 @@ Args:
         it.InspectionTree.__init__(self, parent, *args, **kwargs)
         
         self.__shellframe = parent
+        self._noWatchList = [self]
         self.target = None
         self.toolFrame = self
         self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
@@ -46,10 +47,6 @@ Args:
             self.timer.Stop()
         evt.Skip()
     
-    ## --------------------------------
-    ## InspectionTool wrapper methods
-    ## --------------------------------
-    
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj"""
         if self.target is obj:
@@ -59,7 +56,7 @@ Args:
         if item:
             self.EnsureVisible(item)
             self.SelectItem(item)
-        else:
+        elif obj:
             self.BuildTree(obj)
     
     def watch(self, obj):
@@ -72,13 +69,16 @@ Args:
     def unwatch(self):
         self.target = None
     
+    def Dive(self, obj):
+        shell = self.parent.rootshell.clone(obj)
+        self._noWatchList.append(shell)
+    
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
-        root = self.GetTopLevelParent()
         if wnd:
             if (wnd is self.target
-              or wnd in self.Children
+              or wnd in self._noWatchList
               or wnd in self.Parent.Children
               or wnd is self.GetTopLevelParent()):
                 return
@@ -87,11 +87,12 @@ Args:
     
     def OnShow(self, evt):
         if evt.IsShown():
-            self.timer.Start(500)
             if not self.built:
                 self.BuildTree(self.target)
+            self.timer.Start(500)
         else:
             self.timer.Stop()
+        self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
     
     def OnRightDown(self, evt):
@@ -106,7 +107,7 @@ Args:
         
         Menu.Popup(self, (
             (1, "&Dive into the shell", Icon('core'),
-                lambda v: self.parent.clone_shell(obj),
+                lambda v: self.Dive(obj),
                 lambda v: _enable_menu(v)),
             (),
             (2, "&Watch the event", Icon('ghost'),
