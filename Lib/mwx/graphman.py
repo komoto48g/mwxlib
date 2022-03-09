@@ -854,8 +854,7 @@ class Frame(mwx.Frame):
         if wx.GetKeyState(wx.WXK_SHIFT):
             ## (alt + shift + menu) reload plugin
             if wx.GetKeyState(wx.WXK_ALT):
-                if islayer(name):
-                    self.reload_plug(name)
+                if self.reload_plug(name):
                     pane = self.get_pane(name)
             ## (ctrl + shift + menu) reset floating position of a stray window
             if wx.GetKeyState(wx.WXK_CONTROL):
@@ -896,15 +895,13 @@ class Frame(mwx.Frame):
         pane.floating_size = kwargs.get('floating_size') or pane.floating_size
         
         plug = self.get_plug(name)
-        try:
+        if plug:
             if not isinstance(plug.dockable, bool): # prior to kwargs
                 kwargs.update(dock=plug.dockable)
             if not plug.caption:
                 pane.CaptionVisible(False)
                 pane.Gripper(plug.dockable not in (0, 5)) # show grip
             pane.Dockable(plug.dockable)
-        except AttributeError:
-            pass
         
         dock = kwargs.get('dock')
         if dock:
@@ -1224,6 +1221,8 @@ class Frame(mwx.Frame):
     
     def reload_plug(self, name):
         plug = self.get_plug(name)
+        if not plug:
+            return
         if plug.reloadable:
             current_session = {}
             plug.save_session(current_session)
@@ -1232,12 +1231,16 @@ class Frame(mwx.Frame):
     
     def edit_plug(self, name):
         plug = self.get_plug(name)
+        if not plug:
+            return
         self.edit(self.plugins[plug.__module__])
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell
         """
         plug = self.get_plug(name)
+        if not plug:
+            return
         shell = self.shellframe.rootshell.clone(plug)
         shell.SetFocus()
         
