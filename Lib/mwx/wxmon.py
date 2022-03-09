@@ -40,9 +40,9 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin):
 
 Attributes:
     parent : shellframe
-    target : An widget to monitor
+    target : widget to monitor
     dummy_hook : If True, the debugger calls handlers sequentially.
-                 If False, handlers are hooked in true event-chains.
+                 If False, handlers are hooked in true event-chain.
 
 Args:
     parent : shellframe
@@ -210,7 +210,7 @@ Args:
             warnings.simplefilter('ignore', DeprecationWarning)
             attribs = ew._makeAttribString(evt)
         
-        if wx.VERSION < (4,1,0): # ignore self insert
+        if wx.VERSION < (4,1,0): # ignore self insert event
             if event == wx.EVT_LIST_INSERT_ITEM.typeId\
               and obj is self:
                 return
