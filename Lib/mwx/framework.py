@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.52.9"
+__version__ = "0.53.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -250,7 +250,6 @@ def mro(obj):
     
     A list of filenames and lineno, or the module-names
     """
-    print(repr(obj))
     if not isinstance(obj, type):
         obj = type(obj)
     for base in obj.__mro__:
@@ -1987,7 +1986,7 @@ Global bindings:
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.__shell.target = self.__target # restore target
-        self.linfo.watch(None)
+        self.linfo.unwatch()
         del self.__target
         del self.__shell.locals
         ## del self.Log.target
@@ -2857,7 +2856,7 @@ Shell built-in utility:
     @watch      inspection using wx.lib.inspection.InspectionTool
     @edit       open file with your editor (undefined)
     @where      filename and lineno or module
-    @debug      open pdb or show eventwatcher and widget-tree
+    @debug      open pdb or show event-watcher and widget-tree
 
 Autocomp key bindings:
         C-up : [0] retrieve previous history
@@ -3092,15 +3091,15 @@ Flaky nutshell:
             1 : { # history auto completion S-mode
                          'quit' : (0, clear, _F(self.indent_line)),
                     '* pressed' : (0, fork),
-                  '*up pressed' : (1, self.on_completion_forward), # 古いヒストリへ進む
-                '*down pressed' : (1, self.on_completion_backward), # 新しいヒストリへ戻る
+                  '*up pressed' : (1, self.on_completion_forward_history),
+                '*down pressed' : (1, self.on_completion_backward_history),
                'S-left pressed' : (1, skip),
               'S-right pressed' : (1, skip),
               'shift* released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, self.on_completion_forward),
-                'S-tab pressed' : (1, self.on_completion_backward),
-                  'M-p pressed' : (1, self.on_completion_forward),
-                  'M-n pressed' : (1, self.on_completion_backward),
+                  'tab pressed' : (1, self.on_completion_forward_history),
+                'S-tab pressed' : (1, self.on_completion_backward_history),
+                  'M-p pressed' : (1, self.on_completion_forward_history),
+                  'M-n pressed' : (1, self.on_completion_backward_history),
                 'enter pressed' : (0, lambda v: self.goto_char(-1)),
                'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
@@ -4002,13 +4001,22 @@ Flaky nutshell:
     
     def skip_autocomp(self, evt):
         """Feel like pressing {tab}"""
-        wx.UIActionSimulator().KeyDown(wx.WXK_TAB)
+        if self.AutoCompActive():
+            wx.UIActionSimulator().KeyDown(wx.WXK_TAB)
     
     def on_completion_forward(self, evt):
-        self.on_completion(evt, 1)
+        if self.AutoCompActive():
+            self.on_completion(evt, 1)
     
     def on_completion_backward(self, evt):
-        self.on_completion(evt, -1)
+        if self.AutoCompActive():
+            self.on_completion(evt, -1)
+    
+    def on_completion_forward_history(self, evt):
+        self.on_completion(evt, 1) # 古いヒストリへ進む
+    
+    def on_completion_backward_history(self, evt):
+        self.on_completion(evt, -1) # 新しいヒストリへ戻る
     
     @postcall
     def on_completion(self, evt, step=0):
@@ -4361,8 +4369,8 @@ if 1:
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 4
-    frm.shellframe.rootshell.handler.debug = 0
+    frm.shellframe.handler.debug = 0
+    frm.shellframe.rootshell.handler.debug = 4
     frm.shellframe.rootshell.Execute(SHELLSTARTUP)
     frm.shellframe.rootshell.SetFocus()
     frm.shellframe.Show()
