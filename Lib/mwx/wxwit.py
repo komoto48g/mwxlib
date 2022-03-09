@@ -5,11 +5,8 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-import warnings
-import re
 import wx
-from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-from wx.lib import inspection as it
+import wx.lib.inspection as it
 try:
     from framework import Menu, watchit
     from controls import Icon
@@ -18,64 +15,7 @@ except ImportError:
     from .controls import Icon
 
 
-def atomvars(obj):
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
-        p = re.compile('[a-zA-Z]+')
-        keys = sorted(filter(p.match, dir(obj)), key=lambda s:s.upper())
-        attr = {}
-        for key in keys:
-            try:
-                value = getattr(obj, key)
-                if hasattr(value, '__name__'): # not <atom>
-                    continue
-                if key == 'ContainingSizer':
-                    sizer = obj.ContainingSizer
-                    if sizer:
-                        attr[key] = value
-                        sizerItem = atomvars(sizer.GetItem(obj)) #<wx.SizerItem>
-                        attr.update(("-> SizerItem.{}".format(k), v)
-                                     for k, v in sizerItem.items())
-                        continue
-            except Exception as e:
-                value = e
-            attr[key] = value
-        return attr
-
-
-class InfoList(wx.ListCtrl, ListCtrlAutoWidthMixin):
-    def __init__(self, parent, **kwargs):
-        wx.ListCtrl.__init__(self, parent,
-                             style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
-        ListCtrlAutoWidthMixin.__init__(self)
-        
-        self.data = []
-        self.alist = (
-            ("key", 140),
-            ("value", 0),
-        )
-        for k, (header, w) in enumerate(self.alist):
-            self.InsertColumn(k, header, width=w)
-    
-    def clear(self):
-        self.DeleteAllItems()
-        del self.data[:]
-    
-    def UpdateInfo(self, obj):
-        if not obj:
-            return
-        self.clear()
-        i = 0
-        attr = atomvars(obj)
-        for key, value in attr.items():
-            vstr = str(value)
-            self.data.append([key, vstr])
-            self.InsertItem(i, key)
-            self.SetItem(i, 1, vstr)
-            i += 1
-
-
-class Inspector(wx.SplitterWindow):
+class Inspector(it.InspectionTree):
     """Widget inspection tool
 
 Args:
@@ -84,26 +24,16 @@ Args:
     parent = property(lambda self: self.__shellframe)
     
     def __init__(self, parent, *args, **kwargs):
-        wx.SplitterWindow.__init__(self, parent, *args, **kwargs)
+        it.InspectionTree.__init__(self, parent, *args, **kwargs)
         
         self.__shellframe = parent
+        self._noWatchList = [self]
         self.target = None
+        self.toolFrame = self
+        self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
         
-        self.tree = it.InspectionTree(self, size=(280,-1))
-        self.tree.toolFrame = self # override tree
-        self.tree.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
-        
-        ## self.info = it.InspectionInfoPanel(self, size=(200,-1))
-        ## self.info.DropTarget = None # to prevent filling from crash
-        self.info = InfoList(self, size=(140,-1))
-        self.info.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
-        
-        self.SetMinimumPaneSize(140)
-        self.SplitVertically(self.tree, self.info)
-        
-        self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
@@ -117,25 +47,17 @@ Args:
             self.timer.Stop()
         evt.Skip()
     
-    ## --------------------------------
-    ## InspectionTool wrapper methods
-    ## --------------------------------
-    
-    def RefreshTree(self):
-        self.tree.BuildTree(self.target)
-    
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj"""
         if self.target is obj:
             return
         self.target = obj
-        self.info.UpdateInfo(obj)
-        item = self.tree.FindWidgetItem(obj)
+        item = self.FindWidgetItem(obj)
         if item:
-            self.tree.EnsureVisible(item)
-            self.tree.SelectItem(item)
-        else:
-            self.RefreshTree()
+            self.EnsureVisible(item)
+            self.SelectItem(item)
+        elif obj:
+            self.BuildTree(obj)
     
     def watch(self, obj):
         if not obj:
@@ -147,13 +69,16 @@ Args:
     def unwatch(self):
         self.target = None
     
+    def Dive(self, obj):
+        shell = self.parent.rootshell.clone(obj)
+        self._noWatchList.append(shell)
+    
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
-        root = self.GetTopLevelParent()
         if wnd:
             if (wnd is self.target
-              or wnd in self.Children
+              or wnd in self._noWatchList
               or wnd in self.Parent.Children
               or wnd is self.GetTopLevelParent()):
                 return
@@ -162,17 +87,19 @@ Args:
     
     def OnShow(self, evt):
         if evt.IsShown():
+            if not self.built:
+                self.BuildTree(self.target)
             self.timer.Start(500)
-            if not self.tree.built:
-                self.RefreshTree()
         else:
             self.timer.Stop()
+        self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
     
     def OnRightDown(self, evt):
-        item, flags = self.tree.HitTest(evt.Position)
+        item, flags = self.HitTest(evt.Position)
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
-            self.tree.SelectItem(item) # tree.toolFrame -> SetObj
+            self.SelectItem(item)
+        
         obj = self.target
         
         def _enable_menu(v):
@@ -180,7 +107,7 @@ Args:
         
         Menu.Popup(self, (
             (1, "&Dive into the shell", Icon('core'),
-                lambda v: self.parent.clone_shell(obj),
+                lambda v: self.Dive(obj),
                 lambda v: _enable_menu(v)),
             (),
             (2, "&Watch the event", Icon('ghost'),
@@ -195,10 +122,10 @@ Args:
                 lambda v: watchit(obj)),
             (),
             (11, "Refresh", miniIcon('Refresh'),
-                lambda v: self.RefreshTree()),
+                lambda v: self.BuildTree(obj)),
                  
             (12, "Highlight", miniIcon('HighlightItem'),
-                lambda v: self.highlighter.HighlightCurrentItem(self.tree),
+                lambda v: self.highlighter.HighlightCurrentItem(self),
                 lambda v: _enable_menu(v)),
         ))
         evt.Skip()
