@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.2"
+__version__ = "0.53.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -2764,23 +2764,20 @@ class Editor(EditWindow, EditorInterface):
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
+        @self.handler.bind('*button* pressed')
+        @self.handler.bind('*button* released')
         def fork_up(v):
             """Fork mouse events to the parent"""
             self.parent.handler(self.handler.event, v)
+            v.Skip()
         
+        @self.handler.bind('focus_set')
         def activate(v):
             if hasattr(self, 'target'):
                 self.parent.handler('title_window', self.target)
             self.trace_point()
+            v.Skip()
         
-        self.handler.update({ #<Editor.handler>
-            None : {
-              '*button* dclick' : [ None, skip, fork_up ],
-             '*button* pressed' : [ None, skip, fork_up ],
-            '*button* released' : [ None, skip, fork_up ],
-                    'focus_set' : [ None, skip, activate ],
-            },
-        })
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
         self.set_style(self.PALETTE_STYLE)
