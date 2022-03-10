@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.1"
+__version__ = "0.53.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -4011,11 +4011,15 @@ Flaky nutshell:
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, 1)
+        else:
+            self.handler('quit', evt)
         evt.Skip()
     
     def on_completion_backward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, -1)
+        else:
+            self.handler('quit', evt)
         evt.Skip()
     
     def on_completion_forward_history(self, evt):
