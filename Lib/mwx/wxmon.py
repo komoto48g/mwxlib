@@ -10,9 +10,9 @@ import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
-    from framework import where
+    from framework import CtrlInterface, where
 except ImportError:
-    from .framework import where
+    from .framework import CtrlInterface, where
 
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
@@ -35,7 +35,7 @@ else:
             self.EnableCheckBoxes()
 
 
-class EventMonitor(CheckList, ListCtrlAutoWidthMixin):
+class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     """Event monitor
 
 Attributes:
@@ -56,6 +56,7 @@ Args:
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
+        CtrlInterface.__init__(self)
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
@@ -83,7 +84,14 @@ Args:
         from wx import adv, aui, stc, media
         for module in (adv, aui, stc, media):
             self.add_module(module)
-    
+        
+        @self.handler.bind('*button* pressed')
+        @self.handler.bind('*button* released')
+        def fork(v):
+            """Fork mouse events to the parent"""
+            self.parent.handler(self.handler.event, v)
+            v.Skip()
+        
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.unwatch()

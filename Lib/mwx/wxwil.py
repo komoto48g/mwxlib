@@ -51,8 +51,8 @@ Args:
     def watch(self, locals):
         self.clear()
         if not isinstance(locals, dict):
-            wx.MessageBox("Cannot watch the locals.\n\n"
-                          "- {!r} is not a dict object.".format(locals))
+            ## wx.MessageBox("Cannot watch the locals.\n\n"
+            ##               "- {!r} is not a dict object.".format(locals))
             return
         self.__locals = locals
         self.update(self.__locals)

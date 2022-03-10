@@ -8,14 +8,14 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import wx
 import wx.lib.inspection as it
 try:
-    from framework import Menu, watchit
+    from framework import CtrlInterface, Menu, watchit
     from controls import Icon
 except ImportError:
-    from .framework import Menu, watchit
+    from .framework import CtrlInterface, Menu, watchit
     from .controls import Icon
 
 
-class Inspector(it.InspectionTree):
+class Inspector(it.InspectionTree, CtrlInterface):
     """Widget inspection tool
 
 Args:
@@ -25,6 +25,7 @@ Args:
     
     def __init__(self, parent, *args, **kwargs):
         it.InspectionTree.__init__(self, parent, *args, **kwargs)
+        CtrlInterface.__init__(self)
         
         self.__shellframe = parent
         self._noWatchList = [self]
@@ -40,6 +41,13 @@ Args:
         
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
+        
+        @self.handler.bind('*button* pressed')
+        @self.handler.bind('*button* released')
+        def fork(v):
+            """Fork mouse events to the parent"""
+            self.parent.handler(self.handler.event, v)
+            v.Skip()
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
