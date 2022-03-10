@@ -976,7 +976,7 @@ def funcall(f, *args, **kwargs):
     
     @wraps(f)
     def _Act(*v):
-        return f(*(args + v), **kwargs)
+        return f(*(v + args), **kwargs)
     action = _Act
     
     def explicit_args(argv, defaults):
