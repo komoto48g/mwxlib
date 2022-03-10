@@ -309,13 +309,16 @@ unloadable : flag to set the Layer to be unloadable
         ## Menu (override)
         self.Menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
-                lambda v: self.copy_to_clipboard()),
+                lambda v: self.copy_to_clipboard(),
+                lambda v: v.Enable(bool(self.parameters))),
                 
             (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
-                lambda v: self.paste_from_clipboard()),
+                lambda v: self.paste_from_clipboard(),
+                lambda v: v.Enable(bool(self.parameters))),
             (),
             (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params", Icon('-'),
-                lambda v: (self.Draw(False), self.reset_params())),
+                lambda v: (self.Draw(None), self.reset_params()),
+                lambda v: v.Enable(bool(self.parameters))),
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
                 lambda v: self.parent.edit_plug(self.__module__),

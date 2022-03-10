@@ -589,13 +589,16 @@ class ControlPanel(scrolled.ScrolledPanel):
         
         self.Menu = [
             (wx.ID_COPY, "&Copy params", "Copy params",
-                lambda v: self.copy_to_clipboard()),
+                lambda v: self.copy_to_clipboard(),
+                lambda v: v.Enable(self.__params != [])),
                 
             (wx.ID_PASTE, "&Paste params", "Read params",
-                lambda v: self.paste_from_clipboard()),
+                lambda v: self.paste_from_clipboard(),
+                lambda v: v.Enable(self.__params != [])),
             (),
             (wx.ID_RESET, "&Reset params", "Reset params",
-                lambda v: self.reset_params()),
+                lambda v: self.reset_params(),
+                lambda v: v.Enable(self.__params != [])),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: mwx.Menu.Popup(self, self.Menu))
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
