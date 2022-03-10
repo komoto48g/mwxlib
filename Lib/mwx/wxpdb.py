@@ -60,7 +60,7 @@ Key bindings:
     parent = property(lambda self: self.__shellframe)
     logger = property(lambda self: self.__shellframe.Log)
     handler = property(lambda self: self.__handler)
-    busy = property(lambda self: self.target is not None)
+    busy = property(lambda self: self.__handler.current_state != 0)
     
     @property
     def locals(self):
@@ -159,12 +159,10 @@ Key bindings:
     
     def trace(self, target, *args, **kwargs):
         if not callable(target):
-            print("- cannot break {!r} (not callable)".format(target))
             wx.MessageBox("Not callable object\n\n"
                           "Unable to trace {!r}".format(target))
             return
         if inspect.isbuiltin(target):
-            print("- cannot break {!r}".format(target))
             wx.MessageBox("Built-in object\n\n"
                           "Unable to trace {!r}".format(target))
             return
@@ -198,9 +196,6 @@ Key bindings:
         print(self.indent + "***", msg, file=self.stdout)
     
     def mark(self, frame, lineno):
-        ## module = inspect.getmodule(frame)
-        ## if module is None:
-        ##     return
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
@@ -211,6 +206,10 @@ Key bindings:
     ## --------------------------------
     
     def set_trace(self, frame=None):
+        if self.busy:
+            wx.MessageBox("Debugger is running\n\n"
+                          "Enter [q]uit to exit.")
+            return
         if self.target is None:
             self.target = pdb.sys._getframe().f_back
         self.handler('debug_begin', self.target)
