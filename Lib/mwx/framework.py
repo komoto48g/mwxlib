@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.3"
+__version__ = "0.53.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -1922,9 +1922,10 @@ Global bindings:
         else:
             print("- No such window in any pane: {}.".format(win))
             return
+        pane = self._mgr.GetPane(nb)
         if show is None:
-            show = not nb.IsShown()
-        self._mgr.GetPane(nb).Show(show)
+            show = not pane.IsShown()
+        pane.Show(show)
         self._mgr.Update()
     
     def SetTitleWindow(self, target):
@@ -1971,6 +1972,8 @@ Global bindings:
         self.__shell.SetFocus()
         self.__target = self.__shell.target # save target
         self.Show()
+        self.Log.clear()
+        self.show_page(self.Log, focus=0)
         self.show_page(self.linfo)
     
     def on_debug_next(self, frame):
@@ -2796,20 +2799,6 @@ class Editor(EditWindow, EditorInterface):
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_point()
         evt.Skip()
-    
-    Shown = property(
-        lambda self: self.IsShown(),
-        lambda self,v: self.Show(v))
-    
-    def IsShown(self):
-        """Return True if shown on the screen"""
-        return EditWindow.IsShown(self) and self.Parent.IsShown()
-    
-    def Show(self, show=True):
-        """Show or hide the window"""
-        shown = self.IsShown()
-        self.parent.handler('show_page', self, show)
-        return shown != self.IsShown()
 
 
 class Nautilus(Shell, EditorInterface):

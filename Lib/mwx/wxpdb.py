@@ -128,8 +128,6 @@ Key bindings:
             except Exception:
                 pass
         wx.CallAfter(_continue)
-        self.logger.clear()
-        self.logger.Show()
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
