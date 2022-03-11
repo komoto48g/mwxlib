@@ -1787,8 +1787,8 @@ Global bindings:
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
                     'debug_end' : [ None, self.on_debug_end ],
-                'monitor_begin' : [ None, ],
-                  'monitor_end' : [ None, ],
+                'monitor_begin' : [ None, self.on_monitor_begin ],
+                  'monitor_end' : [ None, self.on_monitor_end ],
                   'put_scratch' : [ None, self.Scratch.SetText ],
                      'put_help' : [ None, self.Help.SetText,
                                           _F(self.show_page, self.Help) ],
@@ -1990,6 +1990,12 @@ Global bindings:
         del self.__target
         del self.__shell.locals
         ## del self.Log.target
+    
+    def on_monitor_begin(self, widget):
+        self.inspector.set_colour(widget, 'blue')
+    
+    def on_monitor_end(self, widget):
+        self.inspector.set_colour(widget, 'black')
     
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus"""
