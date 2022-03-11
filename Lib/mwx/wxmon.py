@@ -210,7 +210,7 @@ Args:
         event = evt.EventType
         obj = evt.EventObject
         name = self.get_name(event)
-        source = ew._makeSourceString(obj)
+        source = ew._makeSourceString(obj) + " id={:#x}".format(id(evt))
         ## timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-4]
         stamp = 1
         
@@ -253,7 +253,7 @@ Args:
                 self.parent.debugger.set_trace()
         self.blink(i)
     
-    def append(self, event, bold=True):
+    def append(self, event):
         data = self.__items
         if event in (item[0] for item in data):
             return
@@ -265,8 +265,7 @@ Args:
         self.InsertItem(i, event)
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
-        if bold:
-            self.SetItemFont(i, self.Font.Bold())
+        self.SetItemTextColour(i, 'blue')
         self.blink(i)
     
     def blink(self, i):
@@ -288,7 +287,7 @@ Args:
         data = self.__items
         ls = _getitem(self.IsSelected)
         lc = _getitem(self.IsItemChecked)
-        lb = _getitem(lambda i: self.GetItemFont(i) == self.Font.Bold())
+        lb = _getitem(lambda i: self.GetItemTextColour(i) == 'blue')
         f = data[self.FocusedItem]
         
         col = evt.Column
@@ -300,9 +299,9 @@ Args:
                 self.SetItem(i, j, str(v))
             self.Select(i, item in ls)
             self.CheckItem(i, item in lc)
-            self.SetItemFont(i, self.Font) # reset font
+            self.SetItemTextColour(i, 'black') # reset font
             if item in lb:
-                self.SetItemFont(i, self.Font.Bold())
+                self.SetItemTextColour(i, 'blue')
             if item == f:
                 self.Focus(i)
     
