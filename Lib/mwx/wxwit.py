@@ -67,6 +67,12 @@ Args:
         elif obj:
             self.BuildTree(obj)
     
+    def set_colour(self, obj, col):
+        self.SetObj(obj)
+        item = self.FindWidgetItem(obj)
+        if item:
+            self.SetItemTextColour(item, col)
+    
     def watch(self, obj):
         if not obj:
             self.unwatch()
