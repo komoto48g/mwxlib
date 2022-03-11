@@ -280,13 +280,13 @@ def get_words_hint(cmd):
 def _get_words_backward(text, sep=None):
     """Get words (from text at left side of caret)"""
     tokens = _split_tokens(text)[::-1]
-    return extract_words_from_tokens(tokens, sep, reverse=1)
+    return _extract_words_from_tokens(tokens, sep, reverse=1)
 
 
 def _get_words_forward(text, sep=None):
     """Get words (from text at right side of caret)"""
     tokens = _split_tokens(text)
-    return extract_words_from_tokens(tokens, sep)
+    return _extract_words_from_tokens(tokens, sep)
 
 
 def extract_words(text, lp):
@@ -300,7 +300,7 @@ def split_words(text):
     phrases = []
     tokens = _split_tokens(text)
     while tokens:
-        words = extract_words_from_tokens(tokens)
+        words = _extract_words_from_tokens(tokens)
         phrases.append(words or tokens.pop(0)) # extracted words or a separator
     return phrases
 
@@ -325,7 +325,7 @@ def _split_tokens(text):
     return ls
 
 
-def extract_words_from_tokens(tokens, sep=None, reverse=False):
+def _extract_words_from_tokens(tokens, sep=None, reverse=False):
     """Extract pythonic expressions from `tokens
     default `sep includes `@, binary-ops, and whitespaces, etc.
     """
@@ -3476,27 +3476,29 @@ Flaky nutshell:
         sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # [`] SEPARATOR_CHARS; nospace, nocomma
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # [@] SEPARATOR_CHARS;
         
-        for j, c in enumerate(tokens):
-            ls, rs = tokens[:j], tokens[j+1:]
+        def _eats(r, sep):
+            s = ''
+            while r and r[0].isspace(): # skip whites
+                r.pop(0)
+            while r and r[0] not in sep: # eat until seps appear
+                s += r.pop(0)
+            return s
+        
+        for i, c in enumerate(tokens):
+            ls, rs = tokens[:i], tokens[i+1:]
             
             if c == '@':
                 f = "{rhs}({lhs})"
-                if rs and rs[0] == '*':
-                    f = "{rhs}(*{lhs})" # x@*y --> y(*x)
-                    rs.pop(0)
-                while rs and rs[0].isspace(): # skip whites
-                    rs.pop(0)
-                
                 lhs = ''.join(ls).strip() or '_'
-                rhs = extract_words_from_tokens(rs, sep2).strip()
-                rhs = re.sub(r"(\(.*\))$",      # x@(y1,...,yn)
+                rhs = ''.join(_eats(rs, sep2)).strip()
+                rhs = re.sub(r"^(\(.*\))$",     # x@(y1,...,yn)
                              r"partial\1", rhs) # --> partial(y1,...,yn)(x)
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '`':
                 f = "{rhs}={lhs}"
                 lhs = ''.join(ls).strip() or '_'
-                rhs = extract_words_from_tokens(rs, sep1).strip()
+                rhs = ''.join(_eats(rs, sep1)).strip()
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '?':
