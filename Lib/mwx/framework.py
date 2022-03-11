@@ -3482,29 +3482,29 @@ Flaky nutshell:
                 r.pop(0)
             while r and r[0] not in sep: # eat until seps appear
                 s += r.pop(0)
-            return s
+            return ''.join(s)
         
+        lhs = ''
         for i, c in enumerate(tokens):
-            ls, rs = tokens[:i], tokens[i+1:]
+            rs = tokens[i+1:]
             
             if c == '@':
                 f = "{rhs}({lhs})"
-                lhs = ''.join(ls).strip() or '_'
-                rhs = ''.join(_eats(rs, sep2)).strip()
+                lhs = lhs.strip() or '_'
+                rhs = _eats(rs, sep2).strip()
                 rhs = re.sub(r"^(\(.*\))$",     # x@(y1,...,yn)
                              r"partial\1", rhs) # --> partial(y1,...,yn)(x)
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '`':
                 f = "{rhs}={lhs}"
-                lhs = ''.join(ls).strip() or '_'
-                rhs = ''.join(_eats(rs, sep1)).strip()
+                lhs = lhs.strip() or '_'
+                rhs = _eats(rs, sep1).strip()
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '?':
-                head, sep, hint = ''.join(ls).rpartition('.')
+                head, sep, hint = lhs.rpartition('.')
                 cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(rs)).groups()
-                
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=locals())".format(
                         head, hint.strip(), len(cc)<2, pred or None))
@@ -3512,11 +3512,12 @@ Flaky nutshell:
             if c == sys.ps2.strip():
                 while rs and rs[0].isspace(): # eat whites
                     c += rs.pop(0)
-                return ''.join(ls) + c + self.magic_interpret(rs)
+                return lhs + c + self.magic_interpret(rs)
             
             if c in ';\r\n':
-                return ''.join(ls) + c + self.magic_interpret(rs)
+                return lhs + c + self.magic_interpret(rs)
             
+            lhs += c
         return ''.join(tokens)
     
     def magic(self, cmd):
