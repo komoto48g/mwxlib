@@ -60,7 +60,7 @@ Key bindings:
     parent = property(lambda self: self.__shellframe)
     logger = property(lambda self: self.__shellframe.Log)
     handler = property(lambda self: self.__handler)
-    busy = property(lambda self: self.__handler.current_state != 0)
+    busy = property(lambda self: self.__handler.current_state == 1)
     
     @property
     def locals(self):
@@ -289,7 +289,7 @@ Key bindings:
         """
         frame = self.curframe
         code = frame.f_code
-        filename = frame.f_code.co_filename
+        filename = code.co_filename
         ## module = inspect.getmodule(frame)
         m = re.match("<frozen (.*)>", filename)
         if m:
@@ -309,8 +309,6 @@ Key bindings:
             
             ## Update logger marker
             if self.code != code:
-                ## self.logger.MarkerDeleteAll(0)
-                ## self.logger.MarkerAdd(lineno-1, 0) # (=>) entry pointer
                 self.logger.mark = self.logger.PositionFromLine(lineno-1)
             
             for ln in lbps:
