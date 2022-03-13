@@ -955,8 +955,7 @@ def regulate_key(key):
 ## Interfaces of Controls
 ## --------------------------------
 
-## def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
-def funcall(f, *args, **kwargs):
+def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
     """Decorator as curried function
     
     event 引数などが省略できるかどうかチェックし，
@@ -965,14 +964,8 @@ def funcall(f, *args, **kwargs):
     If it can be omitted (if required arguments are given by kwargs),
     return the decorated function.
     
-    kwargs: `doc` and `alias` are reserved as kw-only-args,
-        and cannot used as kwargs of given function f.
-    
     retval-> (lambda *v: f`alias<doc:str>(*v, *args, **kwargs))
     """
-    doc = kwargs.pop('doc') if 'doc' in kwargs else ''
-    alias = kwargs.pop('alias') if 'alias' in kwargs else ''
-    
     assert isinstance(doc, (string_types, type(None)))
     assert isinstance(alias, (string_types, type(None)))
     
@@ -1227,8 +1220,10 @@ def ID_(id):
     return id
 
 
-## def pack(self, *args, orient=wx.HORIZONTAL, style=None, label=None): # PY3
-def pack(self, *args, **kwargs):
+def pack(self, *args,
+         orient=wx.HORIZONTAL,
+         style=(0, wx.EXPAND | wx.ALL, 0),
+         label=None):
     """Do layout
 
 Usage:
@@ -1248,17 +1243,13 @@ Usage:
           - None -> phantom
  **kwargs : 
    orient : HORIZONTAL or VERTICAL
-    style : (proportion, flag, border) :default (0, wx.EXPAND | wx.ALL, 0)
+    style : (proportion, flag, border)
             flag-expansion -> EXPAND, SHAPED
             flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
             flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     label : label of StaticBox
     """
-    orient = kwargs.get("orient") or wx.HORIZONTAL
-    style = kwargs.get("style") or (0, wx.EXPAND | wx.ALL, 0)
-    label = kwargs.get("label")
-    
     if label is not None:
         box = wx.StaticBox(self, -1, label)
         sizer = wx.StaticBoxSizer(box, orient)
