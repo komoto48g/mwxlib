@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.4"
+__version__ = "0.53.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from collections import OrderedDict
@@ -29,6 +29,7 @@ import numpy as np
 import fnmatch
 import pkgutil
 import pydoc
+import linecache
 import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator)
@@ -239,10 +240,11 @@ def where(obj):
             return filename
         return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
     except Exception:
-        try:
-            return inspect.getfile(obj.__class__)
-        except Exception:
-            return inspect.getmodule(obj)
+        pass
+    try:
+        return inspect.getfile(obj.__class__)
+    except Exception:
+        return inspect.getmodule(obj)
 
 
 def mro(obj):
@@ -1334,7 +1336,7 @@ class TreeList(object):
             la = self.getf(ls, a)
             if la is not None:
                 return self.getf(la, b)
-            return # None item
+            return None
         return next((x[-1] for x in ls if x and x[0] == key), None)
     
     @classmethod
@@ -1443,8 +1445,7 @@ class MenuBar(wx.MenuBar, TreeList):
             branch = self.getmenu(a, root)
             return self.getmenu(b, branch)
         if root is None:
-            return next((menu for menu,label in self.Menus if menu.Title == key), None)
-        ## return next((item.SubMenu for item in root.MenuItems if item.Text == key), None)
+            return next((menu for menu, label in self.Menus if menu.Title == key), None)
         return next((item.SubMenu for item in root.MenuItems if item.ItemLabel == key), None)
     
     def update(self, key):
@@ -1974,7 +1975,7 @@ Global bindings:
         self.Show()
         self.Log.clear()
         self.show_page(self.Log, focus=0)
-        self.show_page(self.linfo)
+        self.show_page(self.linfo, focus=0)
     
     def on_debug_next(self, frame):
         self.__shell.target = inspect.getmodule(frame) or self.__target
@@ -1982,7 +1983,7 @@ Global bindings:
         self.linfo.watch(self.debugger.locals)
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
-        ## self.Log.target = "File {}".format(frame.f_code.co_filename)
+        ## self.Log.target = frame.f_code.co_name
         dispatcher.send(signal='Interpreter.push', sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
@@ -1996,6 +1997,16 @@ Global bindings:
     
     def on_monitor_begin(self, widget):
         self.inspector.set_colour(widget, 'blue')
+        obj = widget.__class__
+        filename = inspect.getsourcefile(obj)
+        src, lineno = inspect.getsourcelines(obj)
+        lines = linecache.getlines(filename)
+        ## with fopen(filename, encoding='utf8', newline='') as i:
+        ##     self.Log.Text = i.read()
+        self.Log.Text = ''.join(lines)
+        self.Log.mark = self.Log.PositionFromLine(lineno-1)
+        self.Log.goto_char(self.Log.mark)
+        wx.CallAfter(self.Log.recenter)
     
     def on_monitor_end(self, widget):
         self.inspector.set_colour(widget, 'black')
@@ -2188,7 +2199,6 @@ def editable(f):
     def _f(self, *args, **kwargs):
         if self.CanEdit():
             return f(self, *args, **kwargs)
-        ## self.message("- cannot edit")
     return _f
 
 
@@ -2281,23 +2291,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## [1] for numbers, 32 pixels wide, mask 0x01ffffff (~stc.STC_MASK_FOLDERS)
         ## [2] for borders,  1 pixels wide, mask 0xfe000000 ( stc.STC_MASK_FOLDERS)
         
-        ## Set the mask and width
-        ## [1] 32bit mask 1111,1110,0000,0000,0000,0000,0000,0000
-        ## [2] 32bit mask 0000,0001,1111,1111,1111,1111,1111,1111
+        ## 32 bit margin mask
+        ## [0] 1111,1111,1111,1111,1111,1111,1111,1111 = -1 for all markers
+        ## [1] 0000,0001,1111,1111,1111,1111,1111,1111 = 0x01ffffff for markers
+        ## [2] 1111,1110,0000,0000,0000,0000,0000,0000 = 0xfe000000 for folders
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b0111) # mask for default markers
-        ## self.SetMarginMask(0, -1) # mask for all markers
+        self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-        self.SetMarginMask(1, 0b1000) # default: no symbols
-        ## self.SetMarginWidth(1, 0) # default: no margin
+        self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
-        ## self.SetMarginWidth(2, 0) # default: no margin
         self.SetMarginWidth(2, 1)
         self.SetMarginSensitive(2, False)
         
@@ -2305,10 +2313,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginLeft(2) # +1 margin at the left
         
         ## Custom markers (cf. MarkerAdd)
-        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#0080f0', "#0080f0") # o blue-mark
+        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', "#007ff0") # o blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', "#ffffff") # > white-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', "#ff0000") # > red-arrow
         self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "gray")   # >> pointer
+        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', "yellow")  # >> red-pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
@@ -4201,7 +4210,7 @@ Flaky nutshell:
 
 
 try:
-    from wx import core # PY3 only
+    from wx import core # PY3
 
     def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
         """
