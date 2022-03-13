@@ -37,7 +37,8 @@ if 1:
     def __init__(self, name, canvas, guiEvent=None):
         self.name = name
         self.canvas = canvas
-        self.guiEvent = None
+        ## self.guiEvent = None
+        self.guiEvent = guiEvent.Clone() if guiEvent else None
     
     Event.__init__ = __init__
     del __init__
