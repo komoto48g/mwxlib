@@ -32,14 +32,14 @@ from six.moves import builtins
 from six import string_types
 from importlib import reload
 try:
-    from utilus import (SSM, FSM, wdir, apropos, typename, where, mro, pp,
+    from utilus import (FSM, wdir, apropos, typename, where, mro, pp,
                         _get_words_backward,
                         _get_words_forward,
                         split_words,
                         find_modules,
                         get_rootpath)
 except ImportError:
-    from .utilus import (SSM, FSM, wdir, apropos, typename, where, mro, pp,
+    from .utilus import (FSM, wdir, apropos, typename, where, mro, pp,
                          _get_words_backward,
                          _get_words_forward,
                          split_words,
@@ -951,7 +951,8 @@ Global bindings:
                                    stdout=self.__shell.interp.stdout,
                                    skip=[Debugger.__module__,
                                          EventMonitor.__module__,
-                                         'utilus', 'fnmatch', 'warnings',
+                                         FSM.__module__,
+                                         'fnmatch', 'warnings',
                                          'wx.core', 'wx.lib.eventwatcher',
                                          ],
                                    )
@@ -2823,14 +2824,17 @@ Flaky nutshell:
         ##     del shell.target.shell
         ## except AttributeError:
         ##     pass
-        del builtins.help
-        del builtins.info
-        del builtins.dive
-        del builtins.timeit
-        del builtins.profile
-        del builtins.execute
-        del builtins.puts
-        del builtins.debug
+        try:
+            del builtins.help
+            del builtins.info
+            del builtins.dive
+            del builtins.timeit
+            del builtins.profile
+            del builtins.execute
+            del builtins.puts
+            del builtins.debug
+        except AttributeError:
+            pass
     
     def on_text_input(self, text):
         """Called when [Enter] text (before push)

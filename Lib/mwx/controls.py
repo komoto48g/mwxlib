@@ -10,9 +10,11 @@ import wx
 import numpy as np
 from numpy import nan, inf
 try:
+    from utilus import SSM
     import framework as mwx
     import images
 except ImportError:
+    from .utilus import SSM
     from . import framework as mwx
     from . import images
 import wx.lib.platebtn as pb
@@ -65,7 +67,7 @@ Args:
             self.__eval = lambda v: eval(v)
             self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
         self.__check = 0
-        self.__callback = mwx.SSM({
+        self.__callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
               'check' : [ updater ] if updater else [],
