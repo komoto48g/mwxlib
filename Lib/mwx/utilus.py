@@ -795,21 +795,6 @@ class TreeList(object):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     
-    ## def __str__(self):
-    ##     return pformat(self.__items)
-    
-    def iteritems(self, root=None):
-        """Generates all branches [key, value(s)]"""
-        for branch in root or self:
-            if not branch:
-                continue
-            key, data = branch[0], branch[-1]
-            if not isinstance(data, (list, tuple)):
-                yield branch
-            else:
-                for v in self.iteritems(data):
-                    yield v
-    
     @classmethod
     def getf(self, ls, key):
         if '/' in key:
