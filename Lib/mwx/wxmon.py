@@ -10,9 +10,11 @@ import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
-    from framework import CtrlInterface, where
+    from utilus import where
+    from framework import CtrlInterface
 except ImportError:
-    from .framework import CtrlInterface, where
+    from .utilus import where
+    from .framework import CtrlInterface
 
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin

@@ -14,9 +14,9 @@ import linecache
 import inspect
 import wx
 try:
-    from framework import FSM
+    from utilus import FSM
 except ImportError:
-    from .framework import FSM
+    from .utilus import FSM
 
 
 def echo(f):
