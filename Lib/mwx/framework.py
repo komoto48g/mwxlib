@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.6"
+__version__ = "0.53.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -32,19 +32,15 @@ from six.moves import builtins
 from six import string_types
 from importlib import reload
 try:
-    from utilus import (FSM, wdir, apropos, typename, where, mro, pp,
-                        _get_words_backward,
-                        _get_words_forward,
-                        split_words,
-                        find_modules,
-                        get_rootpath)
+    from utilus import (FSM, TreeList,
+                        wdir, apropos, typename, where, mro, pp,
+                        _get_words_forward, _get_words_backward,
+                        split_words, find_modules, get_rootpath,)
 except ImportError:
-    from .utilus import (FSM, wdir, apropos, typename, where, mro, pp,
-                         _get_words_backward,
-                         _get_words_forward,
-                         split_words,
-                         find_modules,
-                         get_rootpath)
+    from .utilus import (FSM, TreeList,
+                         wdir, apropos, typename, where, mro, pp,
+                         _get_words_forward, _get_words_backward,
+                         split_words, find_modules, get_rootpath,)
 
 
 speckeys = {
@@ -514,88 +510,6 @@ Usage:
             sizer.Add(err, *style)
             wx.Bell()
     return sizer
-
-
-class TreeList(object):
-    def __init__(self, ls=None):
-        self.__items = ls or []
-    
-    def __getattr__(self, attr):
-        return getattr(self.__items, attr)
-    
-    def __contains__(self, k):
-        return self.getf(self.__items, k)
-    
-    def __iter__(self):
-        return self.__items.__iter__()
-    
-    def __getitem__(self, k):
-        if isinstance(k, string_types):
-            return self.getf(self.__items, k)
-        return self.__items.__getitem__(k)
-    
-    def __setitem__(self, k, v):
-        if isinstance(k, string_types):
-            return self.setf(self.__items, k, v)
-        return self.__items.__setitem__(k, v)
-    
-    def __delitem__(self, k):
-        if isinstance(k, string_types):
-            return self.delf(self.__items, k)
-        return self.__items.__delitem__(k)
-    
-    def __str__(self):
-        return pformat(self.__items)
-    
-    def items(self, root=None):
-        """Generates all branches [key, value(s)]"""
-        for branch in root or self:
-            if not branch:
-                continue
-            key, data = branch[0], branch[-1]
-            if not isinstance(data, (list, tuple)):
-                yield branch
-            else:
-                for v in self.items(data):
-                    yield v
-    
-    @classmethod
-    def getf(self, ls, key):
-        if '/' in key:
-            a, b = key.split('/', 1)
-            la = self.getf(ls, a)
-            if la is not None:
-                return self.getf(la, b)
-            return None
-        return next((x[-1] for x in ls if x and x[0] == key), None)
-    
-    @classmethod
-    def setf(self, ls, key, value):
-        if '/' in key:
-            a, b = key.split('/', 1)
-            la = self.getf(ls, a)
-            if la is not None:
-                return self.setf(la, b, value)
-            p, key = key.rsplit('/', 1)
-            return self.setf(ls, p, [[key, value]]) # >>> ls[p].append([key, value])
-        try:
-            li = next((x for x in ls if x and x[0] == key), None)
-            if li is not None:
-                if isinstance(value, list):
-                    li[-1][:] = value # assign value:list to items:list
-                else:
-                    li[-1] = value # assign value to item (li must be a list)
-            else:
-                ls.append([key, value]) # append to items:list
-        except (TypeError, AttributeError) as e:
-            print("- TreeList:warning {!r}: key={!r}".format(e, key))
-    
-    @classmethod
-    def delf(self, ls, key):
-        if '/' in key:
-            p, key = key.rsplit('/', 1)
-            ls = self.getf(ls, p)
-        ls.remove(next(x for x in ls if x and x[0] == key))
 
 
 class Menu(wx.Menu):
