@@ -5,7 +5,6 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from collections import OrderedDict
-from pprint import pprint
 import traceback
 import warnings
 import shlex
@@ -18,6 +17,7 @@ import pkgutil
 import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator)
+from pprint import pprint, pformat
 from six import string_types
 
 
@@ -765,3 +765,70 @@ Attributes:
                 warn("- FSM:warning - removing action from context ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
         return False
+
+
+class TreeList(object):
+    def __init__(self, ls=None):
+        self.__items = ls or []
+    
+    def __getattr__(self, attr):
+        return getattr(self.__items, attr)
+    
+    def __contains__(self, k):
+        return self.getf(self.__items, k)
+    
+    def __iter__(self):
+        return self.__items.__iter__()
+    
+    def __getitem__(self, k):
+        if isinstance(k, string_types):
+            return self.getf(self.__items, k)
+        return self.__items.__getitem__(k)
+    
+    def __setitem__(self, k, v):
+        if isinstance(k, string_types):
+            return self.setf(self.__items, k, v)
+        return self.__items.__setitem__(k, v)
+    
+    def __delitem__(self, k):
+        if isinstance(k, string_types):
+            return self.delf(self.__items, k)
+        return self.__items.__delitem__(k)
+    
+    @classmethod
+    def getf(self, ls, key):
+        if '/' in key:
+            a, b = key.split('/', 1)
+            la = self.getf(ls, a)
+            if la is not None:
+                return self.getf(la, b)
+            return None
+        return next((x[-1] for x in ls if x and x[0] == key), None)
+    
+    @classmethod
+    def setf(self, ls, key, value):
+        if '/' in key:
+            a, b = key.split('/', 1)
+            la = self.getf(ls, a)
+            if la is not None:
+                return self.setf(la, b, value)
+            p, key = key.rsplit('/', 1)
+            return self.setf(ls, p, [[key, value]]) # >>> ls[p].append([key, value])
+        try:
+            li = next((x for x in ls if x and x[0] == key), None)
+            if li is not None:
+                if isinstance(value, list):
+                    li[-1][:] = value # assign value:list to items:list
+                else:
+                    li[-1] = value # assign value to item (li must be a list)
+            else:
+                ls.append([key, value]) # append to items:list
+        except (TypeError, AttributeError) as e:
+            print("- TreeList:warning {!r}: key={!r}".format(e, key))
+    
+    @classmethod
+    def delf(self, ls, key):
+        if '/' in key:
+            p, key = key.rsplit('/', 1)
+            ls = self.getf(ls, p)
+        ls.remove(next(x for x in ls if x and x[0] == key))

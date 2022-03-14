@@ -83,9 +83,11 @@ Args:
     def unwatch(self):
         self.target = None
     
-    def Dive(self, obj):
+    def dive(self, obj):
         shell = self.parent.rootshell.clone(obj)
         self._noWatchList.append(shell)
+        self.SetObj(obj)
+        return shell
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
@@ -121,7 +123,7 @@ Args:
         
         Menu.Popup(self, (
             (1, "&Dive into the shell", Icon('core'),
-                lambda v: self.Dive(obj),
+                lambda v: self.dive(obj),
                 lambda v: _enable_menu(v)),
             (),
             (2, "&Watch the event", Icon('ghost'),

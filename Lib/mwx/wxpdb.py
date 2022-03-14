@@ -14,9 +14,9 @@ import linecache
 import inspect
 import wx
 try:
-    from framework import FSM
+    from utilus import FSM
 except ImportError:
-    from .framework import FSM
+    from .utilus import FSM
 
 
 def echo(f):
@@ -60,21 +60,23 @@ Key bindings:
     parent = property(lambda self: self.__shellframe)
     logger = property(lambda self: self.__shellframe.Log)
     handler = property(lambda self: self.__handler)
-    busy = property(lambda self: self.__handler.current_state == 1)
+    
+    @property
+    def busy(self):
+        try:
+            return self.curframe is not None
+        except AttributeError:
+            pass
     
     @property
     def locals(self):
-        try:
+        if self.busy:
             return self.curframe.f_locals # cf. curframe_locals
-        except AttributeError:
-            pass
     
     @property
     def globals(self):
-        try:
+        if self.busy:
             return self.curframe.f_globals
-        except AttributeError:
-            pass
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
@@ -148,7 +150,7 @@ Key bindings:
         self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
-        """Called after set_quit"""
+        """Called before set_quit"""
         shell = self.parent.rootshell
         out = shell.GetTextRange(self.__interactive, shell.point) + '\n'
         self.parent.handler('add_history', out)
@@ -211,7 +213,7 @@ Key bindings:
         if self.target is None:
             self.target = pdb.sys._getframe().f_back
         self.handler('debug_begin', self.target)
-        return Pdb.set_trace(self, frame)
+        Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
         self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
@@ -222,10 +224,10 @@ Key bindings:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         print("-->", self.format_stack_entry(frame_lineno))
-        Pdb.set_quit(self)
         self.handler('debug_end', self.target)
         self.target = None
         self.code = None
+        Pdb.set_quit(self)
     
     ## --------------------------------
     ## Override Pdb methods
