@@ -150,7 +150,7 @@ Key bindings:
         self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
-        """Called before set_quit"""
+        """Called after set_quit"""
         shell = self.parent.rootshell
         out = shell.GetTextRange(self.__interactive, shell.point) + '\n'
         self.parent.handler('add_history', out)
@@ -224,10 +224,13 @@ Key bindings:
         ##     print("+ all stacked frame")
         ##     for frame_lineno in self.stack:
         ##         print("-->", self.format_stack_entry(frame_lineno))
-        self.handler('debug_end', self.target)
-        self.target = None
-        self.code = None
-        Pdb.set_quit(self)
+        try:
+            Pdb.set_quit(self)
+        finally:
+            self.handler('debug_end', self.curframe)
+            self.target = None
+            self.code = None
+            return
     
     ## --------------------------------
     ## Override Pdb methods
