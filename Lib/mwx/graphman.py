@@ -1244,7 +1244,8 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if not plug:
             return
-        shell = self.shellframe.rootshell.clone(plug)
+        ## shell = self.shellframe.rootshell.clone(plug)
+        shell = self.shellframe.inspector.dive(plug)
         shell.SetFocus()
         
         @shell.handler.bind("shell_activated")
