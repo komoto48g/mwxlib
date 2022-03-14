@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.7"
+__version__ = "0.53.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1144,14 +1144,15 @@ Global bindings:
         self.inspector.set_colour(widget, 'blue')
         obj = widget.__class__
         filename = inspect.getsourcefile(obj)
-        src, lineno = inspect.getsourcelines(obj)
-        lines = linecache.getlines(filename)
-        ## with fopen(filename, encoding='utf8', newline='') as i:
-        ##     self.Log.Text = i.read()
-        self.Log.Text = ''.join(lines)
-        self.Log.mark = self.Log.PositionFromLine(lineno-1)
-        self.Log.goto_char(self.Log.mark)
-        wx.CallAfter(self.Log.recenter)
+        if filename:
+            src, lineno = inspect.getsourcelines(obj)
+            lines = linecache.getlines(filename)
+            ## with fopen(filename, encoding='utf8', newline='') as i:
+            ##     self.Log.Text = i.read()
+            self.Log.Text = ''.join(lines)
+            self.Log.mark = self.Log.PositionFromLine(lineno-1)
+            self.Log.goto_char(self.Log.mark)
+            wx.CallAfter(self.Log.recenter)
     
     def on_monitor_end(self, widget):
         self.inspector.set_colour(widget, 'black')
