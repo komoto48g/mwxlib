@@ -51,7 +51,6 @@ Args:
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
-            self.unwatch()
             self.timer.Stop()
         evt.Skip()
     

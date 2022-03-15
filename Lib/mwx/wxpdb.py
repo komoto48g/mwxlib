@@ -157,14 +157,14 @@ Key bindings:
         self.parent.handler('debug_end', frame)
         self.__interactive = None
     
-    def trace(self, target, *args, **kwargs):
+    def watch(self, target, *args, **kwargs):
         if not callable(target):
             wx.MessageBox("Not callable object\n\n"
-                          "Unable to trace {!r}".format(target))
+                          "Unable to watch {!r}".format(target))
             return
         if inspect.isbuiltin(target):
             wx.MessageBox("Built-in object\n\n"
-                          "Unable to trace {!r}".format(target))
+                          "Unable to watch {!r}".format(target))
             return
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
@@ -353,7 +353,7 @@ if __name__ == "__main__":
             },
         })
         frm.dbg = dbg
-        shell.write("self.dbg.trace(self.About)")
+        shell.write("self.dbg.watch(self.About)")
         self.Show()
     frm.Show()
     app.MainLoop()
