@@ -369,9 +369,6 @@ class KeyCtrlInterfaceMixin(object):
     """Keymap interface mixin
     
     This interface class defines extended keymaps for inherited class handler.
-    The class that mixes this in must have,
-      - handler <FSM>
-      - statusbar
     
     keymap : event key name that excluds 'pressed'
         global-map : 0 (default)
@@ -379,12 +376,6 @@ class KeyCtrlInterfaceMixin(object):
           spec-map : 'C-c'
            esc-map : 'escape'
     """
-    def message(self, msg):
-        try:
-            self.statusbar.write(msg)
-        except AttributeError:
-            print(msg)
-    
     def make_keymap(self, keymap, state=0, default=0):
         """Make a basis of extension map in the handler.
         """
@@ -674,16 +665,12 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
  shellframe : mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
-    
-    shellframe = property(lambda self: self.__shellframe)
+    message = property(lambda self: self.statusbar)
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
-        self.__shellframe = ShellFrame(None, target=self)
-        
-        ## statusbar/menubar customization
-        ## Do layout after statusbar/menubar is created
+        self.shellframe = ShellFrame(None, target=self)
         
         self.menubar = MenuBar()
         self.menubar["File"] = [
@@ -756,6 +743,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
   statusbar : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
+    message = property(lambda self: self.statusbar)
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
@@ -824,10 +812,6 @@ Global bindings:
         M-f : Filter text
     """
     rootshell = property(lambda self: self.__shell)
-    debugger = property(lambda self: self.__debugger)
-    inspector = property(lambda self: self.__inspector)
-    monitor = property(lambda self: self.__monitor)
-    linfo = property(lambda self: self.__info)
     
     def __init__(self, parent, target=None, title=None, size=(1000,500),
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
@@ -860,19 +844,19 @@ Global bindings:
             from .wxmon import EventMonitor
             from .wxwil import LocalsWatcher
         
-        self.__debugger = Debugger(self,
-                                   stdin=self.__shell.interp.stdin,
-                                   stdout=self.__shell.interp.stdout,
-                                   skip=[Debugger.__module__,
-                                         EventMonitor.__module__,
-                                         FSM.__module__,
-                                         'fnmatch', 'warnings',
-                                         'wx.core', 'wx.lib.eventwatcher',
-                                         ],
-                                   )
-        self.__inspector = Inspector(self)
-        self.__monitor = EventMonitor(self)
-        self.__info = LocalsWatcher(self)
+        self.debugger = Debugger(self,
+                                 stdin=self.__shell.interp.stdin,
+                                 stdout=self.__shell.interp.stdout,
+                                 skip=[Debugger.__module__,
+                                       EventMonitor.__module__,
+                                       FSM.__module__,
+                                       'fnmatch', 'warnings',
+                                       'wx.core', 'wx.lib.eventwatcher',
+                                       ],
+                                 )
+        self.inspector = Inspector(self)
+        self.monitor = EventMonitor(self)
+        self.linfo = LocalsWatcher(self)
         
         self.console = aui.AuiNotebook(self, size=(600,400),
             style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
@@ -1092,7 +1076,7 @@ Global bindings:
         win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
         ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
-            self.statusbar("- Don't remove the root shell.")
+            self.message("- Don't remove the root shell.")
         else:
             evt.Skip()
     
@@ -1244,7 +1228,7 @@ Global bindings:
         """Close the current shell"""
         shell = self.current_shell
         if shell is self.__shell:
-            self.statusbar("- Don't remove the root shell.")
+            self.message("- Don't remove the root shell.")
             return
         nb = self.console
         j = nb.GetPageIndex(shell)
@@ -1302,7 +1286,7 @@ Global bindings:
                 win.SetIndicatorCurrent(i)
                 win.IndicatorFillRange(pos, lw)
             n += 1
-        self.statusbar("{}: {} found".format(text, n))
+        self.message("{}: {} found".format(text, n))
         self.findData.FindString = text
     
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
@@ -1897,7 +1881,7 @@ class Editor(EditWindow, EditorInterface):
     """Python code editor
     """
     parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.statusbar)
+    message = property(lambda self: self.__parent.message)
     
     PALETTE_STYLE = { #<Editor>
       # Default style for all languages
@@ -2048,7 +2032,7 @@ Flaky nutshell:
     and the other half by K. O'moto.
     """
     parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.statusbar)
+    message = property(lambda self: self.__parent.message)
     
     @property
     def target(self):
