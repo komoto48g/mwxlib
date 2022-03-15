@@ -795,6 +795,19 @@ class TreeList(object):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     
+    def tree(self, k):
+        def _find(ls, key):
+            if '/' in key:
+                a, b = key.split('/', 1)
+                la = _find(ls, a)
+                if la is not None:
+                    lb = next((x for x in la if isinstance(x, (tuple, list))), None)
+                    if lb is not None:
+                        return _find(lb, b)
+                return None
+            return next((x for x in ls if x and x[0] == key), None)
+        return _find(self.__items, k)
+    
     @classmethod
     def getf(self, ls, key):
         if '/' in key:
