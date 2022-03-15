@@ -583,7 +583,7 @@ class MenuBar(wx.MenuBar, TreeList):
         TreeList.__init__(self)
     
     def getmenu(self, key, root=None):
-        key = key.replace('\\', '/')
+        ## key = key.replace('\\', '/')
         if '/' in key:
             a, b = key.split('/', 1)
             branch = self.getmenu(a, root)
@@ -1107,7 +1107,7 @@ Global bindings:
         elif callable(obj):
             def _trace():
                 self.__shell.clearCommand()
-                self.debugger.trace(obj, *args, **kwargs)
+                self.debugger.watch(obj, *args, **kwargs)
             wx.CallAfter(_trace)
         else:
             print("- cannot debug {!r}".format(obj))
@@ -1187,7 +1187,6 @@ Global bindings:
         """Add command:text to the history buffer"""
         ed = self.History
         ed.ReadOnly = 0
-        ## ed.write(command + os.linesep)
         ed.write(command)
         ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
         if noerr is not None:
@@ -1512,12 +1511,19 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def mark(self, v):
         self.__mark = v
         self.MarkerDeleteAll(0)
-        self.MarkerAdd(self.LineFromPosition(v), 0)
+        if v is not None:
+            ln = self.LineFromPosition(v)
+            self.MarkerAdd(ln, 0)
+            self.handler('mark_set', ln)
     
     @mark.deleter
     def mark(self):
+        v = self.__mark
         self.__mark = None
         self.MarkerDeleteAll(0)
+        if v is not None:
+            ln = self.LineFromPosition(v)
+            self.handler('mark_unset', ln)
     
     def set_mark_point(self):
         self.mark = self.point
