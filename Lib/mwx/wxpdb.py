@@ -213,16 +213,12 @@ Key bindings:
        """
         code = frame.f_code
         filename = code.co_filename
-        ## lineno_ = code.co_firstlineno
-        ## lineno = frame.f_lineno
-        ## name = code.co_name
         target = self.logger.target
         line = self.logger.line
         if target == filename and line is not None:
             if event == 'call':
                 src, ln = inspect.getsourcelines(code)
                 if 0 <= line - ln + 1 < len(src):
-                    ## self.mark(frame, lineno_)
                     self.set_trace(frame)
                     return None
         return self.trace
@@ -321,6 +317,7 @@ Key bindings:
         frame = self.curframe
         code = frame.f_code
         filename = code.co_filename
+        firstlineno = code.co_firstlineno
         ## module = inspect.getmodule(frame)
         m = re.match("<frozen (.*)>", filename)
         if m:
@@ -340,7 +337,7 @@ Key bindings:
             
             ## Update logger marker
             if self.code != code:
-                self.logger.mark = self.logger.PositionFromLine(lineno-1)
+                self.logger.mark = self.logger.PositionFromLine(firstlineno-1)
             
             for ln in lbps:
                 self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
