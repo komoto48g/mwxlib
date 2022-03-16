@@ -874,8 +874,8 @@ Global bindings:
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
-        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.History, "History")
+        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
@@ -1112,7 +1112,7 @@ Global bindings:
         self.linfo.watch(self.debugger.locals)
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
-        ## self.Log.target = frame.f_code.co_name
+        self.Log.target = frame.f_code.co_filename
         dispatcher.send(signal='Interpreter.push', sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
@@ -1122,7 +1122,6 @@ Global bindings:
         self.linfo.unwatch()
         del self.__target
         del self.__shell.locals
-        ## del self.Log.target
     
     def on_monitor_begin(self, widget):
         self.inspector.set_colour(widget, 'blue')
@@ -1133,13 +1132,17 @@ Global bindings:
             lines = linecache.getlines(filename)
             ## with fopen(filename, encoding='utf8', newline='') as i:
             ##     self.Log.Text = i.read()
+            self.Log.target = filename
             self.Log.Text = ''.join(lines)
             self.Log.mark = self.Log.PositionFromLine(lineno-1)
             self.Log.goto_char(self.Log.mark)
             wx.CallAfter(self.Log.recenter)
+        sys.settrace(self.debugger.trace)
     
     def on_monitor_end(self, widget):
         self.inspector.set_colour(widget, 'black')
+        del self.Log.target
+        sys.settrace(None)
     
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus"""
@@ -1371,9 +1374,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'C-k pressed' : (0, _F(self.kill_line)),
-                'C-S-f pressed' : (0, _F(self.set_mark_point)), # override key
-              'C-space pressed' : (0, _F(self.set_mark_point)),
-              'S-space pressed' : (0, skip),
+                'C-S-f pressed' : (0, _F(self.set_marker_point)), # override key
+              'C-space pressed' : (0, _F(self.set_marker_point)),
+                  'C-b pressed' : (0, _F(self.set_marker_line)),
+              'S-space pressed' : (0, _F(self.set_marker_line)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -1483,6 +1487,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.IndentationGuides = 1
         
         self.__mark = None
+        self.__line = None
     
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
@@ -1498,19 +1503,41 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if v is not None:
             ln = self.LineFromPosition(v)
             self.MarkerAdd(ln, 0)
-            self.handler('mark_set', ln)
+            self.handler('mark_set', v)
     
     @mark.deleter
     def mark(self):
         v = self.__mark
-        self.__mark = None
         self.MarkerDeleteAll(0)
         if v is not None:
-            ln = self.LineFromPosition(v)
-            self.handler('mark_unset', ln)
+            self.handler('mark_unset', v)
+        self.__mark = None
     
-    def set_mark_point(self):
+    def set_marker_point(self):
         self.mark = self.point
+    
+    @property
+    def line(self):
+        return self.__line
+    
+    @line.setter
+    def line(self, v):
+        self.__line = v
+        self.MarkerDeleteAll(3)
+        if v is not None:
+            self.MarkerAdd(v, 3)
+            self.handler('line_set', v)
+    
+    @line.deleter
+    def line(self):
+        v = self.__line
+        self.MarkerDeleteAll(3)
+        if v is not None:
+            self.handler('line_unset', v)
+        self.__line = None
+    
+    def set_marker_line(self):
+        self.line = self.lineno
     
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
