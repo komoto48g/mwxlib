@@ -192,14 +192,36 @@ Key bindings:
         prefix = self.indent if indent < 0 else ' ' * indent
         print(prefix + str(msg), file=self.stdout)
     
-    def error(self, msg):
-        print(self.indent + "***", msg, file=self.stdout)
+    ## def error(self, msg):
+    ##     print(self.indent + "***", msg, file=self.stdout)
     
     def mark(self, frame, lineno):
         self.logger.MarkerDeleteAll(3)
         self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
         wx.CallAfter(self.logger.recenter)
+    
+    def trace(self, frame, event, arg):
+        """Dispatch a trace function
+        
+        The event can be one of the following:
+        [Python events]
+                line : A new line of code is going to be executed.
+                call : A function is about to be called or another code block is entered.
+              return : A function or other code block is about to return.
+           exception : An exception has occurred.
+       """
+        code = frame.f_code
+        filename = code.co_filename
+        target = self.logger.target
+        line = self.logger.line
+        if target == filename and line is not None:
+            if event == 'call':
+                src, ln = inspect.getsourcelines(code)
+                if 0 <= line - ln + 1 < len(src):
+                    self.set_trace(frame)
+                    return None
+        return self.trace
     
     ## --------------------------------
     ## Override Bdb methods
@@ -210,7 +232,7 @@ Key bindings:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit.")
             return
-        if self.target is None:
+        if not self.target:
             self.target = pdb.sys._getframe().f_back
         self.handler('debug_begin', self.target)
         Pdb.set_trace(self, frame)
@@ -295,6 +317,7 @@ Key bindings:
         frame = self.curframe
         code = frame.f_code
         filename = code.co_filename
+        firstlineno = code.co_firstlineno
         ## module = inspect.getmodule(frame)
         m = re.match("<frozen (.*)>", filename)
         if m:
@@ -314,7 +337,7 @@ Key bindings:
             
             ## Update logger marker
             if self.code != code:
-                self.logger.mark = self.logger.PositionFromLine(lineno-1)
+                self.logger.mark = self.logger.PositionFromLine(firstlineno-1)
             
             for ln in lbps:
                 self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
