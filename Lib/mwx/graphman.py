@@ -954,6 +954,9 @@ class Frame(mwx.Frame):
     
     def get_plug(self, name):
         """Find named plug window in registered plugins"""
+        if isinstance(name, string_types):
+            if name.endswith(".py") or name.endswith(".pyc"):
+                name,_ext = os.path.splitext(os.path.basename(name))
         if name in self.plugins:
             return self.plugins[name].__plug__
         elif islayer(name):
@@ -1696,7 +1699,11 @@ class Frame(mwx.Frame):
                 if path.endswith("/__init__.py"): # when root:module is a package
                     path = path[:-12]
                 current_session = {}
-                plug.save_session(current_session)
+                try:
+                    plug.save_session(current_session)
+                except Exception as e:
+                    traceback.print_exc()
+                    print("- Failed to save session: {}".format(plug))
                 o.write("self.load_plug('{name}', show={show}, dock={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
                         "floating_pos={fpos}, floating_size={fsize}, "
