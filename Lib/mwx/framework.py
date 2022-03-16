@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.53.9"
+__version__ = "0.54.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1096,6 +1096,7 @@ Global bindings:
         else:
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
+        return obj
     
     def on_debug_begin(self, frame):
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
@@ -1141,8 +1142,8 @@ Global bindings:
     
     def on_monitor_end(self, widget):
         self.inspector.set_colour(widget, 'black')
-        del self.Log.target
         sys.settrace(None)
+        ## del self.Log.target
     
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus"""
