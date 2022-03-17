@@ -80,7 +80,7 @@ def _Or(p, q):
     return _pred
 
 
-def predicate(text, locals=None):
+def predicate(text, locals):
     tokens = [x for x in split_words(text.strip()) if not x.isspace()]
     j = 0
     while j < len(tokens):
@@ -332,9 +332,10 @@ def find_modules(force=False, verbose=True):
     This creates a log file in ~/.deb and save the list.
     """
     f = get_rootpath("deb-modules-{}.log".format(sys.winver))
+    
     if not force and os.path.exists(f):
         with open(f, 'r') as o:
-            return eval(o.read()) # read and eval a list of modules
+            return eval(o.read()) # read and evaluate a list of modules
     else:
         print("Please wait a moment "
               "while Py{} gathers a list of all available modules... "
