@@ -2105,11 +2105,11 @@ Flaky nutshell:
     
     @globals.setter
     def globals(self, v): # internal use only
-        self.interp.globals = v
+        self.interp.globals = v or {}
     
     @globals.deleter
     def globals(self): # internal use only
-        self.interp.globals = None
+        self.interp.globals = {}
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2160,14 +2160,15 @@ Flaky nutshell:
         
         ## cf. sys.modules (shell.modules
         if not Nautilus.modules:
-            force = wx.GetKeyState(wx.WXK_CONTROL) & wx.GetKeyState(wx.WXK_SHIFT)
+            force = wx.GetKeyState(wx.WXK_CONTROL)\
+                  & wx.GetKeyState(wx.WXK_SHIFT)
             Nautilus.modules = find_modules(force)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
         self.target = target
         
-        self.interp.globals = None
+        self.interp.globals = {}
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2598,7 +2599,7 @@ Flaky nutshell:
             if '\n' in cmd:
                 self.Execute(cmd) # for multi-line commands
             else:
-                self.run(cmd, verbose=0, prompt=0)
+                self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
         ## normal execute/run
@@ -2994,12 +2995,12 @@ Flaky nutshell:
               "Version: {!s}".format(__version__),
               "#{!r}".format(wx.py.shell),
             sep='\n')
-        return Shell.about(self)
+        Shell.about(self)
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
         (override) Remove ps1 and ps2 from the multi-line command to paste.
-                   Add offset for paste-rectangle.
+                   Add offset for paste-rectangle mode.
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
@@ -3036,6 +3037,15 @@ Flaky nutshell:
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
+    
+    def execStartupScript(self, startupScript):
+        """Execute the user's PYTHONSTARTUP script if they have one.
+        (override) Remove `f`; Add globals when executing the script
+                   Add globals for AttributeError in runcode
+        """
+        self.interp.globals = {}
+        Shell.execStartupScript(self, startupScript)
+        del self.interp.locals['f']
     
     def Execute(self, text):
         """Replace selection with text, run commands,
@@ -3403,6 +3413,23 @@ Flaky nutshell:
         return text.rpartition('.') # -> text, sep, hint
 
 
+## Monkey-patch for wx.py.interpreter
+if 1:
+    from wx.py.interpreter import Interpreter
+
+    def runcode(self, code):
+        try:
+            exec(code, self.globals, self.locals)
+        except SystemExit:
+            raise
+        except:
+            self.showtraceback()
+
+    Interpreter.runcode = runcode
+    del runcode
+
+
+## Monkey-patch for wx.core
 try:
     from wx import core # PY3
 
