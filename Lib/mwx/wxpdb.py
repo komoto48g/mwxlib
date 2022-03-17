@@ -162,10 +162,6 @@ Key bindings:
             wx.MessageBox("Not callable object\n\n"
                           "Unable to watch {!r}".format(target))
             return
-        if inspect.isbuiltin(target):
-            wx.MessageBox("Built-in object\n\n"
-                          "Unable to watch {!r}".format(target))
-            return
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit.")

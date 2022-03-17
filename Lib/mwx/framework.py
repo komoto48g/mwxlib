@@ -1099,16 +1099,16 @@ Global bindings:
         return obj
     
     def on_debug_begin(self, frame):
+        """Called before set_trace"""
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
-        self.__target = self.__shell.target # save target
         self.Show()
         self.Log.clear()
         self.show_page(self.Log, focus=0)
         self.show_page(self.linfo, focus=0)
     
     def on_debug_next(self, frame):
-        self.__shell.target = inspect.getmodule(frame) or self.__target
+        """Called from cmdloop"""
         self.__shell.locals = self.debugger.locals
         self.__shell.globals = self.debugger.globals
         self.linfo.watch(self.debugger.locals)
@@ -1118,15 +1118,15 @@ Global bindings:
         dispatcher.send(signal='Interpreter.push', sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
+        """Called after set_quit"""
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
-        self.__shell.target = self.__target # restore target
         self.linfo.unwatch()
-        del self.__target
         del self.__shell.locals
         del self.__shell.globals
     
     def on_monitor_begin(self, widget):
+        """Called when monitor watch"""
         self.inspector.set_colour(widget, 'blue')
         obj = widget.__class__
         filename = inspect.getsourcefile(obj)
@@ -1143,6 +1143,7 @@ Global bindings:
         sys.settrace(self.debugger.trace)
     
     def on_monitor_end(self, widget):
+        """Called when monitor unwatch"""
         self.inspector.set_colour(widget, 'black')
         sys.settrace(None)
         ## del self.Log.target
@@ -2105,11 +2106,11 @@ Flaky nutshell:
     
     @globals.setter
     def globals(self, v): # internal use only
-        self.interp.globals = v
+        self.interp.globals = v or {}
     
     @globals.deleter
     def globals(self): # internal use only
-        self.interp.globals = None
+        self.interp.globals = {}
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2160,14 +2161,15 @@ Flaky nutshell:
         
         ## cf. sys.modules (shell.modules
         if not Nautilus.modules:
-            force = wx.GetKeyState(wx.WXK_CONTROL) & wx.GetKeyState(wx.WXK_SHIFT)
+            force = wx.GetKeyState(wx.WXK_CONTROL)\
+                  & wx.GetKeyState(wx.WXK_SHIFT)
             Nautilus.modules = find_modules(force)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
         self.target = target
         
-        self.interp.globals = None
+        self.globals = {}
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2598,7 +2600,7 @@ Flaky nutshell:
             if '\n' in cmd:
                 self.Execute(cmd) # for multi-line commands
             else:
-                self.run(cmd, verbose=0, prompt=0)
+                self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
         ## normal execute/run
@@ -2994,12 +2996,12 @@ Flaky nutshell:
               "Version: {!s}".format(__version__),
               "#{!r}".format(wx.py.shell),
             sep='\n')
-        return Shell.about(self)
+        Shell.about(self)
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
         (override) Remove ps1 and ps2 from the multi-line command to paste.
-                   Add offset for paste-rectangle.
+                   Add offset for paste-rectangle mode.
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
@@ -3036,6 +3038,13 @@ Flaky nutshell:
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
+    
+    def execStartupScript(self, startupScript):
+        """Execute the user's PYTHONSTARTUP script if they have one.
+        (override) Add globals when executing the script
+        """
+        self.globals = {}
+        Shell.execStartupScript(self, startupScript)
     
     def Execute(self, text):
         """Replace selection with text, run commands,
@@ -3403,6 +3412,23 @@ Flaky nutshell:
         return text.rpartition('.') # -> text, sep, hint
 
 
+## Monkey-patch for wx.py.interpreter
+if 1:
+    from wx.py.interpreter import Interpreter
+
+    def runcode(self, code):
+        try:
+            exec(code, self.globals, self.locals)
+        except SystemExit:
+            raise
+        except:
+            self.showtraceback()
+
+    Interpreter.runcode = runcode
+    del runcode
+
+
+## Monkey-patch for wx.core
 try:
     from wx import core # PY3
 
