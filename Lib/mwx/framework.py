@@ -1110,6 +1110,7 @@ Global bindings:
     def on_debug_next(self, frame):
         self.__shell.target = inspect.getmodule(frame) or self.__target
         self.__shell.locals = self.debugger.locals
+        self.__shell.globals = self.debugger.globals
         self.linfo.watch(self.debugger.locals)
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
@@ -1123,6 +1124,7 @@ Global bindings:
         self.linfo.unwatch()
         del self.__target
         del self.__shell.locals
+        del self.__shell.globals
     
     def on_monitor_begin(self, widget):
         self.inspector.set_colour(widget, 'blue')
@@ -2097,6 +2099,18 @@ Flaky nutshell:
     def locals(self): # internal use only
         self.interp.locals = self.__target.__dict__
     
+    @property
+    def globals(self):
+        return self.interp.globals
+    
+    @globals.setter
+    def globals(self, v): # internal use only
+        self.interp.globals = v
+    
+    @globals.deleter
+    def globals(self): # internal use only
+        self.interp.globals = None
+    
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
     ## SHELLSTARTUP = ""
@@ -2129,6 +2143,8 @@ Flaky nutshell:
         "STC_P_NUMBER"          : "fore:#ffc080",
     }
     
+    modules = None
+    
     def __init__(self, parent, target,
                  introText=None,
                  startupScript=None,
@@ -2142,12 +2158,16 @@ Flaky nutshell:
                  **kwargs)
         EditorInterface.__init__(self)
         
-        self.modules = find_modules(speckey_state('ctrl')
-                                  & speckey_state('shift'))
+        ## cf. sys.modules (shell.modules
+        if not Nautilus.modules:
+            force = wx.GetKeyState(wx.WXK_CONTROL) & wx.GetKeyState(wx.WXK_SHIFT)
+            Nautilus.modules = find_modules(force)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
         self.target = target
+        
+        self.interp.globals = None
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2579,7 +2599,6 @@ Flaky nutshell:
                 self.Execute(cmd) # for multi-line commands
             else:
                 self.run(cmd, verbose=0, prompt=0)
-                self.message(cmd)
             return
         
         ## normal execute/run
@@ -3016,7 +3035,7 @@ Flaky nutshell:
         self.parent.handler('put_help', doc) or print(doc)
     
     def eval(self, text):
-        return eval(text, self.locals)
+        return eval(text, self.globals, self.locals)
     
     def Execute(self, text):
         """Replace selection with text, run commands,
