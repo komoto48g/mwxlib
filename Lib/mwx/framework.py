@@ -1099,16 +1099,16 @@ Global bindings:
         return obj
     
     def on_debug_begin(self, frame):
+        """Called before set_trace"""
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
-        self.__target = self.__shell.target # save target
         self.Show()
         self.Log.clear()
         self.show_page(self.Log, focus=0)
         self.show_page(self.linfo, focus=0)
     
     def on_debug_next(self, frame):
-        self.__shell.target = inspect.getmodule(frame) or self.__target
+        """Called from cmdloop"""
         self.__shell.locals = self.debugger.locals
         self.__shell.globals = self.debugger.globals
         self.linfo.watch(self.debugger.locals)
@@ -1118,15 +1118,15 @@ Global bindings:
         dispatcher.send(signal='Interpreter.push', sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
+        """Called after set_quit"""
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
-        self.__shell.target = self.__target # restore target
         self.linfo.unwatch()
-        del self.__target
         del self.__shell.locals
         del self.__shell.globals
     
     def on_monitor_begin(self, widget):
+        """Called when monitor watch"""
         self.inspector.set_colour(widget, 'blue')
         obj = widget.__class__
         filename = inspect.getsourcefile(obj)
@@ -1143,6 +1143,7 @@ Global bindings:
         sys.settrace(self.debugger.trace)
     
     def on_monitor_end(self, widget):
+        """Called when monitor unwatch"""
         self.inspector.set_colour(widget, 'black')
         sys.settrace(None)
         ## del self.Log.target
@@ -2168,7 +2169,7 @@ Flaky nutshell:
         
         self.target = target
         
-        self.interp.globals = {}
+        self.globals = {}
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -3040,12 +3041,10 @@ Flaky nutshell:
     
     def execStartupScript(self, startupScript):
         """Execute the user's PYTHONSTARTUP script if they have one.
-        (override) Remove `f`; Add globals when executing the script
-                   Add globals for AttributeError in runcode
+        (override) Add globals when executing the script
         """
-        self.interp.globals = {}
+        self.globals = {}
         Shell.execStartupScript(self, startupScript)
-        del self.interp.locals['f']
     
     def Execute(self, text):
         """Replace selection with text, run commands,
