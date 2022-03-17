@@ -549,6 +549,18 @@ w = PyEmbeddedImage(
     b'RK5CYII=')
 
 #----------------------------------------------------------------------
+wxpdemo = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAABnRSTlMAAAAAAP9DpOgcAAAA'
+    b'CXBIWXMAAA7EAAAOxAGVKw4bAAABWUlEQVRIia1WSxbDIAiEvN6kV2lOba+Ss9CFgKKomHRW'
+    b'ffnMMAzSIACBD5QfowdCeI3YiZgXEZ9ouC8X9kpDsSfWO8CaVJVuGzosNUKSOokyKaIxRERV'
+    b'PGuog0INqSWFztANAYvU9P0OdUZuaFW+i9NmkABOCCZxrB8BNpTBpSQIJqEjsTLRI2Yi5sBF'
+    b'zIQKEJy5qA7uxTDqKaIL8N3T7bbOohzLC/Dt91T64CqVJPzlyAJj9k6pkWGBakZs+FshE0fl'
+    b'3tIIbfgHSPlXaK6xPdGFzpffWo2FHb/2Tp1EMlcenAMfrYmgADbNoY+93x86ubIUwP0tYkyM'
+    b'/pOF/dkpg6mDP7BPBBbs7RTpW2EBi+C+42BNcW4GtnyZaEQepEH5qmGwfQ589t6iluV+eHkb'
+    b'bbq3deUVMO18TAWrTwKhc7bOaBcFZrS0ZbbNJsvO2/5h3ohAJWOw9wX2A4NlgLe2+sgbAAAA'
+    b'AElFTkSuQmCC')
+
+#----------------------------------------------------------------------
 x = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAOAQMAAADKRNSsAAAABlBMVEWywNwAAAB38uVLAAAA'
     b'AnRSTlMA/1uRIrUAAAAiSURBVHicY2AAAwkDBpkCBr4HDOwHGJgbQCSQDRQBisMAAHuNBZa8'
