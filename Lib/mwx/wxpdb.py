@@ -219,10 +219,7 @@ Key bindings:
             if event == 'call':
                 src, lineno = inspect.getsourcelines(code)
                 if 0 <= line - lineno + 1 < len(src):
-                    self.set_trace(frame)
-                    self.parent.rootshell.write(self.prompt) # プロンプト補完▲
-                    self.message("{}{}:{}:{}".format(
-                                 self.prefix1, filename, lineno, name), indent=0)
+                    self.set_trace()
                     return None
         return self.trace
     
