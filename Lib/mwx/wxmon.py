@@ -94,6 +94,11 @@ Args:
             self.parent.handler(self.handler.event, v)
             v.Skip()
         
+        @self.handler.bind('focus_set')
+        def activate(v):
+            self.parent.handler('title_window', self.target)
+            v.Skip()
+    
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.unwatch()
