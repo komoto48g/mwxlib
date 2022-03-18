@@ -961,6 +961,15 @@ Global bindings:
             },
         })
         
+        @self.Log.handler.bind('line_set')
+        def start(v):
+            if self.Log.target:
+                self.debugger.watch((self.Log.target, v))
+        
+        @self.Log.handler.bind('line_unset')
+        def stop(v):
+            self.debugger.unwatch()
+        
         f = self.get_path("deb-logging.log")
         if os.path.exists(f):
             with self.fopen(f) as i:
@@ -991,6 +1000,7 @@ Global bindings:
                           "Enter [q]uit to exit before closing.")
             return
         self.Show(0) # Don't destroy the window
+        self.debugger.unwatch()
     
     def OnDestroy(self, evt):
         nb = self.console
@@ -1093,7 +1103,7 @@ Global bindings:
         elif callable(obj):
             def _trace():
                 self.__shell.clearCommand()
-                self.debugger.watch(obj, *args, **kwargs)
+                self.debugger.debug(obj, *args, **kwargs)
             wx.CallAfter(_trace)
         else:
             print("- cannot debug {!r}".format(obj))
@@ -1135,17 +1145,16 @@ Global bindings:
         if filename:
             src, lineno = inspect.getsourcelines(obj)
             lines = linecache.getlines(filename)
-            self.Log.target = filename
             self.Log.Text = ''.join(lines)
             self.Log.mark = self.Log.PositionFromLine(lineno-1)
             self.Log.goto_char(self.Log.mark)
             wx.CallAfter(self.Log.recenter)
-        ## sys.settrace(self.debugger.trace)
+        self.Log.target = filename
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch"""
         self.inspector.set_colour(widget, 'black')
-        ## sys.settrace(None)
+        self.Log.target = None
     
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus"""
@@ -1377,10 +1386,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'C-k pressed' : (0, _F(self.kill_line)),
-                'C-S-f pressed' : (0, _F(self.set_marker_point)), # override key
-              'C-space pressed' : (0, _F(self.set_marker_point)),
-                  'C-b pressed' : (0, _F(self.set_marker_line)),
-              'S-space pressed' : (0, _F(self.set_marker_line)),
+                'C-S-f pressed' : (0, _F(self.set_point_marker)), # override key
+              'C-space pressed' : (0, _F(self.set_point_marker)),
+                  'C-b pressed' : (0, _F(self.set_line_marker)),
+              'S-space pressed' : (0, _F(self.set_line_marker)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -1516,31 +1525,31 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.handler('mark_unset', v)
         self.__mark = None
     
-    def set_marker_point(self):
+    def set_point_marker(self):
         self.mark = self.point
     
     @property
-    def line(self):
+    def linemark(self):
         return self.__line
     
-    @line.setter
-    def line(self, v):
+    @linemark.setter
+    def linemark(self, v):
         self.__line = v
         self.MarkerDeleteAll(3)
         if v is not None:
             self.MarkerAdd(v, 3)
             self.handler('line_set', v)
     
-    @line.deleter
-    def line(self):
+    @linemark.deleter
+    def linemark(self):
         v = self.__line
         self.MarkerDeleteAll(3)
         if v is not None:
             self.handler('line_unset', v)
         self.__line = None
     
-    def set_marker_line(self):
-        self.line = self.lineno
+    def set_line_marker(self):
+        self.linemark = self.lineno
     
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
@@ -1962,8 +1971,7 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
-            if hasattr(self, 'target'):
-                self.parent.handler('title_window', self.target)
+            self.parent.handler('title_window', self.target)
             self.trace_point()
             v.Skip()
         
@@ -2077,7 +2085,7 @@ Flaky nutshell:
         if not hasattr(target, '__dict__'):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
         
-        ## Note: [self, this, shell] :args are set or overwritten.
+        ## Note: self, this, and shell are set/overwritten.
         try:
             target.self = target
             target.this = inspect.getmodule(target)
@@ -2087,7 +2095,6 @@ Flaky nutshell:
             pass
         self.__target = target
         self.interp.locals = target.__dict__
-        self.parent.handler('title_window', target)
     
     @property
     def locals(self):
@@ -2171,6 +2178,7 @@ Flaky nutshell:
         self.target = target
         
         self.globals = self.locals
+        self.interp.runcode = self.runcode
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2656,6 +2664,17 @@ Flaky nutshell:
     ## Magic caster of the shell
     ## --------------------------------
     
+    @staticmethod
+    def magic(cmd):
+        """Called before command pushed
+        (override) with magic: f x --> f(x) disabled
+        """
+        if cmd:
+            if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
+            elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
+            elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
+        return cmd
+    
     def magic_interpret(self, tokens):
         """Called when [Enter] command, or eval-time for tooltip
         Interpret magic syntax
@@ -2712,16 +2731,6 @@ Flaky nutshell:
             
             lhs += c
         return ''.join(tokens)
-    
-    def magic(self, cmd):
-        """Called before command pushed
-        (override) with magic: f x --> f(x) disabled
-        """
-        if cmd:
-            if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
-            elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
-            elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
-        return cmd
     
     def setBuiltinKeywords(self):
         """Create pseudo keywords as part of builtins (override)"""
@@ -3039,6 +3048,13 @@ Flaky nutshell:
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
+    
+    def runcode(self, code):
+        ## Monkey-patch for wx.py.interpreter.runcode
+        try:
+            exec(code, self.globals, self.locals)
+        except Exception:
+            self.interp.showtraceback()
     
     def execStartupScript(self, startupScript):
         """Execute the user's PYTHONSTARTUP script if they have one.
@@ -3413,22 +3429,6 @@ Flaky nutshell:
         return text.rpartition('.') # -> text, sep, hint
 
 
-## Monkey-patch for wx.py.interpreter
-if 1:
-    from wx.py.interpreter import Interpreter
-
-    def runcode(self, code):
-        try:
-            exec(code, self.globals, self.locals)
-        except SystemExit:
-            raise
-        except:
-            self.showtraceback()
-
-    Interpreter.runcode = runcode
-    del runcode
-
-
 ## Monkey-patch for wx.core
 try:
     from wx import core # PY3
@@ -3604,8 +3604,8 @@ if 1:
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 0
-    frm.shellframe.rootshell.handler.debug = 4
+    frm.shellframe.handler.debug = 4
+    frm.shellframe.rootshell.handler.debug = 0
     frm.shellframe.rootshell.Execute(SHELLSTARTUP)
     frm.shellframe.rootshell.SetFocus()
     frm.shellframe.Show()
