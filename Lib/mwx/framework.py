@@ -2178,6 +2178,7 @@ Flaky nutshell:
         self.target = target
         
         self.globals = self.locals
+        self.interp.runcode = self.runcode
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2663,6 +2664,17 @@ Flaky nutshell:
     ## Magic caster of the shell
     ## --------------------------------
     
+    @staticmethod
+    def magic(cmd):
+        """Called before command pushed
+        (override) with magic: f x --> f(x) disabled
+        """
+        if cmd:
+            if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
+            elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
+            elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
+        return cmd
+    
     def magic_interpret(self, tokens):
         """Called when [Enter] command, or eval-time for tooltip
         Interpret magic syntax
@@ -2719,16 +2731,6 @@ Flaky nutshell:
             
             lhs += c
         return ''.join(tokens)
-    
-    def magic(self, cmd):
-        """Called before command pushed
-        (override) with magic: f x --> f(x) disabled
-        """
-        if cmd:
-            if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
-            elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
-            elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
-        return cmd
     
     def setBuiltinKeywords(self):
         """Create pseudo keywords as part of builtins (override)"""
@@ -3046,6 +3048,13 @@ Flaky nutshell:
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
+    
+    def runcode(self, code):
+        ## Monkey-patch for wx.py.interpreter.runcode
+        try:
+            exec(code, self.globals, self.locals)
+        except Exception:
+            self.interp.showtraceback()
     
     def execStartupScript(self, startupScript):
         """Execute the user's PYTHONSTARTUP script if they have one.
@@ -3418,22 +3427,6 @@ Flaky nutshell:
     def get_words_hint(cmd):
         text = ut._get_words_backward(cmd)
         return text.rpartition('.') # -> text, sep, hint
-
-
-## Monkey-patch for wx.py.interpreter
-if 1:
-    from wx.py.interpreter import Interpreter
-
-    def runcode(self, code):
-        try:
-            exec(code, self.globals, self.locals)
-        except SystemExit:
-            raise
-        except:
-            self.showtraceback()
-
-    Interpreter.runcode = runcode
-    del runcode
 
 
 ## Monkey-patch for wx.core
