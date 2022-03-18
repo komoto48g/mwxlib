@@ -1140,13 +1140,12 @@ Global bindings:
             self.Log.mark = self.Log.PositionFromLine(lineno-1)
             self.Log.goto_char(self.Log.mark)
             wx.CallAfter(self.Log.recenter)
-        sys.settrace(self.debugger.trace)
+        ## sys.settrace(self.debugger.trace)
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch"""
         self.inspector.set_colour(widget, 'black')
-        sys.settrace(None)
-        ## del self.Log.target
+        ## sys.settrace(None)
     
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus"""
