@@ -8,6 +8,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from functools import wraps
 from pdb import Pdb
 import pdb
+import sys
 import re
 import importlib
 import linecache
@@ -83,10 +84,8 @@ Key bindings:
         
         self.__shellframe = parent
         self.__interactive = None
+        self.__breakpoint = None
         self.prompt = self.indent + '(Pdb) ' # default pdb prompt
-        if not self.skip:
-            self.skip = set()
-        self.skip |= {self.__module__, 'bdb', 'pdb'} # skip this module
         self.target = None
         self.code = None
         
@@ -103,6 +102,7 @@ Key bindings:
         self.__handler = FSM({
             0 : {
                   'debug_begin' : (1, self.on_debug_begin),
+                  'trace_begin' : (2, ),
             },
             1 : {
                     'debug_end' : (0, self.on_debug_end),
@@ -114,7 +114,11 @@ Key bindings:
                   'C-s pressed' : (1, lambda v: self.input('s')),
                   'C-r pressed' : (1, lambda v: self.input('r')),
                   'C-@ pressed' : (1, jump_to_entry_point),
-            }
+            },
+            2 : {
+                    'trace_end' : (0, ),
+                  'debug_begin' : (1, self.on_debug_begin),
+            },
         })
     
     def on_debug_begin(self, frame):
@@ -157,14 +161,14 @@ Key bindings:
         self.parent.handler('debug_end', frame)
         self.__interactive = None
     
-    def watch(self, target, *args, **kwargs):
+    def debug(self, target, *args, **kwargs):
         if not callable(target):
             wx.MessageBox("Not callable object\n\n"
-                          "Unable to watch {!r}".format(target))
+                          "Unable to debug {!r}".format(target))
             return
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
-                          "Enter [q]uit to exit.")
+                          "Enter [q]uit to exit debug mode.")
             return
         try:
             self.target = target
@@ -188,34 +192,37 @@ Key bindings:
         prefix = self.indent if indent < 0 else ' ' * indent
         print(prefix + str(msg), file=self.stdout)
     
-    ## def error(self, msg):
-    ##     print(self.indent + "***", msg, file=self.stdout)
-    
     def mark(self, frame, lineno):
-        self.logger.MarkerDeleteAll(3)
-        self.logger.MarkerAdd(lineno-1, 3) # (->) pointer
+        self.logger.linemark = lineno - 1
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
         wx.CallAfter(self.logger.recenter)
     
+    def watch(self, breakpoint):
+        self.__breakpoint = breakpoint
+        sys.settrace(self.trace)
+        self.handler('trace_begin')
+    
+    def unwatch(self):
+        if self.__breakpoint:
+            self.__breakpoint = None
+            sys.settrace(None)
+            self.handler('trace_end')
+    
     def trace(self, frame, event, arg):
-        """Dispatch a trace function
-        
-        The event can be one of the following:
-        [Python events]
-                line : A new line of code is going to be executed.
-                call : A function is about to be called or another code block is entered.
-              return : A function or other code block is about to return.
-           exception : An exception has occurred.
-       """
         code = frame.f_code
         filename = code.co_filename
-        target = self.logger.target
-        line = self.logger.line
-        if target == filename and line is not None:
+        name = code.co_name
+        if not self.__breakpoint:
+            return None
+        target, line = self.__breakpoint
+        if target == filename:
             if event == 'call':
-                src, ln = inspect.getsourcelines(code)
-                if 0 <= line - ln + 1 < len(src):
+                src, lineno = inspect.getsourcelines(code)
+                if 0 <= line - lineno + 1 < len(src):
                     self.set_trace(frame)
+                    self.parent.rootshell.write(self.prompt) # プロンプト補完▲
+                    self.message("{}{}:{}:{}".format(
+                                 self.prefix1, filename, lineno, name), indent=0)
                     return None
         return self.trace
     
@@ -226,10 +233,10 @@ Key bindings:
     def set_trace(self, frame=None):
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
-                          "Enter [q]uit to exit.")
+                          "Enter [q]uit to exit debug mode.")
             return
         if not self.target:
-            self.target = pdb.sys._getframe().f_back
+            self.target = frame or sys._getframe().f_back
         self.handler('debug_begin', self.target)
         Pdb.set_trace(self, frame)
     
@@ -238,10 +245,6 @@ Key bindings:
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
-        ## if self.verbose:
-        ##     print("+ all stacked frame")
-        ##     for frame_lineno in self.stack:
-        ##         print("-->", self.format_stack_entry(frame_lineno))
         try:
             Pdb.set_quit(self)
         finally:
@@ -372,7 +375,7 @@ if __name__ == "__main__":
             },
         })
         frm.dbg = dbg
-        shell.write("self.dbg.watch(self.About)")
+        shell.write("self.dbg.debug(self.About)")
         self.Show()
     frm.Show()
     app.MainLoop()
