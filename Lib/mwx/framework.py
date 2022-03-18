@@ -2106,11 +2106,11 @@ Flaky nutshell:
     
     @globals.setter
     def globals(self, v): # internal use only
-        self.interp.globals = v or {}
+        self.interp.globals = v
     
     @globals.deleter
     def globals(self): # internal use only
-        self.interp.globals = {}
+        self.interp.globals = self.__target.__dict__
     
     ## Default classvar string to Execute when starting the shell was deprecated.
     ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
@@ -2169,7 +2169,7 @@ Flaky nutshell:
         
         self.target = target
         
-        self.globals = {}
+        self.globals = self.locals
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -3043,7 +3043,7 @@ Flaky nutshell:
         """Execute the user's PYTHONSTARTUP script if they have one.
         (override) Add globals when executing the script
         """
-        self.globals = {}
+        self.globals = self.locals
         Shell.execStartupScript(self, startupScript)
     
     def Execute(self, text):
