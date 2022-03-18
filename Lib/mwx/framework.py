@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.0"
+__version__ = "0.54.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -32,15 +32,13 @@ from six.moves import builtins
 from six import string_types
 from importlib import reload
 try:
-    from utilus import (FSM, TreeList,
-                        wdir, apropos, typename, where, mro, pp,
-                        _get_words_forward, _get_words_backward,
-                        split_words, find_modules, get_rootpath,)
+    import utilus as ut
+    from utilus import (FSM, TreeList, wdir,
+                        apropos, typename, where, mro, pp,)
 except ImportError:
-    from .utilus import (FSM, TreeList,
-                         wdir, apropos, typename, where, mro, pp,
-                         _get_words_forward, _get_words_backward,
-                         split_words, find_modules, get_rootpath,)
+    from . import utilus as ut
+    from .utilus import (FSM, TreeList, wdir,
+                         apropos, typename, where, mro, pp,)
 
 
 speckeys = {
@@ -963,18 +961,22 @@ Global bindings:
             },
         })
         
-        f = get_rootpath("deb-logging.log")
+        f = self.get_path("deb-logging.log")
         if os.path.exists(f):
             with self.fopen(f) as i:
                 self.Log.SetText(i.read())
         
-        f = get_rootpath("deb-history.log")
+        f = self.get_path("deb-history.log")
         if os.path.exists(f):
             with self.fopen(f, 'a') as o:
                 o.write("\r\n#! Edit: <{}>\r\n".format(datetime.datetime.now()))
         else:
             with self.fopen(f, 'w') as o:
                 pass
+    
+    @staticmethod
+    def get_path(f):
+        return ut.get_rootpath(f)
     
     @staticmethod
     def fopen(f, *args):
@@ -998,11 +1000,11 @@ Global bindings:
     
     def Destroy(self):
         try:
-            f = get_rootpath("deb-logging.log")
+            f = self.get_path("deb-logging.log")
             with self.fopen(f, 'w') as o:
                 o.write(self.Log.Text)
             
-            f = get_rootpath("deb-history.log")
+            f = self.get_path("deb-history.log")
             with self.fopen(f, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
@@ -1133,8 +1135,6 @@ Global bindings:
         if filename:
             src, lineno = inspect.getsourcelines(obj)
             lines = linecache.getlines(filename)
-            ## with fopen(filename, encoding='utf8', newline='') as i:
-            ##     self.Log.Text = i.read()
             self.Log.target = filename
             self.Log.Text = ''.join(lines)
             self.Log.mark = self.Log.PositionFromLine(lineno-1)
@@ -1186,7 +1186,7 @@ Global bindings:
                 ed.MarkerAdd(ln, 2) # error-marker
         ed.ReadOnly = 1
         
-        f = get_rootpath("deb-history.log")
+        f = self.get_path("deb-history.log")
         if os.path.exists(f):
             with self.fopen(f, 'a') as o:
                 o.write(command)
@@ -1680,8 +1680,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
-        lhs = _get_words_backward(ls) # or ls.rpartition(' ')[-1]
-        rhs = _get_words_forward(rs) # or rs.partition(' ')[0]
+        lhs = ut._get_words_backward(ls) # or ls.rpartition(' ')[-1]
+        rhs = ut._get_words_forward(rs) # or rs.partition(' ')[0]
         return (lhs + rhs).strip()
     
     @property
@@ -1912,6 +1912,8 @@ class Editor(EditWindow, EditorInterface):
     """
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
+    
+    target = None
     
     PALETTE_STYLE = { #<Editor>
       # Default style for all languages
@@ -2162,7 +2164,7 @@ Flaky nutshell:
         if not Nautilus.modules:
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
-            Nautilus.modules = find_modules(force)
+            Nautilus.modules = ut.find_modules(force)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         
@@ -2592,7 +2594,7 @@ Flaky nutshell:
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
-        tokens = split_words(text)
+        tokens = ut.split_words(text)
         
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
@@ -2817,7 +2819,7 @@ Flaky nutshell:
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-autocomp
+    fragmwords = set(keyword.kwlist + wdir(builtins)) # to be used in text-autocomp
     
     ## shell.history is an instance variable of the Shell.
     ## If del shell.history, the history of the class variable is used
@@ -3139,7 +3141,7 @@ Flaky nutshell:
             self.CallTipCancel()
         try:
             try:
-                tokens = split_words(text)
+                tokens = ut.split_words(text)
                 cmd = self.magic_interpret(tokens)
                 obj = self.eval(cmd)
                 text = cmd
@@ -3407,7 +3409,7 @@ Flaky nutshell:
     
     @staticmethod
     def get_words_hint(cmd):
-        text = _get_words_backward(cmd)
+        text = ut._get_words_backward(cmd)
         return text.rpartition('.') # -> text, sep, hint
 
 
