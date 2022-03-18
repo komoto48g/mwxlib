@@ -48,6 +48,11 @@ Args:
             """Fork mouse events to the parent"""
             self.parent.handler(self.handler.event, v)
             v.Skip()
+        
+        @self.handler.bind('focus_set')
+        def activate(v):
+            self.parent.handler('title_window', self.target)
+            v.Skip()
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -65,6 +70,7 @@ Args:
             self.SelectItem(item)
         elif obj:
             self.BuildTree(obj)
+        self.parent.handler('title_window', self.target)
     
     def set_colour(self, obj, col):
         self.SetObj(obj)
