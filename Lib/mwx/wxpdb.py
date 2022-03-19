@@ -97,7 +97,7 @@ Key bindings:
         
         def jump_to_entry_point(v):
             ln = self.logger.LineFromPosition(self.logger.mark)
-            self.input('j {}'.format(ln + 1))
+            self.send_input('j {}'.format(ln + 1))
         
         self.__handler = FSM({
             0 : {
@@ -108,11 +108,11 @@ Key bindings:
                     'debug_end' : (0, self.on_debug_end),
                    'debug_next' : (1, self.on_debug_next),
                 'C-S-h pressed' : (1, lambda v: self.help()),
-                  'C-g pressed' : (1, lambda v: self.input('q')),
-                  'C-q pressed' : (1, lambda v: self.input('q')),
-                  'C-n pressed' : (1, lambda v: self.input('n')),
-                  'C-s pressed' : (1, lambda v: self.input('s')),
-                  'C-r pressed' : (1, lambda v: self.input('r')),
+                  'C-g pressed' : (1, lambda v: self.send_input('q')),
+                  'C-q pressed' : (1, lambda v: self.send_input('q')),
+                  'C-n pressed' : (1, lambda v: self.send_input('n')),
+                  'C-s pressed' : (1, lambda v: self.send_input('s')),
+                  'C-r pressed' : (1, lambda v: self.send_input('r')),
                   'C-@ pressed' : (1, jump_to_entry_point),
             },
             2 : {
@@ -182,9 +182,9 @@ Key bindings:
         if cmd is None:
             self.parent.handler('put_help', pdb.__doc__)
         else:
-            self.input('h {}'.format(cmd)) # individual command help
+            self.send_input('h {}'.format(cmd)) # individual command help
     
-    def input(self, c):
+    def send_input(self, c):
         self.stdin.input = c
     
     def message(self, msg, indent=-1):
@@ -198,9 +198,10 @@ Key bindings:
         wx.CallAfter(self.logger.recenter)
     
     def watch(self, breakpoint):
-        self.__breakpoint = breakpoint
-        sys.settrace(self.trace)
-        self.handler('trace_begin')
+        if not self.busy:
+            self.__breakpoint = breakpoint
+            sys.settrace(self.trace)
+            self.handler('trace_begin')
     
     def unwatch(self):
         if self.__breakpoint:
@@ -220,6 +221,8 @@ Key bindings:
                 src, lineno = inspect.getsourcelines(code)
                 if 0 <= line - lineno + 1 < len(src):
                     self.set_trace()
+                    self.message("{}{}:{}:{}".format(
+                                 self.prefix1, filename, lineno, name), indent=0)
                     return None
         return self.trace
     
@@ -227,6 +230,7 @@ Key bindings:
     ## Override Bdb methods
     ## --------------------------------
     
+    @echo
     def set_trace(self, frame=None):
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
@@ -237,10 +241,12 @@ Key bindings:
         self.handler('debug_begin', self.target)
         Pdb.set_trace(self, frame)
     
+    @echo
     def set_break(self, filename, lineno, *args, **kwargs):
         self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
+    @echo
     def set_quit(self):
         try:
             Pdb.set_quit(self)
@@ -300,10 +306,6 @@ Key bindings:
     def bp_commands(self, frame):
         """--Break--"""
         return Pdb.bp_commands(self, frame)
-    
-    @echo
-    def interaction(self, frame, traceback):
-        Pdb.interaction(self, frame, traceback)
     
     @echo
     def preloop(self):
