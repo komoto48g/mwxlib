@@ -76,7 +76,6 @@ Args:
         for k, (header, w) in enumerate(self.alist):
             self.InsertColumn(k, header, width=w)
         
-        self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.OnItemFocused)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
@@ -245,9 +244,6 @@ Args:
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))
         
-        if i == self.FocusedItem:
-            self.parent.handler("put_scratch", attribs)
-        
         if self.IsItemChecked(i):
             if self.dummy_hook:
                 actions = self.get_actions(evt.EventType, self.target)
@@ -312,17 +308,12 @@ Args:
             if item == f:
                 self.Focus(i)
     
-    def OnItemFocused(self, evt): #<wx._controls.ListEvent>
-        i = evt.Index
-        item = self.__items[i]
-        self.parent.handler("put_scratch", item[-1]) # attribs
-        evt.Skip()
-    
     def OnItemDClick(self, evt): #<wx._core.MouseEvent>
         i, flag = self.HitTest(evt.Position)
         if i >= 0:
             item = self.__items[i]
             wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
+            self.parent.handler("put_scratch", item[-1]) # attribs
         evt.Skip()
 
 
