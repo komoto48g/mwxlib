@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.1"
+__version__ = "0.54.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -845,10 +845,10 @@ Global bindings:
         self.debugger = Debugger(self,
                                  stdin=self.__shell.interp.stdin,
                                  stdout=self.__shell.interp.stdout,
-                                 skip=[Debugger.__module__,
+                                 skip=[FSM.__module__,
+                                       Debugger.__module__,
                                        EventMonitor.__module__,
-                                       FSM.__module__,
-                                       'fnmatch', 'warnings',
+                                       'fnmatch', 'warnings', 'bdb', 'pdb',
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
                                  )
@@ -963,8 +963,9 @@ Global bindings:
         
         @self.Log.handler.bind('line_set')
         def start(v):
-            if self.Log.target:
-                self.debugger.watch((self.Log.target, v))
+            filename = self.Log.target
+            if filename and not self.debugger.busy:
+                self.debugger.watch((filename, v))
         
         @self.Log.handler.bind('line_unset')
         def stop(v):
