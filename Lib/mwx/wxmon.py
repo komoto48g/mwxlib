@@ -95,7 +95,8 @@ Args:
         
         @self.handler.bind('focus_set')
         def activate(v):
-            self.parent.handler('title_window', self.target)
+            self.parent.handler('title_window',
+                "{}: {}".format(self.__class__.__name__, self.target))
             v.Skip()
     
     def OnDestroy(self, evt):

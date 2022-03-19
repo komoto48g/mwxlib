@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.2"
+__version__ = "0.54.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -845,9 +845,9 @@ Global bindings:
         self.debugger = Debugger(self,
                                  stdin=self.__shell.interp.stdin,
                                  stdout=self.__shell.interp.stdout,
-                                 skip=[FSM.__module__,
-                                       Debugger.__module__,
+                                 skip=[Debugger.__module__,
                                        EventMonitor.__module__,
+                                       ## FSM.__module__,
                                        'fnmatch', 'warnings', 'bdb', 'pdb',
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
@@ -1070,10 +1070,8 @@ Global bindings:
         pane.Show(show)
         self._mgr.Update()
     
-    def SetTitleWindow(self, target):
-        ## self.Title = re.sub("(.*) - (.*)",
-        ##                      "\\1 - {!r}".format(target), self.Title)
-        self.Title = "Nautilus - {}".format(target)
+    def SetTitleWindow(self, title):
+        self.Title = "Nautilus - {}".format(title)
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
@@ -1348,6 +1346,8 @@ def editable(f):
 
 class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     """Python code editor interface with Keymap
+    
+    Note: This class should be mixed-in `wx.stc.StyledTextCtrl`
     """
     message = print
     
@@ -2268,8 +2268,6 @@ Flaky nutshell:
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark)),
                'M-down pressed' : (0, _F(self.goto_next_mark)),
-                  ## 'C-a pressed' : (0, _F(self.beggining_of_command_line)),
-                  ## 'C-e pressed' : (0, _F(self.end_of_command_line)),
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
@@ -2955,13 +2953,6 @@ Flaky nutshell:
     ## def cmdln(self):
     ##     """full command-(multi-)line (with no prompt)"""
     ##     return self.GetTextRange(self.bolc, self.eolc)
-    
-    ## def beggining_of_command_line(self):
-    ##     self.goto_char(self.bolc)
-    ##     self.ScrollToColumn(0)
-    
-    ## def end_of_command_line(self):
-    ##     self.goto_char(self.eolc)
     
     def indent_line(self):
         """Auto-indent the current line"""
