@@ -971,12 +971,12 @@ Global bindings:
         def stop(v):
             self.debugger.unwatch()
         
-        f = self.get_path("deb-logging.log")
+        f = self.LOGGING_FILE
         if os.path.exists(f):
             with self.fopen(f) as i:
                 self.Log.SetText(i.read())
         
-        f = self.get_path("deb-history.log")
+        f = self.HISTORY_FILE
         if os.path.exists(f):
             with self.fopen(f, 'a') as o:
                 o.write("\r\n#! Edit: <{}>\r\n".format(datetime.datetime.now()))
@@ -984,9 +984,8 @@ Global bindings:
             with self.fopen(f, 'w') as o:
                 pass
     
-    @staticmethod
-    def get_path(f):
-        return ut.get_rootpath(f)
+    LOGGING_FILE = ut.get_rootpath("deb-logging.log")
+    HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
     @staticmethod
     def fopen(f, *args):
@@ -1011,11 +1010,11 @@ Global bindings:
     
     def Destroy(self):
         try:
-            f = self.get_path("deb-logging.log")
+            f = self.LOGGING_FILE
             with self.fopen(f, 'w') as o:
                 o.write(self.Log.Text)
             
-            f = self.get_path("deb-history.log")
+            f = self.HISTORY_FILE
             with self.fopen(f, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
@@ -1196,7 +1195,7 @@ Global bindings:
                 ed.MarkerAdd(ln, 2) # error-marker
         ed.ReadOnly = 1
         
-        f = self.get_path("deb-history.log")
+        f = self.HISTORY_FILE
         if os.path.exists(f):
             with self.fopen(f, 'a') as o:
                 o.write(command)

@@ -41,7 +41,7 @@ py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
 >>> import mwx; mwx.deb()
 ```
 
-:memo: mwxlib creates ~/.deb/ in your *HOME* directory.
+:memo: mwxlib creates "~/.mwxlib/" in your *HOME* directory.
 This includes history, logs, dump files used to check when an error occurs.
 
 :memo: At the first startup, it takes some time to collect module information and create a dictionary file.

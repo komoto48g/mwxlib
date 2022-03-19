@@ -16,7 +16,7 @@ import fnmatch
 import pkgutil
 import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
-                     isfunction, isgenerator)
+                     isfunction, isgenerator, isframe, iscode, istraceback)
 from pprint import pprint, pformat
 from six import string_types
 
@@ -370,11 +370,11 @@ def find_modules(force=False, verbose=True):
 
 
 def get_rootpath(f):
-    """Return pathname ~/.deb/logfile
-    If ~/.deb/ does not exist, it will be created.
+    """Return pathname ~/.mwxlib/f
+    If ~/.mwxlib/ does not exist, it will be created.
     """
-    home = os.path.expanduser("~/.deb")
-    if not os.path.exists(home): # Create ~/.deb directory
+    home = os.path.expanduser("~/.mwxlib")
+    if not os.path.exists(home):
         os.mkdir(home)
     return os.path.join(home, f)
 
