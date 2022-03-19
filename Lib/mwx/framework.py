@@ -1454,6 +1454,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginWidth(2, 1)
         self.SetMarginSensitive(2, False)
         
+        ## if wx.VERSION >= (4,1,0):
+        try:
+            self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+            self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
+        except AttributeError:
+            pass
+        
         self.SetProperty('fold', '1') # Enable folder at margin=2
         self.SetMarginLeft(2) # +1 margin at the left
         
@@ -1551,6 +1558,83 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def set_line_marker(self):
         self.linemark = self.lineno
     
+    ## --------------------------------
+    ## Fold / Unfold functions
+    ## --------------------------------
+    
+    def show_folder(self, show=True):
+        ## Call this method *before* set_style
+        if show:
+            self.SetMarginWidth(2, 12)
+            self.SetMarginSensitive(2, True)
+            self.SetFoldMarginColour(True, self.CaretLineBackground)
+            self.SetFoldMarginHiColour(True, 'light gray')
+        else:
+            self.SetMarginWidth(2, 1)
+            self.SetMarginSensitive(2, False)
+    
+    def OnMarginClick(self, evt):
+        lc = self.LineFromPosition(evt.Position)
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
+        
+        ## if level == stc.STC_FOLDLEVELHEADERFLAG: # fold the top-level header only
+        if level: # fold any if the indent level is non-zero
+            self.toggle_fold(lc)
+    
+    def OnMarginRClick(self, evt):
+        lc = self.LineFromPosition(evt.Position)
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+        Menu.Popup(self, [
+            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+                lambda v: self.fold_all()),
+                
+            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+                lambda v: self.unfold_all()),
+        ])
+    
+    def toggle_fold(self, lc=None):
+        """Toggle fold/unfold the header including the given line"""
+        if lc is None:
+            lc = self.lineno
+        while 1:
+            lp = self.GetFoldParent(lc)
+            if lp == -1:
+                break
+            lc = lp
+        self.ToggleFold(lc)
+    
+    def fold_all(self):
+        """Fold all headers"""
+        ln = self.LineCount
+        lc = 0
+        while lc < ln:
+            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+            if level == stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldExpanded(lc, False)
+                le = self.GetLastChild(lc, -1)
+                if le > lc:
+                    self.HideLines(lc+1, le)
+                lc = le
+            lc = lc + 1
+    
+    def unfold_all(self):
+        """Unfold all toplevel headers"""
+        ln = self.LineCount
+        lc = 0
+        while lc < ln:
+            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+            if level == stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldExpanded(lc, True)
+                le = self.GetLastChild(lc, -1)
+                if le > lc:
+                    self.ShowLines(lc+1, le)
+                lc = le
+            lc = lc + 1
+    
+    ## --------------------------------
+    ## Preferences / Appearance
+    ## --------------------------------
+    
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
         spec.update(kwargs)
@@ -1565,14 +1649,17 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if "STC_STYLE_LINENUMBER" in spec:
             lsc = _map(spec.get("STC_STYLE_LINENUMBER"))
             
-            ## Set colors used as a chequeboard pattern.
-            ## Being one pixel solid line, the back and fore should be the same.
+            ## Set colors used as a chequeboard pattern,
+            ## lo (back) one of the colors
+            ## hi (fore) the other color
             if self.GetMarginSensitive(2):
+                ## 12 pixel chequeboard, fore being default colour
                 self.SetFoldMarginColour(True, lsc.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
             else:
-                self.SetFoldMarginColour(True, lsc.get('fore')) # back: one of the colors
-                self.SetFoldMarginHiColour(True, lsc.get('fore')) # fore: the other color
+                ## one pixel solid line, the same colour as the line-number
+                self.SetFoldMarginColour(True, lsc.get('fore'))
+                self.SetFoldMarginHiColour(True, lsc.get('fore'))
         
         ## Custom style for caret and line colour
         if "STC_STYLE_CARETLINE" in spec:
@@ -1925,14 +2012,12 @@ class Editor(EditWindow, EditorInterface):
     target = None
     
     PALETTE_STYLE = { #<Editor>
-      # Default style for all languages
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#000000,back:#ffff7f,size:2",
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#ffffb8,size:9",
         "STC_STYLE_BRACELIGHT"  : "fore:#000000,back:#ffffb8,bold",
         "STC_STYLE_BRACEBAD"    : "fore:#000000,back:#ff0000,bold",
         "STC_STYLE_CONTROLCHAR" : "size:9",
-      # Python lexical style
         "STC_P_DEFAULT"         : "fore:#000000,back:#ffffb8",
         "STC_P_IDENTIFIER"      : "fore:#000000",
         "STC_P_COMMENTLINE"     : "fore:#007f7f,back:#ffcfcf",
@@ -2120,19 +2205,13 @@ Flaky nutshell:
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
     
-    ## Default classvar string to Execute when starting the shell was deprecated.
-    ## You should better describe the starter in your script ($PYTHONSTARTUP:~/.py)
-    ## SHELLSTARTUP = ""
-    
     PALETTE_STYLE = { #<Shell>
-     ## Default style for all languages
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
-        "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#012456,size:2",
+        "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#123460,size:2",
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#f0f0f0,size:9",
         "STC_STYLE_BRACELIGHT"  : "fore:#ffffff,back:#202020,bold",
         "STC_STYLE_BRACEBAD"    : "fore:#ffffff,back:#ff0000,bold",
         "STC_STYLE_CONTROLCHAR" : "size:9",
-     ## Python lexical style
         "STC_P_DEFAULT"         : "fore:#cccccc,back:#202020",
         "STC_P_IDENTIFIER"      : "fore:#cccccc",
         "STC_P_COMMENTLINE"     : "fore:#42c18c,back:#004040",
@@ -2442,18 +2521,8 @@ Flaky nutshell:
             },
         })
         
-        self.SetMarginWidth(2, 12)
-        self.SetMarginSensitive(2, True)
-        ## self.SetFoldMarginColour(True, "#f0f0f0") # cf. STC_STYLE_LINENUMBER:back
-        ## self.SetFoldMarginHiColour(True, "#c0c0c0") # fore:black is a bit strong
+        self.show_folder(True)
         self.set_style(self.PALETTE_STYLE)
-        
-        ## if wx.VERSION >= (4,1,0):
-        try:
-            self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
-            self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
-        except AttributeError:
-            pass
         
         self.__text = ''
         self.__start = 0
@@ -2478,68 +2547,6 @@ Flaky nutshell:
         evt.Skip()
     
     ## --------------------------------
-    ## Fold/Unfold feature
-    ## --------------------------------
-    
-    def OnMarginClick(self, evt):
-        lc = self.LineFromPosition(evt.Position)
-        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
-        
-        ## if level == stc.STC_FOLDLEVELHEADERFLAG: # fold the top-level header only
-        if level: # fold any if the indent level is non-zero
-            self.toggle_fold(lc)
-    
-    def OnMarginRClick(self, evt):
-        lc = self.LineFromPosition(evt.Position)
-        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        Menu.Popup(self, [
-            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
-                lambda v: self.fold_all()),
-                
-            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
-                lambda v: self.unfold_all()),
-        ])
-    
-    def toggle_fold(self, lc=None):
-        """Toggle fold/unfold the header including the given line"""
-        if lc is None:
-            lc = self.lineno
-        while 1:
-            lp = self.GetFoldParent(lc)
-            if lp == -1:
-                break
-            lc = lp
-        self.ToggleFold(lc)
-    
-    def fold_all(self):
-        """Fold all headers"""
-        ln = self.LineCount
-        lc = 0
-        while lc < ln:
-            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-            if level == stc.STC_FOLDLEVELHEADERFLAG:
-                self.SetFoldExpanded(lc, False)
-                le = self.GetLastChild(lc, -1)
-                if le > lc:
-                    self.HideLines(lc+1, le)
-                lc = le
-            lc = lc + 1
-    
-    def unfold_all(self):
-        """Unfold all toplevel headers"""
-        ln = self.LineCount
-        lc = 0
-        while lc < ln:
-            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-            if level == stc.STC_FOLDLEVELHEADERFLAG:
-                self.SetFoldExpanded(lc, True)
-                le = self.GetLastChild(lc, -1)
-                if le > lc:
-                    self.ShowLines(lc+1, le)
-                lc = le
-            lc = lc + 1
-    
-    ## --------------------------------
     ## Special keymap of the shell
     ## --------------------------------
     
@@ -2559,8 +2566,9 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        if re.match(r"(import|from)\s*$", self.cmdlc)\
-        or re.match(r"from\s+([\w.]+)\s+import\s*$", self.cmdlc):
+        cmdl = self.cmdlc
+        if re.match(r"(import|from)\s*$", cmdl)\
+        or re.match(r"from\s+([\w.]+)\s+import\s*$", cmdl):
             self.ReplaceSelection(' ')
             self.handler('M-m pressed', None) # call_module_autocomp
             return
@@ -3260,12 +3268,12 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            hint = self.cmdlc
-            if hint.isspace() or self.bol != self.bolc:
+            cmdl = self.cmdlc
+            if cmdl.isspace() or self.bol != self.bolc:
                 self.handler('quit', evt)
                 return
             
-            hint = hint.strip()
+            hint = cmdl.strip()
             ls = [x.replace('\n', os.linesep + sys.ps2)
                     for x in self.history if x.startswith(hint)] # case-sensitive match
             words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
@@ -3287,7 +3295,8 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            hint = re.search(r"[\w.]*$", self.cmdlc).group(0) # get the last word or ''
+            cmdl = self.cmdlc
+            hint = re.search(r"[\w.]*$", cmdl).group(0) # get the last word or ''
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
@@ -3309,22 +3318,23 @@ Flaky nutshell:
             self.handler('quit', evt)
             return
         try:
-            hint = re.search(r"[\w.]*$", self.cmdlc).group(0) # get the last word or ''
+            cmdl = self.cmdlc
+            hint = re.search(r"[\w.]*$", cmdl).group(0) # get the last word or ''
             
-            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", self.cmdlc)
+            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
                 text = m.group(1)
                 modules = [x[len(text)+1:] for x in self.modules if x.startswith(text)]
                 modules = [x for x in modules if x and '.' not in x]
             else:
-                m = re.match(r"(import|from)\s+(.*)", self.cmdlc)
+                m = re.match(r"(import|from)\s+(.*)", cmdl)
                 if m:
                     if not hint:
                         return
                     text = '.'
                     modules = self.modules
                 else:
-                    text, sep, hint = self.get_words_hint(self.cmdlc)
+                    text, sep, hint = self.get_words_hint(cmdl)
                     obj = self.eval(text or 'self')
                     ## modules = [k for k,v in inspect.getmembers(obj, inspect.ismodule)]
                     modules = [k for k,v in vars(obj).items() if inspect.ismodule(v)]
