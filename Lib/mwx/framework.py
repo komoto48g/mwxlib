@@ -1119,6 +1119,7 @@ Global bindings:
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
+        self.add_history(self.__shell.cmdline)
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
         self.Show()
@@ -1128,6 +1129,7 @@ Global bindings:
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
+        self.add_history(self.__shell.cmdline)
         self.__shell.globals = self.debugger.globals
         self.__shell.locals = self.debugger.locals
         self.ginfo.watch(self.debugger.globals)
@@ -1139,6 +1141,7 @@ Global bindings:
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
+        self.add_history(self.__shell.cmdline)
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.linfo.unwatch()
@@ -1193,6 +1196,9 @@ Global bindings:
     
     def add_history(self, command, noerr=None):
         """Add command:text to the history buffer"""
+        if command.isspace():
+            return
+        
         ed = self.History
         ed.ReadOnly = 0
         ed.write(command)
@@ -2611,16 +2617,16 @@ Flaky nutshell:
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.GetTextRange(self.bolc, self.eolc) #.lstrip()
+        text = self.cmdline
         
         ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
         if not text or text[0] in '!?':
             evt.Skip()
             return
         
-        ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
         tokens = ut.split_words(text)
         
+        ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
@@ -2873,7 +2879,6 @@ Flaky nutshell:
         ## bolc : beginning of command-line
         ## eolc : end of the output-buffer
         try:
-            ## input = self.GetTextRange(self.bolc, self.__eolc_marks[-1])
             input = self.GetTextRange(self.__bolc_marks[-1], self.__eolc_marks[-1])
             output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
             
@@ -2968,10 +2973,10 @@ Flaky nutshell:
         """cull command-line (with no prompt)"""
         return self.GetTextRange(self.bol, self.point)
     
-    ## @property
-    ## def cmdln(self):
-    ##     """full command-(multi-)line (with no prompt)"""
-    ##     return self.GetTextRange(self.bolc, self.eolc)
+    @property
+    def cmdline(self):
+        """full command-(multi-)line (with no prompt)"""
+        return self.GetTextRange(self.bolc, self.eolc)
     
     def indent_line(self):
         """Auto-indent the current line"""

@@ -123,43 +123,34 @@ Key bindings:
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        shell = self.parent.rootshell
-        out = shell.GetTextRange(shell.bolc, shell.point)
-        self.parent.handler('add_history', out)
-        self.parent.handler('debug_begin', frame)
-        self.__interactive = shell.point
+        self.__interactive = self.parent.rootshell.point
         def _continue():
             try:
                 wx.EndBusyCursor() # cancel the egg timer
             except Exception:
                 pass
         wx.CallAfter(_continue)
+        self.parent.handler('debug_begin', frame)
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
-        shell = self.parent.rootshell
         pos = self.__interactive
         def _post():
+            shell = self.parent.rootshell
             out = shell.GetTextRange(pos, shell.point)
             if out == self.prompt or out.endswith(self.prompt*2):
-                ## shell.point = pos # backward selection to anchor point
-                shell.point -= len(self.prompt)
+                shell.point -= len(self.prompt) # backward selection
                 shell.ReplaceSelection('')
                 shell.goto_char(-1)
                 shell.prompt()
-            else:
-                self.parent.handler('add_history', out)
             self.__interactive = shell.point
         wx.CallAfter(_post)
         self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
-        shell = self.parent.rootshell
-        out = shell.GetTextRange(self.__interactive, shell.point) + '\n'
-        self.parent.handler('add_history', out)
-        self.parent.handler('debug_end', frame)
         self.__interactive = None
+        self.parent.handler('debug_end', frame)
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
