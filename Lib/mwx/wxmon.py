@@ -171,7 +171,6 @@ Args:
                 name = self.get_name(event)
                 print(" #{:6d}:{:32s}{!s}".format(event, name, e))
                 continue
-        self.parent.handler("show_page", self)
         self.parent.handler("monitor_begin", self.target)
     
     def unwatch(self):
@@ -314,7 +313,6 @@ Args:
         if i >= 0:
             item = self.__items[i]
             wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
-            self.parent.handler("put_scratch", item[-1]) # attribs
         evt.Skip()
 
 

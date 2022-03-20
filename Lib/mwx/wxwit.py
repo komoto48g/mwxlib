@@ -85,7 +85,6 @@ Args:
             self.unwatch()
             return
         self.SetObj(obj)
-        self.parent.handler("show_page", self)
     
     def unwatch(self):
         self.target = None
@@ -95,6 +94,13 @@ Args:
         self._noWatchList.append(shell)
         self.SetObj(obj)
         return shell
+    
+    def monitor(self, obj):
+        self.parent.monitor.watch(obj)
+    
+    def showinfo(self, obj):
+        self.parent.linfo.watch(obj.__dict__)
+        self.parent.ginfo.watch(eval("globals()", obj.__dict__))
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
@@ -134,11 +140,11 @@ Args:
                 lambda v: _enable_menu(v)),
             (),
             (2, "&Watch the event", Icon('ghost'),
-                lambda v: self.parent.monitor.watch(obj),
+                lambda v: self.monitor(obj),
                 lambda v: _enable_menu(v)),
                 
             (3, "&Watch the locals", Icon('info'),
-                lambda v: self.parent.linfo.watch(obj.__dict__),
+                lambda v: self.showinfo(obj),
                 lambda v: _enable_menu(v)),
             (),
             (10, "&Inspection Tool", Icon('inspect'),

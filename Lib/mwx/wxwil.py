@@ -56,7 +56,6 @@ Args:
             return
         self.__locals = locals
         self.update(self.__locals)
-        self.parent.handler("show_page", self, focus=0)
     
     def unwatch(self):
         self.__locals = None

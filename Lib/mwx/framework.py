@@ -854,6 +854,7 @@ Global bindings:
                                  )
         self.inspector = Inspector(self)
         self.monitor = EventMonitor(self)
+        self.ginfo = LocalsWatcher(self)
         self.linfo = LocalsWatcher(self)
         
         self.console = aui.AuiNotebook(self, size=(600,400),
@@ -878,6 +879,13 @@ Global bindings:
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
         
+        self.watcher = aui.AuiNotebook(self, size=(300,200),
+            style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+                &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+        )
+        self.watcher.AddPage(self.ginfo, "globals")
+        self.watcher.AddPage(self.linfo, "locals")
+        
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.45, 0.5) # (w, h)/N
@@ -889,8 +897,8 @@ Global bindings:
                           aui.AuiPaneInfo().Name("ghost")
                              .Caption("Ghost in the Shell").Right().Show(0))
         
-        self._mgr.AddPane(self.linfo,
-                          aui.AuiPaneInfo().Name("locals")
+        self._mgr.AddPane(self.watcher,
+                          aui.AuiPaneInfo().Name("wathcer")
                              .Caption("Locals watch").Float().Show(0))
         
         self._mgr.Update()
@@ -1098,6 +1106,7 @@ Global bindings:
         if isinstance(obj, wx.Object) or obj is None:
             self.inspector.watch(obj)
             self.monitor.watch(obj)
+            self.show_page(self.monitor, focus=0)
         elif callable(obj):
             def _trace():
                 self.__shell.clearCommand()
@@ -1119,8 +1128,9 @@ Global bindings:
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
-        self.__shell.locals = self.debugger.locals
         self.__shell.globals = self.debugger.globals
+        self.__shell.locals = self.debugger.locals
+        self.ginfo.watch(self.debugger.globals)
         self.linfo.watch(self.debugger.locals)
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
@@ -1132,6 +1142,7 @@ Global bindings:
         self.__shell.write("#>> Debugger closed successfully.", -1)
         self.__shell.prompt()
         self.linfo.unwatch()
+        self.ginfo.unwatch()
         del self.__shell.locals
         del self.__shell.globals
     
