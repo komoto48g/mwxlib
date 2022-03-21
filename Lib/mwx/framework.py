@@ -847,7 +847,7 @@ Global bindings:
                                  stdout=self.__shell.interp.stdout,
                                  skip=[Debugger.__module__,
                                        EventMonitor.__module__,
-                                       ## FSM.__module__,
+                                       FSM.__module__,
                                        'fnmatch', 'warnings', 'bdb', 'pdb',
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
@@ -873,8 +873,8 @@ Global bindings:
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
-        self.ghost.AddPage(self.History, "History")
         self.ghost.AddPage(self.Log,     "Log")
+        self.ghost.AddPage(self.History, "History")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
@@ -925,10 +925,8 @@ Global bindings:
                     'debug_end' : [ None, self.on_debug_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                  'put_scratch' : [ None, self.Scratch.SetText ],
-                     'put_help' : [ None, self.Help.SetText,
-                                          _F(self.show_page, self.Help) ],
-                      'put_log' : [ None, self.Log.SetText ],
+                     'put_help' : [ None, _F(self.put_text, page=1, show=1) ],
+                     'put_text' : [ None, self.put_text ],
                   'add_history' : [ None, self.add_history ],
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
@@ -1057,7 +1055,7 @@ Global bindings:
     def PopupWindow(self, win, show=True):
         """Popup window in notebooks (console, ghost)
         win : page or window to popup (default:None is ghost)
-       show : True, False, otherwise None:toggle (in the notebook)
+       show : True, False, otherwise None:toggle
         """
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
@@ -1156,11 +1154,7 @@ Global bindings:
         filename = inspect.getsourcefile(obj)
         if filename:
             src, lineno = inspect.getsourcelines(obj)
-            lines = linecache.getlines(filename)
-            self.Log.Text = ''.join(lines)
-            self.Log.mark = self.Log.PositionFromLine(lineno-1)
-            self.Log.goto_char(self.Log.mark)
-            wx.CallAfter(self.Log.recenter)
+            self.Log.load(filename, lineno)
         self.Log.target = filename
     
     def on_monitor_end(self, widget):
@@ -1169,7 +1163,10 @@ Global bindings:
         self.Log.target = None
     
     def show_page(self, win, show=True, focus=True):
-        """Show the notebook page and move the focus"""
+        """Show the notebook page and move the focus
+        win : page or window to popup (default:None is ghost)
+       show : True, False, otherwise None:toggle
+        """
         wnd = win if focus else wx.Window.FindFocus() # original focus
         self.PopupWindow(win, show)
         if wnd and win.Shown:
@@ -1193,6 +1190,16 @@ Global bindings:
             if nb.PageCount == 1:
                 nb.TabCtrlHeight = 0
         win.Show(0)
+    
+    def put_text(self, text, page=0, show=None, focus=False):
+        """Puts text to the ghost editor
+        page: notebook page {0:Scratch, 1:Help, 2:Log}
+        """
+        assert 0 <= page <= 2
+        target = self.ghost.GetPage(page)
+        target.Text = text
+        if show is not None:
+            self.show_page(target, show, focus)
     
     def add_history(self, command, noerr=None):
         """Add command:text to the history buffer"""
@@ -2026,7 +2033,22 @@ class Editor(EditWindow, EditorInterface):
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
     
-    target = None
+    def load(self, filename, lineno=0):
+        if filename is None:
+            self.target = None
+            return
+        m = re.match("(.*?):([0-9]+)", filename) # @where
+        if m:
+            filename, ln = m.groups()
+            lineno = int(ln)
+        lines = linecache.getlines(filename)
+        if lines:
+            self.Text = ''.join(lines)
+            self.target = filename
+            if lineno:
+                self.mark = self.PositionFromLine(lineno-1)
+                self.goto_char(self.mark)
+                wx.CallAfter(self.recenter)
     
     PALETTE_STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,face:MS Gothic,size:9",
@@ -2059,6 +2081,8 @@ class Editor(EditWindow, EditorInterface):
         EditorInterface.__init__(self)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
+        
+        self.target = None
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
@@ -2374,6 +2398,7 @@ Flaky nutshell:
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp), # quit -> indent_line
+                'S-tab pressed' : (0, skip),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -2634,12 +2659,7 @@ Flaky nutshell:
             else:
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
-        
-        ## normal execute/run
-        if '\n' in text:
-            self.Execute(text) # for multi-line commands
-        else:
-            evt.Skip()
+        evt.Skip()
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -2983,10 +3003,12 @@ Flaky nutshell:
         line = self.GetTextRange(self.bol, self.eol) # no-prompt
         lstr = line.strip()
         indent = self.calc_indent()
-        pos = max(self.bol + len(indent),
-                  self.point + len(indent) - (len(line) - len(lstr)))
+        if lstr in ('else:', 'elif:', 'except:', 'finally:'):
+            indent = indent[:-4]
+        pos = max(self.bol,
+                  self.point - len(line) + len(lstr))
         self.Replace(self.bol, self.eol, indent + lstr)
-        self.goto_char(pos)
+        self.goto_char(pos + len(indent))
     
     def calc_indent(self):
         """Calculate indent spaces from prefious line
@@ -3180,7 +3202,7 @@ Flaky nutshell:
                 obj = self.eval(text)
             tip = pformat(obj)
             self.CallTipShow(self.point, tip)
-            self.parent.handler('put_scratch', tip)
+            self.parent.handler('put_text', tip, page=0)
             self.message(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))
