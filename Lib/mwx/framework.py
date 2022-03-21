@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.3"
+__version__ = "0.54.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -786,28 +786,22 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
 class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break `target
--------------------------------------------------------------------
+
 Attributes:
-  rootshell : Nautilus in the shell
-   debugger : wxmon.EventMonitor
-    monitor : wxpdb.Debugger
-      ghost : Notebook <Editor> as an tooltip ghost in the shell
-    Scratch : temporary buffer for scratch text
+  rootshell : Nautilus root shell
+    watcher : Notebook of global/locals info watcher
+    console : Notebook of shells
+      ghost : Notebook of editors and inspectors
+    Scratch : temporary buffer for scratch (tooltip)
        Help : temporary buffer for help
         Log : logging buffer
     History : shell history (read only)
+    monitor : wxmon.EventMonitor object
+  inspector : wxwit.Inspector object
 
 Args:
      target : Inspection target (any wx.Object)
               If the target is None, it will be __main__.
-
-Prefix:
-        C-x : extension map for the frame
-        C-c : specific map for the editors and the shell
-
-Global bindings:
-        C-f : Find text
-        M-f : Filter text
     """
     rootshell = property(lambda self: self.__shell)
     
@@ -940,7 +934,7 @@ Global bindings:
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.show_page, self.ghost, None, doc="Toggle the ghost")),
+                  'f11 pressed' : (0, _F(self.show_page, self.ghost, None, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
                 'S-f12 pressed' : (0, _F(self.clear_shell)),
                 'C-f12 pressed' : (0, _F(self.clone_shell)),
@@ -1033,8 +1027,6 @@ Global bindings:
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
-            ## __doc__,
-            self.__doc__,
             self.__shell.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
@@ -1050,7 +1042,7 @@ Global bindings:
             "To show the credit, press C-M-Mbutton.",
             ))
         )
-        self.PopupWindow(self.Help)
+        self.show_page(self.Help, focus=0)
     
     def PopupWindow(self, win, show=True):
         """Popup window in notebooks (console, ghost)
@@ -1608,6 +1600,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def OnMarginRClick(self, evt):
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
+        
         Menu.Popup(self, [
             (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
                 lambda v: self.fold_all()),
@@ -2036,7 +2029,7 @@ class Editor(EditWindow, EditorInterface):
     def load(self, filename, lineno=0):
         if filename is None:
             self.target = None
-            return
+            return False
         m = re.match("(.*?):([0-9]+)", filename) # @where
         if m:
             filename, ln = m.groups()
@@ -2049,6 +2042,8 @@ class Editor(EditWindow, EditorInterface):
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
                 wx.CallAfter(self.recenter)
+            return True
+        return False
     
     PALETTE_STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,face:MS Gothic,size:9",
@@ -2117,19 +2112,11 @@ class Editor(EditWindow, EditorInterface):
 
 class Nautilus(Shell, EditorInterface):
     """Nautilus in the Shell with Editor interface
---------------------------------------------------
+
 Features:
-    All objects in the process can be accessed
-    using
-        self : the target of the shell,
-        this : the module which includes target.
-    
-    So as you are diving into the sea of python process,
-    watch, change, and break everything in the target.
-    
-    Nautilus supports you to dive confortably with
-    special syntax, several utilities, five autocomp modes, etc.
-    See below.
+    All objects in the process can be accessed using
+        self : the target of the shell
+        this : the module which includes target
 
 Magic syntax:
    quoteback : x`y --> y=x  | x`y`z --> z=y=x
@@ -2157,7 +2144,7 @@ Shell built-in utility:
     @dive       clone the shell with new target
     @timeit     measure the duration cpu time
     @profile    profile the func(*args, **kwargs)
-    @execute    exec in the locals (PY2-compatible)
+    @execute    exec in the locals
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
     @edit       open file with your editor (undefined)
@@ -3630,7 +3617,8 @@ if 1:
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
     
-    from scipy import constants as const
+    import numpy as np
+    ## from scipy import constants as const
     np.set_printoptions(linewidth=256) # default 75
     
     app = wx.App()
