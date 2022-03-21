@@ -97,10 +97,12 @@ Args:
     
     def monitor(self, obj):
         self.parent.monitor.watch(obj)
+        self.parent.handler('show_page', self.parent.monitor)
     
     def showinfo(self, obj):
         self.parent.linfo.watch(obj.__dict__)
         self.parent.ginfo.watch(eval("globals()", obj.__dict__))
+        self.parent.handler('show_page', self.parent.linfo)
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest

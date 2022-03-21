@@ -76,7 +76,7 @@ Args:
                 del data[j]
         
         for key, value in attr.items():
-            vstr = str(value)
+            vstr = repr(value)
             i = next((i for i, item in enumerate(data)
                                     if item[0] == key), None)
             if i is not None:

@@ -6,6 +6,7 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
+from bdb import BdbQuit
 from pdb import Pdb
 import pdb
 import sys
@@ -47,7 +48,6 @@ Args:
     stdout : shell.interp.stdout
 
 Key bindings:
-    C-S-h  : help(pdb)
       C-g  : quit
       C-q  : quit
       C-n  : next
@@ -85,7 +85,7 @@ Key bindings:
         self.__shellframe = parent
         self.__interactive = None
         self.__breakpoint = None
-        self.prompt = self.indent + '(Pdb) ' # default pdb prompt
+        self.prompt = self.indent + '(Pdb) ' # default prompt
         self.target = None
         self.code = None
         
@@ -94,6 +94,10 @@ Key bindings:
             self.message(msg, indent=0)
             return self.stdin.readline()
         pdb.input = _input
+        
+        def _help():
+            self.parent.handler('put_help', pdb.__doc__)
+        pdb.help = _help
         
         def jump_to_entry_point(v):
             ln = self.logger.LineFromPosition(self.logger.mark)
@@ -107,7 +111,6 @@ Key bindings:
             1 : {
                     'debug_end' : (0, self.on_debug_end),
                    'debug_next' : (1, self.on_debug_next),
-                'C-S-h pressed' : (1, lambda v: self.help()),
                   'C-g pressed' : (1, lambda v: self.send_input('q')),
                   'C-q pressed' : (1, lambda v: self.send_input('q')),
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
@@ -123,43 +126,34 @@ Key bindings:
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        shell = self.parent.rootshell
-        out = shell.GetTextRange(shell.bolc, shell.point)
-        self.parent.handler('add_history', out)
-        self.parent.handler('debug_begin', frame)
-        self.__interactive = shell.point
+        self.__interactive = self.parent.rootshell.point
         def _continue():
             try:
                 wx.EndBusyCursor() # cancel the egg timer
             except Exception:
                 pass
         wx.CallAfter(_continue)
+        self.parent.handler('debug_begin', frame)
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
-        shell = self.parent.rootshell
         pos = self.__interactive
         def _post():
+            shell = self.parent.rootshell
             out = shell.GetTextRange(pos, shell.point)
             if out == self.prompt or out.endswith(self.prompt*2):
-                ## shell.point = pos # backward selection to anchor point
-                shell.point -= len(self.prompt)
+                shell.point -= len(self.prompt) # backward selection
                 shell.ReplaceSelection('')
                 shell.goto_char(-1)
                 shell.prompt()
-            else:
-                self.parent.handler('add_history', out)
             self.__interactive = shell.point
         wx.CallAfter(_post)
         self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
-        shell = self.parent.rootshell
-        out = shell.GetTextRange(self.__interactive, shell.point) + '\n'
-        self.parent.handler('add_history', out)
-        self.parent.handler('debug_end', frame)
         self.__interactive = None
+        self.parent.handler('debug_end', frame)
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
@@ -174,15 +168,15 @@ Key bindings:
             self.target = target
             self.set_trace()
             target(*args, **kwargs)
+        except BdbQuit:
+            pass
+        except Exception as e:
+            wx.CallAfter(wx.MessageBox,
+                         "Debugger is closed\n\n{!s}".format(e),
+                         style=wx.ICON_ERROR)
         finally:
             self.set_quit()
             return
-    
-    def help(self, cmd=None):
-        if cmd is None:
-            self.parent.handler('put_help', pdb.__doc__)
-        else:
-            self.send_input('h {}'.format(cmd)) # individual command help
     
     def send_input(self, c):
         self.stdin.input = c
@@ -310,7 +304,7 @@ Key bindings:
     @echo
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called.
-        (override) output buffer to the logger (cf. pdb._print_lines)
+        (override) output buffer to the logger
         """
         frame = self.curframe
         code = frame.f_code
