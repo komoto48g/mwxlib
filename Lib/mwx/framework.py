@@ -2621,8 +2621,6 @@ Flaky nutshell:
         
         self.__text = ''
         self.__start = 0
-        self.__bolc_marks = [self.bolc]
-        self.__eolc_marks = [self.eolc]
     
     def trace_point(self):
         text, lp = self.CurLine
@@ -2908,8 +2906,7 @@ Flaky nutshell:
         Note: text is raw input:str with no magic cast
         """
         if text.rstrip():
-            self.__bolc_marks.append(self.bolc)
-            self.__eolc_marks.append(self.eolc)
+            self.__eolc_mark = self.eolc
             self.historyIndex = -1
     
     def on_text_output(self, text):
@@ -2918,7 +2915,7 @@ Flaky nutshell:
         
         Note: text is raw output:str with no magic cast
         """
-        ln = self.LineFromPosition(self.__bolc_marks[-1]) # Line to set marker
+        ln = self.LineFromPosition(self.bolc)
         err = re.findall(r"File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
@@ -2957,8 +2954,8 @@ Flaky nutshell:
         ## bolc : beginning of command-line
         ## eolc : end of the output-buffer
         try:
-            input = self.GetTextRange(self.__bolc_marks[-1], self.__eolc_marks[-1])
-            output = self.GetTextRange(self.__eolc_marks[-1], self.eolc)
+            input = self.GetTextRange(self.bolc, self.__eolc_mark)
+            output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
             input = self.regulate_cmd(input).lstrip()
             repeat = (self.history and self.history[0] == input)
@@ -3003,8 +3000,6 @@ Flaky nutshell:
         self.promptPosEnd = 0
         self.more = False
         self.prompt()
-        self.__bolc_marks = []
-        self.__eolc_marks = []
     
     def write(self, text, pos=None):
         """Display text in the shell (override) :option pos"""
