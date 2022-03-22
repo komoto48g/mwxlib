@@ -619,6 +619,8 @@ class Frame(mwx.Frame):
                           aui.AuiPaneInfo().Name("histogram").Caption("histogram")
                              .FloatingSize(size).MinSize(size).Left().Show(0))
         
+        self._mgr.Update()
+        
         self.menubar["File"][0:0] = [
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book_open'),
                 lambda v: self.load_frame()),
@@ -773,8 +775,6 @@ class Frame(mwx.Frame):
         
         ## ドロップターゲットを許可する
         self.SetDropTarget(MyFileDropLoader(self, loader=self))
-        
-        self._mgr.Update()
     
     sync_switch = True
     
@@ -864,6 +864,7 @@ class Frame(mwx.Frame):
                 pane.floating_pos = wx.GetMousePosition()
             show = True
         self._show_pane(name, show)
+        self._mgr.Update()
     
     def _show_pane(self, name, show=True):
         """Show named pane window (internal use only)"""
@@ -880,7 +881,6 @@ class Frame(mwx.Frame):
                 if pane.IsShown():
                     plug.handler('pane_closed', plug)
         pane.Show(show)
-        self._mgr.Update()
     
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane
@@ -899,7 +899,7 @@ class Frame(mwx.Frame):
         
         plug = self.get_plug(name)
         if plug:
-            if not isinstance(plug.dockable, bool): # prior to kwargs
+            if not isinstance(plug.dockable, bool): # prior to dock:kwargs
                 kwargs.update(dock=plug.dockable)
             if not plug.caption:
                 pane.CaptionVisible(False)
@@ -907,8 +907,8 @@ class Frame(mwx.Frame):
             pane.Dockable(plug.dockable)
         
         dock = kwargs.get('dock')
+        pane.dock_direction = dock or 0
         if dock:
-            pane.dock_direction = dock
             pane.Dock()
         else:
             pane.Float()
@@ -1165,6 +1165,7 @@ class Frame(mwx.Frame):
         plug.__Menu_item = None
         
         self.update_pane(name, **props)
+        self._mgr.Update()
         
         ## Create a menu
         if not hasattr(module, 'ID_'): # give a unique index to the module
@@ -1209,7 +1210,7 @@ class Frame(mwx.Frame):
                 self._mgr.DetachPane(plug)
                 self._mgr.Update()
             
-            plug.handler('pane_closed', plug)
+            plug.handler('pane_closed', plug) # (even if not shown)
             plug.handler('pane_unloaded', plug)
             plug.Destroy()
             
@@ -1637,11 +1638,12 @@ class Frame(mwx.Frame):
                 inf = np.inf,
             )
             self.shellframe.rootshell.Execute(i.read())
-            self.menubar.reset()
-            dirname = os.path.dirname(f)
-            if dirname:
-                os.chdir(dirname)
+            self._mgr.Update()
         
+        self.menubar.reset()
+        dirname = os.path.dirname(f)
+        if dirname:
+            os.chdir(dirname)
         self.statusbar("\b done.")
         return True
     
@@ -1669,7 +1671,7 @@ class Frame(mwx.Frame):
         
         with open(f, 'w') as o:
             o.write('\n'.join((
-                "#! wxpyJemacs session file (This file is generated automatically)",
+                "#! Session file (This file is generated automatically)",
                 "self.SetSize({})".format(self.Size),
                 "self.shellframe.SetSize({})".format(self.shellframe.Size),
                 "self.shellframe.Show({})".format(self.shellframe.IsShown()),
@@ -1679,7 +1681,7 @@ class Frame(mwx.Frame):
                 pane = self.get_pane(name)
                 o.write("self.update_pane('{name}', show={show}, dock={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
-                        "floating_pos={fpos}, floating_size={fsize})\n".format(
+                        "floating_pos={f_pos}, floating_size={f_size})\n".format(
                     name = name,
                     show = pane.IsShown(),
                     dock = pane.IsDocked() and pane.dock_direction,
@@ -1687,8 +1689,8 @@ class Frame(mwx.Frame):
                      pos = pane.dock_pos,
                      row = pane.dock_row,
                     prop = pane.dock_proportion,
-                    fpos = pane.floating_pos,
-                   fsize = pane.floating_size,
+                   f_pos = pane.floating_pos,
+                  f_size = pane.floating_size,
                 ))
             for name, module in self.plugins.items(): # save plugins layout
                 pane = self.get_pane(name)
@@ -1706,7 +1708,7 @@ class Frame(mwx.Frame):
                     print("- Failed to save session: {}".format(plug))
                 o.write("self.load_plug('{name}', show={show}, dock={dock}, "
                         "layer={layer}, pos={pos}, row={row}, prop={prop}, "
-                        "floating_pos={fpos}, floating_size={fsize}, "
+                        "floating_pos={f_pos}, floating_size={f_size}, "
                         "force=0, session={session!r})\n".format(
                     name = path,
                     show = pane.IsShown(),
@@ -1715,8 +1717,8 @@ class Frame(mwx.Frame):
                      pos = pane.dock_pos,
                      row = pane.dock_row,
                     prop = pane.dock_proportion,
-                    fpos = pane.floating_pos,
-                   fsize = pane.floating_size,
+                   f_pos = pane.floating_pos,
+                  f_size = pane.floating_size,
                  session = current_session or None,
                 ))
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
