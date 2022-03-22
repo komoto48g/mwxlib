@@ -373,7 +373,7 @@ def get_rootpath(f):
     """Return pathname ~/.mwxlib/f
     If ~/.mwxlib/ does not exist, it will be created.
     """
-    home = os.path.expanduser("~/.mwxlib")
+    home = os.path.normpath(os.path.expanduser("~/.mwxlib"))
     if not os.path.exists(home):
         os.mkdir(home)
     return os.path.join(home, f)

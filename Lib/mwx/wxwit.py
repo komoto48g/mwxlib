@@ -97,11 +97,11 @@ Args:
     
     def monitor(self, obj):
         self.parent.monitor.watch(obj)
-        self.parent.handler('show_page', self.parent.monitor)
+        self.parent.handler('show_page', self.parent.monitor, focus=1)
     
     def showinfo(self, obj):
         self.parent.linfo.watch(obj.__dict__)
-        self.parent.ginfo.watch(eval("globals()", obj.__dict__))
+        self.parent.ginfo.watch(eval("globals()", obj.__dict__), focus=0)
         self.parent.handler('show_page', self.parent.linfo)
     
     def OnTimer(self, evt):

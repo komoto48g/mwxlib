@@ -983,7 +983,15 @@ Args:
         else:
             with self.fopen(f, 'w') as o:
                 pass
+        
+        f = self.SESSION_FILE
+        if os.path.exists(f):
+            with self.fopen(f) as i:
+                exec(i.read())
+        
+        self._mgr.Update()
     
+    SESSION_FILE = ut.get_rootpath("debrc")
     LOGGING_FILE = ut.get_rootpath("deb-logging.log")
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
@@ -1018,6 +1026,11 @@ Args:
             with self.fopen(f, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
+            
+            f = self.SESSION_FILE
+            self.save_session(f)
+        except Exception as e:
+            print(e)
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
@@ -1087,6 +1100,56 @@ Args:
             self.message("- Don't remove the root shell.")
         else:
             evt.Skip()
+    
+    ## --------------------------------
+    ## Session interface
+    ## --------------------------------
+    
+    def update_pane(self, name, show=False,
+                    dock=False, layer=0, pos=0, row=0, prop=10000,
+                    floating_pos=None, floating_size=None):
+        pane = self._mgr.GetPane(name)
+        if pane.IsOk():
+            pane.dock_direction = dock or 0
+            pane.dock_layer = layer
+            pane.dock_pos = pos
+            pane.dock_row = row
+            pane.dock_proportion = prop
+            pane.floating_pos = floating_pos or pane.floating_pos
+            pane.floating_size = floating_size or pane.floating_size
+            if dock:
+                pane.Dock()
+            else:
+                pane.Float()
+            pane.Show(show)
+    
+    def save_session(self, f):
+        with open(f, 'w') as o:
+            o.write('\n'.join((
+                "#! Session file (This file is generated automatically)",
+                "self.SetSize({})".format(self.Size),
+                "self.Show({})".format(self.IsShown()),
+                "self.Log.load({!r}, {})".format(self.Log.target,
+                                                 self.Log.MarkerNext(0,1)+1),
+                ""
+            )))
+            for name in ('ghost', 'wathcer',):
+                pane = self._mgr.GetPane(name)
+                o.write("self.update_pane('{name}', show={show}, dock={dock}, "
+                        "layer={layer}, pos={pos}, row={row}, prop={prop}, "
+                        "floating_pos={f_pos}, floating_size={f_size})\n".format(
+                    name = name,
+                    show = pane.IsShown(),
+                    dock = pane.IsDocked() and pane.dock_direction,
+                   layer = pane.dock_layer,
+                     pos = pane.dock_pos,
+                     row = pane.dock_row,
+                    prop = pane.dock_proportion,
+                   f_pos = pane.floating_pos,
+                  f_size = pane.floating_size,
+                ))
+            o.write('# end of session\n')
+        return True
     
     ## --------------------------------
     ## Actions for handler
@@ -2646,7 +2709,12 @@ Flaky nutshell:
             else:
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
-        evt.Skip()
+        
+        ## normal execute/run
+        if '\n' in text:
+            self.Execute(text) # for multi-line commands
+        else:
+            evt.Skip()
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
