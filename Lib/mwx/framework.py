@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.4"
+__version__ = "0.54.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -23,7 +23,6 @@ from wx import stc
 from wx.py import dispatcher
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
-import numpy as np
 import pydoc
 import linecache
 import inspect
@@ -1264,7 +1263,7 @@ Args:
         ed = self.History
         ed.ReadOnly = 0
         ed.write(command)
-        ln = ed.LineFromPosition(ed.TextLength - len(command)) # line to set marker
+        ln = ed.LineFromPosition(ed.TextLength - len(command))
         if noerr is not None:
             if noerr:
                 ed.MarkerAdd(ln, 1) # white-marker
@@ -1829,6 +1828,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     point = property(
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
+    
+    anchor = property(
+        lambda self: self.GetAnchor(),
+        lambda self,v: self.SetAnchor(v))
     
     ## CurrentLine (0-base number)
     lineno = property(
@@ -2978,29 +2981,19 @@ Flaky nutshell:
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
     
-    ## def _In(self, j):
-    ##     """Input command:str"""
-    ##     return self.GetTextRange(self.__bolc_marks[j],
-    ##                              self.__eolc_marks[j])
-    ## 
-    ## def _Out(self, j):
-    ##     """Output result:str"""
-    ##     ms = self.__bolc_marks[1:] + [self.bolc]
-    ##     le = len(os.linesep)
-    ##     return self.GetTextRange(self.__eolc_marks[j] + le,
-    ##                              ms[j] - len(sys.ps1) - le)
-    
     def goto_previous_mark(self):
-        marks = self.__bolc_marks + [self.bolc]
-        j = np.searchsorted(marks, self.point, 'left')
-        if j > 0:
-            self.goto_char(marks[j-1])
+        ln = self.MarkerPrevious(self.lineno-1, 1<<1)
+        if ln != -1:
+            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
+        else:
+            self.goto_char(0)
     
     def goto_next_mark(self):
-        marks = self.__bolc_marks + [self.bolc]
-        j = np.searchsorted(marks, self.point, 'right')
-        if j < len(marks):
-            self.goto_char(marks[j])
+        ln = self.MarkerNext(self.lineno+1, 1<<1)
+        if ln != -1:
+            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
+        else:
+            self.goto_char(-1)
     
     def clear(self):
         """Delete all text (override) and put new prompt"""
