@@ -1127,7 +1127,7 @@ Args:
             o.write('\n'.join((
                 "#! Session file (This file is generated automatically)",
                 "self.SetSize({})".format(self.Size),
-                "self.Show({})".format(self.IsShown()),
+                ## "self.Show({})".format(self.IsShown()),
                 "self.Log.load({!r}, {})".format(self.Log.target,
                                                  self.Log.MarkerNext(0,1)+1),
                 ""

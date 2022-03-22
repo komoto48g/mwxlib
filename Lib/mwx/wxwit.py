@@ -101,8 +101,8 @@ Args:
     
     def showinfo(self, obj):
         self.parent.linfo.watch(obj.__dict__)
-        self.parent.ginfo.watch(eval("globals()", obj.__dict__), focus=0)
-        self.parent.handler('show_page', self.parent.linfo)
+        self.parent.ginfo.watch(eval("globals()", obj.__dict__))
+        self.parent.handler('show_page', self.parent.linfo, focus=0)
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
