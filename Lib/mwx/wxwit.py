@@ -74,6 +74,15 @@ Args:
         self.parent.handler('title_window',
             "{}: {}".format(self.__class__.__name__, self.target))
     
+    def GetTextForWidget(self, widget):
+        """Returns the string to be used in the tree for a widget
+        (override) make better object name
+        """
+        clsname = widget.__class__.__name__
+        if hasattr(widget, 'Name'):
+            return "{} ({!r})".format(clsname, widget.Name)
+        return clsname
+    
     def set_colour(self, obj, col):
         self.SetObj(obj)
         item = self.FindWidgetItem(obj)

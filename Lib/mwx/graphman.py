@@ -1671,13 +1671,12 @@ class Frame(mwx.Frame):
                 "self.SetSize({})".format(self.Size),
                 ""
             )))
-            for name, module in self.plugins.items(): # save plugins layout
-                pane = self.get_pane(name)
+            ## save layout
+            for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                path = os.path.abspath(module.__file__).replace('\\','/')
-                if path.endswith('.pyc'): # PY2 may return '*.pyc'
-                    path = path[:-1]
-                if path.endswith("/__init__.py"): # when root:module is a package
+                path = os.path.abspath(module.__file__)
+                basename = os.path.basename(path)
+                if basename == "__init__.py": # is module package?
                     path = path[:-12]
                 current_session = {}
                 try:
@@ -1685,21 +1684,8 @@ class Frame(mwx.Frame):
                 except Exception as e:
                     traceback.print_exc()
                     print("- Failed to save session: {}".format(plug))
-                o.write("self.load_plug('{name}', show={show}, dock={dock}, "
-                        "layer={layer}, pos={pos}, row={row}, prop={prop}, "
-                        "floating_pos={f_pos}, floating_size={f_size}, "
-                        "force=0, session={session!r})\n".format(
-                    name = path,
-                    show = pane.IsShown(),
-                    dock = pane.IsDocked() and pane.dock_direction,
-                   layer = pane.dock_layer,
-                     pos = pane.dock_pos,
-                     row = pane.dock_row,
-                    prop = pane.dock_proportion,
-                   f_pos = pane.floating_pos,
-                  f_size = pane.floating_size,
-                 session = current_session or None,
-                ))
+                o.write("self.load_plug({!r}, session={!r})\n"
+                        .format(path, current_session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             ## stack-frame
