@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.5"
+__version__ = "0.54.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -884,7 +884,7 @@ Args:
         self._mgr.SetDockSizeConstraint(0.45, 0.5) # (w, h)/N
         
         self._mgr.AddPane(self.console,
-                          aui.AuiPaneInfo().CenterPane())
+                          aui.AuiPaneInfo().Name("console").CenterPane().Show(1))
         
         self._mgr.AddPane(self.ghost,
                           aui.AuiPaneInfo().Name("ghost")
@@ -897,7 +897,7 @@ Args:
         self._mgr.Update()
         
         self.Unbind(wx.EVT_CLOSE)
-        self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.findDlg = None
@@ -985,8 +985,7 @@ Args:
         
         f = self.SESSION_FILE
         if os.path.exists(f):
-            with self.fopen(f) as i:
-                exec(i.read())
+            self.load_session(f)
         
         self._mgr.Update()
     
@@ -996,12 +995,13 @@ Args:
     
     @staticmethod
     def fopen(f, *args):
+        """Stream for editor:stc"""
         try:
             return open(f, *args, newline='') # PY3
         except TypeError:
             return open(f, *args) # PY2
     
-    def OnCloseFrame(self, evt):
+    def OnClose(self, evt):
         if self.debugger.busy:
             wx.MessageBox("The debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
@@ -1101,54 +1101,27 @@ Args:
             evt.Skip()
     
     ## --------------------------------
-    ## Session interface
+    ## Session
     ## --------------------------------
     
-    def update_pane(self, name, show=False,
-                    dock=False, layer=0, pos=0, row=0, prop=10000,
-                    floating_pos=None, floating_size=None):
-        pane = self._mgr.GetPane(name)
-        if pane.IsOk():
-            pane.dock_direction = dock or 0
-            pane.dock_layer = layer
-            pane.dock_pos = pos
-            pane.dock_row = row
-            pane.dock_proportion = prop
-            pane.floating_pos = floating_pos or pane.floating_pos
-            pane.floating_size = floating_size or pane.floating_size
-            if dock:
-                pane.Dock()
-            else:
-                pane.Float()
-            pane.Show(show)
+    def load_session(self, f):
+        with open(f) as i:
+            try:
+                exec(i.read())
+            except Exception:
+                traceback.print_exc()
+                print("- Failed to exec {!r}".format(f))
     
     def save_session(self, f):
         with open(f, 'w') as o:
             o.write('\n'.join((
                 "#! Session file (This file is generated automatically)",
                 "self.SetSize({})".format(self.Size),
-                ## "self.Show({})".format(self.IsShown()),
                 "self.Log.load({!r}, {})".format(self.Log.target,
                                                  self.Log.MarkerNext(0,1)+1),
+                "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                 ""
             )))
-            for name in ('ghost', 'wathcer',):
-                pane = self._mgr.GetPane(name)
-                o.write("self.update_pane('{name}', show={show}, dock={dock}, "
-                        "layer={layer}, pos={pos}, row={row}, prop={prop}, "
-                        "floating_pos={f_pos}, floating_size={f_size})\n".format(
-                    name = name,
-                    show = pane.IsShown(),
-                    dock = pane.IsDocked() and pane.dock_direction,
-                   layer = pane.dock_layer,
-                     pos = pane.dock_pos,
-                     row = pane.dock_row,
-                    prop = pane.dock_proportion,
-                   f_pos = pane.floating_pos,
-                  f_size = pane.floating_size,
-                ))
-            o.write('# end of session\n')
-        return True
     
     ## --------------------------------
     ## Actions for handler
@@ -3668,7 +3641,6 @@ if 1:
     self.shellframe.rootshell
     dive(self.shellframe)
     dive(self.shellframe.debugger)
-    ## debug(self)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
