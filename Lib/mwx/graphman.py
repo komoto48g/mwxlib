@@ -505,7 +505,7 @@ class MyFileDropLoader(wx.FileDropTarget):
                                       force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
                 self.loader.load_session(path)
-            elif ext == '.index' or ext == '.results':
+            elif ext == '.index':
                 self.loader.import_index(path, self.target)
             else:
                 paths.append(path) # image file just stacks to be loaded
@@ -557,7 +557,7 @@ class Frame(mwx.Frame):
     
     def select_view(self, view):
         self.__view = view
-        self.OnShowFrame(view.frame)
+        self.set_title(view.frame)
     
     @property
     def graphic_windows(self):
@@ -735,45 +735,38 @@ class Frame(mwx.Frame):
         ]
         self.menubar.reset()
         
-        ## フレーム変更時の描画設定
         self.graph.handler.append({ #<Graph.handler>
             None : {
-                  'frame_shown' : [ None, self.OnShowFrame ],
+                  'frame_shown' : [ None, self.set_title ],
                  'frame_loaded' : [ None, lambda v: self.show_pane("graph") ],
                'frame_modified' : [ None, lambda v: self.show_pane("graph") ],
-               'frame_selected' : [ None, self.OnShowFrame ],
+               'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
             },
         })
         self.output.handler.append({ #<Graph.handler>
             None : {
-                  'frame_shown' : [ None, self.OnShowFrame ],
+                  'frame_shown' : [ None, self.set_title ],
                  'frame_loaded' : [ None, lambda v: self.show_pane("output") ],
                'frame_modified' : [ None, lambda v: self.show_pane("output") ],
-               'frame_selected' : [ None, self.OnShowFrame ],
+               'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.output, self.graph) ],
             },
         })
         
-        ## コンテキストメニューに追加
-        ## self.graph.Menu += self.menubar["File"][3:5]
+        ## Add main-menu to context-menu
         self.graph.Menu += self.menubar["Edit"][2:8]
-        
-        ## self.output.Menu += self.menubar["File"][3:5]
         self.output.Menu += self.menubar["Edit"][2:8]
         
-        ## その他
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
-        self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
+        self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         
-        self.Bind(wx.EVT_ACTIVATE,
-                  lambda v: self.OnShowFrame(self.selected_view.frame))
-        
-        ## Custom Key Bindings:
+        ## Custom Key Bindings
         self.define_key('C-g', self.Quit)
         
-        ## ドロップターゲットを許可する
+        ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self, loader=self))
     
     sync_switch = True
@@ -793,21 +786,24 @@ class Frame(mwx.Frame):
     
     def edit(self, f):
         if hasattr(f, '__file__'):
-            name,_ext = os.path.splitext(f.__file__)
+            name,_ = os.path.splitext(f.__file__)
             f = name + '.py'
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
             subprocess.Popen('{} "{}"'.format(self.Editor, f))
     
-    def OnShowFrame(self, frame):
+    def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
-        session_name,_ext = os.path.splitext(ssn)
+        ssname,_ = os.path.splitext(ssn)
+        name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(
-            self.__class__.__name__, platform.node(), session_name,
-            (frame.pathname or frame.name) if frame else '',
-        ))
+            self.__class__.__name__, platform.node(), ssname, name))
     
-    def OnCloseFrame(self, evt): #<wx._core.CloseEvent>
+    def OnActivate(self, evt): #<wx._core.ActivateEvent>
+        if self and evt.Active:
+            self.set_title(self.selected_view.frame)
+    
+    def OnClose(self, evt): #<wx._core.CloseEvent>
         ssn = os.path.basename(self.session_file or '--')
         with wx.MessageDialog(None,
                 "Do you want to save session before closing program?",
@@ -945,7 +941,7 @@ class Frame(mwx.Frame):
         """
         if isinstance(name, string_types):
             if name.endswith(".py") or name.endswith(".pyc"):
-                name,_ext = os.path.splitext(os.path.basename(name))
+                name,_ = os.path.splitext(os.path.basename(name))
         plug = self.get_plug(name)
         if not plug:
             if self.load_plug(name) is not False:
@@ -956,7 +952,7 @@ class Frame(mwx.Frame):
         """Find named plug window in registered plugins"""
         if isinstance(name, string_types):
             if name.endswith(".py") or name.endswith(".pyc"):
-                name,_ext = os.path.splitext(os.path.basename(name))
+                name,_ = os.path.splitext(os.path.basename(name))
         if name in self.plugins:
             return self.plugins[name].__plug__
         elif islayer(name):
@@ -994,7 +990,7 @@ class Frame(mwx.Frame):
         
         rootname = os.path.basename(rootpath)
         if rootname.endswith(".py"):
-            rootname,_ext = os.path.splitext(rootname)
+            rootname,_ = os.path.splitext(rootname)
         
         plug = self.get_plug(rootname)
         if plug:
@@ -1608,7 +1604,7 @@ class Frame(mwx.Frame):
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     ## --------------------------------
-    ## open/close session
+    ## load/save session
     ## --------------------------------
     session_file = None
     
@@ -1673,8 +1669,6 @@ class Frame(mwx.Frame):
             o.write('\n'.join((
                 "#! Session file (This file is generated automatically)",
                 "self.SetSize({})".format(self.Size),
-                "self.shellframe.SetSize({})".format(self.shellframe.Size),
-                "self.shellframe.Show({})".format(self.shellframe.IsShown()),
                 ""
             )))
             for name in ('output', 'histogram'): # save built-in window layout
