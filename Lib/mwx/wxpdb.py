@@ -103,14 +103,18 @@ Key bindings:
             ln = self.logger.LineFromPosition(self.logger.mark)
             self.send_input('j {}'.format(ln + 1))
         
+        def forkup(v):
+            """Fork key events to the debugger"""
+            self.parent.handler(self.handler.event, v)
+        
         self.__handler = FSM({
             0 : {
-                  'debug_begin' : (1, self.on_debug_begin),
-                  'trace_begin' : (2, ),
+                  'debug_begin' : (1, self.on_debug_begin, forkup),
+                  'trace_begin' : (2, forkup),
             },
             1 : {
-                    'debug_end' : (0, self.on_debug_end),
-                   'debug_next' : (1, self.on_debug_next),
+                    'debug_end' : (0, self.on_debug_end, forkup),
+                   'debug_next' : (1, self.on_debug_next, forkup),
                   'C-g pressed' : (1, lambda v: self.send_input('q')),
                   'C-q pressed' : (1, lambda v: self.send_input('q')),
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
@@ -119,8 +123,8 @@ Key bindings:
                   'C-@ pressed' : (1, jump_to_entry_point),
             },
             2 : {
-                    'trace_end' : (0, ),
-                  'debug_begin' : (1, self.on_debug_begin),
+                    'trace_end' : (0, forkup),
+                  'debug_begin' : (1, self.on_debug_begin, forkup),
             },
         })
     
@@ -133,7 +137,6 @@ Key bindings:
             except Exception:
                 pass
         wx.CallAfter(_continue)
-        self.parent.handler('debug_begin', frame)
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
@@ -148,12 +151,11 @@ Key bindings:
                 shell.prompt()
             self.__interactive = shell.point
         wx.CallAfter(_post)
-        self.parent.handler('debug_next', frame)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
         self.__interactive = None
-        self.parent.handler('debug_end', frame)
+        self.logger.linemark = None
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
@@ -191,17 +193,18 @@ Key bindings:
         self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
         wx.CallAfter(self.logger.recenter)
     
-    def watch(self, breakpoint):
+    def watch(self, bp):
         if not self.busy:
-            self.__breakpoint = breakpoint
+            self.__breakpoint = bp
             sys.settrace(self.trace)
-            self.handler('trace_begin')
+            self.handler('trace_begin', bp)
     
     def unwatch(self):
+        bp = self.__breakpoint
         if self.__breakpoint:
             self.__breakpoint = None
             sys.settrace(None)
-            self.handler('trace_end')
+            self.handler('trace_end', bp)
     
     def trace(self, frame, event, arg):
         code = frame.f_code

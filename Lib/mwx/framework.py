@@ -918,8 +918,8 @@ Args:
                     'debug_end' : [ None, self.on_debug_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                     'put_help' : [ None, _F(self.put_text, page=1, show=1) ],
                      'put_text' : [ None, self.put_text ],
+                     'put_help' : [ None, _F(self.put_text, page=1, show=1) ],
                   'add_history' : [ None, self.add_history ],
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
@@ -965,10 +965,13 @@ Args:
             filename = self.Log.target
             if filename and not self.debugger.busy:
                 self.debugger.watch((filename, v))
+                self.Log.MarkerDeleteAll(4)
         
         @self.Log.handler.bind('line_unset')
         def stop(v):
-            self.debugger.unwatch()
+            if not self.debugger.busy: # don't unset while debugging
+                self.debugger.unwatch()
+                self.Log.MarkerAdd(v, 4)
         
         f = self.LOGGING_FILE
         if os.path.exists(f):
@@ -1119,6 +1122,8 @@ Args:
                 "self.SetSize({})".format(self.Size),
                 "self.Log.load({!r}, {})".format(self.Log.target,
                                                  self.Log.MarkerNext(0,1)+1),
+                "self.ghost.SetSelection({})".format(self.ghost.Selection),
+                "self.watcher.SetSelection({})".format(self.watcher.Selection),
                 "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                 ""
             )))
@@ -1568,20 +1573,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @mark.setter
     def mark(self, v):
+        if v is None:
+            del self.mark
+            return
         self.__mark = v
         self.MarkerDeleteAll(0)
-        if v is not None:
-            ln = self.LineFromPosition(v)
-            self.MarkerAdd(ln, 0)
-            self.handler('mark_set', v)
+        ln = self.LineFromPosition(v)
+        self.MarkerAdd(ln, 0)
+        self.handler('mark_set', v)
     
     @mark.deleter
     def mark(self):
         v = self.__mark
-        self.MarkerDeleteAll(0)
-        if v is not None:
-            self.handler('mark_unset', v)
+        if v is None:
+            return
         self.__mark = None
+        self.MarkerDeleteAll(0)
+        self.handler('mark_unset', v)
     
     def set_point_marker(self):
         self.mark = self.point
@@ -1591,23 +1599,29 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return self.__line
     
     @linemark.setter
-    def linemark(self, v):
-        self.__line = v
+    def linemark(self, ln):
+        if ln is None:
+            del self.linemark
+            return
+        self.__line = ln
         self.MarkerDeleteAll(3)
-        if v is not None:
-            self.MarkerAdd(v, 3)
-            self.handler('line_set', v)
+        self.MarkerAdd(ln, 3)
+        self.handler('line_set', ln)
     
     @linemark.deleter
     def linemark(self):
-        v = self.__line
-        self.MarkerDeleteAll(3)
-        if v is not None:
-            self.handler('line_unset', v)
+        ln = self.__line
+        if ln is None:
+            return
         self.__line = None
+        self.MarkerDeleteAll(3)
+        self.handler('line_unset', ln)
     
     def set_line_marker(self):
-        self.linemark = self.lineno
+        if self.linemark == self.lineno:
+            self.linemark = None # toggle
+        else:
+            self.linemark = self.lineno
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -2124,7 +2138,7 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
-        def fork_up(v):
+        def forkup(v):
             """Fork mouse events to the parent"""
             self.parent.handler(self.handler.event, v)
             v.Skip()
@@ -2369,7 +2383,7 @@ Flaky nutshell:
         def fork(v):
             self.handler(self.handler.event, v)
         
-        def fork_up(v):
+        def forkup(v):
             self.parent.handler(self.handler.event, v)
         
         self.handler.update({ #<Nautilus.handler>
@@ -2379,9 +2393,9 @@ Flaky nutshell:
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
-              '*button* dclick' : [ None, skip, fork_up ],
-             '*button* pressed' : [ None, skip, fork_up ],
-            '*button* released' : [ None, skip, fork_up ],
+              '*button* dclick' : [ None, skip, forkup ],
+             '*button* pressed' : [ None, skip, forkup ],
+            '*button* released' : [ None, skip, forkup ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -3640,7 +3654,6 @@ if 1:
     self.shellframe
     self.shellframe.rootshell
     dive(self.shellframe)
-    dive(self.shellframe.debugger)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
@@ -3662,7 +3675,7 @@ if 1:
     frm.shellframe.handler.debug = 4
     frm.shellframe.rootshell.handler.debug = 0
     frm.shellframe.rootshell.Execute(SHELLSTARTUP)
-    frm.shellframe.rootshell.SetFocus()
+    ## frm.shellframe.rootshell.SetFocus()
     frm.shellframe.Show()
     frm.Show()
     app.MainLoop()
