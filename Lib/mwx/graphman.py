@@ -1671,21 +1671,6 @@ class Frame(mwx.Frame):
                 "self.SetSize({})".format(self.Size),
                 ""
             )))
-            for name in ('output', 'histogram'): # save built-in window layout
-                pane = self.get_pane(name)
-                o.write("self.update_pane('{name}', show={show}, dock={dock}, "
-                        "layer={layer}, pos={pos}, row={row}, prop={prop}, "
-                        "floating_pos={f_pos}, floating_size={f_size})\n".format(
-                    name = name,
-                    show = pane.IsShown(),
-                    dock = pane.IsDocked() and pane.dock_direction,
-                   layer = pane.dock_layer,
-                     pos = pane.dock_pos,
-                     row = pane.dock_row,
-                    prop = pane.dock_proportion,
-                   f_pos = pane.floating_pos,
-                  f_size = pane.floating_size,
-                ))
             for name, module in self.plugins.items(): # save plugins layout
                 pane = self.get_pane(name)
                 plug = self.get_plug(name)
@@ -1715,6 +1700,9 @@ class Frame(mwx.Frame):
                   f_size = pane.floating_size,
                  session = current_session or None,
                 ))
+            o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
+            
+            ## stack-frame
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
             if paths:
                 o.write("self.load_frame(\n{})\n".format(pformat(paths, width=160)))
