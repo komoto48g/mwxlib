@@ -1597,7 +1597,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.handler('mark_unset', v)
     
     def set_point_marker(self):
-        self.mark = self.point
+        self.mark = self.curpos
     
     @property
     def linemark(self):
@@ -1623,10 +1623,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.handler('line_unset', ln)
     
     def set_line_marker(self):
-        if self.linemark == self.lineno:
+        if self.linemark == self.curline:
             self.linemark = None # toggle
         else:
-            self.linemark = self.lineno
+            self.linemark = self.curline
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -1668,7 +1668,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def toggle_fold(self, lc=None):
         """Toggle fold/unfold the header including the given line"""
         if lc is None:
-            lc = self.lineno
+            lc = self.curline
         while 1:
             lp = self.GetFoldParent(lc)
             if lp == -1:
@@ -1761,21 +1761,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.StyleSetSpec(getattr(stc, key), value)
     
     def match_paren(self):
-        cur = self.point
+        c = self.curpos
         if self.following_char in "({[<":
-            pos = self.BraceMatch(cur)
+            pos = self.BraceMatch(c)
             if pos != -1:
-                self.BraceHighlight(cur, pos) # matched to following char
+                self.BraceHighlight(c, pos) # matched to following char
                 return pos
             else:
-                self.BraceBadLight(cur)
+                self.BraceBadLight(c)
         elif self.preceding_char in ")}]>":
-            pos = self.BraceMatch(cur-1)
+            pos = self.BraceMatch(c-1)
             if pos != -1:
-                self.BraceHighlight(pos, cur-1) # matched to preceding char
+                self.BraceHighlight(pos, c-1) # matched to preceding char
                 return pos
             else:
-                self.BraceBadLight(cur-1)
+                self.BraceBadLight(c-1)
         else:
             self.BraceHighlight(-1,-1) # no highlight
     
@@ -1799,7 +1799,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """
         n = self.LinesOnScreen() # lines completely visible
         m = n//2 if ln is None else ln % n if ln < n else n
-        w, h = self.PointFromPosition(self.point)
+        w, h = self.PointFromPosition(self.curpos)
         L = h // self.TextHeight(0)
         ## self.ScrollLines(L - m) # a little delay?
         self.ScrollToLine(self.FirstVisibleLine + L - m)
@@ -1807,23 +1807,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
-    following_char = property(lambda self: chr(self.GetCharAt(self.point)))
-    preceding_char = property(lambda self: chr(self.GetCharAt(self.point-1)))
+    following_char = property(lambda self: chr(self.GetCharAt(self.curpos)))
+    preceding_char = property(lambda self: chr(self.GetCharAt(self.curpos-1)))
     
     @property
     def following_symbol(self):
         """Similar to following_char, but skips whites"""
-        ln = self.GetTextRange(self.point, self.eol)
+        ln = self.GetTextRange(self.curpos, self.eol)
         return next((c for c in ln if not c.isspace()), '')
     
     @property
     def preceding_symbol(self):
         """Similar to preceding_char, but skips whites"""
-        ln = self.GetTextRange(self.bol, self.point)[::-1]
+        ln = self.GetTextRange(self.bol, self.curpos)[::-1]
         return next((c for c in ln if not c.isspace()), '')
     
-    ## CurrentPos, cf. Anchor
-    point = property(
+    curpos = property(
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
     
@@ -1832,7 +1831,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         lambda self,v: self.SetAnchor(v))
     
     ## CurrentLine (0-base number)
-    lineno = property(
+    curline = property(
         lambda self: self.GetCurrentLine(),
         lambda self,v: self.SetCurrentLine(v))
     
@@ -1840,7 +1839,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def bol(self):
         """beginning of line"""
         text, lp = self.CurLine
-        return self.point - lp
+        return self.curpos - lp
     
     @property
     def eol(self):
@@ -1848,7 +1847,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         text, lp = self.CurLine
         if text.endswith(os.linesep):
             lp += len(os.linesep)
-        return (self.point - lp + len(text.encode()))
+        return (self.curpos - lp + len(text.encode()))
     
     @property
     def expr_at_caret(self):
@@ -1871,35 +1870,35 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @property
     def right_paren(self):
         if self.following_char in "({[<":
-            return self.BraceMatch(self.point) # (0 <= cur < pos+1)
+            return self.BraceMatch(self.curpos) # (0 <= cur < pos+1)
         return -1
     
     @property
     def left_paren(self):
         if self.preceding_char in ")}]>":
-            return self.BraceMatch(self.point-1) # (0 <= pos < cur-1)
+            return self.BraceMatch(self.curpos-1) # (0 <= pos < cur-1)
         return -1
     
     @property
     def right_quotation(self):
-        cur = self.point
-        text = self.GetTextRange(cur, self.TextLength)
+        c = self.curpos
+        text = self.GetTextRange(c, self.TextLength)
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return cur + len(lexer.get_token())
+                return c + len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
     
     @property
     def left_quotation(self):
-        cur = self.point
-        text = self.GetTextRange(0, cur)[::-1]
+        c = self.curpos
+        text = self.GetTextRange(0, c)[::-1]
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return cur - len(lexer.get_token())
+                return c - len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
@@ -1912,31 +1911,31 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if pos < 0:
             pos += self.TextLength + 1 # end-of-buffer (+1:\0)
         self.GotoPos(pos)
-        return self.point
+        return self.curpos
     
     def goto_line(self, ln):
         if ln < 0:
             ln += self.LineCount
         self.GotoLine(ln)
-        return self.point
+        return self.curpos
     
     def skip_chars_forward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.following_char):
-            c = self.point
+            c = self.curpos
             if c == self.TextLength:
                 break
             self.GotoPos(c + 1)
-        return self.point
+        return self.curpos
     
     def skip_chars_backward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.preceding_char):
-            c = self.point
+            c = self.curpos
             if c == 0:
                 break
             self.GotoPos(c - 1)
-        return self.point
+        return self.curpos
     
     def back_to_indentation(self):
         self.ScrollToColumn(0)
@@ -1946,11 +1945,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def beggining_of_line(self):
         self.GotoPos(self.bol)
         self.ScrollToColumn(0)
-        return self.point
+        return self.curpos
     
     def end_of_line(self):
         self.GotoPos(self.eol)
-        return self.point
+        return self.curpos
     
     def goto_matched_paren(self):
         p = self.right_paren
@@ -1993,15 +1992,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             return topic
         with self.save_excursion():
             boundaries = "({[<>]}),:;"
-            p = q = self.point
+            p = q = self.curpos
             c = self.preceding_char
             if not c.isspace() and c not in boundaries:
                 self.WordLeft()
-                p = self.point
+                p = self.curpos
             c = self.following_char
             if not c.isspace() and c not in boundaries:
                 self.WordRightEnd()
-                q = self.point
+                q = self.curpos
             return self.GetTextRange(p, q)
     
     def save_excursion(self):
@@ -2010,7 +2009,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self._win = win
             
             def __enter__(self):
-                self.pos = self._win.point
+                self.pos = self._win.curpos
                 self.vpos = self._win.GetScrollPos(wx.VERTICAL)
                 self.hpos = self._win.GetScrollPos(wx.HORIZONTAL)
             
@@ -2031,13 +2030,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @editable
     def eat_white_forward(self):
-        p = self.point
+        p = self.curpos
         q = self.skip_chars_forward(r'\s')
         self.Replace(p, q, '')
     
     @editable
     def eat_white_backward(self):
-        p = self.point
+        p = self.curpos
         q = self.skip_chars_backward(r'\s')
         self.Replace(max(q, self.bol), p, '')
     
@@ -2045,10 +2044,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def kill_line(self):
         p = self.eol
         text, lp = self.CurLine
-        if p == self.point:
+        if p == self.curpos:
             if self.GetTextRange(p, p+2) == '\r\n': p += 2
             elif self.GetTextRange(p, p+1) == '\n': p += 1
-        self.Replace(self.point, p, '')
+        self.Replace(self.curpos, p, '')
     
     @editable
     def backward_kill_line(self):
@@ -2058,7 +2057,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             p -= len(os.linesep)
         elif text[:lp] == sys.ps2: # caret at the prompt head
             p -= len(sys.ps2)
-        self.Replace(p, self.point, '')
+        self.Replace(p, self.curpos, '')
     
     @editable
     def insert_space_like_tab(self):
@@ -2077,10 +2076,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.eat_white_forward()
         text, lp = self.CurLine
         for i in range(lp % 4 or 4):
-            p = self.point
+            p = self.curpos
             if self.preceding_char != ' ' or p == self.bol:
                 break
-            self.point = p-1
+            self.curpos = p-1
         self.ReplaceSelection('')
 
 
@@ -2166,7 +2165,7 @@ class Editor(EditWindow, EditorInterface):
     
     def trace_point(self):
         text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.point), pane=1)
+        self.message("{:>6d}:{} ({})".format(self.curline, lp, self.curpos), pane=1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -2207,7 +2206,6 @@ Shell built-in utility:
     @dive       clone the shell with new target
     @timeit     measure the duration cpu time
     @profile    profile the func(*args, **kwargs)
-    @execute    exec in the locals
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
     @edit       open file with your editor (undefined)
@@ -2354,7 +2352,7 @@ Flaky nutshell:
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
         ## This shell is expected to be created many times in the process,
-        ## e.g., when used as a break-point and when cloned.
+        ## e.g., when used as a breakpoint and when cloned.
         ## Assign objects each time it is activated so that the target
         ## does not refer to dead objects in the shell clones (to be deleted).
         
@@ -2621,7 +2619,7 @@ Flaky nutshell:
     
     def trace_point(self):
         text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.lineno, lp, self.point), pane=1)
+        self.message("{:>6d}:{} ({})".format(self.curline, lp, self.curpos), pane=1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -2668,7 +2666,7 @@ Flaky nutshell:
         """Called when backspace (or *left) pressed
         Backspace-guard from Autocomp eating over a prompt white
         """
-        if self.point == self.bolc:
+        if self.curpos == self.bolc:
             ## do not skip to prevent autocomp eats prompt,
             ## so not to backspace over the latest non-continuation prompt
             return
@@ -2721,7 +2719,7 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        st = self.GetStyleAt(self.point-1)
+        st = self.GetStyleAt(self.curpos-1)
         
         if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
@@ -2863,8 +2861,6 @@ Flaky nutshell:
         builtins.dive = self.clone
         builtins.timeit = self.timeit
         builtins.profile = self.profile
-        builtins.execute = postcall(self.Execute)
-        builtins.puts = postcall(lambda v: self.write(str(v)))
         try:
             builtins.debug = self.parent.debug
         except AttributeError:
@@ -2878,20 +2874,12 @@ Flaky nutshell:
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-        ## try:
-        ##     del shell.target.self
-        ##     del shell.target.this
-        ##     del shell.target.shell
-        ## except AttributeError:
-        ##     pass
         try:
             del builtins.help
             del builtins.info
             del builtins.dive
             del builtins.timeit
             del builtins.profile
-            del builtins.execute
-            del builtins.puts
             del builtins.debug
         except AttributeError:
             pass
@@ -2976,14 +2964,14 @@ Flaky nutshell:
                     .replace(os.linesep, lf))
     
     def goto_previous_mark(self):
-        ln = self.MarkerPrevious(self.lineno-1, 1<<1)
+        ln = self.MarkerPrevious(self.curline-1, 1<<1)
         if ln != -1:
             self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
         else:
             self.goto_char(0)
     
     def goto_next_mark(self):
-        ln = self.MarkerNext(self.lineno+1, 1<<1)
+        ln = self.MarkerNext(self.curline+1, 1<<1)
         if ln != -1:
             self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
         else:
@@ -3024,14 +3012,14 @@ Flaky nutshell:
             if text.startswith(p):
                 lp -= len(p)
                 break
-        return (self.point - lp)
+        return (self.curpos - lp)
     
     ## cf. getCommand(), getMultilineCommand() -> caret-line-text that has a prompt (>>>)
     
     @property
     def cmdlc(self):
         """cull command-line (with no prompt)"""
-        return self.GetTextRange(self.bol, self.point)
+        return self.GetTextRange(self.bol, self.curpos)
     
     @property
     def cmdline(self):
@@ -3046,7 +3034,7 @@ Flaky nutshell:
         if lstr in ('else:', 'elif:', 'except:', 'finally:'):
             indent = indent[:-4]
         pos = max(self.bol,
-                  self.point - len(line) + len(lstr))
+                  self.curpos - len(line) + len(lstr))
         self.Replace(self.bol, self.eol, indent + lstr)
         self.goto_char(pos + len(indent))
     
@@ -3054,7 +3042,7 @@ Flaky nutshell:
         """Calculate indent spaces from prefious line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        line = self.GetLine(self.lineno - 1)
+        line = self.GetLine(self.curline - 1)
         for p in (sys.ps1, sys.ps2, sys.ps3):
             if line.startswith(p):
                 line = line[len(p):]
@@ -3241,7 +3229,7 @@ Flaky nutshell:
             except Exception:
                 obj = self.eval(text)
             tip = pformat(obj)
-            self.CallTipShow(self.point, tip)
+            self.CallTipShow(self.curpos, tip)
             self.parent.handler('put_text', tip, page=0)
             self.message(text)
         except Exception as e:
@@ -3283,18 +3271,18 @@ Flaky nutshell:
     
     def skipback_autocomp(self, evt):
         """Don't eat backward prompt white"""
-        if self.point == self.bolc:
+        if self.curpos == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
             self.handler('quit', evt)
         evt.Skip()
     
     def decrback_autocomp(self, evt):
-        """Move forward Anchor point to the word right during autocomp"""
-        c = self.point
+        """Move anchor to the word right during autocomp"""
+        c = self.curpos
         if self.following_char.isalnum() and self.preceding_char == '.':
             self.WordRight()
-            self.point = c # backward selection to anchor point
+            self.curpos = c # backward selection to anchor point
         evt.Skip()
     
     def process_autocomp(self, evt):
@@ -3333,9 +3321,9 @@ Flaky nutshell:
             j = 0 if j < 0 else j if j < N else N-1
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
-            c = self.point
+            c = self.curpos
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.point = c # backward selection to anchor point
+            self.curpos = c # backward selection to anchor point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
@@ -3574,7 +3562,7 @@ except ImportError as e:
 def deb(target=None, app=None, startup=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
-    --- Put me at break-point.
+    --- Put me at breakpoint.
     
     target : object or module. Default None sets target as __main__.
        app : an instance of App.

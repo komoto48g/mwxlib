@@ -130,7 +130,7 @@ Key bindings:
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        self.__interactive = self.parent.rootshell.point
+        self.__interactive = self.parent.rootshell.curpos
         def _continue():
             try:
                 wx.EndBusyCursor() # cancel the egg timer
@@ -143,13 +143,13 @@ Key bindings:
         pos = self.__interactive
         def _post():
             shell = self.parent.rootshell
-            out = shell.GetTextRange(pos, shell.point)
+            out = shell.GetTextRange(pos, shell.curpos)
             if out == self.prompt or out.endswith(self.prompt*2):
-                shell.point -= len(self.prompt) # backward selection
+                shell.curpos -= len(self.prompt) # backward selection
                 shell.ReplaceSelection('')
                 shell.goto_char(-1)
                 shell.prompt()
-            self.__interactive = shell.point
+            self.__interactive = shell.curpos
         wx.CallAfter(_post)
     
     def on_debug_end(self, frame):
