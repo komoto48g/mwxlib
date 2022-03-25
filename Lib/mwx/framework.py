@@ -1099,7 +1099,7 @@ Args:
     
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject #<wx._aui.AuiTabCtrl>
-        win = tab.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
+        win = tab.Pages[evt.Selection].window
         ## win = self.console.GetPage(evt.Selection) # NG for split notebook
         if win is self.__shell:
             self.message("- Don't remove the root shell.")
@@ -1232,10 +1232,10 @@ Args:
     
     def put_text(self, text, page=0, show=None, focus=False):
         """Puts text to the ghost editor
-        page: notebook page {0:Scratch, 1:Help, 2:Log}
+        page: notebook {0:Scratch, 1:Help, 2:Log}
         """
         assert 0 <= page <= 2
-        target = self.ghost.GetPage(page)
+        target= [self.Scratch, self.Help, self.Log][page]
         target.Text = text
         if show is not None:
             self.show_page(target, show, focus)
