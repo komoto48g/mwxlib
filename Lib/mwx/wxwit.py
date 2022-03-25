@@ -74,13 +74,13 @@ Args:
         self.parent.handler('title_window',
             "{}: {}".format(self.__class__.__name__, self.target))
     
-    def GetTextForWidget(self, widget):
+    def GetTextForWidget(self, obj):
         """Returns the string to be used in the tree for a widget
         (override) make better object name
         """
-        clsname = widget.__class__.__name__
-        if hasattr(widget, 'Name'):
-            return "{} ({!r})".format(clsname, widget.Name)
+        clsname = obj.__class__.__name__
+        if hasattr(obj, 'Name'):
+            return "{} ({!r})".format(clsname, obj.Name)
         return clsname
     
     def set_colour(self, obj, col):
@@ -105,13 +105,7 @@ Args:
         return shell
     
     def monitor(self, obj):
-        self.parent.monitor.watch(obj)
-        self.parent.handler('show_page', self.parent.monitor, focus=1)
-    
-    def showinfo(self, obj):
-        self.parent.linfo.watch(obj.__dict__)
-        self.parent.ginfo.watch(eval("globals()", obj.__dict__))
-        self.parent.handler('show_page', self.parent.linfo, focus=0)
+        self.parent.debug(obj)
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
@@ -152,10 +146,6 @@ Args:
             (),
             (2, "&Watch the event", Icon('ghost'),
                 lambda v: self.monitor(obj),
-                lambda v: _enable_menu(v)),
-                
-            (3, "&Watch the locals", Icon('info'),
-                lambda v: self.showinfo(obj),
                 lambda v: _enable_menu(v)),
             (),
             (10, "&Inspection Tool", Icon('inspect'),
