@@ -328,16 +328,16 @@ Args:
             cw += tw
             tw = 0
         
-        label = self.__par.name + '  ' #('  ' if lw else '')
+        label = self.__par.name + '  '
         
         if style == 'chkbox':
-            if lw > 0:
+            if lw >= 0:
                 lw += 16
             self.label = wx.CheckBox(self, label=label, size=(lw,-1))
             self.label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
             
         elif style == 'button':
-            if lw > 0:
+            if lw >= 0:
                 lw += 16
             self.label = pb.PlateButton(self, label=label, size=(lw,-1),
                             style=(pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE))

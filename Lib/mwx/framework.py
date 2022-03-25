@@ -203,7 +203,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
     
     @wraps(f)
     def _Act(*v):
-        return f(*(v + args), **kwargs)
+        return f(*(args + v), **kwargs)
     action = _Act
     
     def explicit_args(argv, defaults):
@@ -821,6 +821,9 @@ Args:
         self.Log = Editor(self)
         self.History = Editor(self)
         
+        self.Log.show_folder()
+        self.History.show_folder()
+        
         self.__shell = Nautilus(self, target,
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
         
@@ -1050,7 +1053,7 @@ Args:
             "Version: {!s}".format(wx.py.version.VERSION),
             wx.py.__doc__,
             wx.py.shell.__doc__,
-            "*original{}".format(wx.py.shell.HELP_TEXT.lower()),
+            "*original{}".format(wx.py.shell.HELP_TEXT.lower().replace('\n', '\n\t')),
             
             "================================\n" # Thanks are also due to Phoenix/wxWidgets
             "#{!r}".format(wx),
@@ -1136,6 +1139,10 @@ Args:
         if isinstance(obj, wx.Object) or obj is None:
             self.inspector.watch(obj)
             self.monitor.watch(obj)
+            self.linfo.watch(obj.__dict__)
+            self.ginfo.watch(eval("globals()", obj.__dict__))
+            self.console.SetFocus() # focus orginal-window
+            self.show_page(self.linfo, focus=0)
             self.show_page(self.monitor, focus=0)
         elif callable(obj):
             def _trace():
@@ -1427,8 +1434,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
                    'f9 pressed' : (0, _F(self.wrap, None, doc="toggle-fold-type")),
-                  'C-l pressed' : (0, _F(self.recenter, None, doc="recenter")),
-                'C-S-l pressed' : (0, _F(self.recenter, -1, doc="recenter-bottom")),
+                  'C-l pressed' : (0, _F(self.recenter)),
                  ## 'M-up pressed' : (0, _F(self.ScrollLines, -2, doc="fast-scroll-up")),
                ## 'M-down pressed' : (0, _F(self.ScrollLines, +2, doc="fast-scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
@@ -1637,6 +1643,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         else:
             self.SetMarginWidth(2, 1)
             self.SetMarginSensitive(2, False)
+            self.SetFoldMarginColour(True, 'black')
+            self.SetFoldMarginHiColour(True, 'black')
     
     def OnMarginClick(self, evt):
         lc = self.LineFromPosition(evt.Position)
@@ -1786,12 +1794,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
     def recenter(self, ln=None):
-        """Scroll the cursor line to the center of screen (ln default None)
-        if ln=0, the cursor goes top of the screen. ln=-1 the bottom
+        """Scroll the cursor line to the center of screen
+        If ln=0, the cursor moves to the top of the screen.
+        If ln=-1, moves to the bottom
         """
         n = self.LinesOnScreen() # lines completely visible
         m = n//2 if ln is None else ln % n if ln < n else n
-        self.ScrollToLine(self.lineno - m)
+        w, h = self.PointFromPosition(self.point)
+        L = h // self.TextHeight(0)
+        ## self.ScrollLines(L - m) # a little delay?
+        self.ScrollToLine(self.FirstVisibleLine + L - m)
     
     ## --------------------------------
     ## Attributes of the editor
@@ -2174,13 +2186,12 @@ Features:
 Magic syntax:
    quoteback : x`y --> y=x  | x`y`z --> z=y=x
     pullback : x@y --> y(x) | x@y@z --> z(y(x))
-     apropos : x.y? [not] p --> shows apropos (not-)matched by predicates `p
+     apropos : x.y? [not] p --> shows apropos (not-)matched by predicates p
                 equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
                 y can contain regular expressions.
                     (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
-                p can be ?atom, ?callable, ?type (e.g., int,str,etc.),
-                    and any predicates imported from inspect module
-                    such as isclass, ismodule, isfunction, etc.
+                p can be atom, callable, type (e.g., int, str, ...),
+                    and any predicates such as inspect.isclass.
   
   *     info :  ?x (x@?) --> info(x) shows short information
   *     help : ??x (x@??) --> help(x) shows full description
@@ -3674,8 +3685,8 @@ if 1:
     frm.editor.handler.debug = 0
     frm.shellframe.handler.debug = 4
     frm.shellframe.rootshell.handler.debug = 0
-    frm.shellframe.rootshell.Execute(SHELLSTARTUP)
-    ## frm.shellframe.rootshell.SetFocus()
     frm.shellframe.Show()
+    frm.shellframe.rootshell.SetFocus()
+    frm.shellframe.rootshell.Execute(SHELLSTARTUP)
     frm.Show()
     app.MainLoop()
