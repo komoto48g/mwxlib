@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.7"
+__version__ = "0.54.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -822,7 +822,6 @@ Args:
         self.History = Editor(self)
         
         self.Log.show_folder()
-        self.History.show_folder()
         
         self.__shell = Nautilus(self, target,
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)

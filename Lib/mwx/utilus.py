@@ -248,7 +248,7 @@ def pp(obj):
 
 if pp:
     pp.indent = 1
-    pp.width = 100 # default 80
+    pp.width = 80 # default 80
     pp.depth = None
     if sys.version_info >= (3,6):
         pp.compact = False
@@ -281,6 +281,7 @@ def _split_tokens(text):
     lexer = shlex.shlex(text)
     lexer.wordchars += '.'
     lexer.whitespace = '' # nothing is white (for multiline analysis)
+    lexer.commenters = '' # don't ignore comment lines
     ls = []
     n = 0
     p = re.compile(r"([a-zA-Z])[\"\']") # check [bfru]-string
