@@ -523,7 +523,8 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        plug = self.GetPage(evt.Selection)
+        tab = evt.EventObject #<wx._aui.AuiTabCtrl>
+        plug = tab.Pages[evt.Selection].window
         mwx.Menu.Popup(self, plug.Menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -533,11 +534,10 @@ class AuiNotebook(aui.AuiNotebook):
         evt.Skip()
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.GetPage(evt.Selection) # new page <-- CurrentPage
         plug = self.CurrentPage
-        if plug and plug is not page:
+        if plug and plug is not evt.EventObject:
             plug.handler('pane_hidden', plug)
-        evt.Skip() # skip to the next handler (called twice when click?)
+        evt.Skip() # ? called twice when click
 
 
 class Frame(mwx.Frame):
@@ -1724,8 +1724,8 @@ if __name__ == '__main__':
     frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     
-    frm.load_buffer(u"demo/sample.bmp")
-    frm.load_buffer(u"demo/sample2.tif")
+    frm.load_buffer(r"C:\usr\home\lib\python\demo\sample.bmp")
+    frm.load_buffer(r"C:\usr\home\lib\python\demo\sample2.tif")
     frm.graph.load(np.random.randn(1024,1024))
     
     ## Note: 次の二つは別モジュール扱い
@@ -1733,11 +1733,12 @@ if __name__ == '__main__':
     ## frm.load_plug("demo/template.py", show=1, force=1)
     
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
-    ## frm.load_plug(r"C:\usr\home\lib\python\Layer\ffmpeg_viewer.py")
+    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\ffmpeg_viewer.py")
     
-    frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewfft.py")
-    frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/viewframe.py")
-    frm.load_plug("C:/usr/home/workspace/tem13/gdk/plugins/lineprofile.py")
+    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\viewfft.py")
+    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\viewframe.py")
+    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\lineprofile.py")
+    
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
