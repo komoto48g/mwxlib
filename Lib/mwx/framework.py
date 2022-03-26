@@ -920,7 +920,6 @@ Args:
                     'debug_end' : [ None, self.on_debug_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                     'put_text' : [ None, self.put_text ],
                      'put_help' : [ None, _F(self.put_text, page=1, show=1) ],
                   'add_history' : [ None, self.add_history ],
                      'add_page' : [ None, self.add_page ],
@@ -975,36 +974,17 @@ Args:
                 self.debugger.unwatch()
                 self.Log.MarkerAdd(v, 4)
         
-        f = self.LOGGING_FILE
-        if os.path.exists(f):
-            with self.fopen(f) as i:
-                self.Log.SetText(i.read())
-        
-        f = self.HISTORY_FILE
-        if os.path.exists(f):
-            with self.fopen(f, 'a') as o:
-                o.write("\r\n#! Edit: <{}>\r\n".format(datetime.datetime.now()))
-        else:
-            with self.fopen(f, 'w') as o:
-                pass
-        
-        f = self.SESSION_FILE
-        if os.path.exists(f):
-            self.load_session(f)
-        
+        self.Init()
         self._mgr.Update()
     
     SESSION_FILE = ut.get_rootpath("debrc")
+    SCRATCH_FILE = ut.get_rootpath("deb-scratch.log")
     LOGGING_FILE = ut.get_rootpath("deb-logging.log")
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
     @staticmethod
     def fopen(f, *args):
-        """Stream for editor:stc"""
-        try:
-            return open(f, *args, newline='') # PY3
-        except TypeError:
-            return open(f, *args) # PY2
+        return open(f, *args, newline='') # PY3
     
     def OnClose(self, evt):
         if self.debugger.busy:
@@ -1020,21 +1000,62 @@ Args:
             nb.TabCtrlHeight = 0
         evt.Skip()
     
+    def Init(self):
+        f = self.SCRATCH_FILE
+        if os.path.isfile(f):
+            with self.fopen(self.SCRATCH_FILE) as i:
+                self.Scratch.Text = i.read()
+        
+        f = self.LOGGING_FILE
+        if os.path.isfile(f):
+            with self.fopen(f) as i:
+                self.Log.Text = i.read()
+        
+        f = self.HISTORY_FILE
+        if os.path.isfile(f):
+            with self.fopen(f, 'a') as o:
+                o.write("\r\n#! Edit: <{}>\r\n".format(datetime.datetime.now()))
+        else:
+            with self.fopen(f, 'w') as o: # as a new file
+                pass
+        
+        try:
+            ## load-session
+            with open(self.SESSION_FILE) as i:
+                exec(i.read())
+        except FileNotFoundError:
+            pass
+        except Exception:
+            traceback.print_exc()
+            print("- Failed to load session")
+    
     def Destroy(self):
         try:
-            f = self.LOGGING_FILE
-            with self.fopen(f, 'w') as o:
+            with self.fopen(self.SCRATCH_FILE, 'w') as o:
+                o.write(self.Scratch.Text)
+            
+            with self.fopen(self.LOGGING_FILE, 'w') as o:
                 o.write(self.Log.Text)
             
-            f = self.HISTORY_FILE
-            with self.fopen(f, 'w') as o:
+            with self.fopen(self.HISTORY_FILE, 'w') as o:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
             
-            f = self.SESSION_FILE
-            self.save_session(f)
-        except Exception as e:
-            print(e)
+            ## save-session
+            with open(self.SESSION_FILE, 'w') as o:
+                o.write('\n'.join((
+                    "#! Session file (This file is generated automatically)",
+                    "self.SetSize({})".format(self.Size),
+                    "self.Log.load({!r}, {})".format(self.Log.target,
+                                                     self.Log.MarkerNext(0,1)+1),
+                    "self.ghost.SetSelection({})".format(self.ghost.Selection),
+                    "self.watcher.SetSelection({})".format(self.watcher.Selection),
+                    "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
+                    ""
+                )))
+        except Exception:
+            traceback.print_exc()
+            print("- Failed to save session")
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
@@ -1104,31 +1125,6 @@ Args:
             self.message("- Don't remove the root shell.")
         else:
             evt.Skip()
-    
-    ## --------------------------------
-    ## Session
-    ## --------------------------------
-    
-    def load_session(self, f):
-        with open(f) as i:
-            try:
-                exec(i.read())
-            except Exception:
-                traceback.print_exc()
-                print("- Failed to exec {!r}".format(f))
-    
-    def save_session(self, f):
-        with open(f, 'w') as o:
-            o.write('\n'.join((
-                "#! Session file (This file is generated automatically)",
-                "self.SetSize({})".format(self.Size),
-                "self.Log.load({!r}, {})".format(self.Log.target,
-                                                 self.Log.MarkerNext(0,1)+1),
-                "self.ghost.SetSelection({})".format(self.ghost.Selection),
-                "self.watcher.SetSelection({})".format(self.watcher.Selection),
-                "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
-                ""
-            )))
     
     ## --------------------------------
     ## Actions for handler
@@ -1256,7 +1252,7 @@ Args:
         ed.ReadOnly = 1
         
         f = self.HISTORY_FILE
-        if os.path.exists(f):
+        if os.path.isfile(f):
             with self.fopen(f, 'a') as o:
                 o.write(command)
     
@@ -3230,7 +3226,6 @@ Flaky nutshell:
                 obj = self.eval(text)
             tip = pformat(obj)
             self.CallTipShow(self.curpos, tip)
-            self.parent.handler('put_text', tip, page=0)
             self.message(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))
