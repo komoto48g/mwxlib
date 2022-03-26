@@ -939,9 +939,6 @@ class Frame(mwx.Frame):
         Note: When called in thread, the display of AuiPane might be broken.
               Reload this from menu with [C-M-S] key after the thread exits.
         """
-        if isinstance(name, string_types):
-            if name.endswith(".py") or name.endswith(".pyc"):
-                name,_ = os.path.splitext(os.path.basename(name))
         plug = self.get_plug(name)
         if not plug:
             if self.load_plug(name) is not False:
@@ -953,8 +950,8 @@ class Frame(mwx.Frame):
         if isinstance(name, string_types):
             if name.endswith(".py") or name.endswith(".pyc"):
                 name,_ = os.path.splitext(os.path.basename(name))
-        if name in self.plugins:
-            return self.plugins[name].__plug__
+            if name in self.plugins:
+                return self.plugins[name].__plug__
         elif islayer(name):
             return name
     
@@ -1733,14 +1730,13 @@ if __name__ == '__main__':
     ## frm.load_plug("demo/template.py", show=1, force=1)
     
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
-    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\ffmpeg_viewer.py")
-    
-    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\viewfft.py")
-    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\viewframe.py")
-    frm.load_plug(r"C:\usr\home\lib\python\wxNautilus\Layer\lineprofile.py")
-    
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
+    
+    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\viewfft.py")
+    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\viewframe.py")
+    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\lineprofile.py")
+    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\ffmpeg_viewer.py")
     
     frm.Show()
     app.MainLoop()
