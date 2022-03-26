@@ -965,7 +965,8 @@ Note:
         if isinstance(v, tuple):
             v, w = v
             self.SetBitmapPressed(_bmpIcon(w))
-        self.SetBitmap(_bmpIcon(v))
+        if v:
+            self.SetBitmap(_bmpIcon(v))
         self.Refresh()
     
     def __init__(self, parent, label='',

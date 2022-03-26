@@ -23,13 +23,14 @@ class Plugin(Layer):
                         handler=trace,
                         tip="this is a button",
                         icon='v',
-                        size=(100,-1),
+                        size=(80,-1),
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",
                         handler=lambda v: self.statusline(v.GetInt(), v.IsChecked()),
                         tip="this is a toggle-button",
-                        icon=('w','v'),
-                        size=(100,-1),
+                        icon=('w','v'), # must be the same size icon
+                        ## icon='wxpdemo',
+                        size=(120,-1),
                         )
         self.text = TextCtrl(self, label="ctrl label",
                         handler=lambda v: self.statusline(v.Value, "enter"),
