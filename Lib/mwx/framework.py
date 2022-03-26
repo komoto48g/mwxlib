@@ -920,8 +920,8 @@ Args:
                     'debug_end' : [ None, self.on_debug_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                     'put_help' : [ None, _F(self.put_text, page=1, show=1) ],
                   'add_history' : [ None, self.add_history ],
+                     'put_help' : [ None, self.put_help ],
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
                   'remove_page' : [ None, self.remove_page ],
@@ -1225,15 +1225,11 @@ Args:
                 nb.TabCtrlHeight = 0
         win.Show(0)
     
-    def put_text(self, text, page=0, show=None, focus=False):
-        """Puts text to the ghost editor
-        page: notebook {0:Scratch, 1:Help, 2:Log}
-        """
-        assert 0 <= page <= 2
-        target= [self.Scratch, self.Help, self.Log][page]
-        target.Text = text
+    def put_help(self, text, show=True, focus=False):
+        """Puts text to the help buffer"""
+        self.Help.Text = text
         if show is not None:
-            self.show_page(target, show, focus)
+            self.show_page(self.Help, show, focus)
     
     def add_history(self, command, noerr=None):
         """Add command:text to the history buffer"""
