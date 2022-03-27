@@ -523,8 +523,8 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject #<wx._aui.AuiTabCtrl>
-        plug = tab.Pages[evt.Selection].window
+        tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
+        plug = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
         mwx.Menu.Popup(self, plug.Menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
