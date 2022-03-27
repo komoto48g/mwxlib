@@ -821,8 +821,6 @@ Args:
         self.Log = Editor(self)
         self.History = Editor(self)
         
-        self.Log.show_folder()
-        
         self.__shell = Nautilus(self, target,
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
         
@@ -920,8 +918,8 @@ Args:
                     'debug_end' : [ None, self.on_debug_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                     'put_help' : [ None, _F(self.put_text, page=1, show=1) ],
                   'add_history' : [ None, self.add_history ],
+                     'put_help' : [ None, self.put_help ],
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
                   'remove_page' : [ None, self.remove_page ],
@@ -960,6 +958,27 @@ Args:
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
             },
         })
+        
+        self.Scratch.set_style(Nautilus.PALETTE_STYLE)
+        self.Scratch.show_folder()
+        
+        @self.Scratch.handler.bind('focus_set')
+        def activate(v):
+            self.SetTitleWindow(self.current_shell.target)
+        
+        @self.Scratch.handler.bind('f5 pressed')
+        def eval(v):
+            try:
+                exec(self.Scratch.Text, self.current_shell.locals)
+            except Exception as e:
+                ## traceback.print_exc()
+                err = re.findall(r"File \".*\", line ([0-9]+)",
+                                 traceback.format_exc(), re.I)
+                if err:
+                    self.Scratch.linemark = int(err[-1]) - 1
+                self.message("- {!r}".format(e))
+        
+        self.Log.show_folder()
         
         @self.Log.handler.bind('line_set')
         def start(v):
@@ -1118,9 +1137,8 @@ Args:
         evt.Skip()
     
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject #<wx._aui.AuiTabCtrl>
-        win = tab.Pages[evt.Selection].window
-        ## win = self.console.GetPage(evt.Selection) # NG for split notebook
+        tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
+        win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
         if win is self.__shell:
             self.message("- Don't remove the root shell.")
         else:
@@ -1225,15 +1243,11 @@ Args:
                 nb.TabCtrlHeight = 0
         win.Show(0)
     
-    def put_text(self, text, page=0, show=None, focus=False):
-        """Puts text to the ghost editor
-        page: notebook {0:Scratch, 1:Help, 2:Log}
-        """
-        assert 0 <= page <= 2
-        target= [self.Scratch, self.Help, self.Log][page]
-        target.Text = text
+    def put_help(self, text, show=True, focus=False):
+        """Puts text to the help buffer"""
+        self.Help.Text = text
         if show is not None:
-            self.show_page(target, show, focus)
+            self.show_page(self.Help, show, focus)
     
     def add_history(self, command, noerr=None):
         """Add command:text to the history buffer"""
@@ -1276,12 +1290,12 @@ Args:
         """Duplicate an expression at the caret-line"""
         win = self.current_editor
         text = win.SelectedText or win.expr_at_caret
-        shell = self.current_shell
         if text:
+            shell = self.current_shell
             if clear:
                 shell.clearCommand()
             shell.write(text, -1)
-        shell.SetFocus()
+            shell.SetFocus()
     
     def clear_shell(self):
         """Clear the current shell"""
@@ -1322,18 +1336,11 @@ Args:
         if win in self.all_pages():
             if isinstance(win, EditorInterface):
                 return win
-        if win.Parent:
-            if self.ghost in win.Parent.Children: # floating ghost ?
-                return self.ghost.CurrentPage # select the ghost editor
-        return self.__shell
+        return self.console.CurrentPage
     
     @property
     def current_shell(self):
-        win = wx.Window.FindFocus()
-        if win in self.all_pages():
-            if isinstance(win, Nautilus):
-                return win
-        return self.__shell
+        return self.console.CurrentPage
     
     def OnFilterText(self, evt):
         win = self.current_editor
@@ -1451,6 +1458,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
               'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
+                  'tab pressed' : (0, _F(self.indent_line)),
+                'S-tab pressed' : (0, skip),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
             },
@@ -1623,6 +1632,44 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.linemark = None # toggle
         else:
             self.linemark = self.curline
+    
+    ## --------------------------------
+    ## Python syntax
+    ## --------------------------------
+    
+    def indent_line(self):
+        """Auto-indent the current line"""
+        line = self.GetTextRange(self.bol, self.eol) # no-prompt
+        lstr = line.strip()
+        indent = self.calc_indent()
+        if lstr in ('else:', 'elif:', 'except:', 'finally:'):
+            indent = indent[:-4]
+        pos = max(self.bol,
+                  self.curpos - len(line) + len(lstr))
+        self.Replace(self.bol, self.eol, indent + lstr)
+        self.goto_char(pos + len(indent))
+    
+    def calc_indent(self):
+        """Calculate indent spaces from prefious line
+        (patch) `with` in wx.py.shell.Shell.prompt
+        """
+        line = self.GetLine(self.curline - 1)
+        for p in (sys.ps1, sys.ps2, sys.ps3):
+            if line.startswith(p):
+                line = line[len(p):]
+                break
+        lstr = line.lstrip()
+        if not lstr:
+            indent = line.strip(os.linesep)
+        else:
+            indent = line[:(len(line)-len(lstr))]
+            if line.strip()[-1] == ':':
+                m = re.match(r"[a-z]+", lstr)
+                if m and m.group(0) in (
+                    'if','else','elif','for','while','with',
+                    'def','class','try','except','finally'):
+                    indent += ' '*4
+        return indent
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -2360,8 +2407,6 @@ Flaky nutshell:
         def inactivate(v):
             self.handler('shell_inactivated', self)
         
-        self.on_activated(self) # call once manually
-        
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
         
@@ -2419,11 +2464,11 @@ Flaky nutshell:
                'escape pressed' : (-1, self.OnEscape),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-               '*enter pressed' : (0, noskip), # -> OnShowCompHistory 無効
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
+               '*enter pressed' : (0, noskip), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
@@ -2732,7 +2777,9 @@ Flaky nutshell:
         evt.Skip(False)            # and do not skip to default autocomp mode
     
     def duplicate_command(self, clear=True):
-        cmd = self.getMultilineCommand()
+        if self.CanEdit():
+            return
+        cmd = self.getMultilineCommand() # Don't use in prompt
         if cmd:
             if clear:
                 self.clearCommand()
@@ -2897,7 +2944,7 @@ Flaky nutshell:
         Note: text is raw output:str with no magic cast
         """
         ln = self.LineFromPosition(self.bolc)
-        err = re.findall(r"File \"(.*)\", line ([0-9]+)(.*)", text) # check traceback
+        err = re.findall(r"File \".*\", line ([0-9]+)", text)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
@@ -3021,40 +3068,6 @@ Flaky nutshell:
     def cmdline(self):
         """full command-(multi-)line (with no prompt)"""
         return self.GetTextRange(self.bolc, self.eolc)
-    
-    def indent_line(self):
-        """Auto-indent the current line"""
-        line = self.GetTextRange(self.bol, self.eol) # no-prompt
-        lstr = line.strip()
-        indent = self.calc_indent()
-        if lstr in ('else:', 'elif:', 'except:', 'finally:'):
-            indent = indent[:-4]
-        pos = max(self.bol,
-                  self.curpos - len(line) + len(lstr))
-        self.Replace(self.bol, self.eol, indent + lstr)
-        self.goto_char(pos + len(indent))
-    
-    def calc_indent(self):
-        """Calculate indent spaces from prefious line
-        (patch) `with` in wx.py.shell.Shell.prompt
-        """
-        line = self.GetLine(self.curline - 1)
-        for p in (sys.ps1, sys.ps2, sys.ps3):
-            if line.startswith(p):
-                line = line[len(p):]
-                break
-        lstr = line.lstrip()
-        if not lstr:
-            indent = line.strip(os.linesep)
-        else:
-            indent = line[:(len(line)-len(lstr))]
-            if line.strip()[-1] == ':':
-                m = re.match(r"[a-z]+", lstr)
-                if m and m.group(0) in (
-                    'if','else','elif','for','while','with',
-                    'def','class','try','except','finally'):
-                    indent += ' '*4
-        return indent
     
     ## --------------------------------
     ## Utility functions of the shell 
@@ -3217,26 +3230,31 @@ Flaky nutshell:
         if self.CallTipActive():
             self.CallTipCancel()
         try:
-            try:
-                tokens = ut.split_words(text)
-                cmd = self.magic_interpret(tokens)
-                obj = self.eval(cmd)
-                text = cmd
-            except Exception:
-                obj = self.eval(text)
-            tip = pformat(obj)
-            self.CallTipShow(self.curpos, tip)
-            self.message(text)
-        except Exception as e:
-            self.message("- {}: {!r}".format(e, text))
+            tokens = ut.split_words(text)
+            cmd = self.magic_interpret(tokens)
+            obj = self.eval(cmd)
+            text = cmd
+        except Exception:
+            obj = self.eval(text)
+        tip = pformat(obj)
+        self.CallTipShow(self.curpos, tip)
+        self.message(text)
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
-        self.gen_tooltip(self.SelectedText or self.expr_at_caret)
+        try:
+            text = self.SelectedText or self.expr_at_caret
+            self.gen_tooltip(text)
+        except Exception as e:
+            self.message("- {}: {!r}".format(e, text))
     
     def call_tooltip(self, evt):
         """Call ToolTip of the selected word or command line"""
-        self.gen_tooltip(self.SelectedText or self.getCommand() or self.expr_at_caret)
+        try:
+            text = self.SelectedText or self.getCommand()
+            self.gen_tooltip(text)
+        except Exception as e:
+            self.call_tooltip2(evt)
     
     def call_helpTip2(self, evt):
         try:
@@ -3569,10 +3587,6 @@ def deb(target=None, app=None, startup=None, **kwargs):
   **kwargs : Nautilus arguments
     locals : additional context (localvars:dict) to the shell
     execStartupScript : First, execute your script ($PYTHONSTARTUP:~/.py)
-
-Note:
-    PyNoAppError will be raised when the App is missing in process.
-    When it may cause bad traceback, please restart.
     """
     quote_unqoute = """
         Anything one man can imagine, other man can make real.
