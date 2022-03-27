@@ -894,6 +894,8 @@ Args:
             try:
                 self.Scratch.linemark = None
                 exec(self.Scratch.Text, self.current_shell.locals)
+                dispatcher.send(signal='Interpreter.push',
+                                sender=self, command=None, more=False)
             except Exception as e:
                 ## traceback.print_exc()
                 err = re.findall(r"File \".*\", line ([0-9]+)",
@@ -1114,7 +1116,8 @@ Args:
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
         self.Log.target = frame.f_code.co_filename
-        dispatcher.send(signal='Interpreter.push', sender=self, command=None, more=False)
+        dispatcher.send(signal='Interpreter.push',
+                        sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
@@ -1377,9 +1380,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
                   'C-t pressed' : (0, noskip), # override transpose-line
-                'C-S-f pressed' : (0, _F(self.set_point_marker)), # override mark
-              'C-space pressed' : (0, _F(self.set_point_marker)),
+                'C-S-f pressed' : (0, _F(self.set_marker)), # override mark
+              'C-space pressed' : (0, _F(self.set_marker)),
               'S-space pressed' : (0, _F(self.set_line_marker)),
+                  'C-@ pressed' : (0, _F(self.goto_marker)),
+                'C-S-@ pressed' : (0, _F(self.goto_line_marker)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -1527,8 +1532,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.MarkerDeleteAll(0)
         self.handler('mark_unset', v)
     
-    def set_point_marker(self):
+    def set_marker(self):
         self.mark = self.curpos
+    
+    def goto_marker(self):
+        if self.mark is not None:
+            self.goto_char(self.mark)
+            self.recenter()
     
     @property
     def linemark(self):
@@ -1558,6 +1568,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.linemark = None # toggle
         else:
             self.linemark = self.curline
+    
+    def goto_line_marker(self):
+        if self.linemark is not None:
+            self.goto_line(self.linemark)
+            self.recenter()
     
     ## --------------------------------
     ## Python syntax
