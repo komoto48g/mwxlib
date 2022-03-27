@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.8"
+__version__ = "0.54.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -32,12 +32,14 @@ from six import string_types
 from importlib import reload
 try:
     import utilus as ut
-    from utilus import (FSM, TreeList, wdir,
+    from utilus import (FSM, TreeList, funcall, wdir,
                         apropos, typename, where, mro, pp,)
 except ImportError:
     from . import utilus as ut
-    from .utilus import (FSM, TreeList, wdir,
+    from .utilus import (FSM, TreeList, funcall, wdir,
                          apropos, typename, where, mro, pp,)
+
+_F = funcall
 
 
 speckeys = {
@@ -181,85 +183,6 @@ def regulate_key(key):
                .replace("M-C-", "C-M-") # modifier key regulation C-M-S-
                .replace("S-M-", "M-S-")
                .replace("S-C-", "C-S-"))
-
-
-## --------------------------------
-## Interfaces of Controls
-## --------------------------------
-
-def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
-    """Decorator as curried function
-    
-    event 引数などが省略できるかどうかチェックし，
-    省略できる場合 (kwargs で必要な引数が与えられる場合) その関数を返す．
-    Check if the event argument etc. can be omitted,
-    If it can be omitted (if required arguments are given by kwargs),
-    return the decorated function.
-    
-    retval-> (lambda *v: f`alias<doc:str>(*v, *args, **kwargs))
-    """
-    assert isinstance(doc, (string_types, type(None)))
-    assert isinstance(alias, (string_types, type(None)))
-    
-    @wraps(f)
-    def _Act(*v):
-        return f(*(args + v), **kwargs)
-    action = _Act
-    
-    def explicit_args(argv, defaults):
-        ## 明示的に与えなければならない引数の数を数える
-        ## defaults と kwargs はかぶることがあるので，次のようにする
-        n = len(args) + len(defaults or ())
-        rest = argv[:-n] if n else argv # explicit, non-default argv that must be given
-        k = len(rest)                   # if k > 0: kwargs must give the rest of args
-        for kw in kwargs:
-            if kw not in argv:
-                raise TypeError("{} got an unexpected keyword {!r}".format(f, kw))
-            if kw in rest:
-                k -= 1
-        return k
-    
-    if not inspect.isbuiltin(f):
-        try:
-            argv, _varargs, _keywords, defaults,\
-              _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) # PY3
-        except AttributeError:
-            argv, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
-        
-        k = explicit_args(argv, defaults)
-        if k == 0 or inspect.ismethod(f) and k == 1: # 暗黙の引数 'self' は除く
-            @wraps(f)
-            def _Act2(*v):
-                return f(*args, **kwargs) # function with no explicit args
-            action = _Act2
-            action.__name__ += str("~")
-    else:
-        ## Builtin functions don't have an argspec that we can get.
-        ## Try alalyzing the doc:str to get argspec info.
-        try:
-            m = re.search(r"(\w+)\((.*)\)", inspect.getdoc(f))
-            name, argspec = m.groups()
-            argv = [x for x in argspec.strip().split(',') if x]
-            defaults = re.findall(r"\w+\s*=(\w+)", argspec)
-            k = explicit_args(argv, defaults)
-            if k == 0:
-                @wraps(f)
-                def _Act3(*v):
-                    return f(*args, **kwargs) # function with no explicit args
-                action = _Act3
-                action.__name__ += str("~~")
-        except TypeError:
-            raise
-        except Exception:
-            pass
-    
-    ## action.__name__ = str(alias or f.__name__)
-    if alias:
-        action.__name__ = str(alias)
-    action.__doc__ = doc or f.__doc__
-    return action
-
-_F = funcall
 
 
 def postcall(f):
@@ -969,6 +892,7 @@ Args:
         @self.Scratch.handler.bind('f5 pressed')
         def eval(v):
             try:
+                self.Scratch.linemark = None
                 exec(self.Scratch.Text, self.current_shell.locals)
             except Exception as e:
                 ## traceback.print_exc()
@@ -1439,23 +1363,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
                    'f9 pressed' : (0, _F(self.wrap, None, doc="toggle-fold-type")),
-                  'C-l pressed' : (0, _F(self.recenter)),
-                 ## 'M-up pressed' : (0, _F(self.ScrollLines, -2, doc="fast-scroll-up")),
-               ## 'M-down pressed' : (0, _F(self.ScrollLines, +2, doc="fast-scroll-down")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
-               'C-S-up pressed' : (0, _F(self.LineUpExtend)),
-             'C-S-down pressed' : (0, _F(self.LineDownExtend)),
              'C-S-left pressed' : (0, _F(self.selection_backward_word_or_paren)),
             'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
+               'C-S-up pressed' : (0, _F(self.LineUpExtend)),
+             'C-S-down pressed' : (0, _F(self.LineDownExtend)),
                   'C-a pressed' : (0, _F(self.beggining_of_line)),
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'C-k pressed' : (0, _F(self.kill_line)),
-                'C-S-f pressed' : (0, _F(self.set_point_marker)), # override key
+                  'C-l pressed' : (0, _F(self.recenter)),
+                'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
+                  'C-t pressed' : (0, noskip), # override transpose-line
+                'C-S-f pressed' : (0, _F(self.set_point_marker)), # override mark
               'C-space pressed' : (0, _F(self.set_point_marker)),
-                  'C-b pressed' : (0, _F(self.set_line_marker)),
               'S-space pressed' : (0, _F(self.set_line_marker)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
