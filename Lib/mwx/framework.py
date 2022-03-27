@@ -1024,11 +1024,13 @@ Args:
         if os.path.isfile(f):
             with self.fopen(self.SCRATCH_FILE) as i:
                 self.Scratch.Text = i.read()
+                self.Scratch.EmptyUndoBuffer()
         
         f = self.LOGGING_FILE
         if os.path.isfile(f):
             with self.fopen(f) as i:
                 self.Log.Text = i.read()
+                self.Log.EmptyUndoBuffer()
         
         f = self.HISTORY_FILE
         if os.path.isfile(f):
@@ -1067,6 +1069,7 @@ Args:
                     "self.SetSize({})".format(self.Size),
                     "self.Log.load({!r}, {})".format(self.Log.target,
                                                      self.Log.MarkerNext(0,1)+1),
+                    "self.Log.EmptyUndoBuffer()",
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
@@ -1660,7 +1663,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 break
         lstr = line.lstrip()
         if not lstr:
-            indent = line.strip(os.linesep)
+            indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
         else:
             indent = line[:(len(line)-len(lstr))]
             if line.strip()[-1] == ':':
@@ -1888,8 +1891,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def eol(self):
         """end of line"""
         text, lp = self.CurLine
-        if text.endswith(os.linesep):
-            lp += len(os.linesep)
+        text = text.strip('\r\n') # remove line-seps: '\r' and '\n'
         return (self.curpos - lp + len(text.encode()))
     
     @property
@@ -2088,18 +2090,20 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         p = self.eol
         text, lp = self.CurLine
         if p == self.curpos:
-            if self.GetTextRange(p, p+2) == '\r\n': p += 2
-            elif self.GetTextRange(p, p+1) == '\n': p += 1
+            if self.GetTextRange(p, p+1) == '\r': p += 1
+            if self.GetTextRange(p, p+1) == '\n': p += 1
         self.Replace(self.curpos, p, '')
     
     @editable
     def backward_kill_line(self):
         p = self.bol
         text, lp = self.CurLine
-        if text[:lp] == '' and p: # caret at the beginning of the line
-            p -= len(os.linesep)
-        elif text[:lp] == sys.ps2: # caret at the prompt head
+        if text[:lp] == sys.ps2: # caret at the prompt head
             p -= len(sys.ps2)
+            lp -= len(sys.ps2)
+        if text[:lp] == '' and p: # caret at the beginning of the line
+            if self.GetTextRange(p-1, p) == '\n': p -= 1
+            if self.GetTextRange(p-1, p) == '\r': p -= 1
         self.Replace(p, self.curpos, '')
     
     @editable
@@ -2944,7 +2948,7 @@ Flaky nutshell:
         Note: text is raw output:str with no magic cast
         """
         ln = self.LineFromPosition(self.bolc)
-        err = re.findall(r"File \".*\", line ([0-9]+)", text)
+        err = re.findall(r"File \".*\", line ([0-9]+)", text, re.I)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
@@ -2990,9 +2994,10 @@ Flaky nutshell:
             if not repeat and input:
                 Shell.addHistory(self, input)
             
-            noerr = self.on_text_output(output.strip(os.linesep))
+            noerr = self.on_text_output(output)
             if noerr:
-                self.fragmwords |= set(re.findall(r"\b[a-zA-Z_][\w.]+", input + output))
+                words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
+                self.fragmwords |= set(words)
             self.parent.handler('add_history', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
