@@ -1868,6 +1868,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             return self.GetTextRange(p, q)
     
     @property
+    def paren_at_caret(self):
+        p = self.curpos
+        def _paren(q):
+            text = self.GetTextRange(p, q)
+            if text:
+                return text.replace(os.linesep + sys.ps2, '')
+        return (_paren(self.left_paren)
+             or _paren(self.right_paren))
+    
+    @property
     def right_paren(self):
         if self.following_char in "({[<":
             return self.BraceMatch(self.curpos) + 1
@@ -1906,6 +1916,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Goto, Skip, Selection, etc.
     ## --------------------------------
+    
+    def _goto_pos(self, pos, selection=False):
+        if 0 <= pos <= self.TextLength:
+            if selection:
+                self.SetCurrentPos(pos)
+            else:
+                self.GotoPos(pos)
+            return True
     
     def goto_char(self, pos):
         if pos < 0:
@@ -1946,36 +1964,20 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoPos(self.eol)
     
     def goto_matched_paren(self):
-        p = self.right_paren
-        if p != -1:
-            return self.GotoPos(p)
-        p = self.left_paren
-        if p != -1:
-            return self.GotoPos(p)
-        q = self.right_quotation
-        if q != -1:
-            return self.GotoPos(q)
-        q = self.left_quotation
-        if q != -1:
-            return self.GotoPos(q)
+        return (self._goto_pos(self.left_paren)
+             or self._goto_pos(self.right_paren)
+             or self._goto_pos(self.left_quotation)
+             or self._goto_pos(self.right_quotation))
     
     def selection_forward_word_or_paren(self):
-        p = self.right_paren
-        if p != -1:
-            return self.SetCurrentPos(p) # forward selection to parenthesized words
-        q = self.right_quotation
-        if q != -1:
-            return self.SetCurrentPos(q) # forward selection to quoted words
-        self.WordRightEndExtend()  # otherwise, extend selection forward word
+        return (self._goto_pos(self.right_paren, 1)
+             or self._goto_pos(self.right_quotation, 1)
+             or self.WordRightEndExtend())
     
     def selection_backward_word_or_paren(self):
-        p = self.left_paren
-        if p != -1:
-            return self.SetCurrentPos(p) # backward selection to parenthesized words
-        q = self.left_quotation
-        if q != -1:
-            return self.SetCurrentPos(q) # forward selection to quoted words
-        self.WordLeftExtend() # otherwise, extend selection backward word
+        return (self._goto_pos(self.left_paren, 1)
+             or self._goto_pos(self.left_quotation, 1)
+             or self.WordLeftExtend())
     
     def save_excursion(self):
         class Excursion(object):
