@@ -1500,7 +1500,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.UseTabs = False
         self.WrapMode = 0
         self.WrapIndentMode = 1
-        self.IndentationGuides = 1
+        self.IndentationGuides = 2
         
         self.__mark = None
         self.__line = None
@@ -1870,35 +1870,35 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @property
     def right_paren(self):
         if self.following_char in "({[<":
-            return self.BraceMatch(self.curpos) # (0 <= cur < pos+1)
+            return self.BraceMatch(self.curpos) + 1
         return -1
     
     @property
     def left_paren(self):
         if self.preceding_char in ")}]>":
-            return self.BraceMatch(self.curpos-1) # (0 <= pos < cur-1)
+            return self.BraceMatch(self.curpos - 1)
         return -1
     
     @property
     def right_quotation(self):
-        c = self.curpos
-        text = self.GetTextRange(c, self.TextLength)
+        p = self.curpos
+        text = self.GetTextRange(p, self.TextLength)
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return c + len(lexer.get_token())
+                return p + len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
     
     @property
     def left_quotation(self):
-        c = self.curpos
-        text = self.GetTextRange(0, c)[::-1]
+        p = self.curpos
+        text = self.GetTextRange(0, p)[::-1]
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
-                return c - len(lexer.get_token())
+                return p - len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
         return -1
@@ -1911,50 +1911,44 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if pos < 0:
             pos += self.TextLength + 1 # end-of-buffer (+1:\0)
         self.GotoPos(pos)
-        return self.curpos
     
     def goto_line(self, ln):
         if ln < 0:
             ln += self.LineCount
         self.GotoLine(ln)
-        return self.curpos
     
     def skip_chars_forward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.following_char):
-            c = self.curpos
-            if c == self.TextLength:
+            q = self.curpos
+            if q == self.TextLength:
                 break
-            self.GotoPos(c + 1)
-        return self.curpos
+            self.GotoPos(q + 1)
     
     def skip_chars_backward(self, rexpr=r'\s'):
         p = re.compile(rexpr)
         while p.search(self.preceding_char):
-            c = self.curpos
-            if c == 0:
+            q = self.curpos
+            if q == 0:
                 break
-            self.GotoPos(c - 1)
-        return self.curpos
+            self.GotoPos(q - 1)
     
     def back_to_indentation(self):
         self.ScrollToColumn(0)
         self.GotoPos(self.bol)
-        return self.skip_chars_forward(r'\s')
+        self.skip_chars_forward(r'\s')
     
     def beggining_of_line(self):
         self.GotoPos(self.bol)
         self.ScrollToColumn(0)
-        return self.curpos
     
     def end_of_line(self):
         self.GotoPos(self.eol)
-        return self.curpos
     
     def goto_matched_paren(self):
         p = self.right_paren
         if p != -1:
-            return self.GotoPos(p+1)
+            return self.GotoPos(p)
         p = self.left_paren
         if p != -1:
             return self.GotoPos(p)
@@ -1968,7 +1962,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def selection_forward_word_or_paren(self):
         p = self.right_paren
         if p != -1:
-            return self.SetCurrentPos(p+1) # forward selection to parenthesized words
+            return self.SetCurrentPos(p) # forward selection to parenthesized words
         q = self.right_quotation
         if q != -1:
             return self.SetCurrentPos(q) # forward selection to quoted words
@@ -2011,14 +2005,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @editable
     def eat_white_forward(self):
         p = self.curpos
-        q = self.skip_chars_forward(r'\s')
-        self.Replace(p, q, '')
+        self.skip_chars_forward(r'\s')
+        self.Replace(p, self.curpos, '')
     
     @editable
     def eat_white_backward(self):
         p = self.curpos
-        q = self.skip_chars_backward(r'\s')
-        self.Replace(max(q, self.bol), p, '')
+        self.skip_chars_backward(r'\s')
+        self.Replace(max(self.curpos, self.bol), p, '')
     
     @editable
     def kill_line(self):
@@ -2995,7 +2989,7 @@ Flaky nutshell:
             if text.startswith(p):
                 lp -= len(p)
                 break
-        return (self.curpos - lp)
+        return self.curpos - lp
     
     ## cf. getCommand(), getMultilineCommand() -> caret-line-text that has a prompt (>>>)
     
@@ -3234,10 +3228,10 @@ Flaky nutshell:
     
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
-        c = self.curpos
+        p = self.curpos
         if self.following_char.isalnum() and self.preceding_char == '.':
             self.WordRight()
-            self.curpos = c # backward selection to anchor point
+            self.curpos = p # backward selection to anchor point
         evt.Skip()
     
     def process_autocomp(self, evt):
@@ -3276,9 +3270,9 @@ Flaky nutshell:
             j = 0 if j < 0 else j if j < N else N-1
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
-            c = self.curpos
+            p = self.curpos
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.curpos = c # backward selection to anchor point
+            self.curpos = p # backward selection to anchor point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
