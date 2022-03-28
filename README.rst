@@ -14,18 +14,15 @@ mwx.deb is wx.py.shell-base inspector used for debugging in the target process.
 
 ::
 
-   >>> from mwx import deb
-   >>> deb()
+   >>> import mwx; mwx.deb()
 
 It is very easy to include the shell in your wxPython application.
 
 ::
 
-    >>> import mwx
-    >>> self.inspector = mwx.InspectorFrame(self, target=self)
+    >>> self.inspector = mwx.ShellFrame(self, target=self)
 
-As you are diving into the python process, you can watch, inspect, and change everything in the target.
-The more pragmatic sample is 'debut.py' included in the `repository <https://github.com/komoto48g/mwxlib>`_.
+As you are diving into the python process, you can watch, inspect, and debug the target.
 
 Enjoy diving!
 

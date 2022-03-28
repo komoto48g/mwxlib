@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.54.9"
+__version__ = "0.55.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1745,21 +1745,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.StyleSetSpec(getattr(stc, key), value)
     
     def match_paren(self):
-        c = self.curpos
+        p = self.curpos
         if self.following_char in "({[<":
-            pos = self.BraceMatch(c)
-            if pos != -1:
-                self.BraceHighlight(c, pos) # matched to following char
-                return pos
+            q = self.BraceMatch(p)
+            if q != -1:
+                self.BraceHighlight(p, q) # matched to following char
+                return q
             else:
-                self.BraceBadLight(c)
+                self.BraceBadLight(p)
         elif self.preceding_char in ")}]>":
-            pos = self.BraceMatch(c-1)
-            if pos != -1:
-                self.BraceHighlight(pos, c-1) # matched to preceding char
-                return pos
+            q = self.BraceMatch(p-1)
+            if q != -1:
+                self.BraceHighlight(q, p-1) # matched to preceding char
+                return q
             else:
-                self.BraceBadLight(c-1)
+                self.BraceBadLight(p-1)
         else:
             self.BraceHighlight(-1,-1) # no highlight
     
@@ -1837,6 +1837,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Pythonic expression at the caret
         The caret scouts back and forth to scoop a chunk of expression.
         """
+        st = self.GetStyleAt(self.curpos)
+        if st in (3,4,6,7,13): # string, char, triplet, eol
+            return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
         lhs = ut._get_words_backward(ls) # or ls.rpartition(' ')[-1]
@@ -1848,7 +1851,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Topic word at the caret or selected substring
         The caret scouts back and forth to scoop a topic.
         """
-        return self.get_selection_or_topic()
+        topic = self.SelectedText
+        if topic:
+            return topic
+        with self.save_excursion():
+            boundaries = "({[<>]}),:;"
+            p = q = self.curpos
+            c = self.preceding_char
+            if not c.isspace() and c not in boundaries:
+                self.WordLeft()
+                p = self.curpos
+            c = self.following_char
+            if not c.isspace() and c not in boundaries:
+                self.WordRightEnd()
+                q = self.curpos
+            return self.GetTextRange(p, q)
     
     @property
     def right_paren(self):
@@ -1965,26 +1982,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if q != -1:
             return self.SetCurrentPos(q) # forward selection to quoted words
         self.WordLeftExtend() # otherwise, extend selection backward word
-    
-    def get_selection_or_topic(self):
-        """Selected substring or topic word at the caret
-        Note: there is no specific definition of the `word` boundary.
-        """
-        topic = self.SelectedText
-        if topic:
-            return topic
-        with self.save_excursion():
-            boundaries = "({[<>]}),:;"
-            p = q = self.curpos
-            c = self.preceding_char
-            if not c.isspace() and c not in boundaries:
-                self.WordLeft()
-                p = self.curpos
-            c = self.following_char
-            if not c.isspace() and c not in boundaries:
-                self.WordRightEnd()
-                q = self.curpos
-            return self.GetTextRange(p, q)
     
     def save_excursion(self):
         class Excursion(object):
@@ -2141,20 +2138,20 @@ class Editor(EditWindow, EditorInterface):
         @self.handler.bind('focus_set')
         def activate(v):
             self.parent.handler('title_window', self.target)
-            self.trace_point()
+            self.trace_position()
             v.Skip()
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
         self.set_style(self.PALETTE_STYLE)
     
-    def trace_point(self):
+    def trace_position(self):
         text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.curline, lp, self.curpos), pane=1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
-            self.trace_point()
+            self.trace_position()
         evt.Skip()
 
 
@@ -2344,7 +2341,7 @@ Flaky nutshell:
         def activate(v):
             self.handler('shell_activated', self)
             self.parent.handler('title_window', self.target)
-            self.trace_point()
+            self.trace_position()
         
         def inactivate(v):
             self.handler('shell_inactivated', self)
@@ -2600,13 +2597,13 @@ Flaky nutshell:
         self.__text = ''
         self.__start = 0
     
-    def trace_point(self):
+    def trace_position(self):
         text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.curline, lp, self.curpos), pane=1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
-            self.trace_point()
+            self.trace_position()
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
                 if text != self.__text:
@@ -2702,7 +2699,7 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        st = self.GetStyleAt(self.curpos-1)
+        st = self.GetStyleAt(self.curpos - 1)
         
         if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
@@ -3187,17 +3184,19 @@ Flaky nutshell:
         """Call ToolTip of the selected word or repr"""
         try:
             text = self.SelectedText or self.expr_at_caret
-            self.gen_tooltip(text)
+            if text:
+                self.gen_tooltip(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))
     
     def call_tooltip(self, evt):
         """Call ToolTip of the selected word or command line"""
         try:
-            text = self.SelectedText or self.getCommand()
-            self.gen_tooltip(text)
+            text = self.SelectedText or self.getCommand() or self.expr_at_caret
+            if text:
+                self.gen_tooltip(text)
         except Exception as e:
-            self.call_tooltip2(evt)
+            self.message("- {}: {!r}".format(e, text))
     
     def call_helpTip2(self, evt):
         try:
