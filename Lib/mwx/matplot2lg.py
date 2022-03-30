@@ -10,11 +10,11 @@ import wx
 try:
     import framework as mwx
     from matplot2 import MatplotPanel
-    from matplot2 import NORMAL, DRAGGING, MARK, LINE, REGION
+    from matplot2 import NORMAL, MARK, LINE, REGION
 except ImportError:
     from . import framework as mwx
     from .matplot2 import MatplotPanel
-    from .matplot2 import NORMAL, DRAGGING, MARK, LINE, REGION
+    from .matplot2 import NORMAL, MARK, LINE, REGION
 import matplotlib
 from matplotlib import patches
 import numpy as np
