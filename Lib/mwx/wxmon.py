@@ -24,7 +24,7 @@ if wx.VERSION < (4,1,0):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
             
-            self.ToolTip = ''
+            ## self.ToolTip = ''
             self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
 
 else:
@@ -32,8 +32,10 @@ else:
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             
-            ## To avoid $BUG wx 4.1.1 (but default Tooltip will disappear)
-            self.ToolTip = ''
+            ## If we use a custom ToolTip, chkbox will disappear.
+            ## To avoid this *BUG* (4.1.1), set a blank string.
+            ## Note: the default Tooltip will disappear too.
+            ## self.ToolTip = ''
             self.EnableCheckBoxes()
 
 
