@@ -35,7 +35,6 @@ from matplotlib import cm
 from matplotlib import colors
 ## from matplotlib import pyplot as plt
 import numpy as np
-from numpy import nan, inf
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
@@ -102,7 +101,7 @@ Note:
                     "Press [OK] to continue.\n"
                     "Press [CANCEL] to terminate the process.",
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
-                ## self.Stop() # caller should stop if necessary
+                ## self.Stop() # the caller should stop if necessary
                 return False
             return True
         finally:
@@ -129,21 +128,22 @@ Note:
     def __enter__(self):
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
-        if not self.is_active:
-            raise AssertionError("cannot enter {} "
-                "unless the thread is running".format(frame.f_code.co_name))
+        name = frame.f_code.co_name
+        assert not self.is_active,\
+               "cannot enter {} (running)".format(name)
         
-        event = "{}:{}:enter".format(module.__name__, frame.f_code.co_name)
+        event = "{}:{}:enter".format(module.__name__, name)
         self.handler(event, self)
     
     def __exit__(self, t, v, tb):
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
+        name = frame.f_code.co_name
         if t:
-            event = "{}:{}:error".format(module.__name__, frame.f_code.co_name)
+            event = "{}:{}:error".format(module.__name__, name)
             self.handler(event, self)
         
-        event = "{}:{}:exit".format(module.__name__, frame.f_code.co_name)
+        event = "{}:{}:exit".format(module.__name__, name)
         self.handler(event, self)
     
     def __call__(self, f, *args, **kwargs):
@@ -194,7 +194,7 @@ Note:
             del busy
 
 
-def islayer(obj):
+def _isLayer(obj):
     ## return isinstance(obj, Layer) # Note: False if __main__.Layer
     return hasattr(obj, 'category') #<class 'Layer'>
 
@@ -834,7 +834,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif islayer(name):
+        elif _isLayer(name):
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -952,7 +952,7 @@ class Frame(mwx.Frame):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
-        elif islayer(name):
+        elif _isLayer(name):
             return name
     
     @staticmethod
@@ -1365,8 +1365,8 @@ class Frame(mwx.Frame):
             
             with open(f) as i:
                 ## evaluation of attributes:tuple in locals
-                from numpy import nan, inf
-                import datetime
+                from numpy import nan, inf # noqa: necessary to eval
+                import datetime # noqa: necessary to eval
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
@@ -1595,10 +1595,11 @@ class Frame(mwx.Frame):
             
             self.statusbar("\b done.")
             return True
-        
         except Exception as e:
             print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
+        finally:
+            del busy
     
     ## --------------------------------
     ## load/save session

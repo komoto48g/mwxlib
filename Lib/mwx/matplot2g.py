@@ -615,13 +615,15 @@ Constants:
         self.__unit = 1.0
         
         #<matplotlib.lines.Line2D>
-        (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1, picker=True, pickradius=4)
+        (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1,
+                                        picker=True, pickradius=4)
         self.__marksel = []
         self.__markarts = []
         self.marked.set_pickradius(8) # for backward compatibility
         
         #<matplotlib.lines.Line2D>
-        (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4, picker=True, pickradius=4, alpha=0.8)
+        (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4,
+                                        picker=True, pickradius=4, alpha=0.8)
         self.__rectsel = []
         self.__rectarts = []
         self.rected.set_pickradius(4) # for backward compatibility

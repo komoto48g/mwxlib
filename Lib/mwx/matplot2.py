@@ -10,8 +10,7 @@ try:
     import framework as mwx
 except ImportError:
     from . import framework as mwx
-import matplotlib
-matplotlib.use('wxagg')
+import matplotlib; matplotlib.use('wxagg') # noqa
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
 #from matplotlib.backends.backend_wx import NavigationToolbar2Wx as Toolbar
@@ -828,7 +827,7 @@ if __name__ == '__main__':
     print("wxPython {}".format(wx.version()))
     print("matplotlib {}".format(matplotlib.__version__))
     
-    from matplotlib import pyplot as plt
+    ## from matplotlib import pyplot as plt
     from matplotlib import patches
     from numpy import pi
     
