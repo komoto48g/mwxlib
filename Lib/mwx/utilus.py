@@ -18,7 +18,7 @@ import pkgutil
 import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator, isframe, iscode, istraceback)
-from pprint import pprint, pformat
+from pprint import pprint
 from six import string_types
 
 
@@ -499,7 +499,7 @@ Attributes:
         self.update(contexts)
     
     def __missing__(self, key):
-        raise Exception("FSM:logic-error - undefined state {!r}".format(key))
+        raise Exception("FSM:logic-error: undefined state {!r}".format(key))
     
     def __repr__(self):
         return "<{} object at 0x{:X}>".format(typename(self), id(self))
@@ -563,7 +563,7 @@ Attributes:
                     ret = act(*args, **kwargs) # try actions after transition
                     retvals.append(ret)
                 except Exception as e:
-                    self.dump("- FSM:exception - {!r}".format(e),
+                    self.dump("- FSM:exception: {!r}".format(e),
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "   state : {}".format(self.__state),
@@ -703,7 +703,7 @@ Attributes:
         warn = self.log
         
         if state not in self:
-            warn("- FSM:warning - [{!r}] context newly created.".format(state))
+            warn("- FSM:warning: [{!r}] context newly created.".format(state))
             self[state] = SSM() # new context
         
         context = self[state]
@@ -712,14 +712,14 @@ Attributes:
         
         if event in context:
             if state2 != context[event][0]:
-                warn("- FSM:warning - transaction may conflict"
+                warn("- FSM:warning: transaction may conflict"
                      " (state {2!r} and the original state is not the same)"
                      " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
                 pass
                 context[event][0] = state2 # update transition
         else:
             ## if state2 not in self:
-            ##     warn("- FSM:warning - transaction may contradict"
+            ##     warn("- FSM:warning: transaction may contradict"
             ##          " (state {2!r} is not found in the contexts)"
             ##          " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
             ##     pass
@@ -734,7 +734,7 @@ Attributes:
             try:
                 transaction.append(action)
             except AttributeError:
-                warn("- FSM:warning - appending action to context ({!r} : {!r})\n"
+                warn("- FSM:warning: appending action to context ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
         return action
     
@@ -748,12 +748,12 @@ Attributes:
         warn = self.log
         
         if state not in self:
-            warn("- FSM:warning - [{!r}] context does not exist.".format(state))
+            warn("- FSM:warning: [{!r}] context does not exist.".format(state))
             return
         
         context = self[state]
         if event not in context:
-            warn("- FSM:warning - No such transaction ({!r} : {!r})".format(state, event))
+            warn("- FSM:warning: No such transaction ({!r} : {!r})".format(state, event))
             return
         
         transaction = context[event]
@@ -769,7 +769,7 @@ Attributes:
                     del context[event]
                 return True
             except AttributeError:
-                warn("- FSM:warning - removing action from context ({!r} : {!r})\n"
+                warn("- FSM:warning: removing action from context ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
         return False
 

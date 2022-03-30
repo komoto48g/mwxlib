@@ -26,9 +26,8 @@ from wx.py.editwindow import EditWindow
 import pydoc
 import linecache
 import inspect
-from pprint import pprint, pformat
+from pprint import pformat
 from six.moves import builtins
-from six import string_types
 from importlib import reload
 try:
     import utilus as ut
@@ -1638,9 +1637,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.toggle_fold(lc)
     
     def OnMarginRClick(self, evt):
-        lc = self.LineFromPosition(evt.Position)
-        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        
         Menu.Popup(self, [
             (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
                 lambda v: self.fold_all()),
