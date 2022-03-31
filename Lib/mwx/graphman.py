@@ -283,7 +283,7 @@ unloadable : flag to set the Layer to be unloadable
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
         
-        self.handler.append({ #<Layer.handler>
+        self.handler.append({ # DNA<Layer>
             None : {
                  'thread_begin' : [ None ], # begin processing
                    'thread_end' : [ None ], # end processing
@@ -420,7 +420,7 @@ class Graph(GraphPlot):
         self.__parent = parent
         self.__loader = loader or parent
         
-        self.handler.append({ #<Graph.handler>
+        self.handler.append({ # DNA<Graph>
             None : {
                'frame_selected' : [ None, _F(self.loader.select_view, view=self) ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
@@ -735,7 +735,7 @@ class Frame(mwx.Frame):
         ]
         self.menubar.reset()
         
-        self.graph.handler.append({ #<Graph.handler>
+        self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
                  'frame_loaded' : [ None, lambda v: self.show_pane("graph") ],
@@ -744,7 +744,7 @@ class Frame(mwx.Frame):
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
             },
         })
-        self.output.handler.append({ #<Graph.handler>
+        self.output.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
                  'frame_loaded' : [ None, lambda v: self.show_pane("output") ],

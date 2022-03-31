@@ -195,10 +195,13 @@ def postcall(f):
 
 
 def skip(v):
+    ## if isinstance(v, wx.Event):
     v.Skip()
 
 
 def noskip(v):
+    ## Fake handler; do nothing, but if the FSM handles this,
+    ## consequently, the event will no longer skip hereafter.
     pass
 
 
@@ -304,7 +307,7 @@ class KeyCtrlInterfaceMixin(object):
         
         keyevent = keymap +' pressed'
         
-        self.handler.update({ #<KeyCtrlInterfaceMixin.handler>
+        self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
                        keyevent : [ keymap, self.prefix_command_hook, skip ],
             },
@@ -633,7 +636,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             """Close the window"""
             self.Close()
         
-        self.__handler = FSM({ #<Frame.handler>
+        self.__handler = FSM({ # DNA<Frame>
                 0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
@@ -691,7 +694,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             """Close the window"""
             self.Close()
         
-        self.__handler = FSM({ #<MiniFrame.handler>
+        self.__handler = FSM({ # DNA<MiniFrame>
                 0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
@@ -833,7 +836,7 @@ Args:
             """Fork key events to the debugger"""
             self.debugger.handler(self.handler.event, v)
         
-        self.handler.update({ #<ShellFrame.handler>
+        self.handler.update({ # DNA<ShellFrame>
             None : {
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
@@ -881,7 +884,7 @@ Args:
             },
         })
         
-        self.Scratch.set_style(Nautilus.PALETTE_STYLE)
+        self.Scratch.set_style(Nautilus.STYLE)
         self.Scratch.show_folder()
         
         @self.Scratch.handler.bind('focus_set')
@@ -1080,10 +1083,11 @@ Args:
         if isinstance(obj, wx.Object) or obj is None:
             self.inspector.watch(obj)
             self.monitor.watch(obj)
-            self.linfo.watch(obj.__dict__)
-            self.ginfo.watch(eval("globals()", obj.__dict__))
             self.console.SetFocus() # focus orginal-window
-            self.show_page(self.linfo, focus=0)
+            if obj:
+                self.linfo.watch(obj.__dict__)
+                self.ginfo.watch(eval("globals()", obj.__dict__))
+                self.show_page(self.linfo, focus=0)
             self.show_page(self.monitor, focus=0)
         elif callable(obj):
             def _trace():
@@ -1351,7 +1355,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.handler.update({ #<Editor.handler>
+        self.handler.update({ # DNA<Editor>
             -1 : {  # original action of the Editor
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
                  '*alt pressed' : (-1, ),
@@ -2082,7 +2086,7 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    PALETTE_STYLE = { #<Editor>
+    STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#000000,back:#ffff7f,size:2",
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#ffffb8,size:9",
@@ -2135,7 +2139,7 @@ class Editor(EditWindow, EditorInterface):
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
-        self.set_style(self.PALETTE_STYLE)
+        self.set_style(self.STYLE)
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -2268,7 +2272,7 @@ Flaky nutshell:
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
     
-    PALETTE_STYLE = { #<Shell>
+    STYLE = { #<Shell>
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#123460,size:2",
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#f0f0f0,size:9",
@@ -2366,7 +2370,7 @@ Flaky nutshell:
         def forkup(v):
             self.parent.handler(self.handler.event, v)
         
-        self.handler.update({ #<Nautilus.handler>
+        self.handler.update({ # DNA<Nautilus>
             None : {
                     'focus_set' : [ None, skip, activate ],
                    'focus_kill' : [ None, skip, inactivate ],
@@ -2584,7 +2588,7 @@ Flaky nutshell:
         })
         
         self.show_folder(True)
-        self.set_style(self.PALETTE_STYLE)
+        self.set_style(self.STYLE)
         
         self.__text = ''
         self.__start = 0
@@ -2723,7 +2727,7 @@ Flaky nutshell:
     
     def on_exit_notemode(self, evt):
         self.noteMode = False
-        self.set_style(self.PALETTE_STYLE)
+        self.set_style(self.STYLE)
         ## self.goto_char(-1)
         ## self.prompt()
         self.promptPosEnd = self.TextLength

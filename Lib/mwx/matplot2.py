@@ -139,7 +139,7 @@ class MatplotPanel(wx.Panel):
             if isinstance(v, wx.Event):
                 v.Skip()
         
-        self.__handler = mwx.FSM({ #<MatplotPanel.handler>
+        self.__handler = mwx.FSM({ # DNA<MatplotPanel>
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
                 #'canvas_drawn' : [ None, ],             # after canvas.draw :deprecated
