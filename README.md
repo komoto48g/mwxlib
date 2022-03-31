@@ -12,8 +12,8 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-- Python 2.7
-- Python 3.x
+- ~~Python 2.7~~ (PY2 support has ended since 0.50)
+- Python 3.5 or later
     - numpy
     - pillow
     - matplotlib
@@ -74,10 +74,10 @@ which has the following features:
     - [3] apropos-comp-mode
     - [4] text-comp-mode
     - [5] module-comp-mode
-1. Objective magic syntax is implemented.
+2. Objective magic syntax is implemented.
     - [ ` ] quoteback
     - [@] pullback
-1. Powerful inspectoin utillities are compiled.
+3. Powerful inspectoin utillities are compiled.
     - Filling
     - InspectionTool
     - Ghost in the shell
@@ -141,6 +141,7 @@ See [key bindings](key-bindings.md) for more information.
 
 
 ## built-in utility:
+
     @p          synonym of print
     @pp         synonym of pprint
     @info   @?  short info
@@ -148,12 +149,11 @@ See [key bindings](key-bindings.md) for more information.
     @dive       clone the shell with new target
     @timeit     measure the duration cpu time
     @profile    profile the func(*args, **kwargs)
-    @execute    exec in the locals (PY2-compatible)
     @filling    inspection using wx.lib.filling.Filling
     @watch      inspection using wx.lib.inspection.InspectionTool
     @edit       open file with your editor (undefined)
     @where      filename and lineno or module
-    @debug      open pdb or show eventwatcher and widget-tree
+    @debug      open pdb or show event-watcher and widget-tree
 
 <!--
 ![utils-mod](doc/image/utils-mod.gif)
