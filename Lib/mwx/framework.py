@@ -1949,26 +1949,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             ln += self.LineCount
         self.GotoLine(ln)
     
-    def skip_chars_forward(self, rexpr=r'\s'):
-        p = re.compile(rexpr)
-        while p.search(self.following_char):
-            q = self.curpos
-            if q == self.TextLength:
-                break
-            self.GotoPos(q + 1)
+    def skip_chars_forward(self, chars):
+        p = self.curpos
+        while chr(self.GetCharAt(p)) in chars and p <= self.TextLength:
+            p += 1
+        self.GotoPos(p)
     
-    def skip_chars_backward(self, rexpr=r'\s'):
-        p = re.compile(rexpr)
-        while p.search(self.preceding_char):
-            q = self.curpos
-            if q == 0:
-                break
-            self.GotoPos(q - 1)
+    def skip_chars_backward(self, chars):
+        p = self.curpos
+        while chr(self.GetCharAt(p-1)) in chars and p > 0:
+            p -= 1
+        self.GotoPos(p)
     
     def back_to_indentation(self):
         self.ScrollToColumn(0)
         self.GotoPos(self.bol)
-        self.skip_chars_forward(r'[ \t]')
+        self.skip_chars_forward(r' \t')
     
     def beggining_of_line(self):
         self.GotoPos(self.bol)
@@ -2021,13 +2017,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @editable
     def eat_white_forward(self):
         p = self.curpos
-        self.skip_chars_forward(r'[ \t]')
+        self.skip_chars_forward(r' \t')
         self.Replace(p, self.curpos, '')
     
     @editable
     def eat_white_backward(self):
         p = self.curpos
-        self.skip_chars_backward(r'[ \t]')
+        self.skip_chars_backward(r' \t')
         self.Replace(max(self.curpos, self.bol), p, '')
     
     @editable
