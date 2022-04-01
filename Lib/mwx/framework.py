@@ -1393,7 +1393,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
               'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
                   'tab pressed' : (0, _F(self.indent_line)),
-                'S-tab pressed' : (0, skip),
+                'S-tab pressed' : (0, _F(self.outdent_line)),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
             },
@@ -1499,8 +1499,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## Custom style of control-char, wrap-mode
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
-        ## self.TabWidth = 4
         ## self.UseTabs = False
+        self.TabWidth = 4
         self.WrapMode = 0
         self.WrapIndentMode = 1
         self.IndentationGuides = 2
@@ -1583,31 +1583,45 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def indent_line(self):
         """Auto-indent the current line"""
-        line = self.GetTextRange(self.bol, self.eol) # no-prompt
-        lstr = line.strip()
+        text = self.GetTextRange(self.bol, self.eol) # no-prompt
+        lstr = text.lstrip()
         indent = self.calc_indent()
-        if lstr in ('else:', 'elif:', 'except:', 'finally:'):
+        if any(lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally')):
             indent = indent[:-4]
-        pos = max(self.bol,
-                  self.curpos - len(line) + len(lstr))
+        lp = max(self.bol, self.curpos - len(text) + len(lstr))
         self.Replace(self.bol, self.eol, indent + lstr)
-        self.goto_char(pos + len(indent))
+        self.goto_char(lp + len(indent))
+    
+    def outdent_line(self):
+        text = self.GetTextRange(self.bol, self.eol) # no-prompt
+        lstr = text.strip()
+        indent = self.calc_indent()
+        if not indent:
+            return
+        indent = indent[:-4]
+        lp = max(self.bol, self.curpos - len(text) + len(lstr))
+        self.Replace(self.bol, self.eol, indent + lstr)
+        self.goto_char(lp + len(indent))
     
     def calc_indent(self):
         """Calculate indent spaces from prefious line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
         line = self.GetLine(self.curline - 1)
-        for p in (sys.ps1, sys.ps2, sys.ps3):
-            if line.startswith(p):
-                line = line[len(p):]
+        for ps in (sys.ps1, sys.ps2, sys.ps3):
+            if line.startswith(ps):
+                line = line[len(ps):]
                 break
         lstr = line.lstrip()
         if not lstr:
             indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
         else:
             indent = line[:(len(line)-len(lstr))]
-            if line.strip()[-1] == ':':
+            try:
+                texts = list(shlex.shlex(lstr)) # skip comment
+            except ValueError as e:
+                return indent
+            if texts[-1] == ':':
                 m = re.match(r"[a-z]+", lstr)
                 if m and m.group(0) in (
                     'if','else','elif','for','while','with',
@@ -1746,14 +1760,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def match_paren(self):
         p = self.curpos
-        if self.following_char in "({[<":
+        if self.get_char(p) in "({[<":
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched to following char
                 return q
             else:
                 self.BraceBadLight(p)
-        elif self.preceding_char in ")}]>":
+        elif self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched to preceding char
@@ -1793,6 +1807,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     following_char = property(lambda self: chr(self.GetCharAt(self.curpos)))
     preceding_char = property(lambda self: chr(self.GetCharAt(self.curpos-1)))
+    
+    def get_char(self, pos):
+        return chr(self.GetCharAt(pos))
     
     @property
     def following_symbol(self):
@@ -1857,11 +1874,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         with self.save_excursion():
             boundaries = "({[<>]}),:;"
             p = q = self.curpos
-            c = self.preceding_char
+            c = self.get_char(p-1)
             if not c.isspace() and c not in boundaries:
                 self.WordLeft()
                 p = self.curpos
-            c = self.following_char
+            c = self.get_char(q)
             if not c.isspace() and c not in boundaries:
                 self.WordRightEnd()
                 q = self.curpos
@@ -1879,14 +1896,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def right_paren(self):
-        if self.following_char in "({[<":
-            return self.BraceMatch(self.curpos) + 1
+        p = self.curpos
+        if self.get_char(p) in "({[<":
+            return self.BraceMatch(p) + 1
         return -1
     
     @property
     def left_paren(self):
-        if self.preceding_char in ")}]>":
-            return self.BraceMatch(self.curpos - 1)
+        p = self.curpos
+        if self.get_char(p-1) in ")}]>":
+            return self.BraceMatch(p - 1)
         return -1
     
     @property
@@ -1935,26 +1954,22 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             ln += self.LineCount
         self.GotoLine(ln)
     
-    def skip_chars_forward(self, rexpr=r'\s'):
-        p = re.compile(rexpr)
-        while p.search(self.following_char):
-            q = self.curpos
-            if q == self.TextLength:
-                break
-            self.GotoPos(q + 1)
+    def skip_chars_forward(self, chars):
+        p = self.curpos
+        while chr(self.GetCharAt(p)) in chars and p <= self.TextLength:
+            p += 1
+        self.GotoPos(p)
     
-    def skip_chars_backward(self, rexpr=r'\s'):
-        p = re.compile(rexpr)
-        while p.search(self.preceding_char):
-            q = self.curpos
-            if q == 0:
-                break
-            self.GotoPos(q - 1)
+    def skip_chars_backward(self, chars):
+        p = self.curpos
+        while chr(self.GetCharAt(p-1)) in chars and p > 0:
+            p -= 1
+        self.GotoPos(p)
     
     def back_to_indentation(self):
         self.ScrollToColumn(0)
         self.GotoPos(self.bol)
-        self.skip_chars_forward(r'\s')
+        self.skip_chars_forward(r' \t')
     
     def beggining_of_line(self):
         self.GotoPos(self.bol)
@@ -2007,13 +2022,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @editable
     def eat_white_forward(self):
         p = self.curpos
-        self.skip_chars_forward(r'\s')
+        self.skip_chars_forward(r' \t')
         self.Replace(p, self.curpos, '')
     
     @editable
     def eat_white_backward(self):
         p = self.curpos
-        self.skip_chars_backward(r'\s')
+        self.skip_chars_backward(r' \t')
         self.Replace(max(self.curpos, self.bol), p, '')
     
     @editable
@@ -2055,7 +2070,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         text, lp = self.CurLine
         for i in range(lp % 4 or 4):
             p = self.curpos
-            if self.preceding_char != ' ' or p == self.bol:
+            if self.get_char(p-1) != ' ' or p == self.bol:
                 break
             self.curpos = p-1
         self.ReplaceSelection('')
@@ -2422,7 +2437,7 @@ Flaky nutshell:
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp), # quit -> indent_line
-                'S-tab pressed' : (0, skip),
+                'S-tab pressed' : (0, _F(self.outdent_line)),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -2695,9 +2710,11 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        st = self.GetStyleAt(self.curpos - 1)
+        p = self.curpos
+        c = self.get_char(p)
+        st = self.GetStyleAt(p-1)
         
-        if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
+        if c.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
             pass
         elif st in (1,2,5,8,9,12): # comment, num, word, class, def
@@ -2920,10 +2937,8 @@ Flaky nutshell:
             input = self.GetTextRange(self.bolc, self.__eolc_mark)
             output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
-            input = self.regulate_cmd(input).lstrip()
-            repeat = (self.history and self.history[0] == input)
-            if not repeat and input:
-                Shell.addHistory(self, input)
+            input = self.regulate_cmd(input, False).lstrip()
+            Shell.addHistory(self, input)
             
             noerr = self.on_text_output(output)
             if noerr:
@@ -2936,7 +2951,13 @@ Flaky nutshell:
             pass
     
     @staticmethod
-    def regulate_cmd(text):
+    def regulate_cmd(text, strip_prompts=True):
+        if strip_prompts:
+            for ps in (sys.ps1, sys.ps2, sys.ps3):
+                if text.startswith(ps):
+                    text = text[len(ps):]
+                    break
+        ## text = self.fixLineEndings(text)
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
@@ -2987,9 +3008,9 @@ Flaky nutshell:
     def bol(self):
         """beginning of line (override) excluding prompt"""
         text, lp = self.CurLine
-        for p in (sys.ps1, sys.ps2, sys.ps3):
-            if text.startswith(p):
-                lp -= len(p)
+        for ps in (sys.ps1, sys.ps2, sys.ps3):
+            if text.startswith(ps):
+                lp -= len(ps)
                 break
         return self.curpos - lp
     
@@ -3028,8 +3049,6 @@ Flaky nutshell:
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                text = self.lstripPrompt(text)
-                text = self.fixLineEndings(text)
                 command = self.regulate_cmd(text)
                 offset = ''
                 if rectangle:
@@ -3075,23 +3094,22 @@ Flaky nutshell:
     
     def Execute(self, text):
         """Replace selection with text, run commands,
-        (override) and check the clock time
-        (patch) `finally` miss-indentation
+        (override) to check the clock time,
+                   patch for `finally` miss-indentation
         """
         self.__start = self.clock()
         
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        text = self.fixLineEndings(text)
-        text = self.lstripPrompt(text)
         text = self.regulate_cmd(text)
         commands = []
         c = ''
         for line in text.split(lf):
             lstr = line.lstrip()
-            if (lstr and lstr == line and not any(
-                lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally'))):
+            if (lstr and lstr == line
+                and not any(lstr.startswith(x)
+                            for x in ('else', 'elif', 'except', 'finally'))):
                 if c:
                     commands.append(c) # Add the previous command to the list
                 c = line
@@ -3106,7 +3124,7 @@ Flaky nutshell:
     
     def run(self, command, prompt=True, verbose=True):
         """Execute command as if it was typed in directly
-        (override) and check the clock time
+        (override) to check the clock time
         """
         self.__start = self.clock()
         
@@ -3231,8 +3249,8 @@ Flaky nutshell:
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
         p = self.curpos
-        if self.following_char.isalnum() and self.preceding_char == '.':
-            self.WordRight()
+        if self.get_char(p).isalnum() and self.get_char(p-1) == '.':
+            self.WordRightEnd()
             self.curpos = p # backward selection to anchor point
         evt.Skip()
     
@@ -3619,6 +3637,11 @@ if 1:
     frm.editor.handler.debug = 0
     frm.shellframe.handler.debug = 4
     frm.shellframe.rootshell.handler.debug = 0
+    if 0:
+        frm.shellframe.rootshell.ViewEOL = 1
+        frm.shellframe.Scratch.ViewEOL = 1
+        frm.shellframe.History.ViewEOL = 1
+        frm.shellframe.Log.ViewEOL = 1
     frm.shellframe.Show()
     frm.shellframe.rootshell.SetFocus()
     frm.shellframe.rootshell.Execute(SHELLSTARTUP)
