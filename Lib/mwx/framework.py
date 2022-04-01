@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.1"
+__version__ = "0.55.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -791,8 +791,8 @@ Args:
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
-        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.History, "History")
+        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
@@ -3083,15 +3083,25 @@ Flaky nutshell:
         ## Monkey-patch for wx.py.interpreter.runcode
         try:
             exec(code, self.globals, self.locals)
+        except SystemExit:
+            raise
         except Exception:
             self.interp.showtraceback()
     
-    def execStartupScript(self, startupScript):
+    def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
-        (override) Add globals when executing the script
+        (override) Add globals when executing su:startupScript
         """
         self.globals = self.locals
-        Shell.execStartupScript(self, startupScript)
+        ## Shell.execStartupScript(self, su)
+        
+        if su and os.path.isfile(su):
+            self.push("print('Startup script executed:', {0!r})\n".format(su))
+            self.push("with open({0!r}) as f: exec(f.read())\n".format(su))
+            self.push("del f\n")
+            self.interp.startupScript = su
+        else:
+            self.push("")
     
     def Execute(self, text):
         """Replace selection with text, run commands,
