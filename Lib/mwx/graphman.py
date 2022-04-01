@@ -211,7 +211,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
              type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
 reloadable : flag to set the Layer to be reloadable
 unloadable : flag to set the Layer to be unloadable
-    parent : parent <Frame> (not always equals `Parent' especially when floating)
+    parent : parent <Frame> is not always equal to Parent when floating
      graph : parent.graph window
     otuput : parent.output window
     """
@@ -1039,7 +1039,7 @@ class Frame(mwx.Frame):
                   floating_pos=None, floating_size=None,
                   force=False, session=None, **kwargs):
         """Load plugin
-        The module `root must have 'class Plugin' derived from <mwx.graphman.Layer>
+        The module root must have <class Plugin> derived from <mwx.graphman.Layer>
         
         root : Layer module, or name of the module
                A wx.Window object can be given (called 'dummy-plug'),
@@ -1449,7 +1449,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def read_buffer(path):
-        """Read buffer from `path file (to be overridden)"""
+        """Read buffer from file path (to be overridden)"""
         buf = Image.open(path)
         info = {}
         if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
@@ -1463,7 +1463,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def write_buffer(path, buf):
-        """Write buffer to `path file (to be overridden)"""
+        """Write buffer to file path (to be overridden)"""
         try:
             img = Image.fromarray(buf)
             img.save(path) # PIL saves as L,I,F,RGB.

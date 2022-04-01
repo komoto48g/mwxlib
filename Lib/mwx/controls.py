@@ -35,16 +35,16 @@ Attributes:
     min,max : lower and upper limits
   std_value : standard value (default None)
       value : current value := std_value + offset
-     offset : ditto (if std_value is None, this is the same as `value)
+     offset : ditto (if std_value is None, this is the same as value)
       knobs : knob list
       index : knob index -> reset -> callback
       check : knob tick (undefined)
         tip : doc:str also shown as a tooltip
    callback : single state machine that handles following events:
-            control -> when `index changed by knobs or reset (call handler)
-            check -> when `check ticks on/off (call updater)
-            overflow -> when `value overflows
-            underflow -> when `value underflows
+            control -> when index changed by knobs or reset (call handler)
+            check -> when check ticks on/off (call updater)
+            overflow -> when value overflows
+            underflow -> when value underflows
 
 Args:
         fmt : text formatter or format str (default is '%g')
@@ -298,7 +298,8 @@ Args:
               chkbox -> label with check box
               button -> label with flat button
    editable : textctrl is editable or readonly
-   lw,tw,cw : width of label, textbox, and ctrl (default height `h=22 of widgets)
+   lw,tw,cw : width of label, textbox, and ctrl
+          h : height of widget (default 22 for Windows)
     """
     @property
     def param(self):

@@ -179,8 +179,8 @@ Args:
         """Update frame-specifc attributes
         The frame holds any attributes with dictionary
         There are some keys which acts as the value setter when given,
-        `annotation' also shows the message with infobar
-        `localunit' also updates the frame.unit
+        `annotation` also shows the message with infobar
+        `localunit` also updates the frame.unit
         """
         attr = attr or {}
         attr.update(kwargs)
@@ -778,7 +778,7 @@ Constants:
         if isinstance(j, string_types):
             ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
             names = [art.name for art in self.__Arts]
-            return names.index(j) # -> ValueError: `j' is not in list
+            return names.index(j) # -> ValueError: `j` is not in list
         return self.__Arts.index(j)
     
     def find_frame(self, j):

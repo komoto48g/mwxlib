@@ -186,7 +186,7 @@ def regulate_key(key):
 
 def postcall(f):
     """A decorator of wx.CallAfter
-    Wx posts the message that forces `f to take place in the main thread.
+    Wx posts the message that forces `f` to take place in the main thread.
     """
     @wraps(f)
     def _f(*args, **kwargs):
@@ -381,7 +381,7 @@ Usage:
             ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
         )
     )
-    *args : wx objects `obj (with some packing directives)
+    *args : wx objects (with some packing parameters)
           - (obj, 1) -> sized with ratio 1 (orient と同方向)
                         他に 0 以外を指定しているオブジェクトとエリアを分け合う
           - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
@@ -709,7 +709,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
 
 class ShellFrame(MiniFrame):
-    """MiniFrame of shell for inspection, debug, and break `target
+    """MiniFrame of shell for inspection, debug, and break target
 
 Attributes:
   rootshell : Nautilus root shell
@@ -894,17 +894,18 @@ Args:
         @self.Scratch.handler.bind('f5 pressed')
         def eval(v):
             try:
-                self.Scratch.linemark = None
                 exec(self.Scratch.Text, self.current_shell.locals)
                 dispatcher.send(signal='Interpreter.push',
                                 sender=self, command=None, more=False)
             except Exception as e:
-                ## traceback.print_exc()
                 err = re.findall(r"File \".*\", line ([0-9]+)",
                                  traceback.format_exc(), re.I)
                 if err:
                     self.Scratch.linemark = int(err[-1]) - 1
-                self.message("- {!r}".format(e))
+                self.message("- {}".format(e))
+            else:
+                self.Scratch.linemark = None
+                self.message("Evaluated successfully.")
         
         self.Log.show_folder()
         

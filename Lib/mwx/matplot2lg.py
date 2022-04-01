@@ -514,7 +514,7 @@ class LineProfile(LinePlot):
     
     @property
     def plotdata(self):
-        """plotted `(xdata, ydata) in single plot"""
+        """plotted (xdata, ydata) in single plot"""
         return self.__plot.get_data(orig=0)
     
     def linplot(self, frame, fit=True, force=True):

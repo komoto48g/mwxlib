@@ -121,7 +121,7 @@ def wdir(obj):
 
 
 def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
-    """Put a list of objects having expression `rexpr in `obj
+    """Put a list of objects having expression rexpr in obj
     """
     name = alias or typename(obj)
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
@@ -302,8 +302,8 @@ def _split_tokens(text):
 
 
 def _extract_words_from_tokens(tokens, sep=None, reverse=False):
-    """Extract pythonic expressions from `tokens
-    default `sep includes `@, binary-ops, and whitespaces, etc.
+    """Extract pythonic expressions from tokens
+    default sep includes `@, binary-ops, and whitespaces, etc.
     """
     if sep is None:
         sep = "`@=+-/*%<>&|^~,:; \t\r\n!?" # OPS; SEPARATOR_CHARS; !?
@@ -442,7 +442,7 @@ class FSM(dict):
             { event : event key <str>
                 transaction (next_state, *actions ...) }
         }
-        state `None` is a wildcard (as executed any time)
+        state: None is a wildcard (as executed any time)
         event is a string that can include wildcards `*?[]` (fnmatch rule)
         actions must accept the same *args of function as __call__(*args)
         
@@ -523,7 +523,7 @@ Attributes:
             try:
                 self.__event = event
                 self.__state = None
-                ret = self.call(event, *args, **kwargs) # `None` process
+                ret = self.call(event, *args, **kwargs) # None process
                 if ret is not None:
                     perf = True
                     retvals += ret
