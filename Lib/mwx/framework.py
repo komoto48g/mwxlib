@@ -1760,14 +1760,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def match_paren(self):
         p = self.curpos
-        if self.following_char in "({[<":
+        if self.get_char(p) in "({[<":
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched to following char
                 return q
             else:
                 self.BraceBadLight(p)
-        elif self.preceding_char in ")}]>":
+        elif self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched to preceding char
@@ -1807,6 +1807,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     following_char = property(lambda self: chr(self.GetCharAt(self.curpos)))
     preceding_char = property(lambda self: chr(self.GetCharAt(self.curpos-1)))
+    
+    def get_char(self, pos):
+        return chr(self.GetCharAt(pos))
     
     @property
     def following_symbol(self):
@@ -1871,11 +1874,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         with self.save_excursion():
             boundaries = "({[<>]}),:;"
             p = q = self.curpos
-            c = self.preceding_char
+            c = self.get_char(p-1)
             if not c.isspace() and c not in boundaries:
                 self.WordLeft()
                 p = self.curpos
-            c = self.following_char
+            c = self.get_char(q)
             if not c.isspace() and c not in boundaries:
                 self.WordRightEnd()
                 q = self.curpos
@@ -1893,14 +1896,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def right_paren(self):
-        if self.following_char in "({[<":
-            return self.BraceMatch(self.curpos) + 1
+        p = self.curpos
+        if self.get_char(p) in "({[<":
+            return self.BraceMatch(p) + 1
         return -1
     
     @property
     def left_paren(self):
-        if self.preceding_char in ")}]>":
-            return self.BraceMatch(self.curpos - 1)
+        p = self.curpos
+        if self.get_char(p-1) in ")}]>":
+            return self.BraceMatch(p - 1)
         return -1
     
     @property
@@ -2065,7 +2070,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         text, lp = self.CurLine
         for i in range(lp % 4 or 4):
             p = self.curpos
-            if self.preceding_char != ' ' or p == self.bol:
+            if self.get_char(p-1) != ' ' or p == self.bol:
                 break
             self.curpos = p-1
         self.ReplaceSelection('')
@@ -2705,9 +2710,11 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        st = self.GetStyleAt(self.curpos - 1)
+        p = self.curpos
+        c = self.get_char(p)
+        st = self.GetStyleAt(p-1)
         
-        if self.following_char.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
+        if c.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
             self.handler('quit', evt)
             pass
         elif st in (1,2,5,8,9,12): # comment, num, word, class, def
@@ -3242,8 +3249,8 @@ Flaky nutshell:
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
         p = self.curpos
-        if self.following_char.isalnum() and self.preceding_char == '.':
-            self.WordRight()
+        if self.get_char(p).isalnum() and self.get_char(p-1) == '.':
+            self.WordRightEnd()
             self.curpos = p # backward selection to anchor point
         evt.Skip()
     
