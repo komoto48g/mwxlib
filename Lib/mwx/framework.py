@@ -237,6 +237,7 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self._mouse_handler('Xbutton2 dclick', v))
         
         ## self.Bind(wx.EVT_MOTION, lambda v: self._window_handler('motion', v))
+        
         self.Bind(wx.EVT_SET_FOCUS, lambda v: self._window_handler('focus_set', v))
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self._window_handler('focus_kill', v))
         self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self._window_handler('window_enter', v))
@@ -323,9 +324,10 @@ class KeyCtrlInterfaceMixin(object):
     
     def prefix_command_hook(self, evt):
         win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry) and win.StringSelection\
-        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
-          # or any other of pre-selection-p?
+        ## if isinstance(win, wx.TextEntry) and win.StringSelection\
+        ## or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
+        ##   # or any other of pre-selection-p?
+        if getattr(win, 'StringSelection', None):
             self.handler('quit', evt)
             return
         self.message(evt.key + '-')
@@ -1397,6 +1399,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
+                  'select_line' : (100, self.on_linesel_begin)
+            },
+            100 : {
+                       'motion' : (100, self.on_linesel_motion),
+                 'capture_lost' : (0, self.on_linesel_end),
+             'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
                     '* pressed' : (0, skip),
@@ -1409,6 +1417,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
         })
         self.handler.clear(0)
+        
+        self.Bind(wx.EVT_MOTION,
+                  lambda v: self.handler('motion', v) or v.Skip())
+        
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                  lambda v: self.handler('capture_lost', v) or v.Skip())
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -1579,7 +1593,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.recenter()
     
     ## --------------------------------
-    ## Python syntax and indent
+    ## Python syntax and indentation
     ## --------------------------------
     py_indent_reg = r"if|else|elif|for|while|with|def|class|try|except|finally".split('|')
     py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
@@ -1672,9 +1686,38 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
         
-        ## if level == stc.STC_FOLDLEVELHEADERFLAG: # fold the top-level header only
         if level: # fold any if the indent level is non-zero
             self.toggle_fold(lc)
+        else:
+            self.handler('select_line', evt)
+    
+    def on_linesel_begin(self, evt):
+        p = evt.Position
+        self.goto_char(p)
+        q = self.eol
+        for eol in '\r\n':
+            if eol == self.get_char(q):
+                q += 1
+        self.curpos = q
+        self._anchors = (p, q)
+        self.CaptureMouse()
+    
+    def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
+        p = self.PositionFromPoint(evt.Position)
+        po, qo = self._anchors
+        if p >= po:
+            lc = self.LineFromPosition(p)
+            line = self.GetLine(lc)
+            self.curpos = p + len(line)
+            self.anchor = po
+        else:
+            self.curpos = p
+            self.anchor = qo
+    
+    def on_linesel_end(self, evt):
+        del self._anchors
+        if self.HasCapture():
+            self.ReleaseMouse()
     
     def OnMarginRClick(self, evt):
         Menu.Popup(self, [
@@ -1807,8 +1850,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.Refresh()
     
     def wrap(self, mode=1):
-        """Set fold type (override) of wrap
-        mode in {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
+        """Sets whether text is word wrapped
+        (override) mode {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
@@ -2778,7 +2821,7 @@ Flaky nutshell:
     @staticmethod
     def magic(cmd):
         """Called before command pushed
-        (override) with magic: f x --> f(x) disabled
+        (override) disable old magic: `f x --> f(x)`
         """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
@@ -2844,7 +2887,9 @@ Flaky nutshell:
         return ''.join(tokens)
     
     def setBuiltinKeywords(self):
-        """Create pseudo keywords as part of builtins (override)"""
+        """Create pseudo keywords as part of builtins
+        (override) to add more helper functions
+        """
         Shell.setBuiltinKeywords(self)
         
         ## Add more useful global abbreviations to builtins
@@ -2858,6 +2903,10 @@ Flaky nutshell:
         builtins.where = where
         builtins.watch = watchit
         builtins.filling = filling
+        try:
+            builtins.edit = self.Parent.Log.load # not parent yet
+        except AttributeError:
+            pass
     
     def on_activated(self, shell):
         """Called when shell:self is activated
@@ -2994,7 +3043,7 @@ Flaky nutshell:
             self.goto_char(-1)
     
     def clear(self):
-        """Delete all text (override) and put new prompt"""
+        """Delete all text (override) put new prompt"""
         self.ClearAll()
         
         self.promptPosStart = 0
@@ -3003,15 +3052,15 @@ Flaky nutshell:
         self.prompt()
     
     def write(self, text, pos=None):
-        """Display text in the shell (override) :option pos"""
+        """Display text in the shell (override) add pos :option"""
         if pos is not None:
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text)
     
     def wrap(self, mode=1):
-        """Sets whether text is word wrapped (override) with
-        mode in {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
+        """Sets whether text is word wrapped
+        (override) mode {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
         """
         EditorInterface.wrap(self, mode)
     
