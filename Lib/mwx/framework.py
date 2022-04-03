@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.1"
+__version__ = "0.55.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -237,6 +237,7 @@ class CtrlInterface(object):
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self._mouse_handler('Xbutton2 dclick', v))
         
         ## self.Bind(wx.EVT_MOTION, lambda v: self._window_handler('motion', v))
+        
         self.Bind(wx.EVT_SET_FOCUS, lambda v: self._window_handler('focus_set', v))
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self._window_handler('focus_kill', v))
         self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self._window_handler('window_enter', v))
@@ -323,9 +324,10 @@ class KeyCtrlInterfaceMixin(object):
     
     def prefix_command_hook(self, evt):
         win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry) and win.StringSelection\
-        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
-          # or any other of pre-selection-p?
+        ## if isinstance(win, wx.TextEntry) and win.StringSelection\
+        ## or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
+        ##   # or any other of pre-selection-p?
+        if getattr(win, 'StringSelection', None):
             self.handler('quit', evt)
             return
         self.message(evt.key + '-')
@@ -791,8 +793,8 @@ Args:
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Help,    "*Help*")
-        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.History, "History")
+        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
@@ -1393,10 +1395,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
               'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
-                  'tab pressed' : (0, _F(self.indent_line)),
-                'S-tab pressed' : (0, _F(self.outdent_line)),
+                  'tab pressed' : (0, self.on_indent_line),
+                'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
+                  'select_line' : (100, self.on_linesel_begin)
+            },
+            100 : {
+                       'motion' : (100, self.on_linesel_motion),
+                 'capture_lost' : (0, self.on_linesel_end),
+             'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
                     '* pressed' : (0, skip),
@@ -1409,6 +1417,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
         })
         self.handler.clear(0)
+        
+        self.Bind(wx.EVT_MOTION,
+                  lambda v: self.handler('motion', v) or v.Skip())
+        
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                  lambda v: self.handler('capture_lost', v) or v.Skip())
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -1579,40 +1593,50 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.recenter()
     
     ## --------------------------------
-    ## Python syntax
+    ## Python syntax and indentation
     ## --------------------------------
+    py_indent_reg = r"if|else|elif|for|while|with|def|class|try|except|finally".split('|')
+    py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
+    py_closing_re = r"break|pass|return|raise|continue"
+    
+    def on_indent_line(self, evt):
+        if self.SelectedText:
+            evt.Skip()
+        else:
+            self.indent_line()
+    
+    def on_outdent_line(self, evt):
+        if self.SelectedText:
+            evt.Skip()
+        else:
+            self.outdent_line()
     
     def indent_line(self):
-        """Auto-indent the current line"""
-        text = self.GetTextRange(self.bol, self.eol) # no-prompt
-        lstr = text.lstrip()
+        """Indent the current line"""
+        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()                         # w/ no-indent
+        p = self.eol - len(lstr)
+        offset = max(0, self.curpos - p)
         indent = self.calc_indent()
-        if any(lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally')):
-            indent = indent[:-4]
-        lp = max(self.bol, self.curpos - len(text) + len(lstr))
-        self.Replace(self.bol, self.eol, indent + lstr)
-        self.goto_char(lp + len(indent))
+        self.Replace(self.bol, p, indent)
+        self.goto_char(self.bol + len(indent) + offset)
     
     def outdent_line(self):
-        text = self.GetTextRange(self.bol, self.eol) # no-prompt
-        lstr = text.strip()
-        indent = self.calc_indent()
-        if not indent:
-            return
-        indent = indent[:-4]
-        lp = max(self.bol, self.curpos - len(text) + len(lstr))
-        self.Replace(self.bol, self.eol, indent + lstr)
-        self.goto_char(lp + len(indent))
+        """Outdent the current line"""
+        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()                         # w/ no-indent
+        p = self.eol - len(lstr)
+        offset = max(0, self.curpos - p)
+        indent = text[:-len(lstr)-4] # cf. delete_backward_space_like_tab
+        self.Replace(self.bol, p, indent)
+        self.goto_char(self.bol + len(indent) + offset)
     
     def calc_indent(self):
         """Calculate indent spaces from prefious line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        line = self.GetLine(self.curline - 1)
-        for ps in (sys.ps1, sys.ps2, sys.ps3):
-            if line.startswith(ps):
-                line = line[len(ps):]
-                break
+        line = self.GetLine(self.curline - 1) # check previous line
+        line = self.strip_prompts(line)
         lstr = line.lstrip()
         if not lstr:
             indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
@@ -1620,15 +1644,26 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             indent = line[:(len(line)-len(lstr))]
             try:
                 texts = list(shlex.shlex(lstr)) # skip comment
-            except ValueError as e:
-                return indent
-            if texts[-1] == ':':
-                m = re.match(r"[a-z]+", lstr)
-                if m and m.group(0) in (
-                    'if','else','elif','for','while','with',
-                    'def','class','try','except','finally'):
+                if texts[-1] == ':' and texts[0] in self.py_indent_reg:
                     indent += ' '*4
+            except ValueError: # shlex failed to parse
+                return indent
+        
+        line = self.GetLine(self.curline) # check current line
+        line = self.strip_prompts(line)
+        lstr = line.lstrip()
+        if re.match(self.py_outdent_re, lstr):
+            indent = indent[:-4]
+        
         return indent
+    
+    @classmethod
+    def strip_prompts(self, line):
+        for ps in (sys.ps1, sys.ps2, sys.ps3):
+            if line.startswith(ps):
+                line = line[len(ps):]
+                break
+        return line
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -1651,9 +1686,38 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
         
-        ## if level == stc.STC_FOLDLEVELHEADERFLAG: # fold the top-level header only
         if level: # fold any if the indent level is non-zero
             self.toggle_fold(lc)
+        else:
+            self.handler('select_line', evt)
+    
+    def on_linesel_begin(self, evt):
+        p = evt.Position
+        self.goto_char(p)
+        q = self.eol
+        for eol in '\r\n':
+            if eol == self.get_char(q):
+                q += 1
+        self.curpos = q
+        self._anchors = (p, q)
+        self.CaptureMouse()
+    
+    def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
+        p = self.PositionFromPoint(evt.Position)
+        po, qo = self._anchors
+        if p >= po:
+            lc = self.LineFromPosition(p)
+            line = self.GetLine(lc)
+            self.curpos = p + len(line)
+            self.anchor = po
+        else:
+            self.curpos = p
+            self.anchor = qo
+    
+    def on_linesel_end(self, evt):
+        del self._anchors
+        if self.HasCapture():
+            self.ReleaseMouse()
     
     def OnMarginRClick(self, evt):
         Menu.Popup(self, [
@@ -1786,8 +1850,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.Refresh()
     
     def wrap(self, mode=1):
-        """Set fold type (override) of wrap
-        mode in {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
+        """Sets whether text is word wrapped
+        (override) mode {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
@@ -2055,8 +2119,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @editable
     def insert_space_like_tab(self):
-        """Enter half-width spaces forward as if feeling like a tab
-        タブの気持ちになって半角スペースを前向きに入力する
+        """Insert half-width spaces forward as if feeling like a tab
+        タブの気持ちになって半角スペースを入力する
         """
         self.eat_white_forward()
         text, lp = self.CurLine
@@ -2065,7 +2129,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @editable
     def delete_backward_space_like_tab(self):
         """Delete half-width spaces backward as if feeling like a S-tab
-        シフト+タブの気持ちになって半角スペースを後ろ向きに消す
+        シフト+タブの気持ちになって半角スペースを消す
         """
         self.eat_white_forward()
         text, lp = self.CurLine
@@ -2437,8 +2501,7 @@ Flaky nutshell:
                   'M-h pressed' : (0, self.call_helpTip2),
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
-                  'tab pressed' : (1, self.call_history_comp), # quit -> indent_line
-                'S-tab pressed' : (0, _F(self.outdent_line)),
+                  'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -2447,7 +2510,8 @@ Flaky nutshell:
                   'M-m pressed' : (5, self.call_module_autocomp),
             },
             1 : { # history auto completion S-mode
-                         'quit' : (0, clear, _F(self.indent_line)),
+                         'quit' : (0, clear),
+                         'fork' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
                   '*up pressed' : (1, self.on_completion_forward_history),
                 '*down pressed' : (1, self.on_completion_backward_history),
@@ -2757,7 +2821,7 @@ Flaky nutshell:
     @staticmethod
     def magic(cmd):
         """Called before command pushed
-        (override) with magic: f x --> f(x) disabled
+        (override) disable old magic: `f x --> f(x)`
         """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
@@ -2823,7 +2887,9 @@ Flaky nutshell:
         return ''.join(tokens)
     
     def setBuiltinKeywords(self):
-        """Create pseudo keywords as part of builtins (override)"""
+        """Create pseudo keywords as part of builtins
+        (override) to add more helper functions
+        """
         Shell.setBuiltinKeywords(self)
         
         ## Add more useful global abbreviations to builtins
@@ -2837,6 +2903,10 @@ Flaky nutshell:
         builtins.where = where
         builtins.watch = watchit
         builtins.filling = filling
+        try:
+            builtins.edit = self.Parent.Log.load # not parent yet
+        except AttributeError:
+            pass
     
     def on_activated(self, shell):
         """Called when shell:self is activated
@@ -2938,7 +3008,7 @@ Flaky nutshell:
             input = self.GetTextRange(self.bolc, self.__eolc_mark)
             output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
-            input = self.regulate_cmd(input, False).lstrip()
+            input = self.regulate_cmd(input) #.lstrip()
             Shell.addHistory(self, input)
             
             noerr = self.on_text_output(output)
@@ -2951,14 +3021,8 @@ Flaky nutshell:
             ## shell.__init__ で定義するアトリビュートも存在しない
             pass
     
-    @staticmethod
-    def regulate_cmd(text, strip_prompts=True):
-        if strip_prompts:
-            for ps in (sys.ps1, sys.ps2, sys.ps3):
-                if text.startswith(ps):
-                    text = text[len(ps):]
-                    break
-        ## text = self.fixLineEndings(text)
+    @classmethod
+    def regulate_cmd(self, text):
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
@@ -2979,7 +3043,7 @@ Flaky nutshell:
             self.goto_char(-1)
     
     def clear(self):
-        """Delete all text (override) and put new prompt"""
+        """Delete all text (override) put new prompt"""
         self.ClearAll()
         
         self.promptPosStart = 0
@@ -2988,15 +3052,15 @@ Flaky nutshell:
         self.prompt()
     
     def write(self, text, pos=None):
-        """Display text in the shell (override) :option pos"""
+        """Display text in the shell (override) add pos :option"""
         if pos is not None:
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text)
     
     def wrap(self, mode=1):
-        """Sets whether text is word wrapped (override) with
-        mode in {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
+        """Sets whether text is word wrapped
+        (override) mode {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
         """
         EditorInterface.wrap(self, mode)
     
@@ -3050,6 +3114,8 @@ Flaky nutshell:
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
+                text = self.lstripPrompt(text)
+                text = self.fixLineEndings(text)
                 command = self.regulate_cmd(text)
                 offset = ''
                 if rectangle:
@@ -3083,15 +3149,25 @@ Flaky nutshell:
         ## Monkey-patch for wx.py.interpreter.runcode
         try:
             exec(code, self.globals, self.locals)
+        except SystemExit:
+            raise
         except Exception:
             self.interp.showtraceback()
     
-    def execStartupScript(self, startupScript):
+    def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
-        (override) Add globals when executing the script
+        (override) Add globals when executing su:startupScript
         """
         self.globals = self.locals
-        Shell.execStartupScript(self, startupScript)
+        ## Shell.execStartupScript(self, su)
+        
+        if su and os.path.isfile(su):
+            self.push("print('Startup script executed:', {0!r})\n".format(su))
+            self.push("with open({0!r}) as f: exec(f.read())\n".format(su))
+            self.push("del f\n")
+            self.interp.startupScript = su
+        else:
+            self.push("")
     
     def Execute(self, text):
         """Replace selection with text, run commands,
@@ -3103,10 +3179,12 @@ Flaky nutshell:
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        text = self.regulate_cmd(text)
+        text = self.lstripPrompt(text)
+        text = self.fixLineEndings(text)
+        command = self.regulate_cmd(text)
         commands = []
         c = ''
-        for line in text.split(lf):
+        for line in command.split(lf):
             lstr = line.lstrip()
             if (lstr and lstr == line
                 and not any(lstr.startswith(x)
@@ -3306,7 +3384,7 @@ Flaky nutshell:
         try:
             cmdl = self.cmdlc
             if cmdl.isspace() or self.bol != self.bolc:
-                self.handler('quit', evt)
+                self.handler('fork', evt) # fork [tab pressed]
                 return
             
             hint = cmdl.strip()
