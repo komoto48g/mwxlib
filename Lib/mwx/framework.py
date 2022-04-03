@@ -184,6 +184,24 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
+def interactive(f=None, prompt="Enter value"):
+    """Get response from the user using a dialog box."""
+    if f is None:
+        return lambda f: interactive(f, prompt)
+    @wraps(f)
+    def _f(*args, **kwargs):
+        with wx.TextEntryDialog(None,
+            prompt, caption=f.__name__) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    value = eval(dlg.Value)
+                except Exception:
+                    value = dlg.Value
+                return f(value, *args, **kwargs)
+    return funcall(_f)
+
+_I = interactive
+
 def postcall(f):
     """A decorator of wx.CallAfter
     Wx posts the message that forces `f` to take place in the main thread.
@@ -1382,6 +1400,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
+                  'M-g pressed' : (0, _I(self.goto_line, "Line to goto:")),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
@@ -1399,7 +1418,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                  'select_line' : (100, self.on_linesel_begin)
+                  'select_line' : (100, self.on_linesel_begin),
             },
             100 : {
                        'motion' : (100, self.on_linesel_motion),
@@ -1459,15 +1478,17 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
+        self.SetMarginSensitive(0, False)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
+        self.SetMarginSensitive(1, False)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
-        self.SetMarginSensitive(2, False)
+        self.SetMarginSensitive(2, False) # cf. show_folder
         
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -1682,14 +1703,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.SetFoldMarginColour(True, 'black')
             self.SetFoldMarginHiColour(True, 'black')
     
-    def OnMarginClick(self, evt):
+    def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
         
-        if level: # fold any if the indent level is non-zero
+        if level and evt.Margin == 2:
             self.toggle_fold(lc)
         else:
             self.handler('select_line', evt)
+    
+    def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
+        Menu.Popup(self, [
+            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+                lambda v: self.fold_all()),
+                
+            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+                lambda v: self.unfold_all()),
+        ])
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -1718,15 +1748,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
-    
-    def OnMarginRClick(self, evt):
-        Menu.Popup(self, [
-            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
-                lambda v: self.fold_all()),
-                
-            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
-                lambda v: self.unfold_all()),
-        ])
     
     def toggle_fold(self, lc=None):
         """Toggle fold/unfold the header including the given line"""
@@ -2032,9 +2053,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoPos(p)
     
     def back_to_indentation(self):
+        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()                         # w/ no-indent
+        self.GotoPos(self.eol - len(lstr))
         self.ScrollToColumn(0)
-        self.GotoPos(self.bol)
-        self.skip_chars_forward(r' \t')
     
     def beggining_of_line(self):
         self.GotoPos(self.bol)
@@ -2996,7 +3018,7 @@ Flaky nutshell:
     def addHistory(self, command):
         """Add command to the command history
         (override) if the command is new (i.e., not found in the head of the list).
-        Then, write the command to History buffer.
+                   Then, write the command to History buffer.
         """
         if not command:
             return
@@ -3117,11 +3139,12 @@ Flaky nutshell:
                 text = self.lstripPrompt(text)
                 text = self.fixLineEndings(text)
                 command = self.regulate_cmd(text)
+                lf = '\n'
                 offset = ''
                 if rectangle:
                     text, lp = self.CurLine
                     offset = ' ' * (lp - len(sys.ps2))
-                self.write(command.replace('\n', os.linesep + sys.ps2 + offset))
+                self.write(command.replace(lf, os.linesep + sys.ps2 + offset))
             wx.TheClipboard.Close()
     
     def info(self, obj=None):
@@ -3714,8 +3737,8 @@ if 1:
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 4
-    frm.shellframe.rootshell.handler.debug = 0
+    frm.shellframe.handler.debug = 0
+    frm.shellframe.rootshell.handler.debug = 4
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1
