@@ -202,7 +202,7 @@ Args:
                 ssmap[event] = actions
                 if verbose:
                     name = self.get_name(event)
-                    values = ('\n'+' '*41).join(where(a) for a in actions)
+                    values = ('\n'+' '*41).join(str(where(a)) for a in actions)
                     print("{:8d}:{:32s}{!s}".format(event, name, values))
         return ssmap
     

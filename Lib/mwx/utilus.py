@@ -227,9 +227,7 @@ def where(obj):
     try:
         return inspect.getfile(obj.__class__)
     except Exception:
-        module = inspect.getmodule(obj)
-        if module:
-            return repr(module)
+        return inspect.getmodule(obj)
 
 
 def mro(obj):
