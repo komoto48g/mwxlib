@@ -96,7 +96,7 @@ Key bindings:
         pdb.input = _input
         
         def _help():
-            self.parent.handler('put_help', pdb.__doc__)
+            self.parent.handler('add_help', pdb.__doc__)
         pdb.help = _help
         
         def jump_to_entry_point(v):

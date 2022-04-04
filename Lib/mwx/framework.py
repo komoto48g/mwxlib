@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.2"
+__version__ = "0.55.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -864,7 +864,7 @@ Args:
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
                   'add_history' : [ None, self.add_history ],
-                     'put_help' : [ None, self.put_help ],
+                     'add_help' : [ None, self.add_help ],
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
                   'remove_page' : [ None, self.remove_page ],
@@ -990,8 +990,7 @@ Args:
                 pass
         
         try:
-            ## load-session
-            with open(self.SESSION_FILE) as i:
+            with open(self.SESSION_FILE) as i: # load-session
                 exec(i.read())
         except FileNotFoundError:
             pass
@@ -1011,8 +1010,7 @@ Args:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
             
-            ## save-session
-            with open(self.SESSION_FILE, 'w') as o:
+            with open(self.SESSION_FILE, 'w') as o: # save-session
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
@@ -1197,7 +1195,7 @@ Args:
                 nb.TabCtrlHeight = 0
         win.Show(0)
     
-    def put_help(self, text, show=True, focus=False):
+    def add_help(self, text, show=True, focus=False):
         """Puts text to the help buffer"""
         self.Help.Text = text
         if show is not None:
@@ -2169,7 +2167,7 @@ class Editor(EditWindow, EditorInterface):
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
     
-    def load(self, filename, lineno=0):
+    def load(self, filename, lineno=0, show=True):
         if filename is None:
             self.target = None
             return False
@@ -2185,6 +2183,8 @@ class Editor(EditWindow, EditorInterface):
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
                 wx.CallAfter(self.recenter)
+            if show:
+                self.parent.handler('show_page', self)
             return True
         return False
     
@@ -2792,26 +2792,18 @@ Flaky nutshell:
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
-        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?([{" # OPS; SEPARATOR_CHARS; !? and open-parens
-        
         if not self.CanEdit():
             return
         
         p = self.curpos
-        c = self.get_char(p)
+        c = self.get_char(p-1)
         st = self.GetStyleAt(p-1)
-        
-        if c.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
+        if st in (11,14,15) or c in ')}]': # identifier, word2, decorator
+            pass
+        elif st not in (0,10) or c in '.': # no default, no operator => quit
             self.handler('quit', evt)
-            pass
-        elif st in (1,2,5,8,9,12): # comment, num, word, class, def
-            self.handler('quit', evt)
-            pass
-        elif st in (3,4,6,7,13): # string, char, triplet, eol
-            pass
-        elif self.preceding_symbol in sep:
-            self.ReplaceSelection("self")
-        
+        else:
+            self.ReplaceSelection('self')
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
     
@@ -3153,7 +3145,7 @@ Flaky nutshell:
             obj = self
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
-        self.parent.handler('put_help', doc) or print(doc)
+        self.parent.handler('add_help', doc) or print(doc)
     
     def help(self, obj=None):
         """Full description"""
@@ -3163,7 +3155,7 @@ Flaky nutshell:
         ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
-        self.parent.handler('put_help', doc) or print(doc)
+        self.parent.handler('add_help', doc) or print(doc)
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
@@ -3351,9 +3343,9 @@ Flaky nutshell:
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
         p = self.curpos
-        if self.get_char(p).isalnum() and self.get_char(p-1) == '.':
-            self.WordRightEnd()
-            self.curpos = p # backward selection to anchor point
+        st = self.GetStyleAt(p-1)
+        if p == self.bolc or st in (0,10): # no default, no operator => quit
+            self.handler('quit', evt)
         evt.Skip()
     
     def process_autocomp(self, evt):
@@ -3637,10 +3629,10 @@ def deb(target=None, app=None, startup=None, **kwargs):
     
     target : object or module. Default None sets target as __main__.
        app : an instance of App.
-                Default None may create a local App and the mainloop.
-                If app is True, neither the app nor the mainloop will be created.
-                If app is given and not started the mainloop yet,
-                the app will enter the mainloop herein.
+             Default None may create a local App and the mainloop.
+             If app is True, neither the app nor the mainloop will be created.
+             If app is given and not started the mainloop yet,
+             the app will enter the mainloop herein.
    startup : called after started up (not before)
   **kwargs : Nautilus arguments
     locals : additional context (localvars:dict) to the shell
