@@ -57,7 +57,8 @@ def deb(target=None, app=None, startup=None, **kwargs):
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
         """
-    kwargs.setdefault('introText', "mwx {}".format(__version__) + quote_unqoute)
+    kwargs.setdefault("introText",
+                      "mwx {}".format(__version__) + quote_unqoute)
     
     app = app or wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
@@ -68,7 +69,7 @@ def deb(target=None, app=None, startup=None, **kwargs):
         shell = frame.rootshell
         try:
             startup(shell)
-            frame.handler.bind("shell_cloned", startup)
+            frame.handler.bind('shell_cloned', startup)
         except Exception as e:
             shell.message("- Failed to startup: {!r}".format(e))
             traceback.print_exc()
