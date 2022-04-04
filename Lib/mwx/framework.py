@@ -184,7 +184,7 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
-def interactive(f=None, prompt="Enter value"):
+def interactive(f=None, prompt="Enter value", locals=None):
     """Get response from the user using a dialog box."""
     if f is None:
         return lambda f: interactive(f, prompt)
@@ -194,7 +194,7 @@ def interactive(f=None, prompt="Enter value"):
             prompt, caption=f.__name__) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 try:
-                    value = eval(dlg.Value)
+                    value = eval(dlg.Value, locals)
                 except Exception:
                     value = dlg.Value
                 return f(value, *args, **kwargs)
