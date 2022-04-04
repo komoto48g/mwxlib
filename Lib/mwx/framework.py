@@ -27,6 +27,7 @@ import pydoc
 import linecache
 import inspect
 from pprint import pformat
+from six import string_types
 from six.moves import builtins
 from importlib import reload
 try:
@@ -1547,7 +1548,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def mark(self):
-        return self.__mark
+        return self.__mark # cf. MarkerNext(0, 1<<0) @PositionFromLine
     
     @mark.setter
     def mark(self, v):
@@ -1579,7 +1580,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def linemark(self):
-        return self.__line
+        return self.__line # cf. MarkerNext(0, 1<<3)
     
     @linemark.setter
     def linemark(self, ln):
@@ -1689,7 +1690,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     
     def show_folder(self, show=True):
-        ## Call this method *before* set_style
+        """Show folder margin
+        
+        Call this method before set_style.
+        If called after set_style, the margin color will be gray
+        """
         if show:
             self.SetMarginWidth(2, 12)
             self.SetMarginSensitive(2, True)
@@ -2164,30 +2169,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
 class Editor(EditWindow, EditorInterface):
     """Python code editor
     """
-    parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.message)
-    
-    def load(self, filename, lineno=0, show=True):
-        if filename is None:
-            self.target = None
-            return False
-        m = re.match("(.*?):([0-9]+)", filename) # @where
-        if m:
-            filename, ln = m.groups()
-            lineno = int(ln)
-        lines = linecache.getlines(filename)
-        if lines:
-            self.Text = ''.join(lines)
-            self.target = filename
-            if lineno:
-                self.mark = self.PositionFromLine(lineno-1)
-                self.goto_char(self.mark)
-                wx.CallAfter(self.recenter)
-            if show:
-                self.parent.handler('show_page', self)
-            return True
-        return False
-    
     STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#000000,back:#ffff7f,size:2",
@@ -2214,6 +2195,21 @@ class Editor(EditWindow, EditorInterface):
         "STC_P_NUMBER"          : "fore:#7f0000",
     }
     
+    parent = property(lambda self: self.__parent)
+    message = property(lambda self: self.__parent.message)
+    
+    @property
+    def target(self):
+        return self.__target
+    
+    @target.setter
+    def target(self, f):
+        if f and os.path.isfile(f):
+            self.__time = os.path.getmtime(f)
+        else:
+            self.__time = None
+        self.__target = f
+    
     def __init__(self, parent, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -2238,10 +2234,47 @@ class Editor(EditWindow, EditorInterface):
             self.parent.handler('title_window', self.target)
             self.trace_position()
             v.Skip()
+            try:
+                f = self.target
+                t = os.path.getmtime(f)
+                if self.__time != t:
+                    with wx.MessageDialog(None,
+                        "The file {} has changed.\n"
+                        "Do you want to reload it?".format(f),
+                        style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
+                        if dlg.ShowModal() == wx.ID_YES:
+                            self.__time = t # Note: modal dlg makes focus off
+                            self.load(f, self.MarkerNext(0,1)+1)
+            except FileNotFoundError:
+                pass
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
         self.set_style(self.STYLE)
+    
+    def load(self, filename, lineno=0, show=True):
+        if filename is None:
+            self.target = None
+            return False
+        if not isinstance(filename, string_types):
+            print("- The filename must be string type. Try @where to get the path")
+            return False
+        m = re.match("(.*?):([0-9]+)", filename)
+        if m:
+            filename, ln = m.groups()
+            lineno = int(ln)
+        lines = linecache.getlines(filename)
+        if lines:
+            self.Text = ''.join(lines)
+            self.target = filename
+            if lineno:
+                self.mark = self.PositionFromLine(lineno-1)
+                self.goto_char(self.mark)
+                wx.CallAfter(self.recenter)
+            if show:
+                self.parent.handler('show_page', self)
+            return True
+        return False
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -2325,55 +2358,6 @@ Flaky nutshell:
     Half-baked by Patrik K. O'Brien,
     and the other half by K. O'moto.
     """
-    parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.message)
-    
-    @property
-    def target(self):
-        return self.__target
-    
-    @target.setter
-    def target(self, target):
-        """Reset the shell->target; Rename the parent title
-        """
-        if not hasattr(target, '__dict__'):
-            raise TypeError("Unable to target primitive object: {!r}".format(target))
-        
-        ## Note: self, this, and shell are set/overwritten.
-        try:
-            target.self = target
-            target.this = inspect.getmodule(target)
-            target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-        except AttributeError as e:
-            print("- cannot set target vars: {!r}".format(e))
-            pass
-        self.__target = target
-        self.interp.locals = target.__dict__
-    
-    @property
-    def locals(self):
-        return self.interp.locals
-    
-    @locals.setter
-    def locals(self, v): # internal use only
-        self.interp.locals = v
-    
-    @locals.deleter
-    def locals(self): # internal use only
-        self.interp.locals = self.__target.__dict__
-    
-    @property
-    def globals(self):
-        return self.interp.globals
-    
-    @globals.setter
-    def globals(self, v): # internal use only
-        self.interp.globals = v
-    
-    @globals.deleter
-    def globals(self): # internal use only
-        self.interp.globals = self.__target.__dict__
-    
     STYLE = { #<Shell>
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
         "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#123460,size:2",
@@ -2399,6 +2383,54 @@ Flaky nutshell:
         "STC_P_OPERATOR"        : "",
         "STC_P_NUMBER"          : "fore:#ffc080",
     }
+    
+    parent = property(lambda self: self.__parent)
+    message = property(lambda self: self.__parent.message)
+    
+    @property
+    def target(self):
+        return self.__target
+    
+    @target.setter
+    def target(self, obj):
+        """Reset the shell target object; Rename the parent title
+        """
+        if not hasattr(obj, '__dict__'):
+            raise TypeError("Unable to target primitive object: {!r}".format(obj))
+        
+        self.__target = obj
+        self.interp.locals = obj.__dict__
+        try:
+            obj.self = obj
+            obj.this = inspect.getmodule(obj)
+            obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+        except AttributeError as e:
+            ## print("- cannot overwrite target vars: {!r}".format(e))
+            pass
+    
+    @property
+    def locals(self):
+        return self.interp.locals
+    
+    @locals.setter
+    def locals(self, v): # internal use only
+        self.interp.locals = v
+    
+    @locals.deleter
+    def locals(self): # internal use only
+        self.interp.locals = self.__target.__dict__
+    
+    @property
+    def globals(self):
+        return self.interp.globals
+    
+    @globals.setter
+    def globals(self, v): # internal use only
+        self.interp.globals = v
+    
+    @globals.deleter
+    def globals(self): # internal use only
+        self.interp.globals = self.__target.__dict__
     
     modules = None
     
@@ -2924,10 +2956,10 @@ Flaky nutshell:
     
     def on_activated(self, shell):
         """Called when shell:self is activated
-        Reset localvars and builtins assigned for the shell->target.
+        Reset localvars and builtins assigned for the shell target.
         Note: the target could be referred from other shells.
         """
-        ## self.target = shell.target # => @target.setter !! Don't overwrite locals here
+        ## self.target = shell.target # !! Don't overwrite locals here
         try:
             self.target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError as e:
@@ -2948,7 +2980,7 @@ Flaky nutshell:
         
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
-        Remove target localvars and builtins assigned for the shell->target.
+        Remove target localvars and builtins assigned for the shell target.
         """
         if self.AutoCompActive():
             self.AutoCompCancel()
@@ -3233,7 +3265,7 @@ Flaky nutshell:
     
     def timeit(self, *args, **kwargs):
         t = self.clock()
-        print("... duration time: {:g} s".format(t-self.__start), file=self)
+        print("... duration time: {:g} s\n".format(t-self.__start), file=self)
     
     def profile(self, obj, *args, **kwargs):
         from profile import Profile
@@ -3246,7 +3278,8 @@ Flaky nutshell:
             raise TypeError("Unable to target primitive object: {!r}".format(target))
         
         ## Make shell:clone in the console
-        shell = Nautilus(self.parent, target, style=wx.BORDER_NONE)
+        shell = Nautilus(self.parent, target,
+                         style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
         self.parent.handler('add_page', shell, typename(target), show=True)
         self.handler('shell_cloned', shell)
         return shell
