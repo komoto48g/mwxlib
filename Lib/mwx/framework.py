@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.2"
+__version__ = "0.55.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -183,6 +183,24 @@ def regulate_key(key):
                .replace("S-M-", "M-S-")
                .replace("S-C-", "C-S-"))
 
+
+def interactive(f=None, prompt="Enter value", locals=None):
+    """Get response from the user using a dialog box."""
+    if f is None:
+        return lambda f: interactive(f, prompt)
+    @wraps(f)
+    def _f(*args, **kwargs):
+        with wx.TextEntryDialog(None,
+            prompt, caption=f.__name__) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    value = eval(dlg.Value, locals)
+                except Exception:
+                    value = dlg.Value
+                return f(value, *args, **kwargs)
+    return funcall(_f)
+
+_I = interactive
 
 def postcall(f):
     """A decorator of wx.CallAfter
@@ -846,7 +864,7 @@ Args:
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
                   'add_history' : [ None, self.add_history ],
-                     'put_help' : [ None, self.put_help ],
+                     'add_help' : [ None, self.add_help ],
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
                   'remove_page' : [ None, self.remove_page ],
@@ -972,8 +990,7 @@ Args:
                 pass
         
         try:
-            ## load-session
-            with open(self.SESSION_FILE) as i:
+            with open(self.SESSION_FILE) as i: # load-session
                 exec(i.read())
         except FileNotFoundError:
             pass
@@ -993,8 +1010,7 @@ Args:
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
             
-            ## save-session
-            with open(self.SESSION_FILE, 'w') as o:
+            with open(self.SESSION_FILE, 'w') as o: # save-session
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
@@ -1179,7 +1195,7 @@ Args:
                 nb.TabCtrlHeight = 0
         win.Show(0)
     
-    def put_help(self, text, show=True, focus=False):
+    def add_help(self, text, show=True, focus=False):
         """Puts text to the help buffer"""
         self.Help.Text = text
         if show is not None:
@@ -1382,6 +1398,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
+                  'M-g pressed' : (0, _I(self.goto_line, "Line to goto:")),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
@@ -1399,7 +1416,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                  'select_line' : (100, self.on_linesel_begin)
+                  'select_line' : (100, self.on_linesel_begin),
             },
             100 : {
                        'motion' : (100, self.on_linesel_motion),
@@ -1459,15 +1476,17 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
+        self.SetMarginSensitive(0, False)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
+        self.SetMarginSensitive(1, False)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
-        self.SetMarginSensitive(2, False)
+        self.SetMarginSensitive(2, False) # cf. show_folder
         
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -1682,14 +1701,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.SetFoldMarginColour(True, 'black')
             self.SetFoldMarginHiColour(True, 'black')
     
-    def OnMarginClick(self, evt):
+    def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
         
-        if level: # fold any if the indent level is non-zero
+        if level and evt.Margin == 2:
             self.toggle_fold(lc)
         else:
             self.handler('select_line', evt)
+    
+    def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
+        Menu.Popup(self, [
+            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+                lambda v: self.fold_all()),
+                
+            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+                lambda v: self.unfold_all()),
+        ])
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -1718,15 +1746,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
-    
-    def OnMarginRClick(self, evt):
-        Menu.Popup(self, [
-            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
-                lambda v: self.fold_all()),
-                
-            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
-                lambda v: self.unfold_all()),
-        ])
     
     def toggle_fold(self, lc=None):
         """Toggle fold/unfold the header including the given line"""
@@ -2032,9 +2051,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoPos(p)
     
     def back_to_indentation(self):
+        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()                         # w/ no-indent
+        self.GotoPos(self.eol - len(lstr))
         self.ScrollToColumn(0)
-        self.GotoPos(self.bol)
-        self.skip_chars_forward(r' \t')
     
     def beggining_of_line(self):
         self.GotoPos(self.bol)
@@ -2147,7 +2167,7 @@ class Editor(EditWindow, EditorInterface):
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
     
-    def load(self, filename, lineno=0):
+    def load(self, filename, lineno=0, show=True):
         if filename is None:
             self.target = None
             return False
@@ -2163,6 +2183,8 @@ class Editor(EditWindow, EditorInterface):
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
                 wx.CallAfter(self.recenter)
+            if show:
+                self.parent.handler('show_page', self)
             return True
         return False
     
@@ -2770,26 +2792,18 @@ Flaky nutshell:
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
-        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?([{" # OPS; SEPARATOR_CHARS; !? and open-parens
-        
         if not self.CanEdit():
             return
         
         p = self.curpos
-        c = self.get_char(p)
+        c = self.get_char(p-1)
         st = self.GetStyleAt(p-1)
-        
-        if c.isalnum(): # e.g., self[.]abc, 0[.]123, etc.,
+        if st in (11,14,15) or c in ')}]': # identifier, word2, decorator
+            pass
+        elif st not in (0,10) or c in '.': # no default, no operator => quit
             self.handler('quit', evt)
-            pass
-        elif st in (1,2,5,8,9,12): # comment, num, word, class, def
-            self.handler('quit', evt)
-            pass
-        elif st in (3,4,6,7,13): # string, char, triplet, eol
-            pass
-        elif self.preceding_symbol in sep:
-            self.ReplaceSelection("self")
-        
+        else:
+            self.ReplaceSelection('self')
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
     
@@ -2996,7 +3010,7 @@ Flaky nutshell:
     def addHistory(self, command):
         """Add command to the command history
         (override) if the command is new (i.e., not found in the head of the list).
-        Then, write the command to History buffer.
+                   Then, write the command to History buffer.
         """
         if not command:
             return
@@ -3117,11 +3131,12 @@ Flaky nutshell:
                 text = self.lstripPrompt(text)
                 text = self.fixLineEndings(text)
                 command = self.regulate_cmd(text)
+                lf = '\n'
                 offset = ''
                 if rectangle:
                     text, lp = self.CurLine
                     offset = ' ' * (lp - len(sys.ps2))
-                self.write(command.replace('\n', os.linesep + sys.ps2 + offset))
+                self.write(command.replace(lf, os.linesep + sys.ps2 + offset))
             wx.TheClipboard.Close()
     
     def info(self, obj=None):
@@ -3130,7 +3145,7 @@ Flaky nutshell:
             obj = self
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
-        self.parent.handler('put_help', doc) or print(doc)
+        self.parent.handler('add_help', doc) or print(doc)
     
     def help(self, obj=None):
         """Full description"""
@@ -3140,7 +3155,7 @@ Flaky nutshell:
         ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
-        self.parent.handler('put_help', doc) or print(doc)
+        self.parent.handler('add_help', doc) or print(doc)
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
@@ -3163,8 +3178,8 @@ Flaky nutshell:
         
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
-            self.push("with open({0!r}) as f: exec(f.read())\n".format(su))
-            self.push("del f\n")
+            self.push("with open({0!r}) as __f: exec(__f.read())\n".format(su))
+            self.push("del __f\n")
             self.interp.startupScript = su
         else:
             self.push("")
@@ -3328,9 +3343,9 @@ Flaky nutshell:
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
         p = self.curpos
-        if self.get_char(p).isalnum() and self.get_char(p-1) == '.':
-            self.WordRightEnd()
-            self.curpos = p # backward selection to anchor point
+        st = self.GetStyleAt(p-1)
+        if p == self.bolc or st in (0,10): # no default, no operator => quit
+            self.handler('quit', evt)
         evt.Skip()
     
     def process_autocomp(self, evt):
@@ -3607,48 +3622,6 @@ except ImportError as e:
     pass
 
 
-def deb(target=None, app=None, startup=None, **kwargs):
-    """Dive into the process from your diving point
-    for debug, break, and inspection of the target
-    --- Put me at breakpoint.
-    
-    target : object or module. Default None sets target as __main__.
-       app : an instance of App.
-                Default None may create a local App and the mainloop.
-                If app is True, neither the app nor the mainloop will be created.
-                If app is given and not started the mainloop yet,
-                the app will enter the mainloop herein.
-   startup : called after started up (not before)
-  **kwargs : Nautilus arguments
-    locals : additional context (localvars:dict) to the shell
-    execStartupScript : First, execute your script ($PYTHONSTARTUP:~/.py)
-    """
-    quote_unqoute = """
-        Anything one man can imagine, other man can make real.
-        --- Jules Verne (1828--1905)
-        """
-    kwargs.setdefault('introText', "mwx {}".format(__version__) + quote_unqoute)
-    
-    app = app or wx.GetApp() or wx.App()
-    frame = ShellFrame(None, target, **kwargs)
-    frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close the window
-    frame.Show()
-    frame.rootshell.SetFocus()
-    if startup:
-        shell = frame.rootshell
-        try:
-            startup(shell)
-            frame.handler.bind("shell_cloned", startup)
-        except Exception as e:
-            shell.message("- Failed to startup: {!r}".format(e))
-            traceback.print_exc()
-        else:
-            shell.message("The startup was completed successfully.")
-    if isinstance(app, wx.App) and not app.GetMainLoop():
-        app.MainLoop()
-    return frame
-
-
 def watchit(target=None, **kwargs):
     """Diver's watch to go deep into the wx process to inspect the target
     Wx.py tool for watching tree structure and events across the wx.Objects
@@ -3714,8 +3687,8 @@ if 1:
     
     frm.handler.debug = 0
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 4
-    frm.shellframe.rootshell.handler.debug = 0
+    frm.shellframe.handler.debug = 0
+    frm.shellframe.rootshell.handler.debug = 4
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1

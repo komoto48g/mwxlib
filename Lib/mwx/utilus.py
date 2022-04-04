@@ -216,18 +216,20 @@ def where(obj):
     A class, method, function, traceback, frame, or code object is expected.
     Otherwise, the module will be returned if it exists.
     """
-    try:
+    def _where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
         if not lineno:
             return filename
         return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-    except Exception:
-        pass
     try:
-        return inspect.getfile(obj.__class__)
+        try:
+            return _where(obj)
+        except Exception:
+            return _where(obj.__class__)
     except Exception:
-        return inspect.getmodule(obj)
+        return inspect.getmodule(obj)\
+            or inspect.getmodule(obj.__class__)
 
 
 def mro(obj):
@@ -333,7 +335,7 @@ def find_modules(force=False, verbose=True):
     """Find all modules available and write to log file.
     
     Similar to pydoc.help, it scans packages, but also the submodules.
-    This creates a log file in ~/.deb and save the list.
+    This creates a log file in ~/.mwxlib and save the list.
     """
     f = get_rootpath("deb-modules-{}.log".format(sys.winver))
     
