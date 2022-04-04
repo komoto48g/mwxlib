@@ -335,7 +335,7 @@ def find_modules(force=False, verbose=True):
     """Find all modules available and write to log file.
     
     Similar to pydoc.help, it scans packages, but also the submodules.
-    This creates a log file in ~/.deb and save the list.
+    This creates a log file in ~/.mwxlib and save the list.
     """
     f = get_rootpath("deb-modules-{}.log".format(sys.winver))
     

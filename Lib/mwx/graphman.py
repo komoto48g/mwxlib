@@ -334,7 +334,7 @@ unloadable : flag to set the Layer to be unloadable
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.is_active))),
             (),
-            (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "deb", Icon('core'),
+            (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
         
