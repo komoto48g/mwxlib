@@ -3178,8 +3178,8 @@ Flaky nutshell:
         
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
-            self.push("with open({0!r}) as f: exec(f.read())\n".format(su))
-            self.push("del f\n")
+            self.push("with open({0!r}) as __f: exec(__f.read())\n".format(su))
+            self.push("del __f\n")
             self.interp.startupScript = su
         else:
             self.push("")
