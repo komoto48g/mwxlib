@@ -24,8 +24,8 @@ from wx.py import dispatcher
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
-import linecache
 import inspect
+## import linecache
 from pprint import pformat
 from six import string_types
 from six.moves import builtins
@@ -913,7 +913,7 @@ Args:
             self.SetTitleWindow(self.current_shell.target)
         
         @self.Scratch.handler.bind('f5 pressed')
-        def eval(v):
+        def eval_buffer(v):
             try:
                 exec(self.Scratch.Text, self.current_shell.locals)
                 dispatcher.send(signal='Interpreter.push',
@@ -1016,7 +1016,7 @@ Args:
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
                     "self.Log.load({!r}, {})".format(self.Log.target,
-                                                     self.Log.MarkerNext(0,1)+1),
+                                                     self.Log.MarkerNext(0, 1)+1),
                     "self.Log.EmptyUndoBuffer()",
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
@@ -1548,7 +1548,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def mark(self):
-        return self.__mark # cf. MarkerNext(0, 1<<0) @PositionFromLine
+        return self.__mark
     
     @mark.setter
     def mark(self, v):
@@ -2234,18 +2234,25 @@ class Editor(EditWindow, EditorInterface):
             self.parent.handler('title_window', self.target)
             self.trace_position()
             v.Skip()
+            if not self.__time:
+                return
             try:
                 f = self.target
                 t = os.path.getmtime(f)
                 if self.__time != t:
+                    self.__time = t # Note: modal dlg makes focus off
+                    p = self.curpos
                     with wx.MessageDialog(None,
                         "The file {} has changed.\n"
                         "Do you want to reload it?".format(f),
-                        style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
+                        style=wx.YES_NO|wx.ICON_INFORMATION) as dlg:
                         if dlg.ShowModal() == wx.ID_YES:
-                            self.__time = t # Note: modal dlg makes focus off
-                            self.load(f, self.MarkerNext(0,1)+1)
-            except FileNotFoundError:
+                            self.load(f, self.MarkerNext(0, 1)+1)
+                            self.goto_char(p)
+                            wx.CallAfter(self.recenter)
+                        if self.HasCapture():
+                            self.ReleaseMouse()
+            except (TypeError, FileNotFoundError):
                 pass
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
@@ -2253,19 +2260,22 @@ class Editor(EditWindow, EditorInterface):
         self.set_style(self.STYLE)
     
     def load(self, filename, lineno=0, show=True):
-        if filename is None:
-            self.target = None
-            return False
         if not isinstance(filename, string_types):
             print("- The filename must be string type. Try @where to get the path")
-            return False
+            return None
+        if filename is None:
+            self.target = None
+            return True
         m = re.match("(.*?):([0-9]+)", filename)
         if m:
             filename, ln = m.groups()
             lineno = int(ln)
-        lines = linecache.getlines(filename)
-        if lines:
-            self.Text = ''.join(lines)
+        ## linecache.checkcache(filename)
+        ## lines = linecache.getlines(filename)
+        ## if lines:
+        ##     self.Text = ''.join(lines)
+        with open(filename) as i:
+            self.Text = i.read()
             self.target = filename
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
@@ -3018,6 +3028,7 @@ Flaky nutshell:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
             self.MarkerAdd(ln, 2) # error-arrow
+            self.linemark = ln + int(err[-1]) - 1
         return (not err)
     
     ## --------------------------------
