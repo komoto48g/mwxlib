@@ -25,7 +25,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
 import inspect
-## import linecache
+import linecache
 from pprint import pformat
 from six import string_types
 from six.moves import builtins
@@ -1571,7 +1571,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.handler('mark_unset', v)
     
     def set_marker(self):
-        self.mark = self.curpos
+        self.mark = self.cpos
     
     def goto_marker(self):
         if self.mark is not None:
@@ -1602,10 +1602,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.handler('line_unset', ln)
     
     def set_line_marker(self):
-        if self.linemark == self.curline:
+        if self.linemark == self.cline:
             self.linemark = None # toggle
         else:
-            self.linemark = self.curline
+            self.linemark = self.cline
     
     def goto_line_marker(self):
         if self.linemark is not None:
@@ -1636,7 +1636,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
         lstr = text.lstrip()                         # w/ no-indent
         p = self.eol - len(lstr)
-        offset = max(0, self.curpos - p)
+        offset = max(0, self.cpos - p)
         indent = self.calc_indent()
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
@@ -1646,7 +1646,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
         lstr = text.lstrip()                         # w/ no-indent
         p = self.eol - len(lstr)
-        offset = max(0, self.curpos - p)
+        offset = max(0, self.cpos - p)
         indent = text[:-len(lstr)-4] # cf. delete_backward_space_like_tab
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
@@ -1655,7 +1655,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Calculate indent spaces from prefious line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        line = self.GetLine(self.curline - 1) # check previous line
+        line = self.GetLine(self.cline - 1) # check previous line
         line = self.strip_prompts(line)
         lstr = line.lstrip()
         if not lstr:
@@ -1669,7 +1669,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             except ValueError: # shlex failed to parse
                 return indent
         
-        line = self.GetLine(self.curline) # check current line
+        line = self.GetLine(self.cline) # check current line
         line = self.strip_prompts(line)
         lstr = line.lstrip()
         if re.match(self.py_outdent_re, lstr):
@@ -1731,7 +1731,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         for eol in '\r\n':
             if eol == self.get_char(q):
                 q += 1
-        self.curpos = q
+        self.cpos = q
         self._anchors = (p, q)
         self.CaptureMouse()
     
@@ -1741,11 +1741,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if p >= po:
             lc = self.LineFromPosition(p)
             line = self.GetLine(lc)
-            self.curpos = p + len(line)
-            self.anchor = po
+            self.cpos = p + len(line)
+            self.Anchor = po
         else:
-            self.curpos = p
-            self.anchor = qo
+            self.cpos = p
+            self.Anchor = qo
     
     def on_linesel_end(self, evt):
         del self._anchors
@@ -1755,7 +1755,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def toggle_fold(self, lc=None):
         """Toggle fold/unfold the header including the given line"""
         if lc is None:
-            lc = self.curline
+            lc = self.cline
         while 1:
             lp = self.GetFoldParent(lc)
             if lp == -1:
@@ -1848,7 +1848,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.StyleSetSpec(getattr(stc, key), value)
     
     def match_paren(self):
-        p = self.curpos
+        p = self.cpos
         if self.get_char(p) in "({[<":
             q = self.BraceMatch(p)
             if q != -1:
@@ -1886,7 +1886,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """
         n = self.LinesOnScreen() # lines completely visible
         m = n//2 if ln is None else ln % n if ln < n else n
-        w, h = self.PointFromPosition(self.curpos)
+        w, h = self.PointFromPosition(self.cpos)
         L = h // self.TextHeight(0)
         ## self.ScrollLines(L - m) # a little delay?
         self.ScrollToLine(self.FirstVisibleLine + L - m)
@@ -1894,8 +1894,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
-    following_char = property(lambda self: chr(self.GetCharAt(self.curpos)))
-    preceding_char = property(lambda self: chr(self.GetCharAt(self.curpos-1)))
+    following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
+    preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
     
     def get_char(self, pos):
         return chr(self.GetCharAt(pos))
@@ -1903,25 +1903,20 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @property
     def following_symbol(self):
         """Similar to following_char, but skips whites"""
-        ln = self.GetTextRange(self.curpos, self.eol)
+        ln = self.GetTextRange(self.cpos, self.eol)
         return next((c for c in ln if not c.isspace()), '')
     
     @property
     def preceding_symbol(self):
         """Similar to preceding_char, but skips whites"""
-        ln = self.GetTextRange(self.bol, self.curpos)[::-1]
+        ln = self.GetTextRange(self.bol, self.cpos)[::-1]
         return next((c for c in ln if not c.isspace()), '')
     
-    curpos = property(
+    cpos = property(
         lambda self: self.GetCurrentPos(),
         lambda self,v: self.SetCurrentPos(v))
     
-    anchor = property(
-        lambda self: self.GetAnchor(),
-        lambda self,v: self.SetAnchor(v))
-    
-    ## CurrentLine (0-base number)
-    curline = property(
+    cline = property(
         lambda self: self.GetCurrentLine(),
         lambda self,v: self.SetCurrentLine(v))
     
@@ -1929,21 +1924,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def bol(self):
         """beginning of line"""
         text, lp = self.CurLine
-        return self.curpos - lp
+        return self.cpos - lp
     
     @property
     def eol(self):
         """end of line"""
         text, lp = self.CurLine
         text = text.strip('\r\n') # remove line-seps: '\r' and '\n'
-        return (self.curpos - lp + len(text.encode()))
+        return (self.cpos - lp + len(text.encode()))
     
     @property
     def expr_at_caret(self):
         """Pythonic expression at the caret
         The caret scouts back and forth to scoop a chunk of expression.
         """
-        st = self.GetStyleAt(self.curpos)
+        st = self.GetStyleAt(self.cpos)
         if st in (3,4,6,7,13): # string, char, triplet, eol
             return ''
         text, lp = self.CurLine
@@ -1962,20 +1957,20 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             return topic
         with self.save_excursion():
             boundaries = "({[<>]}),:;"
-            p = q = self.curpos
+            p = q = self.cpos
             c = self.get_char(p-1)
             if not c.isspace() and c not in boundaries:
                 self.WordLeft()
-                p = self.curpos
+                p = self.cpos
             c = self.get_char(q)
             if not c.isspace() and c not in boundaries:
                 self.WordRightEnd()
-                q = self.curpos
+                q = self.cpos
             return self.GetTextRange(p, q)
     
     @property
     def paren_at_caret(self):
-        p = self.curpos
+        p = self.cpos
         def _paren(q):
             text = self.GetTextRange(p, q)
             if text:
@@ -1985,21 +1980,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def right_paren(self):
-        p = self.curpos
+        p = self.cpos
         if self.get_char(p) in "({[<":
             return self.BraceMatch(p) + 1
         return -1
     
     @property
     def left_paren(self):
-        p = self.curpos
+        p = self.cpos
         if self.get_char(p-1) in ")}]>":
             return self.BraceMatch(p - 1)
         return -1
     
     @property
     def right_quotation(self):
-        p = self.curpos
+        p = self.cpos
         text = self.GetTextRange(p, self.TextLength)
         if text and text[0] in "\"\'":
             try:
@@ -2011,7 +2006,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def left_quotation(self):
-        p = self.curpos
+        p = self.cpos
         text = self.GetTextRange(0, p)[::-1]
         if text and text[0] in "\"\'":
             try:
@@ -2044,13 +2039,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.GotoLine(ln)
     
     def skip_chars_forward(self, chars):
-        p = self.curpos
+        p = self.cpos
         while chr(self.GetCharAt(p)) in chars and p <= self.TextLength:
             p += 1
         self.GotoPos(p)
     
     def skip_chars_backward(self, chars):
-        p = self.curpos
+        p = self.cpos
         while chr(self.GetCharAt(p-1)) in chars and p > 0:
             p -= 1
         self.GotoPos(p)
@@ -2090,7 +2085,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self._win = win
             
             def __enter__(self):
-                self.pos = self._win.curpos
+                self.pos = self._win.cpos
                 self.vpos = self._win.GetScrollPos(wx.VERTICAL)
                 self.hpos = self._win.GetScrollPos(wx.HORIZONTAL)
             
@@ -2111,24 +2106,24 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @editable
     def eat_white_forward(self):
-        p = self.curpos
+        p = self.cpos
         self.skip_chars_forward(r' \t')
-        self.Replace(p, self.curpos, '')
+        self.Replace(p, self.cpos, '')
     
     @editable
     def eat_white_backward(self):
-        p = self.curpos
+        p = self.cpos
         self.skip_chars_backward(r' \t')
-        self.Replace(max(self.curpos, self.bol), p, '')
+        self.Replace(max(self.cpos, self.bol), p, '')
     
     @editable
     def kill_line(self):
         p = self.eol
         text, lp = self.CurLine
-        if p == self.curpos:
+        if p == self.cpos:
             if self.GetTextRange(p, p+1) == '\r': p += 1
             if self.GetTextRange(p, p+1) == '\n': p += 1
-        self.Replace(self.curpos, p, '')
+        self.Replace(self.cpos, p, '')
     
     @editable
     def backward_kill_line(self):
@@ -2140,7 +2135,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if text[:lp] == '' and p: # caret at the beginning of the line
             if self.GetTextRange(p-1, p) == '\n': p -= 1
             if self.GetTextRange(p-1, p) == '\r': p -= 1
-        self.Replace(p, self.curpos, '')
+        self.Replace(p, self.cpos, '')
     
     @editable
     def insert_space_like_tab(self):
@@ -2159,10 +2154,10 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.eat_white_forward()
         text, lp = self.CurLine
         for i in range(lp % 4 or 4):
-            p = self.curpos
+            p = self.cpos
             if self.get_char(p-1) != ' ' or p == self.bol:
                 break
-            self.curpos = p-1
+            self.cpos = p-1
         self.ReplaceSelection('')
 
 
@@ -2241,7 +2236,7 @@ class Editor(EditWindow, EditorInterface):
                 t = os.path.getmtime(f)
                 if self.__time != t:
                     self.__time = t # Note: modal dlg makes focus off
-                    p = self.curpos
+                    p = self.cpos
                     with wx.MessageDialog(None,
                         "The file {} has changed.\n"
                         "Do you want to reload it?".format(f),
@@ -2260,22 +2255,22 @@ class Editor(EditWindow, EditorInterface):
         self.set_style(self.STYLE)
     
     def load(self, filename, lineno=0, show=True):
-        if not isinstance(filename, string_types):
-            print("- The filename must be string type. Try @where to get the path")
-            return None
         if filename is None:
             self.target = None
             return True
+        
+        if not isinstance(filename, string_types):
+            print("- The filename must be string type. Try @where to get the path")
+            return None
+        
         m = re.match("(.*?):([0-9]+)", filename)
         if m:
             filename, ln = m.groups()
             lineno = int(ln)
-        ## linecache.checkcache(filename)
-        ## lines = linecache.getlines(filename)
-        ## if lines:
-        ##     self.Text = ''.join(lines)
-        with open(filename) as i:
-            self.Text = i.read()
+        linecache.checkcache(filename)
+        lines = linecache.getlines(filename)
+        if lines:
+            self.Text = ''.join(lines)
             self.target = filename
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
@@ -2288,7 +2283,7 @@ class Editor(EditWindow, EditorInterface):
     
     def trace_position(self):
         text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.curline, lp, self.curpos), pane=1)
+        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -2739,7 +2734,7 @@ Flaky nutshell:
     
     def trace_position(self):
         text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.curline, lp, self.curpos), pane=1)
+        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -2786,7 +2781,7 @@ Flaky nutshell:
         """Called when backspace (or *left) pressed
         Backspace-guard from Autocomp eating over a prompt white
         """
-        if self.curpos == self.bolc:
+        if self.cpos == self.bolc:
             ## do not skip to prevent autocomp eats prompt,
             ## so not to backspace over the latest non-continuation prompt
             return
@@ -2837,7 +2832,7 @@ Flaky nutshell:
         if not self.CanEdit():
             return
         
-        p = self.curpos
+        p = self.cpos
         c = self.get_char(p-1)
         st = self.GetStyleAt(p-1)
         if st in (11,14,15) or c in ')}]': # identifier, word2, decorator
@@ -3086,14 +3081,14 @@ Flaky nutshell:
                     .replace(os.linesep, lf))
     
     def goto_previous_mark(self):
-        ln = self.MarkerPrevious(self.curline-1, 1<<1)
+        ln = self.MarkerPrevious(self.cline-1, 1<<1)
         if ln != -1:
             self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
         else:
             self.goto_char(0)
     
     def goto_next_mark(self):
-        ln = self.MarkerNext(self.curline+1, 1<<1)
+        ln = self.MarkerNext(self.cline+1, 1<<1)
         if ln != -1:
             self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
         else:
@@ -3134,14 +3129,14 @@ Flaky nutshell:
             if text.startswith(ps):
                 lp -= len(ps)
                 break
-        return self.curpos - lp
+        return self.cpos - lp
     
     ## cf. getCommand(), getMultilineCommand() -> caret-line-text that has a prompt (>>>)
     
     @property
     def cmdlc(self):
         """cull command-line (with no prompt)"""
-        return self.GetTextRange(self.bol, self.curpos)
+        return self.GetTextRange(self.bol, self.cpos)
     
     @property
     def cmdline(self):
@@ -3329,7 +3324,7 @@ Flaky nutshell:
         except Exception:
             obj = self.eval(text)
         tip = pformat(obj)
-        self.CallTipShow(self.curpos, tip)
+        self.CallTipShow(self.cpos, tip)
         self.message(text)
     
     def call_tooltip2(self, evt):
@@ -3378,7 +3373,7 @@ Flaky nutshell:
     
     def skipback_autocomp(self, evt):
         """Don't eat backward prompt white"""
-        if self.curpos == self.bolc:
+        if self.cpos == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
             self.handler('quit', evt)
@@ -3386,7 +3381,7 @@ Flaky nutshell:
     
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
-        p = self.curpos
+        p = self.cpos
         st = self.GetStyleAt(p-1)
         if p == self.bolc or st in (0,10): # no default, no operator => quit
             self.handler('quit', evt)
@@ -3428,9 +3423,9 @@ Flaky nutshell:
             j = 0 if j < 0 else j if j < N else N-1
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
-            p = self.curpos
+            p = self.cpos
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.curpos = p # backward selection to anchor point
+            self.cpos = p # backward selection to anchor point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
