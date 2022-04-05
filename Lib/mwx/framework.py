@@ -25,7 +25,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
 import inspect
-## import linecache
+import linecache
 from pprint import pformat
 from six import string_types
 from six.moves import builtins
@@ -2258,19 +2258,19 @@ class Editor(EditWindow, EditorInterface):
         if filename is None:
             self.target = None
             return True
+        
         if not isinstance(filename, string_types):
             print("- The filename must be string type. Try @where to get the path")
             return None
+        
         m = re.match("(.*?):([0-9]+)", filename)
         if m:
             filename, ln = m.groups()
             lineno = int(ln)
-        ## linecache.checkcache(filename)
-        ## lines = linecache.getlines(filename)
-        ## if lines:
-        ##     self.Text = ''.join(lines)
-        with open(filename) as i:
-            self.Text = i.read()
+        linecache.checkcache(filename)
+        lines = linecache.getlines(filename)
+        if lines:
+            self.Text = ''.join(lines)
             self.target = filename
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
