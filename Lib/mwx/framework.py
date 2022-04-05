@@ -811,9 +811,9 @@ Args:
                 &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
+        self.ghost.AddPage(self.Log,     "*Log*")
         self.ghost.AddPage(self.Help,    "*Help*")
         self.ghost.AddPage(self.History, "History")
-        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
@@ -914,21 +914,15 @@ Args:
         
         @self.Scratch.handler.bind('f5 pressed')
         def eval_buffer(v):
-            try:
-                exec(self.Scratch.Text, self.current_shell.locals)
-                dispatcher.send(signal='Interpreter.push',
-                                sender=self, command=None, more=False)
-            except Exception as e:
-                err = re.findall(r"File \".*\", line ([0-9]+)",
-                                 traceback.format_exc(), re.I)
-                if err:
-                    self.Scratch.linemark = int(err[-1]) - 1
-                self.message("- {}".format(e))
-            else:
-                self.Scratch.linemark = None
-                self.message("Evaluated successfully.")
+            self.Scratch.py_eval_buffer(locals=self.current_shell.locals)
         
+        self.Log.set_style(Nautilus.STYLE)
         self.Log.show_folder()
+        
+        @self.Log.handler.bind('f5 pressed')
+        def eval_buffer(v):
+            ## assert self.Log.target == inspect.getfile(self.current_shell.target.this)
+            self.Log.py_eval_buffer(locals=self.current_shell.locals)
         
         @self.Log.handler.bind('line_set')
         def start(v):
@@ -1184,7 +1178,7 @@ Args:
         nb = self.console
         j = nb.GetPageIndex(win)
         if j == -1:
-            nb.AddPage(win, title or typename(win))
+            nb.AddPage(win, title or typename(win.target))
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
@@ -1256,13 +1250,11 @@ Args:
         """Clear the current shell"""
         shell = self.current_shell
         shell.clear()
-        self.handler('shell_cleared', shell)
     
     def clone_shell(self, target=None):
         """Clone the current shell"""
         shell = self.current_shell
         shell.clone(target or shell.target)
-        self.handler('shell_cloned', shell)
     
     def close_shell(self):
         """Close the current shell"""
@@ -1274,7 +1266,6 @@ Args:
         j = nb.GetPageIndex(shell)
         if j != -1:
             nb.DeletePage(j)
-            self.handler('shell_closed', None)
     
     ## --------------------------------
     ## Find text dialog
@@ -1686,6 +1677,28 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 line = line[len(ps):]
                 break
         return line
+    
+    def py_eval_buffer(self, locals):
+        try:
+            ## self.message("Execution in the buffer...")
+            ## exec(self.Text, locals)
+            cmd = compile(self.Text, "<string>", "exec")
+            exec(cmd, locals)
+            dispatcher.send(signal='Interpreter.push',
+                            sender=self, command=None, more=False)
+        except Exception as e:
+            err = re.findall(r"File \"(.*?)\", line ([0-9]+)",
+                             traceback.format_exc(), re.I)
+            if err:
+                filename, lineno = err[-1]
+                self.linemark = int(lineno) - 1
+                self.goto_line(self.linemark)
+                wx.CallAfter(self.EnsureCaretVisible)
+            self.message("- {}".format(e))
+            ## traceback.print_exc()
+        else:
+            self.linemark = None
+            self.message("Evaluated successfully.")
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -2246,7 +2259,7 @@ class Editor(EditWindow, EditorInterface):
                         if dlg.ShowModal() == wx.ID_YES:
                             self.load(f, self.MarkerNext(0, 1)+1)
                             self.goto_char(p)
-                            wx.CallAfter(self.recenter)
+                            wx.CallAfter(self.EnsureCaretVisible)
                         if self.HasCapture():
                             self.ReleaseMouse()
             except (TypeError, FileNotFoundError):
@@ -2979,7 +2992,7 @@ Flaky nutshell:
         try:
             builtins.debug = self.parent.debug
         except AttributeError:
-            builtins.debug = monitor
+            builtins.debug = monit
         try:
             ## builtins.edit = self.parent.Log.load
             builtins.load = lambda f: self.parent.Log.load(where(f))
@@ -3291,7 +3304,7 @@ Flaky nutshell:
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target,
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
-        self.parent.handler('add_page', shell, typename(target), show=True)
+        self.parent.handler('add_page', shell)
         self.handler('shell_cloned', shell)
         return shell
     
@@ -3682,7 +3695,7 @@ def watchit(target=None, **kwargs):
     return it._frame
 
 
-def monitor(target=None, **kwargs):
+def monit(target=None, **kwargs):
     """Wx.py tool for watching events of the target
     """
     from wx.lib.eventwatcher import EventWatcher
