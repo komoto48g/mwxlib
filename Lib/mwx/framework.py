@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.4"
+__version__ = "0.55.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -936,12 +936,14 @@ Args:
             if filename and not self.debugger.busy:
                 self.debugger.watch((filename, v))
                 self.Log.MarkerDeleteAll(4)
+                self.message("Debugger has started traceing.")
         
         @self.Log.handler.bind('line_unset')
         def stop(v):
             if not self.debugger.busy: # don't unset while debugging
                 self.debugger.unwatch()
                 self.Log.MarkerAdd(v, 4)
+                self.message("Debugger finished tracing.")
         
         self.Init()
         self._mgr.Update()
@@ -2409,7 +2411,7 @@ Flaky nutshell:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
             obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-        except AttributeError as e:
+        except AttributeError:
             ## print("- cannot overwrite target vars: {!r}".format(e))
             pass
     
@@ -2954,10 +2956,6 @@ Flaky nutshell:
         builtins.where = where
         builtins.watch = watchit
         builtins.filling = filling
-        try:
-            builtins.edit = self.Parent.Log.load # not parent yet
-        except AttributeError:
-            pass
     
     def on_activated(self, shell):
         """Called when shell:self is activated
@@ -2982,6 +2980,11 @@ Flaky nutshell:
             builtins.debug = self.parent.debug
         except AttributeError:
             builtins.debug = monitor
+        try:
+            ## builtins.edit = self.parent.Log.load
+            builtins.load = lambda f: self.parent.Log.load(where(f))
+        except AttributeError:
+            pass
         
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
@@ -2998,6 +3001,8 @@ Flaky nutshell:
             del builtins.timeit
             del builtins.profile
             del builtins.debug
+            ## del builtins.edit
+            del builtins.load
         except AttributeError:
             pass
     
