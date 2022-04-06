@@ -276,7 +276,11 @@ def split_words(text):
     tokens = _split_tokens(text)
     while tokens:
         words = _extract_words_from_tokens(tokens)
-        phrases.append(words or tokens.pop(0)) # extracted words or a separator
+        if not words:
+            words = tokens.pop(0)
+        if words.startswith('#'): # eliminates comments
+            break
+        phrases.append(words)
     return phrases
 
 
