@@ -329,7 +329,8 @@ class KeyCtrlInterfaceMixin(object):
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
-                       keyevent : [ keymap, self.prefix_command_hook, skip ],
+                       keyevent : [ keymap, self.prefix_command_hook,
+                                            skip ], # => skip to parents
             },
             keymap : {
                          'quit' : [ default, ],
@@ -343,10 +344,9 @@ class KeyCtrlInterfaceMixin(object):
     
     def prefix_command_hook(self, evt):
         win = wx.Window.FindFocus()
-        ## if isinstance(win, wx.TextEntry) and win.StringSelection\
-        ## or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
-        ##   # or any other of pre-selection-p?
-        if getattr(win, 'StringSelection', None):
+        if isinstance(win, wx.TextEntry) and win.StringSelection\
+        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
+            ## or any other of pre-selection-p?
             self.handler('quit', evt)
             return
         self.message(evt.key + '-')
@@ -666,6 +666,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
+        self.make_keymap('C-c')
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -724,6 +725,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
+        self.make_keymap('C-c')
     
     def Destroy(self):
         return wx.MiniFrame.Destroy(self)
@@ -914,15 +916,18 @@ Args:
         
         @self.Scratch.handler.bind('f5 pressed')
         def eval_buffer(v):
-            self.Scratch.py_eval_buffer(locals=self.current_shell.locals)
+            self.Scratch.py_eval_buffer(self.current_shell.locals)
         
         self.Log.set_style(Nautilus.STYLE)
         self.Log.show_folder()
         
         @self.Log.handler.bind('f5 pressed')
         def eval_buffer(v):
-            ## assert self.Log.target == inspect.getfile(self.current_shell.target.this)
-            self.Log.py_eval_buffer(locals=self.current_shell.locals)
+            this = self.current_shell.target.this # module is __main__?
+            name = getattr(this, '__name__', '?')
+            this.__name__ = '?'
+            self.Log.py_eval_buffer(self.current_shell.locals, self.Log.target)
+            this.__name__ = name
         
         @self.Log.handler.bind('line_set')
         def start(v):
@@ -1424,7 +1429,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
             'C-c' : {
                     '* pressed' : (0, skip),
-                  'C-c pressed' : (0, _F(self.goto_matched_paren)),
+                  'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
             },
         })
         self.handler.clear(0)
@@ -1678,11 +1683,16 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 break
         return line
     
-    def py_eval_buffer(self, locals):
+    def py_eval_buffer(self, locals, filename=None):
         try:
-            ## self.message("Execution in the buffer...")
+            if not filename:
+                filename = '<string>'
+            else:
+                dirname = os.path.dirname(filename)
+                if os.path.isdir(dirname) and dirname not in sys.path:
+                    sys.path.append(dirname)
             ## exec(self.Text, locals)
-            cmd = compile(self.Text, "<string>", "exec")
+            cmd = compile(self.Text, filename, "exec")
             exec(cmd, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
@@ -2994,9 +3004,14 @@ Flaky nutshell:
         except AttributeError:
             builtins.debug = monit
         try:
-            ## builtins.edit = self.parent.Log.load
-            builtins.load = lambda f: self.parent.Log.load(where(f))
-        except AttributeError:
+            loader = self.parent.Log.load
+            def _Load(obj):
+                if isinstance(obj, string_types):
+                    return loader(obj)
+                return loader(where(obj))
+            builtins.load = _Load
+        except AttributeError as e:
+            print("e =", e)
             pass
         
     def on_inactivated(self, shell):
@@ -3014,7 +3029,6 @@ Flaky nutshell:
             del builtins.timeit
             del builtins.profile
             del builtins.debug
-            ## del builtins.edit
             del builtins.load
         except AttributeError:
             pass
@@ -3742,10 +3756,10 @@ if 1:
     )
     frm.editor = Editor(frm)
     
-    frm.handler.debug = 0
+    frm.handler.debug = 4
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 0
-    frm.shellframe.rootshell.handler.debug = 4
+    frm.shellframe.handler.debug = 4
+    frm.shellframe.rootshell.handler.debug = 0
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1
