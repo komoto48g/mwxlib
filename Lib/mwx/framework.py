@@ -918,16 +918,7 @@ Args:
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.locals)
         
-        self.Log.set_style(Nautilus.STYLE)
         self.Log.show_folder()
-        
-        @self.Log.handler.bind('f5 pressed')
-        def eval_buffer(v):
-            this = self.current_shell.target.this # module is __main__?
-            name = getattr(this, '__name__', '?')
-            this.__name__ = '?'
-            self.Log.py_eval_buffer(self.current_shell.locals, self.Log.target)
-            this.__name__ = name
         
         @self.Log.handler.bind('line_set')
         def start(v):
@@ -2872,7 +2863,7 @@ Flaky nutshell:
     def duplicate_command(self, clear=True):
         if self.CanEdit():
             return
-        cmd = self.getMultilineCommand() # Don't use in prompt
+        cmd = self.getMultilineCommand()
         if cmd:
             if clear:
                 self.clearCommand()
@@ -3106,8 +3097,7 @@ Flaky nutshell:
             pass
     
     @classmethod
-    def regulate_cmd(self, text):
-        lf = '\n'
+    def regulate_cmd(self, text, lf='\n'):
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
@@ -3163,7 +3153,8 @@ Flaky nutshell:
                 break
         return self.cpos - lp
     
-    ## cf. getCommand(), getMultilineCommand() -> caret-line-text that has a prompt (>>>)
+    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
+    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
     
     @property
     def cmdlc(self):
@@ -3198,9 +3189,8 @@ Flaky nutshell:
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                text = self.lstripPrompt(text)
-                text = self.fixLineEndings(text)
-                command = self.regulate_cmd(text)
+                command = self.regulate_cmd(
+                            self.fixLineEndings(self.lstripPrompt(text)))
                 lf = '\n'
                 offset = ''
                 if rectangle:
@@ -3229,6 +3219,9 @@ Flaky nutshell:
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
+    
+    def exec(self, text):
+        return exec(text, self.globals, self.locals)
     
     def runcode(self, code):
         ## Monkey-patch for wx.py.interpreter.runcode
@@ -3264,9 +3257,8 @@ Flaky nutshell:
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        text = self.lstripPrompt(text)
-        text = self.fixLineEndings(text)
-        command = self.regulate_cmd(text)
+        command = self.regulate_cmd(
+                    self.fixLineEndings(self.lstripPrompt(text)))
         commands = []
         c = ''
         for line in command.split(lf):
@@ -3328,7 +3320,7 @@ Flaky nutshell:
     
     def CallTipShow(self, pos, tip):
         """Show a call tip containing a definition near position pos.
-        (override) Snip it if the tip is too big
+        (override) Snip the tip of max N lines if it is too long.
         """
         N = 11
         lines = tip.splitlines()
@@ -3344,20 +3336,19 @@ Flaky nutshell:
         if listr:
             self.AutoCompShow(offset, listr)
     
-    def gen_tooltip(self, text):
+    def gen_tooltip(self, text, N=11):
         """Call ToolTip of the selected word or focused line"""
         if self.CallTipActive():
             self.CallTipCancel()
+        
+        tokens = ut.split_words(text)
+        cmd = self.magic_interpret(tokens)
         try:
-            tokens = ut.split_words(text)
-            cmd = self.magic_interpret(tokens)
-            obj = self.eval(cmd)
-            text = cmd
+            tip = pformat(self.eval(cmd))
+            self.CallTipShow(self.cpos, tip)
         except Exception:
-            obj = self.eval(text)
-        tip = pformat(obj)
-        self.CallTipShow(self.cpos, tip)
-        self.message(text)
+            self.exec(cmd)
+        self.message(cmd)
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
@@ -3371,8 +3362,15 @@ Flaky nutshell:
     def call_tooltip(self, evt):
         """Call ToolTip of the selected word or command line"""
         try:
-            text = self.SelectedText or self.getCommand() or self.expr_at_caret
+            ## text = self.SelectedText or self.getCommand() or self.expr_at_caret
+            text = self.SelectedText
+            if not text:
+                if self.CanEdit():
+                    text = self.cmdline
+                else:
+                    text = self.getMultilineCommand() or self.expr_at_caret
             if text:
+                text = self.regulate_cmd(self.lstripPrompt(text))
                 self.gen_tooltip(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))
@@ -3393,7 +3391,7 @@ Flaky nutshell:
         if not self.CallTipActive():
             text = self.SelectedText or self.expr_at_caret
             if text:
-                self.autoCallTipShow(text, False, True)
+                self.autoCallTipShow(text, False, True) # => CallTipShow
     
     def clear_autocomp(self, evt):
         """Clear Autocomp, selection, and message"""
@@ -3740,6 +3738,7 @@ if 1:
     self.shellframe
     self.shellframe.rootshell
     dive(self.shellframe)
+    dive(self.shellframe.shell)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
