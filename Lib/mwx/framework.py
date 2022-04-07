@@ -2909,8 +2909,8 @@ Flaky nutshell:
         
         Note: This is called before run, execute, and original magic.
         """
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n"   # [`] SEPARATOR_CHARS; nospace, nocomma
-        sep2 = "`@=+-/*%<>&|^~;, \t\r\n" # [@] SEPARATOR_CHARS;
+        sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] SEPARATOR_CHARS; nospace, nocomma
+        sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] SEPARATOR_CHARS;
         
         def _eats(r, sep):
             s = ''
