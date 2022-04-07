@@ -916,7 +916,8 @@ Args:
         
         @self.Scratch.handler.bind('f5 pressed')
         def eval_buffer(v):
-            self.Scratch.py_eval_buffer(self.current_shell.locals)
+            self.Scratch.py_eval_buffer(self.current_shell.globals,
+                                        self.current_shell.locals)
         
         self.Log.show_folder()
         
@@ -1674,24 +1675,25 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 break
         return line
     
-    def py_eval_buffer(self, locals, filename=None):
+    def py_eval_buffer(self, globals, locals, filename=None):
+        if not filename:
+            filename = '<string>'
+        else:
+            ## to eval file, add path to sys
+            dirname = os.path.dirname(filename)
+            if os.path.isdir(dirname) and dirname not in sys.path:
+                sys.path.append(dirname)
         try:
-            if not filename:
-                filename = '<string>'
-            else:
-                dirname = os.path.dirname(filename)
-                if os.path.isdir(dirname) and dirname not in sys.path:
-                    sys.path.append(dirname)
-            ## exec(self.Text, locals)
-            cmd = compile(self.Text, filename, "exec")
-            exec(cmd, locals)
+            ## exec(self.Text, globals, locals)
+            code = compile(self.Text, filename, "exec")
+            exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except Exception as e:
             err = re.findall(r"File \"(.*?)\", line ([0-9]+)",
                              traceback.format_exc(), re.I)
             if err:
-                filename, lineno = err[-1]
+                _filename, lineno = err[-1]
                 self.linemark = int(lineno) - 1
                 self.goto_line(self.linemark)
                 wx.CallAfter(self.EnsureCaretVisible)
@@ -3041,7 +3043,7 @@ Flaky nutshell:
         Note: text is raw output:str with no magic cast
         """
         ln = self.LineFromPosition(self.bolc)
-        err = re.findall(r"File \".*\", line ([0-9]+)", text, re.I)
+        err = re.findall(r"File \".*?\", line ([0-9]+)", text, re.I)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
@@ -3221,7 +3223,9 @@ Flaky nutshell:
         return eval(text, self.globals, self.locals)
     
     def exec(self, text):
-        return exec(text, self.globals, self.locals)
+        exec(text, self.globals, self.locals)
+        dispatcher.send(signal='Interpreter.push',
+                        sender=self, command=None, more=False)
     
     def runcode(self, code):
         ## Monkey-patch for wx.py.interpreter.runcode
@@ -3346,9 +3350,24 @@ Flaky nutshell:
         try:
             tip = pformat(self.eval(cmd))
             self.CallTipShow(self.cpos, tip)
+            self.message(cmd)
+            return
         except Exception:
-            self.exec(cmd)
-        self.message(cmd)
+            pass
+        try:
+            code = compile(cmd, "<string>", "exec")
+            self.exec(code)
+        except Exception:
+            err = re.findall(r"File \".*?\", line ([0-9]+)",
+                             traceback.format_exc(), re.I)
+            if err:
+                ln = self.LineFromPosition(self.bolc)
+                self.linemark = ln + int(err[-1]) - 1
+            ## traceback.print_exc()
+            raise
+        else:
+            self.linemark = None
+            self.message("Evaluated successfully.")
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
@@ -3376,6 +3395,7 @@ Flaky nutshell:
             self.message("- {}: {!r}".format(e, text))
     
     def call_helpTip2(self, evt):
+        """Show help:str for the selected topic"""
         try:
             text = self.SelectedText or self.expr_at_caret
             if text:
