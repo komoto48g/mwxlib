@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.5"
+__version__ = "0.55.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -915,6 +915,7 @@ Args:
             self.SetTitleWindow(self.current_shell.target)
         
         @self.Scratch.handler.bind('f5 pressed')
+        @self.Scratch.handler.bind('C-j pressed')
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.globals,
                                         self.current_shell.locals)
@@ -2913,11 +2914,11 @@ Flaky nutshell:
         
         def _eats(r, sep):
             s = ''
-            while r and r[0].isspace(): # skip whites
-                r.pop(0)
-            while r and r[0] not in sep: # eat until seps appear
+            while r and r[0] in ' \t': # skip whites
                 s += r.pop(0)
-            return ''.join(s)
+            while r and r[0] not in sep: # eats until sep appears
+                s += r.pop(0)
+            return s
         
         lhs = ''
         for i, c in enumerate(tokens):
@@ -2939,7 +2940,7 @@ Flaky nutshell:
             
             if c == '?':
                 head, sep, hint = lhs.rpartition('.')
-                cc, pred = re.search(r"(\?+)\s*(.*)", c+''.join(rs)).groups()
+                cc, pred = re.search(r"(\?+)\s*(.*)", c + ''.join(rs)).groups()
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=locals())".format(
                         head, hint.strip(), len(cc)<2, pred or None))
@@ -2951,6 +2952,10 @@ Flaky nutshell:
             
             if c in ';\r\n':
                 return lhs + c + self.magic_interpret(rs)
+            
+            if c.startswith('#'): # eliminates comment
+                rhs = _eats(rs, '\r\n') # eats os.linesep
+                return lhs + c + rhs + self.magic_interpret(rs)
             
             lhs += c
         return ''.join(tokens)
