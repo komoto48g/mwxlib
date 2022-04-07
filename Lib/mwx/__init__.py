@@ -69,7 +69,7 @@ def deb(target=None, app=None, startup=None, **kwargs):
         shell = frame.rootshell
         try:
             startup(shell)
-            frame.handler.bind('shell_cloned', startup)
+            frame.handler.bind('add_page', startup)
         except Exception as e:
             shell.message("- Failed to startup: {!r}".format(e))
             traceback.print_exc()

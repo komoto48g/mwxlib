@@ -329,7 +329,8 @@ class KeyCtrlInterfaceMixin(object):
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
-                       keyevent : [ keymap, self.prefix_command_hook, skip ],
+                       keyevent : [ keymap, self.prefix_command_hook,
+                                            skip ], # => skip to parents
             },
             keymap : {
                          'quit' : [ default, ],
@@ -343,10 +344,9 @@ class KeyCtrlInterfaceMixin(object):
     
     def prefix_command_hook(self, evt):
         win = wx.Window.FindFocus()
-        ## if isinstance(win, wx.TextEntry) and win.StringSelection\
-        ## or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
-        ##   # or any other of pre-selection-p?
-        if getattr(win, 'StringSelection', None):
+        if isinstance(win, wx.TextEntry) and win.StringSelection\
+        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
+            ## or any other of pre-selection-p?
             self.handler('quit', evt)
             return
         self.message(evt.key + '-')
@@ -666,6 +666,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
+        self.make_keymap('C-c')
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -724,6 +725,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
+        self.make_keymap('C-c')
     
     def Destroy(self):
         return wx.MiniFrame.Destroy(self)
@@ -811,9 +813,9 @@ Args:
                 &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
+        self.ghost.AddPage(self.Log,     "*Log*")
         self.ghost.AddPage(self.Help,    "*Help*")
         self.ghost.AddPage(self.History, "History")
-        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
         self.ghost.TabCtrlHeight = -1
@@ -914,19 +916,8 @@ Args:
         
         @self.Scratch.handler.bind('f5 pressed')
         def eval_buffer(v):
-            try:
-                exec(self.Scratch.Text, self.current_shell.locals)
-                dispatcher.send(signal='Interpreter.push',
-                                sender=self, command=None, more=False)
-            except Exception as e:
-                err = re.findall(r"File \".*\", line ([0-9]+)",
-                                 traceback.format_exc(), re.I)
-                if err:
-                    self.Scratch.linemark = int(err[-1]) - 1
-                self.message("- {}".format(e))
-            else:
-                self.Scratch.linemark = None
-                self.message("Evaluated successfully.")
+            self.Scratch.py_eval_buffer(self.current_shell.globals,
+                                        self.current_shell.locals)
         
         self.Log.show_folder()
         
@@ -1184,7 +1175,7 @@ Args:
         nb = self.console
         j = nb.GetPageIndex(win)
         if j == -1:
-            nb.AddPage(win, title or typename(win))
+            nb.AddPage(win, title or typename(win.target))
             nb.TabCtrlHeight = -1
         self.PopupWindow(win, show)
     
@@ -1256,13 +1247,11 @@ Args:
         """Clear the current shell"""
         shell = self.current_shell
         shell.clear()
-        self.handler('shell_cleared', shell)
     
     def clone_shell(self, target=None):
         """Clone the current shell"""
         shell = self.current_shell
         shell.clone(target or shell.target)
-        self.handler('shell_cloned', shell)
     
     def close_shell(self):
         """Close the current shell"""
@@ -1274,7 +1263,6 @@ Args:
         j = nb.GetPageIndex(shell)
         if j != -1:
             nb.DeletePage(j)
-            self.handler('shell_closed', None)
     
     ## --------------------------------
     ## Find text dialog
@@ -1433,7 +1421,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
             'C-c' : {
                     '* pressed' : (0, skip),
-                  'C-c pressed' : (0, _F(self.goto_matched_paren)),
+                  'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
             },
         })
         self.handler.clear(0)
@@ -1686,6 +1674,34 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 line = line[len(ps):]
                 break
         return line
+    
+    def py_eval_buffer(self, globals, locals, filename=None):
+        if not filename:
+            filename = '<string>'
+        else:
+            ## to eval file, add path to sys
+            dirname = os.path.dirname(filename)
+            if os.path.isdir(dirname) and dirname not in sys.path:
+                sys.path.append(dirname)
+        try:
+            ## exec(self.Text, globals, locals)
+            code = compile(self.Text, filename, "exec")
+            exec(code, globals, locals)
+            dispatcher.send(signal='Interpreter.push',
+                            sender=self, command=None, more=False)
+        except Exception as e:
+            err = re.findall(r"File \"(.*?)\", line ([0-9]+)",
+                             traceback.format_exc(), re.I)
+            if err:
+                _filename, lineno = err[-1]
+                self.linemark = int(lineno) - 1
+                self.goto_line(self.linemark)
+                wx.CallAfter(self.EnsureCaretVisible)
+            self.message("- {}".format(e))
+            ## traceback.print_exc()
+        else:
+            self.linemark = None
+            self.message("Evaluated successfully.")
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -2246,7 +2262,7 @@ class Editor(EditWindow, EditorInterface):
                         if dlg.ShowModal() == wx.ID_YES:
                             self.load(f, self.MarkerNext(0, 1)+1)
                             self.goto_char(p)
-                            wx.CallAfter(self.recenter)
+                            wx.CallAfter(self.EnsureCaretVisible)
                         if self.HasCapture():
                             self.ReleaseMouse()
             except (TypeError, FileNotFoundError):
@@ -2849,7 +2865,7 @@ Flaky nutshell:
     def duplicate_command(self, clear=True):
         if self.CanEdit():
             return
-        cmd = self.getMultilineCommand() # Don't use in prompt
+        cmd = self.getMultilineCommand()
         if cmd:
             if clear:
                 self.clearCommand()
@@ -2979,11 +2995,16 @@ Flaky nutshell:
         try:
             builtins.debug = self.parent.debug
         except AttributeError:
-            builtins.debug = monitor
+            builtins.debug = monit
         try:
-            ## builtins.edit = self.parent.Log.load
-            builtins.load = lambda f: self.parent.Log.load(where(f))
-        except AttributeError:
+            loader = self.parent.Log.load
+            def _Load(obj):
+                if isinstance(obj, string_types):
+                    return loader(obj)
+                return loader(where(obj))
+            builtins.load = _Load
+        except AttributeError as e:
+            print("e =", e)
             pass
         
     def on_inactivated(self, shell):
@@ -3001,7 +3022,6 @@ Flaky nutshell:
             del builtins.timeit
             del builtins.profile
             del builtins.debug
-            ## del builtins.edit
             del builtins.load
         except AttributeError:
             pass
@@ -3023,7 +3043,7 @@ Flaky nutshell:
         Note: text is raw output:str with no magic cast
         """
         ln = self.LineFromPosition(self.bolc)
-        err = re.findall(r"File \".*\", line ([0-9]+)", text, re.I)
+        err = re.findall(r"File \".*?\", line ([0-9]+)", text, re.I)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
@@ -3079,8 +3099,7 @@ Flaky nutshell:
             pass
     
     @classmethod
-    def regulate_cmd(self, text):
-        lf = '\n'
+    def regulate_cmd(self, text, lf='\n'):
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
@@ -3136,7 +3155,8 @@ Flaky nutshell:
                 break
         return self.cpos - lp
     
-    ## cf. getCommand(), getMultilineCommand() -> caret-line-text that has a prompt (>>>)
+    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
+    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
     
     @property
     def cmdlc(self):
@@ -3171,9 +3191,8 @@ Flaky nutshell:
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                text = self.lstripPrompt(text)
-                text = self.fixLineEndings(text)
-                command = self.regulate_cmd(text)
+                command = self.regulate_cmd(
+                            self.fixLineEndings(self.lstripPrompt(text)))
                 lf = '\n'
                 offset = ''
                 if rectangle:
@@ -3202,6 +3221,11 @@ Flaky nutshell:
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)
+    
+    def exec(self, text):
+        exec(text, self.globals, self.locals)
+        dispatcher.send(signal='Interpreter.push',
+                        sender=self, command=None, more=False)
     
     def runcode(self, code):
         ## Monkey-patch for wx.py.interpreter.runcode
@@ -3237,9 +3261,8 @@ Flaky nutshell:
         ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
         ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        text = self.lstripPrompt(text)
-        text = self.fixLineEndings(text)
-        command = self.regulate_cmd(text)
+        command = self.regulate_cmd(
+                    self.fixLineEndings(self.lstripPrompt(text)))
         commands = []
         c = ''
         for line in command.split(lf):
@@ -3291,7 +3314,7 @@ Flaky nutshell:
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target,
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
-        self.parent.handler('add_page', shell, typename(target), show=True)
+        self.parent.handler('add_page', shell)
         self.handler('shell_cloned', shell)
         return shell
     
@@ -3301,7 +3324,7 @@ Flaky nutshell:
     
     def CallTipShow(self, pos, tip):
         """Show a call tip containing a definition near position pos.
-        (override) Snip it if the tip is too big
+        (override) Snip the tip of max N lines if it is too long.
         """
         N = 11
         lines = tip.splitlines()
@@ -3317,20 +3340,34 @@ Flaky nutshell:
         if listr:
             self.AutoCompShow(offset, listr)
     
-    def gen_tooltip(self, text):
+    def gen_tooltip(self, text, N=11):
         """Call ToolTip of the selected word or focused line"""
         if self.CallTipActive():
             self.CallTipCancel()
+        
+        tokens = ut.split_words(text)
+        cmd = self.magic_interpret(tokens)
         try:
-            tokens = ut.split_words(text)
-            cmd = self.magic_interpret(tokens)
-            obj = self.eval(cmd)
-            text = cmd
+            tip = pformat(self.eval(cmd))
+            self.CallTipShow(self.cpos, tip)
+            self.message(cmd)
+            return
         except Exception:
-            obj = self.eval(text)
-        tip = pformat(obj)
-        self.CallTipShow(self.cpos, tip)
-        self.message(text)
+            pass
+        try:
+            code = compile(cmd, "<string>", "exec")
+            self.exec(code)
+        except Exception:
+            err = re.findall(r"File \".*?\", line ([0-9]+)",
+                             traceback.format_exc(), re.I)
+            if err:
+                ln = self.LineFromPosition(self.bolc)
+                self.linemark = ln + int(err[-1]) - 1
+            ## traceback.print_exc()
+            raise
+        else:
+            self.linemark = None
+            self.message("Evaluated successfully.")
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
@@ -3344,13 +3381,21 @@ Flaky nutshell:
     def call_tooltip(self, evt):
         """Call ToolTip of the selected word or command line"""
         try:
-            text = self.SelectedText or self.getCommand() or self.expr_at_caret
+            ## text = self.SelectedText or self.getCommand() or self.expr_at_caret
+            text = self.SelectedText
+            if not text:
+                if self.CanEdit():
+                    text = self.cmdline
+                else:
+                    text = self.getMultilineCommand() or self.expr_at_caret
             if text:
+                text = self.regulate_cmd(self.lstripPrompt(text))
                 self.gen_tooltip(text)
         except Exception as e:
             self.message("- {}: {!r}".format(e, text))
     
     def call_helpTip2(self, evt):
+        """Show help:str for the selected topic"""
         try:
             text = self.SelectedText or self.expr_at_caret
             if text:
@@ -3366,7 +3411,7 @@ Flaky nutshell:
         if not self.CallTipActive():
             text = self.SelectedText or self.expr_at_caret
             if text:
-                self.autoCallTipShow(text, False, True)
+                self.autoCallTipShow(text, False, True) # => CallTipShow
     
     def clear_autocomp(self, evt):
         """Clear Autocomp, selection, and message"""
@@ -3682,7 +3727,7 @@ def watchit(target=None, **kwargs):
     return it._frame
 
 
-def monitor(target=None, **kwargs):
+def monit(target=None, **kwargs):
     """Wx.py tool for watching events of the target
     """
     from wx.lib.eventwatcher import EventWatcher
@@ -3713,6 +3758,7 @@ if 1:
     self.shellframe
     self.shellframe.rootshell
     dive(self.shellframe)
+    dive(self.shellframe.shell)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
@@ -3729,10 +3775,10 @@ if 1:
     )
     frm.editor = Editor(frm)
     
-    frm.handler.debug = 0
+    frm.handler.debug = 4
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 0
-    frm.shellframe.rootshell.handler.debug = 4
+    frm.shellframe.handler.debug = 4
+    frm.shellframe.rootshell.handler.debug = 0
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1
