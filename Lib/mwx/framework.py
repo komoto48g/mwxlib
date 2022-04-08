@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.6"
+__version__ = "0.55.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1606,7 +1606,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
-    py_indent_reg = r"if|else|elif|for|while|with|def|class|try|except|finally".split('|')
+    py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
     py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
     py_closing_re = r"break|pass|return|raise|continue"
     
@@ -1614,25 +1614,25 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if self.SelectedText:
             evt.Skip()
         else:
-            self.indent_line()
+            self.py_indent_line()
     
     def on_outdent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
         else:
-            self.outdent_line()
+            self.py_outdent_line()
     
-    def indent_line(self):
+    def py_indent_line(self):
         """Indent the current line"""
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
         lstr = text.lstrip()                         # w/ no-indent
         p = self.eol - len(lstr)
         offset = max(0, self.cpos - p)
-        indent = self.calc_indent()
+        indent = self.py_calc_indent()
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
-    def outdent_line(self):
+    def py_outdent_line(self):
         """Outdent the current line"""
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
         lstr = text.lstrip()                         # w/ no-indent
@@ -1642,26 +1642,29 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
-    def calc_indent(self):
+    def py_calc_indent(self):
         """Calculate indent spaces from prefious line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
         line = self.GetLine(self.cline - 1) # check previous line
-        line = self.strip_prompts(line)
+        line = self.py_strip_prompts(line)
         lstr = line.lstrip()
         if not lstr:
             indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
         else:
             indent = line[:(len(line)-len(lstr))]
             try:
-                texts = list(shlex.shlex(lstr)) # skip comment
-                if texts[-1] == ':' and texts[0] in self.py_indent_reg:
-                    indent += ' '*4
+                texts = list(shlex.shlex(lstr)) # strip comment
+                if texts[-1] == ':':
+                    if re.match(self.py_indent_re, texts[0]):
+                        indent += ' '*4
+                elif re.match(self.py_closing_re, texts[0]):
+                    return indent[:-4]
             except ValueError: # shlex failed to parse
                 return indent
         
         line = self.GetLine(self.cline) # check current line
-        line = self.strip_prompts(line)
+        line = self.py_strip_prompts(line)
         lstr = line.lstrip()
         if re.match(self.py_outdent_re, lstr):
             indent = indent[:-4]
@@ -1669,7 +1672,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return indent
     
     @classmethod
-    def strip_prompts(self, line):
+    def py_strip_prompts(self, line):
         for ps in (sys.ps1, sys.ps2, sys.ps3):
             if line.startswith(ps):
                 line = line[len(ps):]
@@ -3232,6 +3235,8 @@ Flaky nutshell:
         return eval(text, self.globals, self.locals)
     
     def exec(self, text):
+        ## if isinstance(text, string_types):
+        ##     text = compile(text, "<string>", "exec")
         exec(text, self.globals, self.locals)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
@@ -3356,27 +3361,27 @@ Flaky nutshell:
         
         tokens = ut.split_words(text)
         cmd = self.magic_interpret(tokens)
+        
         try:
-            tip = pformat(self.eval(cmd))
-            self.CallTipShow(self.cpos, tip)
+            tip = self.eval(cmd)
+            self.CallTipShow(self.cpos, pformat(tip))
             self.message(cmd)
             return
         except Exception:
             pass
+        
         try:
-            code = compile(cmd, "<string>", "exec")
-            self.exec(code)
+            self.exec(cmd)
+            self.linemark = None
+            self.message("Evaluated successfully.")
         except Exception:
             err = re.findall(r"File \".*?\", line ([0-9]+)",
                              traceback.format_exc(), re.I)
             if err:
-                ln = self.LineFromPosition(self.bolc)
+                ln = self.LineFromPosition(self.bolc) # for current-region only
                 self.linemark = ln + int(err[-1]) - 1
             ## traceback.print_exc()
             raise
-        else:
-            self.linemark = None
-            self.message("Evaluated successfully.")
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
