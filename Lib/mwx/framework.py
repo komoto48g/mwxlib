@@ -1468,17 +1468,19 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
-        self.SetMarginSensitive(0, False)
+        self.SetMarginSensitive(0, True)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
-        self.SetMarginSensitive(1, False)
+        self.SetMarginSensitive(1, True)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
         self.SetMarginSensitive(2, False) # cf. show_folder
+        
+        self.SetFoldFlags(0x10) # draw below if not expanded
         
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -1730,8 +1732,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
-        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
         
+        ## Note: level indicates indent-header flag or indent-level number
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
         else:
@@ -1740,22 +1743,37 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
         Menu.Popup(self, [
             (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
-                lambda v: self.fold_all()),
+                lambda v: self.FoldAll(0)),
                 
             (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
-                lambda v: self.unfold_all()),
+                lambda v: self.FoldAll(1)),
         ])
+    
+    def toggle_fold(self, lc):
+        """Similar to ToggleFold, but the top header containing
+        the specified line switches between expanded and contracted.
+        """
+        while 1:
+            lp = self.GetFoldParent(lc) # get folding root
+            if lp == -1:
+                break
+            lc = lp
+        self.ToggleFold(lc)
     
     def on_linesel_begin(self, evt):
         p = evt.Position
         self.goto_char(p)
-        q = self.eol
-        for eol in '\r\n':
-            if eol == self.get_char(q):
-                q += 1
-        self.cpos = q
-        self._anchors = (p, q)
+        self.cpos = q = self.eol
         self.CaptureMouse()
+        if 1:
+            lc = self.LineFromPosition(p)
+            if not self.GetFoldExpanded(lc): # :not expanded
+                self.CharRightExtend()
+                q = self.cpos
+                print("q, self.TextLength =", q, self.TextLength)
+                if q == self.TextLength:
+                    q -= 1
+        self._anchors = [p, q]
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
@@ -1765,6 +1783,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             line = self.GetLine(lc)
             self.cpos = p + len(line)
             self.Anchor = po
+            if not self.GetFoldExpanded(lc): # :not expanded
+                self.CharRightExtend()
+                self._anchors[1] = self.cpos
         else:
             self.cpos = p
             self.Anchor = qo
@@ -1773,45 +1794,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
-    
-    def toggle_fold(self, lc=None):
-        """Toggle fold/unfold the header including the given line"""
-        if lc is None:
-            lc = self.cline
-        while 1:
-            lp = self.GetFoldParent(lc)
-            if lp == -1:
-                break
-            lc = lp
-        self.ToggleFold(lc)
-    
-    def fold_all(self):
-        """Fold all headers"""
-        ln = self.LineCount
-        lc = 0
-        while lc < ln:
-            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-            if level == stc.STC_FOLDLEVELHEADERFLAG:
-                self.SetFoldExpanded(lc, False)
-                le = self.GetLastChild(lc, -1)
-                if le > lc:
-                    self.HideLines(lc+1, le)
-                lc = le
-            lc = lc + 1
-    
-    def unfold_all(self):
-        """Unfold all toplevel headers"""
-        ln = self.LineCount
-        lc = 0
-        while lc < ln:
-            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-            if level == stc.STC_FOLDLEVELHEADERFLAG:
-                self.SetFoldExpanded(lc, True)
-                le = self.GetLastChild(lc, -1)
-                if le > lc:
-                    self.ShowLines(lc+1, le)
-                lc = le
-            lc = lc + 1
     
     ## --------------------------------
     ## Preferences / Appearance
@@ -1952,7 +1934,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def eol(self):
         """end of line"""
         text, lp = self.CurLine
-        text = text.strip('\r\n') # remove line-seps: '\r' and '\n'
+        text = text.strip('\r\n') # remove linesep: '\r' and '\n'
         return (self.cpos - lp + len(text.encode()))
     
     @property
