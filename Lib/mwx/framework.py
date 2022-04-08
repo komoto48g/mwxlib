@@ -2888,8 +2888,8 @@ Flaky nutshell:
     ## Magic caster of the shell
     ## --------------------------------
     
-    @staticmethod
-    def magic(cmd):
+    @classmethod
+    def magic(self, cmd):
         """Called before command pushed
         (override) disable old magic: `f x --> f(x)`
         """
@@ -2899,6 +2899,7 @@ Flaky nutshell:
             elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
         return cmd
     
+    @classmethod
     def magic_interpret(self, tokens):
         """Called when [Enter] command, or eval-time for tooltip
         Interpret magic syntax
@@ -2911,6 +2912,10 @@ Flaky nutshell:
         """
         sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] SEPARATOR_CHARS; nospace, nocomma
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] SEPARATOR_CHARS;
+        
+        def _popiter(ls, pattern):
+            while ls and re.match(pattern, ls[0]):
+                yield ls.pop(0)
         
         def _eats(r, sep):
             s = ''
@@ -2945,20 +2950,19 @@ Flaky nutshell:
                         "pred={3!r}, locals=locals())".format(
                         head, hint.strip(), len(cc)<2, pred or None))
             
+            if c in ';':
+                return lhs + c + self.magic_interpret(rs)
+            
             if c == sys.ps2.strip():
-                while rs and rs[0].isspace(): # eat whites
-                    c += rs.pop(0)
+                c += ''.join(_popiter(rs, "[ \t\r\n]")) # feed
                 return lhs + c + self.magic_interpret(rs)
             
-            if c in ';\r\n':
+            if c.startswith('#'):
+                c += ''.join(_popiter(rs, "[^\r\n]")) # skip comment
                 return lhs + c + self.magic_interpret(rs)
             
-            if c.startswith('#'): # eliminates comment
-                rhs = _eats(rs, '\r\n') # eats os.linesep
-                return lhs + c + rhs + self.magic_interpret(rs)
-            
-            lhs += c
-        return ''.join(tokens)
+            lhs += c # store in lhs; no more processing
+        return lhs
     
     def setBuiltinKeywords(self):
         """Create pseudo keywords as part of builtins
@@ -3392,7 +3396,8 @@ Flaky nutshell:
                 if self.CanEdit():
                     text = self.cmdline
                 else:
-                    text = self.getMultilineCommand() or self.expr_at_caret
+                    with self.save_excursion():
+                        text = self.getMultilineCommand() or self.expr_at_caret
             if text:
                 text = self.regulate_cmd(self.lstripPrompt(text))
                 self.gen_tooltip(text)
