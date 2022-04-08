@@ -129,8 +129,9 @@ Note:
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
         name = frame.f_code.co_name
-        assert not self.is_active,\
-               "cannot enter {} (running)".format(name)
+        
+        assert self.is_active,\
+          "cannot enter {!r} without an active thread".format(name)
         
         event = "{}:{}:enter".format(module.__name__, name)
         self.handler(event, self)
