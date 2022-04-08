@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.6"
+__version__ = "0.55.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1468,17 +1468,19 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
-        self.SetMarginSensitive(0, False)
+        self.SetMarginSensitive(0, True)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
-        self.SetMarginSensitive(1, False)
+        self.SetMarginSensitive(1, True)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
         self.SetMarginSensitive(2, False) # cf. show_folder
+        
+        self.SetFoldFlags(0x10) # draw below if not expanded
         
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -1606,7 +1608,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
-    py_indent_reg = r"if|else|elif|for|while|with|def|class|try|except|finally".split('|')
+    py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
     py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
     py_closing_re = r"break|pass|return|raise|continue"
     
@@ -1614,25 +1616,25 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         if self.SelectedText:
             evt.Skip()
         else:
-            self.indent_line()
+            self.py_indent_line()
     
     def on_outdent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
         else:
-            self.outdent_line()
+            self.py_outdent_line()
     
-    def indent_line(self):
+    def py_indent_line(self):
         """Indent the current line"""
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
         lstr = text.lstrip()                         # w/ no-indent
         p = self.eol - len(lstr)
         offset = max(0, self.cpos - p)
-        indent = self.calc_indent()
+        indent = self.py_calc_indent()
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
-    def outdent_line(self):
+    def py_outdent_line(self):
         """Outdent the current line"""
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
         lstr = text.lstrip()                         # w/ no-indent
@@ -1642,26 +1644,29 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
-    def calc_indent(self):
+    def py_calc_indent(self):
         """Calculate indent spaces from prefious line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
         line = self.GetLine(self.cline - 1) # check previous line
-        line = self.strip_prompts(line)
+        line = self.py_strip_prompts(line)
         lstr = line.lstrip()
         if not lstr:
             indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
         else:
             indent = line[:(len(line)-len(lstr))]
             try:
-                texts = list(shlex.shlex(lstr)) # skip comment
-                if texts[-1] == ':' and texts[0] in self.py_indent_reg:
-                    indent += ' '*4
+                texts = list(shlex.shlex(lstr)) # strip comment
+                if texts[-1] == ':':
+                    if re.match(self.py_indent_re, texts[0]):
+                        indent += ' '*4
+                elif re.match(self.py_closing_re, texts[0]):
+                    return indent[:-4]
             except ValueError: # shlex failed to parse
                 return indent
         
         line = self.GetLine(self.cline) # check current line
-        line = self.strip_prompts(line)
+        line = self.py_strip_prompts(line)
         lstr = line.lstrip()
         if re.match(self.py_outdent_re, lstr):
             indent = indent[:-4]
@@ -1669,7 +1674,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return indent
     
     @classmethod
-    def strip_prompts(self, line):
+    def py_strip_prompts(self, line):
         for ps in (sys.ps1, sys.ps2, sys.ps3):
             if line.startswith(ps):
                 line = line[len(ps):]
@@ -1727,8 +1732,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
-        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE # header-flag or indent-level
+        level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
         
+        ## Note: level indicates indent-header flag or indent-level number
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
         else:
@@ -1737,22 +1743,37 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
         Menu.Popup(self, [
             (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
-                lambda v: self.fold_all()),
+                lambda v: self.FoldAll(0)),
                 
             (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
-                lambda v: self.unfold_all()),
+                lambda v: self.FoldAll(1)),
         ])
+    
+    def toggle_fold(self, lc):
+        """Similar to ToggleFold, but the top header containing
+        the specified line switches between expanded and contracted.
+        """
+        while 1:
+            lp = self.GetFoldParent(lc) # get folding root
+            if lp == -1:
+                break
+            lc = lp
+        self.ToggleFold(lc)
     
     def on_linesel_begin(self, evt):
         p = evt.Position
         self.goto_char(p)
-        q = self.eol
-        for eol in '\r\n':
-            if eol == self.get_char(q):
-                q += 1
-        self.cpos = q
-        self._anchors = (p, q)
+        self.cpos = q = self.eol
         self.CaptureMouse()
+        if 1:
+            lc = self.LineFromPosition(p)
+            if not self.GetFoldExpanded(lc): # :not expanded
+                self.CharRightExtend()
+                q = self.cpos
+                print("q, self.TextLength =", q, self.TextLength)
+                if q == self.TextLength:
+                    q -= 1
+        self._anchors = [p, q]
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
@@ -1762,6 +1783,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             line = self.GetLine(lc)
             self.cpos = p + len(line)
             self.Anchor = po
+            if not self.GetFoldExpanded(lc): # :not expanded
+                self.CharRightExtend()
+                self._anchors[1] = self.cpos
         else:
             self.cpos = p
             self.Anchor = qo
@@ -1770,45 +1794,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
-    
-    def toggle_fold(self, lc=None):
-        """Toggle fold/unfold the header including the given line"""
-        if lc is None:
-            lc = self.cline
-        while 1:
-            lp = self.GetFoldParent(lc)
-            if lp == -1:
-                break
-            lc = lp
-        self.ToggleFold(lc)
-    
-    def fold_all(self):
-        """Fold all headers"""
-        ln = self.LineCount
-        lc = 0
-        while lc < ln:
-            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-            if level == stc.STC_FOLDLEVELHEADERFLAG:
-                self.SetFoldExpanded(lc, False)
-                le = self.GetLastChild(lc, -1)
-                if le > lc:
-                    self.HideLines(lc+1, le)
-                lc = le
-            lc = lc + 1
-    
-    def unfold_all(self):
-        """Unfold all toplevel headers"""
-        ln = self.LineCount
-        lc = 0
-        while lc < ln:
-            level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-            if level == stc.STC_FOLDLEVELHEADERFLAG:
-                self.SetFoldExpanded(lc, True)
-                le = self.GetLastChild(lc, -1)
-                if le > lc:
-                    self.ShowLines(lc+1, le)
-                lc = le
-            lc = lc + 1
     
     ## --------------------------------
     ## Preferences / Appearance
@@ -1949,7 +1934,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def eol(self):
         """end of line"""
         text, lp = self.CurLine
-        text = text.strip('\r\n') # remove line-seps: '\r' and '\n'
+        text = text.strip('\r\n') # remove linesep: '\r' and '\n'
         return (self.cpos - lp + len(text.encode()))
     
     @property
@@ -3232,6 +3217,8 @@ Flaky nutshell:
         return eval(text, self.globals, self.locals)
     
     def exec(self, text):
+        ## if isinstance(text, string_types):
+        ##     text = compile(text, "<string>", "exec")
         exec(text, self.globals, self.locals)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
@@ -3356,27 +3343,27 @@ Flaky nutshell:
         
         tokens = ut.split_words(text)
         cmd = self.magic_interpret(tokens)
+        
         try:
-            tip = pformat(self.eval(cmd))
-            self.CallTipShow(self.cpos, tip)
+            tip = self.eval(cmd)
+            self.CallTipShow(self.cpos, pformat(tip))
             self.message(cmd)
             return
         except Exception:
             pass
+        
         try:
-            code = compile(cmd, "<string>", "exec")
-            self.exec(code)
+            self.exec(cmd)
+            self.linemark = None
+            self.message("Evaluated successfully.")
         except Exception:
             err = re.findall(r"File \".*?\", line ([0-9]+)",
                              traceback.format_exc(), re.I)
             if err:
-                ln = self.LineFromPosition(self.bolc)
+                ln = self.LineFromPosition(self.bolc) # for current-region only
                 self.linemark = ln + int(err[-1]) - 1
             ## traceback.print_exc()
             raise
-        else:
-            self.linemark = None
-            self.message("Evaluated successfully.")
     
     def call_tooltip2(self, evt):
         """Call ToolTip of the selected word or repr"""
