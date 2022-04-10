@@ -69,9 +69,9 @@ Note:
     
     def wait(self, timeout=None):
         """Wait flag or interrupt the process
-        1. flag.clear   -> clear flag:False so that the thread suspends when wait is called
-        2. flag.wait    -> wait until the chequer flag to be set True
-        3. flag.set     -> set flag:True to resume the thread
+        1. flag.clear -> clear flag:False so that the thread suspends when wait is called
+        2. flag.wait -> wait until the chequer flag to be set True
+        3. flag.set -> set flag:True to resume the thread
         """
         if not self.is_running:
             return False
@@ -119,7 +119,17 @@ Note:
         try:
             self.handler = self.owner.handler
         except AttributeError:
-            self.handler = mwx.FSM({})
+            self.handler = mwx.FSM({ # DNA<Thread>
+                None : {
+                 'thread_begin' : [ None ], # begin processing
+                   'thread_end' : [ None ], # end processing
+                  'thread_quit' : [ None ], # terminated by user
+                 'thread_error' : [ None ], # failed in error
+                      '*:enter' : [ None ], # enter module:co_name
+                       '*:exit' : [ None ], # exit module:co_name
+                      '*:error' : [ None ], # error
+                },
+            })
     
     def __del__(self):
         if self.is_active:

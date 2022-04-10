@@ -847,6 +847,7 @@ Args:
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        self.Bind(wx.EVT_SHOW, self.OnShow)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -962,6 +963,12 @@ Args:
         if nb and nb.PageCount == 1:
             nb.TabCtrlHeight = 0
         evt.Skip()
+    
+    def OnShow(self, evt):
+        if evt.IsShown():
+            self.inspector.watch(self)
+        else:
+            self.inspector.unwatch()
     
     def Init(self):
         f = self.SCRATCH_FILE
@@ -1095,7 +1102,6 @@ Args:
     
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, wx.Object) or obj is None:
-            self.inspector.watch(obj)
             self.monitor.watch(obj)
             self.console.SetFocus() # focus orginal-window
             if obj:
@@ -1468,19 +1474,23 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
-        self.SetMarginSensitive(0, True)
+        self.SetMarginSensitive(0, False)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
-        self.SetMarginSensitive(1, True)
+        self.SetMarginSensitive(1, False)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
         self.SetMarginSensitive(2, False) # cf. show_folder
         
+        self.SetMarginLeft(2) # +1 margin at the left
+        
         self.SetFoldFlags(0x10) # draw below if not expanded
+        
+        self.SetProperty('fold', '1') # Enable folder property
         
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -1488,9 +1498,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         except AttributeError:
             pass
-        
-        self.SetProperty('fold', '1') # Enable folder at margin=2
-        self.SetMarginLeft(2) # +1 margin at the left
         
         ## Custom markers (cf. MarkerAdd)
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', "#007ff0") # o blue-mark
@@ -1630,7 +1637,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         lstr = text.lstrip()                         # w/ no-indent
         p = self.eol - len(lstr)
         offset = max(0, self.cpos - p)
-        indent = self.py_calc_indent()
+        indent = self.py_calc_indent() # guess from the current/previous line
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
@@ -1690,19 +1697,21 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             if os.path.isdir(dirname) and dirname not in sys.path:
                 sys.path.append(dirname)
         try:
-            ## exec(self.Text, globals, locals)
             code = compile(self.Text, filename, "exec")
             exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except Exception as e:
-            err = re.findall(r"File \"(.*?)\", line ([0-9]+)",
-                             traceback.format_exc(), re.I)
+            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
+                             traceback.format_exc(), re.M)
             if err:
-                _filename, lineno = err[-1]
-                self.linemark = int(lineno) - 1
-                self.goto_line(self.linemark)
-                wx.CallAfter(self.EnsureCaretVisible)
+                fname, lineno = err[-1]
+                if fname == filename:
+                    lx = int(lineno) - 1
+                    self.linemark = lx
+                    self.goto_line(lx)
+                    self.EnsureVisible(lx) # expand if folded
+                    self.EnsureCaretVisible()
             self.message("- {}".format(e))
             ## traceback.print_exc()
         else:
@@ -1721,11 +1730,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """
         if show:
             self.SetMarginWidth(2, 12)
+            self.SetMarginSensitive(0, True)
+            self.SetMarginSensitive(1, True)
             self.SetMarginSensitive(2, True)
             self.SetFoldMarginColour(True, self.CaretLineBackground)
             self.SetFoldMarginHiColour(True, 'light gray')
         else:
             self.SetMarginWidth(2, 1)
+            self.SetMarginSensitive(0, False)
+            self.SetMarginSensitive(1, False)
             self.SetMarginSensitive(2, False)
             self.SetFoldMarginColour(True, 'black')
             self.SetFoldMarginHiColour(True, 'black')
@@ -2248,7 +2261,6 @@ class Editor(EditWindow, EditorInterface):
                         if dlg.ShowModal() == wx.ID_YES:
                             self.load(f, self.MarkerNext(0, 1)+1)
                             self.goto_char(p)
-                            wx.CallAfter(self.EnsureCaretVisible)
                         if self.HasCapture():
                             self.ReleaseMouse()
             except (TypeError, FileNotFoundError):
@@ -2935,7 +2947,7 @@ Flaky nutshell:
                         "pred={3!r}, locals=locals())".format(
                         head, hint.strip(), len(cc)<2, pred or None))
             
-            if c in ';':
+            if c == ';':
                 return lhs + c + self.magic_interpret(rs)
             
             if c == sys.ps2.strip():
@@ -3037,12 +3049,14 @@ Flaky nutshell:
         Note: text is raw output:str with no magic cast
         """
         ln = self.LineFromPosition(self.bolc)
-        err = re.findall(r"File \".*?\", line ([0-9]+)", text, re.I)
+        err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
             self.MarkerAdd(ln, 2) # error-arrow
-            self.linemark = ln + int(err[-1]) - 1
+            fname, lineno = err[-1]
+            if fname == "<string>":
+                self.linemark = ln + int(err[-1]) - 1
         return (not err)
     
     ## --------------------------------
@@ -3217,8 +3231,6 @@ Flaky nutshell:
         return eval(text, self.globals, self.locals)
     
     def exec(self, text):
-        ## if isinstance(text, string_types):
-        ##     text = compile(text, "<string>", "exec")
         exec(text, self.globals, self.locals)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
@@ -3343,7 +3355,6 @@ Flaky nutshell:
         
         tokens = ut.split_words(text)
         cmd = self.magic_interpret(tokens)
-        
         try:
             tip = self.eval(cmd)
             self.CallTipShow(self.cpos, pformat(tip))
@@ -3351,17 +3362,19 @@ Flaky nutshell:
             return
         except Exception:
             pass
-        
         try:
+            cmd = compile(cmd, "<string>", "exec")
             self.exec(cmd)
             self.linemark = None
             self.message("Evaluated successfully.")
         except Exception:
-            err = re.findall(r"File \".*?\", line ([0-9]+)",
-                             traceback.format_exc(), re.I)
+            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
+                             traceback.format_exc(), re.M)
             if err:
-                ln = self.LineFromPosition(self.bolc) # for current-region only
-                self.linemark = ln + int(err[-1]) - 1
+                fname, lineno = err[-1]
+                if fname == "<string>":
+                    ln = self.LineFromPosition(self.bolc) # current-region
+                    self.linemark = ln + int(lineno) - 1
             ## traceback.print_exc()
             raise
     

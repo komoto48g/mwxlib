@@ -404,12 +404,12 @@ class SSM(OrderedDict):
         return "<{} object at 0x{:X}>".format(typename(self), id(self))
     
     def __str__(self):
-        def name(a):
+        def _name(a):
             if callable(a):
                 return typename(a, docp=1, qualp=0)
-            return repr(a) # index
-        return '\n'.join("{:>32} : {}".format(
-            k, ', '.join(name(a) for a in v)) for k,v in self.items())
+            return repr(a)
+        return '\n'.join("{:>32} : {}".format(k, ', '.join(_name(a) for a in v))
+                         for k,v in self.items())
     
     def bind(self, event, action=None):
         """Append a transaction to the context"""
@@ -432,8 +432,6 @@ class SSM(OrderedDict):
             raise TypeError("{!r} is not callable".format(action))
         if action in transaction:
             transaction.remove(action)
-            if not any(callable(x) for x in transaction):
-                del self[event]
             return True
         return False
 
@@ -577,7 +575,7 @@ Attributes:
                     traceback.print_exc()
             return retvals
         else:
-            ## matching test using fnmatch ファイル名規約によるマッチングテスト
+            ## matching test using fnmatch
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
                     return self.call(pat, *args, **kwargs) # recursive call with matched pattern
@@ -681,21 +679,13 @@ Attributes:
         for k,v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
-                    if self[k].get(event) == transaction: # remove the event:transaction
-                        self[k].pop(event)
+                    if self[k].get(event) == transaction:
+                        self[k].pop(event) # remove the event:transaction
                         continue
                     for act in transaction[1:]:
                         self.unbind(event, act, k)
-    
-    def hook(self, event, action=None, state=None):
-        if not action:
-            return lambda f: self.hook(event, f, state)
-        
-        def _hook(*args, **kwargs):
-            action(*args, **kwargs)
-            self.unbind(event, _hook) # release hook once called,
-        
-        return self.bind(event, _hook)
+                    if not any(callable(x) for x in transaction):
+                        self[k].pop(event) # remove null event:transaction
     
     def bind(self, event, action=None, state=None, state2=None):
         """Append a transaction to the context
@@ -762,15 +752,12 @@ Attributes:
         
         transaction = context[event]
         if action is None:
-            del context[event]
-            return True
+            return all([self.unbind(event, act, state) for act in transaction[1:]])
         if not callable(action):
             raise TypeError("{!r} is not callable".format(action))
         if action in transaction:
             try:
                 transaction.remove(action)
-                if not any(callable(x) for x in transaction):
-                    del context[event]
                 return True
             except AttributeError:
                 warn("- FSM:warning: removing action from context ({!r} : {!r})\n"
