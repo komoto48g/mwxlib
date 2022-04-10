@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.7"
+__version__ = "0.55.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1690,7 +1690,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def py_eval_buffer(self, globals, locals, filename=None):
         if not filename:
-            filename = '<string>'
+            filename = "<string>"
         else:
             ## to eval file, add path to sys
             dirname = os.path.dirname(filename)
@@ -3056,7 +3056,7 @@ Flaky nutshell:
             self.MarkerAdd(ln, 2) # error-arrow
             fname, lineno = err[-1]
             if fname == "<string>":
-                self.linemark = ln + int(err[-1]) - 1
+                self.linemark = ln + int(lineno) - 1
         return (not err)
     
     ## --------------------------------
@@ -3251,6 +3251,7 @@ Flaky nutshell:
         self.globals = self.locals
         ## Shell.execStartupScript(self, su)
         
+        self.promptPosEnd = self.TextLength # fix history point
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
             self.push("with open({0!r}) as __f: exec(__f.read())\n".format(su))
@@ -3258,6 +3259,7 @@ Flaky nutshell:
             self.interp.startupScript = su
         else:
             self.push("")
+            self.interp.startupScript = None
     
     def Execute(self, text):
         """Replace selection with text, run commands,
