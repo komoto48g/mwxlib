@@ -687,16 +687,6 @@ Attributes:
                     if not any(callable(x) for x in transaction):
                         self[k].pop(event) # remove null event:transaction
     
-    def hook(self, event, action=None, state=None):
-        if not action:
-            return lambda f: self.hook(event, f, state)
-        
-        def _hook(*args, **kwargs):
-            action(*args, **kwargs)
-            self.unbind(event, _hook, state) # release hook once called,
-        
-        return self.bind(event, _hook, state)
-    
     def bind(self, event, action=None, state=None, state2=None):
         """Append a transaction to the context
         equiv. self[state] += {event : [state2, action]}
