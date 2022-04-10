@@ -94,9 +94,11 @@ Args:
             self.unwatch()
             return
         self.SetObj(obj)
+        self.timer.Start(500)
     
     def unwatch(self):
         self.target = None
+        self.timer.Stop()
     
     def dive(self, obj):
         shell = self.parent.rootshell.clone(obj)
@@ -123,9 +125,6 @@ Args:
         if evt.IsShown():
             if not self.built:
                 self.BuildTree(self.target)
-            self.timer.Start(500)
-        else:
-            self.timer.Stop()
         self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
     
