@@ -455,6 +455,7 @@ class FSM(dict):
 
 Attributes:
     debug : verbose level
+        [0] no trace, warnings only
         [1] trace when state transits
         [2] + when different event comes
         [3] + all events and actions

@@ -1704,14 +1704,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         except Exception as e:
             err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                              traceback.format_exc(), re.M)
-            if err:
-                fname, lineno = err[-1]
-                if fname == filename:
-                    lx = int(lineno) - 1
-                    self.linemark = lx
-                    self.goto_line(lx)
-                    self.EnsureVisible(lx) # expand if folded
-                    self.EnsureCaretVisible()
+            lines = [int(l) for f,l in err if f == filename]
+            if lines:
+                lx = lines[-1] - 1
+                self.linemark = lx
+                self.goto_line(lx)
+                self.EnsureVisible(lx) # expand if folded
+                self.EnsureCaretVisible()
             self.message("- {}".format(e))
             ## traceback.print_exc()
         else:
@@ -3054,9 +3053,9 @@ Flaky nutshell:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
             self.MarkerAdd(ln, 2) # error-arrow
-            fname, lineno = err[-1]
-            if fname == "<string>":
-                self.linemark = ln + int(lineno) - 1
+            lines = [int(l) for f,l in err if f == "<string>"]
+            if lines:
+                self.linemark = ln + lines[-1] - 1
         return (not err)
     
     ## --------------------------------
@@ -3372,11 +3371,11 @@ Flaky nutshell:
         except Exception:
             err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                              traceback.format_exc(), re.M)
-            if err:
-                fname, lineno = err[-1]
-                if fname == "<string>":
-                    ln = self.LineFromPosition(self.bolc) # current-region
-                    self.linemark = ln + int(lineno) - 1
+            lines = [int(l) for f,l in err if f == "<string>"]
+            if lines:
+                if self.bolc <= self.cpos: # current-region is active?
+                    ln = self.LineFromPosition(self.bolc)
+                    self.linemark = ln + lines[-1] - 1
             ## traceback.print_exc()
             raise
     
