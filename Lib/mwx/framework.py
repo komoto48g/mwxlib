@@ -1443,6 +1443,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.Bind(stc.EVT_STC_UPDATEUI,
                   lambda v: self.match_paren()) # no skip
         
+        ## If the end of line of a contracted fold point is deleted,
+        ## the last line is hidden.
+        def eof(v):
+            n = self.LineCount
+            self.ShowLines(n-1, n-1)
+        
+        ## This event occurs when lines that are hidden should be made visible.
+        self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
+        
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
@@ -1782,7 +1791,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             if not self.GetFoldExpanded(lc): # :not expanded
                 self.CharRightExtend()
                 q = self.cpos
-                print("q, self.TextLength =", q, self.TextLength)
                 if q == self.TextLength:
                     q -= 1
         self._anchors = [p, q]
@@ -3008,8 +3016,7 @@ Flaky nutshell:
                     return loader(obj)
                 return loader(where(obj))
             builtins.load = _Load
-        except AttributeError as e:
-            print("e =", e)
+        except AttributeError:
             pass
         
     def on_inactivated(self, shell):
