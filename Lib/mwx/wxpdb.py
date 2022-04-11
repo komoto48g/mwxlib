@@ -34,25 +34,25 @@ echo.debug = 0
 class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
-Attributes:
-    logger : ShellFrame Log
-      busy : The flag of being running now
-   verbose : Verbose messages are output from Pdb
-    module : The module of the currently stacked frame on Pdb
-    locals : The namespace of the currently stacked frame on Pdb
-   globals : (ditto)
-
-Args:
-    parent : shellframe
-     stdin : shell.interp.stdin
-    stdout : shell.interp.stdout
-
-Key bindings:
-      C-g  : quit
-      C-q  : quit
-      C-n  : next
-      C-r  : return
-      C-s  : step
+    Attributes:
+         logger : ShellFrame Log
+           busy : The flag of being running now
+        verbose : Verbose messages are output from Pdb
+         module : The module of the currently stacked frame on Pdb
+         locals : The namespace of the currently stacked frame on Pdb
+        globals : (ditto)
+    
+    Args:
+         parent : shellframe
+          stdin : shell.interp.stdin
+         stdout : shell.interp.stdout
+    
+    Key bindings:
+            C-g : quit
+            C-q : quit
+            C-n : next
+            C-r : return
+            C-s : step
     """
     indent = "  "
     prefix1 = "> "

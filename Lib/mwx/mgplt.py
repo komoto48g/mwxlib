@@ -25,9 +25,9 @@ class Gplot(object):
     """Gnuplot - pgnuplot wrapper
     
     default markers
-    std_marker : 1,2,3,
-   open_marker : 4,6,8,10,12,14,
-  solid_marker : 5,7,9,11,13,15,
+         std_marker : 1,2,3,
+        open_marker : 4,6,8,10,12,14,
+       solid_marker : 5,7,9,11,13,15,
     """
     debug = 0
     startupfile = None

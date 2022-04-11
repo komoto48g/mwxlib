@@ -104,24 +104,24 @@ def _Property(name):
 class AxesImagePhantom(object):
     """Phantom of frame facade
     
-Attributes:
-       unit : logical length per pixel arb.unit [u/pixel]
-      image : image <numpy.ndarray> (dtype:uint8)
-     buffer : raw buffer <numpy.ndarray>
-    binning : binning size of image
-              ( ･ω･)? Current verision of wxagg limits < 24M bytes?
-              The image pixel size must be reduced by resizing or binning.
- attributes : optional. miscellaneous info about the frame/buffer
-   pathname : optional. fullpath of buffer, when bounds to file
- annotation : optional. annotation of the buffer
-
-Args:
-        buf : buffer
-       name : buffer name
-       show : show immediately when loaded
-     aspect : initial aspect ratio <float>
-  localunit : initial localunit
- attributes : additional info:dict
+    Attributes:
+           unit : logical length per pixel arb.unit [u/pixel]
+          image : image <numpy.ndarray> (dtype:uint8)
+         buffer : raw buffer <numpy.ndarray>
+        binning : binning size of image
+                  ( ･ω･)? Current verision of wxagg limits < 24M bytes?
+                  The image pixel size must be reduced by resizing or binning.
+     attributes : optional. miscellaneous info about the frame/buffer
+       pathname : optional. fullpath of buffer, when bounds to file
+     annotation : optional. annotation of the buffer
+    
+    Args:
+            buf : buffer
+           name : buffer name
+           show : show immediately when loaded
+         aspect : initial aspect ratio <float>
+      localunit : initial localunit
+     attributes : additional info:dict
     """
     def __init__(self, parent, buf, name, show=True,
                  localunit=None, aspect=1.0, **attributes):
@@ -388,21 +388,22 @@ class Clipboard:
 class GraphPlot(MatplotPanel):
     """Graph panel for 2D graph
     
-    axes : a figure axes <matplotlib.axes.Axes>
-   frame : current art <matplotlib.image.AxesImage>
-  buffer : current data array <numpy.ndarray>; complex is not supported.
-   image : current image array <numpy.ndarray>; uint8
-    unit : logical length per pixel arb.unit [u/pixel]
-     roi : current buffer in ROI (region of interest)
-
-Aritists:
-  Selector : selected points array ([x],[y])
-   Markers : marked points data array ([x],[y])
-    Region : rectangle points data array ((l,r),(b,t))
-
-Constants:
-  nbytes_threshold : image size threshold (for loading onto matplotlib wxagg backend)
-  score_percentile : image cutoff percentiles
+    Attributes:
+           axes : a figure axes <matplotlib.axes.Axes>
+          frame : current art <matplotlib.image.AxesImage>
+         buffer : current data array <numpy.ndarray>; complex is not supported.
+          image : current image array <numpy.ndarray>; uint8
+           unit : logical length per pixel arb.unit [u/pixel]
+            roi : current buffer in ROI (region of interest)
+    
+    Aritists:
+       Selector : selected points array ([x],[y])
+        Markers : marked points data array ([x],[y])
+         Region : rectangle points data array ((l,r),(b,t))
+    
+    Constants:
+    nbytes_threshold : image size threshold (for display)
+    score_percentile : image cutoff percentiles
     """
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)

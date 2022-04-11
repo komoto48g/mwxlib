@@ -29,29 +29,29 @@ from six import string_types
 class Param(object):
     """Standard Parameter
     
-Attributes:
-       name : label
-      range : range [min:max:step]
-    min,max : lower and upper limits
-  std_value : standard value (default None)
-      value : current value := std_value + offset
-     offset : ditto (if std_value is None, this is the same as value)
-      knobs : knob list
-      index : knob index -> reset -> callback
-      check : knob tick (undefined)
-        tip : doc:str also shown as a tooltip
-   callback : single state machine that handles following events:
-            control -> when index changed by knobs or reset (call handler)
-            check -> when check ticks on/off (call updater)
-            overflow -> when value overflows
-            underflow -> when value underflows
-
-Args:
-        fmt : text formatter or format str (default is '%g')
-              `hex` specifies hexadecimal format/eval
-    handler : called when control changed
-    updater : called when check changed
-        tip : tooltip:str shown on the associated knobs
+    Attributes:
+           name : label
+          range : range [min:max:step]
+        min,max : lower and upper limits
+      std_value : standard value (default None)
+          value : current value := std_value + offset
+         offset : ditto (if std_value is None, this is the same as value)
+          knobs : knob list
+          index : knob index -> reset -> callback
+          check : knob tick (undefined)
+            tip : doc:str also shown as a tooltip
+       callback : single state machine that handles following events:
+                control -> when index changed by knobs or reset (call handler)
+                check -> when check ticks on/off (call updater)
+                overflow -> when value overflows
+                underflow -> when value underflows
+    
+    Args:
+            fmt : text formatter or format str (default is '%g')
+                  `hex` specifies hexadecimal format/eval
+        handler : called when control changed
+        updater : called when check changed
+            tip : tooltip:str shown on the associated knobs
     """
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
@@ -280,26 +280,25 @@ class LParam(Param):
 
 class Knob(wx.Panel):
     """Parameter controller unit
-    パラメータクラスのコントロールノブ
     
     In addition to direct key input to the textctrl,
     [up][down][wheelup][wheeldown] keys can be used,
     with modifiers S- 2x, C- 16x, and M- 256x steps.
     [Mbutton] resets to the std. value if it exists.
     
-Attributes:
-      param : A param <Param> object referred from knobs
-
-Args:
-        par : Param <object>
-       type : ctrl type (slider[*], [hv]spin, choice, and default None)
-      style : style of label
-              None -> static text (default)
-              chkbox -> label with check box
-              button -> label with flat button
-   editable : textctrl is editable or readonly
-   lw,tw,cw : width of label, textbox, and ctrl
-          h : height of widget (default 22 for Windows)
+    Attributes:
+          param : A param <Param> object referred from knobs
+    
+    Args:
+            par : Param <object>
+           type : ctrl type (slider[*], [hv]spin, choice, and default None)
+          style : style of label
+                  None -> static text (default)
+                  chkbox -> label with check box
+                  button -> label with flat button
+       editable : textctrl is editable or readonly
+       lw,tw,cw : width of label, textbox, and ctrl
+              h : height of widget (default 22 for Windows)
     """
     @property
     def param(self):
@@ -579,7 +578,6 @@ Args:
 
 class ControlPanel(scrolled.ScrolledPanel):
     """Scrollable Control Panel
-    スクロール可能なコントロール配置用パネル
     """
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
@@ -898,15 +896,15 @@ def _bmpIcon(v):
 class Button(pb.PlateButton):
     """Flat button
     
-Attributes:
-       icon : key:str for Icon
-
-Args:
-      label : button label
-    handler : event handler when the button is pressed
-       icon : key:str for button icon
-        tip : tip:str displayed on the button
-   **kwargs : keywords for wx.lib.platebtn.PlateButton
+    Attributes:
+           icon : key:str for Icon
+    
+    Args:
+          label : button label
+        handler : event handler when the button is pressed
+           icon : key:str for button icon
+            tip : tip:str displayed on the button
+       **kwargs : keywords for wx.lib.platebtn.PlateButton
     """
     @property
     def icon(self):
@@ -943,18 +941,18 @@ Args:
 class ToggleButton(wx.ToggleButton):
     """Togglable button
     
-Attributes:
-       icon : key:str for Icon
-
-Args:
-      label : button label
-    handler : event handler when the button is pressed
-       icon : key:str for button icon
-        tip : tip:str displayed on the button
-   **kwargs : keywords for wx.ToggleButton
-
-Note:
-    To get the status, check Value or event.GetInt or event.IsChecked.
+    Attributes:
+           icon : key:str for Icon
+    
+    Args:
+          label : button label
+        handler : event handler when the button is pressed
+           icon : key:str for button icon
+            tip : tip:str displayed on the button
+       **kwargs : keywords for wx.ToggleButton
+    
+    Note:
+        To get the status, check Value or event.GetInt or event.IsChecked.
     """
     @property
     def icon(self):
@@ -985,19 +983,19 @@ Note:
 class TextCtrl(wx.Panel):
     """Text panel
     
-Attributes:
-      Value : textctrl value:str
-       icon : Icon key:str
-
-Args:
-      label : button label
-    handler : event handler when text is entered
-    updater : event handler when the button is pressed
-       icon : key:str for button icon
-        tip : tip:str displayed on the button
-   readonly : flag:bool for wx.TE_READONLY
-   **kwargs : keywords for wx.TextCtrl
-        e.g., value:str
+    Attributes:
+          Value : textctrl value:str
+           icon : Icon key:str
+    
+    Args:
+          label : button label
+        handler : event handler when text is entered
+        updater : event handler when the button is pressed
+           icon : key:str for button icon
+            tip : tip:str displayed on the button
+       readonly : flag:bool for wx.TE_READONLY
+       **kwargs : keywords for wx.TextCtrl
+            e.g., value:str
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
@@ -1043,25 +1041,25 @@ Args:
 class Choice(wx.Panel):
     """Editable Choice (ComboBox) panel
     
-Attributes:
-  Selection : combobox selection:int
-      Value : combobox value:str
-       icon : Icon key:str
-
-Args:
-      label : button label
-    handler : event handler when text is entered or item is selected
-    updater : event handler when the button is pressed
-       icon : key:str for button icon
-        tip : tip:str displayed on the button
-   readonly : flag:bool for wx.TE_READONLY
-  selection : initial selection:int for combobox
-   **kwargs : keywords for wx.TextCtrl
-        e.g., choices:list
-
-Note:
-    If the input item is not found in the choices,
-    it will be added to the list (unless readonly)
+    Attributes:
+      Selection : combobox selection:int
+          Value : combobox value:str
+           icon : Icon key:str
+    
+    Args:
+          label : button label
+        handler : event handler when text is entered or item is selected
+        updater : event handler when the button is pressed
+           icon : key:str for button icon
+            tip : tip:str displayed on the button
+       readonly : flag:bool for wx.TE_READONLY
+      selection : initial selection:int for combobox
+       **kwargs : keywords for wx.TextCtrl
+            e.g., choices:list
+    
+    Note:
+        If the input item is not found in the choices,
+        it will be added to the list (unless readonly)
     """
     Selection = property(
         lambda self: self.ctrl.GetSelection(),

@@ -50,17 +50,17 @@ class Thread(object):
     
     The worker:thread runs the given target:f of owner:object.
     
-Attributes:
-     target : A target method of the Layer
-     result : A variable that retains the last retval of f
-     worker : reference of the worker thread
-      owner : reference of the handler owner (was typ. f.__self__)
-              if None, the thread_event is handled by its own handler
-Note:
-    is_active : flag of being kept going
-                Check this to see the worker is running and intended being kept going
-    is_running : flag of being running now
-                 Watch this to verify the worker is alive after it has been inactivated
+    Attributes:
+         target : A target method of the Layer
+         result : A variable that retains the last retval of f
+         worker : reference of the worker thread
+          owner : reference of the handler owner (was typ. f.__self__)
+                  if None, the thread_event is handled by its own handler
+    Note:
+        is_active : flag of being kept going
+                    Check this to see the worker is running and intended being kept going
+        is_running : flag of being running now
+                     Watch this to verify the worker is alive after it has been inactivated
     """
     is_active = property(lambda self: self.__keepGoing)
     is_running = property(lambda self: self.__isRunning)
@@ -213,18 +213,19 @@ def _isLayer(obj):
 class Layer(ControlPanel, mwx.CtrlInterface):
     """Graphman.Layer
     
-      menu : menu string in parent menubar
-   menustr : menu-item string in parent menubar
-  category : title of notebook holder, otherwise None for single pane
-   caption : flag to set the pane caption to be visible (default caption is __module__)
-             a string can also be specified
-  dockable : flag to set the pane to be dockable
-             type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
-reloadable : flag to set the Layer to be reloadable
-unloadable : flag to set the Layer to be unloadable
-    parent : parent <Frame> is not always equal to Parent when floating
-     graph : parent.graph window
-    otuput : parent.output window
+    Attributes:
+           menu : menu string in parent menubar
+        menustr : menu-item string in parent menubar
+       category : title of notebook holder, otherwise None for single pane
+        caption : flag to set the pane caption to be visible
+                  a string can also be specified (default is __module__)
+       dockable : flag to set the pane to be dockable
+                  type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
+     reloadable : flag to set the Layer to be reloadable
+     unloadable : flag to set the Layer to be unloadable
+         parent : parent <Frame> is not always equal to Parent when floating
+          graph : parent.graph window
+         otuput : parent.output window
     """
     menu = "Plugins"
     menustr = property(lambda self: "&"+self.__module__)
@@ -554,11 +555,11 @@ class AuiNotebook(aui.AuiNotebook):
 class Frame(mwx.Frame):
     """Graph and Plug manager frame
     
-  Interfaces
-    1. pane window interface
-    2. plugins interface
-    3. load/save images
-    4. open/close session
+    Interfaces:
+        1. pane window interface
+        2. plugins interface
+        3. load/save images
+        4. open/close session
     """
     graph = property(lambda self: self.__graph)
     output = property(lambda self: self.__output)

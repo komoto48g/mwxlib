@@ -41,15 +41,15 @@ else:
 
 class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     """Event monitor
-
-Attributes:
-    parent : shellframe
-    target : widget to monitor
+    
+    Attributes:
+        parent : shellframe
+        target : widget to monitor
     dummy_hook : If True, the debugger calls handlers sequentially.
                  If False, handlers are hooked in true event-chain.
-
-Args:
-    parent : shellframe
+    
+    Args:
+        parent : shellframe
     """
     parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__watchedWidget)

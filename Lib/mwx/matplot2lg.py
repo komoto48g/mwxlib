@@ -205,8 +205,9 @@ class Histogram(LinePlot):
     frame.image <uint8> (buffer ではない) を参照して，ヒストグラムをプロットする
     常に整数ビット画像となるので，高速なビンづめ法で計算する
     
-   __graphs : list of attached graph <matplot2g.GraphPlot>
-    __frame : reference to the current frame
+    Attributes:
+       __graphs : list of attached graph <matplot2g.GraphPlot>
+        __frame : reference to the current frame
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
@@ -375,10 +376,11 @@ class Histogram(LinePlot):
 class LineProfile(LinePlot):
     """LinePlot panel for line profile (Multi-graph : Single-frame)
     
-   __graphs : list of attached graph <matplot2g.GraphPlot>
-    __frame : reference to the current frame
-     logicp : lien axis in logical unit
-  linewidth : line width to integrate [pixel]
+    Attributes:
+       __graphs : list of attached graph <matplot2g.GraphPlot>
+        __frame : reference to the current frame
+       __logicp : line axis in logical unit
+    __linewidth : line width to integrate [pixel]
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)

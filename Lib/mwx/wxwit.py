@@ -17,9 +17,10 @@ except ImportError:
 
 class Inspector(it.InspectionTree, CtrlInterface):
     """Widget inspection tool
-
-Args:
-    parent : shellframe
+    
+    Attributes:
+    Args:
+        parent : shellframe
     """
     parent = property(lambda self: self.__shellframe)
     

@@ -439,7 +439,7 @@ class SSM(OrderedDict):
 class FSM(dict):
     """Finite State Machine
     
-    contexts : map of context
+    DNA: map of context
         { state : initial state
             { event : event key <str>
                 transaction (next_state, *actions ...) }
@@ -447,26 +447,26 @@ class FSM(dict):
         state: None is a wildcard (as executed any time)
         event is a string that can include wildcards `*?[]` (fnmatch rule)
         actions must accept the same *args of function as __call__(*args)
-        
+    
     If no action, FSM carries out only a transition.
     The transition is always done before actions.
     
     Note: There is no enter/exit event handler.
-
-Attributes:
-    debug : verbose level
-        [0] no trace, warnings only
-        [1] trace when state transits
-        [2] + when different event comes
-        [3] + all events and actions
-        [4] ++ all events (+ including state:None)
-        [5] ++ all events (even if no actions + state:None)
-        [8] +++ max verbose level to put all args and kwargs
-    default_state : referred as default state sucn as global-map
-        default=None is given as an argument of the init.
-        If there is only one state, that state will be the default.
-    current_state : referred as the current state
-   previous_state : (read-only, internal use only)
+    
+    Attributes:
+        debug : verbose level
+            [0] no trace, warnings only
+            [1] trace when state transits
+            [2] + when different event comes
+            [3] + all events and actions
+            [4] ++ all events (+ including state:None)
+            [5] ++ all events (even if no actions + state:None)
+            [8] +++ max verbose level to put all args and kwargs
+        default_state : referred as default state sucn as global-map
+            default=None is given as an argument of the init.
+            If there is only one state, that state will be the default.
+        current_state : referred as the current state
+       previous_state : (read-only, internal use only)
     """
     debug = 0
     default_state = None

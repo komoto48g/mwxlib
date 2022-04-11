@@ -11,9 +11,10 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
     """Locals info watcher
-
-Args:
-    parent : shellframe
+    
+    Attributes:
+    Args:
+        parent : shellframe
     """
     parent = property(lambda self: self.__shellframe)
     

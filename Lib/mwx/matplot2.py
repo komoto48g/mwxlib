@@ -45,11 +45,12 @@ if 1:
 class MatplotPanel(wx.Panel):
     """MPL panel for general graph
     
-      axes : <matplotlib.axes.Axes>
-    figure : <matplotlib.figure.Figure>
-    cursor : <matplotlib.widgets.Cursor>
-  selected : selected points <matplotlib.lines.Line2D>
-  Selector : selected points arrays (xx, yy)
+    Attributes:
+           axes : <matplotlib.axes.Axes>
+         figure : <matplotlib.figure.Figure>
+         cursor : <matplotlib.widgets.Cursor>
+       selected : selected points <matplotlib.lines.Line2D>
+       Selector : selected points arrays (xx, yy)
     """
     handler = property(lambda self: self.__handler)
     

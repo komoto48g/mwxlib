@@ -394,14 +394,14 @@ def pack(self, *args,
          style=(0, wx.EXPAND | wx.ALL, 0),
          label=None):
     """Do layout
-
-Usage:
-    self.SetSizer(
-        pack(self,
-            (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
-            ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
+    
+    Usage:
+        self.SetSizer(
+            pack(self,
+                (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
+                ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
+            )
         )
-    )
     *args : wx objects (with some packing parameters)
           - (obj, 1) -> sized with ratio 1 (orient と同方向)
                         他に 0 以外を指定しているオブジェクトとエリアを分け合う
@@ -572,8 +572,9 @@ class MenuBar(wx.MenuBar, TreeList):
 class StatusBar(wx.StatusBar):
     """Construct statusbar with read/write
     
-   field : list of field widths
-    pane : index of status text field
+    Attributes:
+          field : list of field widths
+           pane : index of status text field
     """
     lock = None
     
@@ -603,9 +604,10 @@ class StatusBar(wx.StatusBar):
 class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """Frame base class
     
-    menubar : MenuBar
-  statusbar : StatusBar
- shellframe : mini-frame of the shell
+    Attributes:
+        menubar : MenuBar
+      statusbar : StatusBar
+     shellframe : mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
     message = property(lambda self: self.statusbar)
@@ -683,8 +685,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
 class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """MiniFrame base class
     
-    menubar : MenuBar (not created by default)
-  statusbar : StatusBar (not shown by default)
+    Attributes:
+        menubar : MenuBar (not created by default)
+      statusbar : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
     message = property(lambda self: self.statusbar)
@@ -733,22 +736,22 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
 class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break target
-
-Attributes:
-  rootshell : Nautilus root shell
-    watcher : Notebook of global/locals info watcher
-    console : Notebook of shells
-      ghost : Notebook of editors and inspectors
-    Scratch : temporary buffer for scratch (tooltip)
-       Help : temporary buffer for help
-        Log : logging buffer
-    History : shell history (read only)
-    monitor : wxmon.EventMonitor object
-  inspector : wxwit.Inspector object
-
-Args:
-     target : Inspection target (any wx.Object)
-              If the target is None, it will be __main__.
+    
+    Attributes:
+      rootshell : Nautilus root shell
+        watcher : Notebook of global/locals info watcher
+        console : Notebook of shells
+          ghost : Notebook of editors and inspectors
+        Scratch : temporary buffer for scratch (tooltip)
+           Help : temporary buffer for help
+            Log : logging buffer
+        History : shell history (read only)
+        monitor : wxmon.EventMonitor object
+      inspector : wxwit.Inspector object
+    
+    Args:
+         target : Inspection target (any wx.Object)
+                  If the target is None, it will be __main__.
     """
     rootshell = property(lambda self: self.__shell)
     
@@ -2317,75 +2320,77 @@ class Editor(EditWindow, EditorInterface):
 
 class Nautilus(Shell, EditorInterface):
     """Nautilus in the Shell with Editor interface
-
-Features:
-    All objects in the process can be accessed using
-        self : the target of the shell
-        this : the module which includes target
-
-Magic syntax:
-   quoteback : x`y --> y=x  | x`y`z --> z=y=x
-    pullback : x@y --> y(x) | x@y@z --> z(y(x))
-     apropos : x.y? [not] p --> shows apropos (not-)matched by predicates p
-                equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
-                y can contain regular expressions.
-                    (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
-                p can be atom, callable, type (e.g., int, str, ...),
-                    and any predicates such as inspect.isclass.
-  
-  *     info :  ?x (x@?) --> info(x) shows short information
-  *     help : ??x (x@??) --> help(x) shows full description
-  *   system :  !x (x@!) --> sx(x) executes command in external shell
-  
-  * denotes original syntax defined in wx.py.shell,
-    for which, at present version, enabled with USE_MAGIC switch being on
-
-Shell built-in utility:
-    @p          synonym of print
-    @pp         synonym of pprint
-    @info   @?  short info
-    @help   @?? full description
-    @dive       clone the shell with new target
-    @timeit     measure the duration cpu time
-    @profile    profile the func(*args, **kwargs)
-    @filling    inspection using wx.lib.filling.Filling
-    @watch      inspection using wx.lib.inspection.InspectionTool
-    @edit       open file with your editor (undefined)
-    @where      filename and lineno or module
-    @debug      open pdb or show event-watcher and widget-tree
-
-Autocomp key bindings:
-        C-up : [0] retrieve previous history
-      C-down : [0] retrieve next history
-    M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
-    M-h, C-h : [0] call tooltip of help (for the func selected or focused)
-         TAB : [1] history-comp-mode
-         M-p : [1] retrieve previous history in comp-mode
-         M-n : [1] retrieve next history in comp-mode
-         M-. : [2] word-comp-mode
-         M-/ : [3] apropos-comp-mode
-         M-, : [4] text-comp-mode
-         M-m : [5] module-comp-mode
-  * Autocomps are incremental when pressed any alnums, and decremental when backspace.
-
-Enter key bindings:
-     C-enter : insert-line-break
-     M-enter : duplicate-command
-
-This module is based on the implementation of wx.py.shell.
-    Some of the original key bindings are overridden in the FSM framework.
-    To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
-    The original key bindings are mapped in esc-map, i.e.,
-    e.g., if you want to do 'select-all', type [ESC C-a], not [C-a]
-
-The most convenient way to see the details of keymaps on the shell:
-    >>> self.shell.handler @p
-     or self.shell.handler @filling
-
-Flaky nutshell:
-    With great oven by Robin Dunn,
-    Half-baked by Patrik K. O'Brien,
-    and the other half by K. O'moto.
+    
+    Features:
+        All objects in the process can be accessed using
+           self : the target of the shell
+           this : the module which includes target
+    
+    Magic syntax:
+      quoteback : x`y --> y=x  | x`y`z --> z=y=x
+       pullback : x@y --> y(x) | x@y@z --> z(y(x))
+        apropos : x.y? [not] p --> shows apropos (not-)matched by predicates p
+                   equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
+                   y can contain regular expressions.
+                       (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
+                   p can be atom, callable, type (e.g., int, str, ...),
+                       and any predicates such as inspect.isclass.
+    
+    *      info :  ?x (x@?) --> info(x) shows short information
+    *      help : ??x (x@??) --> help(x) shows full description
+    *    system :  !x (x@!) --> sx(x) executes command in external shell
+    
+    *  denotes original syntax defined in wx.py.shell,
+       for which, at present version, enabled with USE_MAGIC switch being on
+    
+    Shell built-in utility:
+        @p          synonym of print
+        @pp         synonym of pprint
+        @info   @?  short info
+        @help   @?? full description
+        @dive       clone the shell with new target
+        @timeit     measure the duration cpu time
+        @profile    profile the func(*args, **kwargs)
+        @filling    inspection using wx.lib.filling.Filling
+        @watch      inspection using wx.lib.inspection.InspectionTool
+        @edit       open file with your editor (undefined)
+        @where      filename and lineno or module
+        @debug      open pdb or show event-watcher and widget-tree
+    
+    Autocomp key bindings:
+           C-up : [0] retrieve previous history
+         C-down : [0] retrieve next history
+       M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
+       M-h, C-h : [0] call tooltip of help (for the func selected or focused)
+            TAB : [1] history-comp-mode
+            M-p : [1] retrieve previous history in comp-mode
+            M-n : [1] retrieve next history in comp-mode
+            M-. : [2] word-comp-mode
+            M-/ : [3] apropos-comp-mode
+            M-, : [4] text-comp-mode
+            M-m : [5] module-comp-mode
+    
+    * Autocomps are incremental when pressed any alnums,
+                and decremental when backspace.
+    
+    Enter key bindings:
+         C-enter : insert-line-break
+         M-enter : duplicate-command
+    
+    This module is based on the implementation of wx.py.shell.
+        Some of the original key bindings are overridden in the FSM framework.
+        To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
+        The original key bindings are mapped in esc-map, i.e.,
+        e.g., if you want to do 'select-all', type [ESC C-a], not [C-a]
+    
+    The most convenient way to see the details of keymaps on the shell:
+        >>> self.shell.handler @p
+         or self.shell.handler @filling
+    
+    A flaky nutshell:
+        With great oven by Robin Dunn,
+        Half-baked by Patrik K. O'Brien,
+        and the other half by K. O'moto.
     """
     STYLE = { #<Shell>
         "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
@@ -3075,6 +3080,32 @@ Flaky nutshell:
     ## If del shell.history, the history of the class variable is used
     history = []
     
+    bolc = property(lambda self: self.promptPosEnd, doc="beginning of command-line")
+    eolc = property(lambda self: self.TextLength, doc="end of command-line")
+    
+    @property
+    def bol(self):
+        """beginning of line (override) excluding prompt"""
+        text, lp = self.CurLine
+        for ps in (sys.ps1, sys.ps2, sys.ps3):
+            if text.startswith(ps):
+                lp -= len(ps)
+                break
+        return self.cpos - lp
+    
+    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
+    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
+    
+    @property
+    def cmdlc(self):
+        """cull command-line (with no prompt)"""
+        return self.GetTextRange(self.bol, self.cpos)
+    
+    @property
+    def cmdline(self):
+        """full command-(multi-)line (with no prompt)"""
+        return self.GetTextRange(self.bolc, self.eolc)
+    
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
         (override) mark points before push.
@@ -3156,36 +3187,6 @@ Flaky nutshell:
         EditorInterface.wrap(self, mode)
     
     ## input = classmethod(Shell.ask)
-    
-    bolc = property(lambda self: self.promptPosEnd, doc="beginning of command-line")
-    eolc = property(lambda self: self.TextLength, doc="end of command-line")
-    
-    @property
-    def bol(self):
-        """beginning of line (override) excluding prompt"""
-        text, lp = self.CurLine
-        for ps in (sys.ps1, sys.ps2, sys.ps3):
-            if text.startswith(ps):
-                lp -= len(ps)
-                break
-        return self.cpos - lp
-    
-    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
-    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
-    
-    @property
-    def cmdlc(self):
-        """cull command-line (with no prompt)"""
-        return self.GetTextRange(self.bol, self.cpos)
-    
-    @property
-    def cmdline(self):
-        """full command-(multi-)line (with no prompt)"""
-        return self.GetTextRange(self.bolc, self.eolc)
-    
-    ## --------------------------------
-    ## Utility functions of the shell 
-    ## --------------------------------
     
     def about(self):
         """About the shell (to be overridden)"""
