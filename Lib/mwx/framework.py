@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.8"
+__version__ = "0.55.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1443,11 +1443,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         self.Bind(stc.EVT_STC_UPDATEUI,
                   lambda v: self.match_paren()) # no skip
         
-        ## If the end of line of a contracted fold point is deleted,
-        ## the last line is hidden.
-        def eof(v):
-            n = self.LineCount
-            self.ShowLines(n-1, n-1)
+        def eof(evt):
+            p = evt.Position
+            lc = self.LineFromPosition(p)
+            le = self.LineFromPosition(p + evt.Length)
+            self.ShowLines(lc, le)
+            evt.Skip()
         
         ## This event occurs when lines that are hidden should be made visible.
         self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
