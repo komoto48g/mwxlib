@@ -10,11 +10,11 @@ import wx
 import numpy as np
 from numpy import nan, inf
 try:
-    from utilus import SSM
+    from utilus import SSM, funcall
     import framework as mwx
     import images
 except ImportError:
-    from .utilus import SSM
+    from .utilus import SSM, funcall
     from . import framework as mwx
     from . import images
 import wx.lib.platebtn as pb
@@ -893,6 +893,9 @@ def _bmpIcon(v):
     return v
 
 
+_F = funcall
+
+
 class Button(pb.PlateButton):
     """Flat button
     
@@ -922,9 +925,9 @@ class Button(pb.PlateButton):
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_BUTTON, handler)
+            self.Bind(wx.EVT_BUTTON, _F(handler))
         
-        tip = '\n  '.join(filter(None, (tip, handler and handler.__doc__)))
+        tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
         self.icon = icon
     
@@ -973,9 +976,9 @@ class ToggleButton(wx.ToggleButton):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_TOGGLEBUTTON, handler)
+            self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
-        tip = '\n  '.join(filter(None, (tip, handler and handler.__doc__)))
+        tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
         self.icon = icon
 
@@ -1032,10 +1035,9 @@ class TextCtrl(wx.Panel):
             )
         )
         if handler:
-            ## use style=wx.TE_PROCESS_ENTER
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+            self.ctrl.Bind(wx.EVT_TEXT_ENTER, _F(handler, self))
         if updater:
-            self.btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+            self.btn.Bind(wx.EVT_BUTTON, _F(updater, self))
 
 
 class Choice(wx.Panel):
@@ -1101,12 +1103,11 @@ class Choice(wx.Panel):
             )
         )
         if handler:
-            ## use style=wx.TE_PROCESS_ENTER
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
-            self.ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
+            self.ctrl.Bind(wx.EVT_TEXT_ENTER, _F(handler, self))
+            self.ctrl.Bind(wx.EVT_COMBOBOX, _F(handler, self))
         self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         if updater:
-            self.btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+            self.btn.Bind(wx.EVT_BUTTON, _F(updater, self))
         
         if selection is not None:
             self.ctrl.Selection = selection # no events?
