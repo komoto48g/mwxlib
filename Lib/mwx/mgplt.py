@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-import subprocess
+from subprocess import Popen, PIPE
 import warnings
 import tempfile
 import sys
@@ -17,33 +17,29 @@ except:
     from . import framework as mwx
     from .controls import ControlPanel
 import numpy as np
-from six.moves import input
 from six import string_types
 
 
 class Gplot(object):
-    """Gnuplot - pgnuplot wrapper
-    
-    default markers
-         std_marker : 1,2,3,
-        open_marker : 4,6,8,10,12,14,
-       solid_marker : 5,7,9,11,13,15,
+    """Gnuplot - gnuplot:pipe wrapper
     """
     debug = 0
     startupfile = None
     tempfile = tempfile.mktemp()
     data_format = "{:e}".format
+    PGNUPLOT = "gnuplot" # Note: gnuplot/pgnuplot is integrated
     
     @staticmethod
     def init_path(path):
         if not os.path.isdir(path):
-            print("Gplot warning: {!r} is not a directory.".format(path))
-        os.environ['PATH'] = ';'.join((path, os.environ['PATH']))
+            print("- {!r} is not a directory.".format(path))
+            return False
+        os.environ['PATH'] = "{};{}".format(path, os.environ['PATH'])
     
     def __init__(self, startup="__init__.plt", debug=0):
-        self.__gnuplot = subprocess.Popen(['pgnuplot'],
-                            shell=True, stdin=subprocess.PIPE)
         print("Launching new gnuplot...")
+        self.__gnuplot = Popen([self.PGNUPLOT],
+                               shell=True, stdin=PIPE)
         self.startupfile = startup or ""
         self.debug = debug
         self.reset()
@@ -74,7 +70,7 @@ class Gplot(object):
         elif all((type(x) is tuple) for x in args):
             pcmd = []
             with open(self.tempfile, 'w') as o:
-                for i,arg in enumerate(args):
+                for i, arg in enumerate(args):
                     data = arg[:2]
                     opt = arg[2] if len(arg) > 2 else "w l"
                     for v in zip(*data):
@@ -122,19 +118,11 @@ class Gplot(object):
         self.__init__(self.startupfile)
     
     def reset(self, startup=None):
-        self("""reset
-        set zeroaxis lt 9
-        set grid xtics mxtics lt 13, lt 0
-        set grid ytics mytics lt 13, lt 0
-        set grid x2tics mx2tics lt 13, lt 0
-        set grid y2tics my2tics lt 13, lt 0
-        """)
         if startup is not None:
-            self.startupfile = startup # startupfile を変更する
-        
+            self.startupfile = startup
         if self.startupfile:
             self("load '{}'".format(self.startupfile))
-        self("temp = '{}'".format(self.tempfile))
+        self("temp = '{}'".format(self.tempfile)) # set temp:parameter
     
     def wait(self, msg=""):
         input(msg + " (Press ENTER to continue)")
@@ -145,29 +133,18 @@ class Gplot(object):
     def edit(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
-            subprocess.Popen("notepad {}".format(self.startupfile))
+            Popen("notepad {}".format(self.startupfile))
 
 
-## if __name__ == "__main__":
-if 0:
+if __name__ == "__main__":
     from numpy import pi,sin,cos
     
     Gplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
+    ## Gplot.PGNUPLOT = "pgnuplot"
+    
+    ## Gplot.init_path(r"C:\usr\local\gnuplot\bin")
     
     gp = Gplot(None, debug=1)
-    gp("""
-    ## set termoption dashed
-    set termoption enhanced
-    set size ratio -1
-    set title 'test plot'
-    set ylabel 'arb unit'
-    set xtics 1.0
-    set ytics 1.0
-    set mxtics 5
-    set mytics 5
-    set xrange [-4:4]
-    set yrange [-2:2]
-    """)
     X = np.arange(0,2,0.1) * pi
     
     print("\n>>> 数式のプロット 1")
@@ -196,7 +173,7 @@ if 0:
         for v in data.T:
             print('\t'.join("{:g}".format(x) for x in v), file=o)
             
-    gp("f = '{}'".format(o.name))
+    gp("f = '{}'".format(o.name)) # set local parameter
     gp.plot(
         "f using 1:2 w lp",
         "f using 1:3 w lp",
