@@ -482,7 +482,7 @@ class Menu(wx.Menu):
                 except IndexError:
                     pass
             else:
-                subitems = argv.pop()
+                subitems = list(argv.pop())
                 submenu = Menu(owner, subitems)
                 submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
                 submenu_item.SetSubMenu(submenu)
