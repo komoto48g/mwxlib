@@ -997,34 +997,32 @@ class Frame(mwx.Frame):
         elif isinstance(root, type):
             rootpath = inspect.getsourcefile(root)
         
-        rootname = os.path.basename(rootpath)
-        if rootname.endswith(".py"):
-            rootname,_ = os.path.splitext(rootname)
+        name = os.path.basename(rootpath)
+        if name.endswith(".py"):
+            name,_ = os.path.splitext(name)
         
-        plug = self.get_plug(rootname)
-        if plug:
-            ## <plug:rootname> is already registered
+        plug = self.get_plug(name)
+        if plug: # <plug:name> is already registered
             if not force:
-                self.update_pane(rootname, **props)
+                self.update_pane(name, **props)
                 if session:
                     plug.init_session(session)
                 return None
         
         ## Update the include path to load the module correctly.
         dirname = os.path.dirname(rootpath)
-        if dirname:
-            if os.path.isdir(dirname):
-                if dirname in sys.path:
-                    sys.path.remove(dirname) # インクルードパスの先頭に移動するため削除
-                sys.path.insert(0, dirname)  # インクルードパスの先頭に追加する
-            else:
-                print("- No such directory {!r}".format(dirname))
-                return False
+        if os.path.isdir(dirname):
+            if dirname in sys.path:
+                sys.path.remove(dirname) # インクルードパスの先頭に移動するため削除
+            sys.path.insert(0, dirname)  # インクルードパスの先頭に追加する
+        elif dirname:
+            print("- No such directory {!r}".format(dirname))
+            return False
         try:
-            if rootname in sys.modules:
-                module = reload(sys.modules[rootname])
+            if name in sys.modules:
+                module = reload(sys.modules[name])
             else:
-                module = __import__(rootname, fromlist=[''])
+                module = __import__(name, fromlist=[''])
         except ImportError as e:
             print("- Failed to import: {}".format(e))
             return False
@@ -1082,16 +1080,14 @@ class Frame(mwx.Frame):
             
             pane = self._mgr.GetPane(title)
             
-            ## <pane:category> is already registered
-            if pane.IsOk():
+            if pane.IsOk(): # <pane:title> is already registered
                 nb = pane.window
                 if not isinstance(nb, aui.AuiNotebook):
                     raise NameError("Notebook name must not be the same as any other plugins")
             
             pane = self.get_pane(name)
             
-            ## <pane:name> is already registered
-            if pane.IsOk():
+            if pane.IsOk(): # <pane:name> is already registered
                 if name not in self.plugins:
                     raise NameError("Plugin name must not be the same as any other panes")
                 
