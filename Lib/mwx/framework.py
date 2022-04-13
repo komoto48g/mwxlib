@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.55.9"
+__version__ = "0.56.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1148,7 +1148,7 @@ class ShellFrame(MiniFrame):
     def on_debug_end(self, frame):
         """Called after set_quit"""
         self.add_history(self.__shell.cmdline)
-        self.__shell.write("#>> Debugger closed successfully.", -1)
+        self.__shell.write("#>> Debugger closed successfully.\n", -1)
         self.__shell.prompt()
         self.linfo.unwatch()
         self.ginfo.unwatch()
@@ -2135,13 +2135,13 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @editable
     def eat_white_forward(self):
         p = self.cpos
-        self.skip_chars_forward(r' \t')
+        self.skip_chars_forward(' \t')
         self.Replace(p, self.cpos, '')
     
     @editable
     def eat_white_backward(self):
         p = self.cpos
-        self.skip_chars_backward(r' \t')
+        self.skip_chars_backward(' \t')
         self.Replace(max(self.cpos, self.bol), p, '')
     
     @editable

@@ -1606,7 +1606,7 @@ class GraphPlot(MatplotPanel):
         if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
             N = self.maxnum_markers
             xm, ym = self.marked.get_data(orig=0)
-            for k,(x,y) in enumerate(zip(xm[:N],ym[:N])):
+            for k, (x,y) in enumerate(zip(xm[:N],ym[:N])):
                 self.__markarts.append(
                   self.axes.annotate(k, #<matplotlib.text.Annotation>
                     xy=(x,y), xycoords='data',
