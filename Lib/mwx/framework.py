@@ -150,7 +150,7 @@ speckeys = {
 }
 
 def speckey_state(key):
-    k = next((k for k,v in speckeys.items() if v == key), None)
+    k = next((k for k, v in speckeys.items() if v == key), None)
     if k:
         return wx.GetKeyState(k) #cf. wx.GetMouseState
 
@@ -325,7 +325,7 @@ class KeyCtrlInterfaceMixin(object):
             self.message("{} {}".format(keymap, v.key))
         _Pass.__name__ = str('pass')
         
-        keyevent = keymap +' pressed'
+        keyevent = keymap + ' pressed'
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
@@ -357,7 +357,7 @@ class KeyCtrlInterfaceMixin(object):
         If no action, it invalidates the key and returns @decor(binder).
         key must be in C-M-S order (ctrl + alt(meta) + shift).
         
-        kwargs: `doc` and `alias` are reserved as kw-only-args.
+        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
         """
         state = self.handler.default_state
         map, sep, key = regulate_key(keymap).rpartition(' ')
@@ -365,16 +365,14 @@ class KeyCtrlInterfaceMixin(object):
         if not map:
             map = state
         elif map == '*':
-            map = None
-        elif map not in self.handler: # make key map automatically
+            map = state = None
+        elif map not in self.handler: # make spec keymap
             self.make_keymap(map)
-        
-        self.handler[map][key+' pressed'] = transaction = [state] # overwrite transaction
-        self.handler.validate(map)
         if action:
-            transaction.append(funcall(action, *args, **kwargs))
-            return action
-        return lambda f: self.define_key(keymap, f, *args, **kwargs)
+            action = _F(action, *args, **kwargs)
+        event = key + ' pressed'
+        self.handler.update({map: {event: [state]}}) # overwrite transaction
+        return self.handler.bind(event, action, map, state)
 
 
 ## --------------------------------
@@ -3575,7 +3573,7 @@ class Nautilus(Shell, EditorInterface):
                     text, sep, hint = self.get_words_hint(cmdl)
                     obj = self.eval(text or 'self')
                     ## modules = [k for k,v in inspect.getmembers(obj, inspect.ismodule)]
-                    modules = [k for k,v in vars(obj).items() if inspect.ismodule(v)]
+                    modules = [k for k, v in vars(obj).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
