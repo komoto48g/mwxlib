@@ -883,7 +883,7 @@ def Icon(key, size=None):
 
 Icon.provided_arts = provided_arts
 
-Icon.custom_images = dict((k,v) for (k,v) in images.__dict__.items()
+Icon.custom_images = dict((k, v) for k, v in images.__dict__.items()
                           if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
 
 

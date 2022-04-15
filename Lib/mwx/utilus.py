@@ -409,7 +409,7 @@ class SSM(OrderedDict):
                 return typename(a, docp=1, qualp=0)
             return repr(a)
         return '\n'.join("{:>32} : {}".format(k, ', '.join(_name(a) for a in v))
-                         for k,v in self.items())
+                         for k, v in self.items())
     
     def bind(self, event, action=None):
         """Append a transaction to the context"""
@@ -494,7 +494,7 @@ class FSM(dict):
         if contexts is None:
             contexts = {}
         if default is None: # if no default given, reset the first state as the default
-            if FSM.default_state is None:
+            if self.default_state is None:
                 keys = list(contexts)
                 if keys:
                     default = keys[0]
@@ -508,7 +508,7 @@ class FSM(dict):
         return "<{} object at 0x{:X}>".format(typename(self), id(self))
     
     def __str__(self):
-        return '\n'.join("[ {!r} ]\n{!s}".format(k,v) for k,v in self.items())
+        return '\n'.join("[ {!r} ]\n{!s}".format(k, v) for k, v in self.items())
     
     def __call__(self, event, *args, **kwargs):
         """Dispatch the given event
@@ -654,7 +654,7 @@ class FSM(dict):
     
     def update(self, contexts):
         """Update each context or Add new contexts"""
-        for k,v in contexts.items():
+        for k, v in contexts.items():
             if k in self:
                 self[k].update(self.duplicate(v))
             else:
@@ -663,7 +663,7 @@ class FSM(dict):
     
     def append(self, contexts):
         """Append new contexts"""
-        for k,v in contexts.items():
+        for k, v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
                     if event not in self[k]:
@@ -677,7 +677,7 @@ class FSM(dict):
     
     def remove(self, contexts):
         """Remove old contexts"""
-        for k,v in contexts.items():
+        for k, v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
                     if self[k].get(event) == transaction:
