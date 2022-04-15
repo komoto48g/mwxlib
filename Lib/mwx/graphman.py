@@ -56,56 +56,22 @@ class Thread(object):
          worker : reference of the worker thread
           owner : reference of the handler owner (was typ. f.__self__)
                   if None, the thread_event is handled by its own handler
+      is_active : flag of being kept going
+                  Check this to see the worker is running and intended being kept going
+     is_running : flag of being running now
+                  Watch this to verify the worker is alive after it has been inactivated
+          event : A common event flag to interrupt the process
+    
     Note:
-        is_active : flag of being kept going
-                    Check this to see the worker is running and intended being kept going
-        is_running : flag of being running now
-                     Watch this to verify the worker is alive after it has been inactivated
+        1. event.clear -> clear flag:False so that the thread suspends when wait is called
+        2. event.wait -> wait until the chequer flag to be set True
+        3. event.set -> set flag:True to resume the thread
+        
+        The event.wait blocks until the internal flag is True when it is False
+            and returns immediately when it is True.
     """
     is_active = property(lambda self: self.__keepGoing)
     is_running = property(lambda self: self.__isRunning)
-    
-    flag = property(lambda self: self.__flag)
-    
-    def wait(self, timeout=None):
-        """Wait flag or interrupt the process
-        1. flag.clear -> clear flag:False so that the thread suspends when wait is called
-        2. flag.wait -> wait until the chequer flag to be set True
-        3. flag.set -> set flag:True to resume the thread
-        """
-        if not self.is_running:
-            return False
-        
-        ## The event.wait returns immediately when it is True (:set)
-        ## and blocks until the internal flag is True when it is False (:clear)
-        try:
-            if not self.__flag.wait(timeout):
-                raise KeyboardInterrupt("timeout")
-            if not self.is_active:
-                raise KeyboardInterrupt("terminated by user")
-            return True
-        finally:
-            self.__flag.set()
-    
-    check = wait
-    
-    def pause(self, msg=""):
-        """Pause the process where called
-        The caller should check the retval and decide whether to stop the thread.
-        """
-        if not self.is_running:
-            return False
-        try:
-            self.__flag.clear()
-            if wx.MessageBox(msg + "\n\n"
-                    "Press [OK] to continue.\n"
-                    "Press [CANCEL] to terminate the process.",
-                    style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
-                ## self.Stop() # the caller should stop if necessary
-                return False
-            return True
-        finally:
-            self.__flag.set()
     
     def __init__(self, owner=None):
         self.owner = owner
@@ -114,8 +80,8 @@ class Thread(object):
         self.result = None
         self.__keepGoing = 0
         self.__isRunning = 0
-        self.__flag = threading.Event()
-        self.__flag.set()
+        self.event = threading.Event()
+        self.event.set()
         try:
             self.handler = self.owner.handler
         except AttributeError:
@@ -140,8 +106,7 @@ class Thread(object):
         module = inspect.getmodule(frame)
         name = frame.f_code.co_name
         
-        assert self.is_active,\
-          "cannot enter {!r} without an active thread".format(name)
+        assert self.is_active, "cannot enter {!r}".format(name)
         
         event = "{}:{}:enter".format(module.__name__, name)
         self.handler(event, self)
@@ -193,6 +158,7 @@ class Thread(object):
         self.worker = threading.Thread(target=_f, args=args, kwargs=kwargs)
         ## self.worker.setDaemon(True)
         self.worker.start()
+        self.event.set()
     
     @mwx.postcall
     def Stop(self):
@@ -940,7 +906,7 @@ class Frame(mwx.Frame):
     
     @property
     def plugs(self):
-        return OrderedDict((k, v.__plug__) for k,v in self.plugins.items())
+        return OrderedDict((k, v.__plug__) for k, v in self.plugins.items())
     
     __new_ID_ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
     
