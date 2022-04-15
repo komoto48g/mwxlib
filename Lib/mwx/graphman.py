@@ -363,7 +363,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         return self.parent.get_pane(self).IsShown()
     
     def Show(self, show=True):
-        ## self.parent.show_pane(self, show)
         wx.CallAfter(self.parent.show_pane, self, show)
     
     Drawn = property(
@@ -887,6 +886,7 @@ class Frame(mwx.Frame):
         else:
             pane.Float()
         self._show_pane(name, show)
+        self._mgr.Update()
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
@@ -1132,7 +1132,6 @@ class Frame(mwx.Frame):
         plug.__Menu_item = None
         
         self.update_pane(name, **props)
-        self._mgr.Update()
         
         ## Create a menu
         if not hasattr(module, 'ID_'): # give a unique index to the module
