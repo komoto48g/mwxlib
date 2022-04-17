@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.1"
+__version__ = "0.56.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -368,11 +368,14 @@ class KeyCtrlInterfaceMixin(object):
             map = state = None
         elif map not in self.handler: # make spec keymap
             self.make_keymap(map)
-        if action:
-            action = _F(action, *args, **kwargs)
         event = key + ' pressed'
-        self.handler.update({map: {event: [state]}}) # overwrite transaction
-        return self.handler.bind(event, action, map, state)
+        if action:
+            f = _F(action, *args, **kwargs)
+            self.handler.update({map: {event: [state, f]}})
+            return action
+        else:
+            self.handler.update({map: {event: [state]}})
+            return lambda f: self.define_key(keymap, f, *args, **kwargs)
 
 
 ## --------------------------------
