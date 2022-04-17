@@ -938,13 +938,22 @@ class Frame(mwx.Frame):
         """Register dummy-plug <module.Frame.register.<locals>._Plugin>
         """
         module = rebase or inspect.getmodule(cls) # rebsae or __main__
+        
+        ## Plugin(Layer) is cls
+        if _isLayer(cls):
+            warnings.warn(f"Use name `Plugin` for {cls}.", UserWarning)
+            cls.__module__ = module.__name__ # __main__ to module
+            module.Plugin = cls
+            return cls
+        
+        ## Plugin(Layer) has cls as class wrapper
         class _Plugin(Layer):
             def Init(self):
                 self.plug = cls(self)
                 cls.parent = property(lambda p: self.parent)
                 cls.message = property(lambda p: self.message)
-                self.layout((self.plug,), expand=2, title=None)
-        ## _Plugin.__module__ = cls.__module__ # __main__
+                self.layout((self.plug,), expand=2, title=None, border=0)
+        
         _Plugin.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
         _Plugin.__doc__ = cls.__doc__
@@ -957,11 +966,12 @@ class Frame(mwx.Frame):
         Note: This is called automatically from load_plug,
               and should not be called directly from user.
         """
-        rootpath = root
         if hasattr(root, '__file__'): #<class 'module'>
             rootpath = root.__file__
-        elif isinstance(root, type):
+        elif isinstance(root, type): #<class 'type'>
             rootpath = inspect.getsourcefile(root)
+        else:
+            rootpath = root
         
         name = os.path.basename(rootpath)
         if name.endswith(".py"):
@@ -1000,7 +1010,7 @@ class Frame(mwx.Frame):
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                warnings.warn("Use dummy-plug mode for debug only.", UserWarning)
+                warnings.warn(f"Use dummy-plug:{root} for debug only.", UserWarning)
                 module.__dummy_plug__ = root
                 self.register(root, module)
         else:
@@ -1038,7 +1048,7 @@ class Frame(mwx.Frame):
         
         module = self.load_module(root, force, session, **props)
         if not module:
-            return module
+            return False
         
         try:
             name = module.Plugin.__module__
