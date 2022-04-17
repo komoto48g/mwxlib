@@ -47,12 +47,9 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         target : widget to monitor
     dummy_hook : If True, the debugger calls handlers sequentially.
                  If False, handlers are hooked in true event-chain.
-    
-    Args:
-        parent : shellframe
     """
     parent = property(lambda self: self.__shellframe)
-    target = property(lambda self: self.__watchedWidget)
+    target = property(lambda self: self.__widget)
     
     dummy_hook = False
     
@@ -65,7 +62,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.__shellframe = parent
-        self.__watchedWidget = None
+        self.__widget = None
         self.__dir = True # sort direction
         self.__items = []
         
@@ -98,7 +95,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         @self.handler.bind('focus_set')
         def activate(v):
             self.parent.handler('title_window',
-                "{}: {}".format(self.__class__.__name__, self.target))
+                "{}: {}".format(self.__class__.__name__, self.__widget))
             v.Skip()
     
     def OnDestroy(self, evt):
@@ -161,7 +158,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         self.unwatch()
         self.clear()
-        self.__watchedWidget = widget
+        self.__widget = widget
         ssmap = self.dump(widget, verbose=1)
         for binder in self.get_watchlist():
             event = binder.typeId
@@ -173,17 +170,17 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                 name = self.get_name(event)
                 print(" #{:6d}:{:32s}{!s}".format(event, name, e))
                 continue
-        self.parent.handler("monitor_begin", self.target)
+        self.parent.handler("monitor_begin", self.__widget)
     
     def unwatch(self):
         """End watching"""
-        if not self.target:
+        if not self.__widget:
             return
         for binder in self.get_watchlist():
-            if not self.target.Unbind(binder, handler=self.onWatchedEvent):
+            if not self.__widget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
-        self.parent.handler("monitor_end", self.target)
-        self.__watchedWidget = None
+        self.parent.handler("monitor_end", self.__widget)
+        self.__widget = None
     
     def onWatchedEvent(self, evt):
         if self:
@@ -248,7 +245,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         if self.IsItemChecked(i):
             if self.dummy_hook:
-                actions = self.get_actions(evt.EventType, self.target)
+                actions = self.get_actions(evt.EventType, self.__widget)
                 if actions:
                     self.CheckItem(i, False)
                     for f in actions:

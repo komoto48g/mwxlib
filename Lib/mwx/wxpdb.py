@@ -69,16 +69,6 @@ class Debugger(Pdb):
         except AttributeError:
             pass
     
-    @property
-    def locals(self):
-        if self.busy:
-            return self.curframe.f_locals # cf. curframe_locals
-    
-    @property
-    def globals(self):
-        if self.busy:
-            return self.curframe.f_globals
-    
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
@@ -227,23 +217,20 @@ class Debugger(Pdb):
     ## Override Bdb methods
     ## --------------------------------
     
-    @echo
     def set_trace(self, frame=None):
         if self.busy:
             wx.MessageBox("Debugger is running\n\n"
                           "Enter [q]uit to exit debug mode.")
             return
-        if not self.target:
-            self.target = frame or sys._getframe().f_back
-        self.handler('debug_begin', self.target)
+        if not frame:
+            frame = inspect.currentframe().f_back
+        self.handler('debug_begin', frame)
         Pdb.set_trace(self, frame)
     
-    @echo
     def set_break(self, filename, lineno, *args, **kwargs):
         self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
-    @echo
     def set_quit(self):
         try:
             Pdb.set_quit(self)

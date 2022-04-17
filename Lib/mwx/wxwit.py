@@ -19,18 +19,19 @@ class Inspector(it.InspectionTree, CtrlInterface):
     """Widget inspection tool
     
     Attributes:
-    Args:
         parent : shellframe
+        target : widget to inspect
     """
     parent = property(lambda self: self.__shellframe)
+    target = property(lambda self: self.__widget)
     
     def __init__(self, parent, *args, **kwargs):
         it.InspectionTree.__init__(self, parent, *args, **kwargs)
         CtrlInterface.__init__(self)
         
         self.__shellframe = parent
+        self.__widget = None
         self._noWatchList = [self]
-        self.target = None
         self.toolFrame = self
         self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
@@ -53,7 +54,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         @self.handler.bind('focus_set')
         def activate(v):
             self.parent.handler('title_window',
-                "{}: {}".format(self.__class__.__name__, self.target))
+                "{}: {}".format(self.__class__.__name__, self.__widget))
             v.Skip()
     
     def OnDestroy(self, evt):
@@ -63,9 +64,9 @@ class Inspector(it.InspectionTree, CtrlInterface):
     
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj"""
-        if self.target is obj:
+        if self.__widget is obj:
             return
-        self.target = obj
+        self.__widget = obj
         item = self.FindWidgetItem(obj)
         if item:
             self.EnsureVisible(item)
@@ -73,7 +74,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         elif obj:
             self.BuildTree(obj)
         self.parent.handler('title_window',
-            "{}: {}".format(self.__class__.__name__, self.target))
+            "{}: {}".format(self.__class__.__name__, self.__widget))
     
     def GetTextForWidget(self, obj):
         """Returns the string to be used in the tree for a widget
@@ -98,7 +99,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.timer.Start(500)
     
     def unwatch(self):
-        self.target = None
+        self.__widget = None
         self.timer.Stop()
     
     def dive(self, obj):
@@ -114,10 +115,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
         if wnd:
-            if (wnd is self.target
-              or wnd in self._noWatchList
-              or wnd in self.Parent.Children
-              or wnd is self.GetTopLevelParent()):
+            if (wnd is self.__widget
+                or wnd in self._noWatchList
+                or wnd in self.Parent.Children
+                or wnd is self.GetTopLevelParent()):
                 return
             self.SetObj(wnd)
         evt.Skip()
@@ -125,7 +126,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
     def OnShow(self, evt):
         if evt.IsShown():
             if not self.built:
-                self.BuildTree(self.target)
+                self.BuildTree(self.__widget)
         self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
     
@@ -134,7 +135,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.SelectItem(item)
         
-        obj = self.target
+        obj = self.__widget
         
         def _enable_menu(v):
             v.Enable(obj is not None)

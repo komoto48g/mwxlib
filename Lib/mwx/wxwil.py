@@ -13,10 +13,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
     """Locals info watcher
     
     Attributes:
-    Args:
         parent : shellframe
+        target : locals:dict to watch
     """
     parent = property(lambda self: self.__shellframe)
+    target = property(lambda self: self.__locals)
     
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
@@ -24,7 +25,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
         ListCtrlAutoWidthMixin.__init__(self)
         
         self.__shellframe = parent
-        self.__locals = {} # target <dict>
+        self.__locals = {}
         self.__dir = True # sort direction
         self.__items = []
         
