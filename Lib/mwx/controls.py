@@ -893,9 +893,6 @@ def _bmpIcon(v):
     return v
 
 
-_F = funcall
-
-
 class Button(pb.PlateButton):
     """Flat button
     
@@ -925,7 +922,7 @@ class Button(pb.PlateButton):
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_BUTTON, _F(handler))
+            self.Bind(wx.EVT_BUTTON, handler)
         
         tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
@@ -976,7 +973,7 @@ class ToggleButton(wx.ToggleButton):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
+            self.Bind(wx.EVT_TOGGLEBUTTON, handler)
         
         tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
@@ -1014,19 +1011,20 @@ class TextCtrl(wx.Panel):
     def icon(self, v):
         self.btn.icon = v
     
-    def __init__(self, parent, label='', handler=None, updater=None,
+    def __init__(self, parent, label='',
+                 handler=None, updater=None,
                  icon=None, tip='', readonly=0, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
-        
-        self.btn = Button(self, label, icon=icon, tip=tip,
-                          size=(-1,-1) if label or icon else (0,0))
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
                             | (wx.TE_READONLY if readonly else 0))
         
         self.ctrl = wx.TextCtrl(self, **kwargs)
-        ## self.ctrl.Hint = hint
+        
+        self.btn = Button(self, label,
+                          funcall(updater, self) if updater else None,
+                          icon, tip, size=(-1,-1) if label or icon else (0,0))
         
         self.SetSizer(
             mwx.pack(self,
@@ -1035,9 +1033,7 @@ class TextCtrl(wx.Panel):
             )
         )
         if handler:
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, _F(handler, self))
-        if updater:
-            self.btn.Bind(wx.EVT_BUTTON, _F(updater, self))
+            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
 
 
 class Choice(wx.Panel):
@@ -1086,15 +1082,15 @@ class Choice(wx.Panel):
                  icon=None, tip='', readonly=0, selection=None, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
-        self.btn = Button(self, label, icon=icon, tip=tip,
-                          size=(-1,-1) if label or icon else (0,0))
-        
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
                             | (wx.CB_READONLY if readonly else 0))
         
         self.ctrl = wx.ComboBox(self, **kwargs)
-        ## self.ctrl.Hint = hint
+        
+        self.btn = Button(self, label,
+                          funcall(updater, self) if updater else None,
+                          icon, tip, size=(-1,-1) if label or icon else (0,0))
         
         self.SetSizer(
             mwx.pack(self,
@@ -1103,11 +1099,9 @@ class Choice(wx.Panel):
             )
         )
         if handler:
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, _F(handler, self))
-            self.ctrl.Bind(wx.EVT_COMBOBOX, _F(handler, self))
+            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+            self.ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
         self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
-        if updater:
-            self.btn.Bind(wx.EVT_BUTTON, _F(updater, self))
         
         if selection is not None:
             self.ctrl.Selection = selection # no events?

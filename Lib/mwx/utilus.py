@@ -857,6 +857,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
     
     retval-> (lambda *v: f`alias<doc:str>(*v, *args, **kwargs))
     """
+    assert callable(f)
     assert isinstance(doc, (string_types, type(None)))
     assert isinstance(alias, (string_types, type(None)))
     
