@@ -935,7 +935,8 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def register(cls, rebase=None):
-        """Register dummy-plug <module.Frame.register.<locals>._Plugin>
+        """Register dummy plug <module.Frame.register.<locals>._Plugin>
+        Add module.Plugin(Layer)
         """
         module = rebase or inspect.getmodule(cls) # rebsae or __main__
         
@@ -999,10 +1000,7 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = __import__(name, fromlist=[''])
-        except ImportError as e:
-            print("- Failed to import: {}".format(e))
-            return False
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             print("- Unable to load {!r}".format(root))
             return False
@@ -1662,7 +1660,7 @@ class Frame(mwx.Frame):
                 current_session = {}
                 try:
                     plug.save_session(current_session)
-                except Exception as e:
+                except Exception:
                     traceback.print_exc()
                     print("- Failed to save session: {}".format(plug))
                 o.write("self.load_plug({!r}, session={!r})\n"
