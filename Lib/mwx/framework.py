@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.0"
+__version__ = "0.56.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1133,10 +1133,14 @@ class ShellFrame(MiniFrame):
     def on_debug_next(self, frame):
         """Called from cmdloop"""
         self.add_history(self.__shell.cmdline)
-        self.__shell.globals = self.debugger.globals
-        self.__shell.locals = self.debugger.locals
-        self.ginfo.watch(self.debugger.globals)
-        self.linfo.watch(self.debugger.locals)
+        gs = frame.f_globals
+        ls = frame.f_locals
+        self.__shell.globals = gs
+        self.__shell.locals = ls
+        if self.ginfo.target is not gs:
+            self.ginfo.watch(gs)
+        if self.linfo.target is not ls:
+            self.linfo.watch(ls)
         self.show_page(self.Log, focus=0)
         self.SetTitleWindow(frame)
         self.Log.target = frame.f_code.co_filename
