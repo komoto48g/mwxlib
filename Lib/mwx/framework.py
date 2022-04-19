@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.2"
+__version__ = "0.56.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -923,7 +923,8 @@ class ShellFrame(MiniFrame):
         @self.Scratch.handler.bind('C-j pressed')
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.globals,
-                                        self.current_shell.locals)
+                                        self.current_shell.locals,
+                                        filename="<scratch>")
         
         self.Log.show_folder()
         
@@ -1733,7 +1734,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             ## traceback.print_exc()
         else:
             self.linemark = None
-            self.message("Evaluated successfully.")
+            self.message("Evaluated {!r} successfully".format(filename))
     
     ## --------------------------------
     ## Fold / Unfold functions
