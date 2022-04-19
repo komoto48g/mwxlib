@@ -919,6 +919,13 @@ class ShellFrame(MiniFrame):
         def activate(v):
             self.SetTitleWindow(self.current_shell.target)
         
+        @self.Scratch.handler.bind('C-j pressed')
+        def eval_region(v):
+            self.Scratch.py_eval_buffer(self.current_shell.globals,
+                                        self.current_shell.locals,
+                                        region=self.Scratch.region,
+                                        filename="<string>")
+        
         @self.Scratch.handler.bind('f5 pressed')
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.globals,
@@ -1021,7 +1028,7 @@ class ShellFrame(MiniFrame):
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
                     "self.Log.load({!r}, {})".format(self.Log.target,
-                                                     self.Log.MarkerNext(0, 1)+1),
+                                                     self.Log.MarkerNext(0, 1) + 1),
                     "self.Log.EmptyUndoBuffer()",
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
@@ -1566,7 +1573,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def mark(self):
-        return self.__mark
+        return self.__mark # equiv. MarkerNext(0, 0b001)
     
     @mark.setter
     def mark(self, v):
@@ -1598,7 +1605,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def linemark(self):
-        return self.__line # cf. MarkerNext(0, 1<<3)
+        return self.__line # equiv. MarkerNext(0, 0b11000)
     
     @linemark.setter
     def linemark(self, ln):
@@ -1706,7 +1713,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 break
         return line
     
-    def py_eval_buffer(self, globals, locals, filename=None):
+    def py_eval_buffer(self, globals, locals, filename=None, region=None):
         if not filename:
             filename = "<string>"
         else:
@@ -1715,7 +1722,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             if os.path.isdir(dirname) and dirname not in sys.path:
                 sys.path.append(dirname)
         try:
-            code = compile(self.Text, filename, "exec")
+            if region:
+                p, q = region
+                text = self.GetTextRange(p, q)
+                ln = self.LineFromPosition(p)
+                self.mark = p
+            else:
+                text = self.Text
+                ln = 0
+            code = compile(text, filename, "exec")
             exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
@@ -1724,7 +1739,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                              traceback.format_exc(), re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
-                lx = lines[-1] - 1
+                lx = ln + lines[-1] - 1
                 self.linemark = lx
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
@@ -1784,11 +1799,29 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         the specified line switches between expanded and contracted.
         """
         while 1:
-            lp = self.GetFoldParent(lc) # get folding root
-            if lp == -1:
+            la = self.GetFoldParent(lc) # get folding root
+            if la == -1:
                 break
-            lc = lp
+            lc = la
         self.ToggleFold(lc)
+    
+    @property
+    def region(self):
+        """Positions of folding head and tail"""
+        lc = self.cline
+        le = lc + 1
+        while 1:
+            la = self.GetFoldParent(lc) # get folding root
+            if la == -1:
+                break
+            lc = la
+        while 1:
+            level = self.GetFoldLevel(le) ^ stc.STC_FOLDLEVELBASE
+            if level == 0 or level == stc.STC_FOLDLEVELHEADERFLAG:
+                break
+            le += 1
+        ## return (lc, le)
+        return [self.PositionFromLine(x) for x in (lc,le)]
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -2275,7 +2308,7 @@ class Editor(EditWindow, EditorInterface):
                         "Do you want to reload it?".format(f),
                         style=wx.YES_NO|wx.ICON_INFORMATION) as dlg:
                         if dlg.ShowModal() == wx.ID_YES:
-                            self.load(f, self.MarkerNext(0, 1)+1)
+                            self.load(f, self.MarkerNext(0, 1) + 1)
                             self.goto_char(p)
                         if self.HasCapture():
                             self.ReleaseMouse()
