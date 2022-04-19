@@ -73,8 +73,9 @@ class Thread(object):
     is_active = property(lambda self: self.__keepGoing)
     is_running = property(lambda self: self.__isRunning)
     
-    def __init__(self, owner=None):
+    def __init__(self, owner=None, **kwargs):
         self.owner = owner
+        self.props = kwargs
         self.worker = None
         self.target = None
         self.result = None
@@ -155,8 +156,8 @@ class Thread(object):
         self.target = f
         self.result = None
         self.__keepGoing = self.__isRunning = 1
-        self.worker = threading.Thread(target=_f, args=args, kwargs=kwargs)
-        ## self.worker.setDaemon(True)
+        self.worker = threading.Thread(target=_f,
+                                args=args, kwargs=kwargs, **self.props)
         self.worker.start()
         self.event.set()
     
@@ -164,11 +165,13 @@ class Thread(object):
     def Stop(self):
         self.__keepGoing = 0
         if self.__isRunning:
-            busy = wx.BusyInfo("One moment please, now waiting for threads to die...")
-            self.handler('thread_quit', self)
-            self.worker.join(1)
-            ## sys.exit(1)
-            del busy
+            try:
+                busy = wx.BusyInfo("One moment please, "
+                                   "waiting for threads to die...")
+                self.handler('thread_quit', self)
+                self.worker.join(1)
+            finally:
+                del busy
 
 
 def _isLayer(obj):
@@ -1566,8 +1569,8 @@ class Frame(mwx.Frame):
         try:
             name = os.path.basename(path)
             self.statusbar("Saving {!r}...".format(name))
-            busy = wx.BusyInfo("One moment please, now saving {!r}...".format(name))
-            
+            busy = wx.BusyInfo("One moment please, "
+                               "now saving {!r}...".format(name))
             stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
             stack[0].save(path,
                     save_all=True,
