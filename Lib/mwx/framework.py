@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.3"
+__version__ = "0.56.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -920,7 +920,6 @@ class ShellFrame(MiniFrame):
             self.SetTitleWindow(self.current_shell.target)
         
         @self.Scratch.handler.bind('f5 pressed')
-        @self.Scratch.handler.bind('C-j pressed')
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.globals,
                                         self.current_shell.locals,
@@ -2556,12 +2555,12 @@ class Nautilus(Shell, EditorInterface):
             '*button* released' : [ None, skip, forkup ],
             },
             -1 : { # original action of the wx.py.shell
-                    '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
+                    '* pressed' : (0, skip, self.on_exit_escmap),
                  '*alt pressed' : (-1, ),
                 '*ctrl pressed' : (-1, ),
                '*shift pressed' : (-1, ),
              '*[LR]win pressed' : (-1, ),
-                 '*f12 pressed' : (-2, self.on_enter_notemode),
+                 '*f12 pressed' : (-2, self.on_exit_escmap, self.on_enter_notemode),
             },
             -2 : {
                   'C-g pressed' : (0, self.on_exit_notemode),
@@ -2570,7 +2569,7 @@ class Nautilus(Shell, EditorInterface):
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
-               'escape pressed' : (-1, self.OnEscape),
+               'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
                 'enter pressed' : (0, self.OnEnter),
@@ -2788,17 +2787,6 @@ class Nautilus(Shell, EditorInterface):
     ## Special keymap of the shell
     ## --------------------------------
     
-    def OnEscape(self, evt):
-        """Called when escape pressed"""
-        if self.AutoCompActive():
-            self.AutoCompCancel()
-        if self.CallTipActive():
-            self.CallTipCancel()
-        ## if self.eolc < self.bolc: # check if prompt is in valid state
-        ##     self.prompt() # ここでは機能しない？
-        ##     evt.Skip()
-        self.message("ESC-")
-    
     def OnSpace(self, evt):
         """Called when space pressed"""
         if not self.CanEdit():
@@ -2888,17 +2876,30 @@ class Nautilus(Shell, EditorInterface):
                 self.clearCommand()
             self.write(cmd, -1)
     
+    def on_enter_escmap(self, evt):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        if self.CallTipActive():
+            self.CallTipCancel()
+        self._caret = self.CaretPeriod
+        self.CaretPeriod = 0
+        self.message("ESC-")
+    
+    def on_exit_escmap(self, evt):
+        self.CaretPeriod = self._caret
+        self.message("ESC {}".format(evt.key))
+    
     def on_enter_notemode(self, evt):
         self.noteMode = True
-        self.SetCaretForeground("red")
-        self.SetCaretWidth(4)
+        self._caret = self.CaretForeground
+        self.CaretForeground = 'red'
+        self.message("Note mode")
     
     def on_exit_notemode(self, evt):
         self.noteMode = False
-        self.set_style(self.STYLE)
-        ## self.goto_char(-1)
-        ## self.prompt()
+        self.CaretForeground = self._caret
         self.promptPosEnd = self.TextLength
+        self.message("")
     
     ## --------------------------------
     ## Magic caster of the shell
