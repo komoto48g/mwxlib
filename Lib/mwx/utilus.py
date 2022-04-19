@@ -846,16 +846,13 @@ class TreeList(object):
         ls.remove(next(x for x in ls if x and x[0] == key))
 
 
-def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
-    """Decorator as curried function
+def funcall(f, *args, doc:str=None, alias:str=None, **kwargs):
+    """Decorator of event handler
     
-    event 引数などが省略できるかどうかチェックし，
-    省略できる場合 (kwargs で必要な引数が与えられる場合) その関数を返す．
-    Check if the event argument etc. can be omitted,
-    If it can be omitted (if required arguments are given by kwargs),
-    return the decorated function.
+    Check if the event argument can be omitted,
+    and required arguments are given by kwargs.
     
-    retval-> (lambda *v: f`alias<doc:str>(*v, *args, **kwargs))
+    retval-> (lambda *v: f`alias<doc>`(*args, **kwargs))
     """
     assert callable(f)
     assert isinstance(doc, (string_types, type(None)))
@@ -863,34 +860,25 @@ def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
     
     @wraps(f)
     def _Act(*v):
-        return f(*(args + v), **kwargs)
+        return f(*(args + v), **kwargs) # function with event args
+    
+    @wraps(f)
+    def _Act2(*v):
+        return f(*args, **kwargs) # function with no explicit args
+    
     action = _Act
     
-    def explicit_args(argv, defaults):
-        ## 明示的に与えなければならない引数の数を数える
-        ## defaults と kwargs はかぶることがあるので，次のようにする
-        n = len(args) + len(defaults or ())
-        rest = argv[:-n] if n else argv # explicit, non-default argv that must be given
-        k = len(rest)                   # if k > 0: kwargs must give the rest of args
-        for kw in kwargs:
-            if kw not in argv:
-                raise TypeError("{} got an unexpected keyword {!r}".format(f, kw))
-            if kw in rest:
-                k -= 1
-        return k
+    def _explicit_args(argv, defaults):
+        """The rest of argv that must be given explicitly in f"""
+        n = len(args) + int(inspect.ismethod(f)) # given *args but eliminates self
+        j = len(defaults) if defaults else 0     # number of defaults defined in f
+        rest = set(argv[n:]) - set(argv[-j:])    # rest of argv given by **kwargs
+        return rest - set(kwargs)
     
     if not inspect.isbuiltin(f):
-        try:
-            argv, _varargs, _keywords, defaults,\
-              _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f) # PY3
-        except AttributeError:
-            argv, _varargs, _keywords, defaults = inspect.getargspec(f) # PY2
-        
-        k = explicit_args(argv, defaults)
-        if k == 0 or inspect.ismethod(f) and k == 1: # 暗黙の引数 'self' は除く
-            @wraps(f)
-            def _Act2(*v):
-                return f(*args, **kwargs) # function with no explicit args
+        argv, _varargs, _keywords, defaults,\
+          _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f)
+        if not _explicit_args(argv, defaults):
             action = _Act2
             action.__name__ += str("~")
     else:
@@ -908,12 +896,8 @@ def funcall(f, *args, doc=None, alias=None, **kwargs): # PY3
             name, argspec = m.groups()
             argv = [x for x in argspec.strip().split(',') if x]
             defaults = re.findall(r"\w+\s*=(\w+)", argspec)
-            k = explicit_args(argv, defaults)
-            if k == 0:
-                @wraps(f)
-                def _Act3(*v):
-                    return f(*args, **kwargs) # function with no explicit args
-                action = _Act3
+            if not _explicit_args(argv, defaults):
+                action = _Act2
                 action.__name__ += str("~~")
                 if len(docs) > 1:
                     action.__doc__ = '\n'.join(docs[1:])

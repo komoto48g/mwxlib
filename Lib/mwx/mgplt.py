@@ -24,9 +24,8 @@ class Gplot(object):
     """Gnuplot - gnuplot:pipe wrapper
     """
     debug = 0
-    startupfile = None
-    tempfile = tempfile.mktemp()
     data_format = "{:e}".format
+    
     PGNUPLOT = "gnuplot" # Note: gnuplot/pgnuplot is integrated
     
     @staticmethod
@@ -41,6 +40,7 @@ class Gplot(object):
         self.__gnuplot = Popen([self.PGNUPLOT],
                                shell=True, stdin=PIPE)
         self.startupfile = startup or ""
+        self.tempfile = tempfile.mktemp()
         self.debug = debug
         self.reset()
     
@@ -118,7 +118,7 @@ class Gplot(object):
         self.__init__(self.startupfile)
     
     def reset(self, startup=None):
-        if startup is not None:
+        if startup:
             self.startupfile = startup
         if self.startupfile:
             self("load '{}'".format(self.startupfile))
@@ -126,9 +126,6 @@ class Gplot(object):
     
     def wait(self, msg=""):
         input(msg + " (Press ENTER to continue)")
-    
-    def pause(self, dur=-1, msg=""):
-        self("pause {} '{}'".format(dur, msg))
     
     def edit(self):
         with warnings.catch_warnings():

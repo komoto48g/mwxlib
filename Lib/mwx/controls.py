@@ -4,17 +4,18 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
+from functools import wraps
 from itertools import chain
 import sys
 import wx
 import numpy as np
 from numpy import nan, inf
 try:
-    from utilus import SSM, funcall
+    from utilus import SSM
     import framework as mwx
     import images
 except ImportError:
-    from .utilus import SSM, funcall
+    from .utilus import SSM
     from . import framework as mwx
     from . import images
 import wx.lib.platebtn as pb
@@ -893,6 +894,11 @@ def _bmpIcon(v):
     return v
 
 
+def _F(f, obj):
+    if callable(f):
+        return wraps(f)(lambda v: f(obj))
+
+
 class Button(pb.PlateButton):
     """Flat button
     
@@ -1022,9 +1028,8 @@ class TextCtrl(wx.Panel):
         
         self.ctrl = wx.TextCtrl(self, **kwargs)
         
-        self.btn = Button(self, label,
-                          funcall(updater, self) if updater else None,
-                          icon, tip, size=(-1,-1) if label or icon else (0,0))
+        self.btn = Button(self, label, _F(updater, self), icon, tip,
+                                size=(-1,-1) if label or icon else (0,0))
         
         self.SetSizer(
             mwx.pack(self,
@@ -1088,9 +1093,8 @@ class Choice(wx.Panel):
         
         self.ctrl = wx.ComboBox(self, **kwargs)
         
-        self.btn = Button(self, label,
-                          funcall(updater, self) if updater else None,
-                          icon, tip, size=(-1,-1) if label or icon else (0,0))
+        self.btn = Button(self, label, _F(updater, self), icon, tip,
+                                size=(-1,-1) if label or icon else (0,0))
         
         self.SetSizer(
             mwx.pack(self,
