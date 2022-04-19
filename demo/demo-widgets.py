@@ -34,7 +34,8 @@ class Plugin(Layer):
                         )
         self.text = TextCtrl(self, label="ctrl label",
                         handler=lambda v: self.statusline(v.Value, "enter"),
-                        updater=lambda v: self.statusline(v.Value, "update"),
+                        ## updater=lambda v: self.statusline(v.Value, "update"),
+                        updater=trace,
                         tip="this is a textctrl",
                         icon=wx.ART_NEW,
                         readonly=0,
@@ -43,7 +44,8 @@ class Plugin(Layer):
                         )
         self.choice = Choice(self, label="ctrl label",
                          handler=lambda v: self.statusline(v.Value, "selected"),
-                         updater=lambda v: self.statusline(v.Value, "update"),
+                         ## updater=lambda v: self.statusline(v.Value, "update"),
+                         updater=trace,
                          choices=['1','2','3'],
                          tip="this is a choice",
                          icon=wx.ART_NEW,
