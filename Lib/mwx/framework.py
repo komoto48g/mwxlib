@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.3"
+__version__ = "0.56.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -919,8 +919,14 @@ class ShellFrame(MiniFrame):
         def activate(v):
             self.SetTitleWindow(self.current_shell.target)
         
-        @self.Scratch.handler.bind('f5 pressed')
         @self.Scratch.handler.bind('C-j pressed')
+        def eval_region(v):
+            self.Scratch.py_eval_buffer(self.current_shell.globals,
+                                        self.current_shell.locals,
+                                        region=self.Scratch.region,
+                                        filename="<string>")
+        
+        @self.Scratch.handler.bind('f5 pressed')
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.globals,
                                         self.current_shell.locals,
@@ -1022,7 +1028,7 @@ class ShellFrame(MiniFrame):
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
                     "self.Log.load({!r}, {})".format(self.Log.target,
-                                                     self.Log.MarkerNext(0, 1)+1),
+                                                     self.Log.MarkerNext(0, 1) + 1),
                     "self.Log.EmptyUndoBuffer()",
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
@@ -1567,7 +1573,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def mark(self):
-        return self.__mark
+        return self.__mark # equiv. MarkerNext(0, 0b001)
     
     @mark.setter
     def mark(self, v):
@@ -1599,7 +1605,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def linemark(self):
-        return self.__line # cf. MarkerNext(0, 1<<3)
+        return self.__line # equiv. MarkerNext(0, 0b11000)
     
     @linemark.setter
     def linemark(self, ln):
@@ -1707,7 +1713,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 break
         return line
     
-    def py_eval_buffer(self, globals, locals, filename=None):
+    def py_eval_buffer(self, globals, locals, filename=None, region=None):
         if not filename:
             filename = "<string>"
         else:
@@ -1716,7 +1722,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             if os.path.isdir(dirname) and dirname not in sys.path:
                 sys.path.append(dirname)
         try:
-            code = compile(self.Text, filename, "exec")
+            if region:
+                p, q = region
+                text = self.GetTextRange(p, q)
+                ln = self.LineFromPosition(p)
+                self.mark = p
+            else:
+                text = self.Text
+                ln = 0
+            code = compile(text, filename, "exec")
             exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
@@ -1725,7 +1739,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                              traceback.format_exc(), re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
-                lx = lines[-1] - 1
+                lx = ln + lines[-1] - 1
                 self.linemark = lx
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
@@ -1785,11 +1799,29 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         the specified line switches between expanded and contracted.
         """
         while 1:
-            lp = self.GetFoldParent(lc) # get folding root
-            if lp == -1:
+            la = self.GetFoldParent(lc) # get folding root
+            if la == -1:
                 break
-            lc = lp
+            lc = la
         self.ToggleFold(lc)
+    
+    @property
+    def region(self):
+        """Positions of folding head and tail"""
+        lc = self.cline
+        le = lc + 1
+        while 1:
+            la = self.GetFoldParent(lc) # get folding root
+            if la == -1:
+                break
+            lc = la
+        while 1:
+            level = self.GetFoldLevel(le) ^ stc.STC_FOLDLEVELBASE
+            if level == 0 or level == stc.STC_FOLDLEVELHEADERFLAG:
+                break
+            le += 1
+        ## return (lc, le)
+        return [self.PositionFromLine(x) for x in (lc,le)]
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -2276,7 +2308,7 @@ class Editor(EditWindow, EditorInterface):
                         "Do you want to reload it?".format(f),
                         style=wx.YES_NO|wx.ICON_INFORMATION) as dlg:
                         if dlg.ShowModal() == wx.ID_YES:
-                            self.load(f, self.MarkerNext(0, 1)+1)
+                            self.load(f, self.MarkerNext(0, 1) + 1)
                             self.goto_char(p)
                         if self.HasCapture():
                             self.ReleaseMouse()
@@ -2556,12 +2588,12 @@ class Nautilus(Shell, EditorInterface):
             '*button* released' : [ None, skip, forkup ],
             },
             -1 : { # original action of the wx.py.shell
-                    '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
+                    '* pressed' : (0, skip, self.on_exit_escmap),
                  '*alt pressed' : (-1, ),
                 '*ctrl pressed' : (-1, ),
                '*shift pressed' : (-1, ),
              '*[LR]win pressed' : (-1, ),
-                 '*f12 pressed' : (-2, self.on_enter_notemode),
+                 '*f12 pressed' : (-2, self.on_exit_escmap, self.on_enter_notemode),
             },
             -2 : {
                   'C-g pressed' : (0, self.on_exit_notemode),
@@ -2570,7 +2602,7 @@ class Nautilus(Shell, EditorInterface):
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
-               'escape pressed' : (-1, self.OnEscape),
+               'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
                 'enter pressed' : (0, self.OnEnter),
@@ -2788,17 +2820,6 @@ class Nautilus(Shell, EditorInterface):
     ## Special keymap of the shell
     ## --------------------------------
     
-    def OnEscape(self, evt):
-        """Called when escape pressed"""
-        if self.AutoCompActive():
-            self.AutoCompCancel()
-        if self.CallTipActive():
-            self.CallTipCancel()
-        ## if self.eolc < self.bolc: # check if prompt is in valid state
-        ##     self.prompt() # ここでは機能しない？
-        ##     evt.Skip()
-        self.message("ESC-")
-    
     def OnSpace(self, evt):
         """Called when space pressed"""
         if not self.CanEdit():
@@ -2888,17 +2909,30 @@ class Nautilus(Shell, EditorInterface):
                 self.clearCommand()
             self.write(cmd, -1)
     
+    def on_enter_escmap(self, evt):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        if self.CallTipActive():
+            self.CallTipCancel()
+        self._caret = self.CaretPeriod
+        self.CaretPeriod = 0
+        self.message("ESC-")
+    
+    def on_exit_escmap(self, evt):
+        self.CaretPeriod = self._caret
+        self.message("ESC {}".format(evt.key))
+    
     def on_enter_notemode(self, evt):
         self.noteMode = True
-        self.SetCaretForeground("red")
-        self.SetCaretWidth(4)
+        self._caret = self.CaretForeground
+        self.CaretForeground = 'red'
+        self.message("Note mode")
     
     def on_exit_notemode(self, evt):
         self.noteMode = False
-        self.set_style(self.STYLE)
-        ## self.goto_char(-1)
-        ## self.prompt()
+        self.CaretForeground = self._caret
         self.promptPosEnd = self.TextLength
+        self.message("")
     
     ## --------------------------------
     ## Magic caster of the shell
