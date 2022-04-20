@@ -1419,8 +1419,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 'C-S-f pressed' : (0, _F(self.set_marker)), # override mark
               'C-space pressed' : (0, _F(self.set_marker)),
               'S-space pressed' : (0, _F(self.set_line_marker)),
-                  'C-@ pressed' : (0, _F(self.goto_marker)),
-                'C-S-@ pressed' : (0, _F(self.goto_line_marker)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -1440,6 +1438,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                     '* pressed' : (0, skip),
                     '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
                     '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+                    '@ pressed' : (0, _F(self.goto_marker)),
+                  'S-@ pressed' : (0, _F(self.goto_line_marker)),
             },
             'C-c' : {
                     '* pressed' : (0, skip),
