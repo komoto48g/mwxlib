@@ -146,6 +146,8 @@ class Debugger(Pdb):
         """Called after set_quit"""
         self.__interactive = None
         self.logger.linemark = None
+        self.target = None
+        self.code = None
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
@@ -230,8 +232,6 @@ class Debugger(Pdb):
             Pdb.set_quit(self)
         finally:
             self.handler('debug_end', self.curframe)
-            self.target = None
-            self.code = None
             return
     
     ## --------------------------------
@@ -244,9 +244,9 @@ class Debugger(Pdb):
         (override) Change prompt_prefix;
                    Add pointer:marker when step next or jump
         """
-        self.logger.linemark = frame_lineno[1] - 1 # (->) pointer:marker
+        frame, lineno = frame_lineno
+        self.logger.linemark = lineno - 1 # (->) pointer:marker
         wx.CallAfter(self.logger.goto_line_marker)
-        
         if not self.verbose:
             return
         if prompt_prefix is None:
@@ -256,18 +256,18 @@ class Debugger(Pdb):
     @echo
     def user_call(self, frame, argument_list):
         """--Call--"""
-        ## Note: argument_list(=None) is no longer used
-        filename = frame.f_code.co_filename
-        lineno = frame.f_code.co_firstlineno
-        name = frame.f_code.co_name
         if not self.verbose:
+            ## Note: argument_list(=None) is no longer used
+            filename = frame.f_code.co_filename
+            lineno = frame.f_code.co_firstlineno
+            name = frame.f_code.co_name
             self.message("{}{}:{}:{}".format(
                          self.prefix1, filename, lineno, name), indent=0)
         Pdb.user_call(self, frame, argument_list)
     
     @echo
     def user_line(self, frame):
-        """--Step/Line--"""
+        """--Next--"""
         Pdb.user_line(self, frame)
     
     @echo
@@ -306,7 +306,7 @@ class Debugger(Pdb):
         if m:
             module = importlib.import_module(m.group(1))
             filename = inspect.getfile(module)
-        
+        lineno = frame.f_lineno
         lines = linecache.getlines(filename, frame.f_globals)
         if lines:
             ## Update logger text
@@ -317,7 +317,7 @@ class Debugger(Pdb):
             
             ## Update logger marker
             if self.code != code:
-                self.logger.mark = self.logger.PositionFromLine(firstlineno-1)
+                self.logger.mark = self.logger.PositionFromLine(firstlineno - 1)
         
         self.code = code
         self.target = filename
