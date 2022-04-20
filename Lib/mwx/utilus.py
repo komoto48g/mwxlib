@@ -870,9 +870,10 @@ def funcall(f, *args, doc:str=None, alias:str=None, **kwargs):
     
     def _explicit_args(argv, defaults):
         """The rest of argv that must be given explicitly in f"""
+        N = len(argv)
         n = len(args) + int(inspect.ismethod(f)) # given *args but eliminates self
         j = len(defaults) if defaults else 0     # number of defaults defined in f
-        rest = set(argv[n:]) - set(argv[-j:])    # rest of argv given by **kwargs
+        rest = set(argv[n:]) - set(argv[N-j:])   # rest of argv given by **kwargs
         return rest - set(kwargs)
     
     if not inspect.isbuiltin(f):
