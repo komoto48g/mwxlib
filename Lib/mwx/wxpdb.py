@@ -157,7 +157,6 @@ class Debugger(Pdb):
                           "Enter [q]uit to exit debug mode.")
             return
         try:
-            self.target = target
             self.set_trace()
             target(*args, **kwargs)
         except BdbQuit:
@@ -177,11 +176,6 @@ class Debugger(Pdb):
         """(override) Add indent to msg"""
         prefix = self.indent if indent < 0 else ' ' * indent
         print(prefix + str(msg), file=self.stdout)
-    
-    def mark(self, frame, lineno):
-        self.logger.linemark = lineno - 1
-        self.logger.goto_char(self.logger.PositionFromLine(lineno-1))
-        wx.CallAfter(self.logger.recenter)
     
     def watch(self, bp):
         if not self.busy:
@@ -228,7 +222,7 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.logger.MarkerAdd(lineno-1, 1) # new breakpoint
+        self.logger.MarkerAdd(lineno-1, 1) # (>>) breakpoints:marker
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
@@ -248,9 +242,11 @@ class Debugger(Pdb):
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
         (override) Change prompt_prefix;
-                   Add trace pointer when jump is called.
+                   Add pointer:marker when step next or jump
         """
-        self.mark(*frame_lineno) # for jump
+        self.logger.linemark = frame_lineno[1] - 1 # (->) pointer:marker
+        wx.CallAfter(self.logger.goto_line_marker)
+        
         if not self.verbose:
             return
         if prompt_prefix is None:
@@ -283,12 +279,18 @@ class Debugger(Pdb):
     @echo
     def user_exception(self, frame, exc_info):
         """--Exception--"""
-        self.message("$(exc_info) = {!r}".format((exc_info)))
+        t, v, tb = exc_info
+        self.logger.MarkerAdd(tb.tb_lineno-1, 2) # (>>) exception:marker
         Pdb.user_exception(self, frame, exc_info)
     
     @echo
     def bp_commands(self, frame):
         """--Break--"""
+        filename = frame.f_code.co_filename
+        breakpoints = self.get_file_breaks(filename)
+        ## Update breakpoint markers every time the frame changes
+        for lineno in breakpoints:
+            self.logger.MarkerAdd(lineno-1, 1) # (>>) breakpoints:marker
         return Pdb.bp_commands(self, frame)
     
     @echo
@@ -300,36 +302,26 @@ class Debugger(Pdb):
         code = frame.f_code
         filename = code.co_filename
         firstlineno = code.co_firstlineno
-        ## module = inspect.getmodule(frame)
         m = re.match("<frozen (.*)>", filename)
         if m:
             module = importlib.import_module(m.group(1))
             filename = inspect.getfile(module)
-        lineno = frame.f_lineno
-        lines = linecache.getlines(filename, frame.f_globals)
-        lbps = self.get_file_breaks(filename) # breakpoints
-        lx = self.tb_lineno.get(frame) # exception
         
+        lines = linecache.getlines(filename, frame.f_globals)
         if lines:
             ## Update logger text
             eol = lines[-1].endswith('\n')
             if self.code and self.code.co_filename != filename\
               or self.logger.LineCount != len(lines) + eol: # add +1
-                self.logger.Text = ''.join(lines)
+                self.logger.Text = ''.join(lines) # load
             
             ## Update logger marker
             if self.code != code:
                 self.logger.mark = self.logger.PositionFromLine(firstlineno-1)
-            
-            for ln in lbps:
-                self.logger.MarkerAdd(ln-1, 1) # (> ) breakpoints
-            if lx is not None:
-                self.logger.MarkerAdd(lx-1, 2) # (>>) exception
-            
-            self.mark(frame, lineno) # (->) pointer
         
-        self.handler('debug_next', frame)
         self.code = code
+        self.target = filename
+        self.handler('debug_next', frame)
         Pdb.preloop(self)
     
     @echo
@@ -348,6 +340,7 @@ if __name__ == "__main__":
         dbg = Debugger(self,
                        stdin=shell.interp.stdin,
                        stdout=shell.interp.stdout,
+                       skip=['__main__']
                        )
         dbg.handler.debug = 4
         dbg.verbose = 1
@@ -358,7 +351,8 @@ if __name__ == "__main__":
             },
         })
         frm.dbg = dbg
-        shell.write("self.dbg.debug(self.About)")
+        ## shell.write("self.dbg.debug(self.About)")
+        shell.write("self.dbg.debug(self.shell.about)")
         self.Show()
     frm.Show()
     app.MainLoop()
