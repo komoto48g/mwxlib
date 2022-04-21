@@ -37,6 +37,7 @@ class Debugger(Pdb):
     Attributes:
            busy : The flag of being running now
         verbose : Verbose messages are output from Pdb
+         editor : Editor to show the stack frame
     
     Args:
          parent : shellframe
@@ -72,7 +73,7 @@ class Debugger(Pdb):
         ## self.prompt = self.indent + '(Pdb) '
         Debugger.prompt = property(lambda self: self.indent + '(Pdb) ')
         self.indent = ''
-        self.logger = None
+        self.editor = None
         self.target = None
         self.code = None
         
@@ -87,7 +88,7 @@ class Debugger(Pdb):
         pdb.help = _help
         
         def jump_to_entry_point(v):
-            ln = self.logger.LineFromPosition(self.logger.mark)
+            ln = self.editor.LineFromPosition(self.editor.mark)
             self.send_input('j {}'.format(ln + 1))
         
         def forkup(v):
@@ -119,7 +120,6 @@ class Debugger(Pdb):
     def on_debug_begin(self, frame):
         """Called before set_trace"""
         self.indent = ''
-        self.logger = self.parent.Log
         self.__interactive = self.parent.rootshell.cpos
         def _continue():
             try:
@@ -137,21 +137,22 @@ class Debugger(Pdb):
             module = importlib.import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        lines = linecache.getlines(filename, frame.f_globals)
-        if lines:
-            ## Update logger text
-            eol = lines[-1].endswith('\n')
-            if self.code and self.code.co_filename != filename\
-              or self.logger.LineCount != len(lines) + eol: # add +1
-                self.logger.Text = ''.join(lines) # load
+        if filename == "<scratch>":
+            self.editor = self.parent.Scratch
+        else:
+            self.editor = self.parent.Log
+            self.editor.target = filename
             
-            ## Update logger marker
-            if self.code != code:
-                self.logger.mark = self.logger.PositionFromLine(firstlineno - 1)
+            lines = linecache.getlines(filename, frame.f_globals)
+            if not self.code or self.code.co_filename != filename:
+                self.editor.Text = ''.join(lines) or '[EOF]'
+        
+        if self.code != code:
+            self.editor.mark = self.editor.PositionFromLine(firstlineno - 1)
         
         lineno = frame.f_lineno
-        self.logger.linemark = lineno - 1 # (->) pointer:marker
-        self.logger.goto_line_marker()
+        self.editor.linemark = lineno - 1 # (->) pointer:marker
+        self.editor.goto_line_marker()
         
         self.code = code
         self.target = filename
@@ -173,7 +174,7 @@ class Debugger(Pdb):
     def on_debug_end(self, frame):
         """Called after set_quit"""
         self.__interactive = None
-        self.logger.linemark = None
+        self.editor.linemark = None
         self.target = None
         self.code = None
     
@@ -187,7 +188,8 @@ class Debugger(Pdb):
                           "Enter [q]uit to exit debug mode.")
             return
         try:
-            self.set_trace()
+            frame = inspect.currentframe().f_back
+            self.set_trace(frame)
             target(*args, **kwargs)
         except BdbQuit:
             pass
@@ -204,7 +206,7 @@ class Debugger(Pdb):
         1) white-arrow for breakpoints
         2) red-arrow for exception
         """
-        self.logger.MarkerAdd(lineno-1, style)
+        self.editor.MarkerAdd(lineno-1, style)
     
     def send_input(self, c):
         self.stdin.input = c
