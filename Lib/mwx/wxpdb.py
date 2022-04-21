@@ -54,7 +54,7 @@ class Debugger(Pdb):
             C-r : return
             C-s : step
     """
-    indent = "  "
+    indent = ''
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
@@ -75,7 +75,9 @@ class Debugger(Pdb):
         self.__shellframe = parent
         self.__interactive = None
         self.__breakpoint = None
-        self.prompt = self.indent + '(Pdb) ' # default prompt
+        ## self.prompt = self.indent + '(Pdb) '
+        Debugger.prompt = property(lambda self: self.indent + '(Pdb) ')
+        self.indent = ''
         self.target = None
         self.code = None
         
@@ -175,6 +177,7 @@ class Debugger(Pdb):
         """Called after set_quit"""
         self.__interactive = None
         self.logger.linemark = None
+        self.indent = ''
         self.target = None
         self.code = None
     
@@ -211,9 +214,9 @@ class Debugger(Pdb):
         self.stdin.input = c
     
     def message(self, msg, indent=-1):
-        """(override) Add indent to msg"""
+        """(override) Add prefix to msg"""
         prefix = self.indent if indent < 0 else ' ' * indent
-        print(prefix + str(msg), file=self.stdout)
+        print(prefix + msg, file=self.stdout)
     
     def watch(self, bp):
         if not self.busy:
@@ -282,17 +285,17 @@ class Debugger(Pdb):
         """
         frame, lineno = frame_lineno
         self.handler('debug_mark', frame)
-        if not self.verbose:
-            return
-        if prompt_prefix is None:
-            prompt_prefix = '\n' + self.indent + self.prefix2
-        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
+        if self.verbose:
+            Pdb.print_stack_entry(self, frame_lineno,
+                prompt_prefix or '\n' + self.indent + self.prefix2)
     
     @echo
     def user_call(self, frame, argument_list):
         """--Call--
-        (override) Show message (if verbose)
+        (override) Show message to record the history
+                   Add indent spaces
         """
+        self.indent = self.indent + ' ' * 2
         if not self.verbose:
             ## Note: argument_list(=None) is no longer used
             filename = frame.f_code.co_filename
@@ -310,10 +313,12 @@ class Debugger(Pdb):
     @echo
     def user_return(self, frame, return_value):
         """--Return--
-        (override) Show message
+        (override) Show message to record the history
+                   Remove indent spaces
         """
-        self.message("$(retval) = {!r}".format((return_value)))
+        self.message("$(retval) = {!r}".format((return_value)), indent=0)
         Pdb.user_return(self, frame, return_value)
+        self.indent = self.indent[:-2]
     
     @echo
     def user_exception(self, frame, exc_info):
