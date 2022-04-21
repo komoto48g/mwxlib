@@ -11,9 +11,10 @@ from pdb import Pdb
 import pdb
 import sys
 import re
+import inspect
 import importlib
 import linecache
-import inspect
+import traceback
 import wx
 try:
     from utilus import FSM
@@ -54,6 +55,9 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
+    indent = property(lambda self: ' ' * self.__indents)
+    prompt = property(lambda self: ' ' * self.__indents + '(Pdb) ',
+                      lambda self,v: None) # fake setter
     parent = property(lambda self: self.__shellframe)
     handler = property(lambda self: self.__handler)
     
@@ -70,9 +74,7 @@ class Debugger(Pdb):
         self.__shellframe = parent
         self.__interactive = None
         self.__breakpoint = None
-        ## self.prompt = self.indent + '(Pdb) '
-        Debugger.prompt = property(lambda self: self.indent + '(Pdb) ')
-        self.indent = ''
+        self.__indents = 0
         self.editor = None
         self.target = None
         self.code = None
@@ -119,7 +121,7 @@ class Debugger(Pdb):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        self.indent = ''
+        self.__indents = 0
         self.__interactive = self.parent.rootshell.cpos
         def _continue():
             try:
@@ -293,7 +295,7 @@ class Debugger(Pdb):
         (override) Show message to record the history
                    Add indent spaces
         """
-        self.indent = self.indent + ' ' * 2
+        self.__indents += 2
         if not self.verbose:
             ## Note: argument_list(=None) is no longer used
             filename = frame.f_code.co_filename
@@ -316,7 +318,7 @@ class Debugger(Pdb):
         """
         self.message("$(retval) = {!r}".format((return_value)), indent=0)
         Pdb.user_return(self, frame, return_value)
-        self.indent = self.indent[:-2]
+        self.__indents -= 2
     
     @echo
     def user_exception(self, frame, exc_info):
@@ -370,9 +372,9 @@ if __name__ == "__main__":
                 '* pressed' : [None, lambda v: dbg.handler(shell.handler.event, v)],
             },
         })
-        frm.dbg = dbg
-        ## shell.write("self.dbg.debug(self.About)")
-        shell.write("self.dbg.debug(self.shell.about)")
+        self.debugger = dbg
+        ## shell.write("self.shellframe.debug(self.About)")
+        shell.write("self.shellframe.debug(self.shell.about)")
         self.Show()
     frm.Show()
     app.MainLoop()
