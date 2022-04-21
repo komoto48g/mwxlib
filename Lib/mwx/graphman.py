@@ -1049,7 +1049,7 @@ class Frame(mwx.Frame):
         
         module = self.load_module(root, force, session, **props)
         if not module:
-            return False
+            return module # None or False
         
         try:
             name = module.Plugin.__module__
