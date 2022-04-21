@@ -35,12 +35,8 @@ class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
     Attributes:
-         logger : ShellFrame Log
            busy : The flag of being running now
         verbose : Verbose messages are output from Pdb
-         module : The module of the currently stacked frame on Pdb
-         locals : The namespace of the currently stacked frame on Pdb
-        globals : (ditto)
     
     Args:
          parent : shellframe
@@ -54,12 +50,10 @@ class Debugger(Pdb):
             C-r : return
             C-s : step
     """
-    indent = "  "
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
     parent = property(lambda self: self.__shellframe)
-    logger = property(lambda self: self.__shellframe.Log)
     handler = property(lambda self: self.__handler)
     
     @property
@@ -75,7 +69,10 @@ class Debugger(Pdb):
         self.__shellframe = parent
         self.__interactive = None
         self.__breakpoint = None
-        self.prompt = self.indent + '(Pdb) ' # default prompt
+        ## self.prompt = self.indent + '(Pdb) '
+        Debugger.prompt = property(lambda self: self.indent + '(Pdb) ')
+        self.indent = ''
+        self.logger = None
         self.target = None
         self.code = None
         
@@ -104,6 +101,7 @@ class Debugger(Pdb):
             },
             1 : {
                     'debug_end' : (0, self.on_debug_end, forkup),
+                   'debug_mark' : (1, self.on_debug_mark, forkup),
                    'debug_next' : (1, self.on_debug_next, forkup),
                   'C-g pressed' : (1, lambda v: self.send_input('q')),
                   'C-q pressed' : (1, lambda v: self.send_input('q')),
@@ -120,6 +118,8 @@ class Debugger(Pdb):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
+        self.indent = ''
+        self.logger = self.parent.Log
         self.__interactive = self.parent.rootshell.cpos
         def _continue():
             try:
@@ -127,6 +127,34 @@ class Debugger(Pdb):
             except Exception:
                 pass
         wx.CallAfter(_continue)
+    
+    def on_debug_mark(self, frame):
+        code = frame.f_code
+        filename = code.co_filename
+        firstlineno = code.co_firstlineno
+        m = re.match("<frozen (.*)>", filename)
+        if m:
+            module = importlib.import_module(m.group(1))
+            filename = inspect.getfile(module)
+        
+        lines = linecache.getlines(filename, frame.f_globals)
+        if lines:
+            ## Update logger text
+            eol = lines[-1].endswith('\n')
+            if self.code and self.code.co_filename != filename\
+              or self.logger.LineCount != len(lines) + eol: # add +1
+                self.logger.Text = ''.join(lines) # load
+            
+            ## Update logger marker
+            if self.code != code:
+                self.logger.mark = self.logger.PositionFromLine(firstlineno - 1)
+        
+        lineno = frame.f_lineno
+        self.logger.linemark = lineno - 1 # (->) pointer:marker
+        self.logger.goto_line_marker()
+        
+        self.code = code
+        self.target = filename
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
@@ -171,13 +199,20 @@ class Debugger(Pdb):
             self.set_quit()
             return
     
+    def add_marker(self, lineno, style):
+        """Add a mrker to lineno, with the following style markers:
+        1) white-arrow for breakpoints
+        2) red-arrow for exception
+        """
+        self.logger.MarkerAdd(lineno-1, style)
+    
     def send_input(self, c):
         self.stdin.input = c
     
     def message(self, msg, indent=-1):
-        """(override) Add indent to msg"""
+        """(override) Add prefix to msg"""
         prefix = self.indent if indent < 0 else ' ' * indent
-        print(prefix + str(msg), file=self.stdout)
+        print(prefix + msg, file=self.stdout)
     
     def watch(self, bp):
         if not self.busy:
@@ -224,7 +259,7 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.logger.MarkerAdd(lineno-1, 1) # (>>) breakpoints:marker
+        self.add_marker(lineno, 1)
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
@@ -245,17 +280,18 @@ class Debugger(Pdb):
                    Add pointer:marker when step next or jump
         """
         frame, lineno = frame_lineno
-        self.logger.linemark = lineno - 1 # (->) pointer:marker
-        wx.CallAfter(self.logger.goto_line_marker)
-        if not self.verbose:
-            return
-        if prompt_prefix is None:
-            prompt_prefix = '\n' + self.indent + self.prefix2
-        Pdb.print_stack_entry(self, frame_lineno, prompt_prefix)
+        self.handler('debug_mark', frame)
+        if self.verbose:
+            Pdb.print_stack_entry(self, frame_lineno,
+                prompt_prefix or '\n' + self.indent + self.prefix2)
     
     @echo
     def user_call(self, frame, argument_list):
-        """--Call--"""
+        """--Call--
+        (override) Show message to record the history
+                   Add indent spaces
+        """
+        self.indent = self.indent + ' ' * 2
         if not self.verbose:
             ## Note: argument_list(=None) is no longer used
             filename = frame.f_code.co_filename
@@ -272,56 +308,38 @@ class Debugger(Pdb):
     
     @echo
     def user_return(self, frame, return_value):
-        """--Return--"""
-        self.message("$(return_value) = {!r}".format((return_value)))
+        """--Return--
+        (override) Show message to record the history
+                   Remove indent spaces
+        """
+        self.message("$(retval) = {!r}".format((return_value)), indent=0)
         Pdb.user_return(self, frame, return_value)
+        self.indent = self.indent[:-2]
     
     @echo
     def user_exception(self, frame, exc_info):
-        """--Exception--"""
+        """--Exception--
+        (override) Update exception:markers
+        """
         t, v, tb = exc_info
-        self.logger.MarkerAdd(tb.tb_lineno-1, 2) # (>>) exception:marker
+        self.add_marker(tb.tb_lineno, 2)
         Pdb.user_exception(self, frame, exc_info)
     
     @echo
     def bp_commands(self, frame):
-        """--Break--"""
+        """--Break--
+        (override) Update breakpoint:markers every time the frame changes
+        """
         filename = frame.f_code.co_filename
         breakpoints = self.get_file_breaks(filename)
-        ## Update breakpoint markers every time the frame changes
         for lineno in breakpoints:
-            self.logger.MarkerAdd(lineno-1, 1) # (>>) breakpoints:marker
+            self.add_marker(lineno, 1)
         return Pdb.bp_commands(self, frame)
     
     @echo
     def preloop(self):
-        """Hook method executed once when the cmdloop() method is called.
-        (override) output buffer to the logger
-        """
-        frame = self.curframe
-        code = frame.f_code
-        filename = code.co_filename
-        firstlineno = code.co_firstlineno
-        m = re.match("<frozen (.*)>", filename)
-        if m:
-            module = importlib.import_module(m.group(1))
-            filename = inspect.getfile(module)
-        lineno = frame.f_lineno
-        lines = linecache.getlines(filename, frame.f_globals)
-        if lines:
-            ## Update logger text
-            eol = lines[-1].endswith('\n')
-            if self.code and self.code.co_filename != filename\
-              or self.logger.LineCount != len(lines) + eol: # add +1
-                self.logger.Text = ''.join(lines) # load
-            
-            ## Update logger marker
-            if self.code != code:
-                self.logger.mark = self.logger.PositionFromLine(firstlineno - 1)
-        
-        self.code = code
-        self.target = filename
-        self.handler('debug_next', frame)
+        """Hook method executed once when the cmdloop() method is called."""
+        self.handler('debug_next', self.curframe)
         Pdb.preloop(self)
     
     @echo
