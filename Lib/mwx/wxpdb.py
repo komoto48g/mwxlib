@@ -35,12 +35,8 @@ class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
     Attributes:
-         logger : ShellFrame Log
            busy : The flag of being running now
         verbose : Verbose messages are output from Pdb
-         module : The module of the currently stacked frame on Pdb
-         locals : The namespace of the currently stacked frame on Pdb
-        globals : (ditto)
     
     Args:
          parent : shellframe
@@ -54,12 +50,10 @@ class Debugger(Pdb):
             C-r : return
             C-s : step
     """
-    indent = ''
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
     parent = property(lambda self: self.__shellframe)
-    logger = property(lambda self: self.__shellframe.Log)
     handler = property(lambda self: self.__handler)
     
     @property
@@ -78,6 +72,7 @@ class Debugger(Pdb):
         ## self.prompt = self.indent + '(Pdb) '
         Debugger.prompt = property(lambda self: self.indent + '(Pdb) ')
         self.indent = ''
+        self.logger = None
         self.target = None
         self.code = None
         
@@ -123,6 +118,8 @@ class Debugger(Pdb):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
+        self.indent = ''
+        self.logger = self.parent.Log
         self.__interactive = self.parent.rootshell.cpos
         def _continue():
             try:
@@ -177,7 +174,6 @@ class Debugger(Pdb):
         """Called after set_quit"""
         self.__interactive = None
         self.logger.linemark = None
-        self.indent = ''
         self.target = None
         self.code = None
     
