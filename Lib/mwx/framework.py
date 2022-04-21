@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.4"
+__version__ = "0.56.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -2893,7 +2893,7 @@ class Nautilus(Shell, EditorInterface):
         st = self.GetStyleAt(p-1)
         if st in (11,14,15) or c in ')}]': # identifier, word2, decorator
             pass
-        elif st not in (0,10) or c in '.': # no default, no operator => quit
+        elif st not in (0,10) or c == '.': # no default, no operator => quit
             self.handler('quit', evt)
         else:
             self.ReplaceSelection('self')
@@ -3492,8 +3492,9 @@ class Nautilus(Shell, EditorInterface):
     def decrback_autocomp(self, evt):
         """Move anchor to the word right during autocomp"""
         p = self.cpos
+        c = self.get_char(p-1)
         st = self.GetStyleAt(p-1)
-        if p == self.bolc or st in (0,10): # no default, no operator => quit
+        if st in (0,10) and c != '.': # default or operator => quit
             self.handler('quit', evt)
         evt.Skip()
     
@@ -3635,6 +3636,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
+            self.handler('quit', evt)
     
     def call_word_autocomp(self, evt):
         """Called when word-comp mode"""
@@ -3668,6 +3670,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
+            self.handler('quit', evt)
     
     def call_apropos_autocomp(self, evt):
         """Called when apropos mode"""
@@ -3701,6 +3704,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
+            self.handler('quit', evt)
     
     @staticmethod
     def get_words_hint(cmd):
@@ -3815,10 +3819,8 @@ if __name__ == '__main__':
     SHELLSTARTUP = """
 if 1:
     self
-    self.shellframe
-    self.shellframe.rootshell
     dive(self.shellframe)
-    dive(self.shellframe.shell)
+    dive(self.shellframe.rootshell)
     """
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
@@ -3837,8 +3839,8 @@ if 1:
     
     frm.handler.debug = 4
     frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 4
-    frm.shellframe.rootshell.handler.debug = 0
+    frm.shellframe.handler.debug = 0
+    frm.shellframe.rootshell.handler.debug = 4
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1
