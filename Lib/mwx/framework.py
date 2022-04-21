@@ -1136,7 +1136,6 @@ class ShellFrame(MiniFrame):
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
         self.Show()
-        self.Log.clear()
         self.show_page(self.Log, focus=0)
         self.show_page(self.linfo, focus=0)
     
@@ -1152,8 +1151,8 @@ class ShellFrame(MiniFrame):
         if self.linfo.target is not ls:
             self.linfo.watch(ls)
         self.show_page(self.Log, focus=0)
-        self.SetTitleWindow(frame)
         self.Log.target = frame.f_code.co_filename
+        self.SetTitleWindow(frame)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
