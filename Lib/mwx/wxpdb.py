@@ -327,6 +327,7 @@ class Debugger(Pdb):
         """
         t, v, tb = exc_info
         self.add_marker(tb.tb_lineno, 2)
+        self.message("{}".format(tb.tb_frame), indent=0)
         Pdb.user_exception(self, frame, exc_info)
     
     @echo
@@ -365,7 +366,7 @@ if __name__ == "__main__":
                        skip=['__main__']
                        )
         dbg.handler.debug = 4
-        dbg.verbose = 1
+        dbg.verbose = 0
         echo.debug = 1
         shell.handler.update({
             None : {
