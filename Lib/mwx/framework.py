@@ -439,10 +439,10 @@ def pack(self, *args,
                 sizer.Add(*item) # using item-specific style
         except TypeError as e:
             traceback.print_exc()
-            bmp = wx.ArtProvider.GetBitmap(wx.ART_ERROR, size=(16,16))
-            err = wx.StaticBitmap(self, bitmap=bmp)
-            err.SetToolTip("Pack failure\n{}".format(e))
-            sizer.Add(err, *style)
+            bmp = wx.StaticBitmap(self,
+                    bitmap=wx.ArtProvider.GetBitmap(wx.ART_ERROR))
+            bmp.SetToolTip("Pack failure\n{}".format(e))
+            sizer.Add(bmp, 0, wx.EXPAND | wx.ALL, 0)
             wx.Bell()
     return sizer
 
@@ -1135,7 +1135,6 @@ class ShellFrame(MiniFrame):
         self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
         self.__shell.SetFocus()
         self.Show()
-        self.show_page(self.Log, focus=0)
         self.show_page(self.linfo, focus=0)
     
     def on_debug_next(self, frame):
@@ -1149,9 +1148,8 @@ class ShellFrame(MiniFrame):
             self.ginfo.watch(gs)
         if self.linfo.target is not ls:
             self.linfo.watch(ls)
-        self.show_page(self.Log, focus=0)
-        self.Log.target = frame.f_code.co_filename
         self.SetTitleWindow(frame)
+        self.show_page(self.debugger.editor, focus=0)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
@@ -3613,7 +3611,7 @@ class Nautilus(Shell, EditorInterface):
                 else:
                     text, sep, hint = self.get_words_hint(cmdl)
                     obj = self.eval(text or 'self')
-                    ## modules = [k for k,v in inspect.getmembers(obj, inspect.ismodule)]
+                    ## modules = [k for k, v in inspect.getmembers(obj, inspect.ismodule)]
                     modules = [k for k, v in vars(obj).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
