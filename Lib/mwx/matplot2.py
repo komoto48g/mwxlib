@@ -838,7 +838,8 @@ if __name__ == '__main__':
         y = np.sin(t)
         
         #<matplotlib.lines.Line2D>
-        art, = axes.plot(x, y, 'y--', lw=1, mec='b', mfc='r', picker=True, pickradius=2)
+        art, = axes.plot(x, y, 'y--', lw=1, mec='b', mfc='r',
+                         picker=True, pickradius=2)
         
     def _scatter1(axes):
         t = np.arange(0,1,0.02)*2*pi
@@ -847,7 +848,8 @@ if __name__ == '__main__':
         
         #<matplotlib.collections.Collection>
         art = axes.scatter(x, y, c=t, s=t*10, marker='o',
-            alpha=0.5, cmap=cm.Reds, edgecolors='none', picker=True, pickradius=2)
+                           alpha=0.5, cmap=cm.Reds, edgecolors='none',
+                           picker=True, pickradius=2)
         
         ## set_array -> z color value
         ## set_offsets -> x & y locations
@@ -867,7 +869,8 @@ if __name__ == '__main__':
         
         #<matplotlib.collections.Collection>
         art = axes.scatter(x, y, c=c, s=r, marker='o',
-            alpha=0.5, cmap=cm.rainbow, edgecolors='blue', picker=True, pickradius=4)
+                           alpha=0.5, cmap=cm.rainbow, edgecolors='blue',
+                           picker=True, pickradius=4)
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
         art.get_zdata = art.get_array
