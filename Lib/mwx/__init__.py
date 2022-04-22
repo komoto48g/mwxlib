@@ -4,12 +4,12 @@
 """
 ## from . import framework
 from .framework import __version__, __author__
-from .framework import apropos, typename
-from .framework import FSM
+from .utilus import apropos, typename
+from .utilus import FSM
+from .utilus import funcall
 from .framework import pack, hotkey
 from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame
-from .framework import funcall # curry spices
 
 ## from . import controls as wdigets
 ## from .controls import Param, LParam, Knob, ControlPanel, Icon

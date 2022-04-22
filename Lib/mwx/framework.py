@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.5"
+__version__ = "0.56.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -518,7 +518,6 @@ class MenuBar(wx.MenuBar, TreeList):
         TreeList.__init__(self)
     
     def getmenu(self, key, root=None):
-        ## key = key.replace('\\', '/')
         if '/' in key:
             a, b = key.split('/', 1)
             branch = self.getmenu(a, root)
@@ -2265,9 +2264,9 @@ class Editor(EditWindow, EditorInterface):
     @target.setter
     def target(self, f):
         if f and os.path.isfile(f):
-            self.__time = os.path.getmtime(f)
+            self.__mtime = os.path.getmtime(f)
         else:
-            self.__time = None
+            self.__mtime = None
         self.__target = f
     
     def __init__(self, parent, **kwargs):
@@ -2294,13 +2293,13 @@ class Editor(EditWindow, EditorInterface):
             self.parent.handler('title_window', self.target)
             self.trace_position()
             v.Skip()
-            if not self.__time:
+            if not self.__mtime:
                 return
             try:
                 f = self.target
                 t = os.path.getmtime(f)
-                if self.__time != t:
-                    self.__time = t # Note: modal dlg makes focus off
+                if self.__mtime != t:
+                    self.__mtime = t # Note: modal dlg makes focus off
                     p = self.cpos
                     with wx.MessageDialog(None,
                         "The file {} has changed.\n"
