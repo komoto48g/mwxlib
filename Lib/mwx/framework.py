@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.6"
+__version__ = "0.56.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1220,8 +1220,9 @@ class ShellFrame(MiniFrame):
         
         ed = self.History
         ed.ReadOnly = 0
+        ed.goto_char(-1)
+        ln = ed.cline
         ed.write(command)
-        ln = ed.LineFromPosition(ed.TextLength - len(command))
         if noerr is not None:
             if noerr:
                 ed.MarkerAdd(ln, 1) # white-marker
@@ -1521,11 +1522,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             pass
         
         ## Custom markers (cf. MarkerAdd)
-        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', "#007ff0") # o blue-mark
-        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', "#ffffff") # > white-arrow
-        self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', "#ff0000") # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', "gray")   # >> pointer
-        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', "yellow")  # >> red-pointer
+        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o blue-mark
+        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff') # > white-arrow
+        self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000') # > red-arrow
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')   # >> pointer
+        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', 'yellow')  # >> red-pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
@@ -1728,6 +1729,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 ln = 0
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
+            self.linemark = None
+            self.message("Evaluated {!r} successfully".format(filename))
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except Exception as e:
@@ -1742,9 +1745,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
             ## traceback.print_exc()
-        else:
-            self.linemark = None
-            self.message("Evaluated {!r} successfully".format(filename))
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -1817,7 +1817,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 break
             le += 1
         ## return (lc, le)
-        return [self.PositionFromLine(x) for x in (lc,le)]
+        return [self.PositionFromLine(x) for x in (lc, le)]
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -1965,14 +1965,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     @property
     def following_symbol(self):
         """Similar to following_char, but skips whites"""
-        ln = self.GetTextRange(self.cpos, self.eol)
-        return next((c for c in ln if not c.isspace()), '')
+        line = self.GetTextRange(self.cpos, self.eol)
+        return next((c for c in line if not c.isspace()), '')
     
     @property
     def preceding_symbol(self):
         """Similar to preceding_char, but skips whites"""
-        ln = self.GetTextRange(self.bol, self.cpos)[::-1]
-        return next((c for c in ln if not c.isspace()), '')
+        line = self.GetTextRange(self.bol, self.cpos)[::-1]
+        return next((c for c in line if not c.isspace()), '')
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
@@ -2079,7 +2079,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return -1
     
     ## --------------------------------
-    ## Goto, Skip, Selection, etc.
+    ## Editor/ goto, skip, selection,..
     ## --------------------------------
     
     def _goto_pos(self, pos, selection=False):
@@ -2159,7 +2159,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         return Excursion(self)
     
     ## --------------------------------
-    ## Edit /eat /kill
+    ## Editor/ edit, eat, kill,..
     ## --------------------------------
     
     def clear(self):
@@ -2618,10 +2618,10 @@ class Nautilus(Shell, EditorInterface):
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
            'C-S-insert pressed' : (0, _F(self.Paste, rectangle=1)),
-                  'M-j pressed' : (0, self.call_tooltip2),
                   'C-j pressed' : (0, self.call_tooltip),
-                  'M-h pressed' : (0, self.call_helpTip2),
+                  'M-j pressed' : (0, self.call_tooltip2),
                   'C-h pressed' : (0, self.call_helpTip),
+                  'M-h pressed' : (0, self.call_helpTip2),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
@@ -2680,10 +2680,10 @@ class Nautilus(Shell, EditorInterface):
            '*backspace pressed' : (2, self.skipback_autocomp),
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
         'C-S-backspace pressed' : (2, noskip),
-                  'M-j pressed' : (2, self.call_tooltip2),
                   'C-j pressed' : (2, self.call_tooltip),
-                  'M-h pressed' : (2, self.call_helpTip2),
+                  'M-j pressed' : (2, self.call_tooltip2),
                   'C-h pressed' : (2, self.call_helpTip),
+                  'M-h pressed' : (2, self.call_helpTip2),
                   ## 'M-. pressed' : (2, self.on_completion),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2714,10 +2714,10 @@ class Nautilus(Shell, EditorInterface):
            '*backspace pressed' : (3, self.skipback_autocomp),
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
         'C-S-backspace pressed' : (3, noskip),
-                  'M-j pressed' : (3, self.call_tooltip2),
                   'C-j pressed' : (3, self.call_tooltip),
-                  'M-h pressed' : (3, self.call_helpTip2),
+                  'M-j pressed' : (3, self.call_tooltip2),
                   'C-h pressed' : (3, self.call_helpTip),
+                  'M-h pressed' : (3, self.call_helpTip2),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, self.on_completion),
                   ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
@@ -2748,10 +2748,10 @@ class Nautilus(Shell, EditorInterface):
            '*backspace pressed' : (4, self.skipback_autocomp),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, noskip),
-                  'M-j pressed' : (4, self.call_tooltip2),
                   'C-j pressed' : (4, self.call_tooltip),
-                  'M-h pressed' : (4, self.call_helpTip2),
+                  'M-j pressed' : (4, self.call_tooltip2),
                   'C-h pressed' : (4, self.call_helpTip),
+                  'M-h pressed' : (4, self.call_helpTip2),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
                   ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
                   ## 'M-, pressed' : (4, self.on_completion),
@@ -3376,11 +3376,10 @@ class Nautilus(Shell, EditorInterface):
     ## Auto-comp actions of the shell
     ## --------------------------------
     
-    def CallTipShow(self, pos, tip):
+    def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
         (override) Snip the tip of max N lines if it is too long.
         """
-        N = 11
         lines = tip.splitlines()
         if len(lines) > N:
             lines[N+1:] = ["\n...(snip) This tips are too long..."
@@ -3390,68 +3389,64 @@ class Nautilus(Shell, EditorInterface):
     
     def gen_autocomp(self, offset, words):
         """Call AutoCompShow for the specified words"""
-        listr = ' '.join(words) # make itemlist:str
-        if listr:
+        if words:
+            listr = ' '.join(words) # make itemlist:str
             self.AutoCompShow(offset, listr)
     
-    def gen_tooltip(self, text, N=11):
-        """Call ToolTip of the selected word or focused line"""
+    def call_tooltip(self, evt):
+        """Call ToolTip of the selected word"""
         if self.CallTipActive():
             self.CallTipCancel()
-        
-        tokens = ut.split_words(text)
-        cmd = self.magic_interpret(tokens)
-        try:
-            tip = self.eval(cmd)
-            self.CallTipShow(self.cpos, pformat(tip))
-            self.message(cmd)
-            return
-        except Exception:
-            pass
-        try:
-            cmd = compile(cmd, "<string>", "exec")
-            self.exec(cmd)
-            self.linemark = None
-            self.message("Evaluated successfully.")
-        except Exception:
-            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
-                             traceback.format_exc(), re.M)
-            lines = [int(l) for f,l in err if f == "<string>"]
-            if lines:
-                if self.bolc <= self.cpos: # current-region is active?
-                    ln = self.LineFromPosition(self.bolc)
-                    self.linemark = ln + lines[-1] - 1
-            ## traceback.print_exc()
-            raise
+        text = self.SelectedText or self.expr_at_caret
+        if text:
+            try:
+                tokens = ut.split_words(text)
+                cmd = self.magic_interpret(tokens)
+                tip = self.eval(cmd)
+                self.CallTipShow(self.cpos, pformat(tip))
+                self.message(cmd)
+            except Exception as e:
+                self.message("- {}: {!r}".format(e, text))
+        else:
+            self.message("No word")
     
     def call_tooltip2(self, evt):
-        """Call ToolTip of the selected word or repr"""
-        try:
-            text = self.SelectedText or self.expr_at_caret
-            if text:
-                self.gen_tooltip(text)
-        except Exception as e:
-            self.message("- {}: {!r}".format(e, text))
-    
-    def call_tooltip(self, evt):
-        """Call ToolTip of the selected word or command line"""
-        try:
-            ## text = self.SelectedText or self.getCommand() or self.expr_at_caret
-            text = self.SelectedText
-            if not text:
-                if self.CanEdit():
-                    text = self.cmdline
-                else:
-                    with self.save_excursion():
-                        text = self.getMultilineCommand() or self.expr_at_caret
-            if text:
-                text = self.regulate_cmd(self.lstripPrompt(text))
-                self.gen_tooltip(text)
-        except Exception as e:
-            self.message("- {}: {!r}".format(e, text))
+        """Call ToolTip of the selected region"""
+        if self.CallTipActive():
+            self.CallTipCancel()
+        text = self.SelectedText
+        if not text:
+            if self.CanEdit():
+                text = self.cmdline
+            else:
+                with self.save_excursion():
+                    text = self.getMultilineCommand()
+        if text:
+            try:
+                tokens = ut.split_words(text)
+                cmd = self.magic_interpret(tokens)
+                cmd = self.regulate_cmd(self.lstripPrompt(cmd))
+                cmd = compile(cmd, "<string>", "exec")
+                self.exec(cmd)
+                self.linemark = None
+                self.message("Evaluated successfully.")
+            except Exception as e:
+                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
+                                 traceback.format_exc(), re.M)
+                lines = [int(l) for f,l in err if f == "<string>"]
+                if lines:
+                    if self.bolc <= self.cpos: # current-region is active?
+                        ln = self.LineFromPosition(self.bolc)
+                        self.linemark = ln + lines[-1] - 1
+                self.message("- {}".format(e))
+                ## traceback.print_exc()
+        else:
+            self.message("No region")
     
     def call_helpTip2(self, evt):
         """Show help:str for the selected topic"""
+        if self.CallTipActive():
+            self.CallTipCancel()
         try:
             text = self.SelectedText or self.expr_at_caret
             if text:
@@ -3468,6 +3463,8 @@ class Nautilus(Shell, EditorInterface):
             text = self.SelectedText or self.expr_at_caret
             if text:
                 self.autoCallTipShow(text, False, True) # => CallTipShow
+        if not self.CallTipActive():
+            self.message("No tip: {!r}".format(text))
     
     def clear_autocomp(self, evt):
         """Clear Autocomp, selection, and message"""
