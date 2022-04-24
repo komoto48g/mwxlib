@@ -918,14 +918,20 @@ class ShellFrame(MiniFrame):
         def activate(v):
             self.SetTitleWindow(self.current_shell.target)
         
-        @self.Scratch.handler.bind('C-j pressed')
-        def eval_region(v):
-            self.Scratch.py_eval_buffer(self.current_shell.globals,
-                                        self.current_shell.locals,
-                                        region=self.Scratch.region,
-                                        filename="<string>")
+        @self.Scratch.handler.bind('C-j pressed', state=0)
+        def eval_line(v):
+            self.Scratch.py_eval_line(self.current_shell.globals,
+                                      self.current_shell.locals,)
         
-        @self.Scratch.handler.bind('f5 pressed')
+        ## @self.Scratch.handler.bind('M-j pressed', state=0)
+        ## def eval_region(v):
+        ##     self.Scratch.py_eval_buffer(self.current_shell.globals,
+        ##                                 self.current_shell.locals,
+        ##                                 region=self.Scratch.region,
+        ##                                 filename="<string>")
+        
+        @self.Scratch.handler.bind('M-j pressed', state=0)
+        @self.Scratch.handler.bind('f5 pressed', state=0)
         def eval_buffer(v):
             self.Scratch.py_eval_buffer(self.current_shell.globals,
                                         self.current_shell.locals,
@@ -1709,6 +1715,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 line = line[len(ps):]
                 break
         return line
+    
+    def py_eval_line(self, globals, locals):
+        try:
+            cmd = self.SelectedText or self.expr_at_caret
+            tip = eval(cmd, globals, locals)
+            self.CallTipShow(self.cpos, pformat(tip))
+            self.message(cmd)
+        except Exception as e:
+            self.message("- {}".format(e))
     
     def py_eval_buffer(self, globals, locals, filename=None, region=None):
         if not filename:
