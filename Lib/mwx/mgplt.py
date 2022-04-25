@@ -20,7 +20,7 @@ import numpy as np
 from six import string_types
 
 
-class Gplot(object):
+class Gnuplot(object):
     """Gnuplot - gnuplot:pipe wrapper
     """
     debug = 0
@@ -132,10 +132,8 @@ class Gplot(object):
             warnings.simplefilter("ignore", ResourceWarning)
             Popen("notepad {}".format(self.startupfile))
 
-Gnuplot = Gplot
 
-
-class GplotFrame(mwx.Frame):
+class GnuplotFrame(mwx.Frame):
     """Gnuplot Frame
     
     Attributes:
@@ -147,7 +145,7 @@ class GplotFrame(mwx.Frame):
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
-        self.__gplot = Gplot()
+        self.__gplot = Gnuplot()
         self.panel = ControlPanel(self)
         
         self.menubar["Edit"] = [
@@ -181,17 +179,19 @@ class GplotFrame(mwx.Frame):
         del self.__gplot
         return mwx.Frame.Destroy(self)
 
-GnuplotFrame = GplotFrame
+
+Gplot = Gnuplot # for backward compatibility
+GplotFrame = GnuplotFrame # for backward compatibility
 
 
 if __name__ == "__main__":
     from numpy import pi,sin,cos
     
-    Gplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
-    ## Gplot.init_path(r"C:\usr\local\gnuplot\bin")
-    ## Gplot.PGNUPLOT = "pgnuplot"
+    Gnuplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
+    ## Gnuplot.init_path(r"C:\usr\local\gnuplot\bin")
+    ## Gnuplot.PGNUPLOT = "pgnuplot"
     
-    gp = Gplot(None, debug=1)
+    gp = Gnuplot(None, debug=1)
     X = np.arange(0,2,0.1) * pi
     
     print("\n>>> 数式のプロット 1")
@@ -235,9 +235,9 @@ if __name__ == "__main__":
     from numpy import pi
     from mwx.controls import LParam
     
-    class TestFrame(GplotFrame):
+    class TestFrame(GnuplotFrame):
         def __init__(self, *args, **kwargs):
-            GplotFrame.__init__(self, *args, **kwargs)
+            GnuplotFrame.__init__(self, *args, **kwargs)
             
             self.params = (
                 LParam('Amp', (-1, 1, 1e-3), 0, "%8.3e"),
