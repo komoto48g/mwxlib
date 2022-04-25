@@ -27,6 +27,10 @@ from six import string_types
 ## EPSILON = 1e-15
 
 
+def valist(params):
+    return list(p.value for p in params)
+
+
 class Param(object):
     """Standard Parameter
     
@@ -86,6 +90,9 @@ class Param(object):
             return self.__format(v)
         except ValueError:
             return str(v)
+    
+    def __float__(self):
+        return float(self.__value)
     
     def __len__(self):
         return len(self.__range)
