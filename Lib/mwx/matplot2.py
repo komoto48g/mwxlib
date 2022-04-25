@@ -824,11 +824,6 @@ class MatplotPanel(wx.Panel):
 
 
 if __name__ == '__main__':
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    print("matplotlib {}".format(matplotlib.__version__))
-    
-    ## from matplotlib import pyplot as plt
     from matplotlib import patches
     from numpy import pi
     

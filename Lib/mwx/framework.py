@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.8"
+__version__ = "0.56.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -25,10 +25,9 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
 import inspect
+import builtins
 import linecache
 from pprint import pformat
-from six import string_types
-from six.moves import builtins
 from importlib import reload
 try:
     import utilus as ut
@@ -38,6 +37,8 @@ except ImportError:
     from . import utilus as ut
     from .utilus import (FSM, TreeList, funcall, wdir,
                          apropos, typename, where, mro, pp,)
+## from six import string_types
+string_types = str,
 
 _F = funcall
 
@@ -3836,9 +3837,6 @@ if 1:
     dive(self.shellframe)
     dive(self.shellframe.rootshell)
     """
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    
     import numpy as np
     ## from scipy import constants as const
     np.set_printoptions(linewidth=256) # default 75

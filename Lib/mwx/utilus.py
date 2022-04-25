@@ -19,7 +19,9 @@ import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator, isframe, iscode, istraceback)
 from pprint import pprint
-from six import string_types
+
+## from six import string_types
+string_types = str,
 
 
 def atom(v):

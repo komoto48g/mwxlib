@@ -10,14 +10,16 @@ import tempfile
 import sys
 import os
 import wx
+import numpy as np
 try:
     import framework as mwx
     from controls import ControlPanel
 except:
     from . import framework as mwx
     from .controls import ControlPanel
-import numpy as np
-from six import string_types
+
+## from six import string_types
+string_types = str,
 
 
 class Gnuplot(object):
