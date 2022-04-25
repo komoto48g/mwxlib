@@ -176,6 +176,7 @@ class Debugger(Pdb):
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
+        self.__indents = 0
         self.__interactive = None
         if self.editor:
             self.editor.linemark = None
@@ -246,6 +247,7 @@ class Debugger(Pdb):
                 src, lineno = inspect.getsourcelines(code)
                 if 0 <= line - lineno + 1 < len(src):
                     self.set_trace()
+                    self.__indents = 2
                     self.message("{}{}:{}:{}".format(self.prefix1,
                                  filename, lineno, name), indent=0)
                     return None
