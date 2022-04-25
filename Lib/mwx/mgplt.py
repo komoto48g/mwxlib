@@ -132,56 +132,14 @@ class Gplot(object):
             warnings.simplefilter("ignore", ResourceWarning)
             Popen("notepad {}".format(self.startupfile))
 
-
-if __name__ == "__main__":
-    from numpy import pi,sin,cos
-    
-    Gplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
-    ## Gplot.PGNUPLOT = "pgnuplot"
-    
-    ## Gplot.init_path(r"C:\usr\local\gnuplot\bin")
-    
-    gp = Gplot(None, debug=1)
-    X = np.arange(0,2,0.1) * pi
-    
-    print("\n>>> 数式のプロット 1")
-    gp.plot(X, sin(X), "title 'sin' w lp")
-    gp.wait()
-    
-    print("\n>>> 数式のプロット 2")
-    gp.plot((X, sin(X), "title 'sin' w lp"),
-            (X/2, cos(X), "title 'cos' w lp lt 2 ps 0.5"),
-            (cos(X), sin(X), "title 'circ' w lp lt 5 ps 0.5"),
-    )
-    gp.wait()
-    
-    print("\n>>> 数式のプロット 3")
-    gp.plot(X, sin(X), "title 'sin' w lp",
-               cos(X), "title 'cos' w lp lt 5 ps 0.5",
-               np.sqrt(X),
-    )
-    gp.wait()
-    
-    print("\n>>> ファイル出力＋プロット")
-    data = np.vstack((X, sin(X), cos(X)))
-    ## np.savetxt(gp.tempfile, data.T, fmt='%f')
-    
-    with open(gp.tempfile, 'w') as o:
-        for v in data.T:
-            print('\t'.join("{:g}".format(x) for x in v), file=o)
-            
-    gp("f = '{}'".format(o.name)) # set local parameter
-    gp.plot(
-        "f using 1:2 w lp",
-        "f using 1:3 w lp",
-    )
-    gp.wait()
+Gnuplot = Gplot
 
 
 class GplotFrame(mwx.Frame):
-    """gnuplot プロット専用のフレーム
+    """Gnuplot Frame
     
-    gnuplot : single class object
+    Attributes:
+        gnuplot : single class object
     """
     ## gnuplot = None
     gnuplot = property(lambda self: self.__gplot)
@@ -222,6 +180,52 @@ class GplotFrame(mwx.Frame):
     def Destroy(self):
         del self.__gplot
         return mwx.Frame.Destroy(self)
+
+GnuplotFrame = GplotFrame
+
+
+if __name__ == "__main__":
+    from numpy import pi,sin,cos
+    
+    Gplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
+    ## Gplot.init_path(r"C:\usr\local\gnuplot\bin")
+    ## Gplot.PGNUPLOT = "pgnuplot"
+    
+    gp = Gplot(None, debug=1)
+    X = np.arange(0,2,0.1) * pi
+    
+    print("\n>>> 数式のプロット 1")
+    gp.plot(X, sin(X), "title 'sin' w lp")
+    gp.wait()
+    
+    print("\n>>> 数式のプロット 2")
+    gp.plot((X, sin(X), "title 'sin' w lp"),
+            (X/2, cos(X), "title 'cos' w lp lt 2 ps 0.5"),
+            (cos(X), sin(X), "title 'circ' w lp lt 5 ps 0.5"),
+    )
+    gp.wait()
+    
+    print("\n>>> 数式のプロット 3")
+    gp.plot(X, sin(X), "title 'sin' w lp",
+               cos(X), "title 'cos' w lp lt 5 ps 0.5",
+               np.sqrt(X),
+    )
+    gp.wait()
+    
+    print("\n>>> ファイル出力＋プロット")
+    data = np.vstack((X, sin(X), cos(X)))
+    ## np.savetxt(gp.tempfile, data.T, fmt='%f')
+    
+    with open(gp.tempfile, 'w') as o:
+        for v in data.T:
+            print('\t'.join("{:g}".format(x) for x in v), file=o)
+            
+    gp("f = '{}'".format(o.name)) # set local parameter
+    gp.plot(
+        "f using 1:2 w lp",
+        "f using 1:3 w lp",
+    )
+    gp.wait()
 
 
 if __name__ == "__main__":
