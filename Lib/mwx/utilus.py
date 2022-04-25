@@ -228,8 +228,7 @@ def where(obj):
         except Exception:
             return _where(obj.__class__)
     except Exception:
-        return inspect.getmodule(obj)\
-            or inspect.getmodule(obj.__class__)
+        return inspect.getmodule(obj)
 
 
 def mro(obj):
