@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.7"
+__version__ = "0.56.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -924,16 +924,16 @@ class ShellFrame(MiniFrame):
                                       self.current_shell.locals,)
         
         ## @self.Scratch.handler.bind('M-j pressed', state=0)
-        ## def eval_region(v):
-        ##     self.Scratch.py_eval_buffer(self.current_shell.globals,
+        ## def exec_region(v):
+        ##     self.Scratch.py_exec_region(self.current_shell.globals,
         ##                                 self.current_shell.locals,
         ##                                 region=self.Scratch.region,
         ##                                 filename="<string>")
         
         @self.Scratch.handler.bind('M-j pressed', state=0)
         @self.Scratch.handler.bind('f5 pressed', state=0)
-        def eval_buffer(v):
-            self.Scratch.py_eval_buffer(self.current_shell.globals,
+        def exec_buffer(v):
+            self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
                                         filename="<scratch>")
         
@@ -1718,14 +1718,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     def py_eval_line(self, globals, locals):
         try:
-            cmd = self.SelectedText or self.expr_at_caret
+            cmd = self.SelectedText or self.GetTextRange(self.bol, self.eol)
             tip = eval(cmd, globals, locals)
             self.CallTipShow(self.cpos, pformat(tip))
             self.message(cmd)
         except Exception as e:
             self.message("- {}".format(e))
     
-    def py_eval_buffer(self, globals, locals, filename=None, region=None):
+    def py_exec_region(self, globals, locals, filename=None, region=None):
         if not filename:
             filename = "<string>"
         else:
@@ -2633,8 +2633,8 @@ class Nautilus(Shell, EditorInterface):
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
            'C-S-insert pressed' : (0, _F(self.Paste, rectangle=1)),
-                  'C-j pressed' : (0, self.call_tooltip),
-                  'M-j pressed' : (0, self.call_tooltip2),
+                  'C-j pressed' : (0, self.eval_line),
+                  'M-j pressed' : (0, self.exec_region),
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpTip2),
                     '. pressed' : (2, self.OnEnterDot),
@@ -2695,8 +2695,8 @@ class Nautilus(Shell, EditorInterface):
            '*backspace pressed' : (2, self.skipback_autocomp),
           '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
         'C-S-backspace pressed' : (2, noskip),
-                  'C-j pressed' : (2, self.call_tooltip),
-                  'M-j pressed' : (2, self.call_tooltip2),
+                  'C-j pressed' : (2, self.eval_line),
+                  'M-j pressed' : (2, self.exec_region),
                   'C-h pressed' : (2, self.call_helpTip),
                   'M-h pressed' : (2, self.call_helpTip2),
                   ## 'M-. pressed' : (2, self.on_completion),
@@ -2729,8 +2729,8 @@ class Nautilus(Shell, EditorInterface):
            '*backspace pressed' : (3, self.skipback_autocomp),
           '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
         'C-S-backspace pressed' : (3, noskip),
-                  'C-j pressed' : (3, self.call_tooltip),
-                  'M-j pressed' : (3, self.call_tooltip2),
+                  'C-j pressed' : (3, self.eval_line),
+                  'M-j pressed' : (3, self.exec_region),
                   'C-h pressed' : (3, self.call_helpTip),
                   'M-h pressed' : (3, self.call_helpTip2),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
@@ -2763,8 +2763,8 @@ class Nautilus(Shell, EditorInterface):
            '*backspace pressed' : (4, self.skipback_autocomp),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, noskip),
-                  'C-j pressed' : (4, self.call_tooltip),
-                  'M-j pressed' : (4, self.call_tooltip2),
+                  'C-j pressed' : (4, self.eval_line),
+                  'M-j pressed' : (4, self.exec_region),
                   'C-h pressed' : (4, self.call_helpTip),
                   'M-h pressed' : (4, self.call_helpTip2),
                   ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
@@ -3408,34 +3408,40 @@ class Nautilus(Shell, EditorInterface):
             listr = ' '.join(words) # make itemlist:str
             self.AutoCompShow(offset, listr)
     
-    def call_tooltip(self, evt):
-        """Call ToolTip of the selected word"""
+    def gen_tooltip(self, text):
+        """Call ToolTip of the selected word or line"""
+        if text:
+            tokens = ut.split_words(text)
+            cmd = self.magic_interpret(tokens)
+            tip = self.eval(cmd)
+            self.CallTipShow(self.cpos, pformat(tip))
+            return cmd
+    
+    def eval_line(self, evt):
+        """Call ToolTip of the selected word or line"""
         if self.CallTipActive():
             self.CallTipCancel()
-        text = self.SelectedText or self.expr_at_caret
+        
+        text = self.SelectedText or self.getCommand() or self.expr_at_caret
         if text:
             try:
-                tokens = ut.split_words(text)
-                cmd = self.magic_interpret(tokens)
-                tip = self.eval(cmd)
-                self.CallTipShow(self.cpos, pformat(tip))
+                cmd = self.gen_tooltip(text)
                 self.message(cmd)
             except Exception as e:
                 self.message("- {}: {!r}".format(e, text))
         else:
             self.message("No word")
     
-    def call_tooltip2(self, evt):
+    def exec_region(self, evt):
         """Call ToolTip of the selected region"""
         if self.CallTipActive():
             self.CallTipCancel()
-        text = self.SelectedText
-        if not text:
-            if self.CanEdit():
-                text = self.cmdline
-            else:
-                with self.save_excursion():
-                    text = self.getMultilineCommand()
+        
+        if self.CanEdit():
+            text = self.cmdline
+        else:
+            with self.save_excursion():
+                text = self.getMultilineCommand()
         if text:
             try:
                 tokens = ut.split_words(text)
