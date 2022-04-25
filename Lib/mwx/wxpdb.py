@@ -131,6 +131,7 @@ class Debugger(Pdb):
         wx.CallAfter(_continue)
     
     def on_debug_mark(self, frame):
+        """Called when interaction"""
         code = frame.f_code
         filename = code.co_filename
         firstlineno = code.co_firstlineno
@@ -176,7 +177,9 @@ class Debugger(Pdb):
     def on_debug_end(self, frame):
         """Called after set_quit"""
         self.__interactive = None
-        self.editor.linemark = None
+        if self.editor:
+            self.editor.linemark = None
+        self.editor = None
         self.target = None
         self.code = None
     
@@ -205,8 +208,8 @@ class Debugger(Pdb):
     
     def add_marker(self, lineno, style):
         """Add a mrker to lineno, with the following style markers:
-        1) white-arrow for breakpoints
-        2) red-arrow for exception
+        [1] white-arrow for breakpoints
+        [2] red-arrow for exception
         """
         self.editor.MarkerAdd(lineno-1, style)
     
@@ -216,7 +219,7 @@ class Debugger(Pdb):
     def message(self, msg, indent=-1):
         """(override) Add prefix to msg"""
         prefix = self.indent if indent < 0 else ' ' * indent
-        print(prefix + msg, file=self.stdout)
+        print("{}{}".format(prefix, msg), file=self.stdout)
     
     def watch(self, bp):
         if not self.busy:
@@ -243,8 +246,8 @@ class Debugger(Pdb):
                 src, lineno = inspect.getsourcelines(code)
                 if 0 <= line - lineno + 1 < len(src):
                     self.set_trace()
-                    self.message("{}{}:{}:{}".format(
-                                 self.prefix1, filename, lineno, name), indent=0)
+                    self.message("{}{}:{}:{}".format(self.prefix1,
+                                 filename, lineno, name), indent=0)
                     return None
         return self.trace
     
@@ -295,14 +298,13 @@ class Debugger(Pdb):
         (override) Show message to record the history
                    Add indent spaces
         """
-        self.__indents += 2
         if not self.verbose:
-            ## Note: argument_list(=None) is no longer used
             filename = frame.f_code.co_filename
             lineno = frame.f_code.co_firstlineno
             name = frame.f_code.co_name
-            self.message("{}{}:{}:{}".format(
-                         self.prefix1, filename, lineno, name), indent=0)
+            self.message("{}{}:{}:{}".format(self.prefix1,
+                         filename, lineno, name), indent=0)
+        self.__indents += 2
         Pdb.user_call(self, frame, argument_list)
     
     @echo
@@ -316,7 +318,7 @@ class Debugger(Pdb):
         (override) Show message to record the history
                    Remove indent spaces
         """
-        self.message("$(retval) = {!r}".format((return_value)), indent=0)
+        self.message("$(retval) = {!r}".format(return_value), indent=0)
         Pdb.user_return(self, frame, return_value)
         self.__indents -= 2
     
@@ -327,7 +329,7 @@ class Debugger(Pdb):
         """
         t, v, tb = exc_info
         self.add_marker(tb.tb_lineno, 2)
-        self.message("{}".format(tb.tb_frame), indent=0)
+        self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
     
     @echo
