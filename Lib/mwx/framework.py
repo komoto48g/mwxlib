@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.8"
+__version__ = "0.56.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -25,10 +25,9 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
 import inspect
+import builtins
 import linecache
 from pprint import pformat
-from six import string_types
-from six.moves import builtins
 from importlib import reload
 try:
     import utilus as ut
@@ -38,6 +37,8 @@ except ImportError:
     from . import utilus as ut
     from .utilus import (FSM, TreeList, funcall, wdir,
                          apropos, typename, where, mro, pp,)
+## from six import string_types
+string_types = str,
 
 _F = funcall
 
@@ -121,32 +122,6 @@ speckeys = {
     wx.WXK_WINDOWS_LEFT         : 'Lwin',
     wx.WXK_WINDOWS_MENU         : 'appskey',
     wx.WXK_WINDOWS_RIGHT        : 'Rwin',
-    ## wx.WXK_CONTROL_A            : 'a',
-    ## wx.WXK_CONTROL_B            : 'b',
-    ## wx.WXK_CONTROL_C            : 'c',
-    ## wx.WXK_CONTROL_D            : 'd',
-    ## wx.WXK_CONTROL_E            : 'e',
-    ## wx.WXK_CONTROL_F            : 'f',
-    ## wx.WXK_CONTROL_G            : 'g',
-    ## wx.WXK_CONTROL_H            : 'h', # 8=WXK_BACK (C-h)
-    ## wx.WXK_CONTROL_I            : 'i', # 9=WXK_TAB (C-i)
-    ## wx.WXK_CONTROL_J            : 'j',
-    ## wx.WXK_CONTROL_K            : 'k',
-    ## wx.WXK_CONTROL_L            : 'l',
-    ## wx.WXK_CONTROL_M            : 'm', # 13=WXK_RETURN (C-m)
-    ## wx.WXK_CONTROL_N            : 'n',
-    ## wx.WXK_CONTROL_O            : 'o',
-    ## wx.WXK_CONTROL_P            : 'p',
-    ## wx.WXK_CONTROL_Q            : 'q',
-    ## wx.WXK_CONTROL_R            : 'r',
-    ## wx.WXK_CONTROL_S            : 's',
-    ## wx.WXK_CONTROL_T            : 't',
-    ## wx.WXK_CONTROL_U            : 'u',
-    ## wx.WXK_CONTROL_V            : 'v',
-    ## wx.WXK_CONTROL_W            : 'w',
-    ## wx.WXK_CONTROL_X            : 'x',
-    ## wx.WXK_CONTROL_Y            : 'y',
-    ## wx.WXK_CONTROL_Z            : 'z',
 }
 
 def speckey_state(key):
@@ -1008,7 +983,7 @@ class ShellFrame(MiniFrame):
                 pass
         
         try:
-            with open(self.SESSION_FILE) as i: # load-session
+            with open(self.SESSION_FILE) as i:
                 exec(i.read())
         except FileNotFoundError:
             pass
@@ -1134,6 +1109,11 @@ class ShellFrame(MiniFrame):
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
         return obj
+    
+    def load(self, obj):
+        if not isinstance(obj, string_types):
+            obj = where(obj)
+        return self.Log.load(obj, focus=0)
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
@@ -2330,7 +2310,7 @@ class Editor(EditWindow, EditorInterface):
         
         self.set_style(self.STYLE)
     
-    def load(self, filename, lineno=0, show=True):
+    def load(self, filename, lineno=0, show=True, focus=True):
         if filename is None:
             self.target = None
             return True
@@ -2353,7 +2333,7 @@ class Editor(EditWindow, EditorInterface):
                 self.goto_char(self.mark)
                 wx.CallAfter(self.recenter)
             if show:
-                self.parent.handler('show_page', self)
+                self.parent.handler('show_page', self, show, focus)
             return True
         return False
     
@@ -3064,18 +3044,10 @@ class Nautilus(Shell, EditorInterface):
         builtins.profile = self.profile
         try:
             builtins.debug = self.parent.debug
+            builtins.load = self.parent.load
         except AttributeError:
             builtins.debug = monit
-        try:
-            loader = self.parent.Log.load
-            def _Load(obj):
-                if isinstance(obj, string_types):
-                    return loader(obj)
-                return loader(where(obj))
-            builtins.load = _Load
-        except AttributeError:
-            pass
-        
+    
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated
         Remove target localvars and builtins assigned for the shell target.
@@ -3836,9 +3808,6 @@ if 1:
     dive(self.shellframe)
     dive(self.shellframe.rootshell)
     """
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    
     import numpy as np
     ## from scipy import constants as const
     np.set_printoptions(linewidth=256) # default 75

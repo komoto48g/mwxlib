@@ -105,6 +105,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
     def dive(self, obj):
         shell = self.parent.rootshell.clone(obj)
         self._noWatchList.append(shell)
+        self.parent.load(obj)
         self.SetObj(obj)
         return shell
     

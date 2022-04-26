@@ -30,7 +30,6 @@ except ImportError:
     from .controls import ControlPanel
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
-import matplotlib
 from matplotlib import cm
 from matplotlib import colors
 ## from matplotlib import pyplot as plt
@@ -40,7 +39,9 @@ from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
 from importlib import reload
-from six import string_types
+
+## from six import string_types
+string_types = str,
 
 _F = mwx.funcall
 
@@ -217,7 +218,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     ## pane = property(lambda self: self.__parent.get_pane(self))
     
     thread_type = Thread
-    thread = None # worker <Thread>
+    thread = None
     
     @property
     def Arts(self):
@@ -263,6 +264,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
+        self.thread = None
         
         self.handler.append({ # DNA<Layer>
             None : {
@@ -1695,10 +1697,6 @@ class Frame(mwx.Frame):
 
 
 if __name__ == '__main__':
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    print("matplotlib {}".format(matplotlib.__version__))
-    
     app = wx.App()
     frm = Frame(None)
     

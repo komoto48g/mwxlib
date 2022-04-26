@@ -15,7 +15,6 @@ except ImportError:
     from . import framework as mwx
     from .matplot2 import MatplotPanel
     from .matplot2 import NORMAL, MARK, LINE, REGION
-import matplotlib
 from matplotlib import patches
 import numpy as np
 from scipy import signal
@@ -718,12 +717,11 @@ class LineProfile(LinePlot):
 
 
 if __name__ == '__main__':
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    print("matplotlib {}".format(matplotlib.__version__))
-    
-    from matplotlib import pyplot as plt
+    from PIL import Image
     from mwx.matplot2g import GraphPlot
+    
+    def _imread(path):
+        return Image.open(path)
     
     def _plot(axes):
         axes.grid(True)
@@ -744,9 +742,9 @@ if __name__ == '__main__':
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=None)
     frm.graph.handler.debug = 0
     
-    frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
-    frm.graph.load(plt.imread("C:/usr/home/workspace/images/sample_diff.bmp"), "circ")
     frm.graph.unit = 0.1
+    frm.graph.load(_imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
+    frm.graph.load(_imread("C:/usr/home/workspace/images/sample_diff.bmp"), "circ")
     ## frm.graph.frame.aspect_ratio = 2
     frm.Show()
     if 1:

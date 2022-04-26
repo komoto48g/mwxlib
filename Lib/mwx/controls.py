@@ -21,10 +21,15 @@ except ImportError:
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
-from six import string_types
+## from six import string_types
+string_types = str,
 
 ## EPSILON = sys.float_info.epsilon
 ## EPSILON = 1e-15
+
+
+def valist(params):
+    return list(p.value for p in params)
 
 
 class Param(object):
@@ -86,6 +91,9 @@ class Param(object):
             return self.__format(v)
         except ValueError:
             return str(v)
+    
+    def __float__(self):
+        return float(self.__value)
     
     def __len__(self):
         return len(self.__range)
@@ -1226,9 +1234,6 @@ class Gauge(wx.Panel):
 
 
 if __name__ == '__main__':
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    
     from numpy import pi
     
     class TestPanel(ControlPanel, mwx.CtrlInterface):
