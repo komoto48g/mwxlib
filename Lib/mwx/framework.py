@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.56.9"
+__version__ = "0.57.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -886,6 +886,7 @@ class ShellFrame(MiniFrame):
             },
         })
         
+        ## py-mode
         self.Scratch.set_style(Nautilus.STYLE)
         self.Scratch.show_folder()
         
@@ -912,6 +913,7 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         filename="<scratch>")
         
+        ## ed-mode
         self.Log.show_folder()
         
         @self.Log.handler.bind('line_set')
@@ -920,7 +922,7 @@ class ShellFrame(MiniFrame):
             if filename and not self.debugger.busy:
                 self.debugger.watch((filename, v))
                 self.Log.MarkerDeleteAll(4)
-                self.message("Debugger has started traceing.")
+                self.message("Debugger has started tracing.")
         
         @self.Log.handler.bind('line_unset')
         def stop(v):
@@ -941,25 +943,35 @@ class ShellFrame(MiniFrame):
     def fopen(f, *args):
         return open(f, *args, newline='') # PY3
     
-    def OnClose(self, evt):
-        if self.debugger.busy:
-            wx.MessageBox("The debugger is running\n\n"
-                          "Enter [q]uit to exit before closing.")
-            return
-        self.Show(0) # Don't destroy the window
-        self.debugger.unwatch()
+    def load_session(self):
+        try:
+            with open(self.SESSION_FILE) as i:
+                exec(i.read())
+            return True
+        except FileNotFoundError:
+            pass
+        except Exception:
+            traceback.print_exc()
+            print("- Failed to load session")
     
-    def OnDestroy(self, evt):
-        nb = self.console
-        if nb and nb.PageCount == 1:
-            nb.TabCtrlHeight = 0
-        evt.Skip()
-    
-    def OnShow(self, evt):
-        if evt.IsShown():
-            self.inspector.watch(self)
-        else:
-            self.inspector.unwatch()
+    def save_session(self):
+        try:
+            with open(self.SESSION_FILE, 'w') as o:
+                o.write('\n'.join((
+                    "#! Session file (This file is generated automatically)",
+                    "self.SetSize({})".format(self.Size),
+                    "self.Log.load({!r}, {})".format(self.Log.target,
+                                                     self.Log.MarkerNext(0, 1) + 1),
+                    "self.Log.EmptyUndoBuffer()",
+                    "self.ghost.SetSelection({})".format(self.ghost.Selection),
+                    "self.watcher.SetSelection({})".format(self.watcher.Selection),
+                    "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
+                    ""
+                )))
+            return True
+        except Exception:
+            traceback.print_exc()
+            print("- Failed to save session")
     
     def Init(self):
         f = self.SCRATCH_FILE
@@ -982,14 +994,7 @@ class ShellFrame(MiniFrame):
             with self.fopen(f, 'w') as o: # as a new file
                 pass
         
-        try:
-            with open(self.SESSION_FILE) as i:
-                exec(i.read())
-        except FileNotFoundError:
-            pass
-        except Exception:
-            traceback.print_exc()
-            print("- Failed to load session")
+        self.load_session()
     
     def Destroy(self):
         try:
@@ -1003,31 +1008,38 @@ class ShellFrame(MiniFrame):
                 o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
                 o.write(self.History.Text)
             
-            with open(self.SESSION_FILE, 'w') as o: # save-session
-                o.write('\n'.join((
-                    "#! Session file (This file is generated automatically)",
-                    "self.SetSize({})".format(self.Size),
-                    "self.Log.load({!r}, {})".format(self.Log.target,
-                                                     self.Log.MarkerNext(0, 1) + 1),
-                    "self.Log.EmptyUndoBuffer()",
-                    "self.ghost.SetSelection({})".format(self.ghost.Selection),
-                    "self.watcher.SetSelection({})".format(self.watcher.Selection),
-                    "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
-                    ""
-                )))
-        except Exception:
-            traceback.print_exc()
-            print("- Failed to save session")
+            self.save_session()
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
+    
+    def OnShow(self, evt):
+        if evt.IsShown():
+            self.inspector.watch(self)
+        else:
+            self.inspector.unwatch()
+    
+    def OnClose(self, evt):
+        if self.debugger.busy:
+            wx.MessageBox("The debugger is running\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
+        self.Show(0) # Don't destroy the window
+        self.debugger.unwatch()
+    
+    def OnDestroy(self, evt):
+        nb = self.console
+        if nb and nb.PageCount == 1:
+            nb.TabCtrlHeight = 0
+        evt.Skip()
     
     def About(self, evt=None):
         self.Help.SetText('\n\n'.join((
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
-            self.__shell.__doc__,
+            
+            Nautilus.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
             "#{!r}".format(wx.py.shell),
@@ -1113,7 +1125,7 @@ class ShellFrame(MiniFrame):
     def load(self, obj):
         if not isinstance(obj, string_types):
             obj = where(obj)
-        return self.Log.load(obj, focus=0)
+        return self.Log.load(obj, focus=0) or False
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
@@ -2270,9 +2282,13 @@ class Editor(EditWindow, EditorInterface):
         
         self.target = None
         
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
+        
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
+        
+        self.set_style(self.STYLE)
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
@@ -2305,19 +2321,16 @@ class Editor(EditWindow, EditorInterface):
                             self.ReleaseMouse()
             except (TypeError, FileNotFoundError):
                 pass
-        
-        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
-        
-        self.set_style(self.STYLE)
     
     def load(self, filename, lineno=0, show=True, focus=True):
         if filename is None:
+            self.Text = ''
             self.target = None
-            return True
+            return None # no load
         
         if not isinstance(filename, string_types):
             print("- The filename must be string type. Try @where to get the path")
-            return None
+            return None # no load
         
         m = re.match("(.*?):([0-9]+)", filename)
         if m:
@@ -2339,7 +2352,7 @@ class Editor(EditWindow, EditorInterface):
     
     def trace_position(self):
         text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=1)
+        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
@@ -2792,18 +2805,18 @@ class Nautilus(Shell, EditorInterface):
     
     def trace_position(self):
         text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=1)
+        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
-                if text != self.__text:
+                if text and text != self.__text:
                     name, argspec, tip = self.interp.getCallTip(text)
                     if tip:
                         tip = tip.splitlines()[0]
-                    self.message(tip)
+                    self.message(tip) # clear if no tip
                     self.__text = text
         evt.Skip()
     
@@ -3278,15 +3291,14 @@ class Nautilus(Shell, EditorInterface):
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         (override) Add globals when executing su:startupScript
+                   Fix history point
         """
-        self.globals = self.locals
-        ## Shell.execStartupScript(self, su)
-        
+        ## self.globals = self.locals
         self.promptPosEnd = self.TextLength # fix history point
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
-            self.push("with open({0!r}) as __f: exec(__f.read())\n".format(su))
-            self.push("del __f\n")
+            self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
+            self.push("del _f\n")
             self.interp.startupScript = su
         else:
             self.push("")
