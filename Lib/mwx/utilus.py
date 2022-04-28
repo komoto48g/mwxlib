@@ -220,13 +220,10 @@ def where(obj):
     """
     def _where(obj):
         filename = inspect.getsourcefile(obj)
-        try:
-            src, lineno = inspect.getsourcelines(obj)
-            if not lineno:
-                return filename
-            return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
-        except Exception:
+        src, lineno = inspect.getsourcelines(obj)
+        if not lineno:
             return filename
+        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
     try:
         try:
             return _where(obj) # module, class, method, function, frame, or code
