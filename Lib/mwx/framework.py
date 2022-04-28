@@ -2323,7 +2323,6 @@ class Editor(EditWindow, EditorInterface):
     
     def load(self, filename, lineno=0, show=True, focus=True):
         if filename is None:
-            self.ReadOnly = 0
             self.Text = ''
             self.target = None
             self.EmptyUndoBuffer()
@@ -2340,11 +2339,9 @@ class Editor(EditWindow, EditorInterface):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename)
         if lines:
-            self.ReadOnly = 0
             self.Text = ''.join(lines)
             self.target = filename
             self.EmptyUndoBuffer()
-            self.ReadOnly = 1
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
