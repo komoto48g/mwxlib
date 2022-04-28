@@ -220,17 +220,21 @@ def where(obj):
     """
     def _where(obj):
         filename = inspect.getsourcefile(obj)
-        src, lineno = inspect.getsourcelines(obj)
-        if not lineno:
+        try:
+            src, lineno = inspect.getsourcelines(obj)
+            if not lineno:
+                return filename
+            return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+        except Exception:
             return filename
-        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
     try:
         try:
-            return _where(obj)
+            return _where(obj) # module, class, method, function, frame, or code
         except Exception:
-            return _where(obj.__class__)
+            return _where(obj.__class__) # otherwise, class of the object
     except Exception:
-        return inspect.getmodule(obj)
+        return inspect.getmodule(obj)\
+            or inspect.getmodule(obj.__class__) # built-in module or None ?
 
 
 def mro(obj):
