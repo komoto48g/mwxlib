@@ -1823,7 +1823,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             if level == 0 or level == stc.STC_FOLDLEVELHEADERFLAG:
                 break
             le += 1
-        ## return (lc, le)
         return [self.PositionFromLine(x) for x in (lc, le)]
     
     def on_linesel_begin(self, evt):
@@ -1987,7 +1986,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     cline = property(
         lambda self: self.GetCurrentLine(),
-        lambda self,v: self.SetCurrentLine(v))
+        lambda self,v: self.SetCurrentPos(self.PositionFromLine(v)))
     
     @property
     def bol(self):
@@ -2324,8 +2323,10 @@ class Editor(EditWindow, EditorInterface):
     
     def load(self, filename, lineno=0, show=True, focus=True):
         if filename is None:
+            self.ReadOnly = 0
             self.Text = ''
             self.target = None
+            self.EmptyUndoBuffer()
             return None # no load
         
         if not isinstance(filename, string_types):
@@ -2339,8 +2340,11 @@ class Editor(EditWindow, EditorInterface):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename)
         if lines:
+            self.ReadOnly = 0
             self.Text = ''.join(lines)
             self.target = filename
+            self.EmptyUndoBuffer()
+            self.ReadOnly = 1
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
@@ -2483,6 +2487,7 @@ class Nautilus(Shell, EditorInterface):
         except AttributeError:
             ## print("- cannot overwrite target vars: {!r}".format(e))
             pass
+        self.parent.handler('title_window', obj)
     
     @property
     def locals(self):
@@ -3129,18 +3134,49 @@ class Nautilus(Shell, EditorInterface):
                 break
         return self.cpos - lp
     
-    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
-    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
-    
     @property
     def cmdlc(self):
-        """cull command-line (with no prompt)"""
+        """cull command-line (excluding ps1:prompt)"""
         return self.GetTextRange(self.bol, self.cpos)
     
     @property
     def cmdline(self):
-        """full command-(multi-)line (with no prompt)"""
+        """full command-(multi-)line (excluding ps1:prompt)"""
         return self.GetTextRange(self.bolc, self.eolc)
+    
+    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
+    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
+    
+    @property
+    def Command(self):
+        """Extract a command from text which may include a shell prompt.
+        Note: this returns the command at the caret position.
+        """
+        return self.getCommand()
+    
+    @property
+    def MultilineCommand(self):
+        """Extract a multi-line command from the editor.
+        (override) Add limitation to avoid an infinite loop at EOF
+        Note: this returns the command at the caret position.
+        """
+        lc = self.cline
+        le = lc + 1
+        while lc > 0:
+            text = self.GetLine(lc)
+            if not text.startswith(sys.ps2):
+                break
+            lc -= 1
+        if not text.startswith(sys.ps1):
+            return ''
+        while le < self.LineCount:
+            text = self.GetLine(le)
+            if not text.startswith(sys.ps2):
+                break
+            le += 1
+        p = self.PositionFromLine(lc) + len(sys.ps1)
+        q = self.PositionFromLine(le)
+        return self.GetTextRange(p, q)
     
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
@@ -3397,6 +3433,7 @@ class Nautilus(Shell, EditorInterface):
         if text:
             tokens = ut.split_words(text)
             cmd = self.magic_interpret(tokens)
+            cmd = self.regulate_cmd(self.lstripPrompt(cmd))
             tip = self.eval(cmd)
             self.CallTipShow(self.cpos, pformat(tip))
             return cmd
@@ -3406,11 +3443,21 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.getCommand() or self.expr_at_caret
+        text = self.SelectedText or self.Command or self.expr_at_caret
         if text:
             try:
                 cmd = self.gen_tooltip(text)
                 self.message(cmd)
+                return
+            except Exception as e:
+                self.message("- {}: {!r}".format(e, text))
+        
+        text = self.MultilineCommand
+        if text:
+            try:
+                cmd = self.gen_tooltip(text)
+                self.message(cmd)
+                return
             except Exception as e:
                 self.message("- {}: {!r}".format(e, text))
         else:
@@ -3421,11 +3468,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        if self.CanEdit():
-            text = self.cmdline
-        else:
-            with self.save_excursion():
-                text = self.getMultilineCommand()
+        text = self.MultilineCommand
         if text:
             try:
                 tokens = ut.split_words(text)
