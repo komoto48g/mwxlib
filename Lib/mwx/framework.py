@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.0"
+__version__ = "0.57.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1991,7 +1991,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     
     @property
     def expr_at_caret(self):
-        """Pythonic expression at the caret
+        """Minimal expression at the caret line
         The caret scouts back and forth to scoop a chunk of expression.
         """
         st = self.GetStyleAt(self.cpos)
@@ -2023,16 +2023,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
-    
-    @property
-    def paren_at_caret(self):
-        p = self.cpos
-        def _paren(q):
-            text = self.GetTextRange(p, q)
-            if text:
-                return text.replace(os.linesep + sys.ps2, '')
-        return (_paren(self.left_paren)
-             or _paren(self.right_paren))
     
     @property
     def right_paren(self):
@@ -3188,7 +3178,7 @@ class Nautilus(Shell, EditorInterface):
             input = self.GetTextRange(self.bolc, self.__eolc_mark)
             output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
-            input = self.regulate_cmd(input) #.lstrip()
+            input = self.regulate_cmd(input)
             Shell.addHistory(self, input)
             
             noerr = self.on_text_output(output)
@@ -3201,11 +3191,11 @@ class Nautilus(Shell, EditorInterface):
             ## shell.__init__ で定義するアトリビュートも存在しない
             pass
     
-    @classmethod
     def regulate_cmd(self, text, lf='\n'):
-        return (text.replace(os.linesep + sys.ps1, lf)
+        text = (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
+        return self.lstripPrompt(text)
     
     def goto_previous_mark(self):
         ln = self.MarkerPrevious(self.cline-1, 1<<1)
@@ -3247,11 +3237,11 @@ class Nautilus(Shell, EditorInterface):
     
     def about(self):
         """About the shell (to be overridden)"""
-        print("#<module 'mwx' from {!r}>".format(__file__),
-              "Author: {!r}".format(__author__),
-              "Version: {!s}".format(__version__),
-              "#{!r}".format(wx.py.shell),
-            sep='\n')
+        self.write('\n'.join((
+            "#<module 'mwx' from {!r}>".format(__file__),
+            "Author: {!r}".format(__author__),
+            "Version: {!s}".format(__version__),
+            "#{!r}".format(wx.py.shell))))
         Shell.about(self)
     
     def Paste(self, rectangle=False):
@@ -3264,8 +3254,7 @@ class Nautilus(Shell, EditorInterface):
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                command = self.regulate_cmd(
-                            self.fixLineEndings(self.lstripPrompt(text)))
+                command = self.regulate_cmd(self.fixLineEndings(text))
                 lf = '\n'
                 offset = ''
                 if rectangle:
@@ -3331,12 +3320,8 @@ class Nautilus(Shell, EditorInterface):
                    patch for `finally` miss-indentation
         """
         self.__start = self.clock()
-        
-        ## *** The following code is a modification of <wx.py.shell.Shell.Execute>
-        ##     We override (and simplified) it to make up for missing `finally`.
         lf = '\n'
-        command = self.regulate_cmd(
-                    self.fixLineEndings(self.lstripPrompt(text)))
+        command = self.regulate_cmd(self.fixLineEndings(text))
         commands = []
         c = ''
         for line in command.split(lf):
@@ -3413,40 +3398,29 @@ class Nautilus(Shell, EditorInterface):
             listr = ' '.join(words) # make itemlist:str
             self.AutoCompShow(offset, listr)
     
-    def gen_tooltip(self, text):
-        """Call ToolTip of the selected word or line"""
-        if text:
-            tokens = ut.split_words(text)
-            cmd = self.magic_interpret(tokens)
-            cmd = self.regulate_cmd(self.lstripPrompt(cmd))
-            tip = self.eval(cmd)
-            self.CallTipShow(self.cpos, pformat(tip))
-            return cmd
-    
     def eval_line(self, evt):
         """Call ToolTip of the selected word or line"""
         if self.CallTipActive():
             self.CallTipCancel()
+            
+        def _gen_text():
+            yield self.SelectedText or self.Command
+            yield self.MultilineCommand
         
-        text = self.SelectedText or self.Command or self.expr_at_caret
-        if text:
-            try:
-                cmd = self.gen_tooltip(text)
-                self.message(cmd)
-                return
-            except Exception as e:
-                self.message("- {}: {!r}".format(e, text))
-        
-        text = self.MultilineCommand
-        if text:
-            try:
-                cmd = self.gen_tooltip(text)
-                self.message(cmd)
-                return
-            except Exception as e:
-                self.message("- {}: {!r}".format(e, text))
-        else:
-            self.message("No word")
+        status = "No word"
+        for text in _gen_text():
+            if text:
+                try:
+                    tokens = ut.split_words(text)
+                    cmd = self.magic_interpret(tokens)
+                    cmd = self.regulate_cmd(cmd)
+                    tip = self.eval(cmd)
+                    self.CallTipShow(self.cpos, pformat(tip))
+                    self.message(cmd)
+                    return
+                except Exception as e:
+                    status = "- {}: {!r}".format(e, text)
+        self.message(status)
     
     def exec_region(self, evt):
         """Call ToolTip of the selected region"""
@@ -3458,7 +3432,7 @@ class Nautilus(Shell, EditorInterface):
             try:
                 tokens = ut.split_words(text)
                 cmd = self.magic_interpret(tokens)
-                cmd = self.regulate_cmd(self.lstripPrompt(cmd))
+                cmd = self.regulate_cmd(cmd)
                 cmd = compile(cmd, "<string>", "exec")
                 self.exec(cmd)
                 self.linemark = None
