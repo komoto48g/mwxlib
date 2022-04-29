@@ -49,6 +49,8 @@ class MatplotPanel(wx.Panel):
            axes : <matplotlib.axes.Axes>
          figure : <matplotlib.figure.Figure>
          cursor : <matplotlib.widgets.Cursor>
+         canvas : WxAgg.FigureCanvas
+        toolbar : WxAgg.NavigationToolbar2
        selected : selected points <matplotlib.lines.Line2D>
        Selector : selected points arrays (xx, yy)
     """
@@ -835,7 +837,8 @@ if __name__ == '__main__':
         #<matplotlib.lines.Line2D>
         art, = axes.plot(x, y, 'y--', lw=1, mec='b', mfc='r',
                          picker=True, pickradius=2)
-        
+        return art
+    
     def _scatter1(axes):
         t = np.arange(0,1,0.02)*2*pi
         x = np.cos(t*1.5)
@@ -854,6 +857,7 @@ if __name__ == '__main__':
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
         art.get_zdata = art.get_array
+        return art
     
     def _scatter2(axes):
         N = 50
@@ -869,15 +873,17 @@ if __name__ == '__main__':
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
         art.get_zdata = art.get_array
-        
+        return art
+    
     app = wx.App()
     frm = mwx.Frame(None)
-    frm.graph = MatplotPanel(frm, log=frm.statusbar, size=(300,240))
-    
+    frm.view = MatplotPanel(frm,
+                            log=frm.statusbar,
+                            size=(300,240))
     frm.handler.debug = 0
-    frm.graph.handler.debug = 4
+    frm.view.handler.debug = 4
     
-    axes = frm.graph.axes
+    axes = frm.view.axes
     if 1:
         #<matplotlib.patches.Circle>
         ## axes.add_artist(plt.Circle((0, 0), np.sqrt(2), color='r', ls='dashed', fill=0))
@@ -891,17 +897,25 @@ if __name__ == '__main__':
         #<matplotlib.patches.Polygon>
         axes.add_patch(patches.Polygon([(-1,-1),(1,-1),(1,1)], alpha=0.1))
         
-    axes.set_title("the title")
+    axes.set_title("Title")
     axes.set_xlabel("x")
     axes.set_ylabel("y")
+    axes.set_aspect('auto')
     axes.grid(True)
     axes.axis((-2, 2, -2, 2))
     
-    _plot(frm.graph.axes)
-    _scatter1(frm.graph.axes)
-    _scatter2(frm.graph.axes)
+    if 1:
+        art1 = _plot(frm.view.axes)
+        art2 = _scatter1(frm.view.axes)
+        art3 = _scatter2(frm.view.axes)
+        
+        fig = axes.figure # or self.view.figure
+        fig.colorbar(art3) # cf. self.clear()
     
-    frm.graph.update_position()
+    l, b = 0.15, 0.15
+    frm.view.set_margin((l,b,1.,1.-b))
+    
+    frm.view.update_position()
     frm.Fit()
     frm.Show()
     app.MainLoop()

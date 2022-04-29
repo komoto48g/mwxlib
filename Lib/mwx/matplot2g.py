@@ -1016,31 +1016,18 @@ class GraphPlot(MatplotPanel):
         """make colorbar
         The colorbar is plotted in self.figure.axes[1] (second axes)
         """
-        ## 現バージョンではいったん作成すると消すことができない
-        ## スケールバーは [0:256] 諧調の image のみ正しい結果を示す
         from mpl_toolkits.axes_grid1 import make_axes_locatable
-        
         if self.frame:
-            #<mpl_toolkits.axes_grid1.axes_divider.AxesDivider>
             divider = make_axes_locatable(self.axes)
-            
-            #<matplotlib.colorbar.Colorbar> : matplotlib.figure.Figure.colorbar
-            cbar = self.figure.colorbar(self.frame.artist,
-                orientation = 'vertical',
-                cax = divider.append_axes('right', size=0.1, pad=0.1),
-            )
-            ## cbar.on_mappable_changed(self.frame.artist)
-            cbar.update_normal(self.frame.artist)
-            cbar.draw_all()
-            self.draw()
-            
+            cax = divider.append_axes('right', size=0.1, pad=0.1)
+            cbar = self.figure.colorbar(self.frame, cax=cax)
             @self.handler.bind('frame_cmapped')
             @self.handler.bind('frame_shown')
             def update_cmap(frame):
-                ## cbar.on_mappable_changed(frame)
                 cbar.update_normal(frame)
                 cbar.draw_all()
                 self.canvas.draw_idle()
+            update_cmap(self.frame)
         else:
             self['*dummy*'] = np.random.rand(2,2) # dummy
             self.create_colorbar()
@@ -1730,7 +1717,6 @@ if __name__ == '__main__':
     frm.graph.frame.unit = 0.123
     
     frm.graph.create_colorbar()
-    frm.graph.select(0)
     
     def _plot(graph, r=10):
         """円弧を描くテスト"""
