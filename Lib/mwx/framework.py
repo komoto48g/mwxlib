@@ -1962,23 +1962,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
-    following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
-    preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
+    ## following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
+    ## preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
     
     def get_char(self, pos):
         return chr(self.GetCharAt(pos))
-    
-    @property
-    def following_symbol(self):
-        """Similar to following_char, but skips whites"""
-        line = self.GetTextRange(self.cpos, self.eol)
-        return next((c for c in line if not c.isspace()), '')
-    
-    @property
-    def preceding_symbol(self):
-        """Similar to preceding_char, but skips whites"""
-        line = self.GetTextRange(self.bol, self.cpos)[::-1]
-        return next((c for c in line if not c.isspace()), '')
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
