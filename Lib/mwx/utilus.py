@@ -224,11 +224,13 @@ def where(obj):
     try:
         try:
             return _where(obj) # module, class, method, function, frame, or code
-        except Exception:
+        except TypeError:
             return _where(obj.__class__) # otherwise, class of the object
     except Exception:
-        return inspect.getmodule(obj)\
-            or inspect.getmodule(obj.__class__) # built-in module or None ?
+        try:
+            return inspect.getfile(obj) # compiled file ?
+        except TypeError:
+            return inspect.getmodule(obj) # module or None ?
 
 
 def mro(obj):
