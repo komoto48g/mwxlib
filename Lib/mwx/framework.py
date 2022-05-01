@@ -21,6 +21,7 @@ import wx
 from wx import aui
 from wx import stc
 from wx.py import dispatcher
+from wx.py import introspect
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
@@ -2029,14 +2030,12 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         p = self.cpos
         if self.get_char(p) in "({[<":
             return self.BraceMatch(p) + 1
-        return -1
     
     @property
     def left_paren(self):
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             return self.BraceMatch(p - 1)
-        return -1
     
     @property
     def right_quotation(self):
@@ -2048,7 +2047,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 return p + len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
-        return -1
     
     @property
     def left_quotation(self):
@@ -2060,19 +2058,19 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                 return p - len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
-        return -1
     
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
     ## --------------------------------
     
     def _goto_pos(self, pos, selection=False):
-        if 0 <= pos <= self.TextLength:
-            if selection:
-                self.SetCurrentPos(pos)
-            else:
-                self.GotoPos(pos)
-            return True
+        if pos is None:
+            return
+        if selection:
+            self.SetCurrentPos(pos)
+        else:
+            self.GotoPos(pos)
+        return True
     
     def goto_char(self, pos):
         if pos < 0:
@@ -2894,10 +2892,6 @@ class Nautilus(Shell, EditorInterface):
             self.write(cmd, -1)
     
     def on_enter_escmap(self, evt):
-        if self.AutoCompActive():
-            self.AutoCompCancel()
-        if self.CallTipActive():
-            self.CallTipCancel()
         self._caret = self.CaretPeriod
         self.CaretPeriod = 0
         self.message("ESC-")
@@ -3090,7 +3084,7 @@ class Nautilus(Shell, EditorInterface):
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    fragmwords = set(keyword.kwlist + wdir(builtins)) # to be used in text-autocomp
+    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-autocomp
     
     ## shell.history is an instance variable of the Shell.
     ## If del shell.history, the history of the class variable is used
@@ -3191,11 +3185,13 @@ class Nautilus(Shell, EditorInterface):
             ## shell.__init__ で定義するアトリビュートも存在しない
             pass
     
-    def regulate_cmd(self, text, lf='\n'):
-        text = (text.replace(os.linesep + sys.ps1, lf)
+    def regulate_cmd(self, text, lf='\n', eol=None):
+        if eol:
+            text = self.fixLineEndings(text)
+        text = self.lstripPrompt(text)
+        return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
-        return self.lstripPrompt(text)
     
     def goto_previous_mark(self):
         ln = self.MarkerPrevious(self.cline-1, 1<<1)
@@ -3254,7 +3250,7 @@ class Nautilus(Shell, EditorInterface):
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                command = self.regulate_cmd(self.fixLineEndings(text))
+                command = self.regulate_cmd(text, eol=True)
                 lf = '\n'
                 offset = ''
                 if rectangle:
@@ -3321,7 +3317,7 @@ class Nautilus(Shell, EditorInterface):
         """
         self.__start = self.clock()
         lf = '\n'
-        command = self.regulate_cmd(self.fixLineEndings(text))
+        command = self.regulate_cmd(text, eol=True)
         commands = []
         c = ''
         for line in command.split(lf):
@@ -3405,6 +3401,7 @@ class Nautilus(Shell, EditorInterface):
             
         def _gen_text():
             yield self.SelectedText or self.Command
+            yield self.expr_at_caret
             yield self.MultilineCommand
         
         status = "No word"
@@ -3454,24 +3451,27 @@ class Nautilus(Shell, EditorInterface):
         """Show help:str for the selected topic"""
         if self.CallTipActive():
             self.CallTipCancel()
-        try:
-            text = self.SelectedText or self.expr_at_caret
-            if text:
+        
+        text = self.SelectedText or self.Command or self.expr_at_caret
+        if text:
+            try:
+                text = introspect.getRoot(text, terminator='(')
                 self.help(self.eval(text))
-        except Exception as e:
-            self.message("- {} : {!r}".format(e, text))
+            except Exception as e:
+                self.message("- {} : {!r}".format(e, text))
     
     def call_helpTip(self, evt):
         """Show tooltips for the selected topic"""
         if self.CallTipActive():
             self.CallTipCancel()
-        self.OnCallTipAutoCompleteManually(True) # autoCallTipShow or autoCompleteShow
-        if not self.CallTipActive():
-            text = self.SelectedText or self.expr_at_caret
-            if text:
-                self.autoCallTipShow(text, False, True) # => CallTipShow
-        if not self.CallTipActive():
-            self.message("No tip: {!r}".format(text))
+        
+        text = self.SelectedText or self.Command or self.expr_at_caret
+        if text:
+            try:
+                self.autoCallTipShow(text,
+                    self.get_char(self.cpos-1)=='(') # => CallTipShow
+            except Exception as e:
+                self.message("- {} : {!r}".format(e, text))
     
     def clear_autocomp(self, evt):
         """Clear Autocomp, selection, and message"""
