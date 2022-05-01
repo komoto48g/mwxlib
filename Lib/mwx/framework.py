@@ -177,7 +177,6 @@ def interactive(f=None, prompt="Enter value", locals=None):
                 return f(value, *args, **kwargs)
     return funcall(_f)
 
-_I = interactive
 
 def postcall(f):
     """A decorator of wx.CallAfter
@@ -305,8 +304,7 @@ class KeyCtrlInterfaceMixin(object):
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
-                       keyevent : [ keymap, self.prefix_command_hook,
-                                            skip ], # => skip to parents
+                       keyevent : [ keymap, self.prefix_command_hook ],
             },
             keymap : {
                          'quit' : [ default, ],
@@ -324,8 +322,9 @@ class KeyCtrlInterfaceMixin(object):
         or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
             ## or any other of pre-selection-p?
             self.handler('quit', evt)
-            return
-        self.message(evt.key + '-')
+        else:
+            self.message(evt.key + '-')
+        evt.Skip()
     
     def define_key(self, keymap, action=None, *args, **kwargs):
         """Define [map key] action at default state
@@ -718,10 +717,10 @@ class ShellFrame(MiniFrame):
         watcher : Notebook of global/locals info watcher
         console : Notebook of shells
           ghost : Notebook of editors and inspectors
-        Scratch : temporary buffer for scratch (tooltip)
-           Help : temporary buffer for help
-            Log : logging buffer
-        History : shell history (read only)
+        Scratch : buffer for scratch (tooltip)
+           Help : buffer for help
+            Log : buffer for logging
+        History : shell history (read-only)
         monitor : wxmon.EventMonitor object
       inspector : wxwit.Inspector object
     
@@ -744,8 +743,8 @@ class ShellFrame(MiniFrame):
         self.statusbar.Show(1)
         
         self.Scratch = Editor(self)
-        self.Help = Editor(self)
         self.Log = Editor(self)
+        self.Help = Editor(self)
         self.History = Editor(self)
         
         self.__shell = Nautilus(self, target,
@@ -1040,7 +1039,8 @@ class ShellFrame(MiniFrame):
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
             
-            Nautilus.__doc__,
+            ## Nautilus.__doc__,
+            self.__shell.__class__.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
             "#{!r}".format(wx.py.shell),
@@ -1244,10 +1244,9 @@ class ShellFrame(MiniFrame):
     def other_window(self, p=1):
         "Focus moves to other window"
         win = wx.Window.FindFocus()
-        pages = [win for win in self.all_pages()
-                 if isinstance(win, EditorInterface) and win.IsShownOnScreen()]
+        pages = [win for win in self.all_pages() if win.IsShownOnScreen()]
         if win in pages:
-            j = (pages.index(self.current_editor) + p) % len(pages)
+            j = (pages.index(win) + p) % len(pages)
             pages[j].SetFocus()
     
     def duplicate_line(self, clear=True):
@@ -1283,7 +1282,7 @@ class ShellFrame(MiniFrame):
             nb.DeletePage(j)
     
     ## --------------------------------
-    ## Find text dialog
+    ## Attributes of the Console
     ## --------------------------------
     
     def all_pages(self):
@@ -1302,6 +1301,10 @@ class ShellFrame(MiniFrame):
     @property
     def current_shell(self):
         return self.console.CurrentPage
+    
+    ## --------------------------------
+    ## Find text dialog
+    ## --------------------------------
     
     def OnFilterText(self, evt):
         win = self.current_editor
@@ -1407,7 +1410,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
-                  'M-g pressed' : (0, _I(self.goto_line, "Line to goto:")),
+                  'M-g pressed' : (0, interactive(self.goto_line, "Line to goto:")),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
