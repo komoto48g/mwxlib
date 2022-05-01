@@ -21,9 +21,6 @@ except ImportError:
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
-## from six import string_types
-string_types = str,
-
 ## EPSILON = sys.float_info.epsilon
 ## EPSILON = 1e-15
 
@@ -53,7 +50,7 @@ class Param(object):
                 underflow -> when value underflows
     
     Args:
-            fmt : text formatter or format str (default is '%g')
+            fmt : text formatter or format:str (default is '%g')
                   `hex` specifies hexadecimal format/eval
         handler : called when control changed
         updater : called when check changed
@@ -163,7 +160,7 @@ class Param(object):
                 return
         elif v == 'nan': v = nan
         elif v == 'inf': v = inf
-        elif isinstance(v, string_types):
+        elif isinstance(v, str):
             v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
             ## v = self.__eval(v)
         self.set_value(v)
@@ -707,7 +704,7 @@ class ControlPanel(scrolled.ScrolledPanel):
      **kwargs : extra keyword arguments given for Knob
         """
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
-        assert not isinstance(objs, string_types)
+        assert not isinstance(objs, str)
         
         objs = [ (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
             else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
@@ -897,7 +894,7 @@ Icon.custom_images = dict((k, v) for k, v in images.__dict__.items()
 
 
 def _bmpIcon(v):
-    if isinstance(v, string_types):
+    if isinstance(v, str):
         return Icon(v)
     return v
 

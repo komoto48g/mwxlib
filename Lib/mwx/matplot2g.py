@@ -24,9 +24,6 @@ import numpy as np
 from numpy import pi, nan
 from scipy import ndimage as ndi
 
-## from six import string_types
-string_types = str,
-
 _F = mwx.funcall
 
 
@@ -672,7 +669,7 @@ class GraphPlot(MatplotPanel):
         return art
     
     def select(self, j):
-        if isinstance(j, (string_types, AxesImagePhantom)): # given name:str or frame:art
+        if isinstance(j, (str, AxesImagePhantom)): # given name:str or frame:art
            j = self.index(j)
            if j is None:
                return
@@ -707,7 +704,7 @@ class GraphPlot(MatplotPanel):
         return self.frame
     
     def __getitem__(self, j):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             return self.__getitem__(self.index(j))
         
         buffers = [art.buffer for art in self.__Arts]
@@ -717,7 +714,7 @@ class GraphPlot(MatplotPanel):
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             try:
                 return self.__setitem__(self.index(j), v) # overwrite buffer
             except Exception:
@@ -735,7 +732,7 @@ class GraphPlot(MatplotPanel):
             self.select(j)
     
     def __delitem__(self, j):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             return self.__delitem__(self.index(j))
         
         if isinstance(j, list):
@@ -771,20 +768,20 @@ class GraphPlot(MatplotPanel):
         return True
     
     def __contains__(self, j):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             return j in (art.name for art in self.__Arts)
         else:
             return j in self.__Arts
     
     def index(self, j):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
             names = [art.name for art in self.__Arts]
             return names.index(j) # -> ValueError: `j` is not in list
         return self.__Arts.index(j)
     
     def find_frame(self, j):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             return next((art for art in self.__Arts if art.name == j), None)
         return self.__Arts[j]
     

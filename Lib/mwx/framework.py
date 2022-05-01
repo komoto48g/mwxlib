@@ -38,9 +38,6 @@ except ImportError:
     from . import utilus as ut
     from .utilus import (FSM, TreeList, funcall, wdir,
                          apropos, typename, where, mro, pp,)
-## from six import string_types
-string_types = str,
-
 _F = funcall
 
 
@@ -1124,7 +1121,7 @@ class ShellFrame(MiniFrame):
         return obj
     
     def load(self, obj):
-        if not isinstance(obj, string_types):
+        if not isinstance(obj, str):
             obj = where(obj)
         return self.Log.load(obj, focus=0) or False
     
@@ -2307,7 +2304,7 @@ class Editor(EditWindow, EditorInterface):
             self.EmptyUndoBuffer()
             return None # no load
         
-        if not isinstance(filename, string_types):
+        if not isinstance(filename, str):
             print("- The filename must be string type. Try @where to get the path")
             return None # no load
         

@@ -20,9 +20,6 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator, isframe, iscode, istraceback)
 from pprint import pprint
 
-## from six import string_types
-string_types = str,
-
 
 def atom(v):
     return not hasattr(v, '__name__')
@@ -129,7 +126,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
                   .replace('\\A','[A-Z0-9]')) #\A: 
     
-    if isinstance(pred, string_types):
+    if isinstance(pred, str):
         pred = predicate(pred, locals)
     
     if isinstance(pred, type):
@@ -782,17 +779,17 @@ class TreeList(object):
         return self.__items.__iter__()
     
     def __getitem__(self, k):
-        if isinstance(k, string_types):
+        if isinstance(k, str):
             return self.getf(self.__items, k)
         return self.__items.__getitem__(k)
     
     def __setitem__(self, k, v):
-        if isinstance(k, string_types):
+        if isinstance(k, str):
             return self.setf(self.__items, k, v)
         return self.__items.__setitem__(k, v)
     
     def __delitem__(self, k):
-        if isinstance(k, string_types):
+        if isinstance(k, str):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     
@@ -857,8 +854,8 @@ def funcall(f, *args, doc:str=None, alias:str=None, **kwargs):
     retval-> (lambda *v: f`alias<doc>`(*args, **kwargs))
     """
     assert callable(f)
-    assert isinstance(doc, (string_types, type(None)))
-    assert isinstance(alias, (string_types, type(None)))
+    assert isinstance(doc, (str, type(None)))
+    assert isinstance(alias, (str, type(None)))
     
     @wraps(f)
     def _Act(*v):

@@ -18,9 +18,6 @@ except:
     from . import framework as mwx
     from .controls import ControlPanel
 
-## from six import string_types
-string_types = str,
-
 
 class Gnuplot(object):
     """Gnuplot - gnuplot:pipe wrapper
@@ -63,7 +60,7 @@ class Gnuplot(object):
         return self
     
     def plot(self, *args):
-        if isinstance(args[0], string_types): # text command
+        if isinstance(args[0], str): # text command
             pcmd = [v.strip() for v in args]
             if pcmd[-1].endswith(','):
                 pcmd[-1] = pcmd[-1][:-1]
@@ -85,7 +82,7 @@ class Gnuplot(object):
             axis, args = args[0], args[1:]
             data, opts = [], []
             for v in args:
-                if not isinstance(v, string_types):
+                if not isinstance(v, str):
                     data.append(v)
                     if len(data) - len(opts) > 1: # opts 指定が省略されたのでデフォルト指定
                         opts.append("w l")

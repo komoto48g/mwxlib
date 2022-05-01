@@ -40,9 +40,6 @@ from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
 from importlib import reload
 
-## from six import string_types
-string_types = str,
-
 _F = mwx.funcall
 
 
@@ -431,7 +428,7 @@ class Graph(GraphPlot):
             self.infobar.ShowMessage(str(frame.annotation))
     
     def get_frame(self, j):
-        if isinstance(j, string_types):
+        if isinstance(j, str):
             return next((art for art in self.all_frames if art.name == j), None)
         return self.all_frames[j]
     
@@ -930,7 +927,7 @@ class Frame(mwx.Frame):
     
     def get_plug(self, name):
         """Find named plug window in registered plugins"""
-        if isinstance(name, string_types):
+        if isinstance(name, str):
             if name.endswith(".py") or name.endswith(".pyc"):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
@@ -1113,7 +1110,7 @@ class Frame(mwx.Frame):
         
         ## Create pane or notebook pane
         caption = plug.caption
-        if not isinstance(caption, string_types):
+        if not isinstance(caption, str):
             caption = name
         
         title = plug.category
@@ -1467,7 +1464,7 @@ class Frame(mwx.Frame):
         if view not in self.graphic_windows:
             view = self.selected_view
         
-        if isinstance(paths, string_types): # for single frame:backward compatibility
+        if isinstance(paths, str): # for single frame:backward compatibility
             paths = [paths]
         
         if paths is None:
