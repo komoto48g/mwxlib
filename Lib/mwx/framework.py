@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.1"
+__version__ = "0.57.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -38,7 +38,29 @@ except ImportError:
     from . import utilus as ut
     from .utilus import (FSM, TreeList, funcall, wdir,
                          apropos, typename, where, mro, pp,)
+
 _F = funcall
+
+
+def postcall(f):
+    """A decorator of wx.CallAfter
+    Wx posts the message that forces `f` to take place in the main thread.
+    """
+    @wraps(f)
+    def _f(*args, **kwargs):
+        wx.CallAfter(f, *args, **kwargs)
+    return _f
+
+
+def skip(v):
+    ## if isinstance(v, wx.Event):
+    v.Skip()
+
+
+def noskip(v):
+    ## Fake handler; do nothing, but if the FSM handles this,
+    ## consequently, the event will no longer skip hereafter.
+    pass
 
 
 speckeys = {
@@ -158,44 +180,6 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
-def interactive(f=None, prompt="Enter value", locals=None):
-    """Get response from the user using a dialog box."""
-    if f is None:
-        return lambda f: interactive(f, prompt)
-    @wraps(f)
-    def _f(*args, **kwargs):
-        with wx.TextEntryDialog(None,
-            prompt, caption=f.__name__) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                try:
-                    value = eval(dlg.Value, locals)
-                except Exception:
-                    value = dlg.Value
-                return f(value, *args, **kwargs)
-    return funcall(_f)
-
-
-def postcall(f):
-    """A decorator of wx.CallAfter
-    Wx posts the message that forces `f` to take place in the main thread.
-    """
-    @wraps(f)
-    def _f(*args, **kwargs):
-        wx.CallAfter(f, *args, **kwargs)
-    return _f
-
-
-def skip(v):
-    ## if isinstance(v, wx.Event):
-    v.Skip()
-
-
-def noskip(v):
-    ## Fake handler; do nothing, but if the FSM handles this,
-    ## consequently, the event will no longer skip hereafter.
-    pass
-
-
 class CtrlInterface(object):
     """Mouse/Key event interface class
     """
@@ -281,8 +265,6 @@ class CtrlInterface(object):
 
 class KeyCtrlInterfaceMixin(object):
     """Keymap interface mixin
-    
-    This interface class defines extended keymaps for inherited class handler.
     
     keymap : event key name that excluds 'pressed'
         global-map : 0 (default)
@@ -1101,6 +1083,9 @@ class ShellFrame(MiniFrame):
     ## Actions for handler
     ## --------------------------------
     
+    def load(self, obj):
+        return self.Log.load(obj, focus=0) or False
+    
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, wx.Object) or obj is None:
             self.monitor.watch(obj)
@@ -1119,11 +1104,6 @@ class ShellFrame(MiniFrame):
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
         return obj
-    
-    def load(self, obj):
-        if not isinstance(obj, str):
-            obj = where(obj)
-        return self.Log.load(obj, focus=0) or False
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
@@ -1368,6 +1348,23 @@ def editable(f):
         if self.CanEdit():
             return f(self, *args, **kwargs)
     return _f
+
+
+def interactive(f=None, prompt="Enter value", locals=None):
+    """Get response from the user using a dialog box."""
+    if f is None:
+        return lambda f: interactive(f, prompt)
+    @wraps(f)
+    def _f(*args, **kwargs):
+        with wx.TextEntryDialog(None,
+            prompt, caption=f.__name__) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    value = eval(dlg.Value, locals)
+                except Exception:
+                    value = dlg.Value
+                return f(value, *args, **kwargs)
+    return funcall(_f)
 
 
 class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
@@ -2035,7 +2032,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def left_paren(self):
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
-            return self.BraceMatch(p - 1)
+            return self.BraceMatch(p-1)
     
     @property
     def right_quotation(self):
@@ -2373,6 +2370,7 @@ class Nautilus(Shell, EditorInterface):
         @filling    inspection using wx.lib.filling.Filling
         @watch      inspection using wx.lib.inspection.InspectionTool
         @edit       open file with your editor (undefined)
+        @load       load file in the buffer
         @where      filename and lineno or module
         @debug      open pdb or show event-watcher and widget-tree
     
@@ -2999,7 +2997,6 @@ class Nautilus(Shell, EditorInterface):
         Shell.setBuiltinKeywords(self)
         
         ## Add more useful global abbreviations to builtins
-        builtins.typename = typename
         builtins.apropos = apropos
         builtins.reload = reload
         builtins.partial = partial
@@ -3009,6 +3006,7 @@ class Nautilus(Shell, EditorInterface):
         builtins.where = where
         builtins.watch = watchit
         builtins.filling = filling
+        builtins.profile = profile
     
     def on_activated(self, shell):
         """Called when shell:self is activated
@@ -3028,7 +3026,6 @@ class Nautilus(Shell, EditorInterface):
         builtins.info = self.info
         builtins.dive = self.clone
         builtins.timeit = self.timeit
-        builtins.profile = self.profile
         try:
             builtins.debug = self.parent.debug
             builtins.load = self.parent.load
@@ -3048,7 +3045,6 @@ class Nautilus(Shell, EditorInterface):
             del builtins.info
             del builtins.dive
             del builtins.timeit
-            del builtins.profile
             del builtins.debug
             del builtins.load
         except AttributeError:
@@ -3356,12 +3352,6 @@ class Nautilus(Shell, EditorInterface):
         t = self.clock()
         print("... duration time: {:g} s\n".format(t-self.__start), file=self)
     
-    def profile(self, obj, *args, **kwargs):
-        from profile import Profile
-        pr = Profile()
-        pr.runcall(obj, *args, **kwargs)
-        pr.print_stats()
-    
     def clone(self, target):
         if not hasattr(target, '__dict__'):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
@@ -3468,8 +3458,10 @@ class Nautilus(Shell, EditorInterface):
         text = self.SelectedText or self.Command or self.expr_at_caret
         if text:
             try:
+                p = self.cpos
+                c = self.get_char(p-1)
                 self.autoCallTipShow(text,
-                    self.get_char(self.cpos-1)=='(') # => CallTipShow
+                    c == '(' and p == self.eol) # => CallTipShow
             except Exception as e:
                 self.message("- {} : {!r}".format(e, text))
     
@@ -3773,6 +3765,13 @@ except ImportError as e:
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
     pass
+
+
+def profile(obj, *args, **kwargs):
+    from profile import Profile
+    pr = Profile()
+    pr.runcall(obj, *args, **kwargs)
+    pr.print_stats()
 
 
 def watchit(target=None, **kwargs):
