@@ -432,19 +432,6 @@ class GraphPlot(MatplotPanel):
                   'region_draw' : [ None ],
                  'region_drawn' : [ None, draw_idle ],
                'region_removed' : [ None, draw_idle ],
-                 'M-up pressed' : [ None, self.OnPageUp ],
-               'M-down pressed' : [ None, self.OnPageDown ],
-               'pageup pressed' : [ None, self.OnPageUp ],   # page-up
-             'pagedown pressed' : [ None, self.OnPageDown ], # page-down
-                 'home pressed' : [ None, _F(self.select, j=0) ],  # beggining-of-frames
-                  'end pressed' : [ None, _F(self.select, j=-1) ], # end-of-frames
-                  'M-a pressed' : [ None, _F(self.fit_to_canvas) ],
-                  'C-a pressed' : [ None, _F(self.update_axis) ],
-                  'C-c pressed' : [ None, _F(self.write_buffer_to_clipboard) ],
-                  'C-v pressed' : [ None, _F(self.read_buffer_from_clipboard) ],
-                  'C-k pressed' : [ None, _F(self.kill_buffer) ],
-                'C-S-k pressed' : [ None, _F(self.kill_buffer_all) ],
-                  'C-i pressed' : [ None, _F(self.invert_cmap) ],
             },
             NORMAL : {
                  'image_picked' : (NORMAL, self.OnImagePicked),
@@ -461,6 +448,19 @@ class GraphPlot(MatplotPanel):
               'Lbutton pressed' : (NORMAL, self.OnDragLock),
             'S-Lbutton pressed' : (NORMAL, self.OnDragLock, self.OnSelectorAppend),
                  '*Ldrag begin' : (NORMAL+DRAGGING, self.OnDragBegin),
+                 'M-up pressed' : (NORMAL, self.OnPageUp),
+               'M-down pressed' : (NORMAL, self.OnPageDown),
+               'pageup pressed' : (NORMAL, self.OnPageUp),
+             'pagedown pressed' : (NORMAL, self.OnPageDown),
+                 'home pressed' : (NORMAL, _F(self.select, j=0)),
+                  'end pressed' : (NORMAL, _F(self.select, j=-1)),
+                  'M-a pressed' : (NORMAL, _F(self.fit_to_canvas)),
+                  'C-a pressed' : (NORMAL, _F(self.update_axis)),
+                  'C-c pressed' : (NORMAL, _F(self.write_buffer_to_clipboard)),
+                  'C-v pressed' : (NORMAL, _F(self.read_buffer_from_clipboard)),
+                  'C-k pressed' : (NORMAL, _F(self.kill_buffer)),
+                'C-S-k pressed' : (NORMAL, _F(self.kill_buffer_all)),
+                  'C-i pressed' : (NORMAL, _F(self.invert_cmap)),
             },
             NORMAL+DRAGGING : {
                          'quit' : (NORMAL, ),
@@ -1065,13 +1065,17 @@ class GraphPlot(MatplotPanel):
                 self.__isPicked = 'region' # image pick gurad
                 self.handler('region_picked', evt)
                 
-            elif evt.artist is self.selected and self.Selector.shape[1] > 1:
-                if wx.GetKeyState(wx.WXK_SHIFT):
+            elif evt.artist is self.selected:
+                if (self.Selector.shape[1] < 2      # single selector
+                  or wx.GetKeyState(wx.WXK_SHIFT)): # or polygon mode
                     return
                 self.__isPicked = 'line' # image pick gurad
                 self.handler('line_picked', evt)
+            else:
+                self.__isPicked = 'art'
+                MatplotPanel.on_pick(self, evt) # [art_picked]
         self.canvas.draw_idle()
-        
+    
     def on_picker_lock(self, evt):
         self.__isPicked = True
     
