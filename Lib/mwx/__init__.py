@@ -37,21 +37,25 @@ import traceback
 import wx
 
 
-def deb(target=None, app=None, startup=None, **kwargs):
+def deb(target=None, app=None, startup=None, locals=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
-    --- Put me at breakpoint.
     
-    target : object or module. Default None sets target as __main__.
-       app : an instance of App.
-             Default None may create a local App and the mainloop.
-             If app is True, neither the app nor the mainloop will be created.
-             If app is given and not started the mainloop yet,
-             the app will enter the mainloop herein.
-   startup : called after started up (not before)
-  **kwargs : Nautilus arguments
-    locals : additional context (localvars:dict) to the shell
-    execStartupScript : First, execute your script ($PYTHONSTARTUP:~/.py)
+    Args:
+         target : Object or module.
+                  Default None sets target to __main__.
+            app : An instance of App.
+                  Default None may create a local App and the mainloop.
+                  If app is True, neither the app nor the mainloop will be created.
+                  If app is given and not started the mainloop yet,
+                  the app will enter the mainloop herein.
+        startup : A callable to configure the shell
+                  Called after construction of the shell
+         locals : Additional context of the shell
+       **kwargs : Nautilus arguments
+            introText : introductory of the shell
+        startupScript : startup script (default None)
+    execStartupScript : execute your startup script ($PYTHONSTARTUP:~/.py)
     """
     quote_unqoute = """
         Anything one man can imagine, other man can make real.
@@ -64,17 +68,18 @@ def deb(target=None, app=None, startup=None, **kwargs):
     frame = ShellFrame(None, target, **kwargs)
     frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close the window
     frame.Show()
-    frame.rootshell.SetFocus()
+    shell = frame.rootshell
+    shell.SetFocus()
+    if locals:
+        shell.locals.update(locals)
     if startup:
-        shell = frame.rootshell
         try:
             startup(shell)
             frame.handler.bind('add_page', startup)
+            shell.message("The startup completed successfully.")
         except Exception as e:
-            shell.message("- Failed to startup: {!r}".format(e))
             traceback.print_exc()
-        else:
-            shell.message("The startup was completed successfully.")
+            shell.message("- Failed to startup: {!r}".format(e))
     if isinstance(app, wx.App) and not app.GetMainLoop():
         app.MainLoop()
     return frame
