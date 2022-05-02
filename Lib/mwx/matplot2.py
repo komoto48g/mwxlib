@@ -138,9 +138,7 @@ class MatplotPanel(wx.Panel):
         self.canvas.Bind(wx.EVT_CONTEXT_MENU, lambda v: self.handler('context_menu', v))
         
         def fork(v):
-            self.handler(self.handler.event, v)
-            if isinstance(v, wx.Event):
-                v.Skip()
+            self.handler(self.handler.event, v) or v.Skip()
         
         self.__handler = mwx.FSM({ # DNA<MatplotPanel>
                 None : {
