@@ -63,10 +63,11 @@ class Debugger(Pdb):
     
     @property
     def busy(self):
-        try:
-            return self.curframe is not None
-        except AttributeError:
-            pass
+        return self.handler.current_state == 1
+    
+    @property
+    def tracing(self):
+        return self.handler.current_state == 2
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
@@ -97,7 +98,7 @@ class Debugger(Pdb):
             """Fork key events to the debugger"""
             self.parent.handler(self.handler.event, v)
         
-        self.__handler = FSM({
+        self.__handler = FSM({ # DNA<Debugger>
             0 : {
                   'debug_begin' : (1, self.on_debug_begin, forkup),
                   'trace_begin' : (2, forkup),
@@ -223,17 +224,18 @@ class Debugger(Pdb):
         print("{}{}".format(prefix, msg), file=self.stdout)
     
     def watch(self, bp):
-        if not self.busy:
+        if not self.busy: # don't set while debugging
             self.__breakpoint = bp
             sys.settrace(self.trace)
             self.handler('trace_begin', bp)
     
     def unwatch(self):
-        bp = self.__breakpoint
-        if self.__breakpoint:
-            self.__breakpoint = None
-            sys.settrace(None)
-            self.handler('trace_end', bp)
+        if not self.busy: # don't unset while debugging
+            bp = self.__breakpoint
+            if self.__breakpoint:
+                self.__breakpoint = None
+                sys.settrace(None)
+                self.handler('trace_end', bp)
     
     def trace(self, frame, event, arg):
         code = frame.f_code

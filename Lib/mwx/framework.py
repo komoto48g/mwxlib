@@ -898,7 +898,7 @@ class ShellFrame(MiniFrame):
         @self.Log.handler.bind('line_set')
         def start(v):
             filename = self.Log.target
-            if filename and not self.debugger.busy:
+            if filename and not self.debugger.busy: # don't set while debugging
                 self.debugger.watch((filename, v))
                 self.Log.MarkerDeleteAll(4)
                 self.message("Debugger has started tracing.")
@@ -1003,6 +1003,11 @@ class ShellFrame(MiniFrame):
             wx.MessageBox("The debugger is running\n\n"
                           "Enter [q]uit to exit before closing.")
             return
+        if self.debugger.tracing:
+            wx.MessageBox("The debugger ends the trace, "
+                          "and the trace pointer is cleared.")
+            del self.Log.linemark # [line_unset] => unwatch
+        
         self.Show(0) # Don't destroy the window
         self.debugger.unwatch()
     
