@@ -35,8 +35,7 @@ class Plugin(Layer):
             """CTF at k [nm-1]"""
             return sin(pi * (1/2 * cs * el**3 * k**4 - df * el * k**2))
         
-        if 0:
-            del self.Arts
+        if 1:
             ## ax = self.graph.axes
             ## ax.grid(False)
             ## ax.spines['left'].set_position('center')
