@@ -69,7 +69,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.alist = (
             ("typeId",    62),
             ("typeName", 200),
-            ("stamp",     80),
+            ("stamp",     40),
             ("source",     0),
         )
         for k, (header, w) in enumerate(self.alist):
