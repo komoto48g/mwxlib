@@ -63,11 +63,22 @@ class Debugger(Pdb):
     
     @property
     def busy(self):
-        return self.handler.current_state == 1
+        """The current state is debugging mode
+        True from entering `set_trace` until the end of `set_quit`
+        """
+        ## return (self.handler.current_state == 1)
+        try:
+            return self.curframe is not None
+        except AttributeError:
+            pass
     
     @property
     def tracing(self):
-        return self.handler.current_state == 2
+        """The current state is tracing mode
+        True from `watch` to `unwatch`, i.e., while a breakpoint is not None
+        """
+        ## return (self.handler.current_state == 2)
+        return self.__breakpoint is not None
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
@@ -125,10 +136,8 @@ class Debugger(Pdb):
         self.__indents = 0
         self.__interactive = self.parent.rootshell.cpos
         def _continue():
-            try:
-                wx.EndBusyCursor() # cancel the egg timer
-            except Exception:
-                pass
+            if wx.IsBusy():
+                wx.EndBusyCursor()
         wx.CallAfter(_continue)
     
     def on_debug_mark(self, frame):
@@ -224,35 +233,34 @@ class Debugger(Pdb):
         print("{}{}".format(prefix, msg), file=self.stdout)
     
     def watch(self, bp):
+        """Start tracing"""
         if not self.busy: # don't set while debugging
             self.__breakpoint = bp
             sys.settrace(self.trace)
             self.handler('trace_begin', bp)
     
     def unwatch(self):
+        """End tracing"""
         if not self.busy: # don't unset while debugging
             bp = self.__breakpoint
-            if self.__breakpoint:
-                self.__breakpoint = None
-                sys.settrace(None)
-                self.handler('trace_end', bp)
+            self.__breakpoint = None
+            sys.settrace(None)
+            self.handler('trace_end', bp)
     
     def trace(self, frame, event, arg):
         code = frame.f_code
-        filename = code.co_filename
         name = code.co_name
-        if not self.__breakpoint:
-            return None
+        filename = code.co_filename
+        ## firstlineno = code.co_firstlineno
+        lineno = frame.f_lineno
         target, line = self.__breakpoint
-        if target == filename:
-            if event == 'call':
-                src, lineno = inspect.getsourcelines(code)
-                if 0 <= line - lineno + 1 < len(src):
-                    self.set_trace()
-                    self.__indents = 2
-                    self.message("{}{}:{}:{}".format(self.prefix1,
-                                 filename, lineno, name), indent=0)
-                    return None
+        if target == filename and line == lineno-1:
+            if event == 'call' or event == 'line':
+                self.set_trace(frame)
+                self.__indents = 2
+                self.message("{}{}:{}:{}".format(self.prefix1,
+                             filename, lineno, name), indent=0)
+                return None
         return self.trace
     
     ## --------------------------------
@@ -266,6 +274,7 @@ class Debugger(Pdb):
             return
         if not frame:
             frame = inspect.currentframe().f_back
+        self.unwatch()
         self.handler('debug_begin', frame)
         Pdb.set_trace(self, frame)
     
