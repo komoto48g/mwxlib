@@ -157,7 +157,7 @@ class Debugger(Pdb):
             
             lines = linecache.getlines(filename, frame.f_globals)
             if not self.code or self.code.co_filename != filename:
-                self.editor.Text = ''.join(lines) or '[EOF]'
+                self.editor.load_text(''.join(lines) or '[EOF]')
         
         if self.code != code:
             self.editor.mark = self.editor.PositionFromLine(firstlineno - 1)

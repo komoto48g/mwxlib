@@ -324,7 +324,7 @@ class KeyCtrlInterfaceMixin(object):
             self.make_keymap(map)
         event = key + ' pressed'
         if action:
-            f = _F(action, *args, **kwargs)
+            f = funcall(action, *args, **kwargs)
             self.handler.update({map: {event: [state, f]}})
             return action
         else:
@@ -1089,6 +1089,8 @@ class ShellFrame(MiniFrame):
     ## --------------------------------
     
     def load(self, obj):
+        if not isinstance(obj, str):
+            obj = where(obj)
         return self.Log.load(obj, focus=0) or False
     
     def debug(self, obj, *args, **kwargs):
@@ -1382,6 +1384,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def __init__(self):
         CtrlInterface.__init__(self)
         
+        def echo(v):
+            keymap = self.handler.previous_state
+            self.message("{} {}".format(keymap, v.key))
+            v.Skip()
+        
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
@@ -1433,15 +1440,15 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
              'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
-                    '* pressed' : (0, skip),
-                    '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
-                    '@ pressed' : (0, skip, _F(self.goto_marker)),
-                  'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
+                    '* pressed' : (0, echo),
+                    '[ pressed' : (0, echo, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
+                    '] pressed' : (0, echo, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+                    '@ pressed' : (0, echo, _F(self.goto_marker)),
+                  'S-@ pressed' : (0, echo, _F(self.goto_line_marker)),
             },
             'C-c' : {
-                    '* pressed' : (0, skip),
-                  'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
+                    '* pressed' : (0, echo),
+                  'C-c pressed' : (0, echo, _F(self.goto_matched_paren)),
             },
         })
         self.handler.clear(0)
@@ -2299,11 +2306,16 @@ class Editor(EditWindow, EditorInterface):
             except (TypeError, FileNotFoundError):
                 pass
     
+    def load_text(self, text, readonly=False):
+        self.ReadOnly = 0
+        self.Text = text
+        self.EmptyUndoBuffer()
+        self.ReadOnly = readonly
+    
     def load(self, filename, lineno=0, show=True, focus=True):
         if filename is None:
-            self.Text = ''
+            self.load_text('')
             self.target = None
-            self.EmptyUndoBuffer()
             return None # no load
         
         if not isinstance(filename, str):
@@ -2317,9 +2329,8 @@ class Editor(EditWindow, EditorInterface):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename)
         if lines:
-            self.Text = ''.join(lines)
+            self.load_text(''.join(lines))
             self.target = filename
-            self.EmptyUndoBuffer()
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
