@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """mwxlib (based on matplotlib/wx)
 """
-## from . import framework
+## Framework
 from .framework import __version__, __author__
 from .utilus import apropos, typename
 from .utilus import FSM

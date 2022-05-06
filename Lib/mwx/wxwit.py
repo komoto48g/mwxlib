@@ -46,7 +46,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
-        def fork(v):
+        def dispatch(v):
             """Fork mouse events to the parent"""
             self.parent.handler(self.handler.event, v)
             v.Skip()

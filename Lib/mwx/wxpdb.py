@@ -105,19 +105,18 @@ class Debugger(Pdb):
             ln = self.editor.LineFromPosition(self.editor.mark)
             self.send_input('j {}'.format(ln + 1))
         
-        def forkup(v):
-            """Fork key events to the debugger"""
+        def dispatch(v):
             self.parent.handler(self.handler.event, v)
         
         self.__handler = FSM({ # DNA<Debugger>
             0 : {
-                  'debug_begin' : (1, self.on_debug_begin, forkup),
-                  'trace_begin' : (2, forkup),
+                  'debug_begin' : (1, self.on_debug_begin, dispatch),
+                  'trace_begin' : (2, dispatch),
             },
             1 : {
-                    'debug_end' : (0, self.on_debug_end, forkup),
-                   'debug_mark' : (1, self.on_debug_mark, forkup),
-                   'debug_next' : (1, self.on_debug_next, forkup),
+                    'debug_end' : (0, self.on_debug_end, dispatch),
+                   'debug_mark' : (1, self.on_debug_mark, dispatch),
+                   'debug_next' : (1, self.on_debug_next, dispatch),
                   'C-g pressed' : (1, lambda v: self.send_input('q')),
                   'C-q pressed' : (1, lambda v: self.send_input('q')),
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
@@ -126,8 +125,8 @@ class Debugger(Pdb):
                   'C-@ pressed' : (1, jump_to_entry_point),
             },
             2 : {
-                    'trace_end' : (0, forkup),
-                  'debug_begin' : (1, self.on_debug_begin, forkup),
+                    'trace_end' : (0, dispatch),
+                  'debug_begin' : (1, self.on_debug_begin, dispatch),
             },
         })
     

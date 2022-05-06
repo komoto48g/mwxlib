@@ -2269,7 +2269,7 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
-        def forkup(v):
+        def dispatch(v):
             """Fork mouse events to the parent"""
             self.parent.handler(self.handler.event, v)
             v.Skip()
@@ -2558,8 +2558,10 @@ class Nautilus(Shell, EditorInterface):
         def fork(v):
             self.handler(self.handler.event, v)
         
-        def forkup(v):
+        def dispatch(v):
+            """Fork mouse events to the parent"""
             self.parent.handler(self.handler.event, v)
+            v.Skip()
         
         self.handler.update({ # DNA<Nautilus>
             None : {
@@ -2568,9 +2570,9 @@ class Nautilus(Shell, EditorInterface):
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
-              '*button* dclick' : [ None, skip, forkup ],
-             '*button* pressed' : [ None, skip, forkup ],
-            '*button* released' : [ None, skip, forkup ],
+              '*button* dclick' : [ None, dispatch ],
+             '*button* pressed' : [ None, dispatch ],
+            '*button* released' : [ None, dispatch ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),

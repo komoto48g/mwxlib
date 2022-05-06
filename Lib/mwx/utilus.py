@@ -847,7 +847,7 @@ class TreeList(object):
         ls.remove(next(x for x in ls if x and x[0] == key))
 
 
-def funcall(f, *args, doc:str=None, alias:str=None, **kwargs):
+def funcall(f, *args, doc=None, alias=None, **kwargs):
     """Decorator of event handler
     
     Check if the event argument can be omitted,
