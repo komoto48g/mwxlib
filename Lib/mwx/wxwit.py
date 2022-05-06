@@ -73,8 +73,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.SelectItem(item)
         elif obj:
             self.BuildTree(obj)
-        self.parent.handler('title_window',
-            "{}: {}".format(self.__class__.__name__, self.__widget))
     
     def GetTextForWidget(self, obj):
         """Returns the string to be used in the tree for a widget
