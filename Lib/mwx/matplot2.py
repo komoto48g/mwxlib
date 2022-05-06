@@ -854,7 +854,7 @@ if __name__ == '__main__':
         ## art.get_data = lambda: x, y
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
-        art.get_zdata = art.get_array
+        ## art.get_zdata = art.get_array
         return art
     
     def _scatter2(axes):
@@ -870,7 +870,7 @@ if __name__ == '__main__':
                            picker=True, pickradius=4)
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
-        art.get_zdata = art.get_array
+        ## art.get_zdata = art.get_array
         return art
     
     app = wx.App()

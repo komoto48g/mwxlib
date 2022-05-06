@@ -224,6 +224,10 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     @Arts.setter
     def Arts(self, arts):
+        for art in self.__artists[:]:
+            if art not in arts:
+                art.remove()
+                self.__artists.remove(art)
         self.__artists = arts
     
     @Arts.deleter
