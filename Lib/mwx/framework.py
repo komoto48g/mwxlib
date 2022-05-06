@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.2"
+__version__ = "0.57.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -622,7 +622,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
-        self.make_keymap('C-c')
+        ## self.make_keymap('C-c')
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -682,7 +682,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
-        self.make_keymap('C-c')
+        ## self.make_keymap('C-c')
     
     def Destroy(self):
         return wx.MiniFrame.Destroy(self)
@@ -898,17 +898,17 @@ class ShellFrame(MiniFrame):
         @self.Log.handler.bind('line_set')
         def start(v):
             filename = self.Log.target
-            if filename and not self.debugger.busy: # don't set while debugging
+            if filename and not self.debugger.busy:
                 self.debugger.watch((filename, v))
-                self.Log.MarkerDeleteAll(4)
                 self.message("Debugger has started tracing.")
+            self.Log.MarkerDeleteAll(4)
         
         @self.Log.handler.bind('line_unset')
         def stop(v):
-            if not self.debugger.busy: # don't unset while debugging
+            if self.debugger.tracing:
                 self.debugger.unwatch()
-                self.Log.MarkerAdd(v, 4)
                 self.message("Debugger finished tracing.")
+            self.Log.MarkerAdd(v, 4)
         
         self.Init()
         self._mgr.Update()
@@ -1436,8 +1436,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                     '* pressed' : (0, skip),
                     '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
                     '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
-                    '@ pressed' : (0, _F(self.goto_marker)),
-                  'S-@ pressed' : (0, _F(self.goto_line_marker)),
+                    '@ pressed' : (0, skip, _F(self.goto_marker)),
+                  'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
             },
             'C-c' : {
                     '* pressed' : (0, skip),
@@ -2969,7 +2969,7 @@ class Nautilus(Shell, EditorInterface):
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
             
             if c == '`':
-                f = "{rhs}={lhs}"
+                f = "{rhs} = {lhs}"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rs, sep1).strip()
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
@@ -3839,8 +3839,8 @@ if 1:
     frm.editor = Editor(frm)
     
     frm.handler.debug = 4
-    frm.editor.handler.debug = 0
-    frm.shellframe.handler.debug = 0
+    frm.editor.handler.debug = 4
+    frm.shellframe.handler.debug = 4
     frm.shellframe.rootshell.handler.debug = 4
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
