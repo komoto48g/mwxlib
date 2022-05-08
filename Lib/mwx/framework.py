@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.4"
+__version__ = "0.57.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -940,7 +940,7 @@ class ShellFrame(MiniFrame):
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
                     "self.Log.load({!r}, {})".format(self.Log.target,
-                                                     self.Log.MarkerNext(0, 1) + 1),
+                                                     self.Log.MarkerNext(0, 1)+1),
                     "self.Log.EmptyUndoBuffer()",
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
@@ -1252,7 +1252,7 @@ class ShellFrame(MiniFrame):
     def clone_shell(self, target=None):
         """Clone the current shell"""
         shell = self.current_shell
-        shell.clone(target or shell.target)
+        return shell.clone(target or shell.target)
     
     def close_shell(self):
         """Close the current shell"""
@@ -2288,23 +2288,20 @@ class Editor(EditWindow, EditorInterface):
             v.Skip()
             if not self.__mtime:
                 return
-            try:
-                f = self.target
-                t = os.path.getmtime(f)
-                if self.__mtime != t:
-                    self.__mtime = t # Note: modal dlg makes focus off
-                    p = self.cpos
-                    with wx.MessageDialog(None,
-                        "The file {} has changed.\n"
-                        "Do you want to reload it?".format(f),
-                        style=wx.YES_NO|wx.ICON_INFORMATION) as dlg:
-                        if dlg.ShowModal() == wx.ID_YES:
-                            self.load(f, self.MarkerNext(0, 1) + 1)
-                            self.goto_char(p)
-                        if self.HasCapture():
-                            self.ReleaseMouse()
-            except (TypeError, FileNotFoundError):
-                pass
+            f = self.target
+            t = os.path.getmtime(f)
+            if self.__mtime != t:
+                self.__mtime = t # Note: modal dlg makes focus off
+                p = self.cpos
+                with wx.MessageDialog(None,
+                    "The file {!r} has changed.\n"
+                    "Do you want to reload it?".format(f),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) as dlg:
+                    if dlg.ShowModal() == wx.ID_YES:
+                        self.load(f, self.MarkerNext(0, 1)+1)
+                        self.goto_char(p)
+                if self.HasCapture():
+                    self.ReleaseMouse()
     
     def load_text(self, text, readonly=False):
         self.ReadOnly = 0
