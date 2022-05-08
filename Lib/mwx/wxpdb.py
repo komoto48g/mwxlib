@@ -132,7 +132,7 @@ class Debugger(Pdb):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        self.__indents = 0
+        self.__breakpoint = None
         self.__interactive = self.parent.rootshell.cpos
         def _continue():
             if wx.IsBusy():
@@ -235,7 +235,9 @@ class Debugger(Pdb):
         """Start tracing"""
         if not self.busy: # don't set while debugging
             self.__breakpoint = bp
-            sys.settrace(self.trace)
+            ## sys.settrace(self.trace)
+            self.reset()
+            sys.settrace(self.trace_dispatch)
             self.handler('trace_begin', bp)
     
     def unwatch(self):
@@ -246,25 +248,64 @@ class Debugger(Pdb):
             sys.settrace(None)
             self.handler('trace_end', bp)
     
-    def trace(self, frame, event, arg):
-        code = frame.f_code
-        name = code.co_name
-        filename = code.co_filename
-        ## firstlineno = code.co_firstlineno
-        lineno = frame.f_lineno
-        target, line = self.__breakpoint
-        if target == filename and line == lineno-1:
-            if event == 'call' or event == 'line':
-                self.set_trace(frame)
-                self.__indents = 2
-                self.message("{}{}:{}:{}".format(self.prefix1,
-                             filename, lineno, name), indent=0)
-                return None
-        return self.trace
+    ## def trace(self, frame, event, arg):
+    ##     code = frame.f_code
+    ##     name = code.co_name
+    ##     filename = code.co_filename
+    ##     ## firstlineno = code.co_firstlineno
+    ##     lineno = frame.f_lineno
+    ##     target, line = self.__breakpoint
+    ##     if target == filename and line == lineno-1:
+    ##         if event == 'call' or event == 'line':
+    ##             self.set_trace(frame)
+    ##             self.__indents = 2
+    ##             self.message("{}{}:{}:{}".format(self.prefix1,
+    ##                          filename, lineno, name), indent=0)
+    ##             return None
+    ##     return self.trace
     
     ## --------------------------------
     ## Override Bdb methods
     ## --------------------------------
+    
+    def dispatch_line(self, frame):
+        """Invoke user function and return trace function for line event.
+        (override) Watch the breakpoint
+        """
+        if self.__breakpoint:
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
+            target, line = self.__breakpoint
+            if target == filename:
+                if line <= lineno-1:
+                    self.__indents = 2
+                    self.handler('debug_begin', frame)
+                else:
+                    return None
+        return Pdb.dispatch_line(self, frame)
+    
+    def dispatch_call(self, frame, arg):
+        """Invoke user function and return trace function for call event.
+        (override) Watch the breakpoint
+        """
+        if self.__breakpoint:
+            code = frame.f_code
+            filename = code.co_filename
+            lineno = frame.f_lineno
+            target, line = self.__breakpoint
+            if target == filename:
+                src, lineno = inspect.getsourcelines(code)
+                if line == lineno-1:
+                    self.handler('debug_begin', frame)
+                    self.user_call(frame, arg)
+                elif 0 <= line - lineno + 1 < len(src):
+                    ## continue to dispatch_line (in the code)
+                    return self.trace_dispatch
+                else:
+                    return None
+            else:
+                return None
+        return Pdb.dispatch_call(self, frame, arg)
     
     def set_trace(self, frame=None):
         if self.busy:
@@ -273,7 +314,6 @@ class Debugger(Pdb):
             return
         if not frame:
             frame = inspect.currentframe().f_back
-        self.unwatch()
         self.handler('debug_begin', frame)
         Pdb.set_trace(self, frame)
     
@@ -388,8 +428,9 @@ if __name__ == "__main__":
             },
         })
         self.debugger = dbg
+        shell.write("self.shell.about()")
         ## shell.write("self.shellframe.debug(self.About)")
-        shell.write("self.shellframe.debug(self.shell.about)")
+        ## shell.write("self.shellframe.debug(self.shell.about)")
         self.Show()
     frm.Show()
     app.MainLoop()
