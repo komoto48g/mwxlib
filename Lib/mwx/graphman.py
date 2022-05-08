@@ -212,8 +212,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     histogram = property(lambda self: self.__parent.histogram)
     selected_view = property(lambda self: self.__parent.selected_view)
     
-    ## pane = property(lambda self: self.__parent.get_pane(self))
-    
     thread_type = Thread
     thread = None
     
@@ -290,7 +288,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         })
         self.handler.clear(0)
         
-        ## Menu (override)
         self.Menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
                 lambda v: self.copy_to_clipboard(),
@@ -333,9 +330,8 @@ class Layer(ControlPanel, mwx.CtrlInterface):
             self.Init()
             if session:
                 self.init_session(session)
-                ## wx.CallAfter(self.init_session, session)
         except RuntimeError:
-            if parent: # unless stand-alone Layer <wx.Window> object is intended ?
+            if parent: # stand-alone Layer <wx.Window> intended?
                 raise
         except Exception as e:
             traceback.print_exc()
@@ -351,14 +347,16 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     ## def Destroy(self):
     ##     """Called from parent (to be overridden) -> destroy"""
-    ##     return Layer.Destroy(self)
+    ##     return ControlPanel.Destroy(self)
     
     def init_session(self, session):
         """Restore settings from a session file (to be overridden)"""
+        ## self.parameters = session['params']
         pass
     
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
+        ## session['params'] = self.parameters
         pass
     
     Shown = property(
@@ -996,8 +994,8 @@ class Frame(mwx.Frame):
         dirname = os.path.dirname(rootpath)
         if os.path.isdir(dirname):
             if dirname in sys.path:
-                sys.path.remove(dirname) # インクルードパスの先頭に移動するため削除
-            sys.path.insert(0, dirname)  # インクルードパスの先頭に追加する
+                sys.path.remove(dirname)
+            sys.path.insert(0, dirname)
         elif dirname:
             print("- No such directory {!r}".format(dirname))
             return False
