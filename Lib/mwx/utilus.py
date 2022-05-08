@@ -512,8 +512,9 @@ class FSM(dict):
         return '\n'.join("[ {!r} ]\n{!s}".format(k, v) for k, v in self.items())
     
     def __call__(self, event, *args, **kwargs):
-        """Dispatch the given event
-        First, call with the state:None, then call with the current state.
+        """Handle the event
+        First, call handlers with the state:None.
+        Then, call handlers with the current state.
         
         The retval dppends on the context:
             process the event (with transition or actions) -> list
@@ -549,7 +550,7 @@ class FSM(dict):
             return retvals
     
     def call(self, event, *args, **kwargs):
-        """Invoke the event handler
+        """Invoke the event handlers
         Process:
             1. transit the state
             2. try actions after transition
@@ -570,7 +571,7 @@ class FSM(dict):
                     self.dump("- FSM:exception: {!r}".format(e),
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
-                              "   state : {}".format(self.__state),
+                              "      to : {}".format(self.__state),
                               "  action : {}".format(typename(act)),
                               "    args : {}".format(args),
                               "  kwargs : {}".format(kwargs))

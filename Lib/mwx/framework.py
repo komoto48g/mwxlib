@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.3"
+__version__ = "0.57.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -622,7 +622,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
-        ## self.make_keymap('C-c')
     
     def About(self):
         wx.MessageBox(__import__('__main__').__doc__ or 'no information',
@@ -682,7 +681,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             default = 0
         )
         self.make_keymap('C-x')
-        ## self.make_keymap('C-c')
     
     def Destroy(self):
         return wx.MiniFrame.Destroy(self)
@@ -892,13 +890,14 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         filename="<scratch>")
         
-        ## ed-mode
+        ## text-mode
         self.Log.show_folder()
         
         @self.Log.handler.bind('line_set')
         def start(v):
             filename = self.Log.target
             if filename and not self.debugger.busy:
+                self.debugger.editor = self.Log
                 self.debugger.watch((filename, v))
                 self.message("Debugger has started tracing.")
             self.Log.MarkerDeleteAll(4)
@@ -906,6 +905,7 @@ class ShellFrame(MiniFrame):
         @self.Log.handler.bind('line_unset')
         def stop(v):
             if self.debugger.tracing:
+                self.debugger.editor = None
                 self.debugger.unwatch()
                 self.message("Debugger finished tracing.")
             self.Log.MarkerAdd(v, 4)
@@ -1564,9 +1564,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## Custom style of control-char, wrap-mode
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
-        ## self.UseTabs = False
+        self.UseTabs = False
         self.TabWidth = 4
-        self.WrapMode = 0
+        self.WrapMode = 1
         self.WrapIndentMode = 1
         self.IndentationGuides = 2
         
@@ -1771,7 +1771,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         """Show folder margin
         
         Call this method before set_style.
-        If called after set_style, the margin color will be gray
+        Or else the margin color will be gray:default
         """
         if show:
             self.SetMarginWidth(2, 12)
@@ -1949,11 +1949,11 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         mode in {0:insert, 1:over, None:toggle}
         """
         self.Overtype = mode if mode is not None else not self.Overtype
-        self.Refresh()
     
     def wrap(self, mode=1):
         """Sets whether text is word wrapped
-        (override) mode {0:no-wrap, 1:word-wrap, 2:char-wrap, None:toggle}
+        (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
+                            3:whitespace-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
@@ -2791,11 +2791,12 @@ class Nautilus(Shell, EditorInterface):
             },
         })
         
-        self.show_folder(True)
+        self.wrap(0)
+        self.show_folder()
         self.set_style(self.STYLE)
         
         self.__text = ''
-        self.__start = 0
+        self.__time = 0
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -3239,7 +3240,8 @@ class Nautilus(Shell, EditorInterface):
     
     def wrap(self, mode=1):
         """Sets whether text is word wrapped
-        (override) mode {0:no-wrap, 1:word-wrap (2:no-word-wrap), None:toggle}
+        (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
+                            3:whitespace-wrap, None:toggle}
         """
         EditorInterface.wrap(self, mode)
     
@@ -3329,7 +3331,7 @@ class Nautilus(Shell, EditorInterface):
         (override) to check the clock time,
                    patch for `finally` miss-indentation
         """
-        self.__start = self.clock()
+        self.__time = self.clock()
         lf = '\n'
         command = self.regulate_cmd(text, eol=True)
         commands = []
@@ -3355,7 +3357,7 @@ class Nautilus(Shell, EditorInterface):
         """Execute command as if it was typed in directly
         (override) to check the clock time
         """
-        self.__start = self.clock()
+        self.__time = self.clock()
         
         return Shell.run(self, command, prompt, verbose)
     
@@ -3368,7 +3370,7 @@ class Nautilus(Shell, EditorInterface):
     
     def timeit(self, *args, **kwargs):
         t = self.clock()
-        print("... duration time: {:g} s\n".format(t-self.__start), file=self)
+        print("... duration time: {:g} s\n".format(t - self.__time), file=self)
     
     def clone(self, target):
         if not hasattr(target, '__dict__'):
