@@ -1110,7 +1110,6 @@ class ShellFrame(MiniFrame):
         else:
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
-        return obj
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
