@@ -89,6 +89,9 @@ class Param(object):
         except ValueError:
             return str(v)
     
+    def __int__(self):
+        return int(self.__value)
+    
     def __float__(self):
         return float(self.__value)
     
