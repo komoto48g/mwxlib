@@ -7,7 +7,7 @@ from .framework import __version__, __author__
 from .utilus import apropos, typename
 from .utilus import FSM
 from .utilus import funcall
-from .framework import pack, hotkey
+from .framework import pack, postcall
 from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame
 
