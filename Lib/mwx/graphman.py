@@ -325,9 +325,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
             self.Init()
             if session:
                 self.init_session(session)
-        except RuntimeError:
-            if parent: # stand-alone Layer <wx.Window> intended?
-                raise
         except Exception as e:
             traceback.print_exc()
             if parent:
