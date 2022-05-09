@@ -258,7 +258,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
-        self.thread = None
         
         self.handler.append({ # DNA<Layer>
             None : {
