@@ -239,22 +239,17 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         If axes is None, the arts will be removed from their axes.
         """
         if axes:
-            self._add_artists(axes, *args)
+            for art in args:
+                if art.axes:
+                    art.remove()
+                axes.add_artist(art)
+                if art not in self.Arts:
+                    self.Arts.append(art)
         else:
-            self._remove_artists(*args)
-    
-    def _add_artists(self, axes, *args): # to be deprecated
-        for art in args:
-            if art.axes:
-                art.remove()
-            axes.add_artist(art)
-            self.__artists.append(art)
-    
-    def _remove_artists(self, *args): # to be deprecated
-        for art in args or self.__artists[:]:
-            if art.axes:
-                art.remove()
-            self.__artists.remove(art)
+            for art in args or self.Arts[:]:
+                if art.axes:
+                    art.remove()
+                self.Arts.remove(art)
     
     def __init__(self, parent, session=None, **kwargs):
         kwargs.setdefault('size', (130, 24)) # keep minimum size
@@ -351,13 +346,17 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     def init_session(self, session):
         """Restore settings from a session file (to be overridden)"""
-        ## self.parameters = session['params']
-        pass
+        if session:
+            self.parameters = session['params']
     
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
-        ## session['params'] = self.parameters
-        pass
+        if self.parameters:
+            session['params'] = self.parameters
+    
+    def reset_params(self, *args, **kwargs):
+        ControlPanel.reset_params(self, *args, **kwargs)
+        self.Draw(False)
     
     Shown = property(
         lambda self: self.IsShown(),
@@ -367,6 +366,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         return self.parent.get_pane(self).IsShown()
     
     def Show(self, show=True):
+        """Show associated pane"""
         wx.CallAfter(self.parent.show_pane, self, show)
     
     Drawn = property(
@@ -376,9 +376,14 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     def IsDrawn(self):
         return any(art.get_visible() for art in self.Arts)
     
-    def Draw(self, show=True):
+    def Draw(self, show=None):
+        """Draw artists
+        If show is None:default, draw only when the pane is visible.
+        """
         if not self.Arts:
             return
+        if show is None:
+            show = self.IsShown()
         try:
             ## Arts may be belonging to either graph, output, and any other windows.
             for art in self.Arts:
