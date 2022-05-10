@@ -1766,11 +1766,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     ## Fold / Unfold functions
     ## --------------------------------
     
-    def show_folder(self, show=True):
+    def show_folder(self, show=True, colour=None):
         """Show folder margin
         
         Call this method before set_style.
-        Or else the margin color will be gray:default
+        Or else the margin color will be default light gray
+        
+        If show is True, the colour is used for margin hi-colour (default :g).
+        If show is False, the colour is used for margin line colour (default :b)
         """
         if show:
             self.SetMarginWidth(2, 12)
@@ -1778,14 +1781,14 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.SetMarginSensitive(1, True)
             self.SetMarginSensitive(2, True)
             self.SetFoldMarginColour(True, self.CaretLineBackground)
-            self.SetFoldMarginHiColour(True, 'light gray')
+            self.SetFoldMarginHiColour(True, colour or 'light gray')
         else:
             self.SetMarginWidth(2, 1)
             self.SetMarginSensitive(0, False)
             self.SetMarginSensitive(1, False)
             self.SetMarginSensitive(2, False)
-            self.SetFoldMarginColour(True, 'black')
-            self.SetFoldMarginHiColour(True, 'black')
+            self.SetFoldMarginColour(True, colour or 'black')
+            self.SetFoldMarginHiColour(True, colour or 'black')
     
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
