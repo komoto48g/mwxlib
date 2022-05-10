@@ -1035,10 +1035,8 @@ class TextCtrl(wx.Panel):
                             | (wx.TE_READONLY if readonly else 0))
         
         self.ctrl = wx.TextCtrl(self, **kwargs)
-        
         self.btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
-        
         self.SetSizer(
             mwx.pack(self,
                 (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1046,6 +1044,10 @@ class TextCtrl(wx.Panel):
             )
         )
         if handler:
+            def _f(v):
+                self.Value = v
+                handler(self)
+            self.reset = _f
             self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
 
 
@@ -1100,10 +1102,8 @@ class Choice(wx.Panel):
                             | (wx.CB_READONLY if readonly else 0))
         
         self.ctrl = wx.ComboBox(self, **kwargs)
-        
         self.btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
-        
         self.SetSizer(
             mwx.pack(self,
                 (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1111,14 +1111,18 @@ class Choice(wx.Panel):
             )
         )
         if handler:
+            def _f(v):
+                self.Value = v
+                handler(self)
+            self.reset = _f
             self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
             self.ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
-        self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+        self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         
         if selection is not None:
             self.ctrl.Selection = selection # no events?
     
-    def OnEnter(self, evt):
+    def OnTextEnter(self, evt):
         s = evt.String.strip()
         if not s:
             self.ctrl.SetSelection(-1)
