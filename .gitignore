@@ -1,10 +1,13 @@
 *.jssn
 *.ssn
 *.db
+*.lnk
+*.pptx
+*.docx
+*.xlsx
 *.l
 *.log
 *.txt
-*.lnk
 Makefile
 exclude_files
 c/

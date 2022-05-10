@@ -36,12 +36,6 @@ class Plugin(Layer):
     def Destroy(self):
         return Layer.Destroy(self)
     
-    def init_session(self, session):
-        self.parameters = session['params']
-    
-    def save_session(self, session):
-        session['params'] = self.parameters
-    
     def run(self):
         k = self.ksize.value
         src = self.graph.buffer

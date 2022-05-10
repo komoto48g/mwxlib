@@ -323,7 +323,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         try:
             self.Init()
             if session:
-                self.init_session(session)
+                self.load_session(session)
         except Exception as e:
             traceback.print_exc()
             if parent:
@@ -342,8 +342,10 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     def init_session(self, session):
         """Restore settings from a session file (to be overridden)"""
-        if session:
+        if 'params' in session:
             self.parameters = session['params']
+    
+    load_session = init_session # for backward compatibility
     
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
@@ -863,7 +865,7 @@ class Frame(mwx.Frame):
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane
         
-        Note: This is called automatically from load_plug and load_session,
+        Note: This is called automatically from load_plug,
               and should not be called directly from user.
         """
         pane = self.get_pane(name)
@@ -988,7 +990,7 @@ class Frame(mwx.Frame):
             if not force:
                 self.update_pane(name, **props)
                 if session:
-                    plug.init_session(session)
+                    plug.load_session(session)
                 return None
         
         ## Update the include path to load the module correctly.
@@ -1675,7 +1677,8 @@ class Frame(mwx.Frame):
             ## stack-frame
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
             if paths:
-                o.write("self.load_frame(\n{})\n".format(pformat(paths, width=160)))
+                o.write("self.load_frame(\n{}, self.graph)\n".format(
+                        pformat(paths, width=160)))
             
             ## set-global-unit
             o.write("self.graph.unit = {}\n".format(self.graph.unit))

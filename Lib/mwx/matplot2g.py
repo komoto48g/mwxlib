@@ -933,16 +933,17 @@ class GraphPlot(MatplotPanel):
                 a = np.arctan2(dy, dx) * 180/pi
                 lu = np.hypot(dy, dx)
                 li = np.hypot(nx[1]-nx[0], ny[1]-ny[0])
-                self.message("[Line]"
-                    " Length: {:.1f} pixel ({:g}u), Angle: {:.1f} deg".format(li, lu, a))
+                self.message("[Line] "
+                    "Length: {:.1f} pixel ({:g}u) "
+                    "Angle: {:.1f} deg".format(li, lu, a))
                 
             elif type == REGION: # N-Selector trace polygon (called from Region:setter)
                 nx, ny = self.frame.xytopixel(x, y)
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
-                self.message("[Region]"
-                    " Shape: [{0:4d}, {1:4d}]"
-                    " crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
+                self.message("[Region] "
+                    "Shape: [{0:4d}, {1:4d}] "
+                    "crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline"""
