@@ -4,7 +4,7 @@
 """
 ## Framework
 from .framework import __version__, __author__
-from .utilus import apropos, typename
+from .utilus import apropos, typename, where
 from .utilus import FSM
 from .utilus import funcall
 from .framework import pack, postcall

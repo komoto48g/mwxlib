@@ -772,9 +772,11 @@ class Frame(mwx.Frame):
         if hasattr(f, '__file__'):
             name,_ = os.path.splitext(f.__file__)
             f = name + '.py'
+        cmd = '{} "{}"'.format(self.Editor, f)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
-            subprocess.Popen('{} "{}"'.format(self.Editor, f))
+            subprocess.Popen(cmd)
+            self.message(cmd)
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
