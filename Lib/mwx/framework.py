@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.7"
+__version__ = "0.57.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -3613,9 +3613,10 @@ class Nautilus(Shell, EditorInterface):
             
             m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
-                text = m.group(1)
-                modules = [x[len(text)+1:] for x in self.modules if x.startswith(text)]
-                modules = [x for x in modules if x and '.' not in x]
+                root, text = m.groups()
+                ## modules = [x[len(text)+1:] for x in self.modules if x.startswith(text)]
+                ## modules = [x for x in modules if x and '.' not in x]
+                modules = wdir(__import__(root))
             else:
                 m = re.match(r"(import|from)\s+(.*)", cmdl)
                 if m:
