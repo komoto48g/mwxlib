@@ -230,7 +230,8 @@ def where(obj):
         try:
             return inspect.getfile(obj) # compiled file ?
         except TypeError:
-            return inspect.getmodule(obj) # module or None ?
+            ## return inspect.getmodule(obj) # module or None ?
+            return None
 
 
 def mro(obj):
