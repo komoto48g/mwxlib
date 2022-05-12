@@ -62,6 +62,16 @@ class Debugger(Pdb):
     handler = property(lambda self: self.__handler)
     
     @property
+    def shell(self):
+        return self.__shell
+    
+    @shell.setter
+    def shell(self, v):
+        self.__shell = v
+        self.stdin = self.__shell.interp.stdin
+        self.stdout = self.__shell.interp.stdout
+    
+    @property
     def busy(self):
         """The current state is debugging mode
         True from entering `set_trace` until the end of `set_quit`
@@ -87,6 +97,9 @@ class Debugger(Pdb):
         self.__interactive = None
         self.__breakpoint = None
         self.__indents = 0
+        self.shell = parent.rootshell
+        self.stdin = self.parent.rootshell.interp.stdin
+        self.stdout = self.parent.rootshell.interp.stdout
         self.editor = None
         self.target = None
         self.code = None
@@ -133,7 +146,7 @@ class Debugger(Pdb):
     def on_debug_begin(self, frame):
         """Called before set_trace"""
         self.__breakpoint = None
-        self.__interactive = self.parent.rootshell.cpos
+        self.__interactive = self.shell.cpos
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
@@ -173,7 +186,7 @@ class Debugger(Pdb):
         """Called in preloop (cmdloop)"""
         pos = self.__interactive
         def _post():
-            shell = self.parent.rootshell
+            shell = self.shell
             out = shell.GetTextRange(pos, shell.cpos)
             if out == self.prompt or out.endswith(self.prompt*2):
                 shell.cpos -= len(self.prompt) # backward selection
@@ -417,20 +430,15 @@ if __name__ == "__main__":
         dbg = Debugger(self,
                        stdin=shell.interp.stdin,
                        stdout=shell.interp.stdout,
-                       skip=['__main__']
+                       ## skip=['__main__']
                        )
+        self.debugger = dbg
         dbg.handler.debug = 4
         dbg.verbose = 0
         echo.debug = 1
-        shell.handler.update({
-            None : {
-                '* pressed' : [None, lambda v: dbg.handler(shell.handler.event, v)],
-            },
-        })
-        self.debugger = dbg
-        shell.write("self.shell.about()")
+        ## shell.write("self.shell.about()")
         ## shell.write("self.shellframe.debug(self.About)")
-        ## shell.write("self.shellframe.debug(self.shell.about)")
+        shell.write("self.shellframe.debug(self.shell.about)")
         self.Show()
     frm.Show()
     app.MainLoop()
