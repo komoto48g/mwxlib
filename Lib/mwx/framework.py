@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.8"
+__version__ = "0.57.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1005,10 +1005,12 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends the trace, "
                           "and the trace pointer is cleared.")
-            del self.Log.linemark # [line_unset] => unwatch
+            del self.Log.linemark # [line_unset] => debugger.unwatch
         
+        self.monitor.unwatch()
+        self.ginfo.unwatch()
+        self.linfo.unwatch()
         self.Show(0) # Don't destroy the window
-        self.debugger.unwatch()
     
     def OnDestroy(self, evt):
         nb = self.console
