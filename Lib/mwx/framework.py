@@ -846,8 +846,8 @@ class ShellFrame(MiniFrame):
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
               'M-right pressed' : (0, _F(self.other_window, p=+1)),
-             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1)),
-             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1)),
+             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
+             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
             'C-x' : {
                     'l pressed' : (0, _F(self.show_page, self.Log, doc="Show Log")),
@@ -856,7 +856,6 @@ class ShellFrame(MiniFrame):
                     'j pressed' : (0, _F(self.show_page, self.Scratch, doc="Show Scratch")),
                     'm pressed' : (0, _F(self.show_page, self.monitor, doc="Show monitor")),
                     'i pressed' : (0, _F(self.show_page, self.inspector, doc="Show wit")),
-                    'r pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
                  'home pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
@@ -1041,11 +1040,12 @@ class ShellFrame(MiniFrame):
         )
         self.show_page(self.Help, focus=0)
     
-    def PopupWindow(self, win, show=True):
+    def PopupWindow(self, win, show=True, focus=True):
         """Popup window in notebooks (console, ghost)
         win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle
         """
+        wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
             if nb is win:
@@ -1064,6 +1064,8 @@ class ShellFrame(MiniFrame):
             show = not pane.IsShown()
         pane.Show(show)
         self._mgr.Update()
+        if wnd and win.Shown:
+            wnd.SetFocus()
     
     def SetTitleWindow(self, title):
         self.Title = "Nautilus - {}".format(title)
@@ -1165,10 +1167,7 @@ class ShellFrame(MiniFrame):
         win : page or window to popup (default:None is ghost)
        show : True, False, otherwise None:toggle
         """
-        wnd = win if focus else wx.Window.FindFocus() # original focus
-        self.PopupWindow(win, show)
-        if wnd and win.Shown:
-            wnd.SetFocus()
+        self.PopupWindow(win, show, focus)
     
     def add_page(self, win, title=None, show=True):
         """Add page to the console"""
@@ -1217,19 +1216,24 @@ class ShellFrame(MiniFrame):
             with self.fopen(f, 'a') as o:
                 o.write(command)
     
-    def other_editor(self, p=1):
-        "Focus moves to other page (no loop)"
+    def other_editor(self, p=1, mod=True):
+        "Move focus to other page (no loop)"
         win = wx.Window.FindFocus()
         nb = win.Parent
         if nb in (self.console, self.ghost):
-            nb.Selection += p
+            j = nb.Selection + p
+            if mod:
+                j %= nb.PageCount
+            nb.Selection = j
     
-    def other_window(self, p=1):
-        "Focus moves to other window"
+    def other_window(self, p=1, mod=True):
+        "Move focus to other window"
         win = wx.Window.FindFocus()
         pages = [win for win in self.all_pages() if win.IsShownOnScreen()]
         if win in pages:
-            j = (pages.index(win) + p) % len(pages)
+            j = pages.index(win) + p
+            if mod:
+                j %= len(pages)
             pages[j].SetFocus()
     
     def duplicate_line(self, clear=True):
