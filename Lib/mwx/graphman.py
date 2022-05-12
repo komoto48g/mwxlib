@@ -1047,7 +1047,7 @@ class Frame(mwx.Frame):
         prop : dock_proportion < 1e6 ?
    floating_ : pos/size of floating window
         
-        retval-> None if succeeded else False
+        retval -> None if succeeded else False
         """
         props = dict(show=show,
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,
