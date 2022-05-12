@@ -1104,8 +1104,10 @@ class ShellFrame(MiniFrame):
             self.show_page(self.monitor, focus=0)
         elif callable(obj):
             def _trace():
-                self.__shell.clearCommand()
+                shell = self.debugger.shell
+                self.debugger.shell = self.current_shell
                 self.debugger.debug(obj, *args, **kwargs)
+                self.debugger.shell = shell
             wx.CallAfter(_trace)
         else:
             print("- cannot debug {!r}".format(obj))
@@ -1113,37 +1115,39 @@ class ShellFrame(MiniFrame):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        self.add_history(self.__shell.cmdline)
-        self.__shell.write("#<< Enter [n]ext to continue.\n", -1)
-        self.__shell.SetFocus()
+        shell = self.debugger.shell
+        shell.write("#<< Enter [n]ext to continue.\n", -1)
+        shell.prompt()
+        shell.SetFocus()
         self.Show()
         self.show_page(self.linfo, focus=0)
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
-        self.add_history(self.__shell.cmdline)
+        shell = self.debugger.shell
         gs = frame.f_globals
         ls = frame.f_locals
-        self.__shell.globals = gs
-        self.__shell.locals = ls
+        shell.globals = gs
+        shell.locals = ls
         if self.ginfo.target is not gs:
             self.ginfo.watch(gs)
         if self.linfo.target is not ls:
             self.linfo.watch(ls)
         self.SetTitleWindow(frame)
         self.show_page(self.debugger.editor, focus=0)
+        self.add_history(shell.cmdline)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
-        self.add_history(self.__shell.cmdline)
-        self.__shell.write("#>> Debugger closed successfully.\n", -1)
-        self.__shell.prompt()
+        shell = self.debugger.shell
+        shell.write("#>> Debugger closed successfully.\n", -1)
+        shell.prompt()
         self.linfo.unwatch()
         self.ginfo.unwatch()
-        del self.__shell.locals
-        del self.__shell.globals
+        del shell.locals
+        del shell.globals
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
