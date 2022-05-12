@@ -175,10 +175,10 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
 def typename(obj, docp=False, qualp=False):
     """Typename of the obj object
     
-    retval-> module:obj<doc>       when obj is callable and qualp=False
-             module:class<doc>     when obj is a class or an instance object3
-             module:class.obj<doc> when obj is an atom or callable and qualp=True
-             type<obj>             otherwise
+    retval -> module:obj<doc>       when obj is callable and qualp=False
+              module:class<doc>     when obj is a class or an instance object3
+              module:class.obj<doc> when obj is an atom or callable and qualp=True
+              type<obj>             otherwise
     """
     _mods = (None, "__main__",
                    "mwx.utilus",
@@ -555,7 +555,7 @@ class FSM(dict):
         Process:
             1. transit the state
             2. try actions after transition
-        retval-> list or None
+        retval -> list or None
         """
         context = self[self.__state]
         if event in context:
@@ -855,7 +855,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     Check if the event argument can be omitted,
     and required arguments are given by kwargs.
     
-    retval-> (lambda *v: f`alias<doc>`(*args, **kwargs))
+    retval -> (lambda *v: f`alias<doc>`(*args, **kwargs))
     """
     assert callable(f)
     assert isinstance(doc, (str, type(None)))

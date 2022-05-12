@@ -2973,7 +2973,9 @@ class Nautilus(Shell, EditorInterface):
         for i, c in enumerate(tokens):
             rs = tokens[i+1:]
             
-            if c == '@':
+            if c == '@' and not lhs and '\n' in rs: # @dcor
+                pass
+            elif c == '@':
                 f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rs, sep2).strip()

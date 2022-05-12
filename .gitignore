@@ -16,7 +16,6 @@ etc/
 icon*/
 test*/
 vclip/
-Layer/
 !Lib/mwx/
 
 # Byte-compiled / optimized / DLL files
