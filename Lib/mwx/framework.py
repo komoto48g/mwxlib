@@ -689,6 +689,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break target
     
+    Args:
+         target : Inspection target (any wx.Object)
+                  If the target is None, it will be __main__.
+    
     Attributes:
       rootshell : Nautilus root shell
         watcher : Notebook of global/locals info watcher
@@ -700,10 +704,6 @@ class ShellFrame(MiniFrame):
         History : shell history (read-only)
         monitor : wxmon.EventMonitor object
       inspector : wxwit.Inspector object
-    
-    Args:
-         target : Inspection target (any wx.Object)
-                  If the target is None, it will be __main__.
     """
     rootshell = property(lambda self: self.__shell)
     

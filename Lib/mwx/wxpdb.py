@@ -35,15 +35,15 @@ echo.debug = 0
 class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
-    Attributes:
-           busy : The flag of being running now
-        verbose : Verbose messages are output from Pdb
-         editor : Editor to show the stack frame
-    
     Args:
          parent : shellframe
           stdin : shell.interp.stdin
          stdout : shell.interp.stdout
+    
+    Attributes:
+           busy : The flag of being running now
+        verbose : Verbose messages are output from Pdb
+         editor : Editor to show the stack frame
     
     Key bindings:
             C-g : quit

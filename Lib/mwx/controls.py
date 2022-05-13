@@ -32,6 +32,13 @@ def valist(params):
 class Param(object):
     """Standard Parameter
     
+    Args:
+            fmt : text formatter or format:str (default is '%g')
+                  `hex` specifies hexadecimal format/eval
+        handler : called when control changed
+        updater : called when check changed
+            tip : tooltip:str shown on the associated knobs
+    
     Attributes:
            name : label
           range : range [min:max:step]
@@ -48,13 +55,6 @@ class Param(object):
                 check -> when check ticks on/off (call updater)
                 overflow -> when value overflows
                 underflow -> when value underflows
-    
-    Args:
-            fmt : text formatter or format:str (default is '%g')
-                  `hex` specifies hexadecimal format/eval
-        handler : called when control changed
-        updater : called when check changed
-            tip : tooltip:str shown on the associated knobs
     """
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
@@ -295,9 +295,6 @@ class Knob(wx.Panel):
     with modifiers S- 2x, C- 16x, and M- 256x steps.
     [Mbutton] resets to the std. value if it exists.
     
-    Attributes:
-          param : A param <Param> object referred from knobs
-    
     Args:
             par : Param <object>
            type : ctrl type (slider[*], [hv]spin, choice, and default None)
@@ -308,6 +305,9 @@ class Knob(wx.Panel):
        editable : textctrl is editable or readonly
        lw,tw,cw : width of label, textbox, and ctrl
               h : height of widget (default 22 for Windows)
+    
+    Attributes:
+          param : A param <Param> object referred from knobs
     """
     @property
     def param(self):
@@ -910,15 +910,15 @@ def _F(f, obj):
 class Button(pb.PlateButton):
     """Flat button
     
-    Attributes:
-           icon : key:str for Icon
-    
     Args:
           label : button label
         handler : event handler when the button is pressed
            icon : key:str for button icon
             tip : tip:str displayed on the button
        **kwargs : keywords for wx.lib.platebtn.PlateButton
+    
+    Attributes:
+           icon : key:str for Icon
     """
     @property
     def icon(self):
@@ -955,15 +955,15 @@ class Button(pb.PlateButton):
 class ToggleButton(wx.ToggleButton):
     """Togglable button
     
-    Attributes:
-           icon : key:str for Icon
-    
     Args:
           label : button label
         handler : event handler when the button is pressed
            icon : key:str for button icon
             tip : tip:str displayed on the button
        **kwargs : keywords for wx.ToggleButton
+    
+    Attributes:
+           icon : key:str for Icon
     
     Note:
         To get the status, check Value or event.GetInt or event.IsChecked.
@@ -997,10 +997,6 @@ class ToggleButton(wx.ToggleButton):
 class TextCtrl(wx.Panel):
     """Text panel
     
-    Attributes:
-          Value : textctrl value:str
-           icon : Icon key:str
-    
     Args:
           label : button label
         handler : event handler when text is entered
@@ -1010,6 +1006,10 @@ class TextCtrl(wx.Panel):
        readonly : flag:bool for wx.TE_READONLY
        **kwargs : keywords for wx.TextCtrl
             e.g., value:str
+    
+    Attributes:
+          Value : textctrl value:str
+           icon : Icon key:str
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
@@ -1054,11 +1054,6 @@ class TextCtrl(wx.Panel):
 class Choice(wx.Panel):
     """Editable Choice (ComboBox) panel
     
-    Attributes:
-      Selection : combobox selection:int
-          Value : combobox value:str
-           icon : Icon key:str
-    
     Args:
           label : button label
         handler : event handler when text is entered or item is selected
@@ -1069,6 +1064,11 @@ class Choice(wx.Panel):
       selection : initial selection:int for combobox
        **kwargs : keywords for wx.TextCtrl
             e.g., choices:list
+    
+    Attributes:
+      Selection : combobox selection:int
+          Value : combobox value:str
+           icon : Icon key:str
     
     Note:
         If the input item is not found in the choices,
