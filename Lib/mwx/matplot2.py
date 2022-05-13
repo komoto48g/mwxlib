@@ -89,11 +89,12 @@ class MatplotPanel(wx.Panel):
         self.infobar = wx.InfoBar(self)
         
         self.SetSizer(
-            mwx.pack(self,
+            mwx.pack(self, (
                 (self.canvas,   1, wx.EXPAND | wx.ALL, 0),
                 (self.infobar,  0, wx.EXPAND | wx.ALL, 0),
                 (self.modeline, 0, wx.EXPAND | wx.ALL, 2),
                 (self.toolbar,  0, wx.EXPAND | wx.ALL, 2),
+                ),
                 orient = wx.VERTICAL,
             )
         )

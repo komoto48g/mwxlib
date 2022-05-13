@@ -344,20 +344,17 @@ def ID_(id):
     return id
 
 
-def pack(self, *args,
-         orient=wx.HORIZONTAL,
-         style=(0, wx.EXPAND | wx.ALL, 0),
-         label=None):
+def pack(self, *items, orient=wx.HORIZONTAL, style=None, label=None):
     """Do layout
     
     Usage:
         self.SetSizer(
-            pack(self,
+            pack(self, (
                 (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
                 ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
-            )
+            ))
         )
-    *args : wx objects (with some packing parameters)
+    items : wx objects (with some packing parameters)
           - (obj, 1) -> sized with ratio 1 (orient と同方向)
                         他に 0 以外を指定しているオブジェクトとエリアを分け合う
           - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
@@ -374,21 +371,24 @@ def pack(self, *args,
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     label : label of StaticBox
     """
+    if len(items) == 1 and isinstance(items[0], (list, tuple)):
+        items = items[0] # for backward-compatibility < 0.58.0
+    if style is None:
+        style = (0, wx.EXPAND | wx.ALL, 0)
     if label is not None:
         box = wx.StaticBox(self, -1, label)
         sizer = wx.StaticBoxSizer(box, orient)
     else:
         sizer = wx.BoxSizer(orient)
-    
-    for item in args:
+    for item in items:
         if not item:
             if item is None:
-                item = (0,0), 0,0,0, # dummy spacing with null style
+                item = (0,0), 0,0,0, # null space
             else:
-                item = (0,0) # padding with specified style
+                item = (0,0) # padding space
         try:
             try:
-                sizer.Add(item, *style) # using style
+                sizer.Add(item, *style)
             except TypeError:
                 sizer.Add(*item) # using item-specific style
         except TypeError as e:

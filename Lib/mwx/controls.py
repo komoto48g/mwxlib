@@ -419,11 +419,11 @@ class Knob(wx.Panel):
         self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
         self.SetSizer(
-            mwx.pack(self,
+            mwx.pack(self, (
                 (self.label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
                 (self.text,  0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, tw and 1),
                 (self.ctrl,  c, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, cw and 1),
-            )
+            ))
         )
         self.update_range()
         self.update_ctrl()
@@ -591,7 +591,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
         
-        self.SetSizer(mwx.pack(self, orient=wx.VERTICAL))
+        self.SetSizer(mwx.pack(self, [], orient=wx.VERTICAL))
         self.SetupScrolling()
         
         self.__groups = []
@@ -735,12 +735,12 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## do layout in row
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 1:
-            objs = [mwx.pack(self, *objs[i:i+row], orient=wx.HORIZONTAL,
+            objs = [mwx.pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
                         style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
                             for i in range(0, len(objs), row)]
         
         p = wx.EXPAND if expand > 0 else align
-        sizer = mwx.pack(self, *objs, label=title, orient=wx.VERTICAL,
+        sizer = mwx.pack(self, objs, label=title, orient=wx.VERTICAL,
                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
@@ -1038,10 +1038,10 @@ class TextCtrl(wx.Panel):
         self.btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
-            mwx.pack(self,
+            mwx.pack(self, (
                 (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
                 (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
-            )
+            ))
         )
         if handler:
             def _f(v):
@@ -1105,10 +1105,10 @@ class Choice(wx.Panel):
         self.btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
-            mwx.pack(self,
+            mwx.pack(self, (
                 (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
                 (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
-            )
+            ))
         )
         if handler:
             def _f(v):
