@@ -206,6 +206,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
+    require = property(lambda self: self.__parent.require)
     
     graph = property(lambda self: self.__parent.graph)
     output = property(lambda self: self.__parent.output)
@@ -951,7 +952,8 @@ class Frame(mwx.Frame):
         
         ## Plugin(Layer) is cls
         if _isLayer(cls):
-            warnings.warn(f"Use name `Plugin` for {cls}.", UserWarning)
+            warnings.warn("Use class name 'Plugin' instead of {!r}."
+                          .format(cls.__name__), UserWarning)
             cls.__module__ = module.__name__ # __main__ to module
             module.Plugin = cls
             return cls
@@ -1017,7 +1019,7 @@ class Frame(mwx.Frame):
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                warnings.warn(f"Use dummy-plug:{root} for debug only.", UserWarning)
+                warnings.warn("Use dummy plug mode for debugging.", UserWarning)
                 module.__dummy_plug__ = root
                 self.register(root, module)
         else:
