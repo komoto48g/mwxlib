@@ -716,12 +716,14 @@ class ControlPanel(scrolled.ScrolledPanel):
             else c if isinstance(c, wx.Object)
             else Knob(self, c, **kwargs) for c in objs ]
         
-        def flatten(a):
+        def flatiter(a):
             for y in a:
-                for x in (flatten(y) if isinstance(y, tuple) else (y,)):
-                    yield x
+                try:
+                    yield from flatiter(y)
+                except TypeError:
+                    yield y
         
-        self.__groups.append(list(c for c in flatten(objs)
+        self.__groups.append(list(c for c in flatiter(objs)
                                           if isinstance(c, wx.Object)))
         
         def var(c):
