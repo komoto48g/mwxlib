@@ -950,18 +950,6 @@ class ShellFrame(MiniFrame):
             print("- Failed to save session")
     
     def Init(self):
-        f = self.SCRATCH_FILE
-        if os.path.isfile(f):
-            with self.fopen(self.SCRATCH_FILE) as i:
-                self.Scratch.Text = i.read()
-                self.Scratch.EmptyUndoBuffer()
-        
-        f = self.LOGGING_FILE
-        if os.path.isfile(f):
-            with self.fopen(f) as i:
-                self.Log.Text = i.read()
-                self.Log.EmptyUndoBuffer()
-        
         f = self.HISTORY_FILE
         if os.path.isfile(f):
             with self.fopen(f, 'a') as o:
@@ -970,20 +958,15 @@ class ShellFrame(MiniFrame):
             with self.fopen(f, 'w') as o: # as a new file
                 pass
         
+        self.Scratch.LoadFile(self.SCRATCH_FILE)
+        self.Log.LoadFile(self.LOGGING_FILE)
         self.load_session()
     
     def Destroy(self):
         try:
-            with self.fopen(self.SCRATCH_FILE, 'w') as o:
-                o.write(self.Scratch.Text)
-            
-            with self.fopen(self.LOGGING_FILE, 'w') as o:
-                o.write(self.Log.Text)
-            
-            with self.fopen(self.HISTORY_FILE, 'w') as o:
-                o.write("#! Last updated: <{}>\r\n".format(datetime.datetime.now()))
-                o.write(self.History.Text)
-            
+            self.History.SaveFile(self.HISTORY_FILE)
+            self.Scratch.SaveFile(self.SCRATCH_FILE)
+            self.Log.SaveFile(self.LOGGING_FILE)
             self.save_session()
         finally:
             self._mgr.UnInit()
@@ -1093,7 +1076,16 @@ class ShellFrame(MiniFrame):
     def load(self, obj):
         if not isinstance(obj, str):
             obj = where(obj)
-        return self.Log.load(obj, focus=0) or False
+        if obj is None:
+            return False
+        m = re.match("(.*?):([0-9]+)", obj)
+        if m:
+            filename, ln = m.groups()
+            lineno = int(ln)
+        else:
+            filename = obj
+            lineno = 0
+        return self.Log.load(filename, lineno, focus=0)
     
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, wx.Object) or obj is None:
@@ -1154,17 +1146,11 @@ class ShellFrame(MiniFrame):
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
         self.inspector.set_colour(widget, 'blue')
-        obj = widget.__class__
-        filename = inspect.getsourcefile(obj)
-        if filename:
-            src, lineno = inspect.getsourcelines(obj)
-            self.Log.load(filename, lineno)
-        self.Log.target = filename
+        self.load(widget)
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch"""
         self.inspector.set_colour(widget, 'black')
-        self.Log.target = None
     
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus
@@ -2313,30 +2299,23 @@ class Editor(EditWindow, EditorInterface):
                 if self.HasCapture():
                     self.ReleaseMouse()
     
-    def load_text(self, text, readonly=False):
-        self.ReadOnly = 0
-        self.Text = text
-        self.EmptyUndoBuffer()
-        self.ReadOnly = readonly
+    def load_cache(self, filename, globals=None, readonly=False):
+        linecache.checkcache(filename)
+        lines = linecache.getlines(filename, globals)
+        if lines:
+            self.ReadOnly = 0
+            self.Text = ''.join(lines)
+            self.EmptyUndoBuffer()
+            self.ReadOnly = readonly
+            return True
+        return False
     
     def load(self, filename, lineno=0, show=True, focus=True):
-        if filename is None:
-            self.load_text('')
-            self.target = None
-            return None # no load
-        
         if not isinstance(filename, str):
             print("- The filename must be string type. Try @where to get the path")
-            return None # no load
+            return False
         
-        m = re.match("(.*?):([0-9]+)", filename)
-        if m:
-            filename, ln = m.groups()
-            lineno = int(ln)
-        linecache.checkcache(filename)
-        lines = linecache.getlines(filename)
-        if lines:
-            self.load_text(''.join(lines))
+        if self.load_cache(filename) or self.LoadFile(filename):
             self.target = filename
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)

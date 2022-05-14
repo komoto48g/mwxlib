@@ -13,7 +13,6 @@ import sys
 import re
 import inspect
 import importlib
-import linecache
 import traceback
 import wx
 try:
@@ -168,9 +167,8 @@ class Debugger(Pdb):
             self.editor = self.parent.Log
             self.editor.target = filename
             
-            lines = linecache.getlines(filename, frame.f_globals)
             if not self.code or self.code.co_filename != filename:
-                self.editor.load_text(''.join(lines) or '[EOF]')
+                self.editor.load_cache(filename)
         
         if self.code != code:
             self.editor.mark = self.editor.PositionFromLine(firstlineno - 1)
