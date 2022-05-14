@@ -716,25 +716,6 @@ class ControlPanel(scrolled.ScrolledPanel):
             else c if isinstance(c, wx.Object)
             else Knob(self, c, **kwargs) for c in objs ]
         
-        def flatiter(a):
-            for y in a:
-                try:
-                    yield from flatiter(y)
-                except TypeError:
-                    yield y
-        
-        self.__groups.append(list(c for c in flatiter(objs)
-                                          if isinstance(c, wx.Object)))
-        
-        def var(c):
-            if isinstance(c, Knob):
-                return c.param
-            elif hasattr(c, 'value'):
-                return c
-        
-        self.__params.append(list(filter(None, (var(c) for c in objs))))
-        
-        ## do layout in row
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 1:
             objs = [mwx.pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
@@ -746,10 +727,33 @@ class ControlPanel(scrolled.ScrolledPanel):
                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
+        
+        ## Register object and param groups
+        def flatiter(a):
+            for c in a:
+                if isinstance(c, tuple):
+                    yield from flatiter(c)
+                elif isinstance(c, wx.Object):
+                    yield c
+        
+        self.__groups.append(list(flatiter(objs)))
+        
+        def variter(a):
+            for c in a:
+                if isinstance(c, Knob):
+                    yield c.param
+                elif hasattr(c, 'value'):
+                    yield c
+        
+        self.__params.append(list(variter(objs)))
+        
+        ## Set the appearance
         self.show(-1, visible)
         self.fold(-1, not show)
         if fix:
             self.Sizer.Fit(self)
+    
+    pack = mwx.pack
     
     ## --------------------------------
     ## 外部入出力／クリップボード通信
