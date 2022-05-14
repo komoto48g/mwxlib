@@ -344,7 +344,7 @@ def ID_(id):
     return id
 
 
-def pack(self, *items, orient=wx.HORIZONTAL, style=None, label=None):
+def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     """Do layout
     
     Usage:
@@ -371,8 +371,6 @@ def pack(self, *items, orient=wx.HORIZONTAL, style=None, label=None):
                           ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     label : label of StaticBox
     """
-    if len(items) == 1 and isinstance(items[0], (list, tuple)):
-        items = items[0] # for backward-compatibility < 0.58.0
     if style is None:
         style = (0, wx.EXPAND | wx.ALL, 0)
     if label is not None:
