@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.57.9"
+__version__ = "0.58.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -2783,8 +2783,8 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
-           '[a-z0-9_.] pressed' : (5, skip),
-          '[a-z0-9_.] released' : (5, self.call_module_autocomp),
+          '[a-z0-9_.,] pressed' : (5, skip),
+         '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
            '*backspace pressed' : (5, self.skipback_autocomp),
@@ -2832,8 +2832,9 @@ class Nautilus(Shell, EditorInterface):
             return
         
         cmdl = self.cmdlc
-        if re.match(r"(import|from)\s*$", cmdl)\
-        or re.match(r"from\s+([\w.]+)\s+import\s*$", cmdl):
+        if re.match(r"import\s*", cmdl)\
+          or re.match(r"from\s*$", cmdl)\
+          or re.match(r"from\s+([\w.]+)\s+import\s*", cmdl):
             self.ReplaceSelection(' ')
             self.handler('M-m pressed', None) # call_module_autocomp
             return
@@ -3621,23 +3622,23 @@ class Nautilus(Shell, EditorInterface):
             cmdl = self.cmdlc
             hint = re.search(r"[\w.]*$", cmdl).group(0) # get the last word or ''
             
-            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
+            m = re.match(r"from\s+([\w.]+)\s+import\s+", cmdl)
             if m:
-                root, text = m.groups()
-                ## modules = [x[len(text)+1:] for x in self.modules if x.startswith(text)]
-                ## modules = [x for x in modules if x and '.' not in x]
-                modules = wdir(__import__(root))
+                text = m.group(1)
+                if text not in sys.modules:
+                    self.message("[module]>>> loading {}...".format(text))
+                modules = wdir(__import__(text, fromlist=['']))
             else:
-                m = re.match(r"(import|from)\s+(.*)", cmdl)
+                m = re.match(r"(import|from)\s+", cmdl)
                 if m:
-                    if not hint:
+                    if not hint: # don't create autocomp yet
+                        self.message("[module]>>> waiting for key input...")
                         return
                     text = '.'
                     modules = self.modules
                 else:
                     text, sep, hint = self.get_words_hint(cmdl)
                     obj = self.eval(text or 'self')
-                    ## modules = [k for k, v in inspect.getmembers(obj, inspect.ismodule)]
                     modules = [k for k, v in vars(obj).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
@@ -3657,8 +3658,7 @@ class Nautilus(Shell, EditorInterface):
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except Exception as e:
-            self.message("- {} : {!r}".format(e, text))
-            self.handler('quit', evt)
+            raise
     
     def call_word_autocomp(self, evt):
         """Called when word-comp mode"""
@@ -3690,9 +3690,11 @@ class Nautilus(Shell, EditorInterface):
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-        except Exception as e:
+        except SyntaxError as e:
             self.message("- {} : {!r}".format(e, text))
             self.handler('quit', evt)
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
     
     def call_apropos_autocomp(self, evt):
         """Called when apropos mode"""
@@ -3724,9 +3726,11 @@ class Nautilus(Shell, EditorInterface):
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-        except Exception as e:
+        except SyntaxError as e:
             self.message("- {} : {!r}".format(e, text))
             self.handler('quit', evt)
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
     
     @staticmethod
     def get_words_hint(cmd):
