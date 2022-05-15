@@ -272,22 +272,23 @@ class KeyCtrlInterfaceMixin(object):
           spec-map : 'C-c'
            esc-map : 'escape'
     """
-    def make_keymap(self, keymap, state=0, default=0):
+    def make_keymap(self, keymap):
         """Make a basis of extension map in the handler.
         """
         def _Pass(v):
             self.message("{} {}".format(keymap, v.key))
         _Pass.__name__ = str('pass')
         
-        keyevent = keymap + ' pressed'
+        state = self.handler.default_state
+        event = keymap + ' pressed'
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
-                       keyevent : [ keymap, self.prefix_command_hook ],
+                          event : [ keymap, self.prefix_command_hook ],
             },
             keymap : {
-                         'quit' : [ default, ],
-                    '* pressed' : [ default, _Pass ],
+                         'quit' : [ state, ],
+                    '* pressed' : [ state, _Pass ],
                  '*alt pressed' : [ keymap, _Pass ],
                 '*ctrl pressed' : [ keymap, _Pass ],
                '*shift pressed' : [ keymap, _Pass ],
@@ -915,10 +916,6 @@ class ShellFrame(MiniFrame):
     LOGGING_FILE = ut.get_rootpath("deb-logging.log")
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
-    @staticmethod
-    def fopen(f, *args):
-        return open(f, *args, newline='') # PY3
-    
     def load_session(self):
         try:
             with open(self.SESSION_FILE) as i:
@@ -950,23 +947,16 @@ class ShellFrame(MiniFrame):
             print("- Failed to save session")
     
     def Init(self):
-        f = self.HISTORY_FILE
-        if os.path.isfile(f):
-            with self.fopen(f, 'a') as o:
-                o.write("\r\n#! Edit: <{}>\r\n".format(datetime.datetime.now()))
-        else:
-            with self.fopen(f, 'w') as o: # as a new file
-                pass
-        
         self.Scratch.LoadFile(self.SCRATCH_FILE)
         self.Log.LoadFile(self.LOGGING_FILE)
+        self.add_history("#! <{}>\r\n".format(datetime.datetime.now()))
         self.load_session()
     
     def Destroy(self):
         try:
-            self.History.SaveFile(self.HISTORY_FILE)
             self.Scratch.SaveFile(self.SCRATCH_FILE)
             self.Log.SaveFile(self.LOGGING_FILE)
+            self.History.SaveFile(self.HISTORY_FILE)
             self.save_session()
         finally:
             self._mgr.UnInit()
@@ -1129,15 +1119,20 @@ class ShellFrame(MiniFrame):
             self.linfo.watch(ls)
         self.SetTitleWindow(frame)
         self.show_page(self.debugger.editor, focus=0)
-        self.add_history(shell.cmdline)
+        self.add_history(shell.cmdline, prefix=' '*4)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
+        ## logging in case of crashing
+        with open(self.HISTORY_FILE, 'a', newline='') as o: # PY3
+            o.write(shell.cmdline)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
         shell = self.debugger.shell
         shell.write("#>> Debugger closed successfully.\n", -1)
         shell.prompt()
+        ## self.add_history("end\n")
+        self.add_history("< {}\n".format(where(frame)))
         self.linfo.unwatch()
         self.ginfo.unwatch()
         del shell.locals
@@ -1184,15 +1179,17 @@ class ShellFrame(MiniFrame):
         if show is not None:
             self.show_page(self.Help, show, focus)
     
-    def add_history(self, command, noerr=None):
+    def add_history(self, command, noerr=None, prefix=None):
         """Add command:text to the history buffer"""
-        if command.isspace():
+        if not command or command.isspace():
             return
         
         ed = self.History
         ed.ReadOnly = 0
         ed.goto_char(-1)
         ln = ed.cline
+        if prefix:
+            command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
         ed.write(command)
         if noerr is not None:
             if noerr:
@@ -1200,11 +1197,6 @@ class ShellFrame(MiniFrame):
             else:
                 ed.MarkerAdd(ln, 2) # error-marker
         ed.ReadOnly = 1
-        
-        f = self.HISTORY_FILE
-        if os.path.isfile(f):
-            with self.fopen(f, 'a') as o:
-                o.write(command)
     
     def other_editor(self, p=1, mod=True):
         "Move focus to other page (no loop)"
