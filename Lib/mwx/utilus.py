@@ -211,16 +211,25 @@ def typename(obj, docp=False, qualp=False):
 
 def where(obj):
     """Show @where (filename, lineno) the obj is defined
-    
-    A class, method, function, traceback, frame, or code object is expected.
-    Otherwise, the module will be returned if it exists.
     """
+    if inspect.isframe(obj):
+        filename = obj.f_code.co_filename
+        lineno = obj.f_lineno
+        name = obj.f_code.co_name
+        return "{}:{}:{}".format(filename, lineno, name)
+    
+    if inspect.iscode(obj):
+        filename = obj.co_filename
+        lineno = obj.co_firstlineno
+        name = obj.co_name
+        return "{}:{}:{}".format(filename, lineno, name)
+    
     def _where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
         if not lineno:
             return filename
-        return "{!s}:{}:{!s}".format(filename, lineno, src[0].rstrip())
+        return "{}:{}:{}".format(filename, lineno, src[0])
     try:
         try:
             return _where(obj) # module, class, method, function, frame, or code
