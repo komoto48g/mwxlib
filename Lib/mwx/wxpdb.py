@@ -16,9 +16,9 @@ import importlib
 import traceback
 import wx
 try:
-    from utilus import FSM
+    from utilus import FSM, where
 except ImportError:
-    from .utilus import FSM
+    from .utilus import FSM, where
 
 
 def echo(f):
@@ -104,7 +104,7 @@ class Debugger(Pdb):
         self.code = None
         
         def _input(msg):
-            """redirect for cl(ear)"""
+            ## redirects prompt input such as cl(ear)
             self.message(msg, indent=0)
             return self.stdin.readline()
         pdb.input = _input
@@ -112,10 +112,6 @@ class Debugger(Pdb):
         def _help():
             self.parent.handler('add_help', pdb.__doc__)
         pdb.help = _help
-        
-        def jump_to_entry_point(v):
-            ln = self.editor.LineFromPosition(self.editor.mark)
-            self.send_input('j {}'.format(ln + 1))
         
         def dispatch(v):
             self.parent.handler(self.handler.event, v)
@@ -134,13 +130,77 @@ class Debugger(Pdb):
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
                   'C-s pressed' : (1, lambda v: self.send_input('s')),
                   'C-r pressed' : (1, lambda v: self.send_input('r')),
-                  'C-@ pressed' : (1, jump_to_entry_point),
+                  'C-@ pressed' : (1, self.jump_to_entry),
             },
             2 : {
                     'trace_end' : (0, dispatch),
                   'debug_begin' : (1, self.on_debug_begin, dispatch),
             },
         })
+    
+    def jump_to_entry(self, evt):
+        """Jump to the first lineno of the code
+        """
+        ln = self.editor.LineFromPosition(self.editor.mark)
+        self.send_input('j {}'.format(ln + 1))
+    
+    def add_marker(self, lineno, style):
+        """Add a mrker to lineno, with the following style markers:
+        [1] white-arrow for breakpoints
+        [2] red-arrow for exception
+        """
+        self.editor.MarkerAdd(lineno-1, style)
+    
+    def send_input(self, c):
+        self.stdin.input = c
+    
+    def message(self, msg, indent=-1):
+        """(override) Add prefix to msg"""
+        prefix = self.indent if indent < 0 else ' ' * indent
+        print("{}{}".format(prefix, msg), file=self.stdout)
+    
+    def watch(self, bp):
+        """Start tracing"""
+        if not self.busy: # don't set while debugging
+            self.__breakpoint = bp
+            self.reset()
+            sys.settrace(self.trace_dispatch)
+            self.handler('trace_begin', bp)
+    
+    def unwatch(self):
+        """End tracing"""
+        if not self.busy: # don't unset while debugging
+            bp = self.__breakpoint
+            self.__breakpoint = None
+            sys.settrace(None)
+            self.handler('trace_end', bp)
+    
+    ## --------------------------------
+    ## Actions for handler
+    ## --------------------------------
+    
+    def debug(self, target, *args, **kwargs):
+        if not callable(target):
+            wx.MessageBox("Not callable object\n\n"
+                          "Unable to debug {!r}".format(target))
+            return
+        if self.busy:
+            wx.MessageBox("Debugger is running\n\n"
+                          "Enter [q]uit to exit debug mode.")
+            return
+        try:
+            frame = inspect.currentframe().f_back
+            self.set_trace(frame)
+            target(*args, **kwargs)
+        except BdbQuit:
+            pass
+        except Exception as e:
+            wx.CallAfter(wx.MessageBox,
+                         "Debugger is closed\n\n{!s}".format(e),
+                         style=wx.ICON_ERROR)
+        finally:
+            self.set_quit()
+            return
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
@@ -203,77 +263,6 @@ class Debugger(Pdb):
         self.editor = None
         self.target = None
         self.code = None
-    
-    def debug(self, target, *args, **kwargs):
-        if not callable(target):
-            wx.MessageBox("Not callable object\n\n"
-                          "Unable to debug {!r}".format(target))
-            return
-        if self.busy:
-            wx.MessageBox("Debugger is running\n\n"
-                          "Enter [q]uit to exit debug mode.")
-            return
-        try:
-            frame = inspect.currentframe().f_back
-            self.set_trace(frame)
-            target(*args, **kwargs)
-        except BdbQuit:
-            pass
-        except Exception as e:
-            wx.CallAfter(wx.MessageBox,
-                         "Debugger is closed\n\n{!s}".format(e),
-                         style=wx.ICON_ERROR)
-        finally:
-            self.set_quit()
-            return
-    
-    def add_marker(self, lineno, style):
-        """Add a mrker to lineno, with the following style markers:
-        [1] white-arrow for breakpoints
-        [2] red-arrow for exception
-        """
-        self.editor.MarkerAdd(lineno-1, style)
-    
-    def send_input(self, c):
-        self.stdin.input = c
-    
-    def message(self, msg, indent=-1):
-        """(override) Add prefix to msg"""
-        prefix = self.indent if indent < 0 else ' ' * indent
-        print("{}{}".format(prefix, msg), file=self.stdout)
-    
-    def watch(self, bp):
-        """Start tracing"""
-        if not self.busy: # don't set while debugging
-            self.__breakpoint = bp
-            ## sys.settrace(self.trace)
-            self.reset()
-            sys.settrace(self.trace_dispatch)
-            self.handler('trace_begin', bp)
-    
-    def unwatch(self):
-        """End tracing"""
-        if not self.busy: # don't unset while debugging
-            bp = self.__breakpoint
-            self.__breakpoint = None
-            sys.settrace(None)
-            self.handler('trace_end', bp)
-    
-    ## def trace(self, frame, event, arg):
-    ##     code = frame.f_code
-    ##     name = code.co_name
-    ##     filename = code.co_filename
-    ##     ## firstlineno = code.co_firstlineno
-    ##     lineno = frame.f_lineno
-    ##     target, line = self.__breakpoint
-    ##     if target == filename and line == lineno-1:
-    ##         if event == 'call' or event == 'line':
-    ##             self.set_trace(frame)
-    ##             self.__indents = 2
-    ##             self.message("{}{}:{}:{}".format(self.prefix1,
-    ##                          filename, lineno, name), indent=0)
-    ##             return None
-    ##     return self.trace
     
     ## --------------------------------
     ## Override Bdb methods
@@ -362,11 +351,7 @@ class Debugger(Pdb):
                    Add indent spaces
         """
         if not self.verbose:
-            filename = frame.f_code.co_filename
-            lineno = frame.f_code.co_firstlineno
-            name = frame.f_code.co_name
-            self.message("{}{}:{}:{}".format(self.prefix1,
-                         filename, lineno, name), indent=0)
+            self.message("{}{}".format(self.prefix1, where(frame)), indent=0)
         self.__indents += 2
         Pdb.user_call(self, frame, argument_list)
     

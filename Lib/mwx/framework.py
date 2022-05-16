@@ -849,12 +849,12 @@ class ShellFrame(MiniFrame):
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
             'C-x' : {
-                    'l pressed' : (0, _F(self.show_page, self.Log, doc="Show Log")),
-                    'h pressed' : (0, _F(self.show_page, self.Help, doc="Show Help")),
-                  'S-h pressed' : (0, _F(self.show_page, self.History, doc="Show History")),
-                    'j pressed' : (0, _F(self.show_page, self.Scratch, doc="Show Scratch")),
+                    'l pressed' : (0, _F(self.show_page, self.Log, doc="Show log")),
+                    'h pressed' : (0, _F(self.show_page, self.Help, doc="Show help")),
+                  'S-h pressed' : (0, _F(self.show_page, self.History, doc="Show history")),
+                    'j pressed' : (0, _F(self.show_page, self.Scratch, doc="Show scratch")),
                     'm pressed' : (0, _F(self.show_page, self.monitor, doc="Show monitor")),
-                    'i pressed' : (0, _F(self.show_page, self.inspector, doc="Show wit")),
+                    'i pressed' : (0, _F(self.show_page, self.inspector, doc="Show inspector")),
                  'home pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
@@ -949,7 +949,7 @@ class ShellFrame(MiniFrame):
     def Init(self):
         self.Scratch.LoadFile(self.SCRATCH_FILE)
         self.Log.LoadFile(self.LOGGING_FILE)
-        self.add_history("#! <{}>\r\n".format(datetime.datetime.now()))
+        self.add_history("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
         self.load_session()
     
     def Destroy(self):
@@ -3110,7 +3110,7 @@ class Nautilus(Shell, EditorInterface):
         return self.GetTextRange(self.bolc, self.eolc)
     
     ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
-    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use agaist the current prompt
+    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
     
     @property
     def Command(self):
