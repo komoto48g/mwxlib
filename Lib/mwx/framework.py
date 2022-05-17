@@ -29,7 +29,7 @@ import inspect
 import builtins
 import linecache
 from pprint import pformat
-from importlib import reload
+from importlib import reload, import_module
 try:
     import utilus as ut
     from utilus import (FSM, TreeList, funcall, wdir,
@@ -2493,21 +2493,19 @@ class Nautilus(Shell, EditorInterface):
                  **kwargs)
         EditorInterface.__init__(self)
         
-        ## cf. sys.modules (shell.modules
-        if not Nautilus.modules:
-            force = wx.GetKeyState(wx.WXK_CONTROL)\
-                  & wx.GetKeyState(wx.WXK_SHIFT)
-            Nautilus.modules = ut.find_modules(force)
-        
         self.__parent = parent #= self.Parent, but not always if whose son is floating
-        
         self.target = target
-        
         self.globals = self.locals
         self.interp.runcode = self.runcode
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
+        
+        ## cf. sys.modules (shell.modules
+        if not self.modules:
+            force = wx.GetKeyState(wx.WXK_CONTROL)\
+                  & wx.GetKeyState(wx.WXK_SHIFT)
+            Nautilus.modules = ut.find_modules(force)
         
         ## This shell is expected to be created many times in the process,
         ## e.g., when used as a breakpoint and when cloned.
@@ -3391,7 +3389,11 @@ class Nautilus(Shell, EditorInterface):
             self.CallTipCancel()
             
         def _gen_text():
-            yield self.SelectedText or self.Command
+            text = self.SelectedText
+            if text:
+                yield text
+                return
+            yield self.Command
             yield self.expr_at_caret
             yield self.MultilineCommand
         
@@ -3593,17 +3595,22 @@ class Nautilus(Shell, EditorInterface):
             cmdl = self.cmdlc
             hint = re.search(r"[\w.]*$", cmdl).group(0) # get the last word or ''
             
-            m = re.match(r"from\s+([\w.]+)\s+import\s+", cmdl)
+            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
-                text = m.group(1)
+                text, hints = m.groups()
+                if hints and not hints.strip().endswith(','):
+                    return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
-                modules = wdir(__import__(text, fromlist=['']))
+                modules = dir(import_module(text))
             else:
-                m = re.match(r"(import|from)\s+", cmdl)
+                m = re.match(r"(import|from)\s+(.*)", cmdl)
                 if m:
-                    if not hint: # don't create autocomp yet
+                    text, hints = m.groups()
+                    if not hints or hints.strip().endswith(','):
                         self.message("[module]>>> waiting for key input...")
+                        return
+                    elif hints.endswith(' '):
                         return
                     text = '.'
                     modules = self.modules
@@ -3628,7 +3635,7 @@ class Nautilus(Shell, EditorInterface):
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-        except Exception as e:
+        except Exception:
             raise
     
     def call_word_autocomp(self, evt):

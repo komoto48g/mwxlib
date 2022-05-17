@@ -13,7 +13,8 @@ class Plugin(Layer):
     
     def Init(self):
         self.layout(
-            (Button(self, k, icon=k, size=(80,-1))
+            (Button(self, k, icon=k, size=(80,-1),
+                    tip=str(Icon.provided_arts[k]))
                     for k in sorted(Icon.provided_arts)),
             title="Provided art images",
             row=6, show=0
