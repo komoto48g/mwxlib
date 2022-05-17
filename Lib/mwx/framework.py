@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.0"
+__version__ = "0.58.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -2867,9 +2867,9 @@ class Nautilus(Shell, EditorInterface):
         p = self.cpos
         c = self.get_char(p-1)
         st = self.GetStyleAt(p-1)
-        if st in (11,14,15) or c in ')}]': # identifier, word2, decorator
+        if st in (3,4,6,7,11,13,14,15) or c in ')}]': # identifier, word2, @, '', eol
             pass
-        elif st not in (0,10) or c == '.': # no default, no operator => quit
+        elif st not in (0,10) or c == '.': # no default, no operator, ... => quit
             self.handler('quit', evt)
         else:
             self.ReplaceSelection('self')
