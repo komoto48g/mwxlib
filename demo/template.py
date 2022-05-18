@@ -29,7 +29,8 @@ class Plugin(Layer):
             (self.ksize, self.btn),  # the list of objects stacked with the following style:
             title="Gaussian blur",   # subtitle of this layout group. otherwise None (no box)
             row=1, expand=0, show=1, # grouping style: row means the horizontal stack size
-            type='vspin',            # control style: slider[*], [hv]spin, choice
+            type='vspin',            # control type: slider[*], [hv]spin, choice
+            style='chkbox',          # control style: None, chkbox, button
             cw=-1, lw=36, tw=30      # w: width of [c]ontrol, [l]abel, [t]ext
         )
     

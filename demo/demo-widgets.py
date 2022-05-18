@@ -14,28 +14,21 @@ class Plugin(Layer):
     menu = "Plugins/&Demo"
     
     def Init(self):
-        
-        def trace(v):
-            "trace event"
-            print(v)
-        
         self.btn = Button(self, label="button",
-                        handler=trace,
+                        handler=lambda v: self.statusline(v.Int, v.IsChecked()),
                         tip="this is a button",
                         icon='v',
                         size=(80,-1),
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",
-                        handler=lambda v: self.statusline(v.GetInt(), v.IsChecked()),
+                        handler=lambda v: self.statusline(v.Int, v.IsChecked()),
                         tip="this is a toggle-button",
                         icon=('w','v'), # must be the same size icon
-                        ## icon='wxpdemo',
                         size=(120,-1),
                         )
         self.text = TextCtrl(self, label="ctrl label",
                         handler=lambda v: self.statusline(v.Value, "enter"),
-                        ## updater=lambda v: self.statusline(v.Value, "update"),
-                        updater=trace,
+                        updater=lambda v: self.statusline(v.Value, "update"),
                         tip="this is a textctrl",
                         icon=wx.ART_NEW,
                         readonly=0,
@@ -44,8 +37,7 @@ class Plugin(Layer):
                         )
         self.choice = Choice(self, label="ctrl label",
                          handler=lambda v: self.statusline(v.Value, "selected"),
-                         ## updater=lambda v: self.statusline(v.Value, "update"),
-                         updater=trace,
+                         updater=lambda v: self.statusline(v.Value, "update"),
                          choices=['1','2','3'],
                          tip="this is a choice",
                          icon=wx.ART_NEW,
@@ -65,14 +57,17 @@ class Plugin(Layer):
             row=2, expand=0,
         )
         
+        def trace(v):
+            """Trace events"""
+            print("$(v) = {!r}".format(v))
+        
         self.LP =  LParam('L', (-1,1,0.01), 0,
                         handler=print,
-                        tip="Linear param"
-                            "\n In addition to direct key input to the textctrl,"
-                            "\n [up][down][wheelup][wheeldown] keys can be used,"
-                            "\n with modifiers S- 2x, C- 16x, and M- 256x steps."
-                            "\n [Mbutton] resets to the std. value if it exists."
-                        )
+                        tip="Linear param\n\n"
+                            "In addition to direct key input to the textctrl,\n"
+                            "[up][down][wheelup][wheeldown] keys can be used,\n"
+                            "with modifiers S- 2x, C- 16x, and M- 256x steps.\n"
+                            "[Mbutton] resets to the std. value if it exists.\n")
         self.P = Param('U', (1,2,3,inf))
         
         self.layout((
@@ -80,8 +75,8 @@ class Plugin(Layer):
                 self.P,
             ),
             title="Custom param controls",
-            row=1, expand=1, show=1, 
-            type='slider', style='chkbox', lw=20, tw=40, cw=100, h=22,
+            row=1, expand=1, show=1,
+            type='slider', style='button', lw=20, tw=40, cw=100, h=22,
         )
         
         self.textctrl = wx.TextCtrl(self,
