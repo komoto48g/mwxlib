@@ -38,9 +38,9 @@ class Param(object):
         min,max : lower and upper limits
       std_value : standard value (default None)
           value : current value := std_value + offset
-         offset : ditto (if std_value is None, this is the same as value)
+         offset : if std_value is None, this is the same as value.
           knobs : knob list
-          index : knob index
+          index : knob index -> value
           check : knob check (undefined)
             tip : doc:str also shown as a tooltip
        callback : single state machine that handles following events:
@@ -52,6 +52,17 @@ class Param(object):
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
         self.knobs = []
+        self.name = name
+        self.range = range
+        self.__std_value = value
+        self.__value = value if value is not None else self.min
+        self.__check = 0
+        if fmt is hex:
+            self.__eval = lambda v: int(v, 16)
+            self.__format = lambda v: '{:04X}'.format(int(v))
+        else:
+            self.__eval = lambda v: eval(v)
+            self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
         self.callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
@@ -59,17 +70,6 @@ class Param(object):
            'overflow' : [],
           'underflow' : [],
         })
-        self.name = name
-        self.range = range
-        self.value = value if value is not None else self.min
-        self.std_value = value
-        if fmt is hex:
-            self.__eval = lambda v: int(v, 16)
-            self.__format = lambda v: '{:04X}'.format(int(v))
-        else:
-            self.__eval = lambda v: eval(v)
-            self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
-        self.check = 0
         tip = '\n'.join(filter(None, (tip,
                                       handler and handler.__doc__,
                                       updater and updater.__doc__)))
@@ -537,7 +537,7 @@ class Knob(wx.Panel):
         x = self.text.Value.strip()
         if x != str(self.__par):
             try:
-                self.__par.reset(x) # update value if focus out
+                self.__par.reset(x) # reset value if focus out
             except Exception:
                 self.text.SetValue(str(self.__par))
                 self.__par.reset(self.__par.value, backcall=None) # restore value
