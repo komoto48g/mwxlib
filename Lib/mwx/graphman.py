@@ -54,9 +54,9 @@ class Thread(object):
          worker : reference of the worker thread
           owner : reference of the handler owner (was typ. f.__self__)
                   if None, the thread_event is handled by its own handler
-      is_active : flag of being kept going
+         active : flag of being kept going
                   Check this to see the worker is running and intended being kept going
-     is_running : flag of being running now
+        running : flag of being running now
                   Watch this to verify the worker is alive after it has been inactivated
           event : A common event flag to interrupt the process
     
@@ -68,8 +68,9 @@ class Thread(object):
         The event.wait blocks until the internal flag is True when it is False
             and returns immediately when it is True.
     """
-    is_active = property(lambda self: self.__keepGoing)
-    is_running = property(lambda self: self.__isRunning)
+    ## `is_*` to be deprecated; Keep them for backward-compatibility.
+    is_active = property(lambda self: self.active)
+    is_running = property(lambda self: self.running)
     
     def __init__(self, owner=None, **kwargs):
         self.owner = owner
@@ -77,8 +78,8 @@ class Thread(object):
         self.worker = None
         self.target = None
         self.result = None
-        self.__keepGoing = 0
-        self.__isRunning = 0
+        self.active = 0
+        self.running = 0
         self.event = threading.Event()
         self.event.set()
         try:
@@ -97,7 +98,7 @@ class Thread(object):
             })
     
     def __del__(self):
-        if self.is_active:
+        if self.active:
             self.Stop()
     
     def __enter__(self):
@@ -105,7 +106,7 @@ class Thread(object):
         module = inspect.getmodule(frame)
         name = frame.f_code.co_name
         
-        assert self.is_active, "cannot enter {!r}".format(name)
+        assert self.active, "cannot enter {!r}".format(name)
         
         event = "{}:{}:enter".format(module.__name__, name)
         self.handler(event, self)
@@ -143,17 +144,17 @@ class Thread(object):
                 print("- Thread:exception: {}".format(e))
                 self.handler('thread_error', self)
             finally:
-                self.__keepGoing = self.__isRunning = 0
+                self.active = self.running = 0
                 self.handler('thread_end', self)
         
-        if self.__isRunning:
+        if self.running:
             wx.MessageBox("The thread is running (Press C-g to quit).",
                           style=wx.ICON_WARNING)
             return
         
         self.target = f
         self.result = None
-        self.__keepGoing = self.__isRunning = 1
+        self.active = self.running = 1
         self.worker = threading.Thread(target=_f,
                                 args=args, kwargs=kwargs, **self.props)
         self.worker.start()
@@ -161,8 +162,8 @@ class Thread(object):
     
     @mwx.postcall
     def Stop(self):
-        self.__keepGoing = 0
-        if self.__isRunning:
+        self.active = 0
+        if self.running:
             try:
                 busy = wx.BusyInfo("One moment please, "
                                    "waiting for threads to die...")
@@ -206,7 +207,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
-    require = property(lambda self: self.__parent.require)
     
     graph = property(lambda self: self.__parent.graph)
     output = property(lambda self: self.__parent.output)
@@ -303,19 +303,19 @@ class Layer(ControlPanel, mwx.CtrlInterface):
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
                 lambda v: self.parent.reload_plug(self.__module__),
                 lambda v: v.Enable(self.reloadable
-                            and not (self.thread and self.thread.is_active))),
+                            and not (self.thread and self.thread.active))),
                 
             (mwx.ID_(202), "&Unload module", "Unload module", Icon('delete'),
                 lambda v: self.parent.unload_plug(self.__module__),
                 lambda v: v.Enable(self.unloadable
-                            and not (self.thread and self.thread.is_active))),
+                            and not (self.thread and self.thread.active))),
             (),
             (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
         
         def destroy(evt):
-            if self.thread and self.thread.is_active:
+            if self.thread and self.thread.active:
                 self.thread.Stop()
             del self.Arts
             evt.Skip()
@@ -1257,9 +1257,12 @@ class Frame(mwx.Frame):
         """Stop all Layer.thread"""
         for name in self.plugins:
             plug = self.get_plug(name)
-            if plug.thread and plug.thread.is_active:
-                plug.thread._Thread__keepGoing = 0 # is_active=False 直接切り替える
-                plug.thread.Stop() # すぐに止まるわけではない
+            try:
+                if plug.thread and plug.thread.active:
+                    plug.thread.active = 0 # worker-thread から直接切り替える
+                    plug.thread.Stop()     # main-thread @postcall で終了させる
+            except AttributeError as e:
+                pass
     
     ## --------------------------------
     ## load/save index file
