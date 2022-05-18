@@ -52,17 +52,6 @@ class Param(object):
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
         self.__knobs = []
-        self.__name = name
-        self.range = range
-        self.__value = value if value is not None else self.min
-        self.__std_value = value
-        if fmt is hex:
-            self.__eval = lambda v: int(v, 16)
-            self.__format = lambda v: '{:04X}'.format(int(v))
-        else:
-            self.__eval = lambda v: eval(v)
-            self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
-        self.__check = 0
         self.__callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
@@ -70,26 +59,37 @@ class Param(object):
            'overflow' : [],
           'underflow' : [],
         })
+        self.name = name
+        self.range = range
+        self.value = value if value is not None else self.min
+        self.std_value = value
+        if fmt is hex:
+            self.__eval = lambda v: int(v, 16)
+            self.__format = lambda v: '{:04X}'.format(int(v))
+        else:
+            self.__eval = lambda v: eval(v)
+            self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
+        self.check = 0
         tip = '\n'.join(filter(None, (tip,
                                       handler and handler.__doc__,
                                       updater and updater.__doc__)))
         self.tip = tip.strip()
     
     def __str__(self, v=None):
-        v = self.__value if v is None else v
+        v = self.value if v is None else v
         try:
             return self.__format(v)
         except ValueError:
             return str(v)
     
     def __int__(self):
-        return int(self.__value)
+        return int(self.value)
     
     def __float__(self):
-        return float(self.__value)
+        return float(self.value)
     
     def __len__(self):
-        return len(self.__range)
+        return len(self.range)
     
     name = property(
         lambda self: self.__name,
@@ -147,15 +147,14 @@ class Param(object):
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs) with callback"""
         if v is None or v == '':
-            v = self.__std_value
+            v = self.std_value
             if v is None:
                 return
         elif v == 'nan': v = nan
         elif v == 'inf': v = inf
         elif isinstance(v, str):
             v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
-            ## v = self.__eval(v)
-        self.set_value(v)
+        self.value = v
         if backcall:
             self.__callback('control', self)
     
@@ -185,8 +184,6 @@ class Param(object):
             for knob in self.knobs:
                 knob.update_ctrl(None)
             return
-        elif v == self.__value:
-            return
         
         valid = (self.min <= v <= self.max)
         if valid:
@@ -207,15 +204,15 @@ class Param(object):
             knob.update_label()
     
     def get_offset(self):
-        if self.__std_value is not None:
-            return self.__value - self.__std_value
-        return self.__value
+        if self.std_value is not None:
+            return self.value - self.std_value
+        return self.value
     
     def set_offset(self, v):
-        if self.__std_value is not None:
+        if self.std_value is not None:
             if v is not nan: # Note: nan +x is not nan
-                v += self.__std_value
-        self.set_value(v)
+                v += self.std_value
+        self.value = v
     
     def get_range(self):
         return self.__range
