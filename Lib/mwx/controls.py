@@ -91,37 +91,6 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
-    name = property(
-        lambda self: self.__name,
-        lambda self,v: self.set_name(v))
-    
-    value = property(
-        lambda self: self.__value,
-        lambda self,v: self.set_value(v) and self._notify())
-    
-    std_value = property(
-        lambda self: self.__std_value,
-        lambda self,v: self.set_std_value(v))
-    
-    offset = property(
-        lambda self: self.get_offset(),
-        lambda self,v: self.set_offset(v))
-    
-    min = property(lambda self: self.__range[0])
-    max = property(lambda self: self.__range[-1])
-    
-    range = property(
-        lambda self: self.get_range(),
-        lambda self,v: self.set_range(v))
-    
-    index = property(
-        lambda self: self.get_index(),
-        lambda self,j: self.set_index(j))
-    
-    check = property(
-        lambda self: self.__check,
-        lambda self,v: self.set_check(v))
-    
     def bind(self, f=None, target='control'):
         la = self.callback[target]
         if not f:
@@ -147,25 +116,10 @@ class Param(object):
         elif v == 'nan': v = nan
         elif v == 'inf': v = inf
         elif isinstance(v, str):
-            v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
+            v = self.__eval(v.replace(',', '')) # eliminates commas
         self.value = v
         if backcall:
             self.callback('control', self)
-    
-    def _notify(self):
-        for knob in self.knobs:
-            knob.notify_ctrl()
-    
-    def set_check(self, v):
-        self.__check = v
-        self.callback('check', self)
-        for knob in self.knobs:
-            knob.update_label()
-    
-    def set_name(self, v):
-        self.__name = v
-        for knob in self.knobs:
-            knob.update_label()
     
     def set_value(self, v):
         """Set value and check the limit.
@@ -192,26 +146,69 @@ class Param(object):
             knob.update_ctrl(valid)
         return valid
     
-    def set_std_value(self, v):
+    @property
+    def check(self):
+        return self.__check
+    
+    @check.setter
+    def check(self, v):
+        self.__check = v
+        self.callback('check', self)
+        for knob in self.knobs:
+            knob.update_label()
+    
+    @property
+    def name(self):
+        return self.__name
+    
+    @name.setter
+    def name(self, v):
+        self.__name = v
+        for knob in self.knobs:
+            knob.update_label()
+    
+    @property
+    def value(self):
+        return self.__value
+    
+    @value.setter
+    def value(self, v):
+        if self.set_value(v):
+            for knob in self.knobs:
+                knob.notify_ctrl()
+    
+    @property
+    def std_value(self):
+        return self.__std_value
+    
+    @std_value.setter
+    def std_value(self, v):
         self.__std_value = v
         for knob in self.knobs:
             knob.update_label()
     
-    def get_offset(self):
+    @property
+    def offset(self):
         if self.std_value is not None:
             return self.value - self.std_value
         return self.value
     
-    def set_offset(self, v):
+    @offset.setter
+    def offset(self, v):
         if self.std_value is not None:
             if v is not nan: # Note: nan +x is not nan
                 v += self.std_value
         self.value = v
     
-    def get_range(self):
+    min = property(lambda self: self.__range[0])
+    max = property(lambda self: self.__range[-1])
+    
+    @property
+    def range(self):
         return self.__range
     
-    def set_range(self, v):
+    @range.setter
+    def range(self, v):
         if v is None:
             self.__range = [nan] # dummy data
         else:
@@ -219,10 +216,12 @@ class Param(object):
         for knob in self.knobs:
             knob.update_range() # list range of related knobs
     
-    def get_index(self):
+    @property
+    def index(self):
         return int(np.searchsorted(self.range, self.value))
     
-    def set_index(self, j):
+    @index.setter
+    def index(self, j):
         n = len(self)
         i = (0 if j<0 else j if j<n else -1)
         return self.set_value(self.range[i])
@@ -240,10 +239,12 @@ class LParam(Param):
     def __len__(self):
         return 1 + int(round((self.max - self.min) / self.step)) # includes [min,max]
     
-    def get_range(self):
+    @property
+    def range(self):
         return np.arange(self.min, self.max + self.step, self.step)
     
-    def set_range(self, v):
+    @range.setter
+    def range(self, v):
         if v is None:
             v = (0, 0)
         self.__min = v[0]
@@ -252,10 +253,12 @@ class LParam(Param):
         for knob in self.knobs:
             knob.update_range() # linear range of related knobs
     
-    def get_index(self):
+    @property
+    def index(self):
         return int(round((self.value - self.min) / self.step))
     
-    def set_index(self, j):
+    @index.setter
+    def index(self, j):
         return self.set_value(self.min + j * self.step)
 
 
