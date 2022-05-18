@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.1"
+__version__ = "0.58.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -281,6 +281,8 @@ class KeyCtrlInterfaceMixin(object):
         
         state = self.handler.default_state
         event = keymap + ' pressed'
+        
+        assert state is not None, "Don't make keymap for None:state."
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
@@ -1374,9 +1376,6 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             self.message("{} {}".format(keymap, v.key))
             v.Skip()
         
-        self.make_keymap('C-x')
-        self.make_keymap('C-c')
-        
         self.handler.update({ # DNA<Editor>
             -1 : {  # original action of the Editor
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
@@ -1437,6 +1436,9 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
             },
         })
         self.handler.clear(0)
+        
+        self.make_keymap('C-x')
+        self.make_keymap('C-c')
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
