@@ -40,8 +40,8 @@ class Param(object):
           value : current value := std_value + offset
          offset : ditto (if std_value is None, this is the same as value)
           knobs : knob list
-          index : knob index -> reset -> callback
-          check : knob tick (undefined)
+          index : knob index
+          check : knob check (undefined)
             tip : doc:str also shown as a tooltip
        callback : single state machine that handles following events:
                 control -> when index changed by knobs or reset (call handler)
@@ -51,8 +51,8 @@ class Param(object):
     """
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
-        self.__knobs = []
-        self.__callback = SSM({
+        self.knobs = []
+        self.callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
               'check' : [ updater ] if updater else [],
@@ -118,18 +118,12 @@ class Param(object):
         lambda self: self.get_index(),
         lambda self,j: self.set_index(j))
     
-    knobs = property(
-        lambda self: self.__knobs)
-    
     check = property(
         lambda self: self.__check,
         lambda self,v: self.set_check(v))
     
-    callback = property(
-        lambda self: self.__callback)
-    
     def bind(self, f=None, target='control'):
-        la = self.__callback[target]
+        la = self.callback[target]
         if not f:
             return lambda f: self.bind(f, target)
         if f not in la:
@@ -137,7 +131,7 @@ class Param(object):
         return f
     
     def unbind(self, f=None, target='control'):
-        la = self.__callback[target]
+        la = self.callback[target]
         if not f:
             la[:] = [a for a in la if not callable(a)]
             return
@@ -156,7 +150,7 @@ class Param(object):
             v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
         self.value = v
         if backcall:
-            self.__callback('control', self)
+            self.callback('control', self)
     
     def _notify(self):
         for knob in self.knobs:
@@ -164,7 +158,7 @@ class Param(object):
     
     def set_check(self, v):
         self.__check = v
-        self.__callback('check', self)
+        self.callback('check', self)
         for knob in self.knobs:
             knob.update_label()
     
@@ -190,10 +184,10 @@ class Param(object):
             self.__value = v
         elif v < self.min:
             self.__value = self.min
-            self.__callback('underflow', self)
+            self.callback('underflow', self)
         else:
             self.__value = self.max
-            self.__callback('overflow', self)
+            self.callback('overflow', self)
         for knob in self.knobs:
             knob.update_ctrl(valid)
         return valid
@@ -468,13 +462,13 @@ class Knob(wx.Panel):
             ## wrapped C/C++ object of type TextCtrl has been deleted
             pass
     
-    def shift(self, evt, bit, **kwargs):
+    def shift(self, evt, bit, backcall=True):
         if evt.ShiftDown():   bit *= 2
         if evt.ControlDown(): bit *= 16
         if evt.AltDown():     bit *= 256
         i = self.ctrl.GetValue()
         self.__par.index = i + int(bit)
-        self.__par.reset(self.__par.value, **kwargs)
+        self.__par.reset(self.__par.value, backcall)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
         self.__par.index = self.ctrl.GetValue()
