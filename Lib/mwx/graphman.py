@@ -206,7 +206,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.statusbar)
-    require = property(lambda self: self.__parent.require)
     
     graph = property(lambda self: self.__parent.graph)
     output = property(lambda self: self.__parent.output)
