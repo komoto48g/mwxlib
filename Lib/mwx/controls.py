@@ -21,13 +21,6 @@ except ImportError:
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
-## EPSILON = sys.float_info.epsilon
-## EPSILON = 1e-15
-
-
-def valist(params):
-    return list(p.value for p in params)
-
 
 class Param(object):
     """Standard Parameter
@@ -114,20 +107,16 @@ class Param(object):
         lambda self: self.get_offset(),
         lambda self,v: self.set_offset(v))
     
+    min = property(lambda self: self.__range[0])
+    max = property(lambda self: self.__range[-1])
+    
     range = property(
         lambda self: self.get_range(),
         lambda self,v: self.set_range(v))
     
-    min = property(lambda self: self.__range[0])
-    max = property(lambda self: self.__range[-1])
-    
     index = property(
         lambda self: self.get_index(),
         lambda self,j: self.set_index(j))
-    
-    ## rindex = property(
-    ##     lambda self: len(self) - self.get_index() - 1,
-    ##     lambda self,j: self.set_index(len(self) - j - 1))
     
     knobs = property(
         lambda self: self.__knobs)
@@ -239,15 +228,13 @@ class Param(object):
         for knob in self.knobs:
             knob.update_range() # list range of related knobs
     
-    def get_index(self, v=None):
-        if v is None:
-            v = self.value
-        return int(np.searchsorted(self.__range, v))
+    def get_index(self):
+        return int(np.searchsorted(self.range, self.value))
     
     def set_index(self, j):
         n = len(self)
         i = (0 if j<0 else j if j<n else -1)
-        return self.set_value(self.__range[i])
+        return self.set_value(self.range[i])
 
 
 class LParam(Param):
@@ -260,7 +247,7 @@ class LParam(Param):
     step = property(lambda self: self.__step)
     
     def __len__(self):
-        return 1 + self.get_index(self.max) # includes [min,max]
+        return 1 + int(round((self.max - self.min) / self.step)) # includes [min,max]
     
     def get_range(self):
         return np.arange(self.min, self.max + self.step, self.step)
@@ -274,10 +261,8 @@ class LParam(Param):
         for knob in self.knobs:
             knob.update_range() # linear range of related knobs
     
-    def get_index(self, v=None):
-        if v is None:
-            v = self.value
-        return int(round((v - self.min) / self.step))
+    def get_index(self):
+        return int(round((self.value - self.min) / self.step))
     
     def set_index(self, j):
         return self.set_value(self.min + j * self.step)
