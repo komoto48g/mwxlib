@@ -1698,7 +1698,7 @@ class GraphPlot(MatplotPanel):
             self.next_mark(-1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = wx.App()
     frm = mwx.Frame(None)
     frm.graph = GraphPlot(frm, log=frm.statusbar, margin=(.1,.1,.9,.9), size=(300,240))

@@ -1707,7 +1707,7 @@ class Frame(mwx.Frame):
         return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
     

@@ -824,7 +824,7 @@ class MatplotPanel(wx.Panel):
         self.OnYAxisPanZoom(evt, c=self.ylim[1])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from matplotlib import patches
     from numpy import pi
     

@@ -49,7 +49,7 @@ class Frame(mwx.Frame):
         self.menubar.reset()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
     frm.Show()

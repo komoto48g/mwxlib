@@ -46,7 +46,7 @@ class Plugin(Layer):
         self.graph.load((255 * Z ** 2).astype(np.uint8), 'ctf', localunit=lu)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(__file__, show=1, dock=4)

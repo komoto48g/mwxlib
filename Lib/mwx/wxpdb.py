@@ -413,7 +413,7 @@ if __name__ == "__main__":
         dbg = Debugger(self,
                        stdin=shell.interp.stdin,
                        stdout=shell.interp.stdout,
-                       ## skip=['__main__']
+                       ## skip=["__main__"]
                        )
         self.debugger = dbg
         dbg.handler.debug = 4

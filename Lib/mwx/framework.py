@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.3"
+__version__ = "0.58.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -625,7 +625,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.make_keymap('C-x')
     
     def About(self):
-        wx.MessageBox(__import__('__main__').__doc__ or 'no information',
+        wx.MessageBox(__import__("__main__").__doc__ or "no information",
                       "About this software")
     
     def Destroy(self):
@@ -713,7 +713,7 @@ class ShellFrame(MiniFrame):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         if target is None:
-            target = parent or __import__('__main__')
+            target = parent or __import__("__main__")
         
         self.Title = title or "Nautilus - {!r}".format(target)
         
@@ -3840,7 +3840,7 @@ def filling(target=None, label=None, **kwargs):
     return frame
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SHELLSTARTUP = """
 if 1:
     self

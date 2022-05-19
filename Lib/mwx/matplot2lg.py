@@ -716,7 +716,7 @@ class LineProfile(LinePlot):
             self.draw()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from PIL import Image
     from mwx.matplot2g import GraphPlot
     

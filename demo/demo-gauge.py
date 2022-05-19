@@ -34,7 +34,7 @@ class Plugin(Layer):
             self.sig.Value = p.value
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(__file__, show=1, dock=4)

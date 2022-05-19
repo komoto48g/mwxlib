@@ -1195,7 +1195,7 @@ class Gauge(wx.Panel):
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from numpy import pi
     
     class TestPanel(ControlPanel, mwx.CtrlInterface):
