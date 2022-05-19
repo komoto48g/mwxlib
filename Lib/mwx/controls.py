@@ -343,9 +343,7 @@ class Knob(wx.Panel):
         
         if editable:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
-            self.text.Bind(wx.EVT_TEXT, self.OnText)
             self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
-            self.text.Bind(wx.EVT_SET_FOCUS, self.OnTextFocus)
             self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextFocusKill)
             
             if type[-1] == '*':
@@ -440,7 +438,7 @@ class Knob(wx.Panel):
             j = -1
         
         self.ctrl.SetValue(j)
-        self.text.SetValue(str(v)) # => OnText
+        self.text.SetValue(str(v))
         if valid:
             if notify:
                 if self.text.BackgroundColour != '#ffff80':
@@ -513,21 +511,10 @@ class Knob(wx.Panel):
             self.__par.reset(self.__par.value, backcall=None) # restore value
         evt.Skip()
     
-    def OnText(self, evt): #<wx._core.CommandEvent>
-        evt.Skip()
-        x = self.text.Value.strip()
-        if x != str(self.__par):
-            self.set_textcolour('#ffff80') # light-yellow
-        else:
-            self.set_textcolour('white')
-    
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
         evt.Skip()
         x = self.text.Value.strip()
         self.__par.reset(x)
-    
-    def OnTextFocus(self, evt): #<wx._core.FocusEvent>
-        evt.Skip()
     
     def OnTextFocusKill(self, evt): #<wx._core.FocusEvent>
         if self.__par.value in (nan, inf):
@@ -1243,13 +1230,13 @@ if __name__ == '__main__':
                 self.Q,
                 self.R,
             )
-            ## for lp in self.params:
-            ##     lp.callback.update({
-            ##         'control' : [lambda p: print("control", p.name, p.value)],
-            ##           'check' : [lambda p: print("check", p.check)],
-            ##        'overflow' : [lambda p: print("overflow", p)],
-            ##       'underflow' : [lambda p: print("underflow", p)],
-            ##     })
+            for lp in self.params:
+                lp.callback.update({
+                    'control' : [lambda p: print("control", p.name, p.value)],
+                      'check' : [lambda p: print("check", p.check)],
+                   'overflow' : [lambda p: print("overflow", p)],
+                  'underflow' : [lambda p: print("underflow", p)],
+                })
             
             ## @self.K.bind
             ## @self.A.bind
