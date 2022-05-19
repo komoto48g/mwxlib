@@ -117,11 +117,11 @@ class Param(object):
         elif v == 'inf': v = inf
         elif isinstance(v, str):
             v = self.__eval(v.replace(',', '')) # eliminates commas
-        self.value = v
+        self._set_value(v)
         if backcall:
             self.callback('control', self)
     
-    def set_value(self, v):
+    def _set_value(self, v, notify=True):
         """Set value and check the limit.
         If the value is out of range, modify the value.
         """
@@ -131,6 +131,8 @@ class Param(object):
             self.__value = v
             for knob in self.knobs:
                 knob.update_ctrl(None)
+            return
+        elif v == self.__value:
             return
         
         valid = (self.min <= v <= self.max)
@@ -142,9 +144,9 @@ class Param(object):
         else:
             self.__value = self.max
             self.callback('overflow', self)
+        
         for knob in self.knobs:
-            knob.update_ctrl(valid)
-        return valid
+            knob.update_ctrl(valid, notify)
     
     @property
     def check(self):
@@ -173,9 +175,7 @@ class Param(object):
     
     @value.setter
     def value(self, v):
-        if self.set_value(v):
-            for knob in self.knobs:
-                knob.notify_ctrl()
+        self._set_value(v)
     
     @property
     def std_value(self):
@@ -198,7 +198,7 @@ class Param(object):
         if self.std_value is not None:
             if v is not nan: # Note: nan +x is not nan
                 v += self.std_value
-        self.value = v
+        self._set_value(v)
     
     min = property(lambda self: self.__range[0])
     max = property(lambda self: self.__range[-1])
@@ -224,7 +224,7 @@ class Param(object):
     def index(self, j):
         n = len(self)
         i = (0 if j<0 else j if j<n else -1)
-        return self.set_value(self.range[i])
+        return self._set_value(self.range[i])
 
 
 class LParam(Param):
@@ -259,7 +259,7 @@ class LParam(Param):
     
     @index.setter
     def index(self, j):
-        return self.set_value(self.min + j * self.step)
+        return self._set_value(self.min + j * self.step)
 
 
 ## --------------------------------
@@ -430,7 +430,7 @@ class Knob(wx.Panel):
             self.label.SetLabel(v.name + t)
             self.label.Refresh()
     
-    def update_ctrl(self, valid=True):
+    def update_ctrl(self, valid=True, notify=False):
         v = self.__par
         try:
             j = v.index
@@ -442,28 +442,24 @@ class Knob(wx.Panel):
         self.ctrl.SetValue(j)
         self.text.SetValue(str(v)) # => OnText
         if valid:
-            self.set_textcolour('#ffffff') # True: white
+            if notify:
+                if self.text.BackgroundColour != '#ffff80':
+                    wx.CallAfter(wx.CallLater, 1000,
+                        self.set_textcolour, '#ffffff')
+                    self.set_textcolour('#ffff80') # light-yellow
+            else:
+                self.set_textcolour('#ffffff') # True: white
         elif valid is None:
             self.set_textcolour('#ffff80') # None: light-yellow
         else:
-            self.set_textcolour('#ff8080') # Otherwise: light-red
+            self.set_textcolour('#ff8080') # False: light-red
         self.update_label()
     
-    def notify_ctrl(self):
-        self.set_textcolour('#ffff80') # light-yellow
-        def reset_color():
-            if self:
-                self.set_textcolour('white')
-        wx.CallAfter(wx.CallLater, 1000, reset_color)
-    
     def set_textcolour(self, c):
-        try:
+        if self:
             if self.text.IsEditable():
-                self.text.SetBackgroundColour(c)
+                self.text.BackgroundColour = c
             self.text.Refresh()
-        except RuntimeError:
-            ## wrapped C/C++ object of type TextCtrl has been deleted
-            pass
     
     def shift(self, evt, bit, backcall=True):
         if evt.ShiftDown():   bit *= 2
@@ -554,7 +550,6 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnPress(self, evt): #<wx._core.CommandEvent>
-        ## self.__par.check = True
         self.__par.callback('update', self.__par)
         evt.Skip()
     
@@ -1234,7 +1229,7 @@ if __name__ == '__main__':
             
             a = Param('test')
             b = LParam('test')
-            self.layout((a,b,))
+            self.layout((a,b), title="test")
             
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0, 1, 1e-3))
@@ -1248,29 +1243,29 @@ if __name__ == '__main__':
                 self.Q,
                 self.R,
             )
-            for lp in self.params:
-                lp.callback.update({
-                    'control' : [lambda p: print("control", p.name, p.value)],
-                      'check' : [lambda p: print("check", p.check)],
-                   'overflow' : [lambda p: print("overflow", p)],
-                  'underflow' : [lambda p: print("underflow", p)],
-                })
+            ## for lp in self.params:
+            ##     lp.callback.update({
+            ##         'control' : [lambda p: print("control", p.name, p.value)],
+            ##           'check' : [lambda p: print("check", p.check)],
+            ##        'overflow' : [lambda p: print("overflow", p)],
+            ##       'underflow' : [lambda p: print("underflow", p)],
+            ##     })
             
-            @self.K.bind
-            @self.A.bind
-            def p(item):
-                print(item)
+            ## @self.K.bind
+            ## @self.A.bind
+            ## def p(item):
+            ##     print(item)
             
             self.layout(
                 self.params, title="V1",
                 row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22, editable=1
             )
-            self.layout(
-                self.params, title="V2",
-                row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-                type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
-            )
+            ## self.layout(
+            ##     self.params, title="V2",
+            ##     row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
+            ##     type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
+            ## )
             ## self.layout((
             ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
             ##         for type in (
