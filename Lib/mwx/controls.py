@@ -38,10 +38,10 @@ class Param(object):
         min,max : lower and upper limits
       std_value : standard value (default None)
           value : current value := std_value + offset
-         offset : ditto (if std_value is None, this is the same as value)
+         offset : if std_value is None, this is the same as value.
           knobs : knob list
-          index : knob index -> reset -> callback
-          check : knob tick (undefined)
+          index : knob index -> value
+          check : knob check (undefined)
             tip : doc:str also shown as a tooltip
        callback : single state machine that handles following events:
                 control -> when index changed by knobs or reset (call handler)
@@ -51,19 +51,19 @@ class Param(object):
     """
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
-        self.__knobs = []
-        self.__name = name
+        self.knobs = []
+        self.name = name
         self.range = range
-        self.__value = value if value is not None else self.min
         self.__std_value = value
+        self.__value = value if value is not None else self.min
+        self.__check = 0
         if fmt is hex:
             self.__eval = lambda v: int(v, 16)
             self.__format = lambda v: '{:04X}'.format(int(v))
         else:
             self.__eval = lambda v: eval(v)
             self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
-        self.__check = 0
-        self.__callback = SSM({
+        self.callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
               'check' : [ updater ] if updater else [],
@@ -76,60 +76,23 @@ class Param(object):
         self.tip = tip.strip()
     
     def __str__(self, v=None):
-        v = self.__value if v is None else v
+        v = self.value if v is None else v
         try:
             return self.__format(v)
         except ValueError:
             return str(v)
     
     def __int__(self):
-        return int(self.__value)
+        return int(self.value)
     
     def __float__(self):
-        return float(self.__value)
+        return float(self.value)
     
     def __len__(self):
-        return len(self.__range)
-    
-    name = property(
-        lambda self: self.__name,
-        lambda self,v: self.set_name(v))
-    
-    value = property(
-        lambda self: self.__value,
-        lambda self,v: self.set_value(v) and self._notify())
-    
-    std_value = property(
-        lambda self: self.__std_value,
-        lambda self,v: self.set_std_value(v))
-    
-    offset = property(
-        lambda self: self.get_offset(),
-        lambda self,v: self.set_offset(v))
-    
-    min = property(lambda self: self.__range[0])
-    max = property(lambda self: self.__range[-1])
-    
-    range = property(
-        lambda self: self.get_range(),
-        lambda self,v: self.set_range(v))
-    
-    index = property(
-        lambda self: self.get_index(),
-        lambda self,j: self.set_index(j))
-    
-    knobs = property(
-        lambda self: self.__knobs)
-    
-    check = property(
-        lambda self: self.__check,
-        lambda self,v: self.set_check(v))
-    
-    callback = property(
-        lambda self: self.__callback)
+        return len(self.range)
     
     def bind(self, f=None, target='control'):
-        la = self.__callback[target]
+        la = self.callback[target]
         if not f:
             return lambda f: self.bind(f, target)
         if f not in la:
@@ -137,7 +100,7 @@ class Param(object):
         return f
     
     def unbind(self, f=None, target='control'):
-        la = self.__callback[target]
+        la = self.callback[target]
         if not f:
             la[:] = [a for a in la if not callable(a)]
             return
@@ -147,34 +110,18 @@ class Param(object):
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs) with callback"""
         if v is None or v == '':
-            v = self.__std_value
+            v = self.std_value
             if v is None:
                 return
         elif v == 'nan': v = nan
         elif v == 'inf': v = inf
         elif isinstance(v, str):
-            v = self.__eval(v.replace(',', '')) # eliminates commas(, to be deprecated)
-            ## v = self.__eval(v)
-        self.set_value(v)
+            v = self.__eval(v.replace(',', '')) # eliminates commas
+        self._set_value(v)
         if backcall:
-            self.__callback('control', self)
+            self.callback('control', self)
     
-    def _notify(self):
-        for knob in self.knobs:
-            knob.notify_ctrl()
-    
-    def set_check(self, v):
-        self.__check = v
-        self.__callback('check', self)
-        for knob in self.knobs:
-            knob.update_label()
-    
-    def set_name(self, v):
-        self.__name = v
-        for knob in self.knobs:
-            knob.update_label()
-    
-    def set_value(self, v):
+    def _set_value(self, v, notify=True):
         """Set value and check the limit.
         If the value is out of range, modify the value.
         """
@@ -193,34 +140,75 @@ class Param(object):
             self.__value = v
         elif v < self.min:
             self.__value = self.min
-            self.__callback('underflow', self)
+            self.callback('underflow', self)
         else:
             self.__value = self.max
-            self.__callback('overflow', self)
+            self.callback('overflow', self)
+        
         for knob in self.knobs:
-            knob.update_ctrl(valid)
-        return valid
+            knob.update_ctrl(valid, notify)
     
-    def set_std_value(self, v):
+    @property
+    def check(self):
+        return self.__check
+    
+    @check.setter
+    def check(self, v):
+        self.__check = v
+        self.callback('check', self)
+        for knob in self.knobs:
+            knob.update_label()
+    
+    @property
+    def name(self):
+        return self.__name
+    
+    @name.setter
+    def name(self, v):
+        self.__name = v
+        for knob in self.knobs:
+            knob.update_label()
+    
+    @property
+    def value(self):
+        return self.__value
+    
+    @value.setter
+    def value(self, v):
+        self._set_value(v)
+    
+    @property
+    def std_value(self):
+        return self.__std_value
+    
+    @std_value.setter
+    def std_value(self, v):
         self.__std_value = v
         for knob in self.knobs:
             knob.update_label()
     
-    def get_offset(self):
-        if self.__std_value is not None:
-            return self.__value - self.__std_value
-        return self.__value
+    @property
+    def offset(self):
+        if self.std_value is not None:
+            return self.value - self.std_value
+        return self.value
     
-    def set_offset(self, v):
-        if self.__std_value is not None:
+    @offset.setter
+    def offset(self, v):
+        if self.std_value is not None:
             if v is not nan: # Note: nan +x is not nan
-                v += self.__std_value
-        self.set_value(v)
+                v += self.std_value
+        self._set_value(v)
     
-    def get_range(self):
+    min = property(lambda self: self.__range[0])
+    max = property(lambda self: self.__range[-1])
+    
+    @property
+    def range(self):
         return self.__range
     
-    def set_range(self, v):
+    @range.setter
+    def range(self, v):
         if v is None:
             self.__range = [nan] # dummy data
         else:
@@ -228,13 +216,15 @@ class Param(object):
         for knob in self.knobs:
             knob.update_range() # list range of related knobs
     
-    def get_index(self):
+    @property
+    def index(self):
         return int(np.searchsorted(self.range, self.value))
     
-    def set_index(self, j):
+    @index.setter
+    def index(self, j):
         n = len(self)
         i = (0 if j<0 else j if j<n else -1)
-        return self.set_value(self.range[i])
+        return self._set_value(self.range[i])
 
 
 class LParam(Param):
@@ -249,10 +239,12 @@ class LParam(Param):
     def __len__(self):
         return 1 + int(round((self.max - self.min) / self.step)) # includes [min,max]
     
-    def get_range(self):
+    @property
+    def range(self):
         return np.arange(self.min, self.max + self.step, self.step)
     
-    def set_range(self, v):
+    @range.setter
+    def range(self, v):
         if v is None:
             v = (0, 0)
         self.__min = v[0]
@@ -261,11 +253,13 @@ class LParam(Param):
         for knob in self.knobs:
             knob.update_range() # linear range of related knobs
     
-    def get_index(self):
+    @property
+    def index(self):
         return int(round((self.value - self.min) / self.step))
     
-    def set_index(self, j):
-        return self.set_value(self.min + j * self.step)
+    @index.setter
+    def index(self, j):
+        return self._set_value(self.min + j * self.step)
 
 
 ## --------------------------------
@@ -349,9 +343,7 @@ class Knob(wx.Panel):
         
         if editable:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
-            self.text.Bind(wx.EVT_TEXT, self.OnText)
             self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
-            self.text.Bind(wx.EVT_SET_FOCUS, self.OnTextFocus)
             self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextFocusKill)
             
             if type[-1] == '*':
@@ -436,7 +428,7 @@ class Knob(wx.Panel):
             self.label.SetLabel(v.name + t)
             self.label.Refresh()
     
-    def update_ctrl(self, valid=True):
+    def update_ctrl(self, valid=True, notify=False):
         v = self.__par
         try:
             j = v.index
@@ -446,38 +438,34 @@ class Knob(wx.Panel):
             j = -1
         
         self.ctrl.SetValue(j)
-        self.text.SetValue(str(v)) # => OnText
+        self.text.SetValue(str(v))
         if valid:
-            self.set_textcolour('#ffffff') # True: white
+            if notify:
+                if self.text.BackgroundColour != '#ffff80':
+                    wx.CallAfter(wx.CallLater, 1000,
+                        self.set_textcolour, '#ffffff')
+                    self.set_textcolour('#ffff80') # light-yellow
+            else:
+                self.set_textcolour('#ffffff') # True: white
         elif valid is None:
             self.set_textcolour('#ffff80') # None: light-yellow
         else:
-            self.set_textcolour('#ff8080') # Otherwise: light-red
+            self.set_textcolour('#ff8080') # False: light-red
         self.update_label()
     
-    def notify_ctrl(self):
-        self.set_textcolour('#ffff80') # light-yellow
-        def reset_color():
-            if self:
-                self.set_textcolour('white')
-        wx.CallAfter(wx.CallLater, 1000, reset_color)
-    
     def set_textcolour(self, c):
-        try:
+        if self:
             if self.text.IsEditable():
-                self.text.SetBackgroundColour(c)
+                self.text.BackgroundColour = c
             self.text.Refresh()
-        except RuntimeError:
-            ## wrapped C/C++ object of type TextCtrl has been deleted
-            pass
     
-    def shift(self, evt, bit, **kwargs):
+    def shift(self, evt, bit, backcall=True):
         if evt.ShiftDown():   bit *= 2
         if evt.ControlDown(): bit *= 16
         if evt.AltDown():     bit *= 256
         i = self.ctrl.GetValue()
         self.__par.index = i + int(bit)
-        self.__par.reset(self.__par.value, **kwargs)
+        self.__par.reset(self.__par.value, backcall)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
         self.__par.index = self.ctrl.GetValue()
@@ -523,21 +511,10 @@ class Knob(wx.Panel):
             self.__par.reset(self.__par.value, backcall=None) # restore value
         evt.Skip()
     
-    def OnText(self, evt): #<wx._core.CommandEvent>
-        evt.Skip()
-        x = self.text.Value.strip()
-        if x != str(self.__par):
-            self.set_textcolour('#ffff80') # light-yellow
-        else:
-            self.set_textcolour('white')
-    
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
         evt.Skip()
         x = self.text.Value.strip()
         self.__par.reset(x)
-    
-    def OnTextFocus(self, evt): #<wx._core.FocusEvent>
-        evt.Skip()
     
     def OnTextFocusKill(self, evt): #<wx._core.FocusEvent>
         if self.__par.value in (nan, inf):
@@ -546,7 +523,7 @@ class Knob(wx.Panel):
         x = self.text.Value.strip()
         if x != str(self.__par):
             try:
-                self.__par.reset(x) # update value if focus out
+                self.__par.reset(x) # reset value if focus out
             except Exception:
                 self.text.SetValue(str(self.__par))
                 self.__par.reset(self.__par.value, backcall=None) # restore value
@@ -560,7 +537,6 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnPress(self, evt): #<wx._core.CommandEvent>
-        ## self.__par.check = True
         self.__par.callback('update', self.__par)
         evt.Skip()
     
@@ -1240,7 +1216,7 @@ if __name__ == '__main__':
             
             a = Param('test')
             b = LParam('test')
-            self.layout((a,b,))
+            self.layout((a,b), title="test")
             
             self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             self.K = LParam('k', (0, 1, 1e-3))
@@ -1262,21 +1238,21 @@ if __name__ == '__main__':
                   'underflow' : [lambda p: print("underflow", p)],
                 })
             
-            @self.K.bind
-            @self.A.bind
-            def p(item):
-                print(item)
+            ## @self.K.bind
+            ## @self.A.bind
+            ## def p(item):
+            ##     print(item)
             
             self.layout(
                 self.params, title="V1",
                 row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22, editable=1
             )
-            self.layout(
-                self.params, title="V2",
-                row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-                type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
-            )
+            ## self.layout(
+            ##     self.params, title="V2",
+            ##     row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
+            ##     type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
+            ## )
             ## self.layout((
             ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
             ##         for type in (
