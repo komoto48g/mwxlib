@@ -6,7 +6,6 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
 from itertools import chain
-import sys
 import wx
 import numpy as np
 from numpy import nan, inf
@@ -121,7 +120,7 @@ class Param(object):
         if backcall:
             self.callback('control', self)
     
-    def _set_value(self, v, notify=True):
+    def _set_value(self, v):
         """Set value and check the limit.
         If the value is out of range, modify the value.
         """
@@ -144,9 +143,8 @@ class Param(object):
         else:
             self.__value = self.max
             self.callback('overflow', self)
-        
         for knob in self.knobs:
-            knob.update_ctrl(valid, notify)
+            knob.update_ctrl(valid, notify=True)
     
     @property
     def check(self):
@@ -224,7 +222,7 @@ class Param(object):
     def index(self, j):
         n = len(self)
         i = (0 if j<0 else j if j<n else -1)
-        return self._set_value(self.range[i])
+        self._set_value(self.range[i])
 
 
 class LParam(Param):
@@ -454,17 +452,21 @@ class Knob(wx.Panel):
                 self.text.BackgroundColour = c
             self.text.Refresh()
     
-    def shift(self, evt, bit, backcall=True):
+    def shift(self, evt, bit):
         if bit:
             if evt.ShiftDown():   bit *= 2
             if evt.ControlDown(): bit *= 16
             if evt.AltDown():     bit *= 256
-        self.__par.index = self.ctrl.GetValue() + bit
-        self.__par.reset(self.__par.value, backcall)
+        j = self.ctrl.GetValue() + bit
+        if j != self.__par.index:
+            self.__par.index = j
+            self.__par.reset(self.__par.value)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
-        self.__par.index = self.ctrl.GetValue()
-        self.__par.reset(self.__par.value)
+        j = self.ctrl.GetValue()
+        if j != self.__par.index:
+            self.__par.index = j
+            self.__par.reset(self.__par.value)
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
@@ -487,9 +489,9 @@ class Knob(wx.Panel):
         if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
     
     def OnTextKeyUp(self, evt): #<wx._core.KeyEvent>
-        key = evt.GetKeyCode()
-        if key == wx.WXK_DOWN: return self.shift(evt, 0) # only up/down updates (bit=0)
-        if key == wx.WXK_UP: return self.shift(evt, 0)
+        ## key = evt.GetKeyCode()
+        ## if key == wx.WXK_DOWN: return self.shift(evt, 0) # only up/down updates (bit=0)
+        ## if key == wx.WXK_UP: return self.shift(evt, 0)
         evt.Skip()
     
     def OnTextKeyDown(self, evt): #<wx._core.KeyEvent>
