@@ -7,6 +7,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from subprocess import Popen, PIPE
 import warnings
 import tempfile
+import shutil
 import sys
 import os
 import wx
@@ -138,7 +139,6 @@ class GnuplotFrame(mwx.Frame):
     Attributes:
         gnuplot : single class object
     """
-    ## gnuplot = None
     gnuplot = property(lambda self: self.__gplot)
     
     def __init__(self, *args, **kwargs):
@@ -159,36 +159,42 @@ class GnuplotFrame(mwx.Frame):
         ]
         self.menubar["Gnuplot"] = [
             (mwx.ID_(80), "&Gnuplot setting\tCtrl-g", "Edit settings",
-                lambda v: self.__gplot.edit(),
-                lambda v: v.Enable(self.__gplot is not None)),
+                lambda v: self.edit_gnuplot()),
                 
             (mwx.ID_(81), "&Reset gnuplot\tCtrl-r", "Reset setting",
-                lambda v: (self.__gplot.reset(),
-                           self.__gplot("replot")),
-                lambda v: v.Enable(self.__gplot is not None)),
+                lambda v: self.reset_gnuplot()),
             (),
             (mwx.ID_(82), "Restart gnuplot", "Restart process",
-                lambda v: (self.__gplot.restart(),
-                           self.__gplot("replot")),
-                lambda v: v.Enable(self.__gplot is not None)),
+                lambda v: self.restart_gnuplot()),
         ]
         self.menubar.reset()
+    
+    def edit_gnuplot(self):
+        self.gnuplot.edit()
+    
+    def reset_gnuplot(self):
+        self.gnuplot.reset()
+    
+    def restart_gnuplot(self):
+        self.gnuplot.restart()
     
     def Destroy(self):
         del self.__gplot
         return mwx.Frame.Destroy(self)
 
 
-Gplot = Gnuplot # for backward compatibility
-GplotFrame = GnuplotFrame # for backward compatibility
+## for backward compatibility
+## Gplot = Gnuplot
+## GplotFrame = GnuplotFrame
+
+
+if __name__ == "__main__":
+    Gnuplot.PGNUPLOT = "pgnuplot"
+    Gnuplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
 
 
 if __name__ == "__main__":
     from numpy import pi,sin,cos
-    
-    Gnuplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
-    ## Gnuplot.init_path(r"C:\usr\local\gnuplot\bin")
-    ## Gnuplot.PGNUPLOT = "pgnuplot"
     
     gp = Gnuplot(None, debug=1)
     X = np.arange(0,2,0.1) * pi
@@ -213,13 +219,11 @@ if __name__ == "__main__":
     
     print("\n>>> ファイル出力＋プロット")
     data = np.vstack((X, sin(X), cos(X)))
-    ## np.savetxt(gp.tempfile, data.T, fmt='%f')
-    
-    with open(gp.tempfile, 'w') as o:
-        for v in data.T:
-            print('\t'.join("{:g}".format(x) for x in v), file=o)
-            
-    gp("f = '{}'".format(o.name)) # set local parameter
+    np.savetxt(gp.tempfile, data.T, fmt='%f')
+    ## with open(gp.tempfile, 'w') as o:
+    ##     for v in data.T:
+    ##         print('\t'.join("{:g}".format(x) for x in v), file=o)
+    gp("f = '{}'".format(gp.tempfile)) # set local parameter
     gp.plot(
         "f using 1:2 w lp",
         "f using 1:3 w lp",
@@ -228,9 +232,6 @@ if __name__ == "__main__":
 
 
 if __name__ == "__main__":
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
-    
     from numpy import pi
     from mwx.controls import LParam
     
@@ -249,11 +250,31 @@ if __name__ == "__main__":
             self.panel.layout(self.params,
                 row=1, expand=1, type='slider', cw=-1, lw=32)
             
+            self.reset_gnuplot()
+        
+        def reset_gnuplot(self):
+            self.gnuplot.reset()
+            self.gnuplot("set yrange [-1:1]")
+        
         def plot(self, par):
             a, k, p = [x.value for x in self.params]
+            x = np.arange(0, 10, 0.01)
+            y = a * np.sin(k * (x- p))
+            data = np.vstack((x, y))
             try:
-                self.gnuplot("plot [:] [-1:1] "
-                             "{:f} * sin({:f} * (x - {:f}))".format(a,k,p))
+                ## self.gnuplot("plot [:] [-1:1] "
+                ##              "{:f} * sin({:f} * (x - {:f}))".format(a,k,p))
+                
+                ## self.gnuplot.plot(x, y, "title 'y' w l lt 1")
+                
+                temp = self.gnuplot.tempfile
+                np.savetxt(temp, data.T)
+                if 1: # 連続書き込み時の読み取りをできるだけ同期する
+                    dst = r"C:\temp\mgplt-temp.out"
+                    shutil.copyfile(temp, dst)
+                else:
+                    dst = temp
+                self.gnuplot.plot("'{}' using 1:2 title 'y' w l lt 1".format(dst))
             except Exception as e:
                 print(e)
                 self.statusbar.write("gnuplot fail, try to restart.")
