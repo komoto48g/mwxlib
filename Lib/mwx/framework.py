@@ -3781,6 +3781,18 @@ except ImportError as e:
     pass
 
 
+## Monkey-patch for wx.stc
+try:
+    def _SetSelection(self, from_, to_):
+        self.Anchor = from_
+        self.CurrentPos = to_
+
+    stc.StyledTextCtrl.SetSelection = _SetSelection
+    del _SetSelection
+except Exception:
+    pass
+
+
 def profile(obj, *args, **kwargs):
     from profile import Profile
     pr = Profile()

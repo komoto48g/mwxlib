@@ -229,7 +229,7 @@ def where(obj):
         src, lineno = inspect.getsourcelines(obj)
         if not lineno:
             return filename
-        return "{}:{}:{}".format(filename, lineno, src[0])
+        return "{}:{}:{}".format(filename, lineno, src[0].rstrip())
     try:
         try:
             return _where(obj) # module, class, method, function, frame, or code
