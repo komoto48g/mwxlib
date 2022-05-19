@@ -345,13 +345,8 @@ class Knob(wx.Panel):
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
             self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
             self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextFocusKill)
-            
-            if type[-1] == '*':
-                self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
-            else:
-                self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKey)
-                self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
-            
+            self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
+            self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
             self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             self.text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         else:
@@ -460,11 +455,11 @@ class Knob(wx.Panel):
             self.text.Refresh()
     
     def shift(self, evt, bit, backcall=True):
-        if evt.ShiftDown():   bit *= 2
-        if evt.ControlDown(): bit *= 16
-        if evt.AltDown():     bit *= 256
-        i = self.ctrl.GetValue()
-        self.__par.index = i + int(bit)
+        if bit:
+            if evt.ShiftDown():   bit *= 2
+            if evt.ControlDown(): bit *= 16
+            if evt.AltDown():     bit *= 256
+        self.__par.index = self.ctrl.GetValue() + bit
         self.__par.reset(self.__par.value, backcall)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
@@ -490,12 +485,6 @@ class Knob(wx.Panel):
         i = ls.index(self)
         if key == wx.WXK_DOWN: return any(focus(c) for c in ls[i+1:])
         if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
-    
-    def OnTextKey(self, evt): #<wx._core.KeyEvent>
-        key = evt.GetKeyCode()
-        if key == wx.WXK_DOWN: return self.shift(evt, -1, backcall=None)
-        if key == wx.WXK_UP: return self.shift(evt, 1, backcall=None)
-        evt.Skip()
     
     def OnTextKeyUp(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
