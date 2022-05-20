@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.5"
+__version__ = "0.58.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import partial
@@ -1553,7 +1553,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
         ## self.ViewWhiteSpace = True
         self.UseTabs = False
         self.TabWidth = 4
-        self.WrapMode = 1
+        self.WrapMode = 0
         self.WrapIndentMode = 1
         self.IndentationGuides = 2
         
