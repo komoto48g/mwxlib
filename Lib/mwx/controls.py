@@ -25,15 +25,16 @@ class Param(object):
     """Standard Parameter
     
     Args:
+           name : label
+          range : range
+          value : std_value (default is None)
             fmt : text formatter or format:str (default is '%g')
-                  `hex` specifies hexadecimal format/eval
+                  `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
             tip : tooltip:str shown on the associated knobs
     
     Attributes:
-           name : label
-          range : range [min:max:step]
         min,max : lower and upper limits
       std_value : standard value (default None)
           value : current value := std_value + offset
@@ -227,9 +228,32 @@ class Param(object):
 
 class LParam(Param):
     """Linear Parameter
-    """
-    __doc__ = Param.__doc__
     
+    Args:
+           name : label
+          range : range [min:max:step]
+          value : std_value (default is None)
+            fmt : text formatter or format:str (default is '%g')
+                  `hex` specifies hexadecimal format
+        handler : called when control changed
+        updater : called when check changed
+            tip : tooltip:str shown on the associated knobs
+    
+    Attributes:
+        min,max : lower and upper limits
+      std_value : standard value (default None)
+          value : current value := std_value + offset
+         offset : if std_value is None, this is the same as value.
+          knobs : knob list
+          index : knob index -> value
+          check : knob check (undefined)
+            tip : doc:str also shown as a tooltip
+       callback : single state machine that handles following events:
+                control -> when index changed by knobs or reset (call handler)
+                check -> when check ticks on/off (call updater)
+                overflow -> when value overflows
+                underflow -> when value underflows
+    """
     min = property(lambda self: self.__min)
     max = property(lambda self: self.__max)
     step = property(lambda self: self.__step)
@@ -253,6 +277,8 @@ class LParam(Param):
     
     @property
     def index(self):
+        if self.value in (nan, inf):
+            return -1
         return int(round((self.value - self.min) / self.step))
     
     @index.setter
@@ -273,8 +299,8 @@ class Knob(wx.Panel):
     [Mbutton] resets to the std. value if it exists.
     
     Args:
-            par : Param <object>
-           type : ctrl type (slider[*], [hv]spin, choice, and default None)
+          param : object <Param> or <LParam>
+           type : ctrl type (slider[*], [hv]spin, choice, None)
           style : style of label
                   None -> static text (default)
                   chkbox -> label with check box
@@ -298,11 +324,11 @@ class Knob(wx.Panel):
         self.update_range()
         self.update_ctrl()
     
-    def __init__(self, parent, par, type='slider',
+    def __init__(self, parent, param, type='slider',
                  style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22):
         wx.Panel.__init__(self, parent)
         self.__bit = 1
-        self.__par = par
+        self.__par = param
         self.__par.knobs.append(self) # パラメータの関連付けを行う
         
         if type is None:
@@ -342,7 +368,7 @@ class Knob(wx.Panel):
         if editable:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
             self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
-            self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextFocusKill)
+            self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextExit)
             self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
             self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
             self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
@@ -489,9 +515,6 @@ class Knob(wx.Panel):
         if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
     
     def OnTextKeyUp(self, evt): #<wx._core.KeyEvent>
-        ## key = evt.GetKeyCode()
-        ## if key == wx.WXK_DOWN: return self.shift(evt, 0) # only up/down updates (bit=0)
-        ## if key == wx.WXK_UP: return self.shift(evt, 0)
         evt.Skip()
     
     def OnTextKeyDown(self, evt): #<wx._core.KeyEvent>
@@ -507,10 +530,7 @@ class Knob(wx.Panel):
         x = self.text.Value.strip()
         self.__par.reset(x)
     
-    def OnTextFocusKill(self, evt): #<wx._core.FocusEvent>
-        if self.__par.value in (nan, inf):
-            evt.Skip()
-            return
+    def OnTextExit(self, evt): #<wx._core.FocusEvent>
         x = self.text.Value.strip()
         if x != str(self.__par):
             try:
@@ -518,9 +538,6 @@ class Knob(wx.Panel):
             except Exception:
                 self.text.SetValue(str(self.__par))
                 self.__par.reset(self.__par.value, backcall=None) # restore value
-        else:
-            self.text.SetValue(x)
-            self.set_textcolour('white')
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
@@ -645,18 +662,18 @@ class ControlPanel(scrolled.ScrolledPanel):
                **kwargs):
         """Do layout (cf. Layout) using mwx.pack
         
-        title : box header string (default is None - no box)
-         objs : list of Params, wx.Objects, tuple of sizing, or None
-          row : number of row to arange widgets
-         show : fold or unfold the boxed group
-       expand : (0) fixed size
-                (1) to expand horizontally
-                (2) to exapnd horizontally and vertically
-       border : size of outline border
-  [hv]spacing : spacing among packed objs inside the group
-        align : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
-          fix : tell sizer to fix the minimum layout
-     **kwargs : extra keyword arguments given for Knob
+          title : box header string (default is None - no box)
+           objs : list of Params, wx.Objects, tuple of sizing, or None
+            row : number of row to arange widgets
+           show : fold or unfold the boxed group
+         expand : (0) fixed size
+                  (1) to expand horizontally
+                  (2) to exapnd horizontally and vertically
+         border : size of outline border
+    [hv]spacing : spacing among packed objs inside the group
+          align : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
+            fix : tell sizer to fix the minimum layout
+       **kwargs : extra keyword arguments given for Knob
         """
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
         assert not isinstance(objs, str)
@@ -1229,20 +1246,15 @@ if __name__ == "__main__":
                   'underflow' : [lambda p: print("underflow", p)],
                 })
             
-            ## @self.K.bind
-            ## @self.A.bind
-            ## def p(item):
-            ##     print(item)
-            
             self.layout(
                 self.params, title="V1",
                 row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
-                type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22, editable=1
+                type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22,
             )
             ## self.layout(
             ##     self.params, title="V2",
             ##     row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-            ##     type='spin', style='button', lw=-1, tw=60, cw=-1, editable=0,
+            ##     type='spin', style='button', lw=-1, tw=60, cw=-1,
             ## )
             ## self.layout((
             ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
