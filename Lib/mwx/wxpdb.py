@@ -14,6 +14,7 @@ import re
 import inspect
 import importlib
 import traceback
+import threading
 import wx
 try:
     from utilus import FSM, where
@@ -165,6 +166,7 @@ class Debugger(Pdb):
             self.__breakpoint = bp
             self.reset()
             sys.settrace(self.trace_dispatch)
+            threading.settrace(self.trace_dispatch)
             self.handler('trace_begin', bp)
     
     def unwatch(self):
@@ -173,6 +175,7 @@ class Debugger(Pdb):
             bp = self.__breakpoint
             self.__breakpoint = None
             sys.settrace(None)
+            threading.settrace(None)
             self.handler('trace_end', bp)
     
     ## --------------------------------
@@ -181,7 +184,7 @@ class Debugger(Pdb):
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
-            wx.MessageBox("Not callable object\n\n"
+            wx.MessageBox("Not a callable object\n\n"
                           "Unable to debug {!r}".format(target))
             return
         if self.busy:
@@ -216,6 +219,7 @@ class Debugger(Pdb):
         code = frame.f_code
         filename = code.co_filename
         firstlineno = code.co_firstlineno
+        lineno = frame.f_lineno
         m = re.match("<frozen (.*)>", filename)
         if m:
             module = importlib.import_module(m.group(1))
@@ -226,17 +230,13 @@ class Debugger(Pdb):
         else:
             self.editor = self.parent.Log
             self.editor.target = filename
-            
             if not self.code or self.code.co_filename != filename:
                 self.editor.load_cache(filename)
         
         if self.code != code:
             self.editor.mark = self.editor.PositionFromLine(firstlineno - 1)
-        
-        lineno = frame.f_lineno
         self.editor.linemark = lineno - 1 # (->) pointer:marker
         self.editor.goto_line_marker()
-        
         self.code = code
         self.target = filename
     
@@ -273,9 +273,9 @@ class Debugger(Pdb):
         (override) Watch the breakpoint
         """
         if self.__breakpoint:
+            target, line = self.__breakpoint
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
-            target, line = self.__breakpoint
             if target == filename:
                 if line <= lineno-1:
                     self.__indents = 2
@@ -289,11 +289,11 @@ class Debugger(Pdb):
         (override) Watch the breakpoint
         """
         if self.__breakpoint:
-            code = frame.f_code
-            filename = code.co_filename
-            lineno = frame.f_lineno
             target, line = self.__breakpoint
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
             if target == filename:
+                code = frame.f_code
                 src, lineno = inspect.getsourcelines(code)
                 if line == lineno-1:
                     self.handler('debug_begin', frame)
@@ -404,9 +404,10 @@ class Debugger(Pdb):
 
 
 if __name__ == "__main__":
-    import mwx
+    from mwx import Frame
+    
     app = wx.App()
-    frm = mwx.Frame(None)
+    frm = Frame(None)
     if 1:
         self = frm.shellframe
         shell = frm.shellframe.rootshell
