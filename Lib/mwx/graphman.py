@@ -38,7 +38,7 @@ from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
-from importlib import reload
+from importlib import reload, import_module
 
 _F = mwx.funcall
 
@@ -213,7 +213,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     histogram = property(lambda self: self.__parent.histogram)
     selected_view = property(lambda self: self.__parent.selected_view)
     
-    thread_type = Thread
+    ## thread_type = Thread
     thread = None
     
     @property
@@ -1010,7 +1010,7 @@ class Frame(mwx.Frame):
             if name in sys.modules:
                 module = reload(sys.modules[name])
             else:
-                module = __import__(name, fromlist=[''])
+                module = import_module(name)
         except Exception:
             traceback.print_exc()
             print("- Unable to load {!r}".format(root))

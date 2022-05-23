@@ -12,9 +12,9 @@ import pdb
 import sys
 import re
 import inspect
-import importlib
 import traceback
 import threading
+from importlib import import_module
 import wx
 try:
     from utilus import FSM, where
@@ -222,7 +222,7 @@ class Debugger(Pdb):
         lineno = frame.f_lineno
         m = re.match("<frozen (.*)>", filename)
         if m:
-            module = importlib.import_module(m.group(1))
+            module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
         if filename == "<scratch>":

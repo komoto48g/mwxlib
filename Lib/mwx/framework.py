@@ -4,11 +4,10 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.6"
+__version__ = "0.58.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
-from functools import partial
-from functools import wraps
+from functools import wraps, partial
 import traceback
 import datetime
 import keyword
