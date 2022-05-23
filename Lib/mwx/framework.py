@@ -833,6 +833,7 @@ class ShellFrame(MiniFrame):
             0 : {
                     '* pressed' : (0, skip, fork), # -> debugger
                    'f1 pressed' : (0, self.About),
+                   'f2 pressed' : (0, lambda v: self.load(self.current_shell.target)),
                   'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1079,8 +1080,12 @@ class ShellFrame(MiniFrame):
             lineno = 0
         return self.Log.load(filename, lineno, focus=0)
     
+    @postcall
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, wx.Object) or obj is None:
+            if args or kwargs:
+                self.message("- args:{} and kwargs:{} were given,"
+                             " but ignored for object monitoring.")
             self.monitor.watch(obj)
             self.console.SetFocus() # focus orginal-window
             if obj:
@@ -1089,22 +1094,28 @@ class ShellFrame(MiniFrame):
                 self.show_page(self.linfo, focus=0)
             self.show_page(self.monitor, focus=0)
         elif callable(obj):
-            def _trace():
+            try:
                 shell = self.debugger.shell
                 self.debugger.shell = self.current_shell
                 self.debugger.debug(obj, *args, **kwargs)
+            finally:
                 self.debugger.shell = shell
-            wx.CallAfter(_trace)
         else:
             print("- cannot debug {!r}".format(obj))
             print("  the target must be callable or wx.Object.")
+            wx.MessageBox("Not a callable object\n\n"
+                          "Unable to debug {!r}".format(obj))
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
         shell = self.debugger.shell
         shell.write("#<< Enter [n]ext to continue.\n", -1)
-        shell.prompt()
-        shell.SetFocus()
+        def _continue():
+            if wx.IsBusy():
+                wx.EndBusyCursor()
+            shell.SetFocus()
+            shell.prompt()
+        wx.CallAfter(_continue)
         self.Show()
         self.show_page(self.linfo, focus=0)
     
@@ -1133,7 +1144,6 @@ class ShellFrame(MiniFrame):
         shell = self.debugger.shell
         shell.write("#>> Debugger closed successfully.\n", -1)
         shell.prompt()
-        ## self.add_history("end\n")
         self.add_history("< {}\n".format(where(frame)))
         self.linfo.unwatch()
         self.ginfo.unwatch()
@@ -1256,10 +1266,12 @@ class ShellFrame(MiniFrame):
     ## Attributes of the Console
     ## --------------------------------
     
-    def all_pages(self):
+    def all_pages(self, type=None):
         for nb in (self.console, self.ghost):
             for j in range(nb.PageCount):
-                yield nb.GetPage(j)
+                win = nb.GetPage(j)
+                if type is None or isinstance(win, type):
+                    yield win
     
     @property
     def current_editor(self):
@@ -2951,41 +2963,41 @@ class Nautilus(Shell, EditorInterface):
         
         lhs = ''
         for i, c in enumerate(tokens):
-            rs = tokens[i+1:]
+            rest = tokens[i+1:]
             
-            if c == '@' and not lhs and '\n' in rs: # @dcor
+            if c == '@' and not lhs and '\n' in rest: # @dcor
                 pass
             elif c == '@':
                 f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
-                rhs = _eats(rs, sep2).strip()
+                rhs = _eats(rest, sep2).strip()
                 rhs = re.sub(r"^(\(.*\))$",     # x@(y1,...,yn)
                              r"partial\1", rhs) # --> partial(y1,...,yn)(x)
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
             
             if c == '`':
                 f = "{rhs} = {lhs}"
                 lhs = lhs.strip() or '_'
-                rhs = _eats(rs, sep1).strip()
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rs)
+                rhs = _eats(rest, sep1).strip()
+                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
             
             if c == '?':
                 head, sep, hint = lhs.rpartition('.')
-                cc, pred = re.search(r"(\?+)\s*(.*)", c + ''.join(rs)).groups()
+                cc, pred = re.search(r"(\?+)\s*(.*)", c + ''.join(rest)).groups()
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=locals())".format(
                         head, hint.strip(), len(cc)<2, pred or None))
             
             if c == ';':
-                return lhs + c + self.magic_interpret(rs)
+                return lhs + c + self.magic_interpret(rest)
             
             if c == sys.ps2.strip():
-                c += ''.join(_popiter(rs, "[ \t\r\n]")) # feed
-                return lhs + c + self.magic_interpret(rs)
+                rhs = ''.join(_popiter(rest, "[ \t\r\n]")) # feed
+                return lhs + c + rhs + self.magic_interpret(rest)
             
             if c.startswith('#'):
-                c += ''.join(_popiter(rs, "[^\r\n]")) # skip comment
-                return lhs + c + self.magic_interpret(rs)
+                rhs = ''.join(_popiter(rest, "[^\r\n]")) # skip comment
+                return lhs + c + rhs + self.magic_interpret(rest)
             
             lhs += c # store in lhs; no more processing
         return lhs
@@ -3181,10 +3193,11 @@ class Nautilus(Shell, EditorInterface):
             ## shell.__init__ で定義するアトリビュートも存在しない
             pass
     
-    def regulate_cmd(self, text, lf='\n', eol=None):
+    def regulate_cmd(self, text, eol=None):
         if eol:
             text = self.fixLineEndings(text)
         text = self.lstripPrompt(text)
+        lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
