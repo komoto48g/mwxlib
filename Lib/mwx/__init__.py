@@ -30,14 +30,11 @@ from .framework import Frame, MiniFrame, ShellFrame
 ## from .mgplt import Gnuplot
 ## from .mgplt import GnuplotFrame
 
-## mwx.reload
 from importlib import reload
-
-import traceback
 import wx
 
 
-def deb(target=None, app=None, startup=None, locals=None, **kwargs):
+def deb(target=None, app=None, locals=None, **kwargs):
     """Dive into the process from your diving point
     for debug, break, and inspection of the target
     
@@ -49,8 +46,6 @@ def deb(target=None, app=None, startup=None, locals=None, **kwargs):
                   If app is True, neither the app nor the mainloop will be created.
                   If app is given and not started the mainloop yet,
                   the app will enter the mainloop herein.
-        startup : A callable to configure the shell
-                  Called after construction of the shell
          locals : Additional context of the shell
        **kwargs : Nautilus arguments
             introText : introductory of the shell
@@ -72,14 +67,6 @@ def deb(target=None, app=None, startup=None, locals=None, **kwargs):
     shell.SetFocus()
     if locals:
         shell.locals.update(locals)
-    if startup:
-        try:
-            startup(shell)
-            frame.handler.bind('add_page', startup)
-            shell.message("The startup completed successfully.")
-        except Exception as e:
-            traceback.print_exc()
-            shell.message("- Failed to startup: {!r}".format(e))
     if isinstance(app, wx.App) and not app.GetMainLoop():
         app.MainLoop()
     return frame
