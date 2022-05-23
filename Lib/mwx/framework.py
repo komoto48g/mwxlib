@@ -951,7 +951,7 @@ class ShellFrame(MiniFrame):
     def Init(self):
         self.Scratch.LoadFile(self.SCRATCH_FILE)
         self.Log.LoadFile(self.LOGGING_FILE)
-        self.add_history("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
+        self.add_history("#! Opened: <{}>".format(datetime.datetime.now()))
         self.load_session()
     
     def Destroy(self):
@@ -1117,7 +1117,7 @@ class ShellFrame(MiniFrame):
         wx.CallAfter(_continue)
         self.Show()
         self.show_page(self.linfo, focus=0)
-        self.add_history("<-- Beginning of debugger\n")
+        self.add_history("<-- Beginning of debugger")
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
@@ -1135,7 +1135,7 @@ class ShellFrame(MiniFrame):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         command = shell.cmdline
-        self.add_history(command, prefix=' '*4)
+        self.add_history(command, prefix=' '*4, suffix=None)
         ## The cmdline ends with linesep (see comment of addHistory)
         ## logging each line in case of crashing
         with open(self.HISTORY_FILE, 'a', newline='') as o: # PY3
@@ -1146,7 +1146,7 @@ class ShellFrame(MiniFrame):
         shell = self.debugger.shell
         shell.write("#>> Debugger closed successfully.\n", -1)
         shell.prompt()
-        self.add_history("--> End of debugger\n")
+        self.add_history("--> End of debugger")
         self.linfo.unwatch()
         self.ginfo.unwatch()
         del shell.locals
@@ -1193,8 +1193,13 @@ class ShellFrame(MiniFrame):
         if show is not None:
             self.show_page(self.Help, show, focus)
     
-    def add_history(self, command, noerr=None, prefix=None):
-        """Add command:text to the history buffer"""
+    def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
+        """Add command:str to the history buffer
+        
+        noerr: Add marker, otherwise None if no marker is needed.
+        prefix: Add prefix:str at the beginning of each line.
+        suffix: Add linesep at the end of the command
+        """
         if not command or command.isspace():
             return
         
@@ -1204,6 +1209,8 @@ class ShellFrame(MiniFrame):
         ln = ed.cline
         if prefix:
             command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
+        if suffix:
+            command += suffix
         ed.write(command)
         if noerr is not None:
             if noerr:
@@ -3181,7 +3188,7 @@ class Nautilus(Shell, EditorInterface):
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
-            self.parent.handler('add_history', command + os.linesep, noerr)
+            self.parent.handler('add_history', command, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
             ## shell.__init__ で定義するアトリビュートも存在しない
