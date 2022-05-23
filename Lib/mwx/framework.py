@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.7"
+__version__ = "0.58.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -186,7 +186,7 @@ class CtrlInterface(object):
     
     def __init__(self):
         self.__key = ''
-        self.__handler = FSM({None:{}})
+        self.__handler = FSM({None:{}, 0:{}}, default=0)
         
         ## self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
@@ -1117,6 +1117,7 @@ class ShellFrame(MiniFrame):
         wx.CallAfter(_continue)
         self.Show()
         self.show_page(self.linfo, focus=0)
+        self.add_history("<-- Beginning of debugger\n")
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
@@ -1131,19 +1132,21 @@ class ShellFrame(MiniFrame):
             self.linfo.watch(ls)
         self.SetTitleWindow(frame)
         self.show_page(self.debugger.editor, focus=0)
-        self.add_history(shell.cmdline, prefix=' '*4)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
-        ## logging in case of crashing
+        command = shell.cmdline
+        self.add_history(command, prefix=' '*4)
+        ## The cmdline ends with linesep (see comment of addHistory)
+        ## logging each line in case of crashing
         with open(self.HISTORY_FILE, 'a', newline='') as o: # PY3
-            o.write(shell.cmdline)
+            o.write(command)
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
         shell = self.debugger.shell
         shell.write("#>> Debugger closed successfully.\n", -1)
         shell.prompt()
-        self.add_history("< {}\n".format(where(frame)))
+        self.add_history("--> End of debugger\n")
         self.linfo.unwatch()
         self.ginfo.unwatch()
         del shell.locals
@@ -1382,10 +1385,8 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        def echo(v):
-            keymap = self.handler.previous_state
-            self.message("{} {}".format(keymap, v.key))
-            v.Skip()
+        self.make_keymap('C-x')
+        self.make_keymap('C-c')
         
         self.handler.update({ # DNA<Editor>
             -1 : {  # original action of the Editor
@@ -1435,21 +1436,18 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
              'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
-                    '* pressed' : (0, echo),
-                    '[ pressed' : (0, echo, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, echo, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
-                    '@ pressed' : (0, echo, _F(self.goto_marker)),
-                  'S-@ pressed' : (0, echo, _F(self.goto_line_marker)),
+                    '* pressed' : (0, skip),
+                    '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
+                    '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+                    '@ pressed' : (0, skip, _F(self.goto_marker)),
+                  'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
             },
             'C-c' : {
-                    '* pressed' : (0, echo),
-                  'C-c pressed' : (0, echo, _F(self.goto_matched_paren)),
+                    '* pressed' : (0, skip),
+                  'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
             },
         })
         self.handler.clear(0)
-        
-        self.make_keymap('C-x')
-        self.make_keymap('C-c')
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -2840,11 +2838,9 @@ class Nautilus(Shell, EditorInterface):
                 self.prompt()
                 evt.Skip()
             return
-        
         if self.AutoCompActive(): # skip to auto completion
             evt.Skip()
             return
-        
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -2855,9 +2851,8 @@ class Nautilus(Shell, EditorInterface):
             evt.Skip()
             return
         
-        tokens = ut.split_words(text)
-        
         ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
+        tokens = ut.split_words(text)
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
