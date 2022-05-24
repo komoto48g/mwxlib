@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.8"
+__version__ = "0.58.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2973,8 +2973,12 @@ class Nautilus(Shell, EditorInterface):
                 f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rest, sep2).strip()
-                rhs = re.sub(r"^(\(.*\))$",     # x@(y1,...,yn)
-                             r"partial\1", rhs) # --> partial(y1,...,yn)(x)
+                if rhs in ("debug", "profile"):
+                    lhs = re.sub(r"([\w.]+)\((.*)\)", # func(a,b,c) @debug
+                                 r"\1, \2", lhs)      # --> func,a,b,c @debug
+                else:
+                    rhs = re.sub(r"^\((.*)\)",        # @(y1,,,yn)
+                                 r"partial(\1)", rhs) # --> partial(y1,,,yn)
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
             
             if c == '`':
