@@ -68,10 +68,6 @@ class Thread(object):
         The event.wait blocks until the internal flag is True when it is False
             and returns immediately when it is True.
     """
-    ## `is_*` to be deprecated; Keep them for backward-compatibility.
-    is_active = property(lambda self: self.active)
-    is_running = property(lambda self: self.running)
-    
     def __init__(self, owner=None, **kwargs):
         self.owner = owner
         self.props = kwargs
@@ -1263,6 +1259,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save index file
     ## --------------------------------
+    ATTRIBUTESFILE = "results.index"
     
     def import_index(self, f=None, view=None):
         """Load frames :ref to the Index file
@@ -1345,7 +1342,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save frames and attributes 
     ## --------------------------------
-    ATTRIBUTESFILE = "results.index"
     
     @classmethod
     def read_attributes(self, f):
@@ -1362,8 +1358,10 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
-                path = os.path.join(savedir, name)
-                if not os.path.exists(path): # check & pop missing files
+                path = os.path.join(savedir, name)  # search by rel-path (dir + name)
+                if not os.path.exists(path):        # search by abs-path (pathname)
+                    path = attr.get('pathname')
+                if not os.path.exists(path):        # check & pop missing files
                     res.pop(name)
                     mis.update({name:attr})
                 else:
