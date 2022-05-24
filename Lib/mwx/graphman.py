@@ -1259,6 +1259,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save index file
     ## --------------------------------
+    ATTRIBUTESFILE = "results.index"
     
     def import_index(self, f=None, view=None):
         """Load frames :ref to the Index file
@@ -1341,7 +1342,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save frames and attributes 
     ## --------------------------------
-    ATTRIBUTESFILE = "results.index"
     
     @classmethod
     def read_attributes(self, f):
@@ -1358,8 +1358,10 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
-                path = os.path.join(savedir, name)
-                if not os.path.exists(path): # check & pop missing files
+                path = os.path.join(savedir, name)  # search by rel-path (dir + name)
+                if not os.path.exists(path):        # search by abs-path (pathname)
+                    path = attr.get('pathname')
+                if not os.path.exists(path):        # check & pop missing files
                     res.pop(name)
                     mis.update({name:attr})
                 else:
