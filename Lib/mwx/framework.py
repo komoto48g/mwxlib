@@ -326,12 +326,20 @@ class KeyCtrlInterfaceMixin(object):
             self.make_keymap(map)
         event = key + ' pressed'
         if action:
-            f = funcall(action, *args, **kwargs)
+            f = self.interactive_call(action, *args, **kwargs)
             self.handler.update({map: {event: [state, f]}})
             return action
         else:
             self.handler.update({map: {event: [state]}})
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
+    
+    def interactive_call(self, action, *args, **kwargs):
+        f = funcall(action, *args, **kwargs)
+        @wraps(f)
+        def _echo(*v):
+            self.message(f.__name__)
+            return f(*v)
+        return _echo
 
 
 ## --------------------------------
@@ -1359,26 +1367,19 @@ class ShellFrame(MiniFrame):
 
 def editable(f):
     @wraps(f)
-    def _f(self, *args, **kwargs):
+    def _f(self):
         if self.CanEdit():
-            return f(self, *args, **kwargs)
+            return f(self)
     return _f
 
 
-def interactive(f=None, prompt="Enter value", locals=None):
+def prompt1(f, message="Enter value", type=str):
     """Get response from the user using a dialog box."""
-    if f is None:
-        return lambda f: interactive(f, prompt)
     @wraps(f)
-    def _f(*args, **kwargs):
-        with wx.TextEntryDialog(None,
-            prompt, caption=f.__name__) as dlg:
+    def _f(*v):
+        with wx.TextEntryDialog(None, message, f.__name__) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
-                try:
-                    value = eval(dlg.Value, locals)
-                except Exception:
-                    value = dlg.Value
-                return f(value, *args, **kwargs)
+                return f(type(dlg.Value))
     return funcall(_f)
 
 
@@ -1419,7 +1420,7 @@ class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
-                  'M-g pressed' : (0, interactive(self.goto_line, "Line to goto:")),
+                  'M-g pressed' : (0, prompt1(self.goto_line, "Line to goto:", int)),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
