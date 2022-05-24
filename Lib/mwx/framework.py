@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.58.9"
+__version__ = "0.59.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -179,8 +179,88 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
-class CtrlInterface(object):
-    """Mouse/Key event interface class
+class KeyCtrlInterfaceMixin(object):
+    """Keymap interface mixin
+    
+    keymap : event key name that excluds 'pressed'
+        global-map : 0 (default)
+         ctl-x-map : 'C-x'
+          spec-map : 'C-c'
+           esc-map : 'escape'
+    """
+    def make_keymap(self, keymap):
+        """Make a basis of extension map in the handler.
+        """
+        def _Pass(v):
+            self.message("{} {}".format(keymap, v.key))
+        _Pass.__name__ = str('pass')
+        
+        state = self.handler.default_state
+        event = keymap + ' pressed'
+        
+        assert state is not None, "Don't make keymap for None:state."
+        
+        self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
+            state : {
+                          event : [ keymap, self.prefix_command_hook ],
+            },
+            keymap : {
+                         'quit' : [ state, ],
+                    '* pressed' : [ state, _Pass ],
+                 '*alt pressed' : [ keymap, _Pass ],
+                '*ctrl pressed' : [ keymap, _Pass ],
+               '*shift pressed' : [ keymap, _Pass ],
+             '*[LR]win pressed' : [ keymap, _Pass ],
+            },
+        })
+    
+    def prefix_command_hook(self, evt):
+        win = wx.Window.FindFocus()
+        if isinstance(win, wx.TextEntry) and win.StringSelection\
+        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
+            ## or any other of pre-selection-p?
+            self.handler('quit', evt)
+        else:
+            self.message(evt.key + '-')
+        evt.Skip()
+    
+    def define_key(self, keymap, action=None, *args, **kwargs):
+        """Define [map key] action at default state
+        
+        If no action, it invalidates the key and returns @decor(binder).
+        key must be in C-M-S order (ctrl + alt(meta) + shift).
+        
+        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
+        """
+        state = self.handler.default_state
+        map, sep, key = regulate_key(keymap).rpartition(' ')
+        map = map.strip()
+        if not map:
+            map = state
+        elif map == '*':
+            map = state = None
+        elif map not in self.handler: # make spec keymap
+            self.make_keymap(map)
+        event = key + ' pressed'
+        if action:
+            f = self.interactive_call(action, *args, **kwargs)
+            self.handler.update({map: {event: [state, f]}})
+            return action
+        else:
+            self.handler.update({map: {event: [state]}})
+            return lambda f: self.define_key(keymap, f, *args, **kwargs)
+    
+    def interactive_call(self, action, *args, **kwargs):
+        f = funcall(action, *args, **kwargs)
+        @wraps(f)
+        def _echo(*v):
+            self.message(f.__name__)
+            return f(*v)
+        return _echo
+
+
+class CtrlInterface(KeyCtrlInterfaceMixin):
+    """Mouse/Key event interface mixin
     """
     handler = property(lambda self: self.__handler)
     
@@ -260,86 +340,6 @@ class CtrlInterface(object):
     
     def _window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
         self.handler(event, evt) or evt.Skip()
-
-
-class KeyCtrlInterfaceMixin(object):
-    """Keymap interface mixin
-    
-    keymap : event key name that excluds 'pressed'
-        global-map : 0 (default)
-         ctl-x-map : 'C-x'
-          spec-map : 'C-c'
-           esc-map : 'escape'
-    """
-    def make_keymap(self, keymap):
-        """Make a basis of extension map in the handler.
-        """
-        def _Pass(v):
-            self.message("{} {}".format(keymap, v.key))
-        _Pass.__name__ = str('pass')
-        
-        state = self.handler.default_state
-        event = keymap + ' pressed'
-        
-        assert state is not None, "Don't make keymap for None:state."
-        
-        self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
-            state : {
-                          event : [ keymap, self.prefix_command_hook ],
-            },
-            keymap : {
-                         'quit' : [ state, ],
-                    '* pressed' : [ state, _Pass ],
-                 '*alt pressed' : [ keymap, _Pass ],
-                '*ctrl pressed' : [ keymap, _Pass ],
-               '*shift pressed' : [ keymap, _Pass ],
-             '*[LR]win pressed' : [ keymap, _Pass ],
-            },
-        })
-    
-    def prefix_command_hook(self, evt):
-        win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry) and win.StringSelection\
-        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
-            ## or any other of pre-selection-p?
-            self.handler('quit', evt)
-        else:
-            self.message(evt.key + '-')
-        evt.Skip()
-    
-    def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key] action at default state
-        
-        If no action, it invalidates the key and returns @decor(binder).
-        key must be in C-M-S order (ctrl + alt(meta) + shift).
-        
-        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
-        """
-        state = self.handler.default_state
-        map, sep, key = regulate_key(keymap).rpartition(' ')
-        map = map.strip()
-        if not map:
-            map = state
-        elif map == '*':
-            map = state = None
-        elif map not in self.handler: # make spec keymap
-            self.make_keymap(map)
-        event = key + ' pressed'
-        if action:
-            f = self.interactive_call(action, *args, **kwargs)
-            self.handler.update({map: {event: [state, f]}})
-            return action
-        else:
-            self.handler.update({map: {event: [state]}})
-            return lambda f: self.define_key(keymap, f, *args, **kwargs)
-    
-    def interactive_call(self, action, *args, **kwargs):
-        f = funcall(action, *args, **kwargs)
-        @wraps(f)
-        def _echo(*v):
-            self.message(f.__name__)
-            return f(*v)
-        return _echo
 
 
 ## --------------------------------
@@ -1383,7 +1383,7 @@ def prompt1(f, message="Enter value", type=str):
     return funcall(_f)
 
 
-class EditorInterface(CtrlInterface, KeyCtrlInterfaceMixin):
+class EditorInterface(CtrlInterface):
     """Python code editor interface with Keymap
     
     Note: This class should be mixed-in `wx.stc.StyledTextCtrl`
