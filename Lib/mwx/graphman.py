@@ -68,10 +68,6 @@ class Thread(object):
         The event.wait blocks until the internal flag is True when it is False
             and returns immediately when it is True.
     """
-    ## `is_*` to be deprecated; Keep them for backward-compatibility.
-    is_active = property(lambda self: self.active)
-    is_running = property(lambda self: self.running)
-    
     def __init__(self, owner=None, **kwargs):
         self.owner = owner
         self.props = kwargs
