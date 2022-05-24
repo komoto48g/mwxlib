@@ -172,7 +172,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
-def typename(obj, docp=False, qualp=False):
+def typename(obj, docp=False, qualp=False, signature=False):
     """Typename of the obj object
     
     retval -> module:obj<doc>       when obj is callable and qualp=False
@@ -206,6 +206,12 @@ def typename(obj, docp=False, qualp=False):
     
     if docp and callable(obj) and obj.__doc__:
         name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
+    
+    if signature and callable(obj):
+         try:
+             name += str(inspect.signature(obj)) # concat the signature
+         except ValueError:
+             pass
     return name
 
 
@@ -872,7 +878,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     
     @wraps(f)
     def _Act(*v):
-        return f(*(args + v), **kwargs) # function with event args
+        return f(*(v + args), **kwargs) # function with event args
     
     @wraps(f)
     def _Act2(*v):
@@ -891,7 +897,13 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     if not inspect.isbuiltin(f):
         argv, _varargs, _keywords, defaults,\
           _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f)
-        if not _explicit_args(argv, defaults):
+        if _varargs:
+            ## warnings.warn("Used handler *args, but none is passed to {!r}."
+            ##               .format(f.__name__), UserWarning)
+            ## print('-', where(inspect.currentframe().f_back))
+            action = _Act
+            pass
+        elif not _explicit_args(argv, defaults):
             action = _Act2
             action.__name__ += str("~")
     else:
