@@ -2337,6 +2337,24 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
+    def LoadFile(self, filename):
+        ## return EditWindow.LoadFile(self, filename)
+        try:
+            with open(filename, "r", encoding='utf-8') as i:
+                self.Text = i.read()
+        except Exception:
+            return False
+        return True
+    
+    def SaveFile(self, filename):
+        ## return EditWindow.SaveFile(self, filename)
+        try:
+            with open(filename, "w", encoding='utf-8') as o:
+                o.write(self.Text)
+        except Exception:
+            return False
+        return True
+    
     def trace_position(self):
         text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
