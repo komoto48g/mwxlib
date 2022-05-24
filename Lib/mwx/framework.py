@@ -2338,18 +2338,24 @@ class Editor(EditWindow, EditorInterface):
         return False
     
     def LoadFile(self, filename):
+        """Load the contents of filename into the editor.
+        (override) Use default file-io-encoding and original eol-code.
+        """
         ## return EditWindow.LoadFile(self, filename)
         try:
-            with open(filename, "r", encoding='utf-8') as i:
+            with open(filename, "r", encoding='utf-8', newline='') as i:
                 self.Text = i.read()
         except Exception:
             return False
         return True
     
     def SaveFile(self, filename):
+        """Write the contents of the editor to filename.
+        (override) Use default file-io-encoding and original eol-code.
+        """
         ## return EditWindow.SaveFile(self, filename)
         try:
-            with open(filename, "w", encoding='utf-8') as o:
+            with open(filename, "w", encoding='utf-8', newline='') as o:
                 o.write(self.Text)
         except Exception:
             return False
