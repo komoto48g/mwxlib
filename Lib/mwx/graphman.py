@@ -268,17 +268,17 @@ class Layer(ControlPanel, mwx.CtrlInterface):
                  'thread_error' : [ None ], # failed in error
                   'pane_loaded' : [ None ], # Called after Init
                 'pane_unloaded' : [ None ], # Called before Destroy
-                   'pane_shown' : [ None, _F(self.Draw, show=True)  ], # when active
-                  'pane_closed' : [ None, _F(self.Draw, show=False) ], # when inactive
-                  'pane_hidden' : [ None, _F(self.Draw, show=False) ], # when hidden (not closed)
+                   'pane_shown' : [ None, _F(self.Draw, True)  ], # when active
+                  'pane_closed' : [ None, _F(self.Draw, False) ], # when inactive
+                  'pane_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
             },
             0 : {
                   'C-c pressed' : (0, _F(self.copy_to_clipboard)),
-                  'C-v pressed' : (0, _F(self.paste_from_clipboard)),
-                  'C-n pressed' : (0, _F(self.Draw, show=False), _F(self.reset_params)),
                 'C-S-c pressed' : (0, _F(self.copy_to_clipboard, checked_only=1)),
+                  'C-v pressed' : (0, _F(self.paste_from_clipboard)),
                 'C-S-v pressed' : (0, _F(self.paste_from_clipboard, checked_only=1)),
-                'C-S-n pressed' : (0, _F(self.reset_params, checked_only=1)),
+                  'C-n pressed' : (0, _F(self.Draw, False), _F(self.reset_params)),
+                'C-S-n pressed' : (0, _F(self.Draw, False), _F(self.reset_params, checked_only=1)),
             }
         })
         self.handler.clear(0)
@@ -352,10 +352,6 @@ class Layer(ControlPanel, mwx.CtrlInterface):
         """Save settings in a session file (to be overridden)"""
         if self.parameters:
             session['params'] = self.parameters
-    
-    def reset_params(self, *args, **kwargs):
-        ControlPanel.reset_params(self, *args, **kwargs)
-        self.Draw(False)
     
     Shown = property(
         lambda self: self.IsShown(),
