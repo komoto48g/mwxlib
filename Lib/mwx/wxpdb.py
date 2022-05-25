@@ -178,10 +178,6 @@ class Debugger(Pdb):
             threading.settrace(None)
             self.handler('trace_end', bp)
     
-    ## --------------------------------
-    ## Actions for handler
-    ## --------------------------------
-    
     def debug(self, target, *args, **kwargs):
         if not callable(target):
             wx.MessageBox("Not a callable object\n\n"
@@ -204,6 +200,10 @@ class Debugger(Pdb):
         finally:
             self.set_quit()
             return
+    
+    ## --------------------------------
+    ## Actions for handler
+    ## --------------------------------
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""

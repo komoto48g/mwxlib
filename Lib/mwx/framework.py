@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.1"
+__version__ = "0.59.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1283,6 +1283,7 @@ class ShellFrame(MiniFrame):
     ## --------------------------------
     
     def all_pages(self, type=None):
+        """Yields all pages of the specified type in the notebooks"""
         for nb in (self.console, self.ghost):
             for j in range(nb.PageCount):
                 win = nb.GetPage(j)
@@ -1291,15 +1292,19 @@ class ShellFrame(MiniFrame):
     
     @property
     def current_editor(self):
+        """Currently focused editor or shell"""
         win = wx.Window.FindFocus()
-        if win in self.all_pages():
-            if isinstance(win, EditorInterface):
-                return win
+        if win in self.all_pages(EditorInterface):
+            return win
         return self.console.CurrentPage
     
     @property
     def current_shell(self):
-        return self.console.CurrentPage
+        """Currently selected shell or rootshell"""
+        page = self.console.CurrentPage
+        if isinstance(page, Nautilus):
+            return page
+        return self.__shell
     
     ## --------------------------------
     ## Find text dialog
@@ -2229,7 +2234,7 @@ class Editor(EditWindow, EditorInterface):
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#ffffb8,size:9",
         "STC_STYLE_BRACELIGHT"  : "fore:#000000,back:#ffffb8,bold",
         "STC_STYLE_BRACEBAD"    : "fore:#000000,back:#ff0000,bold",
-        "STC_STYLE_CONTROLCHAR" : "size:9",
+        "STC_STYLE_CONTROLCHAR" : "size:6",
         "STC_P_DEFAULT"         : "fore:#000000,back:#ffffb8",
         "STC_P_IDENTIFIER"      : "fore:#000000",
         "STC_P_COMMENTLINE"     : "fore:#007f7f,back:#ffcfcf",
@@ -2451,7 +2456,7 @@ class Nautilus(Shell, EditorInterface):
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#f0f0f0,size:9",
         "STC_STYLE_BRACELIGHT"  : "fore:#ffffff,back:#202020,bold",
         "STC_STYLE_BRACEBAD"    : "fore:#ffffff,back:#ff0000,bold",
-        "STC_STYLE_CONTROLCHAR" : "size:9",
+        "STC_STYLE_CONTROLCHAR" : "size:6",
         "STC_P_DEFAULT"         : "fore:#cccccc,back:#202020",
         "STC_P_IDENTIFIER"      : "fore:#cccccc",
         "STC_P_COMMENTLINE"     : "fore:#42c18c,back:#004040",
