@@ -230,12 +230,19 @@ def where(obj):
         name = obj.co_name
         return "{}:{}:{}".format(filename, lineno, name)
     
+    if inspect.istraceback(obj):
+        filename = obj.tb_frame.f_code.co_filename
+        lineno = obj.tb_lineno
+        name = obj.tb_frame.f_code.co_name
+        return "{}:{}:{}".format(filename, lineno, name)
+    
     def _where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
+        name = src[0].rstrip()
         if not lineno:
             return filename
-        return "{}:{}:{}".format(filename, lineno, src[0].rstrip())
+        return "{}:{}:{}".format(filename, lineno, name)
     try:
         try:
             return _where(obj) # module, class, method, function, frame, or code
