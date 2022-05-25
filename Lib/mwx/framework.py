@@ -1145,7 +1145,7 @@ class ShellFrame(MiniFrame):
         self.add_history(command, prefix=' '*4, suffix=None)
         ## The cmdline ends with linesep (see comment of addHistory)
         ## logging each line in case of crashing
-        with open(self.HISTORY_FILE, 'a', newline='') as o: # PY3
+        with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(command)
     
     def on_debug_end(self, frame):
