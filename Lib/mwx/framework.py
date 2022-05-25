@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.0"
+__version__ = "0.59.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -892,7 +892,6 @@ class ShellFrame(MiniFrame):
         ##                                 filename="<string>")
         
         @self.Scratch.handler.bind('M-j pressed', state=0)
-        @self.Scratch.handler.bind('f5 pressed', state=0)
         def exec_buffer(v):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
@@ -2100,13 +2099,13 @@ class EditorInterface(CtrlInterface):
     
     def skip_chars_forward(self, chars):
         p = self.cpos
-        while chr(self.GetCharAt(p)) in chars and p <= self.TextLength:
+        while self.get_char(p) in chars and p < self.TextLength:
             p += 1
         self.GotoPos(p)
     
     def skip_chars_backward(self, chars):
         p = self.cpos
-        while chr(self.GetCharAt(p-1)) in chars and p > 0:
+        while self.get_char(p-1) in chars and p > 0:
             p -= 1
         self.GotoPos(p)
     
@@ -2540,6 +2539,8 @@ class Nautilus(Shell, EditorInterface):
         self.target = target
         self.globals = self.locals
         self.interp.runcode = self.runcode
+        self.interp.showtraceback = self.showtraceback
+        self.interp.showsyntaxerror = self.showsyntaxerror
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -3333,6 +3334,20 @@ class Nautilus(Shell, EditorInterface):
             raise
         except Exception:
             self.interp.showtraceback()
+    
+    def showtraceback(self):
+        self.interp.__class__.showtraceback(self.interp)
+        
+        t, v, tb = sys.exc_info() # (most recent call)
+        lineno = tb.tb_next.tb_lineno
+        self.linemark = self.LineFromPosition(self.bolc)  + lineno - 1
+    
+    def showsyntaxerror(self, filename=None):
+        self.interp.__class__.showsyntaxerror(self.interp, filename)
+        
+        t, v, tb = sys.exc_info() # (most recent call)
+        lineno = v.lineno
+        self.linemark = self.LineFromPosition(self.bolc)  + lineno - 1
     
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
