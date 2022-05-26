@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.2"
+__version__ = "0.59.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1987,7 +1987,17 @@ class EditorInterface(CtrlInterface):
     ## preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
     
     def get_char(self, pos):
+        """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
+    
+    def get_text(self, start, end):
+        """Retrieve a range of text."""
+        n = self.TextLength + 1 # end-of-buffer (+1:\0)
+        if start < 0:
+            start += n
+        if end < 0:
+            end += n
+        return self.GetTextRange(start, end)
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
@@ -2012,17 +2022,24 @@ class EditorInterface(CtrlInterface):
     
     @property
     def expr_at_caret(self):
-        """Minimal expression at the caret line
-        The caret scouts back and forth to scoop a chunk of expression.
-        """
-        st = self.GetStyleAt(self.cpos)
-        if st in (3,4,6,7,13): # string, char, triplet, eol
-            return ''
+        """Pythonic expression at the caret line"""
+        ## st = self.GetStyleAt(self.cpos)
+        ## if st in (3,4,6,7,13): # string, char, triplet, eol
+        ##     return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
         lhs = ut._get_words_backward(ls) # or ls.rpartition(' ')[-1]
         rhs = ut._get_words_forward(rs) # or rs.partition(' ')[0]
         return (lhs + rhs).strip()
+    
+    @property
+    def word_at_caret(self):
+        """Pythonic word at the caret line"""
+        text, lp = self.CurLine
+        ls, rs = text[:lp], text[lp:]
+        rhs = re.match(r"[\w.]*", rs).group(0)
+        lhs = re.match(r"[\w.]*", ls[::-1]).group(0)
+        return lhs[::-1] + rhs
     
     @property
     def topic_at_caret(self):
@@ -2113,6 +2130,38 @@ class EditorInterface(CtrlInterface):
         while self.get_char(p-1) in chars and p > 0:
             p -= 1
         self.GotoPos(p)
+    
+    def skip_regex_forward(self, pattern):
+        p = self.cpos
+        text = self.GetTextRange(p, self.TextLength)
+        m = re.match(pattern, text)
+        if m:
+            self.GotoPos(p + len(m.group(0)))
+    
+    def skip_regex_backward(self, pattern):
+        p = self.cpos
+        text = self.GetTextRange(0, p)[::-1]
+        m = re.match(pattern, text)
+        if m:
+            self.GotoPos(p - len(m.group(0)))
+    
+    def re_search_forward(self, pattern):
+        p = self.cpos
+        text = self.GetTextRange(p, self.TextLength)
+        m = re.search(pattern, text)
+        if m:
+            a, b = m.span(0)
+            self.Anchor = p + a
+            self.cpos = p + b
+    
+    def re_search_backward(self, pattern):
+        p = self.cpos
+        text = self.GetTextRange(0, p)[::-1]
+        m = re.search(pattern, text)
+        if m:
+            a, b = m.span(0)
+            self.Anchor = p - a
+            self.cpos = p - b
     
     def back_to_indentation(self):
         text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
