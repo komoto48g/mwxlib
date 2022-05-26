@@ -722,8 +722,6 @@ class ShellFrame(MiniFrame):
         if target is None:
             target = parent or __import__("__main__")
         
-        self.Title = title or "Nautilus - {!r}".format(target)
-        
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
@@ -777,7 +775,7 @@ class ShellFrame(MiniFrame):
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Log,     "*Log*")
-        self.ghost.AddPage(self.Help,    "*Help*")
+        self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
         self.ghost.AddPage(self.monitor, "Monitor")
         self.ghost.AddPage(self.inspector, "Inspector")
@@ -875,10 +873,6 @@ class ShellFrame(MiniFrame):
         self.Scratch.set_style(Nautilus.STYLE)
         self.Scratch.show_folder()
         
-        @self.Scratch.handler.bind('focus_set')
-        def activate(v):
-            self.SetTitleWindow(self.current_shell.target)
-        
         @self.Scratch.handler.bind('C-j pressed', state=0)
         def eval_line(v):
             self.Scratch.py_eval_line(self.current_shell.globals,
@@ -942,9 +936,8 @@ class ShellFrame(MiniFrame):
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
-                    "self.Log.load({!r}, {})".format(self.Log.target,
-                                                     self.Log.MarkerNext(0, 1)+1),
-                    "self.Log.EmptyUndoBuffer()",
+                    "self.Log.load_file({!r}, {})".format(self.Log.target,
+                                                          self.Log.MarkerNext(0,1)+1),
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
@@ -1050,7 +1043,7 @@ class ShellFrame(MiniFrame):
             wnd.SetFocus()
     
     def SetTitleWindow(self, title):
-        self.Title = "Nautilus - {}".format(title)
+        self.SetTitle("Nautilus - {}".format(title))
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
@@ -1084,7 +1077,7 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        return self.Log.load(filename, lineno, focus=0)
+        return self.Log.load_file(filename, lineno, focus=0)
     
     @postcall
     def debug(self, obj, *args, **kwargs):
@@ -2346,22 +2339,27 @@ class Editor(EditWindow, EditorInterface):
             self.parent.handler('title_window', self.target)
             self.trace_position()
             v.Skip()
-            if not self.__mtime:
-                return
+            if self.__mtime:
+                f = self.target
+                t = os.path.getmtime(f)
+                if self.__mtime != t:
+                    self.message("The target file {!r} has changed. "
+                                 "Press [F5] to reload the target.".format(f))
+        
+        @self.define_key('f5')
+        def reload_target(v):
+            self.reload_target()
+            self.message("\b {!r}.".format(self.target))
+    
+    def reload_target(self, force=True):
+        if self.__mtime:
             f = self.target
             t = os.path.getmtime(f)
-            if self.__mtime != t:
-                self.__mtime = t # Note: modal dlg makes focus off
+            if force or self.__mtime != t:
                 p = self.cpos
-                with wx.MessageDialog(None,
-                    "The file {!r} has changed.\n"
-                    "Do you want to reload it?".format(f),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) as dlg:
-                    if dlg.ShowModal() == wx.ID_YES:
-                        self.load(f, self.MarkerNext(0, 1)+1)
-                        self.goto_char(p)
-                if self.HasCapture():
-                    self.ReleaseMouse()
+                self.load_file(f, self.MarkerNext(0,1)+1)
+                self.goto_char(p)
+                self.__mtime = t
     
     def load_cache(self, filename, globals=None, readonly=False):
         linecache.checkcache(filename)
@@ -2374,9 +2372,10 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    def load(self, filename, lineno=0, show=True, focus=True):
+    def load_file(self, filename, lineno=0, show=True, focus=True):
         if not isinstance(filename, str):
-            print("- The filename must be string type. Try @where to get the path")
+            print("- The filename must be string type (got {!r}). "
+                  "Try @where to get the path".format(filename))
             return False
         
         if self.load_cache(filename) or self.LoadFile(filename):
@@ -2394,25 +2393,25 @@ class Editor(EditWindow, EditorInterface):
         """Load the contents of filename into the editor.
         (override) Use default file-io-encoding and original eol-code.
         """
-        ## return EditWindow.LoadFile(self, filename)
         try:
             with open(filename, "r", encoding='utf-8', newline='') as i:
                 self.Text = i.read()
+            self.EmptyUndoBuffer()
+            return True
         except Exception:
             return False
-        return True
     
     def SaveFile(self, filename):
         """Write the contents of the editor to filename.
         (override) Use default file-io-encoding and original eol-code.
         """
-        ## return EditWindow.SaveFile(self, filename)
         try:
             with open(filename, "w", encoding='utf-8', newline='') as o:
                 o.write(self.Text)
+            self.SetSavePoint()
+            return True
         except Exception:
             return False
-        return True
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -3891,18 +3890,6 @@ except ImportError as e:
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
     pass
-
-
-## ## Monkey-patch for wx.stc
-## try:
-##     def _SetSelection(self, from_, to_):
-##         self.Anchor = from_
-##         self.CurrentPos = to_
-## 
-##     stc.StyledTextCtrl.SetSelection = _SetSelection
-##     del _SetSelection
-## except Exception:
-##     pass
 
 
 def profile(obj, *args, **kwargs):

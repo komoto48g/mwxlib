@@ -337,7 +337,7 @@ def _extract_words_from_tokens(tokens, sep=None, reverse=False):
         sep = "`@=+-/*%<>&|^~,:; \t\r\n!?#" # OPS; SEPARATOR_CHARS; !?
     p, q = "({[", ")}]"
     if reverse:
-        p,q = q,p
+        p, q = q, p
     stack = []
     words = []
     for j, c in enumerate(tokens):
@@ -732,16 +732,16 @@ class FSM(dict):
         
         if event in context:
             if state2 != context[event][0]:
-                warn("- FSM:warning: transaction may conflict"
-                     " (state {2!r} and the original state is not the same)"
-                     " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+                warn("- FSM:warning: transaction may conflict.\n"
+                     "  The state {2!r} and the original state is not the same."
+                     "  {0!r} : {1!r} --> {2!r}".format(event, state, state2))
                 pass
                 context[event][0] = state2 # update transition
         else:
             ## if state2 not in self:
-            ##     warn("- FSM:warning: transaction may contradict"
-            ##          " (state {2!r} is not found in the contexts)"
-            ##          " {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+            ##     warn("- FSM:warning: transaction may contradict\n"
+            ##          "  The state {2!r} is not found in the contexts."
+            ##          "  {0!r} : {1!r} --> {2!r}".format(event, state, state2))
             ##     pass
             context[event] = [state2] # new event:transaction
         
