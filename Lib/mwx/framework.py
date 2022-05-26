@@ -997,8 +997,7 @@ class ShellFrame(MiniFrame):
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
             
-            ## Nautilus.__doc__,
-            self.__shell.__class__.__doc__,
+            Nautilus.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
             "#{!r}".format(wx.py.shell),
@@ -1664,8 +1663,8 @@ class EditorInterface(CtrlInterface):
     
     def py_indent_line(self):
         """Indent the current line"""
-        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
-        lstr = text.lstrip()                         # w/ no-indent
+        text = self.caretline  # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()   # w/ no-indent
         p = self.eol - len(lstr)
         offset = max(0, self.cpos - p)
         indent = self.py_calc_indent() # guess from the current/previous line
@@ -1674,8 +1673,8 @@ class EditorInterface(CtrlInterface):
     
     def py_outdent_line(self):
         """Outdent the current line"""
-        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
-        lstr = text.lstrip()                         # w/ no-indent
+        text = self.caretline  # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()   # w/ no-indent
         p = self.eol - len(lstr)
         offset = max(0, self.cpos - p)
         indent = text[:-len(lstr)-4] # cf. delete_backward_space_like_tab
@@ -1721,7 +1720,7 @@ class EditorInterface(CtrlInterface):
     
     def py_eval_line(self, globals, locals):
         try:
-            cmd = self.SelectedText or self.GetTextRange(self.bol, self.eol)
+            cmd = self.SelectedText or self.caretline
             tip = eval(cmd, globals, locals)
             self.CallTipShow(self.cpos, pformat(tip))
             self.message(cmd)
@@ -1739,7 +1738,7 @@ class EditorInterface(CtrlInterface):
         try:
             if region:
                 p, q = region
-                text = self.GetTextRange(p, q)
+                text = self.get_text(p, q)
                 ln = self.LineFromPosition(p)
                 self.mark = p
             else:
@@ -1984,12 +1983,20 @@ class EditorInterface(CtrlInterface):
         return chr(self.GetCharAt(pos))
     
     def get_text(self, start, end):
-        """Retrieve a range of text."""
-        n = self.TextLength + 1 # end-of-buffer (+1:\0)
-        if start < 0:
-            start += n
-        if end < 0:
-            end += n
+        """Retrieve a range of text.
+        Note: If p=-1, then p->TextLength.
+              i.e., get_text(0,-1) != Text[0:-1],
+              but get_text(0,None) == Text[0:None] is True.
+        """
+        n = self.TextLength
+        if start is None:
+            start = 0
+        elif start < 0:
+            start += n + 1 # Counts end-of-buffer (+1:\0)
+        if end is None:
+            end = n
+        elif end < 0:
+            end += n + 1
         return self.GetTextRange(start, end)
     
     cpos = property(
@@ -2012,6 +2019,15 @@ class EditorInterface(CtrlInterface):
         text, lp = self.CurLine
         text = text.strip('\r\n') # remove linesep: '\r' and '\n'
         return (self.cpos - lp + len(text.encode()))
+    
+    @property
+    def caretline(self):
+        """Text of the range (bol, eol) at the caret line
+        
+        Similar to CurLine, but with the trailing crlf truncated.
+        For shells, the leading prompt is also be truncated due to overriden bol.
+        """
+        return self.GetTextRange(self.bol, self.eol)
     
     @property
     def expr_at_caret(self):
@@ -2053,7 +2069,7 @@ class EditorInterface(CtrlInterface):
             if not c.isspace() and c not in boundaries:
                 self.WordRightEnd()
                 q = self.cpos
-            return self.GetTextRange(p, q)
+            return self.get_text(p, q)
     
     @property
     def right_paren(self):
@@ -2070,7 +2086,7 @@ class EditorInterface(CtrlInterface):
     @property
     def right_quotation(self):
         p = self.cpos
-        text = self.GetTextRange(p, self.TextLength)
+        text = self.get_text(p, -1)
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
@@ -2081,7 +2097,7 @@ class EditorInterface(CtrlInterface):
     @property
     def left_quotation(self):
         p = self.cpos
-        text = self.GetTextRange(0, p)[::-1]
+        text = self.get_text(0, p)[::-1]
         if text and text[0] in "\"\'":
             try:
                 lexer = shlex.shlex(text)
@@ -2104,7 +2120,7 @@ class EditorInterface(CtrlInterface):
     
     def goto_char(self, pos):
         if pos < 0:
-            pos += self.TextLength + 1 # end-of-buffer (+1:\0)
+            pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
         self.GotoPos(pos)
     
     def goto_line(self, ln):
@@ -2126,21 +2142,21 @@ class EditorInterface(CtrlInterface):
     
     def skip_regex_forward(self, pattern):
         p = self.cpos
-        text = self.GetTextRange(p, self.TextLength)
+        text = self.get_text(p, -1)
         m = re.match(pattern, text)
         if m:
             self.GotoPos(p + len(m.group(0)))
     
     def skip_regex_backward(self, pattern):
         p = self.cpos
-        text = self.GetTextRange(0, p)[::-1]
+        text = self.get_text(0, p)[::-1]
         m = re.match(pattern, text)
         if m:
             self.GotoPos(p - len(m.group(0)))
     
     def re_search_forward(self, pattern):
         p = self.cpos
-        text = self.GetTextRange(p, self.TextLength)
+        text = self.get_text(p, -1)
         m = re.search(pattern, text)
         if m:
             a, b = m.span(0)
@@ -2149,7 +2165,7 @@ class EditorInterface(CtrlInterface):
     
     def re_search_backward(self, pattern):
         p = self.cpos
-        text = self.GetTextRange(0, p)[::-1]
+        text = self.get_text(0, p)[::-1]
         m = re.search(pattern, text)
         if m:
             a, b = m.span(0)
@@ -2157,8 +2173,8 @@ class EditorInterface(CtrlInterface):
             self.cpos = p - b
     
     def back_to_indentation(self):
-        text = self.GetTextRange(self.bol, self.eol) # w/ no-prompt cf. CurLine
-        lstr = text.lstrip()                         # w/ no-indent
+        text = self.caretline # w/ no-prompt cf. CurLine
+        lstr = text.lstrip()  # w/ no-indent
         self.GotoPos(self.eol - len(lstr))
         self.ScrollToColumn(0)
     
@@ -2227,8 +2243,8 @@ class EditorInterface(CtrlInterface):
         p = self.eol
         text, lp = self.CurLine
         if p == self.cpos:
-            if self.GetTextRange(p, p+1) == '\r': p += 1
-            if self.GetTextRange(p, p+1) == '\n': p += 1
+            if self.get_char(p) == '\r': p += 1
+            if self.get_char(p) == '\n': p += 1
         self.Replace(self.cpos, p, '')
     
     @editable
@@ -2239,8 +2255,8 @@ class EditorInterface(CtrlInterface):
             p -= len(sys.ps2)
             lp -= len(sys.ps2)
         if text[:lp] == '' and p: # caret at the beginning of the line
-            if self.GetTextRange(p-1, p) == '\n': p -= 1
-            if self.GetTextRange(p-1, p) == '\r': p -= 1
+            if self.get_char(p-1) == '\n': p -= 1
+            if self.get_char(p-1) == '\r': p -= 1
         self.Replace(p, self.cpos, '')
     
     @editable
@@ -3657,7 +3673,7 @@ class Nautilus(Shell, EditorInterface):
         try:
             cmdl = self.cmdlc
             if cmdl.isspace() or self.bol != self.bolc:
-                self.handler('fork', evt) # fork [tab pressed]
+                self.handler('fork', evt) # fork [tab pressed] => on_indent_line
                 return
             
             hint = cmdl.strip()
