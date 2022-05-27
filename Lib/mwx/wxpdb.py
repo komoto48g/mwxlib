@@ -55,6 +55,7 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
+    use_rawinput = False
     indent = property(lambda self: ' ' * self.__indents)
     prompt = property(lambda self: ' ' * self.__indents + '(Pdb) ',
                       lambda self,v: None) # fake setter
@@ -98,8 +99,6 @@ class Debugger(Pdb):
         self.__breakpoint = None
         self.__indents = 0
         self.shell = parent.rootshell
-        self.stdin = self.parent.rootshell.interp.stdin
-        self.stdout = self.parent.rootshell.interp.stdout
         self.editor = None
         self.target = None
         self.code = None
@@ -181,11 +180,11 @@ class Debugger(Pdb):
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
-            wx.MessageBox("Not a callable object\n\n"
-                          "Unable to debug {!r}".format(target))
+            wx.MessageBox("Not a callable object.\n\n"
+                          "Unable to debug {!r}.".format(target))
             return
         if self.busy:
-            wx.MessageBox("Debugger is running\n\n"
+            wx.MessageBox("Debugger is running.\n\n"
                           "Enter [q]uit to exit debug mode.")
             return
         try:
@@ -195,8 +194,7 @@ class Debugger(Pdb):
         except BdbQuit:
             pass
         except Exception as e:
-            wx.CallAfter(wx.MessageBox,
-                         "Debugger is closed\n\n{!s}".format(e),
+            wx.MessageBox("Debugger is closed.\n\n{!s}".format(e),
                          style=wx.ICON_ERROR)
         finally:
             self.set_quit()
@@ -312,7 +310,7 @@ class Debugger(Pdb):
     
     def set_trace(self, frame=None):
         if self.busy:
-            wx.MessageBox("Debugger is running\n\n"
+            wx.MessageBox("Debugger is running.\n\n"
                           "Enter [q]uit to exit debug mode.")
             return
         if not frame:
@@ -414,11 +412,7 @@ if __name__ == "__main__":
     if 1:
         self = frm.shellframe
         shell = frm.shellframe.rootshell
-        dbg = Debugger(self,
-                       stdin=shell.interp.stdin,
-                       stdout=shell.interp.stdout,
-                       ## skip=["__main__"]
-                       )
+        dbg = Debugger(self)
         self.debugger = dbg
         dbg.handler.debug = 4
         dbg.verbose = 0
