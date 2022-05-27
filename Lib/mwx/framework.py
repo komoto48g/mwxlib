@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.3"
+__version__ = "0.59.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1046,7 +1046,7 @@ class ShellFrame(MiniFrame):
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
-        if nb.CurrentPage is self.__shell:
+        if nb.CurrentPage is self.rootshell:
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
@@ -1055,7 +1055,7 @@ class ShellFrame(MiniFrame):
     def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
         win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if win is self.__shell:
+        if win is self.rootshell:
             self.message("- Don't remove the root shell.")
         else:
             evt.Skip()
@@ -1262,7 +1262,7 @@ class ShellFrame(MiniFrame):
     def close_shell(self):
         """Close the current shell"""
         shell = self.current_shell
-        if shell is self.__shell:
+        if shell is self.rootshell:
             self.message("- Don't remove the root shell.")
             return
         nb = self.console
@@ -1296,7 +1296,7 @@ class ShellFrame(MiniFrame):
         page = self.console.CurrentPage
         if isinstance(page, Nautilus):
             return page
-        return self.__shell
+        return self.rootshell
     
     ## --------------------------------
     ## Find text dialog

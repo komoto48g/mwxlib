@@ -68,6 +68,12 @@ class Thread(object):
         The event.wait blocks until the internal flag is True when it is False
             and returns immediately when it is True.
     """
+    @property
+    def running(self):
+        if self.worker:
+            return self.worker.is_alive()
+        return False
+    
     def __init__(self, owner=None, **kwargs):
         self.owner = owner
         self.props = kwargs
@@ -75,7 +81,6 @@ class Thread(object):
         self.target = None
         self.result = None
         self.active = 0
-        self.running = 0
         self.event = threading.Event()
         self.event.set()
         try:
@@ -140,7 +145,7 @@ class Thread(object):
                 print("- Thread:exception: {}".format(e))
                 self.handler('thread_error', self)
             finally:
-                self.active = self.running = 0
+                self.active = 0
                 self.handler('thread_end', self)
         
         if self.running:
@@ -150,7 +155,7 @@ class Thread(object):
         
         self.target = f
         self.result = None
-        self.active = self.running = 1
+        self.active = 1
         self.worker = threading.Thread(target=_f,
                                 args=args, kwargs=kwargs, **self.props)
         self.worker.start()
