@@ -9,6 +9,7 @@ __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
 import traceback
+import warnings
 import datetime
 import keyword
 import shlex
@@ -1442,8 +1443,8 @@ class EditorInterface(CtrlInterface):
             },
             'C-x' : {
                     '* pressed' : (0, skip),
-                    '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+                    '[ pressed' : (0, skip, _F(self.goto_char, 0, doc="beginning-of-buffer")),
+                    '] pressed' : (0, skip, _F(self.goto_char, -1, doc="end-of-buffer")),
                     '@ pressed' : (0, skip, _F(self.goto_marker)),
                   'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
             },
@@ -2502,6 +2503,15 @@ class Interpreter(interpreter.Interpreter):
         
         t, v, tb = sys.exc_info()
         self.parent.handler('interp_error', v)
+    
+    def getCallTip(self, *args, **kwargs):
+        """Return call tip text for a command.
+        (override) Ignore DeprecationWarning: for function,
+                   `formatargspec` is deprecated since Python 3.5.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return interpreter.Interpreter.getCallTip(self, *args, **kwargs)
 
 
 class Nautilus(Shell, EditorInterface):
@@ -2763,8 +2773,8 @@ class Nautilus(Shell, EditorInterface):
                '*enter pressed' : (0, noskip), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
-                 ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
-               ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
+                 ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, +1, doc="prev-command")),
+               ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, -1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark_arrow)),
@@ -3168,7 +3178,7 @@ class Nautilus(Shell, EditorInterface):
     
     def setBuiltinKeywords(self):
         """Create pseudo keywords as part of builtins
-        (override) to add more helper functions
+        (override) Add more helper functions
         """
         Shell.setBuiltinKeywords(self)
         
