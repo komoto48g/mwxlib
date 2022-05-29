@@ -12,7 +12,6 @@ import pdb
 import sys
 import re
 import inspect
-import traceback
 import threading
 from importlib import import_module
 import wx
@@ -55,6 +54,7 @@ class Debugger(Pdb):
     prefix1 = "> "
     prefix2 = "-> "
     verbose = False
+    use_rawinput = False
     indent = property(lambda self: ' ' * self.__indents)
     prompt = property(lambda self: ' ' * self.__indents + '(Pdb) ',
                       lambda self,v: None) # fake setter
@@ -76,7 +76,7 @@ class Debugger(Pdb):
         """The current state is debugging mode
         True from entering `set_trace` until the end of `set_quit`
         """
-        ## return (self.handler.current_state == 1)
+        ## cf. (self.handler.current_state == 1)
         try:
             return self.curframe is not None
         except AttributeError:
@@ -87,7 +87,7 @@ class Debugger(Pdb):
         """The current state is tracing mode
         True from `watch` to `unwatch`, i.e., while a breakpoint is not None
         """
-        ## return (self.handler.current_state == 2)
+        ## cf. (self.handler.current_state == 2)
         return self.__breakpoint is not None
     
     def __init__(self, parent, *args, **kwargs):
@@ -98,8 +98,6 @@ class Debugger(Pdb):
         self.__breakpoint = None
         self.__indents = 0
         self.shell = parent.rootshell
-        self.stdin = self.parent.rootshell.interp.stdin
-        self.stdout = self.parent.rootshell.interp.stdout
         self.editor = None
         self.target = None
         self.code = None
@@ -135,6 +133,7 @@ class Debugger(Pdb):
             },
             2 : {
                     'trace_end' : (0, dispatch),
+                   'trace_hook' : (2, self.on_trace_hook, dispatch),
                   'debug_begin' : (1, self.on_debug_begin, dispatch),
             },
         })
@@ -180,11 +179,11 @@ class Debugger(Pdb):
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
-            wx.MessageBox("Not a callable object\n\n"
-                          "Unable to debug {!r}".format(target))
+            wx.MessageBox("Not a callable object.\n\n"
+                          "Unable to debug {!r}.".format(target))
             return
         if self.busy:
-            wx.MessageBox("Debugger is running\n\n"
+            wx.MessageBox("Debugger is running.\n\n"
                           "Enter [q]uit to exit debug mode.")
             return
         try:
@@ -195,8 +194,7 @@ class Debugger(Pdb):
             pass
         except Exception as e:
             wx.CallAfter(wx.MessageBox,
-                         "Debugger is closed\n\n{!s}".format(e),
-                         style=wx.ICON_ERROR)
+                         "Debugger is closed.\n\n{}".format(e))
         finally:
             self.set_quit()
             return
@@ -206,13 +204,16 @@ class Debugger(Pdb):
     ## --------------------------------
     
     def on_debug_begin(self, frame):
-        """Called before set_trace"""
+        """Called before set_trace
+        Note: self.busy -> False or None
+        """
         self.__breakpoint = None
         self.__interactive = self.shell.cpos
-        def _continue():
-            if wx.IsBusy():
-                wx.EndBusyCursor()
-        wx.CallAfter(_continue)
+        ## def _continue():
+        ##     if wx.IsBusy():
+        ##         wx.EndBusyCursor()
+        ## wx.CallAfter(_continue)
+        self.send_input('') # clear stdin buffer
     
     def on_debug_mark(self, frame):
         """Called when interaction"""
@@ -255,7 +256,9 @@ class Debugger(Pdb):
         wx.CallAfter(_post)
     
     def on_debug_end(self, frame):
-        """Called after set_quit"""
+        """Called after set_quit
+        Note: self.busy -> True (until this stage)
+        """
         self.__indents = 0
         self.__interactive = None
         if self.editor:
@@ -263,6 +266,15 @@ class Debugger(Pdb):
         self.editor = None
         self.target = None
         self.code = None
+        cur = threading.current_thread()
+        if cur != threading.main_thread():
+            self.send_input('\n') # terminates reader in the thread
+    
+    def on_trace_hook(self, frame):
+        """Called when a breakppoint is reached"""
+        self.__indents = 2
+        self.__breakpoint = None
+        self.message(where(frame.f_code), indent=0)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -278,8 +290,9 @@ class Debugger(Pdb):
             lineno = frame.f_lineno
             if target == filename:
                 if line <= lineno-1:
-                    self.__indents = 2
+                    self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
+                    ## self.user_line(frame)
                 else:
                     return None
         return Pdb.dispatch_line(self, frame)
@@ -296,8 +309,11 @@ class Debugger(Pdb):
                 code = frame.f_code
                 src, lineno = inspect.getsourcelines(code)
                 if line == lineno-1:
+                    self.__indents = 2
+                    self.__breakpoint = None
+                    self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
-                    self.user_call(frame, arg)
+                    ## self.user_call(frame, arg)
                 elif 0 <= line - lineno + 1 < len(src):
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
@@ -309,7 +325,7 @@ class Debugger(Pdb):
     
     def set_trace(self, frame=None):
         if self.busy:
-            wx.MessageBox("Debugger is running\n\n"
+            wx.MessageBox("Debugger is running.\n\n"
                           "Enter [q]uit to exit debug mode.")
             return
         if not frame:
@@ -411,11 +427,7 @@ if __name__ == "__main__":
     if 1:
         self = frm.shellframe
         shell = frm.shellframe.rootshell
-        dbg = Debugger(self,
-                       stdin=shell.interp.stdin,
-                       stdout=shell.interp.stdout,
-                       ## skip=["__main__"]
-                       )
+        dbg = Debugger(self)
         self.debugger = dbg
         dbg.handler.debug = 4
         dbg.verbose = 0
