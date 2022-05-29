@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.4"
+__version__ = "0.59.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1570,19 +1570,19 @@ class EditorInterface(CtrlInterface):
         self.WrapIndentMode = 1
         self.IndentationGuides = 2
         
-        self.__mark = None
-        self.__line = None
+        self.__mark = -1
+        self.__line = -1
     
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     
     @property
     def mark(self):
-        return self.__mark # equiv. MarkerNext(0, 0b001)
+        return self.__mark # equiv. MarkerNext(0, 0b001) @PositionFromLine
     
     @mark.setter
     def mark(self, v):
-        if v is None:
+        if v == -1 or v is None:
             del self.mark
             return
         self.__mark = v
@@ -1594,7 +1594,7 @@ class EditorInterface(CtrlInterface):
     @mark.deleter
     def mark(self):
         v = self.__mark
-        if v is None:
+        if v == -1:
             return
         self.__mark = None
         self.MarkerDeleteAll(0)
@@ -1604,7 +1604,7 @@ class EditorInterface(CtrlInterface):
         self.mark = self.cpos
     
     def goto_marker(self):
-        if self.mark is not None:
+        if self.mark != -1:
             self.goto_char(self.mark)
             self.recenter()
     
@@ -1613,32 +1613,32 @@ class EditorInterface(CtrlInterface):
         return self.__line # equiv. MarkerNext(0, 0b11000)
     
     @linemark.setter
-    def linemark(self, ln):
-        if ln is None:
+    def linemark(self, v):
+        if v == -1 or v is None:
             del self.linemark
             return
-        self.__line = ln
+        self.__line = v
         self.MarkerDeleteAll(3)
-        self.MarkerAdd(ln, 3)
-        self.handler('line_set', ln)
+        self.MarkerAdd(v, 3)
+        self.handler('line_set', v)
     
     @linemark.deleter
     def linemark(self):
-        ln = self.__line
-        if ln is None:
+        v = self.__line
+        if v == -1:
             return
-        self.__line = None
+        self.__line = -1
         self.MarkerDeleteAll(3)
-        self.handler('line_unset', ln)
+        self.handler('line_unset', v)
     
     def set_line_marker(self):
         if self.linemark == self.cline:
-            self.linemark = None # toggle
+            self.linemark = -1 # toggle show
         else:
             self.linemark = self.cline
     
     def goto_line_marker(self):
-        if self.linemark is not None:
+        if self.linemark != -1:
             self.goto_line(self.linemark)
             self.recenter()
     
@@ -1746,7 +1746,7 @@ class EditorInterface(CtrlInterface):
                 ln = 0
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
-            self.linemark = None
+            del self.linemark
             self.message("Evaluated {!r} successfully".format(filename))
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
@@ -2728,8 +2728,8 @@ class Nautilus(Shell, EditorInterface):
                ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
-                 'M-up pressed' : (0, _F(self.goto_previous_mark)),
-               'M-down pressed' : (0, _F(self.goto_next_mark)),
+                 'M-up pressed' : (0, _F(self.goto_previous_mark_arrow)),
+               'M-down pressed' : (0, _F(self.goto_next_mark_arrow)),
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
@@ -3327,14 +3327,14 @@ class Nautilus(Shell, EditorInterface):
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
     
-    def goto_previous_mark(self):
+    def goto_previous_mark_arrow(self):
         ln = self.MarkerPrevious(self.cline-1, 1<<1)
         if ln != -1:
             self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
         else:
             self.goto_char(0)
     
-    def goto_next_mark(self):
+    def goto_next_mark_arrow(self):
         ln = self.MarkerNext(self.cline+1, 1<<1)
         if ln != -1:
             self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
@@ -3465,9 +3465,9 @@ class Nautilus(Shell, EditorInterface):
                    patch for `finally` miss-indentation
         """
         self.__time = self.clock()
-        lf = '\n'
         command = self.regulate_cmd(text, eol=True)
         commands = []
+        lf = '\n'
         c = ''
         for line in command.split(lf):
             lstr = line.lstrip()
@@ -3579,7 +3579,7 @@ class Nautilus(Shell, EditorInterface):
                 cmd = self.regulate_cmd(cmd)
                 cmd = compile(cmd, "<string>", "exec")
                 self.exec(cmd)
-                self.linemark = None
+                del self.linemark
                 self.message("Evaluated successfully.")
             except Exception as e:
                 err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
