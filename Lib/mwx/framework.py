@@ -2032,9 +2032,14 @@ class EditorInterface(CtrlInterface):
     @property
     def expr_at_caret(self):
         """Pythonic expression at the caret line"""
-        ## st = self.GetStyleAt(self.cpos)
-        ## if st in (3,4,6,7,13): # string, char, triplet, eol
-        ##     return ''
+        p = self.cpos
+        st = self.GetStyleAt(p-1)
+        if st in (1,12,13): # comment, eol
+            return ''
+        if st in (3,4,6,7): # string
+            st = self.GetStyleAt(p)
+            if st in (3,4,6,7): # inside the string
+                return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
         lhs = ut._get_words_backward(ls) # or ls.rpartition(' ')[-1]
@@ -2042,13 +2047,33 @@ class EditorInterface(CtrlInterface):
         return (lhs + rhs).strip()
     
     @property
-    def word_at_caret(self):
-        """Pythonic word at the caret line"""
-        text, lp = self.CurLine
-        ls, rs = text[:lp], text[lp:]
-        rhs = re.match(r"[\w.]*", rs).group(0)
-        lhs = re.match(r"[\w.]*", ls[::-1]).group(0)
-        return lhs[::-1] + rhs
+    def atom_at_caret(self):
+        """Pythonic atom unit at the caret line"""
+        p = q = self.cpos
+        st = self.GetStyleAt(p-1)
+        if st == 0:
+            st = self.GetStyleAt(p)
+        if st == 10:
+            c = self.get_char(p-1) # preceding char
+            if c in ")}]":
+                return self.get_text(self.left_paren, p)
+            c = self.get_char(p) # following char
+            if c in "({[":
+                return self.get_text(p, self.right_paren)
+            st = self.GetStyleAt(p)
+        if st == 11:
+            text, lp = self.CurLine
+            ls, rs = text[:lp], text[lp:]
+            rhs = re.match(r"[\w.]*", rs).group(0)
+            lhs = re.match(r"[\w.]*", ls[::-1]).group(0)
+            return lhs[::-1] + rhs
+        if st not in (0,10): # (no default or operator)
+            while self.GetStyleAt(p-1) == st and p > 0:
+                p -= 1
+            while self.GetStyleAt(q) == st and q < self.TextLength:
+                q += 1
+            return self.get_text(p, q)
+        return ''
     
     @property
     def topic_at_caret(self):
