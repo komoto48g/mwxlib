@@ -1152,6 +1152,10 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         del shell.locals
         del shell.globals
+        def _continue():
+            if wx.IsBusy():
+                wx.EndBusyCursor()
+        wx.CallAfter(_continue)
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
