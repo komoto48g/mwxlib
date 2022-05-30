@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.6"
+__version__ = "0.59.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2982,10 +2982,6 @@ class Nautilus(Shell, EditorInterface):
                     self.__text = text
         evt.Skip()
     
-    ## --------------------------------
-    ## Special keymap of the shell
-    ## --------------------------------
-    
     def OnSpace(self, evt):
         """Called when space pressed"""
         if not self.CanEdit():
@@ -3093,6 +3089,13 @@ class Nautilus(Shell, EditorInterface):
         self.CaretForeground = self._caret
         self.promptPosEnd = self.TextLength
         self.message("")
+    
+    def wrap(self, mode=1):
+        """Sets whether text is word wrapped
+        (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
+                            3:whitespace-wrap, None:toggle}
+        """
+        EditorInterface.wrap(self, mode)
     
     ## --------------------------------
     ## Magic caster of the shell
@@ -3270,6 +3273,20 @@ class Nautilus(Shell, EditorInterface):
     def on_interp_error(self, e):
         self.linemark = self.LineFromPosition(self.bolc)  + e.lineno - 1
     
+    def goto_previous_mark_arrow(self):
+        ln = self.MarkerPrevious(self.cline-1, 1<<1)
+        if ln != -1:
+            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
+        else:
+            self.goto_char(0)
+    
+    def goto_next_mark_arrow(self):
+        ln = self.MarkerNext(self.cline+1, 1<<1)
+        if ln != -1:
+            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
+        else:
+            self.goto_char(-1)
+    
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
@@ -3383,20 +3400,6 @@ class Nautilus(Shell, EditorInterface):
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
     
-    def goto_previous_mark_arrow(self):
-        ln = self.MarkerPrevious(self.cline-1, 1<<1)
-        if ln != -1:
-            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
-        else:
-            self.goto_char(0)
-    
-    def goto_next_mark_arrow(self):
-        ln = self.MarkerNext(self.cline+1, 1<<1)
-        if ln != -1:
-            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
-        else:
-            self.goto_char(-1)
-    
     def clear(self):
         """Delete all text (override) put new prompt"""
         self.ClearAll()
@@ -3412,13 +3415,6 @@ class Nautilus(Shell, EditorInterface):
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text)
-    
-    def wrap(self, mode=1):
-        """Sets whether text is word wrapped
-        (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
-                            3:whitespace-wrap, None:toggle}
-        """
-        EditorInterface.wrap(self, mode)
     
     ## input = classmethod(Shell.ask)
     
