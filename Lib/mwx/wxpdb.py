@@ -207,9 +207,16 @@ class Debugger(Pdb):
         """Called before set_trace
         Note: self.busy -> False or None
         """
+        shell = self.shell
         self.__breakpoint = None
         self.__interactive = self.shell.cpos
         self.send_input('') # clear stdin buffer
+        def _continue():
+            if wx.IsBusy():
+                wx.EndBusyCursor()
+            shell.prompt()
+            shell.SetFocus()
+        wx.CallAfter(_continue)
     
     def on_debug_mark(self, frame):
         """Called when interaction"""
@@ -262,9 +269,15 @@ class Debugger(Pdb):
         self.editor = None
         self.target = None
         self.code = None
-        cur = threading.current_thread()
-        if cur != threading.main_thread():
-            self.send_input('\n') # terminates reader in the thread
+        main = threading.main_thread()
+        thread = threading.current_thread()
+        if thread is not main:
+            ## self.send_input('\n') # terminates reader in the thread
+            wx.CallAfter(self.send_input, '\n')
+        def _continue():
+            if wx.IsBusy():
+                wx.EndBusyCursor()
+        wx.CallAfter(_continue)
     
     def on_trace_hook(self, frame):
         """Called when a breakppoint is reached"""
@@ -288,7 +301,6 @@ class Debugger(Pdb):
                 if line <= lineno-1:
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
-                    ## self.user_line(frame)
                 else:
                     return None
         return Pdb.dispatch_line(self, frame)
@@ -305,12 +317,9 @@ class Debugger(Pdb):
                 code = frame.f_code
                 src, lineno = inspect.getsourcelines(code)
                 if line == lineno-1:
-                    self.__indents = 2
-                    self.__breakpoint = None
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
-                    ## self.user_call(frame, arg)
-                elif 0 <= line - lineno + 1 < len(src):
+                elif 0 < line - lineno + 1 < len(src):
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
                 else:

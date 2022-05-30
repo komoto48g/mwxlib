@@ -903,6 +903,8 @@ class ShellFrame(MiniFrame):
                 self.debugger.editor = self.Log
                 self.debugger.watch((filename, v))
                 self.message("Debugger has started tracing.")
+            elif self.debugger.busy:
+                self.message("Debugger is busy now.")
             self.Log.MarkerDeleteAll(4)
         
         @self.Log.handler.bind('line_unset')
@@ -911,6 +913,8 @@ class ShellFrame(MiniFrame):
                 self.debugger.editor = None
                 self.debugger.unwatch()
                 self.message("Debugger finished tracing.")
+            elif self.debugger.busy:
+                self.message("Debugger is busy now.")
             self.Log.MarkerAdd(v, 4)
         
         self.Init()
@@ -1110,12 +1114,8 @@ class ShellFrame(MiniFrame):
         """Called before set_trace"""
         shell = self.debugger.shell
         shell.write("#<< Enter [n]ext to continue.\n", -1)
-        def _continue():
-            if wx.IsBusy():
-                wx.EndBusyCursor()
-            shell.SetFocus()
-            shell.prompt()
-        wx.CallAfter(_continue)
+        shell.prompt()
+        shell.SetFocus()
         self.Show()
         self.show_page(self.linfo, focus=0)
         self.add_history("<-- Beginning of debugger")
@@ -1152,10 +1152,6 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         del shell.locals
         del shell.globals
-        def _continue():
-            if wx.IsBusy():
-                wx.EndBusyCursor()
-        wx.CallAfter(_continue)
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
