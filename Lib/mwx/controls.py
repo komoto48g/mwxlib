@@ -607,7 +607,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     
     def Scroll(self, *args):
         """Scrolls a window so the view start is at the given point.
-        (override) to aviod DeprecationWarning: an integer is required.
+        (override) Ignore DeprecationWarning: an integer is required.
         """
         if len(args) == 1:
             args = args[0]

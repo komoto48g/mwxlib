@@ -209,10 +209,6 @@ class Debugger(Pdb):
         """
         self.__breakpoint = None
         self.__interactive = self.shell.cpos
-        ## def _continue():
-        ##     if wx.IsBusy():
-        ##         wx.EndBusyCursor()
-        ## wx.CallAfter(_continue)
         self.send_input('') # clear stdin buffer
     
     def on_debug_mark(self, frame):

@@ -4,11 +4,12 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.5"
+__version__ = "0.59.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
 import traceback
+import warnings
 import datetime
 import keyword
 import shlex
@@ -21,6 +22,7 @@ from wx import aui
 from wx import stc
 from wx.py import dispatcher
 from wx.py import introspect
+from wx.py import interpreter
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 import pydoc
@@ -1150,6 +1152,10 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         del shell.locals
         del shell.globals
+        def _continue():
+            if wx.IsBusy():
+                wx.EndBusyCursor()
+        wx.CallAfter(_continue)
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
@@ -1441,8 +1447,8 @@ class EditorInterface(CtrlInterface):
             },
             'C-x' : {
                     '* pressed' : (0, skip),
-                    '[ pressed' : (0, skip, _F(self.goto_char, pos=0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, skip, _F(self.goto_char, pos=-1, doc="end-of-buffer")),
+                    '[ pressed' : (0, skip, _F(self.goto_char, 0, doc="beginning-of-buffer")),
+                    '] pressed' : (0, skip, _F(self.goto_char, -1, doc="end-of-buffer")),
                     '@ pressed' : (0, skip, _F(self.goto_marker)),
                   'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
             },
@@ -2025,7 +2031,7 @@ class EditorInterface(CtrlInterface):
         """Text of the range (bol, eol) at the caret line
         
         Similar to CurLine, but with the trailing crlf truncated.
-        For shells, the leading prompt is also be truncated due to overriden bol.
+        For shells, the leading prompt is also be truncated due to overridden bol.
         """
         return self.GetTextRange(self.bol, self.eol)
     
@@ -2464,6 +2470,54 @@ class Editor(EditWindow, EditorInterface):
         evt.Skip()
 
 
+class Interpreter(interpreter.Interpreter):
+    def __init__(self, *args, **kwargs):
+        parent = kwargs.pop('interpShell')
+        interpreter.Interpreter.__init__(self, *args, **kwargs)
+        self.parent = parent
+        self.globals = self.locals
+    
+    def runcode(self, code):
+        """Execute a code object.
+        (override) Add globals referenced by the debugger in the parent:shell.
+        """
+        try:
+            exec(code, self.globals, self.locals)
+        except SystemExit:
+            raise
+        except Exception:
+            self.showtraceback()
+    
+    def showtraceback(self):
+        """Display the exception that just occurred.
+        (override) Pass the traceback info to the parent:shell.
+        """
+        interpreter.Interpreter.showtraceback(self)
+        
+        t, v, tb = sys.exc_info()
+        v.lineno = tb.tb_next.tb_lineno
+        v.filename = tb.tb_next.tb_frame.f_code.co_filename
+        self.parent.handler('interp_error', v)
+    
+    def showsyntaxerror(self, filename=None):
+        """Display the syntax error that just occurred.
+        (override) Pass the syntax error info to the parent:shell.
+        """
+        interpreter.Interpreter.showsyntaxerror(self, filename)
+        
+        t, v, tb = sys.exc_info()
+        self.parent.handler('interp_error', v)
+    
+    def getCallTip(self, *args, **kwargs):
+        """Return call tip text for a command.
+        (override) Ignore DeprecationWarning: for function,
+                   `formatargspec` is deprecated since Python 3.5.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return interpreter.Interpreter.getCallTip(self, *args, **kwargs)
+
+
 class Nautilus(Shell, EditorInterface):
     """Nautilus in the Shell with Editor interface
     
@@ -2623,6 +2677,8 @@ class Nautilus(Shell, EditorInterface):
                  **kwargs):
         Shell.__init__(self, parent,
                  locals=target.__dict__,
+                 interpShell=self,
+                 InterpClass=Interpreter,
                  introText=introText,
                  startupScript=startupScript,
                  execStartupScript=execStartupScript, # if True, executes ~/.py
@@ -2631,10 +2687,6 @@ class Nautilus(Shell, EditorInterface):
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.target = target
-        self.globals = self.locals
-        self.interp.runcode = self.runcode
-        self.interp.showtraceback = self.showtraceback
-        self.interp.showsyntaxerror = self.showsyntaxerror
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2695,6 +2747,7 @@ class Nautilus(Shell, EditorInterface):
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
+                 'interp_error' : [ None, self.on_interp_error ],
               '*button* dclick' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch ],
             '*button* released' : [ None, dispatch ],
@@ -2724,8 +2777,8 @@ class Nautilus(Shell, EditorInterface):
                '*enter pressed' : (0, noskip), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
-                 ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, step=+1, doc="prev-command")),
-               ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, step=-1, doc="next-command")),
+                 ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, +1, doc="prev-command")),
+               ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, -1, doc="next-command")),
                ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark_arrow)),
@@ -3129,7 +3182,7 @@ class Nautilus(Shell, EditorInterface):
     
     def setBuiltinKeywords(self):
         """Create pseudo keywords as part of builtins
-        (override) to add more helper functions
+        (override) Add more helper functions
         """
         Shell.setBuiltinKeywords(self)
         
@@ -3213,6 +3266,9 @@ class Nautilus(Shell, EditorInterface):
             if lines:
                 self.linemark = ln + lines[-1] - 1
         return (not err)
+    
+    def on_interp_error(self, e):
+        self.linemark = self.LineFromPosition(self.bolc)  + e.lineno - 1
     
     ## --------------------------------
     ## Attributes of the shell
@@ -3419,29 +3475,6 @@ class Nautilus(Shell, EditorInterface):
         exec(text, self.globals, self.locals)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
-    
-    def runcode(self, code):
-        ## Monkey-patch for wx.py.interpreter.runcode
-        try:
-            exec(code, self.globals, self.locals)
-        except SystemExit:
-            raise
-        except Exception:
-            self.interp.showtraceback()
-    
-    def showtraceback(self):
-        self.interp.__class__.showtraceback(self.interp)
-        
-        t, v, tb = sys.exc_info() # (most recent call)
-        lineno = tb.tb_next.tb_lineno
-        self.linemark = self.LineFromPosition(self.bolc)  + lineno - 1
-    
-    def showsyntaxerror(self, filename=None):
-        self.interp.__class__.showsyntaxerror(self.interp, filename)
-        
-        t, v, tb = sys.exc_info() # (most recent call)
-        lineno = v.lineno
-        self.linemark = self.LineFromPosition(self.bolc)  + lineno - 1
     
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
