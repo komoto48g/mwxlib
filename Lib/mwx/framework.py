@@ -3398,7 +3398,8 @@ class Nautilus(Shell, EditorInterface):
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
-                    .replace(os.linesep, lf))
+                    .replace(os.linesep, lf)
+                    .rstrip(' \t'))
     
     def clear(self):
         """Delete all text (override) put new prompt"""
@@ -3489,8 +3490,8 @@ class Nautilus(Shell, EditorInterface):
             self.interp.startupScript = None
     
     def Execute(self, text):
-        """Replace selection with text, run commands,
-        (override) to check the clock time,
+        """Replace selection with text and run commands.
+        (override) Check the clock time,
                    patch for `finally` miss-indentation
         """
         self.__time = self.clock()
@@ -3516,8 +3517,8 @@ class Nautilus(Shell, EditorInterface):
             self.processLine()
     
     def run(self, command, prompt=True, verbose=True):
-        """Execute command as if it was typed in directly
-        (override) to check the clock time
+        """Execute command as if it was typed in directly.
+        (override) Check the clock time.
         """
         self.__time = self.clock()
         
