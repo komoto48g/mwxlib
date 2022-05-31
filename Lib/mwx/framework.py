@@ -943,7 +943,7 @@ class ShellFrame(MiniFrame):
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
                     "self.Log.load_file({!r}, {})".format(self.Log.target,
-                                                          self.Log.MarkerNext(0,1)+1),
+                                                          self.Log.markline+1),
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
@@ -1579,6 +1579,10 @@ class EditorInterface(CtrlInterface):
     stc.STC_P_WORD3 = 20
     
     @property
+    def markline(self):
+        return self.MarkerNext(0, 0b001)
+    
+    @property
     def mark(self):
         return self.__mark # equiv. MarkerNext(0, 0b001) @PositionFromLine
     
@@ -1612,7 +1616,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def linemark(self):
-        return self.__line # equiv. MarkerNext(0, 0b11000)
+        return self.__line # equiv. MarkerNext(0, 0b01000)
     
     @linemark.setter
     def linemark(self, v):
@@ -2400,7 +2404,7 @@ class Editor(EditWindow, EditorInterface):
             t = os.path.getmtime(f)
             if force or self.__mtime != t:
                 p = self.cpos
-                self.load_file(f, self.MarkerNext(0,1)+1)
+                self.load_file(f, self.markline+1)
                 self.goto_char(p)
                 self.__mtime = t
     
