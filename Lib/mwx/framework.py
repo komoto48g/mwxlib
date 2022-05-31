@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.7"
+__version__ = "0.59.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1414,7 +1414,7 @@ class EditorInterface(CtrlInterface):
             'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
              'C-S-down pressed' : (0, _F(self.LineDownExtend)),
-                  'C-a pressed' : (0, _F(self.beggining_of_line)),
+                  'C-a pressed' : (0, _F(self.beginning_of_line)),
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
@@ -1584,7 +1584,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def mark(self):
-        return self.__mark # equiv. MarkerNext(0, 0b001) @PositionFromLine
+        return self.__mark
     
     @mark.setter
     def mark(self, v):
@@ -1616,7 +1616,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def linemark(self):
-        return self.__line # equiv. MarkerNext(0, 0b01000)
+        return self.__line
     
     @linemark.setter
     def linemark(self, v):
@@ -2209,7 +2209,7 @@ class EditorInterface(CtrlInterface):
         self.GotoPos(self.eol - len(lstr))
         self.ScrollToColumn(0)
     
-    def beggining_of_line(self):
+    def beginning_of_line(self):
         self.GotoPos(self.bol)
         self.ScrollToColumn(0)
     
@@ -3127,16 +3127,16 @@ class Nautilus(Shell, EditorInterface):
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] SEPARATOR_CHARS;
         
         def _popiter(ls, pattern):
-            while ls and re.match(pattern, ls[0]):
+            if isinstance(pattern, str):
+                p = re.compile(pattern).match
+            else:
+                p = pattern
+            while ls and p(ls[0]):
                 yield ls.pop(0)
         
         def _eats(r, sep):
-            s = ''
-            while r and r[0] in ' \t': # skip whites
-                s += r.pop(0)
-            while r and r[0] not in sep: # eats until sep appears
-                s += r.pop(0)
-            return s
+            return ''.join(_popiter(r, "[ \t]")) \
+                 + ''.join(_popiter(r, lambda c: c not in sep))
         
         lhs = ''
         for i, c in enumerate(tokens):

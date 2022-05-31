@@ -141,7 +141,7 @@ class Debugger(Pdb):
     def jump_to_entry(self, evt):
         """Jump to the first lineno of the code
         """
-        ln = self.editor.LineFromPosition(self.editor.mark)
+        ln = self.editor.markline
         self.send_input('j {}'.format(ln + 1))
     
     def add_marker(self, lineno, style):
