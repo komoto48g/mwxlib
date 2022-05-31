@@ -283,13 +283,13 @@ if pp:
         pp.sort_dicts = True
 
 
-def _get_words_backward(text, sep=None):
+def get_words_backward(text, sep=None):
     """Get words (from text at left side of caret)"""
     tokens = _split_tokens(text)[::-1]
     return _extract_words_from_tokens(tokens, sep, reverse=1)
 
 
-def _get_words_forward(text, sep=None):
+def get_words_forward(text, sep=None):
     """Get words (from text at right side of caret)"""
     tokens = _split_tokens(text)
     return _extract_words_from_tokens(tokens, sep)

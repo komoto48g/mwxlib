@@ -2051,8 +2051,8 @@ class EditorInterface(CtrlInterface):
                 return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
-        lhs = ut._get_words_backward(ls) # or ls.rpartition(' ')[-1]
-        rhs = ut._get_words_forward(rs) # or rs.partition(' ')[0]
+        lhs = ut.get_words_backward(ls) # or ls.rpartition(' ')[-1]
+        rhs = ut.get_words_forward(rs) # or rs.partition(' ')[0]
         return (lhs + rhs).strip()
     
     @property
@@ -3126,8 +3126,8 @@ class Nautilus(Shell, EditorInterface):
         
         Note: This is called before run, execute, and original magic.
         """
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] SEPARATOR_CHARS; nospace, nocomma
-        sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] SEPARATOR_CHARS;
+        sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] OPS; SEPARATORS (no space, no comma)
+        sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] OPS; SEPARATORS
         
         def _popiter(ls, pattern):
             if isinstance(pattern, str):
@@ -3757,7 +3757,7 @@ class Nautilus(Shell, EditorInterface):
             return
         try:
             cmdl = self.cmdlc
-            hint = re.search(r"[\w.]*$", cmdl).group(0) # get the last word or ''
+            hint = self.get_last_hint(cmdl)
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
@@ -3780,7 +3780,7 @@ class Nautilus(Shell, EditorInterface):
             return
         try:
             cmdl = self.cmdlc
-            hint = re.search(r"[\w.]*$", cmdl).group(0) # get the last word or ''
+            hint = self.get_last_hint(cmdl)
             
             m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
@@ -3809,7 +3809,10 @@ class Nautilus(Shell, EditorInterface):
                     modules = self.modules
                 else:
                     text, sep, hint = self.get_words_hint(cmdl)
-                    obj = self.eval(text or 'self')
+                    obj = self.eval(text)
+                    if not hasattr(obj, '__dict__'):
+                        self.message("[module] primitive object: {}".format(obj))
+                        return
                     modules = [k for k, v in vars(obj).items() if inspect.ismodule(v)]
             
             P = re.compile(hint)
@@ -3828,6 +3831,9 @@ class Nautilus(Shell, EditorInterface):
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
+        except SyntaxError as e:
+            self.message("- {} : {!r}".format(e, text))
+            self.handler('quit', evt)
         except Exception:
             raise
     
@@ -3904,8 +3910,12 @@ class Nautilus(Shell, EditorInterface):
             self.message("- {} : {!r}".format(e, text))
     
     @staticmethod
-    def get_words_hint(cmd):
-        text = ut._get_words_backward(cmd)
+    def get_last_hint(cmdl):
+        return re.search(r"[\w.]*$", cmdl).group(0) # or ''
+    
+    @staticmethod
+    def get_words_hint(cmdl):
+        text = ut.get_words_backward(cmdl)
         return text.rpartition('.') # -> text, sep, hint
 
 
