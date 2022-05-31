@@ -809,8 +809,10 @@ class ShellFrame(MiniFrame):
         
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
         self.Bind(wx.EVT_SHOW, self.OnShow)
+        self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -918,7 +920,6 @@ class ShellFrame(MiniFrame):
             self.Log.MarkerAdd(v, 4)
         
         self.Init()
-        self._mgr.Update()
     
     SESSION_FILE = ut.get_rootpath("debrc")
     SCRATCH_FILE = ut.get_rootpath("deb-scratch.log")
@@ -997,12 +998,14 @@ class ShellFrame(MiniFrame):
             nb.TabCtrlHeight = 0
         evt.Skip()
     
+    def OnCreate(self, evt):
+        evt.Skip()
+    
     def About(self, evt=None):
         self.Help.SetText('\n\n'.join((
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
-            
             Nautilus.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
