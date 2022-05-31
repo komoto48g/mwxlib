@@ -2318,7 +2318,7 @@ class Editor(EditWindow, EditorInterface):
     """Python code editor
     """
     STYLE = { #<Editor>
-        "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,face:MS Gothic,size:9",
+        "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
         "STC_STYLE_CARETLINE"   : "fore:#000000,back:#ffff7f,size:2",
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#ffffb8,size:9",
         "STC_STYLE_BRACELIGHT"  : "fore:#000000,back:#ffffb8,bold",
@@ -2594,7 +2594,7 @@ class Nautilus(Shell, EditorInterface):
         and the other half by K. O'moto.
     """
     STYLE = { #<Shell>
-        "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,face:MS Gothic,size:9",
+        "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
         "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#123460,size:2",
         "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#f0f0f0,size:9",
         "STC_STYLE_BRACELIGHT"  : "fore:#ffffff,back:#202020,bold",
@@ -3786,7 +3786,11 @@ class Nautilus(Shell, EditorInterface):
                     return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
-                modules = dir(import_module(text))
+                try:
+                    modules = dir(import_module(text))
+                except ImportError as e:
+                    self.message("\b failed: {}".format(e))
+                    return
             else:
                 m = re.match(r"(import|from)\s+(.*)", cmdl)
                 if m:
@@ -3794,9 +3798,11 @@ class Nautilus(Shell, EditorInterface):
                     if not hints or hints.strip().endswith(','):
                         self.message("[module]>>> waiting for key input...")
                         return
-                    elif hints.endswith(' '):
+                    if hints.endswith(' '):  # Don't show comp-list
                         return
-                    text = '.'
+                    tail = hints.split(',')[-1] # the last one following `,`
+                    if len(tail.split()) > 1:   # includes a seperator, e.g., `as`
+                        return
                     modules = self.modules
                 else:
                     text, sep, hint = self.get_words_hint(cmdl)
