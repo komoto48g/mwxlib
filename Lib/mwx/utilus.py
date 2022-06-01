@@ -604,7 +604,7 @@ class FSM(dict):
             ## matching test using fnmatch
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
-                    return self.call(pat, *args, **kwargs) # recursive call with matched pattern
+                    return self.call(pat, *args, **kwargs) # recursive call
         
         self.__debcall__(event, *args, **kwargs) # check when no transition
         return None # no event, no action

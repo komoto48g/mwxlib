@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.9"
+__version__ = "0.60.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1937,20 +1937,20 @@ class EditorInterface(CtrlInterface):
     
     def match_paren(self):
         p = self.cpos
-        if self.get_char(p) in "({[<":
-            q = self.BraceMatch(p)
-            if q != -1:
-                self.BraceHighlight(p, q) # matched to following char
-                return q
-            else:
-                self.BraceBadLight(p)
-        elif self.get_char(p-1) in ")}]>":
+        if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
-                self.BraceHighlight(q, p-1) # matched to preceding char
+                self.BraceHighlight(q, p-1) # matched the preceding char
                 return q
             else:
                 self.BraceBadLight(p-1)
+        elif self.get_char(p) in "({[<":
+            q = self.BraceMatch(p)
+            if q != -1:
+                self.BraceHighlight(p, q) # matched the following char
+                return q
+            else:
+                self.BraceBadLight(p)
         else:
             self.BraceHighlight(-1,-1) # no highlight
     
