@@ -29,7 +29,7 @@ The simplest frame, which consists of
 - The button is based on <wx.lib.platebtn>
 - The panel is based on <wx.lib.scrolledpanel>, and extended to be foldable. (try it!)
 
-[demo-buttons](./demo-buttons.py)
+[demo-icons](./demo-icons.py)
 ![screenshot (folded)](./image/demo-buttons(folded).png)
 ![screenshot (expanded)](./image/demo-buttons(expanded).png)
 

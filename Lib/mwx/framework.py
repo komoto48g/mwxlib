@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.59.8"
+__version__ = "0.59.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -842,7 +842,6 @@ class ShellFrame(MiniFrame):
             0 : {
                     '* pressed' : (0, skip, fork), # -> debugger
                    'f1 pressed' : (0, self.About),
-                   'f2 pressed' : (0, lambda v: self.load(self.current_shell.target)),
                   'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1410,7 +1409,6 @@ class EditorInterface(CtrlInterface):
                    '* released' : (0, skip),
                'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
-                   'f9 pressed' : (0, _F(self.wrap, None, doc="toggle-fold-type")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
              'C-S-left pressed' : (0, _F(self.selection_backward_word_or_paren)),
@@ -2040,7 +2038,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def expr_at_caret(self):
-        """Pythonic expression at the caret line"""
+        """A syntax unit (expression) at the caret line"""
         p = self.cpos
         st = self.GetStyleAt(p-1)
         if st in (1,12,13): # comment, eol
@@ -2057,7 +2055,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def atom_at_caret(self):
-        """Pythonic atom unit at the caret line"""
+        """A style unit (atom) at the caret line"""
         p = q = self.cpos
         st = self.GetStyleAt(p-1)
         if st == 0:
@@ -3094,10 +3092,6 @@ class Nautilus(Shell, EditorInterface):
         self.message("")
     
     def wrap(self, mode=1):
-        """Sets whether text is word wrapped
-        (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
-                            3:whitespace-wrap, None:toggle}
-        """
         EditorInterface.wrap(self, mode)
     
     ## --------------------------------
