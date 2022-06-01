@@ -1701,6 +1701,8 @@ class EditorInterface(CtrlInterface):
             indent = line[:(len(line)-len(lstr))]
             try:
                 texts = list(shlex.shlex(lstr)) # strip comment
+                if not texts:
+                    return indent
                 if texts[-1] == ':':
                     if re.match(self.py_indent_re, texts[0]):
                         indent += ' '*4
@@ -2054,35 +2056,6 @@ class EditorInterface(CtrlInterface):
         return (lhs + rhs).strip()
     
     @property
-    def atom_at_caret(self):
-        """A style unit (atom) at the caret line"""
-        p = q = self.cpos
-        st = self.GetStyleAt(p-1)
-        if st == 0:
-            st = self.GetStyleAt(p)
-        if st == 10:
-            c = self.get_char(p-1) # preceding char
-            if c in ")}]":
-                return self.get_text(self.left_paren, p)
-            c = self.get_char(p) # following char
-            if c in "({[":
-                return self.get_text(p, self.right_paren)
-            st = self.GetStyleAt(p)
-        if st == 11:
-            text, lp = self.CurLine
-            ls, rs = text[:lp], text[lp:]
-            rhs = re.match(r"[\w.]*", rs).group(0)
-            lhs = re.match(r"[\w.]*", ls[::-1]).group(0)
-            return lhs[::-1] + rhs
-        if st not in (0,10): # (no default or operator)
-            while self.GetStyleAt(p-1) == st and p > 0:
-                p -= 1
-            while self.GetStyleAt(q) == st and q < self.TextLength:
-                q += 1
-            return self.get_text(p, q)
-        return ''
-    
-    @property
     def topic_at_caret(self):
         """Topic word at the caret or selected substring
         The caret scouts back and forth to scoop a topic.
@@ -2194,6 +2167,7 @@ class EditorInterface(CtrlInterface):
             a, b = m.span(0)
             self.Anchor = p + a
             self.cpos = p + b
+            return self.SelectedText
     
     def re_search_backward(self, pattern):
         p = self.cpos
@@ -2203,6 +2177,7 @@ class EditorInterface(CtrlInterface):
             a, b = m.span(0)
             self.Anchor = p - a
             self.cpos = p - b
+            return self.SelectedText
     
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt cf. CurLine
@@ -2393,11 +2368,6 @@ class Editor(EditWindow, EditorInterface):
                 if self.__mtime != t:
                     self.message("The target file {!r} has changed. "
                                  "Press [F5] to reload the target.".format(f))
-        
-        @self.define_key('f5')
-        def reload_target(v):
-            self.reload_target()
-            self.message("\b {!r}.".format(self.target))
     
     def reload_target(self, force=True):
         if self.__mtime:
