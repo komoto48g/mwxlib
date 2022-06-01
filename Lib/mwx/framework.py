@@ -2375,8 +2375,13 @@ class Editor(EditWindow, EditorInterface):
             t = os.path.getmtime(f)
             if force or self.__mtime != t:
                 p = self.cpos
-                self.load_file(f, self.markline+1)
+                m = self.mark
+                lm = self.linemark
+                self.load_file(f)
+                self.mark = m
+                self.linemark = lm
                 self.goto_char(p)
+                self.recenter()
                 self.__mtime = t
     
     def load_cache(self, filename, globals=None, readonly=False):
