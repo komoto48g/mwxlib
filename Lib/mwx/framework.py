@@ -850,6 +850,7 @@ class ShellFrame(MiniFrame):
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.show_page, self.ghost, None, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
+             '*f[0-9]* pressed' : (0, noskip),
                   'C-w pressed' : (0, _F(self.close_shell)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
