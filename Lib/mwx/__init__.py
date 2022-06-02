@@ -1,30 +1,26 @@
 #! python3
 # -*- coding: utf-8 -*-
-"""mwxlib (based on matplotlib/wx)
+"""mwxlib framework (based on matplotlib/wx)
 """
-## Framework
 from .framework import __version__, __author__
-from .utilus import apropos, typename, where
-from .utilus import FSM
-from .utilus import funcall
-from .framework import pack, postcall
-from .framework import Menu, MenuBar, StatusBar
+from .utilus import apropos, typename, FSM
+from .framework import pack, Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame
 
-## from . import controls as wdigets
+## from . import controls
 ## from .controls import Param, LParam, Knob, ControlPanel, Icon
 ## from .controls import Button, ToggleButton, TextCtrl, Choice, Gauge, Indicator
 
-## matplot
+## from . import graphman
+## from .graphman import Layer, Thread, Graph
+## from .graphman import Frame as Graphman
+
+## Matplot
 ## from .matplot2 import MatplotPanel
 ## from .matplot2g import GraphPlot
 ## from .matplot2lg import LinePlot
 ## from .matplot2lg import Histogram
 ## from .matplot2lg import LineProfile
-
-## from . import graphman
-## from .graphman import Layer, Thread, Graph
-## from .graphman import Frame as Graphman
 
 ## Gnuplot
 ## from .mgplt import Gnuplot
@@ -36,7 +32,9 @@ import wx
 
 def deb(target=None, app=None, locals=None, **kwargs):
     """Dive into the process from your diving point
-    for debug, break, and inspection of the target
+    
+ @@ Divers:
+    This will execute your startup script $(PYTHONSTARTUP).
     
     Args:
          target : Object or module.
@@ -44,8 +42,8 @@ def deb(target=None, app=None, locals=None, **kwargs):
             app : An instance of App.
                   Default None may create a local App and the mainloop.
                   If app is True, neither the app nor the mainloop will be created.
-                  If app is given and not started the mainloop yet,
-                  the app will enter the mainloop herein.
+                  If app is given and the mainloop has not yet started,
+                  the app will enter the mainloop.
          locals : Additional context of the shell
        **kwargs : Nautilus arguments
             introText : introductory of the shell
