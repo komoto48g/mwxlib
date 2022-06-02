@@ -2938,6 +2938,8 @@ class Nautilus(Shell, EditorInterface):
         self.show_folder()
         self.set_style(self.STYLE)
         
+        self.MarkerDeleteAll(1) # delete unnecessary mark-arrow at startup
+        
         self.__text = ''
         self.__time = 0
     
