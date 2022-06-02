@@ -139,10 +139,8 @@ class Debugger(Pdb):
         })
     
     def jump_to_entry(self, evt):
-        """Jump to the first lineno of the code
-        """
-        ln = self.editor.markline
-        self.send_input('j {}'.format(ln + 1))
+        """Jump to the first lineno of the code"""
+        self.send_input('j {}'.format(self.editor.markline+1))
     
     def add_marker(self, lineno, style):
         """Add a mrker to lineno, with the following style markers:
@@ -152,7 +150,10 @@ class Debugger(Pdb):
         self.editor.MarkerAdd(lineno-1, style)
     
     def send_input(self, c):
-        self.stdin.input = c
+        """Send input:str @postcall"""
+        def _send():
+            self.stdin.input = c
+        wx.CallAfter(_send)
     
     def message(self, msg, indent=-1):
         """(override) Add prefix to msg"""
@@ -210,7 +211,7 @@ class Debugger(Pdb):
         shell = self.shell
         self.__breakpoint = None
         self.__interactive = self.shell.cpos
-        self.send_input('') # clear stdin buffer
+        self.stdin.input = '' # clear stdin buffer
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
@@ -220,6 +221,8 @@ class Debugger(Pdb):
     
     def on_debug_mark(self, frame):
         """Called when interaction"""
+        if frame is None:
+            self.handler('debug_end', frame) # emergency stop?
         code = frame.f_code
         filename = code.co_filename
         firstlineno = code.co_firstlineno
@@ -246,6 +249,8 @@ class Debugger(Pdb):
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
+        if frame is None:
+            self.handler('debug_end', frame) # emergency stop?
         pos = self.__interactive
         def _post():
             shell = self.shell
@@ -272,7 +277,7 @@ class Debugger(Pdb):
         main = threading.main_thread()
         thread = threading.current_thread()
         if thread is not main:
-            ## self.send_input('\n') # terminates reader in the thread
+            ## terminates the reader (main-thread)
             wx.CallAfter(self.send_input, '\n')
         def _continue():
             if wx.IsBusy():
