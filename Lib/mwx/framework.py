@@ -740,11 +740,13 @@ class ShellFrame(MiniFrame):
             from wxwit import Inspector
             from wxmon import EventMonitor
             from wxwil import LocalsWatcher
+            from controls import Icon
         except ImportError:
             from .wxpdb import Debugger
             from .wxwit import Inspector
             from .wxmon import EventMonitor
             from .wxwil import LocalsWatcher
+            from .controls import Icon
         
         self.debugger = Debugger(self,
                                  stdin=self.__shell.interp.stdin,
@@ -765,7 +767,7 @@ class ShellFrame(MiniFrame):
             style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
                 &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
-        self.console.AddPage(self.__shell, "root")
+        self.console.AddPage(self.__shell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
@@ -776,11 +778,11 @@ class ShellFrame(MiniFrame):
                 &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.ghost.AddPage(self.Scratch, "*Scratch*")
-        self.ghost.AddPage(self.Log,     "*Log*")
+        self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
-        self.ghost.AddPage(self.monitor, "Monitor")
-        self.ghost.AddPage(self.inspector, "Inspector")
+        self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
+        self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.ghost.TabCtrlHeight = -1
         
         self.watcher = aui.AuiNotebook(self, size=(300,200),
@@ -848,9 +850,6 @@ class ShellFrame(MiniFrame):
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.show_page, self.ghost, None, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
-                'S-f12 pressed' : (0, _F(self.clear_shell)),
-                'C-f12 pressed' : (0, _F(self.clone_shell)),
-                'M-f12 pressed' : (0, _F(self.close_shell)),
                   'C-w pressed' : (0, _F(self.close_shell)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
@@ -1373,11 +1372,11 @@ def editable(f):
     return _f
 
 
-def prompt1(f, message="Enter value", type=str):
+def ask(f, prompt="Enter value", type=str):
     """Get response from the user using a dialog box."""
     @wraps(f)
     def _f(*v):
-        with wx.TextEntryDialog(None, message, f.__name__) as dlg:
+        with wx.TextEntryDialog(None, prompt, f.__name__) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 return f(type(dlg.Value))
     return funcall(_f)
@@ -1419,7 +1418,7 @@ class EditorInterface(CtrlInterface):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
-                  'M-g pressed' : (0, prompt1(self.goto_line, "Line to goto:", int)),
+                  'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", int)),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
@@ -3098,16 +3097,13 @@ class Nautilus(Shell, EditorInterface):
         sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] OPS; SEPARATORS (no space, no comma)
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] OPS; SEPARATORS
         
-        def _popiter(ls, pattern):
-            if isinstance(pattern, str):
-                p = re.compile(pattern).match
-            else:
-                p = pattern
+        def _popiter(ls, f):
+            p = f if callable(f) else re.compile(f).match
             while ls and p(ls[0]):
                 yield ls.pop(0)
         
         def _eats(r, sep):
-            return ''.join(_popiter(r, "[ \t]")) \
+            return ''.join(_popiter(r, "[ \t]"))\
                  + ''.join(_popiter(r, lambda c: c not in sep))
         
         lhs = ''

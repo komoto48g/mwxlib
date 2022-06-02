@@ -295,7 +295,7 @@ class Knob(wx.Panel):
     
     In addition to direct key input to the textctrl,
     [up][down][wheelup][wheeldown] keys can be used,
-    with modifiers S- 2x, C- 16x, and M- 256x steps.
+      w/modifiers: S- 2x, C- 16x, and M- 256x steps.
     [Mbutton] resets to the std. value if it exists.
     
     Args:

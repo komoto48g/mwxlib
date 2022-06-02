@@ -790,9 +790,9 @@ class Frame(mwx.Frame):
     def OnClose(self, evt): #<wx._core.CloseEvent>
         ssn = os.path.basename(self.session_file or '--')
         with wx.MessageDialog(None,
-                "Do you want to save session before closing program?",
-                "{}@{} - [{}]".format(self.__class__.__name__, platform.node(), ssn),
-                style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
+            "Do you want to save session before closing program?",
+            "{}@{} - [{}]".format(self.__class__.__name__, platform.node(), ssn),
+            style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
             ret = dlg.ShowModal()
             if ret == wx.ID_YES:
                 if not self.save_session():
