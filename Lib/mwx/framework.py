@@ -1332,6 +1332,9 @@ class ShellFrame(MiniFrame):
         self.findData.FindString = text
     
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
+    ## Note: This interface is common to editors
+    
+    target_editor = None
     
     def OnFindText(self, evt):
         if self.findDlg is not None:
@@ -1339,23 +1342,24 @@ class ShellFrame(MiniFrame):
             return
         
         win = self.current_editor
+        self.target_editor = win
         self.findData.FindString = win.topic_at_caret
         self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
                             style=(wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN))
         self.findDlg.Show()
     
     def OnFindNext(self, evt, backward=False): #<wx._core.FindDialogEvent>
-        if self.findDlg:
-            self.findDlg.Close()
-            self.findDlg = None
-        
         data = self.findData
         down_p = data.Flags & wx.FR_DOWN
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = self.current_editor # or self.findDlg.Parent <EditWindow>
-        win.DoFindNext(data)
+        win = wx.Window.FindFocus()
+        if win not in self.all_pages(EditorInterface):
+            win = self.target_editor or self.console.CurrentPage
+        win.DoFindNext(data, self.findDlg or win)
+        if self.findDlg:
+            self.OnFindClose(None)
     
     def OnFindPrev(self, evt):
         self.OnFindNext(evt, backward=True)
@@ -2358,15 +2362,24 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
-            self.parent.handler('title_window', self.target)
-            self.trace_position()
-            v.Skip()
             if self.__mtime:
                 f = self.target
                 t = os.path.getmtime(f)
                 if self.__mtime != t:
                     self.message("The target file {!r} has changed. "
                                  "Press [F5] to reload the target.".format(f))
+            self.parent.handler('title_window', self.target)
+            self.trace_position()
+            v.Skip()
+    
+    def trace_position(self):
+        text, lp = self.CurLine
+        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
+    
+    def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
+        if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
+            self.trace_position()
+        evt.Skip()
     
     def reload_target(self, force=True):
         if self.__mtime:
@@ -2434,15 +2447,6 @@ class Editor(EditWindow, EditorInterface):
             return True
         except Exception:
             return False
-    
-    def trace_position(self):
-        text, lp = self.CurLine
-        self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
-    
-    def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
-        if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
-            self.trace_position()
-        evt.Skip()
 
 
 class Interpreter(interpreter.Interpreter):
@@ -2681,9 +2685,11 @@ class Nautilus(Shell, EditorInterface):
             self.handler('shell_activated', self)
             self.parent.handler('title_window', self.target)
             self.trace_position()
+            v.Skip()
         
         def inactivate(v):
             self.handler('shell_inactivated', self)
+            v.Skip()
         
         ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
         ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
@@ -2717,8 +2723,8 @@ class Nautilus(Shell, EditorInterface):
         
         self.handler.update({ # DNA<Nautilus>
             None : {
-                    'focus_set' : [ None, skip, activate ],
-                   'focus_kill' : [ None, skip, inactivate ],
+                    'focus_set' : [ None, activate ],
+                   'focus_kill' : [ None, inactivate ],
                  'shell_cloned' : [ None, ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
