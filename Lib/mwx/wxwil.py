@@ -128,6 +128,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
 
 if __name__ == "__main__":
     from graphman import Frame
+    
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(LocalsWatcher, show=1) #>>> self.plug.watch(locals())

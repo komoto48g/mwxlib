@@ -1770,7 +1770,6 @@ class EditorInterface(CtrlInterface):
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
-            ## traceback.print_exc()
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -3358,8 +3357,8 @@ class Nautilus(Shell, EditorInterface):
                 self.fragmwords |= set(words)
             self.parent.handler('add_history', command, noerr)
         except AttributeError:
-            ## execStartupScript 実行時は出力先 (owner) が存在しないのでパス
-            ## shell.__init__ で定義するアトリビュートも存在しない
+            ## execStartupScript 実行時は出力先 (owner) が存在しない
+            ## shell.__init__ よりも先に実行される
             pass
     
     def regulate_cmd(self, text, eol=None):
@@ -3429,7 +3428,7 @@ class Nautilus(Shell, EditorInterface):
     def help(self, obj=None):
         """Full description"""
         ## if obj is None:
-        ##     self.message("The stream is piped from stdin.")
+        ##     self.message("Currently redirected to stdin/stdout.")
         ##     wx.CallAfter(pydoc.help)
         ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
@@ -3479,7 +3478,7 @@ class Nautilus(Shell, EditorInterface):
                     commands.append(c) # Add the previous command to the list
                 c = line
             else:
-                c += lf + line # Multiline command. Add to the command
+                c += lf + line # Multiline command; Add to the command
         commands.append(c)
         
         self.Replace(self.bolc, self.eolc, '')
@@ -3591,7 +3590,6 @@ class Nautilus(Shell, EditorInterface):
                         ln = self.LineFromPosition(self.bolc)
                         self.linemark = ln + lines[-1] - 1
                 self.message("- {}".format(e))
-                ## traceback.print_exc()
         else:
             self.message("No region")
     
@@ -4004,9 +4002,9 @@ if 1:
     dive(self.shellframe)
     dive(self.shellframe.rootshell)
     """
-    import numpy as np
+    ## import numpy as np
     ## from scipy import constants as const
-    np.set_printoptions(linewidth=256) # default 75
+    ## np.set_printoptions(linewidth=256) # default 75
     
     app = wx.App()
     frm = Frame(None,

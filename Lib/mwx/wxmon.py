@@ -317,6 +317,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
 
 if __name__ == "__main__":
     from graphman import Frame
+    
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(EventMonitor, show=1) #>>> self.plug.watch(self.plug)

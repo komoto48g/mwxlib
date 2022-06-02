@@ -1214,11 +1214,12 @@ class Gauge(wx.Panel):
 
 if __name__ == "__main__":
     from numpy import pi
+    from framework import CtrlInterface
     
-    class TestPanel(ControlPanel, mwx.CtrlInterface):
+    class TestPanel(ControlPanel, CtrlInterface):
         def __init__(self, *args, **kwargs):
             ControlPanel.__init__(self, *args, **kwargs)
-            mwx.CtrlInterface.__init__(self)
+            CtrlInterface.__init__(self)
             
             self.handler.debug = 6
             

@@ -168,6 +168,7 @@ def miniIcon(key, size=(16,16)):
 
 if __name__ == "__main__":
     from graphman import Frame
+    
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(Inspector, show=1) #>>> self.plug.watch(self.plug)

@@ -22,12 +22,14 @@ try:
     import framework as mwx
     from controls import Icon
     from controls import ControlPanel
+    from framework import CtrlInterface
     from matplot2g import GraphPlot
     from matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
     from .controls import Icon
     from .controls import ControlPanel
+    from .framework import CtrlInterface
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
 from matplotlib import cm
@@ -179,7 +181,7 @@ def _isLayer(obj):
     return hasattr(obj, 'category') #<class 'Layer'>
 
 
-class Layer(ControlPanel, mwx.CtrlInterface):
+class Layer(ControlPanel, CtrlInterface):
     """Graphman.Layer
     
     Attributes:
@@ -256,7 +258,7 @@ class Layer(ControlPanel, mwx.CtrlInterface):
     def __init__(self, parent, session=None, **kwargs):
         kwargs.setdefault('size', (130, 24)) # keep minimum size
         ControlPanel.__init__(self, parent, **kwargs)
-        mwx.CtrlInterface.__init__(self)
+        CtrlInterface.__init__(self)
         
         self.__parent = parent #= self.Parent, but not always if whose son is floating
         self.__artists = []
