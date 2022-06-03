@@ -2375,7 +2375,7 @@ class Editor(EditWindow, EditorInterface):
             self.trace_position()
         evt.Skip()
     
-    def reload_target(self, force=True):
+    def reload_target(self, show=True, focus=True, force=True):
         if self.__mtime:
             f = self.target
             t = os.path.getmtime(f)
@@ -2383,7 +2383,7 @@ class Editor(EditWindow, EditorInterface):
                 p = self.cpos
                 m = self.mark
                 lm = self.linemark
-                self.load_file(f)
+                self.load_file(f, 0, show, focus)
                 self.mark = m
                 self.linemark = lm
                 self.goto_char(p)
