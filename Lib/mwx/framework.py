@@ -839,7 +839,7 @@ class ShellFrame(MiniFrame):
                      'add_page' : [ None, self.add_page ],
                     'show_page' : [ None, self.show_page ],
                   'remove_page' : [ None, self.remove_page ],
-                 'title_window' : [ None, self.SetTitleWindow ],
+                 'title_window' : [ None, self.on_title_window ],
             },
             0 : {
                     '* pressed' : (0, skip, fork), # -> debugger
@@ -1022,36 +1022,6 @@ class ShellFrame(MiniFrame):
         )
         self.show_page(self.Help, focus=0)
     
-    def PopupWindow(self, win, show=True, focus=True):
-        """Popup window in notebooks (console, ghost)
-        win : page or window to popup (default:None is ghost)
-       show : True, False, otherwise None:toggle
-        """
-        wnd = win if focus else wx.Window.FindFocus() # original focus
-        for pane in self._mgr.GetAllPanes():
-            nb = pane.window
-            if nb is win:
-                break
-            if isinstance(nb, aui.AuiNotebook):
-                j = nb.GetPageIndex(win)
-                if j != -1:
-                    if j != nb.Selection:
-                        nb.Selection = j # move focus to AuiTab?
-                    break
-        else:
-            print("- No such window in any pane: {}.".format(win))
-            return
-        pane = self._mgr.GetPane(nb)
-        if show is None:
-            show = not pane.IsShown()
-        pane.Show(show)
-        self._mgr.Update()
-        if wnd and win.Shown:
-            wnd.SetFocus()
-    
-    def SetTitleWindow(self, title):
-        self.SetTitle("Nautilus - {}".format(title))
-    
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
         if nb.CurrentPage is self.rootshell:
@@ -1133,7 +1103,7 @@ class ShellFrame(MiniFrame):
             self.ginfo.watch(gs)
         if self.linfo.target is not ls:
             self.linfo.watch(ls)
-        self.SetTitleWindow(frame)
+        self.on_title_window(frame)
         self.show_page(self.debugger.editor, focus=0)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
@@ -1164,12 +1134,35 @@ class ShellFrame(MiniFrame):
         """Called when monitor unwatch"""
         self.inspector.set_colour(widget, 'black')
     
+    def on_title_window(self, obj):
+        self.SetTitle("Nautilus - {}".format(obj))
+    
     def show_page(self, win, show=True, focus=True):
         """Show the notebook page and move the focus
-        win : page or window to popup (default:None is ghost)
+        win : page or window to popup
        show : True, False, otherwise None:toggle
         """
-        self.PopupWindow(win, show, focus)
+        wnd = win if focus else wx.Window.FindFocus() # original focus
+        for pane in self._mgr.GetAllPanes():
+            nb = pane.window
+            if nb is win:
+                break
+            if isinstance(nb, aui.AuiNotebook):
+                j = nb.GetPageIndex(win)
+                if j != -1:
+                    if j != nb.Selection:
+                        nb.Selection = j # move focus to AuiTab?
+                    break
+        else:
+            ## print("- No such window in any pane: {}.".format(win))
+            return
+        pane = self._mgr.GetPane(nb)
+        if show is None:
+            show = not pane.IsShown()
+        pane.Show(show)
+        self._mgr.Update()
+        if wnd and win.Shown:
+            wnd.SetFocus()
     
     def add_page(self, win, title=None, show=True):
         """Add page to the console"""
@@ -1178,7 +1171,7 @@ class ShellFrame(MiniFrame):
         if j == -1:
             nb.AddPage(win, title or typename(win.target))
             nb.TabCtrlHeight = -1
-        self.PopupWindow(win, show)
+        self.show_page(win, show)
     
     def remove_page(self, win):
         """Remove page from the console"""
