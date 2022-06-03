@@ -1109,8 +1109,8 @@ class ShellFrame(MiniFrame):
                         sender=self, command=None, more=False)
         command = shell.cmdline
         self.add_history(command, prefix=' '*4, suffix=None)
-        ## The cmdline ends with linesep (see comment of addHistory)
-        ## logging each line in case of crashing
+        ## The cmdline ends with linesep (cf. regulate_cmd).
+        ## Log debug history every single step in case of crash.
         with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(command)
     
@@ -1562,13 +1562,14 @@ class EditorInterface(CtrlInterface):
         self.IndicatorSetForeground(2, "light gray")
         
         ## Custom style of control-char, wrap-mode
+        ## self.UseTabs = False
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
-        self.UseTabs = False
         self.TabWidth = 4
-        self.WrapMode = 0
-        self.WrapIndentMode = 1
-        self.IndentationGuides = 2
+        self.EOLMode = stc.STC_EOL_LF
+        self.WrapMode = stc.STC_WRAP_NONE
+        self.WrapIndentMode = stc.STC_WRAPINDENT_SAME
+        self.IndentationGuides = stc.STC_IV_LOOKFORWARD
         
         self.__mark = -1
         self.__line = -1
@@ -4021,6 +4022,7 @@ if 1:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1
         frm.shellframe.History.ViewEOL = 1
+        frm.shellframe.Help.ViewEOL = 1
         frm.shellframe.Log.ViewEOL = 1
     frm.shellframe.Show()
     frm.shellframe.rootshell.SetFocus()
