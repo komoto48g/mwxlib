@@ -269,11 +269,11 @@ class Layer(ControlPanel, CtrlInterface):
                    'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                  'pane_loaded' : [ None ], # Called after Init
-                'pane_unloaded' : [ None ], # Called before Destroy
-                   'pane_shown' : [ None, _F(self.Draw, True)  ], # when active
-                  'pane_closed' : [ None, _F(self.Draw, False) ], # when inactive
-                  'pane_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
+                  'page_loaded' : [ None ], # Called after Init
+                'page_unloaded' : [ None ], # Called before Destroy
+                   'page_shown' : [ None, _F(self.Draw, True)  ], # when active
+                  'page_closed' : [ None, _F(self.Draw, False) ], # when inactive
+                  'page_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
             },
             0 : {
                   'C-c pressed' : (0, _F(self.copy_to_clipboard)),
@@ -517,13 +517,13 @@ class AuiNotebook(aui.AuiNotebook):
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
         plug = self.CurrentPage
         if plug:
-            plug.handler('pane_shown', plug)
+            plug.handler('page_shown', plug)
         evt.Skip()
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
         plug = self.CurrentPage
         if plug and plug is not evt.EventObject:
-            plug.handler('pane_hidden', plug)
+            plug.handler('page_hidden', plug)
         evt.Skip() # ? called twice when click
 
 
@@ -861,10 +861,10 @@ class Frame(mwx.Frame):
                 nb.SetSelection(nb.GetPageIndex(plug))
             if show:
                 if not pane.IsShown():
-                    plug.handler('pane_shown', plug)
+                    plug.handler('page_shown', plug)
             else:
                 if pane.IsShown():
-                    plug.handler('pane_closed', plug)
+                    plug.handler('page_closed', plug)
         pane.Show(show)
     
     def update_pane(self, name, show=False, **kwargs):
@@ -906,9 +906,9 @@ class Frame(mwx.Frame):
         if isinstance(win, aui.AuiNotebook):
             for j in range(win.PageCount):
                 plug = win.GetPage(j)
-                plug.handler('pane_closed', plug)
+                plug.handler('page_closed', plug)
         else:
-            win.handler('pane_closed', win)
+            win.handler('page_closed', win)
         ## evt.Skip() # cause the same event call twice?
     
     ## --------------------------------
@@ -1117,7 +1117,7 @@ class Frame(mwx.Frame):
         ## set reference of a plug (one module, one plugin)
         module.__plug__ = plug
         
-        plug.handler('pane_loaded', plug)
+        plug.handler('page_loaded', plug)
         
         ## Create pane or notebook pane
         caption = plug.caption
@@ -1195,8 +1195,8 @@ class Frame(mwx.Frame):
                 self._mgr.DetachPane(plug)
                 self._mgr.Update()
             
-            plug.handler('pane_closed', plug) # (even if not shown)
-            plug.handler('pane_unloaded', plug)
+            plug.handler('page_closed', plug) # (even if not shown)
+            plug.handler('page_unloaded', plug)
             plug.Destroy()
             
             if nb and not nb.PageCount:
