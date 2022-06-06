@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.0"
+__version__ = "0.60.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -832,6 +832,9 @@ class ShellFrame(MiniFrame):
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
                     'debug_end' : [ None, self.on_debug_end ],
+                  'trace_begin' : [ None, self.on_trace_begin ],
+                   'trace_hook' : [ None, self.on_trace_hook ],
+                    'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
                   'add_history' : [ None, self.add_history ],
@@ -881,42 +884,22 @@ class ShellFrame(MiniFrame):
             self.Scratch.py_eval_line(self.current_shell.globals,
                                       self.current_shell.locals,)
         
-        ## @self.Scratch.handler.bind('M-j pressed', state=0)
-        ## def exec_region(v):
-        ##     self.Scratch.py_exec_region(self.current_shell.globals,
-        ##                                 self.current_shell.locals,
-        ##                                 region=self.Scratch.region,
-        ##                                 filename="<string>")
-        
         @self.Scratch.handler.bind('M-j pressed', state=0)
         def exec_buffer(v):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
                                         filename="<scratch>")
         
+        self.Scratch.target = "<scratch>"
+        
+        self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
+        self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
+        
         ## text-mode
         self.Log.show_folder()
         
-        @self.Log.handler.bind('line_set')
-        def start(v):
-            filename = self.Log.target
-            if filename and not self.debugger.busy:
-                self.debugger.editor = self.Log
-                self.debugger.watch((filename, v))
-                self.message("Debugger has started tracing.")
-            elif self.debugger.busy:
-                self.message("Debugger is busy now.")
-            self.Log.MarkerDeleteAll(4)
-        
-        @self.Log.handler.bind('line_unset')
-        def stop(v):
-            if self.debugger.tracing:
-                self.debugger.editor = None
-                self.debugger.unwatch()
-                self.message("Debugger finished tracing.")
-            elif self.debugger.busy:
-                self.message("Debugger is busy now.")
-            self.Log.MarkerAdd(v, 4)
+        self.Log.handler.bind('line_set', _F(self.start_trace, self.Log))
+        self.Log.handler.bind('line_unset', _F(self.stop_trace, self.Log))
         
         self.Init()
     
@@ -1124,6 +1107,34 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         del shell.locals
         del shell.globals
+    
+    def start_trace(self, line, editor):
+        if not editor.target:
+            return
+        if not self.debugger.busy:
+            self.debugger.editor = editor
+            self.debugger.watch((editor.target, line))
+            self.message("Debugger has started tracing.")
+        editor.MarkerDeleteAll(4)
+    
+    def stop_trace(self, line, editor):
+        if self.debugger.tracing:
+            self.debugger.editor = None
+            self.debugger.unwatch()
+            self.message("Debugger finished tracing.")
+        editor.MarkerAdd(line, 4)
+    
+    def on_trace_begin(self, frame):
+        """Called when set-trace"""
+        pass
+    
+    def on_trace_hook(self, frame):
+        """Called when a breakppoint is reached"""
+        pass
+    
+    def on_trace_end(self, frame):
+        """Called when unset-trace"""
+        pass
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
@@ -1743,6 +1754,7 @@ class EditorInterface(CtrlInterface):
             if os.path.isdir(dirname) and dirname not in sys.path:
                 sys.path.append(dirname)
         try:
+            del self.linemark
             if region:
                 p, q = region
                 text = self.get_text(p, q)
@@ -1753,7 +1765,6 @@ class EditorInterface(CtrlInterface):
                 ln = 0
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
-            del self.linemark
             self.message("Evaluated {!r} successfully".format(filename))
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)

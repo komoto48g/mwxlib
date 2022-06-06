@@ -320,11 +320,17 @@ class Debugger(Pdb):
             lineno = frame.f_lineno
             if target == filename:
                 code = frame.f_code
-                src, lineno = inspect.getsourcelines(code)
+                if filename == "<scratch>":
+                    ## TODO: line-hook (cannot get src from <scratch> code)
+                    ## Currently, only call-hook mode is available.
+                    lcnt = 1
+                else:
+                    src, lineno = inspect.getsourcelines(code)
+                    lcnt = len(src)
                 if line == lineno-1:
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
-                elif 0 < line - lineno + 1 < len(src):
+                elif 0 < line - lineno + 1 < lcnt:
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
                 else:
