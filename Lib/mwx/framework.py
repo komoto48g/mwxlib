@@ -2131,24 +2131,27 @@ class EditorInterface(CtrlInterface):
     ## Editor/ goto, skip, selection,..
     ## --------------------------------
     
-    def _goto_pos(self, pos, selection=False):
+    def goto_char(self, pos, selection=False):
         if pos is None:
             return
+        if pos < 0:
+            pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
         if selection:
-            self.SetCurrentPos(pos)
+            self.cpos = pos
         else:
             self.GotoPos(pos)
         return True
     
-    def goto_char(self, pos):
-        if pos < 0:
-            pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
-        self.GotoPos(pos)
-    
-    def goto_line(self, ln):
+    def goto_line(self, ln, selection=False):
+        if ln is None:
+            return
         if ln < 0:
             ln += self.LineCount
-        self.GotoLine(ln)
+        if selection:
+            self.cline = ln
+        else:
+            self.GotoLine(ln)
+        return True
     
     def skip_chars_forward(self, chars):
         p = self.cpos
@@ -2210,19 +2213,19 @@ class EditorInterface(CtrlInterface):
         self.GotoPos(self.eol)
     
     def goto_matched_paren(self):
-        return (self._goto_pos(self.left_paren)
-             or self._goto_pos(self.right_paren)
-             or self._goto_pos(self.left_quotation)
-             or self._goto_pos(self.right_quotation))
+        return (self.goto_char(self.left_paren)
+             or self.goto_char(self.right_paren)
+             or self.goto_char(self.left_quotation)
+             or self.goto_char(self.right_quotation))
     
     def selection_forward_word_or_paren(self):
-        return (self._goto_pos(self.right_paren, 1)
-             or self._goto_pos(self.right_quotation, 1)
+        return (self.goto_char(self.right_paren, True)
+             or self.goto_char(self.right_quotation, True)
              or self.WordRightEndExtend())
     
     def selection_backward_word_or_paren(self):
-        return (self._goto_pos(self.left_paren, 1)
-             or self._goto_pos(self.left_quotation, 1)
+        return (self.goto_char(self.left_paren, True)
+             or self.goto_char(self.left_quotation, True)
              or self.WordLeftExtend())
     
     def save_excursion(self):
@@ -2803,6 +2806,8 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear),
                          'fork' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
+                   'up pressed' : (0, fork),
+                 'down pressed' : (0, fork),
                   '*up pressed' : (1, self.on_completion_forward_history),
                 '*down pressed' : (1, self.on_completion_backward_history),
                'S-left pressed' : (1, skip),
@@ -3270,16 +3275,18 @@ class Nautilus(Shell, EditorInterface):
     def goto_previous_mark_arrow(self):
         ln = self.MarkerPrevious(self.cline-1, 1<<1)
         if ln != -1:
-            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
+            p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
-            self.goto_char(0)
+            p = 0
+        self.goto_char(p)
     
     def goto_next_mark_arrow(self):
         ln = self.MarkerNext(self.cline+1, 1<<1)
         if ln != -1:
-            self.goto_char(self.PositionFromLine(ln) + len(sys.ps1))
+            p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
-            self.goto_char(-1)
+            p = -1
+        self.goto_char(p)
     
     ## --------------------------------
     ## Attributes of the shell
