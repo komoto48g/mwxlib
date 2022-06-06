@@ -73,7 +73,7 @@ class Debugger(Pdb):
     
     @property
     def busy(self):
-        """The current state is debugging mode
+        """The current state is debug mode
         True from entering `set_trace` until the end of `set_quit`
         """
         ## cf. (self.handler.current_state == 1)
@@ -84,8 +84,7 @@ class Debugger(Pdb):
     
     @property
     def tracing(self):
-        """The current state is tracing mode
-        True from `watch` to `unwatch`, i.e., while a breakpoint is not None
+        """The current state is trace mode
         """
         ## cf. (self.handler.current_state == 2)
         return self.__breakpoint is not None
@@ -163,6 +162,11 @@ class Debugger(Pdb):
     def watch(self, bp):
         """Start tracing"""
         if not self.busy: # don't set while debugging
+            if not bp:
+                self.unwatch()
+                return
+            elif not bp[0]: # no target
+                return
             self.__breakpoint = bp
             self.reset()
             sys.settrace(self.trace_dispatch)
@@ -173,6 +177,8 @@ class Debugger(Pdb):
         """End tracing"""
         if not self.busy: # don't unset while debugging
             bp = self.__breakpoint
+            if not bp:
+                return
             self.__breakpoint = None
             sys.settrace(None)
             threading.settrace(None)
@@ -187,6 +193,7 @@ class Debugger(Pdb):
             wx.MessageBox("Debugger is running.\n\n"
                           "Enter [q]uit to exit debug mode.")
             return
+        self.unwatch()
         try:
             frame = inspect.currentframe().f_back
             self.set_trace(frame)
@@ -320,11 +327,17 @@ class Debugger(Pdb):
             lineno = frame.f_lineno
             if target == filename:
                 code = frame.f_code
-                src, lineno = inspect.getsourcelines(code)
+                if filename == "<scratch>":
+                    ## TODO: line-hook (cannot get src from <scratch> code)
+                    ## Currently, only call-hook mode is available.
+                    lcnt = 1
+                else:
+                    src, lineno = inspect.getsourcelines(code)
+                    lcnt = len(src)
                 if line == lineno-1:
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
-                elif 0 < line - lineno + 1 < len(src):
+                elif 0 < line - lineno + 1 < lcnt:
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
                 else:
