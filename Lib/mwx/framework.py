@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.3"
+__version__ = "0.60.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -707,6 +707,40 @@ class AuiNotebook(aui.AuiNotebook):
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
           &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
         aui.AuiNotebook.__init__(self, *args, **kwargs)
+        self.parent = self.Parent
+    
+    def show_page(self, win, show=True):
+        j = self.GetPageIndex(win)
+        if j != -1:
+            if j != self.Selection:
+                self.Selection = j # move focus to AuiTab?
+                return True
+    
+    def add_page(self, win, title=None, show=True):
+        """Add page to the console"""
+        j = self.GetPageIndex(win)
+        if j == -1:
+            self.AddPage(win, title or typename(win.target))
+            if self.PageCount > 1:
+                self.TabCtrlHeight = -1
+        self.show_page(win, show)
+    
+    def remove_page(self, win):
+        """Remove page from the console"""
+        j = self.GetPageIndex(win)
+        if j != -1:
+            self.RemovePage(j)
+            ## if self.PageCount == 1:
+            ##     self.TabCtrlHeight = 0
+        win.Show(0)
+    
+    def delete_page(self, win):
+        """Delete page from the console"""
+        j = self.GetPageIndex(win)
+        if j != -1:
+            self.DeletePage(j) # Destroy the window
+            ## if self.PageCount == 1:
+            ##     self.TabCtrlHeight = 0
 
 
 class ShellFrame(MiniFrame):
@@ -843,9 +877,9 @@ class ShellFrame(MiniFrame):
                   'monitor_end' : [ None, self.on_monitor_end ],
                   'add_history' : [ None, self.add_history ],
                      'add_help' : [ None, self.add_help ],
-                     'add_page' : [ None, self.add_page ],
-                    'show_page' : [ None, self.show_page ],
-                  'remove_page' : [ None, self.remove_page ],
+                     'add_page' : [ None, self.console.add_page ],
+                  'remove_page' : [ None, self.console.remove_page ],
+                 'popup_window' : [ None, self.popup_window ],
                  'title_window' : [ None, self.on_title_window ],
             },
             0 : {
@@ -855,7 +889,7 @@ class ShellFrame(MiniFrame):
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.show_page, self.ghost, None, doc="Toggle ghost")),
+                  'f11 pressed' : (0, _F(self.popup_window, self.ghost, None, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, noskip),
                   'C-w pressed' : (0, _F(self.close_shell)),
@@ -867,13 +901,13 @@ class ShellFrame(MiniFrame):
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
             'C-x' : {
-                    'l pressed' : (0, _F(self.show_page, self.Log, doc="Show log")),
-                    'h pressed' : (0, _F(self.show_page, self.Help, doc="Show help")),
-                  'S-h pressed' : (0, _F(self.show_page, self.History, doc="Show history")),
-                    'j pressed' : (0, _F(self.show_page, self.Scratch, doc="Show scratch")),
-                    'm pressed' : (0, _F(self.show_page, self.monitor, doc="Show monitor")),
-                    'i pressed' : (0, _F(self.show_page, self.inspector, doc="Show inspector")),
-                 'home pressed' : (0, _F(self.show_page, self.rootshell, doc="Show root shell")),
+                    'l pressed' : (0, _F(self.popup_window, self.Log, doc="Show log")),
+                    'h pressed' : (0, _F(self.popup_window, self.Help, doc="Show help")),
+                  'S-h pressed' : (0, _F(self.popup_window, self.History, doc="Show history")),
+                    'j pressed' : (0, _F(self.popup_window, self.Scratch, doc="Show scratch")),
+                    'm pressed' : (0, _F(self.popup_window, self.monitor, doc="Show monitor")),
+                    'i pressed' : (0, _F(self.popup_window, self.inspector, doc="Show inspector")),
+                 'home pressed' : (0, _F(self.popup_window, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
             },
@@ -1007,7 +1041,27 @@ class ShellFrame(MiniFrame):
             "To show the credit, press C-M-Mbutton.",
             ))
         )
-        self.show_page(self.Help, focus=0)
+        self.popup_window(self.Help, focus=0)
+    
+    def popup_window(self, win, show=True, focus=True):
+        """Show the notebook page and move the focus
+        win : page or window to popup
+       show : True, False, otherwise None:toggle
+        """
+        wnd = win if focus else wx.Window.FindFocus() # original focus
+        for pane in self._mgr.GetAllPanes():
+            nb = pane.window
+            if nb is win or nb.show_page(win, show):
+                break
+        else:
+            ## print("- No such window: {}.".format(win))
+            return
+        if show is None:
+            show = not pane.IsShown()
+        pane.Show(show)
+        self._mgr.Update()
+        if wnd and win.Shown:
+            wnd.SetFocus()
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = self.console
@@ -1054,8 +1108,8 @@ class ShellFrame(MiniFrame):
             if obj:
                 self.linfo.watch(obj.__dict__)
                 self.ginfo.watch(eval("globals()", obj.__dict__))
-                self.show_page(self.linfo, focus=0)
-            self.show_page(self.monitor, focus=0)
+                self.popup_window(self.linfo, focus=0)
+            self.popup_window(self.monitor, focus=0)
         elif callable(obj):
             try:
                 shell = self.debugger.shell
@@ -1076,7 +1130,7 @@ class ShellFrame(MiniFrame):
         shell.prompt()
         shell.SetFocus()
         self.Show()
-        self.show_page(self.linfo, focus=0)
+        self.popup_window(self.linfo, focus=0)
         self.add_history("<-- Beginning of debugger")
     
     def on_debug_next(self, frame):
@@ -1091,7 +1145,7 @@ class ShellFrame(MiniFrame):
         if self.linfo.target is not ls:
             self.linfo.watch(ls)
         self.on_title_window(frame)
-        self.show_page(self.debugger.editor, focus=0)
+        self.popup_window(self.debugger.editor, focus=0)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         command = shell.cmdline
@@ -1156,57 +1210,11 @@ class ShellFrame(MiniFrame):
     def on_title_window(self, obj):
         self.SetTitle("Nautilus - {}".format(obj))
     
-    def show_page(self, win, show=True, focus=True):
-        """Show the notebook page and move the focus
-        win : page or window to popup
-       show : True, False, otherwise None:toggle
-        """
-        wnd = win if focus else wx.Window.FindFocus() # original focus
-        for pane in self._mgr.GetAllPanes():
-            nb = pane.window
-            if nb is win:
-                break
-            if isinstance(nb, aui.AuiNotebook):
-                j = nb.GetPageIndex(win)
-                if j != -1:
-                    if j != nb.Selection:
-                        nb.Selection = j # move focus to AuiTab?
-                    break
-        else:
-            ## print("- No such window in any pane: {}.".format(win))
-            return
-        pane = self._mgr.GetPane(nb)
-        if show is None:
-            show = not pane.IsShown()
-        pane.Show(show)
-        self._mgr.Update()
-        if wnd and win.Shown:
-            wnd.SetFocus()
-    
-    def add_page(self, win, title=None, show=True):
-        """Add page to the console"""
-        nb = self.console
-        j = nb.GetPageIndex(win)
-        if j == -1:
-            nb.AddPage(win, title or typename(win.target))
-            nb.TabCtrlHeight = -1
-        self.show_page(win, show)
-    
-    def remove_page(self, win):
-        """Remove page from the console"""
-        nb = self.console
-        j = nb.GetPageIndex(win)
-        if j != -1:
-            nb.RemovePage(j)
-            if nb.PageCount == 1:
-                nb.TabCtrlHeight = 0
-        win.Show(0)
-    
     def add_help(self, text, show=True, focus=False):
         """Puts text to the help buffer"""
         self.Help.Text = text
         if show is not None:
-            self.show_page(self.Help, show, focus)
+            self.popup_window(self.Help, show, focus)
     
     def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
         """Add command:str to the history buffer
@@ -1281,10 +1289,7 @@ class ShellFrame(MiniFrame):
         if shell is self.rootshell:
             self.message("- Don't remove the root shell.")
             return
-        nb = self.console
-        j = nb.GetPageIndex(shell)
-        if j != -1:
-            nb.DeletePage(j)
+        self.console.delete_page(shell)
     
     ## --------------------------------
     ## Attributes of the Console
@@ -2444,7 +2449,7 @@ class Editor(EditWindow, EditorInterface):
             self.linemark = lm
             wx.CallAfter(self.recenter)
             if show:
-                self.parent.handler('show_page', self, show, focus)
+                self.parent.handler('popup_window', self, show, focus)
             return True
         return False
     
