@@ -500,6 +500,9 @@ class MyFileDropLoader(wx.FileDropTarget):
 
 class AuiNotebook(aui.AuiNotebook):
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault('style',
+            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+          &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
@@ -1129,9 +1132,7 @@ class Frame(mwx.Frame):
                 nb.AddPage(plug, caption)
             else:
                 size = plug.GetSize() + (2,30)
-                nb = AuiNotebook(self,
-                    style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                        &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+                nb = AuiNotebook(self)
                 nb.AddPage(plug, caption)
                 self._mgr.AddPane(nb, aui.AuiPaneInfo()
                                          .Name(title).Caption(title)

@@ -701,6 +701,14 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         return wx.MiniFrame.Destroy(self)
 
 
+class AuiNotebook(aui.AuiNotebook):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('style',
+            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
+          &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+        aui.AuiNotebook.__init__(self, *args, **kwargs)
+
+
 class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break target
     
@@ -768,20 +776,14 @@ class ShellFrame(MiniFrame):
         self.ginfo = LocalsWatcher(self)
         self.linfo = LocalsWatcher(self)
         
-        self.console = aui.AuiNotebook(self, size=(600,400),
-            style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
-        )
+        self.console = AuiNotebook(self, size=(600,400))
         self.console.AddPage(self.__shell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleTabClose)
         
-        self.ghost = aui.AuiNotebook(self, size=(600,400),
-            style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
-        )
+        self.ghost = AuiNotebook(self, size=(600,400))
         self.ghost.AddPage(self.Scratch, "*Scratch*")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
@@ -790,10 +792,7 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.ghost.TabCtrlHeight = -1
         
-        self.watcher = aui.AuiNotebook(self, size=(300,200),
-            style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-                &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
-        )
+        self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
         
@@ -2024,6 +2023,10 @@ class EditorInterface(CtrlInterface):
         elif end < 0:
             end += n + 1
         return self.GetTextRange(start, end)
+    
+    anchor = property(
+        lambda self: self.GetAnchor(),
+        lambda self,v: self.SetAnchor(v))
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
