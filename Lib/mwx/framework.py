@@ -1111,14 +1111,18 @@ class ShellFrame(MiniFrame):
     def start_trace(self, line, editor):
         if not editor.target:
             return
-        if not self.debugger.busy:
+        if self.debugger.busy:
+            self.message("Debugger is busy.")
+        else:
             self.debugger.editor = editor
             self.debugger.watch((editor.target, line))
             self.message("Debugger has started tracing.")
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
-        if self.debugger.tracing:
+        if self.debugger.busy:
+            self.message("Debugger is busy.")
+        elif self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
             self.message("Debugger finished tracing.")
