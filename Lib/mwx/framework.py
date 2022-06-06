@@ -1073,7 +1073,7 @@ class ShellFrame(MiniFrame):
     def on_debug_begin(self, frame):
         """Called before set_trace"""
         shell = self.debugger.shell
-        shell.write("#<< Enter [n]ext to continue.\n", -1)
+        shell.write("#<-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
         shell.SetFocus()
         self.Show()
@@ -1105,7 +1105,7 @@ class ShellFrame(MiniFrame):
     def on_debug_end(self, frame):
         """Called after set_quit"""
         shell = self.debugger.shell
-        shell.write("#>> Debugger closed successfully.\n", -1)
+        shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
         self.add_history("--> End of debugger")
         self.linfo.unwatch()
@@ -1125,12 +1125,12 @@ class ShellFrame(MiniFrame):
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
-        if self.debugger.busy:
-            self.message("Debugger is busy.")
-        elif self.debugger.tracing:
+        if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-            self.message("Debugger finished tracing.")
+            self.message("Debugger stopped tracing.")
+        else:
+            self.message("Debugger closed.")
         editor.MarkerAdd(line, 4)
     
     def on_trace_begin(self, frame):
@@ -2351,6 +2351,16 @@ class Editor(EditWindow, EditorInterface):
             self.__mtime = None
         self.__target = f
     
+    @property
+    def target_mtdelta(self):
+        if self.__mtime:
+            return os.path.getmtime(self.target) - self.__mtime
+    
+    @target_mtdelta.deleter
+    def target_mtdelta(self):
+        assert self.__mtime is not None
+        self.__mtime = os.path.getmtime(self.target)
+    
     def __init__(self, parent, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -2376,12 +2386,8 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
-            if self.__mtime:
-                f = self.target
-                t = os.path.getmtime(f)
-                if self.__mtime != t:
-                    self.message("The target file {!r} has changed. "
-                                 "Press [F5] to reload the target.".format(f))
+            if self.target_mtdelta:
+                self.message("The target file has been modified externally.")
             self.parent.handler('title_window', self.target)
             self.trace_position()
             v.Skip()
@@ -2395,20 +2401,8 @@ class Editor(EditWindow, EditorInterface):
             self.trace_position()
         evt.Skip()
     
-    def reload_target(self, show=True, focus=True, force=True):
-        if self.__mtime:
-            f = self.target
-            t = os.path.getmtime(f)
-            if force or self.__mtime != t:
-                p = self.cpos
-                m = self.mark
-                lm = self.linemark
-                self.load_file(f, 0, show, focus)
-                self.mark = m
-                self.linemark = lm
-                self.goto_char(p)
-                self.recenter()
-                self.__mtime = t
+    def reload_target(self, show=True, focus=True):
+        return self.load_file(self.target, self.markline+1, show, focus)
     
     def load_cache(self, filename, globals=None, readonly=False):
         linecache.checkcache(filename)
@@ -2427,12 +2421,22 @@ class Editor(EditWindow, EditorInterface):
                   "Try @where to get the path".format(filename))
             return False
         
+        if self.target == filename:
+            p = self.cpos
+            lm = self.linemark
+        else:
+            p = -1
+            lm = -1
+        
         if self.load_cache(filename) or self.LoadFile(filename):
             self.target = filename
             if lineno:
                 self.mark = self.PositionFromLine(lineno-1)
                 self.goto_char(self.mark)
-                wx.CallAfter(self.recenter)
+            if p != -1:
+                self.goto_char(p)
+            self.linemark = lm
+            wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('show_page', self, show, focus)
             return True
