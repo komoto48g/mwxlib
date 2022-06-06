@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.2"
+__version__ = "0.60.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -226,12 +226,11 @@ class KeyCtrlInterfaceMixin(object):
             self.message(evt.key + '-')
         evt.Skip()
     
-    def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key] action at default state
+    def define_keymap(self, keymap, action=None, mode='', *args, **kwargs):
+        """Define [map key mode] action in the default state.
         
         If no action, it invalidates the key and returns @decor(binder).
         key must be in C-M-S order (ctrl + alt(meta) + shift).
-        
         Note: kwargs `doc` and `alias` are reserved as kw-only-args.
         """
         state = self.handler.default_state
@@ -243,14 +242,20 @@ class KeyCtrlInterfaceMixin(object):
             map = state = None
         elif map not in self.handler: # make spec keymap
             self.make_keymap(map)
-        event = key + ' pressed'
+        if mode:
+            key += ' ' + mode
         if action:
             f = self.interactive_call(action, *args, **kwargs)
-            self.handler.update({map: {event: [state, f]}})
+            self.handler.update({map: {key: [state, f]}})
             return action
         else:
-            self.handler.update({map: {event: [state]}})
-            return lambda f: self.define_key(keymap, f, *args, **kwargs)
+            self.handler.update({map: {key: [state]}})
+            return lambda f: self.define_keymap(keymap, f, mode, *args, **kwargs)
+    
+    def define_key(self, keymap, action=None, *args, **kwargs):
+        """Define [map key (pressed:mode)] action in the default state.
+        """
+        return self.define_keymap(keymap, action, mode='pressed', *args, **kwargs)
     
     def interactive_call(self, action, *args, **kwargs):
         f = funcall(action, *args, **kwargs)
@@ -879,12 +884,12 @@ class ShellFrame(MiniFrame):
         self.Scratch.set_style(Nautilus.STYLE)
         self.Scratch.show_folder()
         
-        @self.Scratch.handler.bind('C-j pressed', state=0)
+        @self.Scratch.define_key('C-j')
         def eval_line(v):
             self.Scratch.py_eval_line(self.current_shell.globals,
                                       self.current_shell.locals,)
         
-        @self.Scratch.handler.bind('M-j pressed', state=0)
+        @self.Scratch.define_key('M-j')
         def exec_buffer(v):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
@@ -2596,12 +2601,12 @@ class Nautilus(Shell, EditorInterface):
         "STC_P_STRING"          : "fore:#a0a0a0",
         "STC_P_TRIPLE"          : "fore:#a0a0a0,back:#004040,eol",
         "STC_P_TRIPLEDOUBLE"    : "fore:#a0a0a0,back:#004040,eol",
-        "STC_P_STRINGEOL"       : "fore:#808080",
+        "STC_P_STRINGEOL"       : "fore:#7f7f7f",
         "STC_P_WORD"            : "fore:#80a0ff",
         "STC_P_WORD2"           : "fore:#ff80ff",
         "STC_P_WORD3"           : "fore:#ff0000,back:#ffff00", # optional for search word
-        "STC_P_DEFNAME"         : "fore:#e0c080,bold",
-        "STC_P_CLASSNAME"       : "fore:#e0c080,bold",
+        "STC_P_DEFNAME"         : "fore:#f0f080,bold",
+        "STC_P_CLASSNAME"       : "fore:#f0f080,bold",
         "STC_P_DECORATOR"       : "fore:#e08040",
         "STC_P_OPERATOR"        : "",
         "STC_P_NUMBER"          : "fore:#ffc080",
