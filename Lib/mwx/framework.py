@@ -2982,6 +2982,7 @@ class Nautilus(Shell, EditorInterface):
         self.set_style(self.STYLE)
         
         self.MarkerDeleteAll(1) # delete unnecessary mark-arrow at startup
+        self.AutoCompSetSeparator(ord('\t'))
         
         self.__text = ''
         self.__time = 0
@@ -3580,7 +3581,7 @@ class Nautilus(Shell, EditorInterface):
     def gen_autocomp(self, offset, words):
         """Call AutoCompShow for the specified words"""
         if words:
-            listr = ' '.join(words) # make itemlist:str
+            listr = '\t'.join(words) # make itemlist:str
             self.AutoCompShow(offset, listr)
     
     def eval_line(self, evt):
