@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.4"
+__version__ = "0.60.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -226,7 +226,7 @@ class KeyCtrlInterfaceMixin(object):
             self.message(evt.key + '-')
         evt.Skip()
     
-    def define_keymap(self, keymap, action=None, mode='', *args, **kwargs):
+    def define_handler(self, keymap, action=None, mode='', *args, **kwargs):
         """Define [map key mode] action in the default state.
         
         If no action, it invalidates the key and returns @decor(binder).
@@ -250,12 +250,17 @@ class KeyCtrlInterfaceMixin(object):
             return action
         else:
             self.handler.update({map: {key: [state]}})
-            return lambda f: self.define_keymap(keymap, f, mode, *args, **kwargs)
+            return lambda f: self.define_handler(keymap, f, mode, *args, **kwargs)
+    
+    ## def undefine_handler(self, keymap, mode=''):
+    ##     self.define_handler(keymap, None, mode)
     
     def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key (pressed:mode)] action in the default state.
-        """
-        return self.define_keymap(keymap, action, mode='pressed', *args, **kwargs)
+        """Define [map key pressed:mode] action in the default state."""
+        return self.define_handler(keymap, action, 'pressed', *args, **kwargs)
+    
+    ## def undefine_key(self, keymap):
+    ##     self.define_key(keymap, None)
     
     def interactive_call(self, action, *args, **kwargs):
         f = funcall(action, *args, **kwargs)
@@ -877,8 +882,7 @@ class ShellFrame(MiniFrame):
                   'monitor_end' : [ None, self.on_monitor_end ],
                   'add_history' : [ None, self.add_history ],
                      'add_help' : [ None, self.add_help ],
-                     'add_page' : [ None, self.console.add_page ],
-                  'remove_page' : [ None, self.console.remove_page ],
+                    'add_shell' : [ None, self.console.add_page ],
                  'popup_window' : [ None, self.popup_window ],
                  'title_window' : [ None, self.on_title_window ],
             },
@@ -892,7 +896,6 @@ class ShellFrame(MiniFrame):
                   'f11 pressed' : (0, _F(self.popup_window, self.ghost, None, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, noskip),
-                  'C-w pressed' : (0, _F(self.close_shell)),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -942,7 +945,7 @@ class ShellFrame(MiniFrame):
         self.Init()
     
     SESSION_FILE = ut.get_rootpath("debrc")
-    SCRATCH_FILE = ut.get_rootpath("deb-scratch.log")
+    SCRATCH_FILE = ut.get_rootpath("deb-scratch.py")
     LOGGING_FILE = ut.get_rootpath("deb-logging.log")
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
@@ -3551,7 +3554,7 @@ class Nautilus(Shell, EditorInterface):
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target,
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
-        self.parent.handler('add_page', shell)
+        self.parent.handler('add_shell', shell)
         self.handler('shell_cloned', shell)
         return shell
     
