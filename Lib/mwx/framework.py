@@ -713,6 +713,26 @@ class AuiNotebook(aui.AuiNotebook):
           &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         self.parent = self.Parent
+        
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
+    
+    def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
+        page = self.CurrentPage
+        if page:
+            self.parent.handler('page_shown', page)
+        evt.Skip()
+    
+    def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
+        page = self.CurrentPage
+        obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
+        if page and isinstance(obj, aui.AuiTabCtrl):
+            win = obj.Pages[evt.Selection].window
+            if not win.IsShownOnScreen():
+                ## Check if the (selected) window is hidden now.
+                ## False means that the page will be hidden by the window.
+                self.parent.handler('page_hidden', page)
+        evt.Skip()
     
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks"""

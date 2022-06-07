@@ -511,20 +511,25 @@ class AuiNotebook(aui.AuiNotebook):
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
-        plug = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        mwx.Menu.Popup(self, plug.Menu)
+        page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
+        mwx.Menu.Popup(self, page.Menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
-        plug = self.CurrentPage
-        if plug:
-            plug.handler('page_shown', plug)
+        page = self.CurrentPage
+        if page:
+            page.handler('page_shown', page)
         evt.Skip()
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        plug = self.CurrentPage
-        if plug and plug is not evt.EventObject:
-            plug.handler('page_hidden', plug)
-        evt.Skip() # ? called twice when click
+        page = self.CurrentPage
+        obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
+        if page and isinstance(obj, aui.AuiTabCtrl):
+            win = obj.Pages[evt.Selection].window
+            if not win.IsShownOnScreen():
+                ## Check if the (selected) window is hidden now.
+                ## False means that the page will be hidden by the window.
+                page.handler('page_hidden', page)
+        evt.Skip()
 
 
 class Frame(mwx.Frame):
