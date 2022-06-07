@@ -714,6 +714,13 @@ class AuiNotebook(aui.AuiNotebook):
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         self.parent = self.Parent
     
+    def all_pages(self, type=None):
+        """Yields all pages of the specified type in the notebooks"""
+        for j in range(self.PageCount):
+            win = self.GetPage(j)
+            if type is None or isinstance(win, type):
+                yield win
+    
     def show_page(self, win, show=True):
         j = self.GetPageIndex(win)
         if j != -1:
@@ -1300,11 +1307,8 @@ class ShellFrame(MiniFrame):
     
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks"""
-        for nb in (self.console, self.ghost):
-            for j in range(nb.PageCount):
-                win = nb.GetPage(j)
-                if type is None or isinstance(win, type):
-                    yield win
+        yield from self.console.all_pages(type)
+        yield from self.ghost.all_pages(type)
     
     @property
     def current_editor(self):
