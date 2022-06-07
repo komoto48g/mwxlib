@@ -713,6 +713,26 @@ class AuiNotebook(aui.AuiNotebook):
           &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         self.parent = self.Parent
+        
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
+    
+    def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
+        page = self.CurrentPage
+        if page:
+            self.parent.handler('page_shown', page)
+        evt.Skip()
+    
+    def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
+        page = self.CurrentPage
+        obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
+        if page and isinstance(obj, aui.AuiTabCtrl):
+            win = obj.Pages[evt.Selection].window
+            if not win.IsShownOnScreen():
+                ## Check if the (selected) window is hidden now.
+                ## False means that the page will be hidden by the window.
+                self.parent.handler('page_hidden', page)
+        evt.Skip()
     
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks"""
@@ -957,7 +977,10 @@ class ShellFrame(MiniFrame):
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
     def load_session(self):
+        """Load session from file"""
         try:
+            self.Scratch.LoadFile(self.SCRATCH_FILE)
+            self.Log.LoadFile(self.LOGGING_FILE)
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -968,7 +991,10 @@ class ShellFrame(MiniFrame):
             print("- Failed to load session")
     
     def save_session(self):
+        """Save session to file"""
         try:
+            self.Scratch.SaveFile(self.SCRATCH_FILE)
+            self.Log.SaveFile(self.LOGGING_FILE)
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
@@ -986,15 +1012,11 @@ class ShellFrame(MiniFrame):
             print("- Failed to save session")
     
     def Init(self):
-        self.Scratch.LoadFile(self.SCRATCH_FILE)
-        self.Log.LoadFile(self.LOGGING_FILE)
         self.add_history("#! Opened: <{}>".format(datetime.datetime.now()))
         self.load_session()
     
     def Destroy(self):
         try:
-            self.Scratch.SaveFile(self.SCRATCH_FILE)
-            self.Log.SaveFile(self.LOGGING_FILE)
             self.History.SaveFile(self.HISTORY_FILE)
             self.save_session()
         finally:
@@ -1161,7 +1183,7 @@ class ShellFrame(MiniFrame):
         command = shell.cmdline
         self.add_history(command, prefix=' '*4, suffix=None)
         ## The cmdline ends with linesep (cf. regulate_cmd).
-        ## Log debug history every single step in case of crash.
+        ## Logging debug history every step in case of crash.
         with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(command)
     
@@ -2063,7 +2085,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def caretline(self):
-        """Text of the range (bol, eol) at the caret line
+        """Text of the range (bol, eol) at the caret-line
         
         Similar to CurLine, but with the trailing crlf truncated.
         For shells, the leading prompt is also be truncated due to overridden bol.
@@ -2072,7 +2094,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def expr_at_caret(self):
-        """A syntax unit (expression) at the caret line"""
+        """A syntax unit (expression) at the caret-line"""
         p = self.cpos
         st = self.GetStyleAt(p-1)
         if st in (1,12,13): # comment, eol
