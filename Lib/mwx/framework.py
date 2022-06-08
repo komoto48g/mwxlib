@@ -2765,9 +2765,10 @@ class Nautilus(Shell, EditorInterface):
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
-        ## some AutoComp settings
+        ## some autocomp settings
         self.AutoCompSetAutoHide(False)
         self.AutoCompSetIgnoreCase(True)
+        ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         
         def clear(v):
             ## Clear selection and statusline, no skip.
@@ -3011,7 +3012,6 @@ class Nautilus(Shell, EditorInterface):
         self.set_style(self.STYLE)
         
         self.MarkerDeleteAll(1) # delete unnecessary mark-arrow at startup
-        self.AutoCompSetSeparator(ord('\t'))
         
         self.__text = ''
         self.__time = 0
@@ -3607,11 +3607,11 @@ class Nautilus(Shell, EditorInterface):
                           ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
-    def gen_autocomp(self, offset, words):
+    def gen_autocomp(self, offset, words, sep=' '):
         """Call AutoCompShow for the specified words"""
         if words:
-            listr = '\t'.join(words) # make itemlist:str
-            self.AutoCompShow(offset, listr)
+            self.AutoCompSetSeparator(ord(sep))
+            self.AutoCompShow(offset, sep.join(words))
     
     def eval_line(self, evt):
         """Call ToolTip of the selected word or line"""

@@ -334,7 +334,7 @@ def _extract_words_from_tokens(tokens, sep=None, reverse=False):
     default sep includes `@, binary-ops, and whitespaces, etc.
     """
     if sep is None:
-        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?#" # OPS; SEPARATOR_CHARS; !?
+        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?#" # OPS; SEPARATORS; !?
     p, q = "({[", ")}]"
     if reverse:
         p, q = q, p
