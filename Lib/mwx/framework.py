@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.6"
+__version__ = "0.60.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -726,7 +726,7 @@ class AuiNotebook(aui.AuiNotebook):
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
         page = self.CurrentPage
         obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
-        if page and isinstance(obj, aui.AuiTabCtrl):
+        if obj is self.ActiveTabCtrl:
             win = obj.Pages[evt.Selection].window
             if not win.IsShownOnScreen():
                 ## Check if the (selected) window is hidden now.
