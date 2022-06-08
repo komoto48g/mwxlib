@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.7"
+__version__ = "0.60.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -847,7 +847,7 @@ class ShellFrame(MiniFrame):
         self.console.TabCtrlHeight = 0
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
-        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleTabClose)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClosing)
         
         self.ghost = AuiNotebook(self, size=(600,400))
         self.ghost.AddPage(self.Scratch, "*Scratch*")
@@ -857,6 +857,8 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
         self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.ghost.TabCtrlHeight = -1
+        
+        self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
@@ -1026,8 +1028,6 @@ class ShellFrame(MiniFrame):
     def OnShow(self, evt):
         if evt.IsShown():
             self.inspector.watch(self)
-        else:
-            self.inspector.unwatch()
     
     def OnClose(self, evt):
         if self.debugger.busy:
@@ -1039,9 +1039,12 @@ class ShellFrame(MiniFrame):
                           "and the trace pointer is cleared.")
             del self.Log.linemark # [line_unset] => debugger.unwatch
         
-        self.monitor.unwatch()
-        self.ginfo.unwatch()
-        self.linfo.unwatch()
+        pane = self._mgr.GetPane(self.ghost)
+        if pane.IsDocked():
+            self.inspector.unwatch()
+            self.monitor.unwatch()
+            self.ginfo.unwatch()
+            self.linfo.unwatch()
         self.Show(0) # Don't destroy the window
     
     def OnDestroy(self, evt):
@@ -1103,13 +1106,24 @@ class ShellFrame(MiniFrame):
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         evt.Skip()
     
-    def OnConsoleTabClose(self, evt): #<wx._aui.AuiNotebookEvent>
+    def OnConsolePageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
         win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
         if win is self.rootshell:
             self.message("- Don't remove the root shell.")
         else:
             evt.Skip()
+    
+    def OnGhostShow(self, evt):
+        if evt.IsShown():
+            ## self.inspector.watch(self)
+            pass
+        else:
+            self.inspector.unwatch()
+            self.monitor.unwatch()
+            self.ginfo.unwatch()
+            self.linfo.unwatch()
+        evt.Skip()
     
     ## --------------------------------
     ## Actions for handler

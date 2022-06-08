@@ -358,6 +358,6 @@ if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(EventMonitor, show=1) #>>> self.plug.watch(self.plug)
-    frm.get_plug("wxmon").plug.watch(frm)
+    frm.get_plug("wxmon").plug.watch(frm.shellframe.ghost)
     frm.Show()
     app.MainLoop()
