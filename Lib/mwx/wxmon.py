@@ -11,10 +11,12 @@ import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
     from utilus import where
-    from framework import CtrlInterface
+    from framework import CtrlInterface, Menu
+    from controls import Icon, Clipboard
 except ImportError:
     from .utilus import where
-    from .framework import CtrlInterface
+    from .framework import CtrlInterface, Menu
+    from .controls import Icon, Clipboard
 
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
@@ -77,6 +79,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnItemContextMenu)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.add_module = ew.addModuleEvents
@@ -312,6 +315,20 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         if i >= 0:
             item = self.__items[i]
             wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
+        evt.Skip()
+    
+    def OnItemContextMenu(self, evt): #<wx._core.MouseEvent>
+        i, flag = self.HitTest(evt.Position)
+        if i >= 0:
+            item = self.__items[i]
+            def _copy(text):
+                Clipboard.write(text)
+            Menu.Popup(self, (
+                (item[1], item[1], Icon('ghost'), (
+                    (1, "Copy typeName", lambda v: Clipboard.write(item[1])),
+                    (2, "Copy typeInfo", lambda v: Clipboard.write(item[-1])),
+                )),
+            ))
         evt.Skip()
 
 
