@@ -862,8 +862,10 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if plug:
             nb = plug.__notebook # given when load_plug
-            if nb and show:
-                nb.SetSelection(nb.GetPageIndex(plug))
+            if nb:
+                if show:
+                    nb.SetSelection(nb.GetPageIndex(plug))
+                nb.Show(show)
             if show:
                 if not pane.IsShown():
                     plug.handler('page_shown', plug)
