@@ -865,7 +865,7 @@ class Frame(mwx.Frame):
             if nb:
                 if show:
                     nb.SetSelection(nb.GetPageIndex(plug))
-                nb.Show(show)
+                ## nb.Show(show)
             if show:
                 if not pane.IsShown():
                     plug.handler('page_shown', plug)
