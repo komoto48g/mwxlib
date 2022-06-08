@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.5"
+__version__ = "0.60.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -746,7 +746,7 @@ class AuiNotebook(aui.AuiNotebook):
         if j != -1:
             if j != self.Selection:
                 self.Selection = j # move focus to AuiTab?
-                return True
+            return True
     
     def add_page(self, win, title=None, show=True):
         """Add page to the console"""
@@ -755,7 +755,7 @@ class AuiNotebook(aui.AuiNotebook):
             self.AddPage(win, title or typename(win.target))
             if self.PageCount > 1:
                 self.TabCtrlHeight = -1
-        self.show_page(win, show)
+        return self.show_page(win, show)
     
     def remove_page(self, win):
         """Remove page from the console"""
@@ -1092,7 +1092,7 @@ class ShellFrame(MiniFrame):
             show = not pane.IsShown()
         pane.Show(show)
         self._mgr.Update()
-        if wnd and win.Shown:
+        if wnd and win.IsShown():
             wnd.SetFocus()
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
