@@ -260,7 +260,7 @@ class Layer(ControlPanel, CtrlInterface):
         ControlPanel.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
         
-        self.__parent = parent #= self.Parent, but not always if whose son is floating
+        self.__parent = parent
         self.__artists = []
         
         self.handler.append({ # DNA<Layer>

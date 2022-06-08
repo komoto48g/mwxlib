@@ -2405,11 +2405,17 @@ class Editor(EditWindow, EditorInterface):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
-        self.__parent = parent #= self.Parent, but not always if whose son is floating
-        
+        self.__parent = parent  # parent:<ShellFrame>
+                                # Parent:<AuiNotebook>
         self.target = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
+        
+        self.Bind(stc.EVT_STC_SAVEPOINTLEFT,
+                  lambda v: self.handler('savepoint_left', v))
+        
+        self.Bind(stc.EVT_STC_SAVEPOINTREACHED,
+                  lambda v: self.handler('savepoint_reached', v))
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
@@ -2722,7 +2728,8 @@ class Nautilus(Shell, EditorInterface):
                  **kwargs)
         EditorInterface.__init__(self)
         
-        self.__parent = parent #= self.Parent, but not always if whose son is floating
+        self.__parent = parent  # parent:<ShellFrame>
+                                # Parent:<AuiNotebook>
         self.target = target
         
         wx.py.shell.USE_MAGIC = True
