@@ -36,6 +36,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
         
+        self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
@@ -76,11 +77,11 @@ class Inspector(it.InspectionTree, CtrlInterface):
     
     def GetTextForWidget(self, obj):
         """Returns the string to be used in the tree for a widget
-        (override) make better object name
+        (override) make better object name and Id
         """
         clsname = obj.__class__.__name__
         if hasattr(obj, 'Name'):
-            return "{} ({!r})".format(clsname, obj.Name)
+            return "{} ({!r} {})".format(clsname, obj.Name, obj.Id)
         return clsname
     
     def set_colour(self, obj, col):
@@ -127,6 +128,13 @@ class Inspector(it.InspectionTree, CtrlInterface):
             if not self.built:
                 self.BuildTree(self.__widget)
         self._noWatchList = [w for w in self._noWatchList if w]
+        evt.Skip()
+    
+    def OnItemTooltip(self, evt):
+        item = evt.GetItem()
+        if item:
+            obj = self.GetItemData(item)
+            evt.SetToolTip("id={:#x}".format(id(obj)))
         evt.Skip()
     
     def OnRightDown(self, evt):
