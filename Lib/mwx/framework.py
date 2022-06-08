@@ -1093,6 +1093,7 @@ class ShellFrame(MiniFrame):
             return
         if show is None:
             show = not pane.IsShown()
+        nb.Show(show)
         pane.Show(show)
         self._mgr.Update()
         if wnd and win.IsShown():
