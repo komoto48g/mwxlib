@@ -65,6 +65,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.__shellframe = parent
         self.__widget = None
+        self.__prev = None
         self.__dir = True # sort direction
         self.__items = []
         
@@ -79,7 +80,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.OnItemContextMenu)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.add_module = ew.addModuleEvents
@@ -97,8 +98,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
-            self.parent.handler('title_window',
-                "{}: {}".format(self.__class__.__name__, self.__widget))
+            self.parent.handler('title_window', self.__class__.__name__)
             v.Skip()
     
     def OnDestroy(self, evt):
@@ -173,16 +173,18 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                 name = self.get_name(event)
                 print(" #{:6d}:{:32s}{!s}".format(event, name, e))
                 continue
-        self.parent.handler("monitor_begin", self.__widget)
+        self.parent.handler("monitor_begin", widget)
     
     def unwatch(self):
         """End watching"""
-        if not self.__widget:
+        widget = self.__widget
+        if not widget:
             return
         for binder in self.get_watchlist():
-            if not self.__widget.Unbind(binder, handler=self.onWatchedEvent):
+            if not widget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
-        self.parent.handler("monitor_end", self.__widget)
+        self.parent.handler("monitor_end", widget)
+        self.__prev = widget
         self.__widget = None
     
     def onWatchedEvent(self, evt):
@@ -317,19 +319,37 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
         evt.Skip()
     
-    def OnItemContextMenu(self, evt): #<wx._core.MouseEvent>
-        i, flag = self.HitTest(evt.Position)
-        if i >= 0:
-            item = self.__items[i]
-            def _copy(text):
-                Clipboard.write(text)
-            Menu.Popup(self, (
-                (item[1], item[1], Icon('ghost'), (
-                    (1, "Copy typeName", lambda v: Clipboard.write(item[1])),
-                    (2, "Copy typeInfo", lambda v: Clipboard.write(item[-1])),
-                )),
-            ))
-        evt.Skip()
+    ## @property
+    ## def SelectedItems(self):
+    ##     return filter(self.IsSelected, range(self.ItemCount))
+    
+    def OnContextMenu(self, evt):
+        i = self.FocusedItem
+        item = self.__items[i] if i != -1 else []
+        obj = self.__widget
+        wnd = self.__prev
+        
+        Menu.Popup(self, (
+            ('No Item selected', item) if not item
+        else
+            (item[1], Icon('copy'), (
+                (1, "Copy typeName",
+                    lambda v: Clipboard.write(item[1]),
+                    lambda v: v.Enable(item is not None)),
+                    
+                (2, "Copy typeInfo",
+                    lambda v: Clipboard.write('\n'.join(str(x) for x in item)),
+                    lambda v: v.Enable(item is not None)),
+            )),
+            (),
+            (11, "Restart watching {}".format(wnd.__class__.__name__), Icon('ghost'),
+                 lambda v: self.watch(wnd),
+                 lambda v: v.Enable(wnd is not None)),
+             
+            (12, "Stop watching {}".format(obj.__class__.__name__), Icon('exit'),
+                 lambda v: self.unwatch(),
+                 lambda v: v.Enable(obj is not None)),
+        ))
 
 
 if __name__ == "__main__":
@@ -338,5 +358,6 @@ if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
     frm.load_plug(EventMonitor, show=1) #>>> self.plug.watch(self.plug)
+    frm.get_plug("wxmon").plug.watch(frm)
     frm.Show()
     app.MainLoop()

@@ -54,8 +54,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
-            self.parent.handler('title_window',
-                "{}: {}".format(self.__class__.__name__, self.__widget))
+            self.parent.handler('title_window', self.__class__.__name__)
             v.Skip()
     
     def OnDestroy(self, evt):
@@ -141,20 +140,16 @@ class Inspector(it.InspectionTree, CtrlInterface):
         item, flags = self.HitTest(evt.Position)
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.SelectItem(item)
-        
         obj = self.__widget
-        
-        def _enable_menu(v):
-            v.Enable(obj is not None)
         
         Menu.Popup(self, (
             (1, "&Dive into the shell", Icon('core'),
                 lambda v: self.dive(obj),
-                lambda v: _enable_menu(v)),
+                lambda v: v.Enable(obj is not None)),
             (),
             (2, "&Watch the event", Icon('ghost'),
                 lambda v: self.monitor(obj),
-                lambda v: _enable_menu(v)),
+                lambda v: v.Enable(obj is not None)),
             (),
             (10, "&Inspection Tool", Icon('inspect'),
                 lambda v: watchit(obj)),
@@ -164,7 +159,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
                  
             (12, "Highlight", miniIcon('HighlightItem'),
                 lambda v: self.highlighter.HighlightCurrentItem(self),
-                lambda v: _enable_menu(v)),
+                lambda v: v.Enable(obj is not None)),
         ))
         evt.Skip()
 
