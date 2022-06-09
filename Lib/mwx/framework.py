@@ -1484,7 +1484,9 @@ class EditorInterface(CtrlInterface):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
-                  'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", int)),
+                  'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
+                                       _F(self.recenter),
+                                       _F(self.SetFocus)),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
