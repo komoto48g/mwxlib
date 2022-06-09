@@ -1213,36 +1213,28 @@ class ShellFrame(MiniFrame):
         del shell.globals
     
     def start_trace(self, line, editor):
-        if not editor.target:
-            return
-        if self.debugger.busy:
-            self.message("Debugger is busy.")
-        else:
+        if not self.debugger.busy:
             self.debugger.editor = editor
             self.debugger.watch((editor.target, line))
-            self.message("Debugger has started tracing.")
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-            self.message("Debugger stopped tracing.")
-        else:
-            self.message("Debugger closed.")
         editor.MarkerAdd(line, 4)
     
     def on_trace_begin(self, frame):
         """Called when set-trace"""
-        pass
+        self.message("Debugger has started tracing {}.".format(frame))
     
     def on_trace_hook(self, frame):
-        """Called when a breakppoint is reached"""
-        pass
+        """Called when a breakpoint is reached"""
+        self.message("Debugger hooked {}".format(frame))
     
     def on_trace_end(self, frame):
         """Called when unset-trace"""
-        pass
+        self.message("Debugger has stopped tracing {}.".format(frame))
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
