@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.9"
+__version__ = "0.61.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -806,10 +806,10 @@ class ShellFrame(MiniFrame):
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        self.Scratch = Editor(self)
-        self.Log = Editor(self)
-        self.Help = Editor(self)
-        self.History = Editor(self)
+        self.Scratch = Editor(self, name="<scratch>")
+        self.Log = Editor(self, name="<log>")
+        self.Help = Editor(self, name="<help>")
+        self.History = Editor(self, name="<history>")
         
         self.__shell = Nautilus(self, target,
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
@@ -960,7 +960,7 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         filename="<scratch>")
         
-        self.Scratch.target = "<scratch>"
+        self.Scratch.target = "<scratch>" # target for debugger.watch
         
         self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
         self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
@@ -1117,8 +1117,7 @@ class ShellFrame(MiniFrame):
     
     def OnGhostShow(self, evt):
         if evt.IsShown():
-            ## self.inspector.watch(self)
-            pass
+            self.inspector.watch(self.ghost)
         else:
             self.inspector.unwatch()
             self.monitor.unwatch()
@@ -1166,7 +1165,7 @@ class ShellFrame(MiniFrame):
                 self.debugger.shell = shell
         else:
             print("- cannot debug {!r}".format(obj))
-            print("  the target must be callable or wx.Object.")
+            print("  The debug target must be callable or wx.Object.")
             wx.MessageBox("Not a callable object\n\n"
                           "Unable to debug {!r}".format(obj))
     
@@ -2413,13 +2412,14 @@ class Editor(EditWindow, EditorInterface):
         if self.__mtime:
             return os.path.getmtime(self.target) - self.__mtime
     
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, name="", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.target = None
+        self.target = None  # buffer-filename
+        self.name = name    # buffer-name
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
@@ -2480,8 +2480,8 @@ class Editor(EditWindow, EditorInterface):
         if not filename:
             filename = self.target
         if not isinstance(filename, str):
-            print("- The filename must be a string (got {!r})."
-                  "  Try @where to get the path".format(filename))
+            print("- The filename must be a string ({} got {!r})."
+                  "  Try @where to get the path".format(self.name, filename))
             return False
         
         if filename == self.target:
@@ -2521,11 +2521,11 @@ class Editor(EditWindow, EditorInterface):
         filename = os.path.abspath(filename)
         if filename == self.target:
             if not self.IsModified():
-                print("- No need to save.")
+                self.message("\b No need to save.")
                 return None
             if wx.MessageBox("Overwrite {!r}?".format(filename),
                              style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                print("- The save has been canceled.")
+                self.message("\b The save has been canceled.")
                 return None
         
         if self.SaveFile(filename):
