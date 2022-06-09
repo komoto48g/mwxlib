@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.8"
+__version__ = "0.60.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2411,11 +2411,6 @@ class Editor(EditWindow, EditorInterface):
         if self.__mtime:
             return os.path.getmtime(self.target) - self.__mtime
     
-    @target_mtdelta.deleter
-    def target_mtdelta(self):
-        assert self.__mtime is not None
-        self.__mtime = os.path.getmtime(self.target)
-    
     def __init__(self, parent, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -2462,29 +2457,35 @@ class Editor(EditWindow, EditorInterface):
             self.trace_position()
         evt.Skip()
     
-    def reload_target(self, show=True, focus=True):
-        return self.load_file(self.target, self.markline+1, show, focus)
-    
-    def load_cache(self, filename, globals=None, readonly=False):
+    def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename, globals)
         if lines:
-            self.ReadOnly = 0
             self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
-            self.ReadOnly = readonly
             return True
         return False
     
-    def load_file(self, filename, lineno=0, show=True, focus=True):
+    def load_file(self, filename='', lineno=0, show=True, focus=True):
+        """Wrapped method of LoadFile
+        
+        filename : target file:str
+                   If not specified, the target file will be reloaded.
+          lineno : mark the specified line (>=1)
+            show : popup editor window when success
+           focus : set the focus if the window is displayed
+        """
+        if not filename:
+            filename = self.target
         if not isinstance(filename, str):
-            print("- The filename must be string type (got {!r}). "
-                  "Try @where to get the path".format(filename))
+            print("- The filename must be a string (got {!r})."
+                  "  Try @where to get the path".format(filename))
             return False
         
-        if self.target == filename:
+        if filename == self.target:
             p = self.cpos
             lm = self.linemark
+            lineno = self.markline + 1
         else:
             p = -1
             lm = -1
@@ -2500,6 +2501,33 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
+            return True
+        return False
+    
+    def save_file(self, filename=''):
+        """Wrapped method of SaveFile
+        
+        filename : target file:str
+                   If not specified, the target file will be overwritten.
+        """
+        if not filename:
+            filename = self.target
+        if not isinstance(filename, str):
+            print("- The filename is not specified.")
+            return False
+        
+        filename = os.path.abspath(filename)
+        if filename == self.target:
+            if not self.IsModified():
+                print("- No need to save.")
+                return None
+            if wx.MessageBox("Overwrite {!r}?".format(filename),
+                             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                print("- The save has been canceled.")
+                return None
+        
+        if self.SaveFile(filename):
+            self.target = filename
             return True
         return False
     
