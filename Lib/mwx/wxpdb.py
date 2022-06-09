@@ -248,7 +248,7 @@ class Debugger(Pdb):
                 self.editor.load_cache(filename)
         
         if self.code != code:
-            self.editor.mark = self.editor.PositionFromLine(firstlineno - 1)
+            self.editor.markline = firstlineno - 1
         self.editor.linemark = lineno - 1 # (->) pointer:marker
         self.editor.goto_line_marker()
         self.code = code

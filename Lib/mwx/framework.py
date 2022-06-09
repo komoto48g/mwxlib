@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.60.9"
+__version__ = "0.61.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -806,10 +806,10 @@ class ShellFrame(MiniFrame):
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        self.Scratch = Editor(self)
-        self.Log = Editor(self)
-        self.Help = Editor(self)
-        self.History = Editor(self)
+        self.Scratch = Editor(self, name="<scratch>")
+        self.Log = Editor(self, name="<log>")
+        self.Help = Editor(self, name="<help>")
+        self.History = Editor(self, name="<history>")
         
         self.__shell = Nautilus(self, target,
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
@@ -960,7 +960,7 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         filename="<scratch>")
         
-        self.Scratch.target = "<scratch>"
+        self.Scratch.target = "<scratch>" # target for debugger.watch
         
         self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
         self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
@@ -1117,8 +1117,7 @@ class ShellFrame(MiniFrame):
     
     def OnGhostShow(self, evt):
         if evt.IsShown():
-            ## self.inspector.watch(self)
-            pass
+            self.inspector.watch(self.ghost)
         else:
             self.inspector.unwatch()
             self.monitor.unwatch()
@@ -1166,7 +1165,7 @@ class ShellFrame(MiniFrame):
                 self.debugger.shell = shell
         else:
             print("- cannot debug {!r}".format(obj))
-            print("  the target must be callable or wx.Object.")
+            print("  The debug target must be callable or wx.Object.")
             wx.MessageBox("Not a callable object\n\n"
                           "Unable to debug {!r}".format(obj))
     
@@ -1214,36 +1213,28 @@ class ShellFrame(MiniFrame):
         del shell.globals
     
     def start_trace(self, line, editor):
-        if not editor.target:
-            return
-        if self.debugger.busy:
-            self.message("Debugger is busy.")
-        else:
+        if not self.debugger.busy:
             self.debugger.editor = editor
             self.debugger.watch((editor.target, line))
-            self.message("Debugger has started tracing.")
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-            self.message("Debugger stopped tracing.")
-        else:
-            self.message("Debugger closed.")
         editor.MarkerAdd(line, 4)
     
     def on_trace_begin(self, frame):
         """Called when set-trace"""
-        pass
+        self.message("Debugger has started tracing {}.".format(frame))
     
     def on_trace_hook(self, frame):
-        """Called when a breakppoint is reached"""
-        pass
+        """Called when a breakpoint is reached"""
+        self.message("Debugger hooked {}".format(frame))
     
     def on_trace_end(self, frame):
         """Called when unset-trace"""
-        pass
+        self.message("Debugger has stopped tracing {}.".format(frame))
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch"""
@@ -1651,6 +1642,17 @@ class EditorInterface(CtrlInterface):
     def markline(self):
         return self.MarkerNext(0, 0b001)
     
+    @markline.setter
+    def markline(self, v):
+        if v == -1 or v is None:
+            del self.mark
+        else:
+            self.mark = self.PositionFromLine(v)
+    
+    @markline.deleter
+    def markline(self, v):
+        del self.mark
+    
     @property
     def mark(self):
         return self.__mark
@@ -1659,21 +1661,20 @@ class EditorInterface(CtrlInterface):
     def mark(self, v):
         if v == -1 or v is None:
             del self.mark
-            return
-        self.__mark = v
-        self.MarkerDeleteAll(0)
-        ln = self.LineFromPosition(v)
-        self.MarkerAdd(ln, 0)
-        self.handler('mark_set', v)
+        else:
+            self.__mark = v
+            self.MarkerDeleteAll(0)
+            ln = self.LineFromPosition(v)
+            self.MarkerAdd(ln, 0)
+            self.handler('mark_set', v)
     
     @mark.deleter
     def mark(self):
         v = self.__mark
-        if v == -1:
-            return
-        self.__mark = None
-        self.MarkerDeleteAll(0)
-        self.handler('mark_unset', v)
+        if v != -1:
+            self.__mark = None
+            self.MarkerDeleteAll(0)
+            self.handler('mark_unset', v)
     
     def set_marker(self):
         self.mark = self.cpos
@@ -1691,20 +1692,19 @@ class EditorInterface(CtrlInterface):
     def linemark(self, v):
         if v == -1 or v is None:
             del self.linemark
-            return
-        self.__line = v
-        self.MarkerDeleteAll(3)
-        self.MarkerAdd(v, 3)
-        self.handler('line_set', v)
+        else:
+            self.__line = v
+            self.MarkerDeleteAll(3)
+            self.MarkerAdd(v, 3)
+            self.handler('line_set', v)
     
     @linemark.deleter
     def linemark(self):
         v = self.__line
-        if v == -1:
-            return
-        self.__line = -1
-        self.MarkerDeleteAll(3)
-        self.handler('line_unset', v)
+        if v != -1:
+            self.__line = -1
+            self.MarkerDeleteAll(3)
+            self.handler('line_unset', v)
     
     def set_line_marker(self):
         if self.linemark == self.cline:
@@ -2413,13 +2413,14 @@ class Editor(EditWindow, EditorInterface):
         if self.__mtime:
             return os.path.getmtime(self.target) - self.__mtime
     
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, name="", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.target = None
+        self.target = None  # buffer-filename
+        self.name = name    # buffer-name
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
         
@@ -2480,8 +2481,8 @@ class Editor(EditWindow, EditorInterface):
         if not filename:
             filename = self.target
         if not isinstance(filename, str):
-            print("- The filename must be a string (got {!r})."
-                  "  Try @where to get the path".format(filename))
+            print("- The filename must be a string ({} got {!r})."
+                  "  Try @where to get the path".format(self.name, filename))
             return False
         
         if filename == self.target:
@@ -2521,11 +2522,11 @@ class Editor(EditWindow, EditorInterface):
         filename = os.path.abspath(filename)
         if filename == self.target:
             if not self.IsModified():
-                print("- No need to save.")
+                self.message("\b No need to save.")
                 return None
             if wx.MessageBox("Overwrite {!r}?".format(filename),
                              style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                print("- The save has been canceled.")
+                self.message("\b The save has been canceled.")
                 return None
         
         if self.SaveFile(filename):
