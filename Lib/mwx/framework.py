@@ -1650,6 +1650,17 @@ class EditorInterface(CtrlInterface):
     def markline(self):
         return self.MarkerNext(0, 0b001)
     
+    @markline.setter
+    def markline(self, v):
+        if v == -1 or v is None:
+            del self.mark
+        else:
+            self.mark = self.PositionFromLine(v)
+    
+    @markline.deleter
+    def markline(self, v):
+        del self.mark
+    
     @property
     def mark(self):
         return self.__mark
@@ -1658,21 +1669,20 @@ class EditorInterface(CtrlInterface):
     def mark(self, v):
         if v == -1 or v is None:
             del self.mark
-            return
-        self.__mark = v
-        self.MarkerDeleteAll(0)
-        ln = self.LineFromPosition(v)
-        self.MarkerAdd(ln, 0)
-        self.handler('mark_set', v)
+        else:
+            self.__mark = v
+            self.MarkerDeleteAll(0)
+            ln = self.LineFromPosition(v)
+            self.MarkerAdd(ln, 0)
+            self.handler('mark_set', v)
     
     @mark.deleter
     def mark(self):
         v = self.__mark
-        if v == -1:
-            return
-        self.__mark = None
-        self.MarkerDeleteAll(0)
-        self.handler('mark_unset', v)
+        if v != -1:
+            self.__mark = None
+            self.MarkerDeleteAll(0)
+            self.handler('mark_unset', v)
     
     def set_marker(self):
         self.mark = self.cpos
@@ -1690,20 +1700,19 @@ class EditorInterface(CtrlInterface):
     def linemark(self, v):
         if v == -1 or v is None:
             del self.linemark
-            return
-        self.__line = v
-        self.MarkerDeleteAll(3)
-        self.MarkerAdd(v, 3)
-        self.handler('line_set', v)
+        else:
+            self.__line = v
+            self.MarkerDeleteAll(3)
+            self.MarkerAdd(v, 3)
+            self.handler('line_set', v)
     
     @linemark.deleter
     def linemark(self):
         v = self.__line
-        if v == -1:
-            return
-        self.__line = -1
-        self.MarkerDeleteAll(3)
-        self.handler('line_unset', v)
+        if v != -1:
+            self.__line = -1
+            self.MarkerDeleteAll(3)
+            self.handler('line_unset', v)
     
     def set_line_marker(self):
         if self.linemark == self.cline:
