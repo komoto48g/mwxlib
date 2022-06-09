@@ -1650,7 +1650,7 @@ class EditorInterface(CtrlInterface):
             self.mark = self.PositionFromLine(v)
     
     @markline.deleter
-    def markline(self, v):
+    def markline(self):
         del self.mark
     
     @property
@@ -2496,7 +2496,7 @@ class Editor(EditWindow, EditorInterface):
         if self.load_cache(filename) or self.LoadFile(filename):
             self.target = filename
             if lineno:
-                self.mark = self.PositionFromLine(lineno-1)
+                self.markline = lineno - 1
                 self.goto_char(self.mark)
             if p != -1:
                 self.goto_char(p)
