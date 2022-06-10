@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.0"
+__version__ = "0.61.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -734,6 +734,15 @@ class AuiNotebook(aui.AuiNotebook):
                 self.parent.handler('page_hidden', page)
         evt.Skip()
     
+    def get_page_caption(self, win):
+        _p, tab, idx = self.FindTab(win)
+        return tab.GetPage(idx).caption
+    
+    def set_page_caption(self, win, caption):
+        _p, tab, idx = self.FindTab(win)
+        tab.GetPage(idx).caption = caption
+        tab.Refresh()
+    
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks"""
         for j in range(self.PageCount):
@@ -748,11 +757,11 @@ class AuiNotebook(aui.AuiNotebook):
                 self.Selection = j # move focus to AuiTab?
             return True
     
-    def add_page(self, win, title=None, show=True):
+    def add_page(self, win, caption=None, show=True):
         """Add page to the console"""
         j = self.GetPageIndex(win)
         if j == -1:
-            self.AddPage(win, title or typename(win.target))
+            self.AddPage(win, caption or typename(win.target))
             if self.PageCount > 1:
                 self.TabCtrlHeight = -1
         return self.show_page(win, show)
@@ -762,8 +771,6 @@ class AuiNotebook(aui.AuiNotebook):
         j = self.GetPageIndex(win)
         if j != -1:
             self.RemovePage(j)
-            ## if self.PageCount == 1:
-            ##     self.TabCtrlHeight = 0
         win.Show(0)
     
     def delete_page(self, win):
@@ -771,8 +778,6 @@ class AuiNotebook(aui.AuiNotebook):
         j = self.GetPageIndex(win)
         if j != -1:
             self.DeletePage(j) # Destroy the window
-            ## if self.PageCount == 1:
-            ##     self.TabCtrlHeight = 0
 
 
 class ShellFrame(MiniFrame):
@@ -807,9 +812,9 @@ class ShellFrame(MiniFrame):
         self.statusbar.Show(1)
         
         self.Scratch = Editor(self, name="<scratch>")
-        self.Log = Editor(self, name="<log>")
-        self.Help = Editor(self, name="<help>")
-        self.History = Editor(self, name="<history>")
+        self.Log = Editor(self, name="Log")
+        self.Help = Editor(self, name="Help")
+        self.History = Editor(self, name="History")
         
         self.__shell = Nautilus(self, target,
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
@@ -2447,10 +2452,10 @@ class Editor(EditWindow, EditorInterface):
         def activate(v):
             if self.target_mtdelta:
                 self.message("The target file has been modified externally.")
-            self.parent.handler('title_window', self.target)
+            self.parent.handler('title_window', self.target or self.name)
             self.trace_position()
             v.Skip()
-    
+        
     def trace_position(self):
         text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
@@ -2466,6 +2471,7 @@ class Editor(EditWindow, EditorInterface):
         if lines:
             self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
+            self.SetSavePoint()
             return True
         return False
     
@@ -2542,6 +2548,7 @@ class Editor(EditWindow, EditorInterface):
             with open(filename, "r", encoding='utf-8', newline='') as i:
                 self.Text = i.read()
             self.EmptyUndoBuffer()
+            self.SetSavePoint()
             return True
         except Exception:
             return False
