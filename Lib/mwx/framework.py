@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.1"
+__version__ = "0.61.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1876,7 +1876,7 @@ class EditorInterface(CtrlInterface):
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
         
-        ## Note: level indicates indent-header flag or indent-level number
+        ## `level` indicates indent-header flag or indent-level number
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
         else:
@@ -2475,30 +2475,23 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    def load_file(self, filename='', lineno=0, show=True, focus=True):
+    def load_file(self, filename, lineno=0, show=True, focus=True):
         """Wrapped method of LoadFile
-        
-        filename : target file:str
-                   If not specified, the target file will be reloaded.
+        filename : target file:str => abspath
           lineno : mark the specified line (>=1)
             show : popup editor window when success
            focus : set the focus if the window is displayed
-        """
-        if not filename:
-            filename = self.target
-        if not isinstance(filename, str):
-            print("- The filename must be a string ({} got {!r})."
-                  "  Try @where to get the path".format(self.name, filename))
-            return False
         
-        if filename == self.target:
+        Note: the target file will be reloaded without confirmation.
+        """
+        filename = os.path.abspath(filename)
+        if filename == self.target: # save pos/markers before loading
             p = self.cpos
             lm = self.linemark
             lineno = self.markline + 1
         else:
             p = -1
             lm = -1
-        
         if self.load_cache(filename) or self.LoadFile(filename):
             self.target = filename
             if lineno:
@@ -2513,28 +2506,13 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    def save_file(self, filename=''):
+    def save_file(self, filename):
         """Wrapped method of SaveFile
+        filename : target file:str => abspath
         
-        filename : target file:str
-                   If not specified, the target file will be overwritten.
+        Note: the target file will be overwritten without confirmation.
         """
-        if not filename:
-            filename = self.target
-        if not isinstance(filename, str):
-            print("- The filename is not specified.")
-            return False
-        
         filename = os.path.abspath(filename)
-        if filename == self.target:
-            if not self.IsModified():
-                self.message("\b No need to save.")
-                return None
-            if wx.MessageBox("Overwrite {!r}?".format(filename),
-                             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.message("\b The save has been canceled.")
-                return None
-        
         if self.SaveFile(filename):
             self.target = filename
             return True
