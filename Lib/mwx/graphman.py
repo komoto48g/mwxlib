@@ -1254,8 +1254,8 @@ class Frame(mwx.Frame):
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
-            wildcard="Python file (*.py)|*.py",
-            style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
+                wildcard="Python file (*.py)|*.py",
+                style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 for path in dlg.Paths:
                     self.load_plug(path)
@@ -1284,10 +1284,10 @@ class Frame(mwx.Frame):
         
         if not f:
             with wx.FileDialog(self, "Select path to import",
-                defaultFile=self.ATTRIBUTESFILE,
-                wildcard="Index (*.index)|*.index|"
-                         "ALL files (*.*)|*.*",
-                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
+                    defaultFile=self.ATTRIBUTESFILE,
+                    wildcard="Index (*.index)|*.index|"
+                             "ALL files (*.*)|*.*",
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 f = dlg.Path
@@ -1318,10 +1318,10 @@ class Frame(mwx.Frame):
         if not f:
             path = next((x.pathname for x in frames if x.pathname), '')
             with wx.FileDialog(self, "Select path to export",
-                defaultDir=os.path.dirname(path),
-                defaultFile=self.ATTRIBUTESFILE,
-                wildcard="Index (*.index)|*.index",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                    defaultDir=os.path.dirname(path),
+                    defaultFile=self.ATTRIBUTESFILE,
+                    wildcard="Index (*.index)|*.index",
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 f = dlg.Path
@@ -1491,8 +1491,8 @@ class Frame(mwx.Frame):
         
         if paths is None:
             with wx.FileDialog(self, "Open image files",
-                wildcard='|'.join(self.wildcards),
-                style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 paths = dlg.Paths
@@ -1551,9 +1551,9 @@ class Frame(mwx.Frame):
         if not path:
             name = re.sub("[\\/:*?\"<>|]", '_', frame.name)
             with wx.FileDialog(self, "Save buffer as",
-                defaultFile=name,
-                wildcard='|'.join(self.wildcards),
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                    defaultFile=name,
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 path = dlg.Path
@@ -1581,9 +1581,9 @@ class Frame(mwx.Frame):
         
         if not path:
             with wx.FileDialog(self, "Save frames as stack-tiff",
-                defaultFile="Stack-image",
-                wildcard="TIF file (*.tif)|*.tif",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                    defaultFile="Stack-image",
+                    wildcard="TIF file (*.tif)|*.tif",
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 path = dlg.Path
@@ -1615,8 +1615,8 @@ class Frame(mwx.Frame):
         """Load session from file"""
         if not f:
             with wx.FileDialog(self, 'Load session',
-                wildcard="Session file (*.jssn)|*.jssn",
-                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
+                    wildcard="Session file (*.jssn)|*.jssn",
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return False
                 f = dlg.Path
@@ -1649,9 +1649,9 @@ class Frame(mwx.Frame):
     def save_session_as(self):
         """Save session as (new file)"""
         with wx.FileDialog(self, "Save session as",
-            defaultFile=self.session_file or '',
-            wildcard="Session file (*.jssn)|*.jssn",
-            style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                defaultFile=self.session_file or '',
+                wildcard="Session file (*.jssn)|*.jssn",
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 return self.save_session(dlg.Path)
             return False
