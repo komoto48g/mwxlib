@@ -921,7 +921,8 @@ class ShellFrame(MiniFrame):
                  'title_window' : [ None, self.on_title_window ],
             },
             0 : {
-                    '* pressed' : (0, skip, fork), # -> debugger
+                    '* pressed' : (0, skip, fork), # => debugger
+                  'C-g pressed' : (0, self.Quit, fork), # => debugger
                    'f1 pressed' : (0, self.About),
                   'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
@@ -1036,13 +1037,14 @@ class ShellFrame(MiniFrame):
     
     def OnClose(self, evt):
         if self.debugger.busy:
-            wx.MessageBox("The debugger is running\n\n"
+            wx.MessageBox("The debugger is running.\n\n"
                           "Enter [q]uit to exit before closing.")
             return
         if self.debugger.tracing:
-            wx.MessageBox("The debugger ends the trace, "
-                          "and the trace pointer is cleared.")
+            wx.MessageBox("The debugger ends tracing.\n\n"
+                          "The trace pointer is cleared.")
             del self.Log.linemark # [line_unset] => debugger.unwatch
+            del self.Scratch.linemark
         
         pane = self._mgr.GetPane(self.ghost)
         if pane.IsDocked():
@@ -1128,6 +1130,18 @@ class ShellFrame(MiniFrame):
             self.monitor.unwatch()
             self.ginfo.unwatch()
             self.linfo.unwatch()
+        evt.Skip()
+    
+    def Quit(self, evt):
+        self.inspector.unwatch()
+        self.monitor.unwatch()
+        self.ginfo.unwatch()
+        self.linfo.unwatch()
+        shell = self.debugger.shell
+        del shell.locals
+        del shell.globals
+        self.debugger.unwatch()
+        self.message("Quit")
         evt.Skip()
     
     ## --------------------------------
