@@ -277,7 +277,7 @@ class Debugger(Pdb):
         self.__indents = 0
         self.__interactive = None
         if self.editor:
-            self.editor.linemark = None
+            self.editor.linemark = -1
         self.editor = None
         self.target = None
         self.code = None
@@ -310,7 +310,7 @@ class Debugger(Pdb):
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
-                if line <= lineno-1:
+                if line <= lineno:
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
                 else:
@@ -334,10 +334,10 @@ class Debugger(Pdb):
                 else:
                     src, lineno = inspect.getsourcelines(code)
                     lcnt = len(src)
-                if line == lineno-1:
+                if line == lineno:
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
-                elif 0 < line - lineno + 1 < lcnt:
+                elif 0 < line - lineno < lcnt:
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
                 else:

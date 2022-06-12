@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.2"
+__version__ = "0.61.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1220,7 +1220,7 @@ class ShellFrame(MiniFrame):
     def start_trace(self, line, editor):
         if not self.debugger.busy:
             self.debugger.editor = editor
-            self.debugger.watch((editor.target, line))
+            self.debugger.watch((editor.target, line+1))
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
