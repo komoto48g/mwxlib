@@ -2213,7 +2213,7 @@ class EditorInterface(CtrlInterface):
         else:
             while self.GetStyleAt(q) == st and q < self.TextLength:
                 q += 1
-        return self.get_text(p, q)
+        return self.get_text(p, q), st
     
     def get_atom_backward(self):
         """A style unit (atom) at the caret"""
@@ -2227,7 +2227,7 @@ class EditorInterface(CtrlInterface):
         else:
             while self.GetStyleAt(p-1) == st and p > 0:
                 p -= 1
-        return self.get_text(p, q)
+        return self.get_text(p, q), st
     
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
@@ -2331,13 +2331,13 @@ class EditorInterface(CtrlInterface):
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
-        atom = self.get_atom_forward()
+        atom, st = self.get_atom_forward()
         ## self.anchor = self.cpos
         self.cpos += len(atom)
         return atom
     
     def selection_backward_atom(self):
-        atom = self.get_atom_backward()
+        atom, st = self.get_atom_backward()
         ## self.anchor = self.cpos
         self.cpos -= len(atom)
         return atom
@@ -2983,7 +2983,7 @@ class Nautilus(Shell, EditorInterface):
            'S-[a-z\\] released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, self.skipback_autocomp),
-          '*backspace released' : (2, self.call_word_autocomp, self.decrback_autocomp),
+          '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, noskip),
                   'C-j pressed' : (2, self.eval_line),
                   'M-j pressed' : (2, self.exec_region),
@@ -3019,7 +3019,7 @@ class Nautilus(Shell, EditorInterface):
            'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, self.skipback_autocomp),
-          '*backspace released' : (3, self.call_apropos_autocomp, self.decrback_autocomp),
+          '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, noskip),
                   'C-j pressed' : (3, self.eval_line),
                   'M-j pressed' : (3, self.exec_region),
@@ -3808,15 +3808,6 @@ class Nautilus(Shell, EditorInterface):
         if self.cpos == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
-            self.handler('quit', evt)
-        evt.Skip()
-    
-    def decrback_autocomp(self, evt):
-        """Move anchor to the word right during autocomp"""
-        p = self.cpos
-        c = self.get_char(p-1)
-        st = self.GetStyleAt(p-1)
-        if st in (0,10) and c != '.': # default or operator => quit
             self.handler('quit', evt)
         evt.Skip()
     

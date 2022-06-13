@@ -132,7 +132,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
     if isinstance(pred, type):
         pred = instance(pred)
     
-    if pred:
+    if pred is not None:
         if not callable(pred):
             raise TypeError("{!r} is not callable".format(pred))
         try:
