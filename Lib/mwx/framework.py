@@ -1485,8 +1485,8 @@ class EditorInterface(CtrlInterface):
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
-             'C-S-left pressed' : (0, _F(self.selection_backward_word_or_paren)),
-            'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
+             'C-S-left pressed' : (0, _F(self.selection_backward_atom)),
+            'C-S-right pressed' : (0, _F(self.selection_forward_atom)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
              'C-S-down pressed' : (0, _F(self.LineDownExtend)),
                   'C-a pressed' : (0, _F(self.beginning_of_line)),
@@ -1838,7 +1838,7 @@ class EditorInterface(CtrlInterface):
                 p, q = region
                 text = self.get_text(p, q)
                 ln = self.LineFromPosition(p)
-                self.mark = p
+                self.markline = ln
             else:
                 text = self.Text
                 ln = 0
@@ -1955,13 +1955,13 @@ class EditorInterface(CtrlInterface):
             lc = self.LineFromPosition(p)
             line = self.GetLine(lc)
             self.cpos = p + len(line)
-            self.Anchor = po
+            self.anchor = po
             if not self.GetFoldExpanded(lc): # :not expanded
                 self.CharRightExtend()
                 self._anchors[1] = self.cpos
         else:
             self.cpos = p
-            self.Anchor = qo
+            self.anchor = qo
     
     def on_linesel_end(self, evt):
         del self._anchors
@@ -2201,6 +2201,34 @@ class EditorInterface(CtrlInterface):
             except ValueError:
                 pass # no closing quotation
     
+    def get_atom_forward(self):
+        """A style unit (atom) at the caret"""
+        p = q = self.cpos
+        c = self.get_char(p)
+        st = self.GetStyleAt(p)
+        if c in "({[":
+            q = self.right_paren
+        elif c in ",;:":
+            q += 1
+        else:
+            while self.GetStyleAt(q) == st and q < self.TextLength:
+                q += 1
+        return self.get_text(p, q)
+    
+    def get_atom_backward(self):
+        """A style unit (atom) at the caret"""
+        p = q = self.cpos
+        c = self.get_char(p-1)
+        st = self.GetStyleAt(p-1)
+        if c in ")}]":
+            p = self.left_paren
+        elif c in ",;:":
+            p -= 1
+        else:
+            while self.GetStyleAt(p-1) == st and p > 0:
+                p -= 1
+        return self.get_text(p, q)
+    
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
     ## --------------------------------
@@ -2259,7 +2287,7 @@ class EditorInterface(CtrlInterface):
         m = re.search(pattern, text)
         if m:
             a, b = m.span(0)
-            self.Anchor = p + a
+            self.anchor = p + a
             self.cpos = p + b
             return self.SelectedText
     
@@ -2269,7 +2297,7 @@ class EditorInterface(CtrlInterface):
         m = re.search(pattern, text)
         if m:
             a, b = m.span(0)
-            self.Anchor = p - a
+            self.anchor = p - a
             self.cpos = p - b
             return self.SelectedText
     
@@ -2301,6 +2329,18 @@ class EditorInterface(CtrlInterface):
         return (self.goto_char(self.left_paren, True)
              or self.goto_char(self.left_quotation, True)
              or self.WordLeftExtend())
+    
+    def selection_forward_atom(self):
+        atom = self.get_atom_forward()
+        ## self.anchor = self.cpos
+        self.cpos += len(atom)
+        return atom
+    
+    def selection_backward_atom(self):
+        atom = self.get_atom_backward()
+        ## self.anchor = self.cpos
+        self.cpos -= len(atom)
+        return atom
     
     def save_excursion(self):
         class Excursion(object):
