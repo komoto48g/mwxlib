@@ -1286,7 +1286,6 @@ class ShellFrame(MiniFrame):
         ed = self.History
         ed.ReadOnly = 0
         ed.goto_char(-1)
-        ln = ed.cline
         if prefix:
             command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
         if suffix:
@@ -1294,9 +1293,9 @@ class ShellFrame(MiniFrame):
         ed.write(command)
         if noerr is not None:
             if noerr:
-                ed.MarkerAdd(ln, 1) # white-marker
+                ed.MarkerAdd(ed.cline, 1) # white-arrow
             else:
-                ed.MarkerAdd(ln, 2) # error-marker
+                ed.MarkerAdd(ed.cline, 2) # red-arrow
         ed.ReadOnly = 1
     
     def other_editor(self, p=1, mod=True):
@@ -2502,7 +2501,6 @@ class Editor(EditWindow, EditorInterface):
         if filename == self.target: # save pos/markers before loading
             p = self.cpos
             lm = self.linemark
-            lineno = self.markline + 1
         else:
             p = -1
             lm = -1
@@ -2510,8 +2508,8 @@ class Editor(EditWindow, EditorInterface):
             self.target = filename
             if lineno:
                 self.markline = lineno - 1
-                self.goto_char(self.mark)
-            if p != -1:
+                self.goto_line(lineno - 1)
+            elif p != -1:
                 self.goto_char(p)
             self.linemark = lm
             wx.CallAfter(self.recenter)
@@ -3293,6 +3291,7 @@ class Nautilus(Shell, EditorInterface):
     def on_activated(self, shell):
         """Called when shell:self is activated
         Reset localvars and builtins assigned for the shell target.
+        
         Note: the target could be referred from other shells.
         """
         ## self.target = shell.target # !! Don't overwrite locals here
@@ -3353,7 +3352,7 @@ class Nautilus(Shell, EditorInterface):
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
         else:
-            self.MarkerAdd(ln, 2) # error-arrow
+            self.MarkerAdd(ln, 2) # red-arrow
             lines = [int(l) for f,l in err if f == "<string>"]
             if lines:
                 self.linemark = ln + lines[-1] - 1
@@ -3363,7 +3362,7 @@ class Nautilus(Shell, EditorInterface):
         self.linemark = self.LineFromPosition(self.bolc)  + e.lineno - 1
     
     def goto_previous_mark_arrow(self):
-        ln = self.MarkerPrevious(self.cline-1, 1<<1)
+        ln = self.MarkerPrevious(self.cline-1, 1<<1) # previous white-arrow
         if ln != -1:
             p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
@@ -3371,7 +3370,7 @@ class Nautilus(Shell, EditorInterface):
         self.goto_char(p)
     
     def goto_next_mark_arrow(self):
-        ln = self.MarkerNext(self.cline+1, 1<<1)
+        ln = self.MarkerNext(self.cline+1, 1<<1) # next white-arrow
         if ln != -1:
             p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
@@ -3416,7 +3415,8 @@ class Nautilus(Shell, EditorInterface):
     @property
     def Command(self):
         """Extract a command from text which may include a shell prompt.
-        Note: this returns the command at the caret position.
+        
+        Returns the command at the caret position.
         """
         return self.getCommand()
     
@@ -3424,7 +3424,8 @@ class Nautilus(Shell, EditorInterface):
     def MultilineCommand(self):
         """Extract a multi-line command from the editor.
         (override) Add limitation to avoid an infinite loop at EOF
-        Note: this returns the command at the caret position.
+        
+        Returns the command at the caret position.
         """
         lc = self.cline
         le = lc + 1
