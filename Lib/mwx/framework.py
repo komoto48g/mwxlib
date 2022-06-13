@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.3"
+__version__ = "0.61.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2928,7 +2928,9 @@ class Nautilus(Shell, EditorInterface):
                    'up pressed' : (2, self.on_completion_backward),
                  'down pressed' : (2, self.on_completion_forward),
                  'left pressed' : (2, skip),
-                'right pressed' : (2, self.process_autocomp),
+                'left released' : (2, skip),
+                'right pressed' : (2, skip),
+               'right released' : (2, self.call_word_autocomp),
                'S-left pressed' : (2, skip),
               'S-right pressed' : (2, skip),
               'shift* released' : (2, self.call_word_autocomp),
@@ -2962,7 +2964,9 @@ class Nautilus(Shell, EditorInterface):
                    'up pressed' : (3, self.on_completion_backward),
                  'down pressed' : (3, self.on_completion_forward),
                  'left pressed' : (3, skip),
-                'right pressed' : (3, self.process_autocomp),
+                'left released' : (3, skip),
+                'right pressed' : (3, skip),
+               'right released' : (3, self.call_apropos_autocomp),
                'S-left pressed' : (3, skip),
               'S-right pressed' : (3, skip),
               'shift* released' : (3, self.call_apropos_autocomp),
@@ -2996,7 +3000,9 @@ class Nautilus(Shell, EditorInterface):
                    'up pressed' : (4, self.on_completion_backward),
                  'down pressed' : (4, self.on_completion_forward),
                  'left pressed' : (4, skip),
-                'right pressed' : (4, self.process_autocomp),
+                'left released' : (4, skip),
+                'right pressed' : (4, skip),
+               'right released' : (4, self.call_text_autocomp),
                'S-left pressed' : (4, skip),
               'S-right pressed' : (4, skip),
               'shift* released' : (4, self.call_text_autocomp),
@@ -3030,7 +3036,9 @@ class Nautilus(Shell, EditorInterface):
                    'up pressed' : (5, self.on_completion_backward),
                  'down pressed' : (5, self.on_completion_forward),
                  'left pressed' : (5, skip),
-                'right pressed' : (5, self.process_autocomp),
+                'left released' : (5, skip),
+                'right pressed' : (5, skip),
+               'right released' : (5, self.call_module_autocomp),
                'S-left pressed' : (5, skip),
               'S-right pressed' : (5, skip),
               'shift* released' : (5, self.call_module_autocomp),
