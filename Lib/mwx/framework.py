@@ -1651,25 +1651,49 @@ class EditorInterface(CtrlInterface):
         self.IndentationGuides = stc.STC_IV_LOOKFORWARD
         
         self.__mark = -1
-        self.__line = -1
     
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     
+    def _Marker(name, n):
+        """Factory of markers property
+        """
+        def fget(self):
+            return self.MarkerNext(0, 1<<n)
+        
+        def fset(self, line):
+            if line != -1:
+                self.MarkerDeleteAll(n)
+                self.MarkerAdd(line, n)
+                self.handler('{}_set'.format(name), line)
+            else:
+                fdel(self)
+        
+        def fdel(self):
+            line = fget(self)
+            if line != -1:
+                self.MarkerDeleteAll(n)
+                self.handler('{}_unset'.format(name), line)
+        
+        return property(fget, fset, fdel)
+    
+    white_arrow = _Marker("white-arrow", 1)
+    red_arrow = _Marker("red-arrow", 2)
+    linemark = _Marker("line", 3)
+    
     @property
     def markline(self):
-        return self.MarkerNext(0, 0b001)
+        return self.MarkerNext(0, 1<<0)
     
     @markline.setter
     def markline(self, v):
-        if v == -1 or v is None:
-            del self.mark
-        else:
-            self.mark = self.PositionFromLine(v)
+        self.mark = self.PositionFromLine(v)
     
     @markline.deleter
     def markline(self):
         del self.mark
+    
+    ## markline = _Marker("mark", 3)
     
     @property
     def mark(self):
@@ -1677,20 +1701,20 @@ class EditorInterface(CtrlInterface):
     
     @mark.setter
     def mark(self, v):
-        if v == -1 or v is None:
-            del self.mark
-        else:
+        if v != -1:
             self.__mark = v
+            line = self.LineFromPosition(v)
             self.MarkerDeleteAll(0)
-            ln = self.LineFromPosition(v)
-            self.MarkerAdd(ln, 0)
+            self.MarkerAdd(line, 0)
             self.handler('mark_set', v)
+        else:
+            del self.mark
     
     @mark.deleter
     def mark(self):
         v = self.__mark
         if v != -1:
-            self.__mark = None
+            self.__mark = -1
             self.MarkerDeleteAll(0)
             self.handler('mark_unset', v)
     
@@ -1701,28 +1725,6 @@ class EditorInterface(CtrlInterface):
         if self.mark != -1:
             self.goto_char(self.mark)
             self.recenter()
-    
-    @property
-    def linemark(self):
-        return self.__line
-    
-    @linemark.setter
-    def linemark(self, v):
-        if v == -1 or v is None:
-            del self.linemark
-        else:
-            self.__line = v
-            self.MarkerDeleteAll(3)
-            self.MarkerAdd(v, 3)
-            self.handler('line_set', v)
-    
-    @linemark.deleter
-    def linemark(self):
-        v = self.__line
-        if v != -1:
-            self.__line = -1
-            self.MarkerDeleteAll(3)
-            self.handler('line_unset', v)
     
     def set_line_marker(self):
         if self.linemark == self.cline:
@@ -1851,7 +1853,7 @@ class EditorInterface(CtrlInterface):
             lines = [int(l) for f,l in err if f == filename]
             if lines:
                 lx = ln + lines[-1] - 1
-                self.linemark = lx
+                self.red_arrow = lx
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
@@ -3054,7 +3056,9 @@ class Nautilus(Shell, EditorInterface):
         self.show_folder()
         self.set_style(self.STYLE)
         
-        self.MarkerDeleteAll(1) # delete unnecessary mark-arrow at startup
+        ## delete unnecessary arrows at startup
+        del self.white_arrow
+        del self.red_arrow
         
         self.__text = ''
         self.__time = 0
