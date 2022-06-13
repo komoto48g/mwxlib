@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.4"
+__version__ = "0.61.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2200,6 +2200,28 @@ class EditorInterface(CtrlInterface):
                 return p - len(lexer.get_token())
             except ValueError:
                 pass # no closing quotation
+    
+    @property
+    def atom_at_caret(self):
+        """A style unit (atom) at the caret line"""
+        p = q = self.cpos
+        lc = self.get_char(p-1)
+        rc = self.get_char(p)
+        st = self.GetStyleAt(p-1) or self.GetStyleAt(p) # non-white or any
+        if lc in ")}]":
+            p = self.left_paren
+        elif rc in "({[":
+            q = self.right_paren
+        elif lc in ",;:":
+            p -= 1
+        elif rc in ",;:":
+            q += 1
+        else:
+            while self.GetStyleAt(p-1) == st and p > 0:
+                p -= 1
+            while self.GetStyleAt(q) == st and q < self.TextLength:
+                q += 1
+        return self.get_text(p, q), st
     
     def get_atom_forward(self):
         """A style unit (atom) at the caret"""
