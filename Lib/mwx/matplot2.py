@@ -279,7 +279,7 @@ class MatplotPanel(wx.Panel):
         """Initialize the plot figure"""
         #<matplotlib.axes.Axes>
         self.figure.clear()
-        self.figure.add_subplot(111) # cf. add_axes(margin=(l,b,w,t))
+        self.figure.add_subplot(111) # cf. add_axes(rect=(l,b,w,h))
         
         #<matplotlib.lines.Line2D>
         (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75,
@@ -851,7 +851,7 @@ if __name__ == "__main__":
         ## set_array -> z color value
         ## set_offsets -> x & y locations
         
-        ## scatter は データ参照メソッドを追加する必要がある see on_pick
+        ## scatter は データ参照メソッドを追加すること (=> on_pick で使用する)
         ## art.get_data = lambda: x, y
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
@@ -878,6 +878,7 @@ if __name__ == "__main__":
     frm = mwx.Frame(None)
     frm.view = MatplotPanel(frm,
                             log=frm.statusbar,
+                            margin=None, #(.1,.1,.9,.9),
                             size=(300,240))
     frm.handler.debug = 0
     frm.view.handler.debug = 4
@@ -908,11 +909,11 @@ if __name__ == "__main__":
         art2 = _scatter1(frm.view.axes)
         art3 = _scatter2(frm.view.axes)
         
-        fig = axes.figure # or self.view.figure
-        fig.colorbar(art3) # cf. self.clear()
-    
-    l, b = 0.15, 0.15
-    frm.view.set_margin((l,b,1.,1.-b))
+        frm.view.figure.colorbar(art3)
+        
+        ## margin
+        l, b = 0.15, 0.15
+        frm.view.set_margin((l, b, 0.95, 1-b))
     
     frm.view.update_position()
     frm.Fit()

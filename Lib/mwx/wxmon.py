@@ -173,7 +173,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                 name = self.get_name(event)
                 print(" #{:6d}:{:32s}{!s}".format(event, name, e))
                 continue
-        self.parent.handler("monitor_begin", widget)
+        self.parent.handler('monitor_begin', widget)
     
     def unwatch(self):
         """End watching"""
@@ -183,7 +183,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         for binder in self.get_watchlist():
             if not widget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
-        self.parent.handler("monitor_end", widget)
+        self.parent.handler('monitor_end', widget)
         self.__prev = widget
         self.__widget = None
     

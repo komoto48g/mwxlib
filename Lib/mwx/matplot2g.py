@@ -1701,8 +1701,10 @@ class GraphPlot(MatplotPanel):
 if __name__ == "__main__":
     app = wx.App()
     frm = mwx.Frame(None)
-    frm.graph = GraphPlot(frm, log=frm.statusbar, margin=(.1,.1,.9,.9), size=(300,240))
-    
+    frm.graph = GraphPlot(frm,
+                          log=frm.statusbar,
+                          margin=(.1,.1,.9,.9),
+                          size=(300,240))
     frm.handler.debug = 0
     frm.graph.handler.debug = 4
     
