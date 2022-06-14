@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.5"
+__version__ = "0.61.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -811,7 +811,7 @@ class ShellFrame(MiniFrame):
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        self.Scratch = Editor(self, name="<scratch>")
+        self.Scratch = Editor(self, name="Scratch")
         self.Log = Editor(self, name="Log")
         self.Help = Editor(self, name="Help")
         self.History = Editor(self, name="History")
@@ -955,18 +955,25 @@ class ShellFrame(MiniFrame):
         self.Scratch.set_style(Nautilus.STYLE)
         self.Scratch.show_folder()
         
+        self.Scratch.target = "<scratch>" # target name to debugger.watch
+        
         @self.Scratch.define_key('C-j')
         def eval_line(v):
             self.Scratch.py_eval_line(self.current_shell.globals,
-                                      self.current_shell.locals,)
+                                      self.current_shell.locals)
         
         @self.Scratch.define_key('M-j')
         def exec_buffer(v):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
-                                        filename="<scratch>")
+                                        self.Scratch.target)
         
-        self.Scratch.target = "<scratch>" # target for debugger.watch
+        ## @self.Scratch.define_key('M-i')
+        ## def exec_region(v):
+        ##     self.Scratch.py_exec_region(self.current_shell.globals,
+        ##                                 self.current_shell.locals,
+        ##                                 self.Scratch.target,
+        ##                                 self.Scratch.region)
         
         self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
         self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
@@ -2523,7 +2530,8 @@ class Editor(EditWindow, EditorInterface):
         def activate(v):
             if self.target_mtdelta:
                 self.message("The target file has been modified externally.")
-            self.parent.handler('title_window', self.target or self.name)
+            self.parent.handler('title_window',
+                                "{} file: {}".format(self.name, self.target))
             self.trace_position()
             v.Skip()
         
