@@ -2212,9 +2212,9 @@ class EditorInterface(CtrlInterface):
             p = self.left_paren
         elif rc in "({[":
             q = self.right_paren
-        elif lc in ",;:":
+        elif lc in ",:;":
             p -= 1
-        elif rc in ",;:":
+        elif rc in ",:;":
             q += 1
         else:
             while self.GetStyleAt(p-1) == st and p > 0:
@@ -2223,33 +2223,31 @@ class EditorInterface(CtrlInterface):
                 q += 1
         return self.get_text(p, q), st
     
-    def get_atom_forward(self):
-        """A style unit (atom) at the caret"""
+    def following_atom(self):
         p = q = self.cpos
         c = self.get_char(p)
         st = self.GetStyleAt(p)
         if c in "({[":
             q = self.right_paren
-        elif c in ",;:":
+        elif c in ",:;":
             q += 1
         else:
             while self.GetStyleAt(q) == st and q < self.TextLength:
                 q += 1
-        return self.get_text(p, q), st
+        return p, q, st
     
-    def get_atom_backward(self):
-        """A style unit (atom) at the caret"""
+    def preceding_atom(self):
         p = q = self.cpos
         c = self.get_char(p-1)
         st = self.GetStyleAt(p-1)
         if c in ")}]":
             p = self.left_paren
-        elif c in ",;:":
+        elif c in ",:;":
             p -= 1
         else:
             while self.GetStyleAt(p-1) == st and p > 0:
                 p -= 1
-        return self.get_text(p, q), st
+        return p, q, st
     
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
@@ -2353,16 +2351,12 @@ class EditorInterface(CtrlInterface):
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
-        atom, st = self.get_atom_forward()
-        ## self.anchor = self.cpos
-        self.cpos += len(atom)
-        return atom
+        p, q, st = self.following_atom()
+        self.cpos = q
     
     def selection_backward_atom(self):
-        atom, st = self.get_atom_backward()
-        ## self.anchor = self.cpos
-        self.cpos -= len(atom)
-        return atom
+        p, q, st = self.preceding_atom()
+        self.cpos = p
     
     def save_excursion(self):
         class Excursion(object):
@@ -2540,6 +2534,7 @@ class Editor(EditWindow, EditorInterface):
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
+            self.handler('stc_updated', evt)
         evt.Skip()
     
     def load_cache(self, filename, globals=None):
@@ -3148,6 +3143,7 @@ class Nautilus(Shell, EditorInterface):
                         tip = tip.splitlines()[0]
                     self.message(tip) # clear if no tip
                     self.__text = text
+            self.handler('stc_updated', evt)
         evt.Skip()
     
     def OnSpace(self, evt):
@@ -3871,7 +3867,7 @@ class Nautilus(Shell, EditorInterface):
             n = len(self.__comp_hint)
             p = self.cpos
             self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
-            self.cpos = p # backward selection to anchor point
+            self.cpos = p # backward selection to the point
             self.__comp_ind = j
         except IndexError:
             self.message("no completion words")
