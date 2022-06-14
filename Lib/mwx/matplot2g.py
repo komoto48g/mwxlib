@@ -619,6 +619,7 @@ class GraphPlot(MatplotPanel):
         self.__marksel = []
         self.__markarts = []
         self.marked.set_pickradius(8) # for backward compatibility
+        self.marked.set_clip_on(False)
         
         #<matplotlib.lines.Line2D>
         (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4,
@@ -626,10 +627,12 @@ class GraphPlot(MatplotPanel):
         self.__rectsel = []
         self.__rectarts = []
         self.rected.set_pickradius(4) # for backward compatibility
+        self.rected.set_clip_on(False)
         
         self.__isPicked = None
         self.selected.set_picker(True)
         self.selected.set_pickradius(8)
+        self.selected.set_clip_on(False)
     
     def get_uniqname(self, name):
         base = name = name or "*temp*"
