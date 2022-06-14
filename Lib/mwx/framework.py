@@ -2228,7 +2228,7 @@ class EditorInterface(CtrlInterface):
                 p -= 1
             while self.GetStyleAt(q) == st and q < self.TextLength:
                 q += 1
-        return self.get_text(p, q), st
+        return self.get_text(p, q)
     
     def following_atom(self):
         p = q = self.cpos
