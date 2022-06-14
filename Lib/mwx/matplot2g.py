@@ -1091,6 +1091,12 @@ class GraphPlot(MatplotPanel):
         evt.ind = (ny, nx)
         self.Selector = (x, y)
     
+    def _inaxes(self, evt):
+        try:
+            return evt.inaxes is not self.axes #<matplotlib.backend_bases.MouseEvent>
+        except AttributeError:
+            return None #<wx._core.KeyEvent>
+    
     ## --------------------------------
     ## Pan/Zoom actions (override)
     ## --------------------------------
@@ -1207,7 +1213,7 @@ class GraphPlot(MatplotPanel):
         pass
     
     def OnDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event # the last pressed
@@ -1252,7 +1258,7 @@ class GraphPlot(MatplotPanel):
         self.__linesel = None
     
     def OnLineDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event # the last pressed
@@ -1417,7 +1423,7 @@ class GraphPlot(MatplotPanel):
         self.set_wxcursor(wx.CURSOR_ARROW)
     
     def OnRegionDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event # the last pressed
@@ -1638,7 +1644,7 @@ class GraphPlot(MatplotPanel):
         self.update_art_of_mark()
     
     def OnMarkDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         self.__orgpoints = self.get_current_mark()
