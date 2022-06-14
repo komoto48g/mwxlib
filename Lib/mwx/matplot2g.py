@@ -619,6 +619,7 @@ class GraphPlot(MatplotPanel):
         self.__marksel = []
         self.__markarts = []
         self.marked.set_pickradius(8) # for backward compatibility
+        self.marked.set_clip_on(False)
         
         #<matplotlib.lines.Line2D>
         (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4,
@@ -626,10 +627,12 @@ class GraphPlot(MatplotPanel):
         self.__rectsel = []
         self.__rectarts = []
         self.rected.set_pickradius(4) # for backward compatibility
+        self.rected.set_clip_on(False)
         
         self.__isPicked = None
         self.selected.set_picker(True)
         self.selected.set_pickradius(8)
+        self.selected.set_clip_on(False)
     
     def get_uniqname(self, name):
         base = name = name or "*temp*"
@@ -1091,6 +1094,12 @@ class GraphPlot(MatplotPanel):
         evt.ind = (ny, nx)
         self.Selector = (x, y)
     
+    def _inaxes(self, evt):
+        try:
+            return evt.inaxes is not self.axes #<matplotlib.backend_bases.MouseEvent>
+        except AttributeError:
+            return None #<wx._core.KeyEvent>
+    
     ## --------------------------------
     ## Pan/Zoom actions (override)
     ## --------------------------------
@@ -1207,7 +1216,7 @@ class GraphPlot(MatplotPanel):
         pass
     
     def OnDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event # the last pressed
@@ -1252,7 +1261,7 @@ class GraphPlot(MatplotPanel):
         self.__linesel = None
     
     def OnLineDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event # the last pressed
@@ -1264,7 +1273,7 @@ class GraphPlot(MatplotPanel):
         xc, yc = self.__lastpoint
         xo, yo = self.__orgpoints
         j = self.__linesel
-        if j:
+        if j is not None:
             if shift:
                 i = j-1 if j else 1
                 xo, yo = xo[i], yo[i] # となりの点を基準とする
@@ -1344,17 +1353,23 @@ class GraphPlot(MatplotPanel):
             return np.array((x, y))
     
     def set_current_rect(self, x, y):
-        l,r,b,t = self.frame.get_extent()
-        xa, xb = min(x), max(x)
-        ya, yb = min(y), max(y)
-        if (xa < l or xb > r) or (ya < b or yb > t):
-            return
-        
         if len(x) == 2:
-            (xo,x), (yo,y) = x, y
-            x, y = [xo,x,x,xo,xo], [yo,yo,y,y,yo]
+            (xa,xb), (ya,yb) = x, y
             self.__rectsel = [2]
-        
+        else:
+            l,r,b,t = self.frame.get_extent()
+            xa, xb = min(x), max(x)
+            ya, yb = min(y), max(y)
+            ## if (xa < l or xb > r) or (ya < b or yb > t):
+            ##     return
+            ## Modify range so that it does not exceed the extent
+            w, h = xb-xa, yb-ya
+            if xa < l: xa, xb = l, l+w
+            if xb > r: xa, xb = r-w, r
+            if ya < b: ya, yb = b, b+h
+            if yb > t: ya, yb = t-h, t
+        x = [xa, xb, xb, xa, xa]
+        y = [ya, ya, yb, yb, ya]
         self.rected.set_data(x, y)
         self.rected.set_visible(1)
         self.update_art_of_region()
@@ -1417,7 +1432,7 @@ class GraphPlot(MatplotPanel):
         self.set_wxcursor(wx.CURSOR_ARROW)
     
     def OnRegionDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event # the last pressed
@@ -1430,7 +1445,7 @@ class GraphPlot(MatplotPanel):
     def OnRegionDragMove(self, evt, shift=False, meta=False):
         x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
         xs, ys = self.get_current_rect()
-        j = self.__rectsel
+        j = self.__rectsel # corner-drag[1] or region-drag[4]
         if len(j) == 1:
             k = (j[0] + 2) % 4 # 選択された一点の対角点
             xo, yo = xs[k], ys[k]
@@ -1638,7 +1653,7 @@ class GraphPlot(MatplotPanel):
         self.update_art_of_mark()
     
     def OnMarkDragBegin(self, evt):
-        if not self.frame or evt.inaxes is not self.axes:
+        if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         self.__orgpoints = self.get_current_mark()
