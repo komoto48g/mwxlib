@@ -1350,17 +1350,23 @@ class GraphPlot(MatplotPanel):
             return np.array((x, y))
     
     def set_current_rect(self, x, y):
-        l,r,b,t = self.frame.get_extent()
-        xa, xb = min(x), max(x)
-        ya, yb = min(y), max(y)
-        if (xa < l or xb > r) or (ya < b or yb > t):
-            return
-        
         if len(x) == 2:
-            (xo,x), (yo,y) = x, y
-            x, y = [xo,x,x,xo,xo], [yo,yo,y,y,yo]
+            (xa,xb), (ya,yb) = x, y
             self.__rectsel = [2]
-        
+        else:
+            l,r,b,t = self.frame.get_extent()
+            xa, xb = min(x), max(x)
+            ya, yb = min(y), max(y)
+            ## if (xa < l or xb > r) or (ya < b or yb > t):
+            ##     return
+            ## Modify range so that it does not exceed the extent
+            w, h = xb-xa, yb-ya
+            if xa < l: xa, xb = l, l+w
+            if xb > r: xa, xb = r-w, r
+            if ya < b: ya, yb = b, b+h
+            if yb > t: ya, yb = t-h, t
+        x = [xa, xb, xb, xa, xa]
+        y = [ya, ya, yb, yb, ya]
         self.rected.set_data(x, y)
         self.rected.set_visible(1)
         self.update_art_of_region()
@@ -1436,7 +1442,7 @@ class GraphPlot(MatplotPanel):
     def OnRegionDragMove(self, evt, shift=False, meta=False):
         x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
         xs, ys = self.get_current_rect()
-        j = self.__rectsel
+        j = self.__rectsel # corner-drag[1] or region-drag[4]
         if len(j) == 1:
             k = (j[0] + 2) % 4 # 選択された一点の対角点
             xo, yo = xs[k], ys[k]
