@@ -1273,7 +1273,7 @@ class GraphPlot(MatplotPanel):
         xc, yc = self.__lastpoint
         xo, yo = self.__orgpoints
         j = self.__linesel
-        if j:
+        if j is not None:
             if shift:
                 i = j-1 if j else 1
                 xo, yo = xo[i], yo[i] # となりの点を基準とする
