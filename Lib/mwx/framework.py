@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.6"
+__version__ = "0.61.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2507,7 +2507,7 @@ class Editor(EditWindow, EditorInterface):
         self.target = None  # buffer-filename
         self.name = name    # buffer-name
         
-        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT,
                   lambda v: self.handler('savepoint_left', v))
@@ -2853,26 +2853,6 @@ class Nautilus(Shell, EditorInterface):
                   & wx.GetKeyState(wx.WXK_SHIFT)
             Nautilus.modules = ut.find_modules(force)
         
-        ## This shell is expected to be created many times in the process,
-        ## e.g., when used as a breakpoint and when cloned.
-        ## Assign objects each time it is activated so that the target
-        ## does not refer to dead objects in the shell clones (to be deleted).
-        
-        def activate(v):
-            self.handler('shell_activated', self)
-            self.parent.handler('title_window', self.target)
-            self.trace_position()
-            v.Skip()
-        
-        def inactivate(v):
-            self.handler('shell_inactivated', self)
-            v.Skip()
-        
-        ## EditWindow.OnUpdateUI は Shell.OnUpdateUI とかぶってオーバーライドされるので
-        ## ここでは別途 EVT_STC_UPDATEUI ハンドラを追加する (EVT_UPDATE_UI ではない !)
-        
-        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
-        
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
@@ -2881,6 +2861,17 @@ class Nautilus(Shell, EditorInterface):
         self.AutoCompSetAutoHide(False)
         self.AutoCompSetIgnoreCase(True)
         ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
+        
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
+        def activate(v):
+            self.handler('shell_activated', self)
+            v.Skip()
+        
+        def inactivate(v):
+            self.handler('shell_inactivated', self)
+            v.Skip()
         
         def clear(v):
             ## Clear selection and statusline, no skip.
@@ -2904,6 +2895,7 @@ class Nautilus(Shell, EditorInterface):
                     'focus_set' : [ None, activate ],
                    'focus_kill' : [ None, inactivate ],
                  'shell_cloned' : [ None, ],
+                'shell_deleted' : [ None, self.on_deleted ],
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
                  'interp_error' : [ None, self.on_interp_error ],
@@ -3156,6 +3148,10 @@ class Nautilus(Shell, EditorInterface):
             self.handler('stc_updated', evt)
         evt.Skip()
     
+    def OnDestroy(self, evt):
+        self.handler('shell_deleted', self)
+        evt.Skip()
+    
     def OnSpace(self, evt):
         """Called when space pressed"""
         if not self.CanEdit():
@@ -3368,17 +3364,27 @@ class Nautilus(Shell, EditorInterface):
         builtins.filling = filling
         builtins.profile = profile
     
+    def on_deleted(self, shell):
+        """Called before shell:self is killed.
+        Delete target shell to prevent referencing the dead shell.
+        """
+        try:
+            del self.target.shell # delete the facade <wx.py.shell.ShellFacade>
+        except AttributeError as e:
+            pass
+    
     def on_activated(self, shell):
-        """Called when shell:self is activated
+        """Called when shell:self is activated.
         Reset localvars and builtins assigned for the shell target.
         
         Note: the target could be referred from other shells.
         """
-        ## self.target = shell.target # !! Don't overwrite locals here
+        ## self.target = shell.target # Don't overwrite locals here
+        self.parent.handler('title_window', self.target)
+        self.trace_position()
         try:
             self.target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError as e:
-            print("- cannot set target vars: {!r}".format(e))
             pass
         
         ## To prevent the builtins from referring dead objects,
@@ -3394,7 +3400,7 @@ class Nautilus(Shell, EditorInterface):
             builtins.debug = monit
     
     def on_inactivated(self, shell):
-        """Called when shell:self is inactivated
+        """Called when shell:self is inactivated.
         Remove target localvars and builtins assigned for the shell target.
         """
         if self.AutoCompActive():
