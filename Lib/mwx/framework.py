@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.7"
+__version__ = "0.61.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1529,12 +1529,14 @@ class EditorInterface(CtrlInterface):
              'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
+                    '* pressed' : (0, skip),
                     '[ pressed' : (0, skip, _F(self.goto_char, 0, doc="beginning-of-buffer")),
                     '] pressed' : (0, skip, _F(self.goto_char, -1, doc="end-of-buffer")),
                     '@ pressed' : (0, skip, _F(self.goto_marker)),
                   'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
             },
             'C-c' : {
+                    '* pressed' : (0, skip),
                   'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
             },
         })
@@ -2479,7 +2481,7 @@ class Editor(EditWindow, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    post_message = property(lambda self: postcall(self.__parent.message))
+    post_message = property(lambda self: postcall(self.message))
     
     @property
     def target(self):
@@ -2530,10 +2532,10 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
+            title = "{} file: {}".format(self.name, self.target)
             if self.target_mtdelta:
-                self.message("The target file has been modified externally.")
-            self.parent.handler('title_window',
-                                "{} file: {}".format(self.name, self.target))
+                self.message("{} has been modified externally.".format(title))
+            self.parent.handler('title_window', title)
             self.trace_position()
             v.Skip()
         
@@ -2566,15 +2568,15 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the target file will be reloaded without confirmation.
         """
-        filename = os.path.abspath(filename)
-        if filename == self.target: # save pos/markers before loading
+        filepath = os.path.abspath(filename)
+        if filepath == self.target: # save pos/markers before loading
             p = self.cpos
             lm = self.linemark
         else:
             p = -1
             lm = -1
-        if self.load_cache(filename) or self.LoadFile(filename):
-            self.target = filename
+        if self.load_cache(filepath) or self.LoadFile(filepath):
+            self.target = filepath
             if lineno:
                 self.markline = lineno - 1
                 self.goto_line(lineno - 1)
@@ -2584,6 +2586,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
+            self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2593,9 +2596,10 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the target file will be overwritten without confirmation.
         """
-        filename = os.path.abspath(filename)
-        if self.SaveFile(filename):
-            self.target = filename
+        filepath = os.path.abspath(filename)
+        if self.SaveFile(filepath):
+            self.target = filepath
+            self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2776,7 +2780,7 @@ class Nautilus(Shell, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    post_message = property(lambda self: postcall(self.__parent.message))
+    post_message = property(lambda self: postcall(self.message))
     
     @property
     def target(self):
