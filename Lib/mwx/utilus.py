@@ -539,11 +539,12 @@ class FSM(dict):
         First, call handlers with the state:None.
         Then, call handlers with the current state.
         
-        The retval dppends on the context:
-            process the event (with transition or actions) -> list
+        Returns depending on the context:
+            process the event (with actions) -> [retvals]
+            process the event (no actions) -> []
             no event:transaction -> None
         """
-        perf = False # Is transaction performed?
+        recept = False # Is transaction performed?
         retvals = [] # retvals of actions
         if None in self:
             org = self.__state
@@ -553,7 +554,7 @@ class FSM(dict):
                 self.__state = None
                 ret = self.call(event, *args, **kwargs) # None process
                 if ret is not None:
-                    perf = True
+                    recept = True
                     retvals += ret
             finally:
                 if self.__state is None: # restore original
@@ -564,12 +565,12 @@ class FSM(dict):
         if self.__state is not None:
             ret = self.call(event, *args, **kwargs) # normal process
             if ret is not None:
-                perf = True
+                recept = True
                 retvals += ret
         
         self.__prev_state = self.__state
         self.__prev_event = event
-        if perf:
+        if recept:
             return retvals
     
     def call(self, event, *args, **kwargs):

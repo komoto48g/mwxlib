@@ -139,7 +139,8 @@ class MatplotPanel(wx.Panel):
         self.canvas.Bind(wx.EVT_CONTEXT_MENU, lambda v: self.handler('context_menu', v))
         
         def fork(v):
-            self.handler(self.handler.event, v) or v.Skip()
+            if self.handler(self.handler.event, v) is None:
+                v.Skip()
         
         self.__handler = mwx.FSM({ # DNA<MatplotPanel>
                 None : {
@@ -526,7 +527,8 @@ class MatplotPanel(wx.Panel):
         """Called when key down"""
         key = mwx.hotkey(evt)
         self.__key = mwx.regulate_key(key + '+')
-        self.handler('{} pressed'.format(key), evt) or evt.Skip()
+        if self.handler('{} pressed'.format(key), evt) is None:
+            evt.Skip()
     
     def on_hotkey_ndrag(self, evt): #<wx._core.KeyEvent>
         """Called when key down while dragging"""
@@ -537,7 +539,8 @@ class MatplotPanel(wx.Panel):
         """Called when key up"""
         key = mwx.hotkey(evt)
         self.__key = ''
-        self.handler('{} released'.format(key), evt) or evt.Skip()
+        if self.handler('{} released'.format(key), evt) is None:
+            evt.Skip()
     
     def _on_mouse_event(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called in the mouse event handlers
