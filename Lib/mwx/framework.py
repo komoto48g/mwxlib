@@ -2481,7 +2481,7 @@ class Editor(EditWindow, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    post_message = property(lambda self: postcall(self.__parent.message))
+    post_message = property(lambda self: postcall(self.message))
     
     @property
     def target(self):
@@ -2568,15 +2568,15 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the target file will be reloaded without confirmation.
         """
-        filename = os.path.abspath(filename)
-        if filename == self.target: # save pos/markers before loading
+        filepath = os.path.abspath(filename)
+        if filepath == self.target: # save pos/markers before loading
             p = self.cpos
             lm = self.linemark
         else:
             p = -1
             lm = -1
-        if self.load_cache(filename) or self.LoadFile(filename):
-            self.target = filename
+        if self.load_cache(filepath) or self.LoadFile(filepath):
+            self.target = filepath
             if lineno:
                 self.markline = lineno - 1
                 self.goto_line(lineno - 1)
@@ -2586,6 +2586,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
+            self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2595,9 +2596,10 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the target file will be overwritten without confirmation.
         """
-        filename = os.path.abspath(filename)
-        if self.SaveFile(filename):
-            self.target = filename
+        filepath = os.path.abspath(filename)
+        if self.SaveFile(filepath):
+            self.target = filepath
+            self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2778,7 +2780,7 @@ class Nautilus(Shell, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    post_message = property(lambda self: postcall(self.__parent.message))
+    post_message = property(lambda self: postcall(self.message))
     
     @property
     def target(self):
