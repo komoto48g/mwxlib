@@ -1529,12 +1529,14 @@ class EditorInterface(CtrlInterface):
              'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
+                    '* pressed' : (0, skip),
                     '[ pressed' : (0, skip, _F(self.goto_char, 0, doc="beginning-of-buffer")),
                     '] pressed' : (0, skip, _F(self.goto_char, -1, doc="end-of-buffer")),
                     '@ pressed' : (0, skip, _F(self.goto_marker)),
                   'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
             },
             'C-c' : {
+                    '* pressed' : (0, skip),
                   'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
             },
         })
