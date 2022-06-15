@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.7"
+__version__ = "0.61.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2530,10 +2530,10 @@ class Editor(EditWindow, EditorInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
+            title = "{} file: {}".format(self.name, self.target)
             if self.target_mtdelta:
-                self.message("The target file has been modified externally.")
-            self.parent.handler('title_window',
-                                "{} file: {}".format(self.name, self.target))
+                self.message("{} has been modified externally.".format(title))
+            self.parent.handler('title_window', title)
             self.trace_position()
             v.Skip()
         
