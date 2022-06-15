@@ -58,12 +58,6 @@ def skip(v):
     v.Skip()
 
 
-def noskip(v):
-    ## Fake handler; do nothing, but if the FSM handles this,
-    ## consequently, the event will no longer skip hereafter.
-    pass
-
-
 speckeys = {
     wx.WXK_ALT                  : 'alt',
     wx.WXK_BACK                 : 'backspace',
@@ -207,7 +201,7 @@ class KeyCtrlInterfaceMixin(object):
                           event : [ keymap, self.prefix_command_hook ],
             },
             keymap : {
-                         'quit' : [ state, ],
+                         'quit' : [ state, skip ],
                     '* pressed' : [ state, _Pass ],
                  '*alt pressed' : [ keymap, _Pass ],
                 '*ctrl pressed' : [ keymap, _Pass ],
@@ -316,13 +310,15 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             return
         key = hotkey(evt)
         self.__key = regulate_key(key + '+')
-        self.handler('{} pressed'.format(key), evt) or evt.Skip()
+        if self.handler('{} pressed'.format(key), evt) is None:
+            evt.Skip()
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up"""
         key = hotkey(evt)
         self.__key = ''
-        self.handler('{} released'.format(key), evt) or evt.Skip()
+        if self.handler('{} released'.format(key), evt) is None:
+            evt.Skip()
     
     def on_mousewheel(self, evt): #<wx._core.MouseEvent>
         """Called when wheel event
@@ -333,7 +329,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         else:
             p = 'up' if evt.WheelRotation > 0 else 'down'
         evt.key = self.__key + "wheel{}".format(p)
-        self.handler('{} pressed'.format(evt.key), evt) or evt.Skip()
+        if self.handler('{} pressed'.format(evt.key), evt) is None:
+            evt.Skip()
         self.__key = ''
     
     def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
@@ -343,7 +340,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         event = self.__key + event # 'C-M-S-K+[LMRX]button pressed/released/dclick'
         key, sep, st = event.rpartition(' ') # removes st:'pressed/released/dclick'
         evt.key = key or st
-        self.handler(event, evt) or evt.Skip()
+        if self.handler(event, evt) is None:
+            evt.Skip()
         self.__key = ''
         try:
             self.SetFocusIgnoringChildren() # let the panel accept keys
@@ -351,7 +349,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             pass
     
     def _window_handler(self, event, evt): #<wx._core.FocusEvent> #<wx._core.MouseEvent>
-        self.handler(event, evt) or evt.Skip()
+        if self.handler(event, evt) is None:
+            evt.Skip()
 
 
 ## --------------------------------
@@ -626,7 +625,8 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
-                self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
+                if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
+                    evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         def close(v):
@@ -682,7 +682,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
-                self.handler('{} pressed'.format(hotkey(evt)), evt) or evt.Skip()
+                if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
+                    evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         ## To default close >>> self.Unbind(wx.EVT_CLOSE)
@@ -930,7 +931,7 @@ class ShellFrame(MiniFrame):
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.popup_window, self.ghost, None, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
-             '*f[0-9]* pressed' : (0, noskip),
+             '*f[0-9]* pressed' : (0, ),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
                 'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
@@ -1507,8 +1508,8 @@ class EditorInterface(CtrlInterface):
                                        _F(self.SetFocus)),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
-                'C-S-l pressed' : (0, _F(self.recenter)), # override delete-line
-                  'C-t pressed' : (0, noskip), # override transpose-line
+                'C-S-l pressed' : (0, _F(self.recenter)),   # override delete-line
+                  'C-t pressed' : (0, ),                    # override transpose-line
                 'C-S-f pressed' : (0, _F(self.set_marker)), # override mark
               'C-space pressed' : (0, _F(self.set_marker)),
               'S-space pressed' : (0, _F(self.set_line_marker)),
@@ -1540,10 +1541,10 @@ class EditorInterface(CtrlInterface):
         self.handler.clear(0)
         
         self.Bind(wx.EVT_MOTION,
-                  lambda v: self.handler('motion', v) or v.Skip())
+                  lambda v: (self.handler('motion', v), v.Skip()))
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                  lambda v: self.handler('capture_lost', v) or v.Skip())
+                  lambda v: (self.handler('capture_lost', v), v.Skip()))
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -2925,7 +2926,7 @@ class Nautilus(Shell, EditorInterface):
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
-               '*enter pressed' : (0, noskip), # -> OnShowCompHistory 無効
+               '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
                  ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, +1, doc="prev-command")),
@@ -3003,7 +3004,7 @@ class Nautilus(Shell, EditorInterface):
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, self.skipback_autocomp),
           '*backspace released' : (2, self.call_word_autocomp),
-        'C-S-backspace pressed' : (2, noskip),
+        'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
                   'M-j pressed' : (2, self.exec_region),
                   'C-h pressed' : (2, self.call_helpTip),
@@ -3039,7 +3040,7 @@ class Nautilus(Shell, EditorInterface):
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, self.skipback_autocomp),
           '*backspace released' : (3, self.call_apropos_autocomp),
-        'C-S-backspace pressed' : (3, noskip),
+        'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
                   'M-j pressed' : (3, self.exec_region),
                   'C-h pressed' : (3, self.call_helpTip),
@@ -3075,7 +3076,7 @@ class Nautilus(Shell, EditorInterface):
               '*delete pressed' : (4, skip),
            '*backspace pressed' : (4, self.skipback_autocomp),
           '*backspace released' : (4, self.call_text_autocomp),
-        'C-S-backspace pressed' : (4, noskip),
+        'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
                   'M-j pressed' : (4, self.exec_region),
                   'C-h pressed' : (4, self.call_helpTip),
@@ -3110,7 +3111,7 @@ class Nautilus(Shell, EditorInterface):
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
            '*backspace pressed' : (5, self.skipback_autocomp),
           '*backspace released' : (5, self.call_module_autocomp),
-        'C-S-backspace pressed' : (5, noskip),
+        'C-S-backspace pressed' : (5, ),
                  '*alt pressed' : (5, ),
                 '*ctrl pressed' : (5, ),
                '*shift pressed' : (5, ),
