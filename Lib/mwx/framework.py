@@ -1147,6 +1147,7 @@ class ShellFrame(MiniFrame):
         shell = self.debugger.shell
         del shell.locals
         del shell.globals
+        self.on_title_window(shell.target)
         self.debugger.unwatch()
         self.message("Quit")
         evt.Skip()
@@ -1235,6 +1236,7 @@ class ShellFrame(MiniFrame):
         self.add_history("--> End of debugger")
         self.linfo.unwatch()
         self.ginfo.unwatch()
+        self.on_title_window(shell.target)
         del shell.locals
         del shell.globals
     

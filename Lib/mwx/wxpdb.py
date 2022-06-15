@@ -239,7 +239,7 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        if filename == "<scratch>":
+        if filename == self.parent.Scratch.target:
             self.editor = self.parent.Scratch
         else:
             self.editor = self.parent.Log
@@ -327,8 +327,8 @@ class Debugger(Pdb):
             lineno = frame.f_lineno
             if target == filename:
                 code = frame.f_code
-                if filename == "<scratch>":
-                    ## TODO: line-hook (cannot get src from <scratch> code)
+                if filename == self.parent.Scratch.target:
+                    ## TODO: line-hook (cannot get src from code)
                     ## Currently, only call-hook mode is available.
                     lcnt = 1
                 else:

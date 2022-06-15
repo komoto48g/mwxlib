@@ -851,7 +851,7 @@ if __name__ == "__main__":
         ## set_array -> z color value
         ## set_offsets -> x & y locations
         
-        ## scatter は データ参照メソッドを追加すること (=> on_pick で使用する)
+        ## scatter データ参照メソッドを追加すること (=> on_pick で使用する)
         ## art.get_data = lambda: x, y
         art.get_xdata = lambda: x
         art.get_ydata = lambda: y
