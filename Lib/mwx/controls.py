@@ -299,7 +299,7 @@ class Knob(wx.Panel):
     [Mbutton] resets to the std. value if it exists.
     
     Args:
-          param : object <Param> or <LParam>
+          param : <Param> or <LParam> object
            type : ctrl type (slider[*], [hv]spin, choice, None)
           style : style of label
                   None -> static text (default)
@@ -310,7 +310,7 @@ class Knob(wx.Panel):
               h : height of widget (default 22 for Windows)
     
     Attributes:
-          param : A param <Param> object referred from knobs
+          param : <Param> object referred from knobs
     """
     @property
     def param(self):
@@ -697,7 +697,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
-        ## Register object and param groups
+        ## Register object and parameter groups
         def flatiter(a):
             for c in a:
                 if isinstance(c, tuple):

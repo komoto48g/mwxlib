@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.61.8"
+__version__ = "0.61.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1480,8 +1480,10 @@ class EditorInterface(CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.handler.update({ # DNA<Editor>
-            -1 : {  # original action of the Editor
+        self.handler.update({ # DNA<EditorInterface>
+            None : {
+            },
+            -1 : { # original action of the Editor
                     '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
                  '*alt pressed' : (-1, ),
                 '*ctrl pressed' : (-1, ),
@@ -1499,6 +1501,8 @@ class EditorInterface(CtrlInterface):
             'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
              'C-S-down pressed' : (0, _F(self.LineDownExtend)),
+                  'C-c pressed' : (0, skip),
+                'C-S-c pressed' : (0, _F(self.Copy)),
                   'C-a pressed' : (0, _F(self.beginning_of_line)),
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
@@ -1521,12 +1525,13 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                  'select_line' : (100, self.on_linesel_begin),
+                       'motion' : (0, skip),
+                  'select_line' : (100, skip, self.on_linesel_begin),
             },
             100 : {
-                       'motion' : (100, self.on_linesel_motion),
-                 'capture_lost' : (0, self.on_linesel_end),
-             'Lbutton released' : (0, self.on_linesel_end),
+                       'motion' : (100, skip, self.on_linesel_motion),
+                 'capture_lost' : (0, skip, self.on_linesel_end),
+             'Lbutton released' : (0, skip, self.on_linesel_end),
             },
             'C-x' : {
                     '* pressed' : (0, skip),
@@ -1543,10 +1548,10 @@ class EditorInterface(CtrlInterface):
         self.handler.clear(0)
         
         self.Bind(wx.EVT_MOTION,
-                  lambda v: (self.handler('motion', v), v.Skip()))
+                  lambda v: self.handler('motion', v))
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                  lambda v: (self.handler('capture_lost', v), v.Skip()))
+                  lambda v: self.handler('capture_lost', v))
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
