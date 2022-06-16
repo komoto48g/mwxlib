@@ -116,7 +116,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if wnd:
             if (wnd is self.__widget
                 or wnd in self._noWatchList
-                or wnd in self.Parent.Children
+                ## or wnd in self.Parent.Children
                 or wnd is self.GetTopLevelParent()):
                 return
             self.SetObj(wnd)
