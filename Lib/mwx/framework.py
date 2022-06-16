@@ -2514,6 +2514,10 @@ class Editor(EditWindow, EditorInterface):
         self.target = None  # buffer-filename
         self.name = name    # buffer-name
         
+        ## To prevent @filling crash (Never access to DropTarget)
+        ## Don't allow DnD of text, file, whatever.
+        self.SetDropTarget(None)
+        
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT,
@@ -2522,20 +2526,16 @@ class Editor(EditWindow, EditorInterface):
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED,
                   lambda v: self.handler('savepoint_reached', v))
         
-        ## To prevent @filling crash (Never access to DropTarget)
-        ## Don't allow DnD of text, file, whatever.
-        self.SetDropTarget(None)
-        
-        self.set_style(self.STYLE)
-        
-        @self.handler.bind('*button* pressed')
-        @self.handler.bind('*button* released')
-        def dispatch(v):
-            """Fork mouse events to the parent"""
-            self.parent.handler(self.handler.event, v)
+        def on_savepoint_leave(v):
+            if self.__mtime:
+                self.Parent.set_page_caption(self, '* ' + self.name)
             v.Skip()
         
-        @self.handler.bind('focus_set')
+        def on_savepoint_reach(v):
+            if self.__mtime:
+                self.Parent.set_page_caption(self, self.name)
+            v.Skip()
+        
         def activate(v):
             title = "{} file: {}".format(self.name, self.target)
             if self.target_mtdelta:
@@ -2544,6 +2544,29 @@ class Editor(EditWindow, EditorInterface):
             self.trace_position()
             v.Skip()
         
+        def inactivate(v):
+            v.Skip()
+        
+        def dispatch(v):
+            """Fork mouse events to the parent"""
+            self.parent.handler(self.handler.event, v)
+            v.Skip()
+        
+        self.handler.update({ # DNA<Editor>
+            None : {
+                    'focus_set' : [ None, activate ],
+                   'focus_kill' : [ None, inactivate ],
+                  'stc_updated' : [ None, ],
+              '*button* dclick' : [ None, dispatch ],
+             '*button* pressed' : [ None, dispatch ],
+            '*button* released' : [ None, dispatch ],
+               'savepoint_left' : [ None, on_savepoint_leave ],
+            'savepoint_reached' : [ None, on_savepoint_reach ],
+            },
+        })
+        
+        self.set_style(self.STYLE)
+    
     def trace_position(self):
         text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
@@ -2873,7 +2896,11 @@ class Nautilus(Shell, EditorInterface):
         ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
+        def destroy(v):
+            self.handler('shell_deleted', self)
+            v.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def activate(v):
             self.handler('shell_activated', self)
@@ -2904,6 +2931,7 @@ class Nautilus(Shell, EditorInterface):
             None : {
                     'focus_set' : [ None, activate ],
                    'focus_kill' : [ None, inactivate ],
+                  'stc_updated' : [ None, ],
                  'shell_cloned' : [ None, ],
                 'shell_deleted' : [ None, self.on_deleted ],
               'shell_activated' : [ None, self.on_activated ],
@@ -2944,6 +2972,8 @@ class Nautilus(Shell, EditorInterface):
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark_arrow)),
                'M-down pressed' : (0, _F(self.goto_next_mark_arrow)),
+                  'C-c pressed' : (0, skip),
+                'C-S-c pressed' : (0, skip),
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
@@ -3156,10 +3186,6 @@ class Nautilus(Shell, EditorInterface):
                     self.message(tip) # clear if no tip
                     self.__text = text
             self.handler('stc_updated', evt)
-        evt.Skip()
-    
-    def OnDestroy(self, evt):
-        self.handler('shell_deleted', self)
         evt.Skip()
     
     def OnSpace(self, evt):
@@ -3380,7 +3406,7 @@ class Nautilus(Shell, EditorInterface):
         """
         try:
             del self.target.shell # delete the facade <wx.py.shell.ShellFacade>
-        except AttributeError as e:
+        except AttributeError:
             pass
     
     def on_activated(self, shell):
@@ -3394,7 +3420,7 @@ class Nautilus(Shell, EditorInterface):
         self.trace_position()
         try:
             self.target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-        except AttributeError as e:
+        except AttributeError:
             pass
         
         ## To prevent the builtins from referring dead objects,
