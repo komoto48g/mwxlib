@@ -104,14 +104,13 @@ class Gnuplot(object):
     
     def terminate(self):
         if self.__gnuplot is not None:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", ResourceWarning)
-                try:
-                    self('q')
-                    ## self.__gnuplot.kill()
-                except Exception:
-                    pass
-                self.__gnuplot = None
+            try:
+                self('q')
+                ## self.__gnuplot.kill()
+                outs, errs = self.__gnuplot.communicate()
+            except Exception:
+                pass
+            self.__gnuplot = None
     
     def restart(self):
         self.terminate()
@@ -229,7 +228,7 @@ if __name__ == "__main__":
         "f using 1:3 w lp",
     )
     gp.wait()
-
+    ## del gp
 
 if __name__ == "__main__":
     from numpy import pi
