@@ -506,7 +506,6 @@ class FSM(dict):
     
     def clear(self, state):
         """Reset current and previous states"""
-        self.default_state = state
         self.__state = state
         self.__prev_state = state
         self.__event = None
@@ -522,6 +521,7 @@ class FSM(dict):
                 keys = list(contexts)
                 if keys:
                     default = keys[0]
+        self.default_state = default
         self.clear(default) # the first clear creates object localvars
         self.update(contexts)
     
@@ -548,7 +548,7 @@ class FSM(dict):
         retvals = [] # retvals of actions
         if None in self:
             org = self.__state
-            prg = self.__prev_state
+            prev = self.__prev_state
             try:
                 self.__event = event
                 self.__state = None
@@ -559,7 +559,7 @@ class FSM(dict):
             finally:
                 if self.__state is None: # restore original
                     self.__state = org
-                    self.__prev_state = prg
+                    self.__prev_state = prev
         
         self.__event = event
         if self.__state is not None:

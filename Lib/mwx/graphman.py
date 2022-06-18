@@ -284,7 +284,6 @@ class Layer(ControlPanel, CtrlInterface):
                 'C-S-n pressed' : (0, _F(self.Draw, False), _F(self.reset_params, checked_only=1)),
             }
         })
-        self.handler.clear(0)
         
         self.Menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",

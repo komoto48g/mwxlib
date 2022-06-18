@@ -1544,7 +1544,6 @@ class EditorInterface(CtrlInterface):
                   'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
             },
         })
-        self.handler.clear(0)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v))
