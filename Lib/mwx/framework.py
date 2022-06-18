@@ -1501,7 +1501,6 @@ class EditorInterface(CtrlInterface):
             'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
              'C-S-down pressed' : (0, _F(self.LineDownExtend)),
-                  'C-c pressed' : (0, skip),
                 'C-S-c pressed' : (0, _F(self.Copy)),
                   'C-a pressed' : (0, _F(self.beginning_of_line)),
                   'C-e pressed' : (0, _F(self.end_of_line)),
@@ -2972,7 +2971,6 @@ class Nautilus(Shell, EditorInterface):
              ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
                  'M-up pressed' : (0, _F(self.goto_previous_mark_arrow)),
                'M-down pressed' : (0, _F(self.goto_next_mark_arrow)),
-                  'C-c pressed' : (0, skip),
                 'C-S-c pressed' : (0, skip),
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
