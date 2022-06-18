@@ -184,6 +184,9 @@ class KeyCtrlInterfaceMixin(object):
           spec-map : 'C-c'
            esc-map : 'escape'
     """
+    message = print # override this in subclass
+    post_message = property(lambda self: postcall(self.message))
+    
     def make_keymap(self, keymap):
         """Make a basis of extension map in the handler.
         """
@@ -1481,8 +1484,6 @@ class EditorInterface(CtrlInterface):
     
     Note: This class should be mixed-in `wx.stc.StyledTextCtrl`
     """
-    message = print
-    
     def __init__(self):
         CtrlInterface.__init__(self)
         
@@ -2495,7 +2496,6 @@ class Editor(EditWindow, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    post_message = property(lambda self: postcall(self.message))
     
     @property
     def target(self):
@@ -2817,7 +2817,6 @@ class Nautilus(Shell, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    post_message = property(lambda self: postcall(self.message))
     
     @property
     def target(self):
