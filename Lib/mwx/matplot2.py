@@ -105,7 +105,6 @@ class MatplotPanel(wx.Panel):
         self.clear()
         
         ## mpl event handler
-        ## 後方優先でイベントハンドラが呼び出される
         self.canvas.mpl_connect('pick_event', self.on_pick)
         self.canvas.mpl_connect('scroll_event', self.on_scroll)
         ## self.canvas.mpl_connect('key_press_event', self.on_key_press)
@@ -121,7 +120,6 @@ class MatplotPanel(wx.Panel):
         ## self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
         ## self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
-        ## mpl が取りこぼすイベントを捕まえる
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_ndrag)
         self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
@@ -295,7 +293,6 @@ class MatplotPanel(wx.Panel):
         """Draw the plot
         Called every time the drawing is updated.
         """
-        ## 描画全体をアップデートするたびに呼び出す
         if isinstance(art, matplotlib.artist.Artist):
             ## bg = self.canvas.copy_from_bbox(self.axes.bbox)
             ## self.canvas.restore_region(bg)
@@ -397,7 +394,7 @@ class MatplotPanel(wx.Panel):
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
     
     ## --------------------------------
-    ## 外部入出力／複合インターフェース
+    ## External I/O file and clipboard 
     ## --------------------------------
     
     ## def save_to_file(self, path=None):
@@ -669,7 +666,8 @@ class MatplotPanel(wx.Panel):
     ##         self.draw()
     
     def zoomlim(self, lim, M, c=None):
-        ## 拡大しすぎると処理速度が遅くなるため表示幅を制限する (None を返す)
+        ## The limitation of zoom is necessary; If the axes is enlarged too much,
+        ## the processing speed will significantly slow down.
         if c is None:
             c = (lim[1] + lim[0]) / 2
         y = c - M * (c - lim)
@@ -699,14 +697,14 @@ class MatplotPanel(wx.Panel):
         ## self.toolbar.set_cursor(2)
         self.set_wxcursor(wx.CURSOR_HAND)
         self.toolbar.pan()
-        self.__prev = self.handler.previous_state # PAN 前の状態を記録する
+        self.__prev = self.handler.previous_state # save previous state of PAN
     
     def OnPanEnd(self, evt):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
         ## self.draw()
-        self.handler.current_state = self.__prev  # PAN 前の状態に戻す
+        self.handler.current_state = self.__prev  # --> previous state of PAN
         del self.__prev
     
     def OnZoomBegin(self, evt):
@@ -714,14 +712,14 @@ class MatplotPanel(wx.Panel):
         ## self.toolbar.set_cursor(3)
         self.set_wxcursor(wx.CURSOR_CROSS)
         self.toolbar.zoom()
-        self.__prev = self.handler.previous_state # ZOOM 前状態を記録する
+        self.__prev = self.handler.previous_state # save previous state of ZOOM
     
     def OnZoomEnd(self, evt):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
         ## self.draw()
-        self.handler.current_state = self.__prev  # ZOOM 前の状態に戻す
+        self.handler.current_state = self.__prev  # --> previous state of ZOOM
         del self.__prev
     
     ## def OnZoomMove(self, evt):
