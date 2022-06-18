@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.0"
+__version__ = "0.62.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -198,10 +198,10 @@ class KeyCtrlInterfaceMixin(object):
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {
-                          event : [ keymap, self.prefix_command_hook ],
+                          event : [ keymap, self.pre_command_hook ],
             },
             keymap : {
-                         'quit' : [ state, skip ],
+                         'quit' : [ state, ],
                     '* pressed' : [ state, _Pass ],
                  '*alt pressed' : [ keymap, _Pass ],
                 '*ctrl pressed' : [ keymap, _Pass ],
@@ -210,7 +210,10 @@ class KeyCtrlInterfaceMixin(object):
             },
         })
     
-    def prefix_command_hook(self, evt):
+    def pre_command_hook(self, evt):
+        """Enter extention mode.
+        Check selection for [C-c][C-x].
+        """
         win = wx.Window.FindFocus()
         if isinstance(win, wx.TextEntry) and win.StringSelection\
         or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
@@ -219,6 +222,12 @@ class KeyCtrlInterfaceMixin(object):
         else:
             self.message(evt.key + '-')
         evt.Skip()
+    
+    def post_command_hook(self, evt):
+        keymap = self.handler.previous_state
+        self.message("{} {}".format(keymap, evt.key))
+        evt.Skip()
+    post_command_hook.__name__ = str('skip')
     
     def define_handler(self, keymap, action=None, mode='', *args, **kwargs):
         """Define [map key mode] action in the default state.
@@ -1480,6 +1489,8 @@ class EditorInterface(CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
+        _P = self.post_command_hook
+        
         self.handler.update({ # DNA<EditorInterface>
             None : {
             },
@@ -1533,15 +1544,15 @@ class EditorInterface(CtrlInterface):
              'Lbutton released' : (0, skip, self.on_linesel_end),
             },
             'C-x' : {
-                    '* pressed' : (0, skip),
-                    '[ pressed' : (0, skip, _F(self.goto_char, 0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, skip, _F(self.goto_char, -1, doc="end-of-buffer")),
-                    '@ pressed' : (0, skip, _F(self.goto_marker)),
-                  'S-@ pressed' : (0, skip, _F(self.goto_line_marker)),
+                    '* pressed' : (0, _P), # skip to the parent.handler
+                    '[ pressed' : (0, _P, _F(self.goto_char, 0, doc="beginning-of-buffer")),
+                    '] pressed' : (0, _P, _F(self.goto_char, -1, doc="end-of-buffer")),
+                    '@ pressed' : (0, _P, _F(self.goto_marker)),
+                  'S-@ pressed' : (0, _P, _F(self.goto_line_marker)),
             },
             'C-c' : {
-                    '* pressed' : (0, skip),
-                  'C-c pressed' : (0, skip, _F(self.goto_matched_paren)),
+                    '* pressed' : (0, _P), # skip to the parent.handler
+                  'C-c pressed' : (0, _P, _F(self.goto_matched_paren)),
             },
         })
         
