@@ -496,10 +496,16 @@ class MatplotPanel(wx.Panel):
         """Find index near (x,y) and set the Selector
         Called (maybe) after mouse button pressed.
         
-      * Data reference method (get_xdata/ydata) should be added
-      * scatter はデータ参照メソッドを持たないので，マニュアルで追加する
-      o axes.plot <matplotlib.lines.Line2D>
-      x axes.scatter <matplotlib.collections.PathCollection>
+        Note:
+            For axes.plot <matplotlib.lines.Line2D>,
+                get_xdata/get_ydata are used to pick up x/y data.
+            
+            For axes.scatter <matplotlib.collections.PathCollection>,
+            the data reference methods should be added manually,
+            e.g.,
+                art = axes.scatter(x, y, c, ...)
+                art.get_xdata = lambda: x
+                art.get_ydata = lambda: y
         """
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
             return
@@ -512,14 +518,17 @@ class MatplotPanel(wx.Panel):
             indices = evt.ind
             x = evt.mouseevent.xdata
             y = evt.mouseevent.ydata
-            xs = evt.artist.get_xdata()
-            ys = evt.artist.get_ydata()
-            distances = np.hypot(x-xs[indices], y-ys[indices])
-            evt.index = k = indices[distances.argmin()] # index of the nearest point
-            evt.xdata = x = xs[k]
-            evt.ydata = y = ys[k]
+            try:
+                xs = evt.artist.get_xdata()
+                ys = evt.artist.get_ydata()
+                distances = np.hypot(x-xs[indices], y-ys[indices])
+                evt.index = k = indices[distances.argmin()] # index of the nearest point
+                evt.xdata = x = xs[k]
+                evt.ydata = y = ys[k]
+            except AttributeError:
+                evt.index = k = evt.ind
+                pass
             self.Selector = (x, y)
-            self.canvas.draw_idle()
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
