@@ -59,10 +59,10 @@ cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst
     
     bins = binning
     if threshold:
-        ## 最終的に <uint8(=1byte)> 型に変換するので，ビニング数は itemsize 分小さくする
+        ## Converted to <uint8(=1byte)> finally, binning should be reduced by itemsize.
         n = int(np.sqrt(src.nbytes / threshold / src.itemsize)) + 1
         if bins < n:
-            bins = n # binning or threshold で指定される大きい方にする
+            bins = n # binning or threshold; Select the larger one.
     
     if bins > 1:
         ## cv2.resize accepts uint8, uint16, float32, and float64 only..
