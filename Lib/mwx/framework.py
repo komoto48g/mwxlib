@@ -1307,7 +1307,7 @@ class ShellFrame(MiniFrame):
         
         ed = self.History
         ed.ReadOnly = 0
-        ed.goto_char(-1)
+        ed.goto_char(ed.TextLength)
         if prefix:
             command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
         if suffix:
@@ -1546,8 +1546,6 @@ class EditorInterface(CtrlInterface):
             },
             'C-x' : {
                     '* pressed' : (0, _P), # skip to the parent.handler
-                    '[ pressed' : (0, _P, _F(self.goto_char, 0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, _P, _F(self.goto_char, -1, doc="end-of-buffer")),
                     '@ pressed' : (0, _P, _F(self.goto_marker)),
                   'S-@ pressed' : (0, _P, _F(self.goto_line_marker)),
             },
@@ -2120,6 +2118,7 @@ class EditorInterface(CtrlInterface):
     
     def get_text(self, start, end):
         """Retrieve a range of text.
+        
         Note: If p=-1, then p->TextLength.
               i.e., get_text(0,-1) != Text[0:-1],
               but get_text(0,None) == Text[0:None] is True.
@@ -2300,10 +2299,11 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     
     def goto_char(self, pos, selection=False):
-        if pos is None:
+        if pos is None or pos < 0:
             return
-        if pos < 0:
-            pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
+        ## if pos < 0:
+        ##     pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
+        ##     return
         if selection:
             self.cpos = pos
         else:
@@ -2313,8 +2313,8 @@ class EditorInterface(CtrlInterface):
     def goto_line(self, ln, selection=False):
         if ln is None:
             return
-        if ln < 0:
-            ln += self.LineCount
+        ## if ln < 0:
+        ##     ln += self.LineCount
         if selection:
             self.cline = ln
         else:
@@ -3034,7 +3034,7 @@ class Nautilus(Shell, EditorInterface):
                 'S-tab pressed' : (1, self.on_completion_backward_history),
                   'M-p pressed' : (1, self.on_completion_forward_history),
                   'M-n pressed' : (1, self.on_completion_backward_history),
-                'enter pressed' : (0, lambda v: self.goto_char(-1)),
+                'enter pressed' : (0, lambda v: self.goto_char(self.TextLength)),
                'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
@@ -3243,7 +3243,7 @@ class Nautilus(Shell, EditorInterface):
     def OnEnter(self, evt):
         """Called when enter pressed"""
         if not self.CanEdit(): # go back to the end of command line
-            self.goto_char(-1)
+            self.goto_char(self.TextLength)
             if self.eolc < self.bolc: # check if prompt is in valid state
                 self.prompt()
                 evt.Skip()
@@ -3524,7 +3524,7 @@ class Nautilus(Shell, EditorInterface):
         if ln != -1:
             p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
-            p = -1
+            p = self.TextLength
         self.goto_char(p)
     
     ## --------------------------------
@@ -3655,6 +3655,8 @@ class Nautilus(Shell, EditorInterface):
     def write(self, text, pos=None):
         """Display text in the shell (override) add pos :option"""
         if pos is not None:
+            if pos < 0:
+                pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text)
