@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.1"
+__version__ = "0.62.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -146,7 +146,7 @@ def speckey_state(key):
 
 
 def hotkey(evt):
-    """Interpret evt.KeyCode as Hotkey string and overwrite evt.key.
+    """Interpret evt.KeyCode as hotkey:str and overwrite evt.key.
     The modifiers are arranged in the same order as matplotlib as
     [LR]win + ctrl + alt(meta) + shift.
     """
@@ -1307,7 +1307,7 @@ class ShellFrame(MiniFrame):
         
         ed = self.History
         ed.ReadOnly = 0
-        ed.goto_char(-1)
+        ed.goto_char(ed.TextLength)
         if prefix:
             command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
         if suffix:
@@ -1546,8 +1546,6 @@ class EditorInterface(CtrlInterface):
             },
             'C-x' : {
                     '* pressed' : (0, _P), # skip to the parent.handler
-                    '[ pressed' : (0, _P, _F(self.goto_char, 0, doc="beginning-of-buffer")),
-                    '] pressed' : (0, _P, _F(self.goto_char, -1, doc="end-of-buffer")),
                     '@ pressed' : (0, _P, _F(self.goto_marker)),
                   'S-@ pressed' : (0, _P, _F(self.goto_line_marker)),
             },
@@ -2099,12 +2097,28 @@ class EditorInterface(CtrlInterface):
     ## following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
     ## preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
     
+    def get_style(self, pos):
+        c = self.get_char(pos)
+        st = self.GetStyleAt(pos)
+        if st in (1,12):
+            return 'comment'
+        if st in (2,):
+            return 'number'
+        if st in (3,4,6,7,13):
+            return 'string'
+        if st in (13,):
+            return 'eol'
+        if st in (11,14,15) or c == '.':
+            return 'word' # consider '.' as an identifier
+        return st # 'other' (0,5,8,9,10)
+    
     def get_char(self, pos):
         """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
     
     def get_text(self, start, end):
         """Retrieve a range of text.
+        
         Note: If p=-1, then p->TextLength.
               i.e., get_text(0,-1) != Text[0:-1],
               but get_text(0,None) == Text[0:None] is True.
@@ -2158,12 +2172,12 @@ class EditorInterface(CtrlInterface):
     def expr_at_caret(self):
         """A syntax unit (expression) at the caret-line"""
         p = self.cpos
-        st = self.GetStyleAt(p-1)
-        if st in (1,12,13): # comment, eol
+        st = self.get_style(p-1)
+        if st in ('comment', 'eol'):
             return ''
-        if st in (3,4,6,7): # string
-            st = self.GetStyleAt(p)
-            if st in (3,4,6,7): # inside the string
+        if st == 'string':
+            st = self.get_style(p)
+            if st == 'string': # inside the string
                 return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
@@ -2196,13 +2210,19 @@ class EditorInterface(CtrlInterface):
     def right_paren(self):
         p = self.cpos
         if self.get_char(p) in "({[<":
-            return self.BraceMatch(p) + 1
+            q = self.BraceMatch(p)
+            if q != -1:
+                return q+1
+            ## return q
     
     @property
     def left_paren(self):
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
-            return self.BraceMatch(p-1)
+            q = self.BraceMatch(p-1)
+            if q != -1:
+                return q
+            ## return q
     
     @property
     def right_quotation(self):
@@ -2232,7 +2252,7 @@ class EditorInterface(CtrlInterface):
         p = q = self.cpos
         lc = self.get_char(p-1)
         rc = self.get_char(p)
-        st = self.GetStyleAt(p-1) or self.GetStyleAt(p) # non-white or any
+        st = self.get_style(p-1) or self.get_style(p) # non-white or any
         if lc in ")}]":
             p = self.left_paren
         elif rc in "({[":
@@ -2242,35 +2262,35 @@ class EditorInterface(CtrlInterface):
         elif rc in ",:;":
             q += 1
         else:
-            while self.GetStyleAt(p-1) == st and p > 0:
+            while self.get_style(p-1) == st and p > 0:
                 p -= 1
-            while self.GetStyleAt(q) == st and q < self.TextLength:
+            while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return self.get_text(p, q)
     
     def following_atom(self):
         p = q = self.cpos
         c = self.get_char(p)
-        st = self.GetStyleAt(p)
+        st = self.get_style(p)
         if c in "({[":
             q = self.right_paren
         elif c in ",:;":
             q += 1
         else:
-            while self.GetStyleAt(q) == st and q < self.TextLength:
+            while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return p, q, st
     
     def preceding_atom(self):
         p = q = self.cpos
         c = self.get_char(p-1)
-        st = self.GetStyleAt(p-1)
+        st = self.get_style(p-1)
         if c in ")}]":
             p = self.left_paren
         elif c in ",:;":
             p -= 1
         else:
-            while self.GetStyleAt(p-1) == st and p > 0:
+            while self.get_style(p-1) == st and p > 0:
                 p -= 1
         return p, q, st
     
@@ -2279,10 +2299,11 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     
     def goto_char(self, pos, selection=False):
-        if pos is None:
+        if pos is None or pos < 0:
             return
-        if pos < 0:
-            pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
+        ## if pos < 0:
+        ##     pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
+        ##     return
         if selection:
             self.cpos = pos
         else:
@@ -2292,8 +2313,8 @@ class EditorInterface(CtrlInterface):
     def goto_line(self, ln, selection=False):
         if ln is None:
             return
-        if ln < 0:
-            ln += self.LineCount
+        ## if ln < 0:
+        ##     ln += self.LineCount
         if selection:
             self.cline = ln
         else:
@@ -3013,7 +3034,7 @@ class Nautilus(Shell, EditorInterface):
                 'S-tab pressed' : (1, self.on_completion_backward_history),
                   'M-p pressed' : (1, self.on_completion_forward_history),
                   'M-n pressed' : (1, self.on_completion_backward_history),
-                'enter pressed' : (0, lambda v: self.goto_char(-1)),
+                'enter pressed' : (0, lambda v: self.goto_char(self.TextLength)),
                'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
@@ -3222,7 +3243,7 @@ class Nautilus(Shell, EditorInterface):
     def OnEnter(self, evt):
         """Called when enter pressed"""
         if not self.CanEdit(): # go back to the end of command line
-            self.goto_char(-1)
+            self.goto_char(self.TextLength)
             if self.eolc < self.bolc: # check if prompt is in valid state
                 self.prompt()
                 evt.Skip()
@@ -3263,8 +3284,8 @@ class Nautilus(Shell, EditorInterface):
         
         p = self.cpos
         c = self.get_char(p-1)
-        st = self.GetStyleAt(p-1)
-        if st in (3,4,6,7,11,13,14,15) or c in ')}]': # identifier, word2, @, '', eol
+        st = self.get_style(p-1)
+        if st in ('string', 'eol', 'word') or c in ')}]':
             pass
         elif st not in (0,10) or c == '.': # no default, no operator, ... => quit
             self.handler('quit', evt)
@@ -3503,7 +3524,7 @@ class Nautilus(Shell, EditorInterface):
         if ln != -1:
             p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
-            p = -1
+            p = self.TextLength
         self.goto_char(p)
     
     ## --------------------------------
@@ -3634,6 +3655,8 @@ class Nautilus(Shell, EditorInterface):
     def write(self, text, pos=None):
         """Display text in the shell (override) add pos :option"""
         if pos is not None:
+            if pos < 0:
+                pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text)
