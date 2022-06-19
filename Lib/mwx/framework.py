@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.1"
+__version__ = "0.62.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -146,7 +146,7 @@ def speckey_state(key):
 
 
 def hotkey(evt):
-    """Interpret evt.KeyCode as Hotkey string and overwrite evt.key.
+    """Interpret evt.KeyCode as hotkey:str and overwrite evt.key.
     The modifiers are arranged in the same order as matplotlib as
     [LR]win + ctrl + alt(meta) + shift.
     """
@@ -2099,6 +2099,21 @@ class EditorInterface(CtrlInterface):
     ## following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
     ## preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
     
+    def get_style(self, pos):
+        c = self.get_char(pos)
+        st = self.GetStyleAt(pos)
+        if st in (1,12):
+            return 'comment'
+        if st in (2,):
+            return 'number'
+        if st in (3,4,6,7,13):
+            return 'string'
+        if st in (13,):
+            return 'eol'
+        if st in (11,14,15) or c == '.':
+            return 'word' # consider '.' as an identifier
+        return st # 'other' (0,5,8,9,10)
+    
     def get_char(self, pos):
         """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
@@ -2158,12 +2173,12 @@ class EditorInterface(CtrlInterface):
     def expr_at_caret(self):
         """A syntax unit (expression) at the caret-line"""
         p = self.cpos
-        st = self.GetStyleAt(p-1)
-        if st in (1,12,13): # comment, eol
+        st = self.get_style(p-1)
+        if st in ('comment', 'eol'):
             return ''
-        if st in (3,4,6,7): # string
-            st = self.GetStyleAt(p)
-            if st in (3,4,6,7): # inside the string
+        if st == 'string':
+            st = self.get_style(p)
+            if st == 'string': # inside the string
                 return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
@@ -2232,7 +2247,7 @@ class EditorInterface(CtrlInterface):
         p = q = self.cpos
         lc = self.get_char(p-1)
         rc = self.get_char(p)
-        st = self.GetStyleAt(p-1) or self.GetStyleAt(p) # non-white or any
+        st = self.get_style(p-1) or self.get_style(p) # non-white or any
         if lc in ")}]":
             p = self.left_paren
         elif rc in "({[":
@@ -2242,35 +2257,35 @@ class EditorInterface(CtrlInterface):
         elif rc in ",:;":
             q += 1
         else:
-            while self.GetStyleAt(p-1) == st and p > 0:
+            while self.get_style(p-1) == st and p > 0:
                 p -= 1
-            while self.GetStyleAt(q) == st and q < self.TextLength:
+            while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return self.get_text(p, q)
     
     def following_atom(self):
         p = q = self.cpos
         c = self.get_char(p)
-        st = self.GetStyleAt(p)
+        st = self.get_style(p)
         if c in "({[":
             q = self.right_paren
         elif c in ",:;":
             q += 1
         else:
-            while self.GetStyleAt(q) == st and q < self.TextLength:
+            while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return p, q, st
     
     def preceding_atom(self):
         p = q = self.cpos
         c = self.get_char(p-1)
-        st = self.GetStyleAt(p-1)
+        st = self.get_style(p-1)
         if c in ")}]":
             p = self.left_paren
         elif c in ",:;":
             p -= 1
         else:
-            while self.GetStyleAt(p-1) == st and p > 0:
+            while self.get_style(p-1) == st and p > 0:
                 p -= 1
         return p, q, st
     
@@ -3263,8 +3278,8 @@ class Nautilus(Shell, EditorInterface):
         
         p = self.cpos
         c = self.get_char(p-1)
-        st = self.GetStyleAt(p-1)
-        if st in (3,4,6,7,11,13,14,15) or c in ')}]': # identifier, word2, @, '', eol
+        st = self.get_style(p-1)
+        if st in ('string', 'eol', 'word') or c in ')}]':
             pass
         elif st not in (0,10) or c == '.': # no default, no operator, ... => quit
             self.handler('quit', evt)
