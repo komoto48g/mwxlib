@@ -492,17 +492,6 @@ class MatplotPanel(wx.Panel):
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
         """Find index near (x,y) and set the Selector
         Called (maybe) after mouse button pressed.
-        
-        Note:
-            For axes.plot <matplotlib.lines.Line2D>,
-                get_xdata/get_ydata are used to pick up x/y data.
-            
-            For axes.scatter <matplotlib.collections.PathCollection>,
-            the data reference methods should be added manually,
-            e.g.,
-                art = axes.scatter(x, y, c, ...)
-                art.get_xdata = lambda: x
-                art.get_ydata = lambda: y
         """
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
             return
@@ -516,15 +505,13 @@ class MatplotPanel(wx.Panel):
             x = evt.mouseevent.xdata
             y = evt.mouseevent.ydata
             try:
-                xs = evt.artist.get_xdata()
-                ys = evt.artist.get_ydata()
-                distances = np.hypot(x-xs[indices], y-ys[indices])
-                evt.index = k = indices[distances.argmin()] # index of the nearest point
-                evt.xdata = x = xs[k]
-                evt.ydata = y = ys[k]
+                xs, ys = evt.artist.get_data()
             except AttributeError:
-                evt.index = k = evt.ind
-                pass
+                xs, ys = evt.artist.get_offsets().T
+            distances = np.hypot(x-xs[indices], y-ys[indices])
+            evt.index = k = indices[distances.argmin()] # index of the nearest point
+            evt.xdata = x = xs[k]
+            evt.ydata = y = ys[k]
             self.Selector = (x, y)
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
@@ -860,12 +847,6 @@ if __name__ == "__main__":
         
         ## set_array -> z color value
         ## set_offsets -> x & y locations
-        
-        ## scatter データ参照メソッドを追加すること (=> on_pick で使用する)
-        ## art.get_data = lambda: x, y
-        art.get_xdata = lambda: x
-        art.get_ydata = lambda: y
-        ## art.get_zdata = art.get_array
         return art
     
     def _scatter2(axes):
@@ -879,9 +860,6 @@ if __name__ == "__main__":
         art = axes.scatter(x, y, c=c, s=r, marker='o',
                            alpha=0.5, cmap=cm.rainbow, edgecolors='blue',
                            picker=True, pickradius=4)
-        art.get_xdata = lambda: x
-        art.get_ydata = lambda: y
-        ## art.get_zdata = art.get_array
         return art
     
     app = wx.App()
