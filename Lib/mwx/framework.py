@@ -2211,13 +2211,19 @@ class EditorInterface(CtrlInterface):
     def right_paren(self):
         p = self.cpos
         if self.get_char(p) in "({[<":
-            return self.BraceMatch(p) + 1
+            q = self.BraceMatch(p)
+            if q != -1:
+                return q+1
+            ## return q
     
     @property
     def left_paren(self):
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
-            return self.BraceMatch(p-1)
+            q = self.BraceMatch(p-1)
+            if q != -1:
+                return q
+            ## return q
     
     @property
     def right_quotation(self):
