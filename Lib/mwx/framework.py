@@ -2315,40 +2315,6 @@ class EditorInterface(CtrlInterface):
             p -= 1
         self.GotoPos(p)
     
-    def skip_regex_forward(self, pattern):
-        p = self.cpos
-        text = self.get_text(p, -1)
-        m = re.match(pattern, text)
-        if m:
-            self.GotoPos(p + len(m.group(0)))
-    
-    def skip_regex_backward(self, pattern):
-        p = self.cpos
-        text = self.get_text(0, p)[::-1]
-        m = re.match(pattern, text)
-        if m:
-            self.GotoPos(p - len(m.group(0)))
-    
-    def re_search_forward(self, pattern):
-        p = self.cpos
-        text = self.get_text(p, -1)
-        m = re.search(pattern, text)
-        if m:
-            a, b = m.span(0)
-            self.anchor = p + a
-            self.cpos = p + b
-            return self.SelectedText
-    
-    def re_search_backward(self, pattern):
-        p = self.cpos
-        text = self.get_text(0, p)[::-1]
-        m = re.search(pattern, text)
-        if m:
-            a, b = m.span(0)
-            self.anchor = p - a
-            self.cpos = p - b
-            return self.SelectedText
-    
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt cf. CurLine
         lstr = text.lstrip()  # w/ no-indent
