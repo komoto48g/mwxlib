@@ -847,6 +847,7 @@ if __name__ == "__main__":
         
         ## set_array -> z color value
         ## set_offsets -> x & y locations
+        ## art.get_data = lambda: (x, y)
         return art
     
     def _scatter2(axes):
@@ -860,6 +861,7 @@ if __name__ == "__main__":
         art = axes.scatter(x, y, c=c, s=r, marker='o',
                            alpha=0.5, cmap=cm.rainbow, edgecolors='blue',
                            picker=True, pickradius=4)
+        ## art.get_data = lambda: (x, y)
         return art
     
     app = wx.App()

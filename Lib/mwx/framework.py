@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.2"
+__version__ = "0.62.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1819,7 +1819,7 @@ class EditorInterface(CtrlInterface):
                         indent += ' '*4
                 elif re.match(self.py_closing_re, texts[0]):
                     return indent[:-4]
-            except ValueError: # shlex failed to parse
+            except ValueError:
                 return indent
         
         line = self.GetLine(self.cline) # check current line
@@ -2106,10 +2106,12 @@ class EditorInterface(CtrlInterface):
             return 'number'
         if st in (3,4,6,7,13):
             return 'string'
-        if st in (13,):
-            return 'eol'
         if st in (11,14,15) or c == '.':
-            return 'word' # consider '.' as an identifier
+            return 'word'
+        if st in (10,):
+            if c in ",:;": return 'delim'
+            if c in "({[]})": return 'paren'
+            if c in "`@=+-/*%<>&|^~!?": return "op"
         return st # 'other' (0,5,8,9,10)
     
     def get_char(self, pos):
@@ -2173,7 +2175,7 @@ class EditorInterface(CtrlInterface):
         """A syntax unit (expression) at the caret-line"""
         p = self.cpos
         st = self.get_style(p-1)
-        if st in ('comment', 'eol'):
+        if st == 'comment':
             return ''
         if st == 'string':
             st = self.get_style(p)
@@ -2211,84 +2213,74 @@ class EditorInterface(CtrlInterface):
         p = self.cpos
         if self.get_char(p) in "({[<":
             q = self.BraceMatch(p)
-            if q != -1:
-                return q+1
-            ## return q
+            return q if q < 0 else q+1
     
     @property
     def left_paren(self):
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
-            if q != -1:
-                return q
-            ## return q
+            return q
     
     @property
     def right_quotation(self):
         p = self.cpos
-        text = self.get_text(p, -1)
-        if text and text[0] in "\"\'":
-            try:
-                lexer = shlex.shlex(text)
-                return p + len(lexer.get_token())
-            except ValueError:
-                pass # no closing quotation
+        st = self.get_style(p)
+        if st == 'string':
+            while self.get_style(p) == st and p < self.TextLength:
+                p += 1
+            return p
+        if st == 'comment':
+            text, lp = self.CurLine
+            text = text[lp:]
+            if text[0] in "\"\'":
+                try:
+                    lexer = shlex.shlex(text)
+                    return p + len(lexer.get_token())
+                except ValueError:
+                    pass # no closing quotation
     
     @property
     def left_quotation(self):
         p = self.cpos
-        text = self.get_text(0, p)[::-1]
-        if text and text[0] in "\"\'":
-            try:
-                lexer = shlex.shlex(text)
-                return p - len(lexer.get_token())
-            except ValueError:
-                pass # no closing quotation
-    
-    @property
-    def atom_at_caret(self):
-        """A style unit (atom) at the caret line"""
-        p = q = self.cpos
-        lc = self.get_char(p-1)
-        rc = self.get_char(p)
-        st = self.get_style(p-1) or self.get_style(p) # non-white or any
-        if lc in ")}]":
-            p = self.left_paren
-        elif rc in "({[":
-            q = self.right_paren
-        elif lc in ",:;":
-            p -= 1
-        elif rc in ",:;":
-            q += 1
-        else:
+        st = self.get_style(p-1)
+        if st == 'string':
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
-            while self.get_style(q) == st and q < self.TextLength:
-                q += 1
-        return self.get_text(p, q)
+            return p
+        if st == 'comment':
+            text, lp = self.CurLine
+            text = text[:lp][::-1]
+            if text[0] in "\"\'":
+                try:
+                    lexer = shlex.shlex(text)
+                    return p - len(lexer.get_token())
+                except ValueError:
+                    pass # no closing quotation
     
-    def following_atom(self):
-        p = q = self.cpos
+    def get_following_atom(self, pos=None):
+        p = q = self.cpos if pos is None else pos
         c = self.get_char(p)
         st = self.get_style(p)
         if c in "({[":
-            q = self.right_paren
-        elif c in ",:;":
-            q += 1
+            q = self.BraceMatch(p)
+            if q == -1:
+                st = None
+            else:
+                q += 1
         else:
             while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return p, q, st
     
-    def preceding_atom(self):
-        p = q = self.cpos
+    def get_preceding_atom(self, pos=None):
+        p = q = self.cpos if pos is None else pos
         c = self.get_char(p-1)
         st = self.get_style(p-1)
         if c in ")}]":
-            p = self.left_paren
-        elif c in ",:;":
-            p -= 1
+            p = self.BraceMatch(p-1)
+            if p == -1:
+                st = None
         else:
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -2333,40 +2325,6 @@ class EditorInterface(CtrlInterface):
             p -= 1
         self.GotoPos(p)
     
-    def skip_regex_forward(self, pattern):
-        p = self.cpos
-        text = self.get_text(p, -1)
-        m = re.match(pattern, text)
-        if m:
-            self.GotoPos(p + len(m.group(0)))
-    
-    def skip_regex_backward(self, pattern):
-        p = self.cpos
-        text = self.get_text(0, p)[::-1]
-        m = re.match(pattern, text)
-        if m:
-            self.GotoPos(p - len(m.group(0)))
-    
-    def re_search_forward(self, pattern):
-        p = self.cpos
-        text = self.get_text(p, -1)
-        m = re.search(pattern, text)
-        if m:
-            a, b = m.span(0)
-            self.anchor = p + a
-            self.cpos = p + b
-            return self.SelectedText
-    
-    def re_search_backward(self, pattern):
-        p = self.cpos
-        text = self.get_text(0, p)[::-1]
-        m = re.search(pattern, text)
-        if m:
-            a, b = m.span(0)
-            self.anchor = p - a
-            self.cpos = p - b
-            return self.SelectedText
-    
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt cf. CurLine
         lstr = text.lstrip()  # w/ no-indent
@@ -2397,12 +2355,14 @@ class EditorInterface(CtrlInterface):
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
-        p, q, st = self.following_atom()
+        p, q, st = self.get_following_atom()
         self.cpos = q
+        return st
     
     def selection_backward_atom(self):
-        p, q, st = self.preceding_atom()
+        p, q, st = self.get_preceding_atom()
         self.cpos = p
+        return st
     
     def save_excursion(self):
         class Excursion(object):
@@ -3261,7 +3221,7 @@ class Nautilus(Shell, EditorInterface):
             evt.Skip()
             return
         
-        ## cast magic for `@? (Note: PY35 supports @(matmal)-operator)
+        ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
         tokens = ut.split_words(text)
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
@@ -3285,12 +3245,13 @@ class Nautilus(Shell, EditorInterface):
         p = self.cpos
         c = self.get_char(p-1)
         st = self.get_style(p-1)
-        if st in ('string', 'eol', 'word') or c in ')}]':
+        if st in ('string', 'word') or c in ")}]":
             pass
-        elif st not in (0,10) or c == '.': # no default, no operator, ... => quit
-            self.handler('quit', evt)
+        elif st == 0 or c in "({[,;":
+            self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
-            self.ReplaceSelection('self')
+            self.handler('quit', evt) # => quit autocomp mode
+        
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
     
