@@ -1819,7 +1819,7 @@ class EditorInterface(CtrlInterface):
                         indent += ' '*4
                 elif re.match(self.py_closing_re, texts[0]):
                     return indent[:-4]
-            except ValueError: # shlex failed to parse
+            except ValueError:
                 return indent
         
         line = self.GetLine(self.cline) # check current line
@@ -2213,8 +2213,6 @@ class EditorInterface(CtrlInterface):
         p = self.cpos
         if self.get_char(p) in "({[<":
             q = self.BraceMatch(p)
-            ## if q != -1:
-            ##     return q+1
             return q if q < 0 else q+1
     
     @property
@@ -2222,31 +2220,43 @@ class EditorInterface(CtrlInterface):
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
-            ## if q != -1:
-            ##     return q
             return q
     
     @property
     def right_quotation(self):
         p = self.cpos
-        text = self.get_text(p, -1)
-        if text and text[0] in "\"\'":
-            try:
-                lexer = shlex.shlex(text)
-                return p + len(lexer.get_token())
-            except ValueError:
-                pass # no closing quotation
+        st = self.get_style(p)
+        if st == 'string':
+            while self.get_style(p) == st and p < self.TextLength:
+                p += 1
+            return p
+        if st == 'comment':
+            text, lp = self.CurLine
+            text = text[lp:]
+            if text[0] in "\"\'":
+                try:
+                    lexer = shlex.shlex(text)
+                    return p + len(lexer.get_token())
+                except ValueError:
+                    pass # no closing quotation
     
     @property
     def left_quotation(self):
         p = self.cpos
-        text = self.get_text(0, p)[::-1]
-        if text and text[0] in "\"\'":
-            try:
-                lexer = shlex.shlex(text)
-                return p - len(lexer.get_token())
-            except ValueError:
-                pass # no closing quotation
+        st = self.get_style(p-1)
+        if st == 'string':
+            while self.get_style(p-1) == st and p > 0:
+                p -= 1
+            return p
+        if st == 'comment':
+            text, lp = self.CurLine
+            text = text[:lp][::-1]
+            if text[0] in "\"\'":
+                try:
+                    lexer = shlex.shlex(text)
+                    return p - len(lexer.get_token())
+                except ValueError:
+                    pass # no closing quotation
     
     def get_following_atom(self, pos=None):
         p = q = self.cpos if pos is None else pos
