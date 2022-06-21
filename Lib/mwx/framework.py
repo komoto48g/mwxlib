@@ -2094,25 +2094,43 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
-    ## following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
-    ## preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
+    py_styles = {
+        stc.STC_P_DEFAULT       : 0,  # space, crlf, \$ (non-identifier)
+        stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
+        stc.STC_P_COMMENTLINE   : 'comment',
+        stc.STC_P_COMMENTBLOCK  : 'comment',
+        stc.STC_P_NUMBER        : 'number',
+        stc.STC_P_STRING        : 'string',
+        stc.STC_P_STRINGEOL     : 'string',
+        stc.STC_P_CHARACTER     : 'string',
+        stc.STC_P_TRIPLE        : 'string',
+        stc.STC_P_TRIPLEDOUBLE  : 'string',
+        stc.STC_P_IDENTIFIER    : 'word',
+        stc.STC_P_WORD2         : 'word',
+        stc.STC_P_DECORATOR     : 'word',
+        stc.STC_P_WORD          : 'keyword',
+        stc.STC_P_CLASSNAME     : 'class',
+        stc.STC_P_DEFNAME       : 'def',
+    }
     
     def get_style(self, pos):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
-        if st in (1,12):
-            return 'comment'
-        if st in (2,):
-            return 'number'
-        if st in (3,4,6,7,13):
-            return 'string'
-        if st in (11,14,15) or c == '.':
-            return 'word'
-        if st in (10,):
+        st = self.py_styles[st]
+        if st == 0:
+            if c in " \t": return 'space'
+        if st == 10:
+            ## if c in ".": return 'word'
+            if c in ".":
+                if '...' in self.get_text(pos-2,pos+3):
+                    return 'ellipsis'
+                else:
+                    return 'word'
             if c in ",:;": return 'delim'
-            if c in "({[]})": return 'paren'
+            if c in "({[": return 'lparen'
+            if c in ")}]": return 'rparen'
             if c in "`@=+-/*%<>&|^~!?": return "op"
-        return st # 'other' (0,5,8,9,10)
+        return st
     
     def get_char(self, pos):
         """Returns the character at the position."""
@@ -2253,11 +2271,9 @@ class EditorInterface(CtrlInterface):
     def get_following_atom(self, p):
         q = p
         st = self.get_style(p)
-        if c in "({[":
+        if st == "lparen":
             q = self.BraceMatch(p)
-            if q == -1:
-                st = None
-            else:
+            if q != -1:
                 q += 1
         else:
             while self.get_style(q) == st and q < self.TextLength:
@@ -2267,10 +2283,8 @@ class EditorInterface(CtrlInterface):
     def get_preceding_atom(self, p):
         q = p
         st = self.get_style(p-1)
-        if c in ")}]":
+        if st == "rparen":
             p = self.BraceMatch(p-1)
-            if p == -1:
-                st = None
         else:
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -3236,11 +3250,10 @@ class Nautilus(Shell, EditorInterface):
             return
         
         p = self.cpos
-        c = self.get_char(p-1)
         st = self.get_style(p-1)
-        if st in ('string', 'word') or c in ")}]":
+        if st in ('string', 'word', 'rparen'):
             pass
-        elif st == 0 or c in "({[,;":
+        elif st in (0, 'space', 'lparen', 'delim'):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
             self.handler('quit', evt) # => quit autocomp mode
