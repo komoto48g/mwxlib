@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.4"
+__version__ = "0.62.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -214,7 +214,7 @@ class KeyCtrlInterfaceMixin(object):
         })
     
     def pre_command_hook(self, evt):
-        """Enter extention mode.
+        """Enter extension mode.
         Check selection for [C-c][C-x].
         """
         win = wx.Window.FindFocus()
@@ -1055,6 +1055,16 @@ class ShellFrame(MiniFrame):
         if evt.IsShown():
             self.inspector.watch(self)
     
+    def OnGhostShow(self, evt):
+        if evt.IsShown():
+            self.inspector.watch(self.ghost)
+        else:
+            self.inspector.unwatch()
+            self.monitor.unwatch()
+            self.ginfo.unwatch()
+            self.linfo.unwatch()
+        evt.Skip()
+    
     def OnClose(self, evt):
         if self.debugger.busy:
             wx.MessageBox("The debugger is running.\n\n"
@@ -1142,32 +1152,22 @@ class ShellFrame(MiniFrame):
         else:
             evt.Skip()
     
-    def OnGhostShow(self, evt):
-        if evt.IsShown():
-            self.inspector.watch(self.ghost)
-        else:
-            self.inspector.unwatch()
-            self.monitor.unwatch()
-            self.ginfo.unwatch()
-            self.linfo.unwatch()
-        evt.Skip()
-    
-    def Quit(self, evt):
-        self.inspector.unwatch()
-        self.monitor.unwatch()
-        self.ginfo.unwatch()
-        self.linfo.unwatch()
-        shell = self.debugger.shell
-        del shell.locals
-        del shell.globals
-        self.on_title_window(shell.target)
-        self.debugger.unwatch()
-        self.message("Quit")
-        evt.Skip()
-    
     ## --------------------------------
     ## Actions for handler
     ## --------------------------------
+    
+    def Quit(self, evt):
+        ## self.inspector.unwatch()
+        self.monitor.unwatch()
+        self.ginfo.unwatch()
+        self.linfo.unwatch()
+        self.debugger.unwatch()
+        shell = self.debugger.shell # reset interp locals
+        del shell.locals
+        del shell.globals
+        self.on_title_window(self.current_shell.target) # reset title
+        self.message("Quit")
+        evt.Skip()
     
     def load(self, obj):
         if not isinstance(obj, str):
@@ -1783,9 +1783,10 @@ class EditorInterface(CtrlInterface):
         """Indent the current line"""
         text = self.caretline  # w/ no-prompt cf. CurLine
         lstr = text.lstrip()   # w/ no-indent
-        p = self.eol - len(lstr)
+        ## p = self.eol - len(lstr)
+        p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = self.py_calc_indent() # guess from the current/previous line
+        indent = self.py_calc_indent(self.cline) # check current/previous line
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
@@ -1793,50 +1794,51 @@ class EditorInterface(CtrlInterface):
         """Outdent the current line"""
         text = self.caretline  # w/ no-prompt cf. CurLine
         lstr = text.lstrip()   # w/ no-indent
-        p = self.eol - len(lstr)
+        ## p = self.eol - len(lstr)
+        p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = text[:-len(lstr)-4] # cf. delete_backward_space_like_tab
+        indent = text[:len(text)-len(lstr)-4] # cf. delete_backward_space_like_tab
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
-    def py_calc_indent(self):
-        """Calculate indent spaces from prefious line
+    def py_calc_indent(self, line):
+        """Calculate indent spaces from previous line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        line = self.GetLine(self.cline - 1) # check previous line
-        line = self.py_strip_prompts(line)
-        lstr = line.lstrip()
+        text = self.GetLine(line - 1) # check previous line
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip()
         if not lstr:
-            indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
+            indent = text.strip('\r\n') # remove linesep: '\r' and '\n'
         else:
-            indent = line[:(len(line)-len(lstr))]
+            indent = text[:len(text)-len(lstr)] # for multi-byte string
             try:
-                texts = list(shlex.shlex(lstr)) # strip comment
-                if not texts:
+                tokens = list(shlex.shlex(lstr)) # strip comment
+                if not tokens:
                     return indent
-                if texts[-1] == ':':
-                    if re.match(self.py_indent_re, texts[0]):
+                if tokens[-1] == ':':
+                    if re.match(self.py_indent_re, tokens[0]):
                         indent += ' '*4
-                elif re.match(self.py_closing_re, texts[0]):
+                elif re.match(self.py_closing_re, tokens[0]):
                     return indent[:-4]
             except ValueError:
                 return indent
         
-        line = self.GetLine(self.cline) # check current line
-        line = self.py_strip_prompts(line)
-        lstr = line.lstrip()
+        text = self.GetLine(line) # check current line
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip()
         if re.match(self.py_outdent_re, lstr):
             indent = indent[:-4]
         
         return indent
     
     @classmethod
-    def py_strip_prompts(self, line):
+    def py_strip_prompts(self, text):
         for ps in (sys.ps1, sys.ps2, sys.ps3):
-            if line.startswith(ps):
-                line = line[len(ps):]
+            if text.startswith(ps):
+                text = text[len(ps):]
                 break
-        return line
+        return text
     
     def py_eval_line(self, globals, locals):
         try:
@@ -1976,8 +1978,8 @@ class EditorInterface(CtrlInterface):
         po, qo = self._anchors
         if p >= po:
             lc = self.LineFromPosition(p)
-            line = self.GetLine(lc)
-            self.cpos = p + len(line)
+            text = self.GetLine(lc)
+            self.cpos = p + len(text)
             self.anchor = po
             if not self.GetFoldExpanded(lc): # :not expanded
                 self.CharRightExtend()
@@ -2017,7 +2019,7 @@ class EditorInterface(CtrlInterface):
                 self.SetFoldMarginColour(True, lsc.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
             else:
-                ## one pixel solid line, the same colour as the line-number
+                ## one pixel solid line, the same colour as the line number
                 self.SetFoldMarginColour(True, lsc.get('fore'))
                 self.SetFoldMarginHiColour(True, lsc.get('fore'))
         
@@ -2099,12 +2101,12 @@ class EditorInterface(CtrlInterface):
         stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
-        stc.STC_P_NUMBER        : 'number',
-        stc.STC_P_STRING        : 'string',
-        stc.STC_P_STRINGEOL     : 'string',
-        stc.STC_P_CHARACTER     : 'string',
-        stc.STC_P_TRIPLE        : 'string',
-        stc.STC_P_TRIPLEDOUBLE  : 'string',
+        stc.STC_P_NUMBER        : 'suji',
+        stc.STC_P_STRING        : 'moji',
+        stc.STC_P_STRINGEOL     : 'moji',
+        stc.STC_P_CHARACTER     : 'moji',
+        stc.STC_P_TRIPLE        : 'moji',
+        stc.STC_P_TRIPLEDOUBLE  : 'moji',
         stc.STC_P_IDENTIFIER    : 'word',
         stc.STC_P_WORD2         : 'word',
         stc.STC_P_DECORATOR     : 'word',
@@ -2195,9 +2197,9 @@ class EditorInterface(CtrlInterface):
         st = self.get_style(p-1)
         if st == 'comment':
             return ''
-        if st == 'string':
+        if st == 'moji':
             st = self.get_style(p)
-            if st == 'string': # inside the string
+            if st == 'moji': # inside the string
                 return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
@@ -2238,7 +2240,7 @@ class EditorInterface(CtrlInterface):
     
     def get_right_quotation(self, p):
         st = self.get_style(p)
-        if st == 'string':
+        if st == 'moji':
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
             return p
@@ -2254,7 +2256,7 @@ class EditorInterface(CtrlInterface):
     
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
-        if st == 'string':
+        if st == 'moji':
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
             return p
@@ -2321,26 +2323,26 @@ class EditorInterface(CtrlInterface):
         p = self.cpos
         while self.get_char(p) in chars and p < self.TextLength:
             p += 1
-        self.GotoPos(p)
+        self.goto_char(p)
     
     def skip_chars_backward(self, chars):
         p = self.cpos
         while self.get_char(p-1) in chars and p > 0:
             p -= 1
-        self.GotoPos(p)
+        self.goto_char(p)
     
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt cf. CurLine
         lstr = text.lstrip()  # w/ no-indent
-        self.GotoPos(self.eol - len(lstr))
+        self.goto_char(self.bol + len(text) - len(lstr)) # for multi-byte string
         self.ScrollToColumn(0)
     
     def beginning_of_line(self):
-        self.GotoPos(self.bol)
+        self.goto_char(self.bol)
         self.ScrollToColumn(0)
     
     def end_of_line(self):
-        self.GotoPos(self.eol)
+        self.goto_char(self.eol)
     
     def goto_matched_paren(self):
         p = self.cpos
@@ -2892,6 +2894,7 @@ class Nautilus(Shell, EditorInterface):
         ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
+        self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         
         def destroy(v):
             self.handler('shell_deleted', self)
@@ -3183,6 +3186,10 @@ class Nautilus(Shell, EditorInterface):
             self.handler('stc_updated', evt)
         evt.Skip()
     
+    def OnCallTipClick(self, evt):
+        self.parent.handler('add_help', self.__calltip)
+        evt.Skip()
+    
     def OnSpace(self, evt):
         """Called when space pressed"""
         if not self.CanEdit():
@@ -3251,9 +3258,9 @@ class Nautilus(Shell, EditorInterface):
         
         p = self.cpos
         st = self.get_style(p-1)
-        if st in ('string', 'word', 'rparen'):
+        if st in ('moji', 'word', 'rparen'):
             pass
-        elif st in (0, 'space', 'lparen', 'delim'):
+        elif st in (0, 'space', 'delim', 'lparen'):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
             self.handler('quit', evt) # => quit autocomp mode
@@ -3620,13 +3627,13 @@ class Nautilus(Shell, EditorInterface):
         self.prompt()
     
     def write(self, text, pos=None):
-        """Display text in the shell (override) add pos :option"""
+        """Display text in the shell (override) add pos:option"""
         if pos is not None:
             if pos < 0:
                 pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
             self.goto_char(pos)
         if self.CanEdit():
-            Shell.write(self, text)
+            Shell.write(self, text) # => AddText
     
     ## input = classmethod(Shell.ask)
     
@@ -3764,11 +3771,13 @@ class Nautilus(Shell, EditorInterface):
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
         (override) Snip the tip of max N lines if it is too long.
+                   Keep the tip for calltip-click event.
         """
+        self.__calltip = tip
         lines = tip.splitlines()
         if len(lines) > N:
-            lines[N+1:] = ["\n...(snip) This tips are too long..."
-                          #"Show Help buffer for more details..."
+            lines[N+1:] = ["\n...(snip) This tips are too long... "
+                          "Click to show more details."
                           ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
@@ -4002,7 +4011,7 @@ class Nautilus(Shell, EditorInterface):
                     if hints.endswith(' '):  # Don't show comp-list
                         return
                     tail = hints.split(',')[-1] # the last one following `,`
-                    if len(tail.split()) > 1:   # includes a seperator, e.g., `as`
+                    if len(tail.split()) > 1:   # includes a separator, e.g., `as`
                         return
                     modules = self.modules
                 else:
