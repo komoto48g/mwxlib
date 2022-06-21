@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.3"
+__version__ = "0.62.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2094,25 +2094,43 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
-    ## following_char = property(lambda self: chr(self.GetCharAt(self.cpos)))
-    ## preceding_char = property(lambda self: chr(self.GetCharAt(self.cpos-1)))
+    py_styles = {
+        stc.STC_P_DEFAULT       : 0,  # space, crlf, \$ (non-identifier)
+        stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
+        stc.STC_P_COMMENTLINE   : 'comment',
+        stc.STC_P_COMMENTBLOCK  : 'comment',
+        stc.STC_P_NUMBER        : 'number',
+        stc.STC_P_STRING        : 'string',
+        stc.STC_P_STRINGEOL     : 'string',
+        stc.STC_P_CHARACTER     : 'string',
+        stc.STC_P_TRIPLE        : 'string',
+        stc.STC_P_TRIPLEDOUBLE  : 'string',
+        stc.STC_P_IDENTIFIER    : 'word',
+        stc.STC_P_WORD2         : 'word',
+        stc.STC_P_DECORATOR     : 'word',
+        stc.STC_P_WORD          : 'keyword',
+        stc.STC_P_CLASSNAME     : 'class',
+        stc.STC_P_DEFNAME       : 'def',
+    }
     
     def get_style(self, pos):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
-        if st in (1,12):
-            return 'comment'
-        if st in (2,):
-            return 'number'
-        if st in (3,4,6,7,13):
-            return 'string'
-        if st in (11,14,15) or c == '.':
-            return 'word'
-        if st in (10,):
+        st = self.py_styles[st]
+        if st == 0:
+            if c in " \t": return 'space'
+        if st == 10:
+            ## if c in ".": return 'word'
+            if c in ".":
+                if '...' in self.get_text(pos-2,pos+3):
+                    return 'ellipsis'
+                else:
+                    return 'word'
             if c in ",:;": return 'delim'
-            if c in "({[]})": return 'paren'
+            if c in "({[": return 'lparen'
+            if c in ")}]": return 'rparen'
             if c in "`@=+-/*%<>&|^~!?": return "op"
-        return st # 'other' (0,5,8,9,10)
+        return st
     
     def get_char(self, pos):
         """Returns the character at the position."""
@@ -2196,35 +2214,29 @@ class EditorInterface(CtrlInterface):
         if topic:
             return topic
         with self.save_excursion():
-            boundaries = "({[<>]}),:;"
+            delims = "({[<>]}),:; \t\r\n"
             p = q = self.cpos
             c = self.get_char(p-1)
-            if not c.isspace() and c not in boundaries:
+            if c not in delims:
                 self.WordLeft()
                 p = self.cpos
             c = self.get_char(q)
-            if not c.isspace() and c not in boundaries:
+            if c not in delims:
                 self.WordRightEnd()
                 q = self.cpos
             return self.get_text(p, q)
     
-    @property
-    def right_paren(self):
-        p = self.cpos
-        if self.get_char(p) in "({[<":
+    def get_right_paren(self, p):
+        if self.get_char(p) in "({[<": # left-parentheses, <
             q = self.BraceMatch(p)
             return q if q < 0 else q+1
     
-    @property
-    def left_paren(self):
-        p = self.cpos
-        if self.get_char(p-1) in ")}]>":
+    def get_left_paren(self, p):
+        if self.get_char(p-1) in ")}]>": # right-parentheses, >
             q = self.BraceMatch(p-1)
             return q
     
-    @property
-    def right_quotation(self):
-        p = self.cpos
+    def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'string':
             while self.get_style(p) == st and p < self.TextLength:
@@ -2240,9 +2252,7 @@ class EditorInterface(CtrlInterface):
                 except ValueError:
                     pass # no closing quotation
     
-    @property
-    def left_quotation(self):
-        p = self.cpos
+    def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'string':
             while self.get_style(p-1) == st and p > 0:
@@ -2258,29 +2268,23 @@ class EditorInterface(CtrlInterface):
                 except ValueError:
                     pass # no closing quotation
     
-    def get_following_atom(self, pos=None):
-        p = q = self.cpos if pos is None else pos
-        c = self.get_char(p)
+    def get_following_atom(self, p):
+        q = p
         st = self.get_style(p)
-        if c in "({[":
+        if st == "lparen":
             q = self.BraceMatch(p)
-            if q == -1:
-                st = None
-            else:
+            if q != -1:
                 q += 1
         else:
             while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return p, q, st
     
-    def get_preceding_atom(self, pos=None):
-        p = q = self.cpos if pos is None else pos
-        c = self.get_char(p-1)
+    def get_preceding_atom(self, p):
+        q = p
         st = self.get_style(p-1)
-        if c in ")}]":
+        if st == "rparen":
             p = self.BraceMatch(p-1)
-            if p == -1:
-                st = None
         else:
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -2339,28 +2343,31 @@ class EditorInterface(CtrlInterface):
         self.GotoPos(self.eol)
     
     def goto_matched_paren(self):
-        return (self.goto_char(self.left_paren)
-             or self.goto_char(self.right_paren)
-             or self.goto_char(self.left_quotation)
-             or self.goto_char(self.right_quotation))
+        p = self.cpos
+        return (self.goto_char(self.get_left_paren(p))
+             or self.goto_char(self.get_right_paren(p))
+             or self.goto_char(self.get_left_quotation(p))
+             or self.goto_char(self.get_right_quotation(p)))
     
     def selection_forward_word_or_paren(self):
-        return (self.goto_char(self.right_paren, True)
-             or self.goto_char(self.right_quotation, True)
+        p = self.cpos
+        return (self.goto_char(self.get_right_paren(p), True)
+             or self.goto_char(self.get_right_quotation(p), True)
              or self.WordRightEndExtend())
     
     def selection_backward_word_or_paren(self):
-        return (self.goto_char(self.left_paren, True)
-             or self.goto_char(self.left_quotation, True)
+        p = self.cpos
+        return (self.goto_char(self.get_left_paren(p), True)
+             or self.goto_char(self.get_left_quotation(p), True)
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
-        p, q, st = self.get_following_atom()
+        p, q, st = self.get_following_atom(self.cpos)
         self.cpos = q
         return st
     
     def selection_backward_atom(self):
-        p, q, st = self.get_preceding_atom()
+        p, q, st = self.get_preceding_atom(self.cpos)
         self.cpos = p
         return st
     
@@ -3243,11 +3250,10 @@ class Nautilus(Shell, EditorInterface):
             return
         
         p = self.cpos
-        c = self.get_char(p-1)
         st = self.get_style(p-1)
-        if st in ('string', 'word') or c in ")}]":
+        if st in ('string', 'word', 'rparen'):
             pass
-        elif st == 0 or c in "({[,;":
+        elif st in (0, 'space', 'lparen', 'delim'):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
             self.handler('quit', evt) # => quit autocomp mode
