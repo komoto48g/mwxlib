@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.4"
+__version__ = "0.62.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1055,6 +1055,16 @@ class ShellFrame(MiniFrame):
         if evt.IsShown():
             self.inspector.watch(self)
     
+    def OnGhostShow(self, evt):
+        if evt.IsShown():
+            self.inspector.watch(self.ghost)
+        else:
+            self.inspector.unwatch()
+            self.monitor.unwatch()
+            self.ginfo.unwatch()
+            self.linfo.unwatch()
+        evt.Skip()
+    
     def OnClose(self, evt):
         if self.debugger.busy:
             wx.MessageBox("The debugger is running.\n\n"
@@ -1142,32 +1152,22 @@ class ShellFrame(MiniFrame):
         else:
             evt.Skip()
     
-    def OnGhostShow(self, evt):
-        if evt.IsShown():
-            self.inspector.watch(self.ghost)
-        else:
-            self.inspector.unwatch()
-            self.monitor.unwatch()
-            self.ginfo.unwatch()
-            self.linfo.unwatch()
-        evt.Skip()
-    
-    def Quit(self, evt):
-        self.inspector.unwatch()
-        self.monitor.unwatch()
-        self.ginfo.unwatch()
-        self.linfo.unwatch()
-        shell = self.debugger.shell
-        del shell.locals
-        del shell.globals
-        self.on_title_window(shell.target)
-        self.debugger.unwatch()
-        self.message("Quit")
-        evt.Skip()
-    
     ## --------------------------------
     ## Actions for handler
     ## --------------------------------
+    
+    def Quit(self, evt):
+        ## self.inspector.unwatch()
+        self.monitor.unwatch()
+        self.ginfo.unwatch()
+        self.linfo.unwatch()
+        self.debugger.unwatch()
+        shell = self.debugger.shell # reset interp locals
+        del shell.locals
+        del shell.globals
+        self.on_title_window(self.current_shell.target) # reset title
+        self.message("Quit")
+        evt.Skip()
     
     def load(self, obj):
         if not isinstance(obj, str):
@@ -2892,6 +2892,7 @@ class Nautilus(Shell, EditorInterface):
         ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
+        self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         
         def destroy(v):
             self.handler('shell_deleted', self)
@@ -3181,6 +3182,10 @@ class Nautilus(Shell, EditorInterface):
                     self.message(tip) # clear if no tip
                     self.__text = text
             self.handler('stc_updated', evt)
+        evt.Skip()
+    
+    def OnCallTipClick(self, evt):
+        self.parent.handler('add_help', self.__calltip)
         evt.Skip()
     
     def OnSpace(self, evt):
@@ -3764,11 +3769,13 @@ class Nautilus(Shell, EditorInterface):
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
         (override) Snip the tip of max N lines if it is too long.
+                   Keep the tip for calltip-click event.
         """
+        self.__calltip = tip
         lines = tip.splitlines()
         if len(lines) > N:
-            lines[N+1:] = ["\n...(snip) This tips are too long..."
-                          #"Show Help buffer for more details..."
+            lines[N+1:] = ["\n...(snip) This tips are too long... "
+                          "Click to show more details."
                           ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
