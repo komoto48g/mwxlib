@@ -214,7 +214,7 @@ class KeyCtrlInterfaceMixin(object):
         })
     
     def pre_command_hook(self, evt):
-        """Enter extention mode.
+        """Enter extension mode.
         Check selection for [C-c][C-x].
         """
         win = wx.Window.FindFocus()
@@ -1783,9 +1783,10 @@ class EditorInterface(CtrlInterface):
         """Indent the current line"""
         text = self.caretline  # w/ no-prompt cf. CurLine
         lstr = text.lstrip()   # w/ no-indent
-        p = self.eol - len(lstr)
+        ## p = self.eol - len(lstr)
+        p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = self.py_calc_indent() # guess from the current/previous line
+        indent = self.py_calc_indent(self.cline) # check current/previous line
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
@@ -1793,50 +1794,51 @@ class EditorInterface(CtrlInterface):
         """Outdent the current line"""
         text = self.caretline  # w/ no-prompt cf. CurLine
         lstr = text.lstrip()   # w/ no-indent
-        p = self.eol - len(lstr)
+        ## p = self.eol - len(lstr)
+        p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = text[:-len(lstr)-4] # cf. delete_backward_space_like_tab
+        indent = text[:len(text)-len(lstr)-4] # cf. delete_backward_space_like_tab
         self.Replace(self.bol, p, indent)
         self.goto_char(self.bol + len(indent) + offset)
     
-    def py_calc_indent(self):
-        """Calculate indent spaces from prefious line
+    def py_calc_indent(self, line):
+        """Calculate indent spaces from previous line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        line = self.GetLine(self.cline - 1) # check previous line
-        line = self.py_strip_prompts(line)
-        lstr = line.lstrip()
+        text = self.GetLine(line - 1) # check previous line
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip()
         if not lstr:
-            indent = line.strip('\r\n') # remove line-seps: '\r' and '\n'
+            indent = text.strip('\r\n') # remove linesep: '\r' and '\n'
         else:
-            indent = line[:(len(line)-len(lstr))]
+            indent = text[:len(text)-len(lstr)] # for multi-byte string
             try:
-                texts = list(shlex.shlex(lstr)) # strip comment
-                if not texts:
+                tokens = list(shlex.shlex(lstr)) # strip comment
+                if not tokens:
                     return indent
-                if texts[-1] == ':':
-                    if re.match(self.py_indent_re, texts[0]):
+                if tokens[-1] == ':':
+                    if re.match(self.py_indent_re, tokens[0]):
                         indent += ' '*4
-                elif re.match(self.py_closing_re, texts[0]):
+                elif re.match(self.py_closing_re, tokens[0]):
                     return indent[:-4]
             except ValueError:
                 return indent
         
-        line = self.GetLine(self.cline) # check current line
-        line = self.py_strip_prompts(line)
-        lstr = line.lstrip()
+        text = self.GetLine(line) # check current line
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip()
         if re.match(self.py_outdent_re, lstr):
             indent = indent[:-4]
         
         return indent
     
     @classmethod
-    def py_strip_prompts(self, line):
+    def py_strip_prompts(self, text):
         for ps in (sys.ps1, sys.ps2, sys.ps3):
-            if line.startswith(ps):
-                line = line[len(ps):]
+            if text.startswith(ps):
+                text = text[len(ps):]
                 break
-        return line
+        return text
     
     def py_eval_line(self, globals, locals):
         try:
@@ -1976,8 +1978,8 @@ class EditorInterface(CtrlInterface):
         po, qo = self._anchors
         if p >= po:
             lc = self.LineFromPosition(p)
-            line = self.GetLine(lc)
-            self.cpos = p + len(line)
+            text = self.GetLine(lc)
+            self.cpos = p + len(text)
             self.anchor = po
             if not self.GetFoldExpanded(lc): # :not expanded
                 self.CharRightExtend()
@@ -2332,7 +2334,7 @@ class EditorInterface(CtrlInterface):
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt cf. CurLine
         lstr = text.lstrip()  # w/ no-indent
-        self.goto_char(self.eol - len(lstr))
+        self.goto_char(self.bol + len(text) - len(lstr)) # for multi-byte string
         self.ScrollToColumn(0)
     
     def beginning_of_line(self):
@@ -4009,7 +4011,7 @@ class Nautilus(Shell, EditorInterface):
                     if hints.endswith(' '):  # Don't show comp-list
                         return
                     tail = hints.split(',')[-1] # the last one following `,`
-                    if len(tail.split()) > 1:   # includes a seperator, e.g., `as`
+                    if len(tail.split()) > 1:   # includes a separator, e.g., `as`
                         return
                     modules = self.modules
                 else:
