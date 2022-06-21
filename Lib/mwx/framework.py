@@ -2321,26 +2321,26 @@ class EditorInterface(CtrlInterface):
         p = self.cpos
         while self.get_char(p) in chars and p < self.TextLength:
             p += 1
-        self.GotoPos(p)
+        self.goto_char(p)
     
     def skip_chars_backward(self, chars):
         p = self.cpos
         while self.get_char(p-1) in chars and p > 0:
             p -= 1
-        self.GotoPos(p)
+        self.goto_char(p)
     
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt cf. CurLine
         lstr = text.lstrip()  # w/ no-indent
-        self.GotoPos(self.eol - len(lstr))
+        self.goto_char(self.eol - len(lstr))
         self.ScrollToColumn(0)
     
     def beginning_of_line(self):
-        self.GotoPos(self.bol)
+        self.goto_char(self.bol)
         self.ScrollToColumn(0)
     
     def end_of_line(self):
-        self.GotoPos(self.eol)
+        self.goto_char(self.eol)
     
     def goto_matched_paren(self):
         p = self.cpos
