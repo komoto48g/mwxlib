@@ -2017,7 +2017,7 @@ class EditorInterface(CtrlInterface):
                 self.SetFoldMarginColour(True, lsc.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
             else:
-                ## one pixel solid line, the same colour as the line-number
+                ## one pixel solid line, the same colour as the line number
                 self.SetFoldMarginColour(True, lsc.get('fore'))
                 self.SetFoldMarginHiColour(True, lsc.get('fore'))
         
@@ -2099,12 +2099,12 @@ class EditorInterface(CtrlInterface):
         stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
-        stc.STC_P_NUMBER        : 'number',
-        stc.STC_P_STRING        : 'string',
-        stc.STC_P_STRINGEOL     : 'string',
-        stc.STC_P_CHARACTER     : 'string',
-        stc.STC_P_TRIPLE        : 'string',
-        stc.STC_P_TRIPLEDOUBLE  : 'string',
+        stc.STC_P_NUMBER        : 'suji',
+        stc.STC_P_STRING        : 'moji',
+        stc.STC_P_STRINGEOL     : 'moji',
+        stc.STC_P_CHARACTER     : 'moji',
+        stc.STC_P_TRIPLE        : 'moji',
+        stc.STC_P_TRIPLEDOUBLE  : 'moji',
         stc.STC_P_IDENTIFIER    : 'word',
         stc.STC_P_WORD2         : 'word',
         stc.STC_P_DECORATOR     : 'word',
@@ -2195,9 +2195,9 @@ class EditorInterface(CtrlInterface):
         st = self.get_style(p-1)
         if st == 'comment':
             return ''
-        if st == 'string':
+        if st == 'moji':
             st = self.get_style(p)
-            if st == 'string': # inside the string
+            if st == 'moji': # inside the string
                 return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
@@ -2238,7 +2238,7 @@ class EditorInterface(CtrlInterface):
     
     def get_right_quotation(self, p):
         st = self.get_style(p)
-        if st == 'string':
+        if st == 'moji':
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
             return p
@@ -2254,7 +2254,7 @@ class EditorInterface(CtrlInterface):
     
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
-        if st == 'string':
+        if st == 'moji':
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
             return p
@@ -3256,9 +3256,9 @@ class Nautilus(Shell, EditorInterface):
         
         p = self.cpos
         st = self.get_style(p-1)
-        if st in ('string', 'word', 'rparen'):
+        if st in ('moji', 'word', 'rparen'):
             pass
-        elif st in (0, 'space', 'lparen', 'delim'):
+        elif st in (0, 'space', 'delim', 'lparen'):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
             self.handler('quit', evt) # => quit autocomp mode
@@ -3625,13 +3625,13 @@ class Nautilus(Shell, EditorInterface):
         self.prompt()
     
     def write(self, text, pos=None):
-        """Display text in the shell (override) add pos :option"""
+        """Display text in the shell (override) add pos:option"""
         if pos is not None:
             if pos < 0:
                 pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
             self.goto_char(pos)
         if self.CanEdit():
-            Shell.write(self, text)
+            Shell.write(self, text) # => AddText
     
     ## input = classmethod(Shell.ask)
     
