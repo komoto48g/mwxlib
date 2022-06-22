@@ -4058,8 +4058,8 @@ class Nautilus(Shell, EditorInterface):
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except SyntaxError as e:
-            self.message("- {} : {!r}".format(e, text))
             self.handler('quit', evt)
+            self.message("- {} : {!r}".format(e, text))
         except Exception:
             raise
     
@@ -4071,11 +4071,6 @@ class Nautilus(Shell, EditorInterface):
         try:
             text, sep, hint = self.get_words_hint(self.cmdlc)
             obj = self.eval(text)
-            
-            if isinstance(obj, (bool,int,float,type(None))):
-                ## self.message("- Nothing to complete")
-                self.handler('quit', evt)
-                return
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -4094,8 +4089,8 @@ class Nautilus(Shell, EditorInterface):
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except SyntaxError as e:
-            self.message("- {} : {!r}".format(e, text))
             self.handler('quit', evt)
+            self.message("- {} : {!r}".format(e, text))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
     
@@ -4107,11 +4102,6 @@ class Nautilus(Shell, EditorInterface):
         try:
             text, sep, hint = self.get_words_hint(self.cmdlc)
             obj = self.eval(text)
-            
-            if isinstance(obj, (bool,int,float,type(None))):
-                ## self.message("- Nothing to complete")
-                self.handler('quit', evt)
-                return
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -4130,8 +4120,8 @@ class Nautilus(Shell, EditorInterface):
         except re.error as e:
             self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
         except SyntaxError as e:
-            self.message("- {} : {!r}".format(e, text))
             self.handler('quit', evt)
+            self.message("- {} : {!r}".format(e, text))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
     
