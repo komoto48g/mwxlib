@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.5"
+__version__ = "0.62.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -252,7 +252,10 @@ class KeyCtrlInterfaceMixin(object):
             key += ' ' + mode
         if action:
             f = self.interactive_call(action, *args, **kwargs)
-            self.handler.update({map: {key: [state, f]}})
+            if map != state:
+                self.handler.update({map: {key: [state, f, self.post_command_hook]}})
+            else:
+                self.handler.update({map: {key: [state, f]}})
             return action
         else:
             self.handler.update({map: {key: [state]}})
@@ -597,6 +600,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     handler = property(lambda self: self.__handler)
     message = property(lambda self: self.statusbar)
     
+    def post_command_hook(self, evt):
+        pass
+    post_command_hook.__name__ = str('stop') # no skip
+    
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
@@ -676,6 +683,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """
     handler = property(lambda self: self.__handler)
     message = property(lambda self: self.statusbar)
+    
+    def post_command_hook(self, evt):
+        pass
+    post_command_hook.__name__ = str('stop') # no skip
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
