@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.6"
+__version__ = "0.62.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2607,12 +2607,12 @@ class Editor(EditWindow, EditorInterface):
     
     def load_file(self, filename, lineno=0, show=True, focus=True):
         """Wrapped method of LoadFile
-        filename : target file:str => abspath
+        filename : buffer-file-name:str
           lineno : mark the specified line (>=1)
             show : popup editor window when success
            focus : set the focus if the window is displayed
         
-        Note: the target file will be reloaded without confirmation.
+        Note: the file will be reloaded without confirmation.
         """
         filepath = os.path.abspath(filename)
         if filepath == self.target: # save pos/markers before loading
@@ -2638,9 +2638,9 @@ class Editor(EditWindow, EditorInterface):
     
     def save_file(self, filename):
         """Wrapped method of SaveFile
-        filename : target file:str => abspath
+        filename : buffer-file-name:str
         
-        Note: the target file will be overwritten without confirmation.
+        Note: the file will be overwritten without confirmation.
         """
         filepath = os.path.abspath(filename)
         if self.SaveFile(filepath):
@@ -4215,38 +4215,38 @@ def profile(obj, *args, **kwargs):
     pr.print_stats()
 
 
-def watchit(target=None, **kwargs):
-    """Diver's watch to go deep into the wx process to inspect the target
+def watchit(widget=None, **kwargs):
+    """Diver's watch to go deep into the wx process to inspect the widget
     Wx.py tool for watching tree structure and events across the wx.Objects
     
   **kwargs : InspectionTool arguments
     pos, size, conifg, locals, and app
     """
     from wx.lib.inspection import InspectionTool
-    if target:
-        kwargs.update(locals=target.__dict__)
+    if widget:
+        kwargs.update(locals=widget.__dict__)
     it = InspectionTool()
     it.Init(**kwargs)
-    it.Show(target)
+    it.Show(widget)
     return it._frame
 
 
-def monit(target=None, **kwargs):
-    """Wx.py tool for watching events of the target
+def monit(widget=None, **kwargs):
+    """Wx.py tool for watching events of the widget
     """
     from wx.lib.eventwatcher import EventWatcher
     ew = EventWatcher(None, **kwargs)
-    ew.watch(target)
+    ew.watch(widget)
     ew.Show()
     return ew
 
 
-def filling(target=None, label=None, **kwargs):
-    """Wx.py tool for watching ingredients of the target
+def filling(obj=None, label=None, **kwargs):
+    """Wx.py tool for watching ingredients of the widget
     """
     from wx.py.filling import FillingFrame
-    frame = FillingFrame(rootObject=target,
-                         rootLabel=label or typename(target),
+    frame = FillingFrame(rootObject=obj,
+                         rootLabel=label or typename(obj),
                          static=False, # update each time pushed
                          **kwargs)
     frame.filling.text.WrapMode = 0 # no wrap
