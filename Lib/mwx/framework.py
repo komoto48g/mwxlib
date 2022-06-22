@@ -2499,8 +2499,16 @@ class Editor(EditWindow, EditorInterface):
     message = property(lambda self: self.__parent.message)
     
     @property
+    def name(self):
+        return self.__name
+    
+    @property
+    def filename(self):
+        return self.__filename
+    
+    @property
     def target(self):
-        return self.__target
+        return self.__filename
     
     @target.setter
     def target(self, f):
@@ -2508,7 +2516,7 @@ class Editor(EditWindow, EditorInterface):
             self.__mtime = os.path.getmtime(f)
         else:
             self.__mtime = None
-        self.__target = f
+        self.__filename = f
     
     @property
     def target_mtdelta(self):
@@ -2521,8 +2529,8 @@ class Editor(EditWindow, EditorInterface):
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.target = None  # buffer-filename
-        self.name = name    # buffer-name
+        self.__name = name      # buffer-name
+        self.target = None      # buffer-filename
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
@@ -2624,7 +2632,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
-            self.message("Loaded {!r} successfully.".format(filename))
+            self.message("Loaded {!r} successfully.".format(os.path.basename(filename)))
             return True
         return False
     
@@ -2637,7 +2645,7 @@ class Editor(EditWindow, EditorInterface):
         filepath = os.path.abspath(filename)
         if self.SaveFile(filepath):
             self.target = filepath
-            self.message("Saved {!r} successfully.".format(filename))
+            self.message("Saved {!r} successfully.".format(os.path.basename(filename)))
             return True
         return False
     
