@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.7"
+__version__ = "0.62.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1872,7 +1872,7 @@ class EditorInterface(CtrlInterface):
             del self.linemark
             if region:
                 p, q = region
-                text = self.get_text(p, q)
+                text = self.GetTextRange(p, q)
                 ln = self.LineFromPosition(p)
                 self.markline = ln
             else:
@@ -2108,7 +2108,7 @@ class EditorInterface(CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 0,  # space, crlf, \$ (non-identifier)
+        stc.STC_P_DEFAULT       : 0,  # space, \r\n\\$ (non-identifier)
         stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
@@ -2129,21 +2129,22 @@ class EditorInterface(CtrlInterface):
     def get_style(self, pos):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
-        st = self.py_styles[st]
-        if st == 0:
+        sty = self.py_styles[st]
+        if sty == 0:
             if c in " \t": return 'space'
-        if st == 10:
-            ## if c in ".": return 'word'
+        if sty == 10:
             if c in ".":
-                if '...' in self.get_text(pos-2,pos+3):
+                if '...' in self.GetTextRange(pos-2, pos+3):
                     return 'ellipsis'
-                else:
-                    return 'word'
-            if c in ",:;": return 'delim'
+                return 'word'
+            if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
             if c in "`@=+-/*%<>&|^~!?": return "op"
-        return st
+        if c == 'f':
+            if self.get_char(pos+1) in "\"\'": # f-string
+                return 'moji'
+        return sty
     
     def get_char(self, pos):
         """Returns the character at the position."""
@@ -2206,12 +2207,11 @@ class EditorInterface(CtrlInterface):
         """A syntax unit (expression) at the caret-line"""
         p = self.cpos
         st = self.get_style(p-1)
-        if st == 'comment':
-            return ''
         if st == 'moji':
-            st = self.get_style(p)
-            if st == 'moji': # inside the string
+            if st == self.get_style(p): # inside the string
                 return ''
+        elif st == 'comment':
+            return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
         lhs = ut.get_words_backward(ls) # or ls.rpartition(' ')[-1]
@@ -2237,7 +2237,7 @@ class EditorInterface(CtrlInterface):
             if c not in delims:
                 self.WordRightEnd()
                 q = self.cpos
-            return self.get_text(p, q)
+            return self.GetTextRange(p, q)
     
     def get_right_paren(self, p):
         if self.get_char(p) in "({[<": # left-parentheses, <
@@ -2252,6 +2252,8 @@ class EditorInterface(CtrlInterface):
     def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'moji':
+            if self.get_char(p) not in "bfru\"\'":
+                return
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
             return p
@@ -2268,6 +2270,8 @@ class EditorInterface(CtrlInterface):
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'moji':
+            if self.get_char(p-1) not in "\"\'":
+                return
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
             return p
@@ -2468,6 +2472,11 @@ class EditorInterface(CtrlInterface):
 
 class Editor(EditWindow, EditorInterface):
     """Python code editor
+
+    Attributes:
+           name : buffer-name (e.g. '*scratch*')
+         target : target-code-name (e.g. '<scratch>' for debug)
+       filename : buffer-file-name (full-path)
     """
     STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
@@ -2503,15 +2512,19 @@ class Editor(EditWindow, EditorInterface):
         return self.__name
     
     @property
-    def filename(self):
-        return self.__filename
-    
-    @property
     def target(self):
-        return self.__filename
+        return self.__codename
     
     @target.setter
     def target(self, f):
+        self.__codename = f
+    
+    @property
+    def filename(self):
+        return self.__filename
+    
+    @filename.setter
+    def filename(self, f):
         if f and os.path.isfile(f):
             self.__mtime = os.path.getmtime(f)
         else:
@@ -2519,7 +2532,7 @@ class Editor(EditWindow, EditorInterface):
         self.__filename = f
     
     @property
-    def target_mtdelta(self):
+    def mtdelta(self):
         if self.__mtime:
             return os.path.getmtime(self.target) - self.__mtime
     
@@ -2530,7 +2543,9 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.__name = name      # buffer-name
-        self.target = None      # buffer-filename
+        self.__codename = None  # target-code-name
+        self.__filename = None  # buffer-file-name
+        self.__mtime = None     # timestamp
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
@@ -2556,7 +2571,7 @@ class Editor(EditWindow, EditorInterface):
         
         def activate(v):
             title = "{} file: {}".format(self.name, self.target)
-            if self.target_mtdelta:
+            if self.mtdelta:
                 self.message("{} has been modified externally.".format(title))
             self.parent.handler('title_window', title)
             self.trace_position()
@@ -2602,6 +2617,8 @@ class Editor(EditWindow, EditorInterface):
             self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
+            self.target = filename
+            self.filename = filename
             return True
         return False
     
@@ -2614,15 +2631,18 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the file will be reloaded without confirmation.
         """
-        filepath = os.path.abspath(filename)
-        if filepath == self.target: # save pos/markers before loading
+        if not filename:
+            return
+        f = os.path.abspath(filename)
+        if f == self.filename: # save pos/markers before loading
             p = self.cpos
             lm = self.linemark
         else:
             p = -1
             lm = -1
-        if self.load_cache(filepath) or self.LoadFile(filepath):
-            self.target = filepath
+        if self.LoadFile(f):
+            self.target = f
+            self.filename = f
             if lineno:
                 self.markline = lineno - 1
                 self.goto_line(lineno - 1)
@@ -2632,7 +2652,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
-            self.message("Loaded {!r} successfully.".format(os.path.basename(filename)))
+            self.post_message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2642,10 +2662,13 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the file will be overwritten without confirmation.
         """
-        filepath = os.path.abspath(filename)
-        if self.SaveFile(filepath):
-            self.target = filepath
-            self.message("Saved {!r} successfully.".format(os.path.basename(filename)))
+        if not filename:
+            return
+        f = os.path.abspath(filename)
+        if self.SaveFile(f):
+            self.target = f
+            self.filename = f
+            self.post_message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
@@ -3279,7 +3302,7 @@ class Nautilus(Shell, EditorInterface):
         st = self.get_style(p-1)
         if st in ('moji', 'word', 'rparen'):
             pass
-        elif st in (0, 'space', 'delim', 'lparen'):
+        elif st in (0, 'space', 'sep', 'lparen'):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
             self.handler('quit', evt) # => quit autocomp mode

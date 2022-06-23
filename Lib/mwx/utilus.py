@@ -283,16 +283,14 @@ if pp:
         pp.sort_dicts = True
 
 
-def get_words_backward(text, sep=None):
-    """Get words (from text at left side of caret)"""
+def get_words_backward(text):
     tokens = _split_tokens(text)[::-1]
-    return _extract_words_from_tokens(tokens, sep, reverse=1)
+    return _extract_words_from_tokens(tokens, reverse=1)
 
 
-def get_words_forward(text, sep=None):
-    """Get words (from text at right side of caret)"""
+def get_words_forward(text):
     tokens = _split_tokens(text)
-    return _extract_words_from_tokens(tokens, sep)
+    return _extract_words_from_tokens(tokens)
 
 
 def split_words(text):
@@ -302,8 +300,6 @@ def split_words(text):
         words = _extract_words_from_tokens(tokens)
         if not words:
             words = tokens.pop(0)
-        ## if words.startswith('#'): # eliminates comments
-        ##     break
         phrases.append(words)
     return phrases
 
@@ -329,12 +325,11 @@ def _split_tokens(text):
     return ls
 
 
-def _extract_words_from_tokens(tokens, sep=None, reverse=False):
+def _extract_words_from_tokens(tokens, reverse=False):
     """Extract pythonic expressions from tokens
     default sep includes `@, binary-ops, and whitespaces, etc.
     """
-    if sep is None:
-        sep = "`@=+-/*%<>&|^~,:; \t\r\n!?#" # OPS; SEPARATORS; !?
+    sep = "`@=+-/*%<>&|^~,:; \t\r\n!?#"
     p, q = "({[", ")}]"
     if reverse:
         p, q = q, p

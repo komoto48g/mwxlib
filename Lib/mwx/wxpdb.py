@@ -243,7 +243,6 @@ class Debugger(Pdb):
             self.editor = self.parent.Scratch
         else:
             self.editor = self.parent.Log
-            self.editor.target = filename
             if not self.code or self.code.co_filename != filename:
                 self.editor.load_cache(filename)
         
