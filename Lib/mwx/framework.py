@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.7"
+__version__ = "0.62.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2468,6 +2468,11 @@ class EditorInterface(CtrlInterface):
 
 class Editor(EditWindow, EditorInterface):
     """Python code editor
+
+    Attributes:
+           name : buffer-name (e.g. '*scratch*')
+         target : target-code-name (e.g. '<scratch>' for debug)
+       filename : buffer-file-name (full-path)
     """
     STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
@@ -2503,15 +2508,19 @@ class Editor(EditWindow, EditorInterface):
         return self.__name
     
     @property
-    def filename(self):
-        return self.__filename
-    
-    @property
     def target(self):
-        return self.__filename
+        return self.__codename
     
     @target.setter
     def target(self, f):
+        self.__codename = f
+    
+    @property
+    def filename(self):
+        return self.__filename
+    
+    @filename.setter
+    def filename(self, f):
         if f and os.path.isfile(f):
             self.__mtime = os.path.getmtime(f)
         else:
@@ -2519,7 +2528,7 @@ class Editor(EditWindow, EditorInterface):
         self.__filename = f
     
     @property
-    def target_mtdelta(self):
+    def mtdelta(self):
         if self.__mtime:
             return os.path.getmtime(self.target) - self.__mtime
     
@@ -2530,7 +2539,9 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.__name = name      # buffer-name
-        self.target = None      # buffer-filename
+        self.__codename = None  # target-code-name
+        self.__filename = None  # buffer-file-name
+        self.__mtime = None     # timestamp
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
@@ -2556,7 +2567,7 @@ class Editor(EditWindow, EditorInterface):
         
         def activate(v):
             title = "{} file: {}".format(self.name, self.target)
-            if self.target_mtdelta:
+            if self.mtdelta:
                 self.message("{} has been modified externally.".format(title))
             self.parent.handler('title_window', title)
             self.trace_position()
@@ -2602,6 +2613,8 @@ class Editor(EditWindow, EditorInterface):
             self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
+            self.target = filename
+            self.filename = filename
             return True
         return False
     
@@ -2614,15 +2627,18 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the file will be reloaded without confirmation.
         """
-        filepath = os.path.abspath(filename)
-        if filepath == self.target: # save pos/markers before loading
+        if not filename:
+            return
+        f = os.path.abspath(filename)
+        if f == self.filename: # save pos/markers before loading
             p = self.cpos
             lm = self.linemark
         else:
             p = -1
             lm = -1
-        if self.load_cache(filepath) or self.LoadFile(filepath):
-            self.target = filepath
+        if self.LoadFile(f):
+            self.target = f
+            self.filename = f
             if lineno:
                 self.markline = lineno - 1
                 self.goto_line(lineno - 1)
@@ -2632,7 +2648,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
-            self.message("Loaded {!r} successfully.".format(os.path.basename(filename)))
+            self.post_message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2642,10 +2658,13 @@ class Editor(EditWindow, EditorInterface):
         
         Note: the file will be overwritten without confirmation.
         """
-        filepath = os.path.abspath(filename)
-        if self.SaveFile(filepath):
-            self.target = filepath
-            self.message("Saved {!r} successfully.".format(os.path.basename(filename)))
+        if not filename:
+            return
+        f = os.path.abspath(filename)
+        if self.SaveFile(f):
+            self.target = f
+            self.filename = f
+            self.post_message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
