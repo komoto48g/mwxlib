@@ -1872,7 +1872,7 @@ class EditorInterface(CtrlInterface):
             del self.linemark
             if region:
                 p, q = region
-                text = self.get_text(p, q)
+                text = self.GetTextRange(p, q)
                 ln = self.LineFromPosition(p)
                 self.markline = ln
             else:
@@ -2108,7 +2108,7 @@ class EditorInterface(CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 0,  # space, crlf, \$ (non-identifier)
+        stc.STC_P_DEFAULT       : 0,  # space, \r\n\\$ (non-identifier)
         stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
@@ -2133,13 +2133,11 @@ class EditorInterface(CtrlInterface):
         if st == 0:
             if c in " \t": return 'space'
         if st == 10:
-            ## if c in ".": return 'word'
             if c in ".":
-                if '...' in self.get_text(pos-2,pos+3):
+                if '...' in self.GetTextRange(pos-2, pos+3):
                     return 'ellipsis'
-                else:
-                    return 'word'
-            if c in ",:;": return 'delim'
+                return 'word'
+            if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
             if c in "`@=+-/*%<>&|^~!?": return "op"
@@ -2237,7 +2235,7 @@ class EditorInterface(CtrlInterface):
             if c not in delims:
                 self.WordRightEnd()
                 q = self.cpos
-            return self.get_text(p, q)
+            return self.GetTextRange(p, q)
     
     def get_right_paren(self, p):
         if self.get_char(p) in "({[<": # left-parentheses, <
@@ -3298,7 +3296,7 @@ class Nautilus(Shell, EditorInterface):
         st = self.get_style(p-1)
         if st in ('moji', 'word', 'rparen'):
             pass
-        elif st in (0, 'space', 'delim', 'lparen'):
+        elif st in (0, 'space', 'sep', 'lparen'):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         else:
             self.handler('quit', evt) # => quit autocomp mode
