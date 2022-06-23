@@ -2129,10 +2129,10 @@ class EditorInterface(CtrlInterface):
     def get_style(self, pos):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
-        st = self.py_styles[st]
-        if st == 0:
+        sty = self.py_styles[st]
+        if sty == 0:
             if c in " \t": return 'space'
-        if st == 10:
+        if sty == 10:
             if c in ".":
                 if '...' in self.GetTextRange(pos-2, pos+3):
                     return 'ellipsis'
@@ -2141,7 +2141,10 @@ class EditorInterface(CtrlInterface):
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
             if c in "`@=+-/*%<>&|^~!?": return "op"
-        return st
+        if c == 'f':
+            if self.get_char(pos+1) in "\"\'": # f-string
+                return 'moji'
+        return sty
     
     def get_char(self, pos):
         """Returns the character at the position."""
@@ -2204,12 +2207,11 @@ class EditorInterface(CtrlInterface):
         """A syntax unit (expression) at the caret-line"""
         p = self.cpos
         st = self.get_style(p-1)
-        if st == 'comment':
-            return ''
         if st == 'moji':
-            st = self.get_style(p)
-            if st == 'moji': # inside the string
+            if st == self.get_style(p): # inside the string
                 return ''
+        elif st == 'comment':
+            return ''
         text, lp = self.CurLine
         ls, rs = text[:lp], text[lp:]
         lhs = ut.get_words_backward(ls) # or ls.rpartition(' ')[-1]
@@ -2250,6 +2252,8 @@ class EditorInterface(CtrlInterface):
     def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'moji':
+            if self.get_char(p) not in "bfru\"\'":
+                return
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
             return p
@@ -2266,6 +2270,8 @@ class EditorInterface(CtrlInterface):
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'moji':
+            if self.get_char(p-1) not in "\"\'":
+                return
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
             return p
