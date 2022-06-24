@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.9"
+__version__ = "0.63.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2271,8 +2271,12 @@ class EditorInterface(CtrlInterface):
         st = self.get_style(p)
         if st == "lparen":
             q = self.BraceMatch(p)
-            if q != -1:
+            if q == -1:
+                q = self.TextLength
+                st = None # no closing paren
+            else:
                 q += 1
+                st = 'paren' # closed
         else:
             while self.get_style(q) == st and q < self.TextLength:
                 q += 1
@@ -2283,6 +2287,11 @@ class EditorInterface(CtrlInterface):
         st = self.get_style(p-1)
         if st == "rparen":
             p = self.BraceMatch(p-1)
+            if p == -1:
+                p = 0
+                st = None # no closing paren
+            else:
+                st = 'paren' # closed
         else:
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -3252,15 +3261,15 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
+        ## skip to wx.py.magic if cmdline begins with !(sx), ?(info), and ??(help)
         text = self.cmdline
-        
-        ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
         if not text or text[0] in '!?':
             evt.Skip()
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
-        tokens = ut.split_words(text)
+        ## tokens = ut.split_words(text)
+        tokens = list(self.cmdline_atoms())
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
@@ -3269,11 +3278,10 @@ class Nautilus(Shell, EditorInterface):
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
-        ## normal execution
         if '\n' in text:
             self.Execute(text) # for multi-line commands
         else:
-            evt.Skip()
+            evt.Skip() # => processLine
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -3368,6 +3376,7 @@ class Nautilus(Shell, EditorInterface):
                  + ''.join(_popiter(r, lambda c: c not in sep))
         
         lhs = ''
+        tokens = list(tokens)
         for i, c in enumerate(tokens):
             rest = tokens[i+1:]
             
@@ -3560,6 +3569,12 @@ class Nautilus(Shell, EditorInterface):
     def cmdline(self):
         """full command-(multi-)line (excluding ps1:prompt)"""
         return self.GetTextRange(self.bolc, self.eolc)
+    
+    def cmdline_atoms(self):
+        q = self.bolc
+        while q < self.eolc:
+            p, q, st = self.get_following_atom(q)
+            yield self.GetTextRange(p, q)
     
     ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
     ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
@@ -3802,7 +3817,7 @@ class Nautilus(Shell, EditorInterface):
         lines = tip.splitlines()
         if len(lines) > N:
             lines[N+1:] = ["\n...(snip) This tips are too long... "
-                          "Click to show more details."
+                           "Click to show more details."
                           ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
