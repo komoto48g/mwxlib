@@ -2149,24 +2149,6 @@ class EditorInterface(CtrlInterface):
         """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
     
-    def get_text(self, start, end):
-        """Retrieve a range of text.
-        
-        Note: If p=-1, then p->TextLength.
-              i.e., get_text(0,-1) != Text[0:-1],
-              but get_text(0,None) == Text[0:None] is True.
-        """
-        n = self.TextLength
-        if start is None:
-            start = 0
-        elif start < 0:
-            start += n + 1 # Counts end-of-buffer (+1:\0)
-        if end is None:
-            end = n
-        elif end < 0:
-            end += n + 1
-        return self.GetTextRange(start, end)
-    
     anchor = property(
         lambda self: self.GetAnchor(),
         lambda self,v: self.SetAnchor(v))
@@ -3046,7 +3028,7 @@ class Nautilus(Shell, EditorInterface):
                 'S-tab pressed' : (1, self.on_completion_backward_history),
                   'M-p pressed' : (1, self.on_completion_forward_history),
                   'M-n pressed' : (1, self.on_completion_backward_history),
-                'enter pressed' : (0, lambda v: self.goto_char(self.TextLength)),
+                'enter pressed' : (0, lambda v: self.goto_char(self.eolc)),
                'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
@@ -3259,7 +3241,7 @@ class Nautilus(Shell, EditorInterface):
     def OnEnter(self, evt):
         """Called when enter pressed"""
         if not self.CanEdit(): # go back to the end of command line
-            self.goto_char(self.TextLength)
+            self.goto_char(self.eolc)
             if self.eolc < self.bolc: # check if prompt is in valid state
                 self.prompt()
                 evt.Skip()
@@ -3544,7 +3526,7 @@ class Nautilus(Shell, EditorInterface):
         if ln != -1:
             p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
-            p = self.TextLength
+            p = self.eolc
         self.goto_char(p)
     
     ## --------------------------------
@@ -3772,9 +3754,10 @@ class Nautilus(Shell, EditorInterface):
             else:
                 cmd += lf + line # Multiline command; Add to the command
         commands.append(cmd)
+        
         self.Replace(self.bolc, self.eolc, '')
-        for c in commands:
-            self.write(c.replace(lf, os.linesep + sys.ps2))
+        for cmd in commands:
+            self.write(cmd.replace(lf, os.linesep + sys.ps2))
             self.processLine()
     
     def run(self, command, prompt=True, verbose=True):
