@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.8"
+__version__ = "0.62.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2107,8 +2107,8 @@ class EditorInterface(CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 0,  # space, \r\n\\$ (non-identifier)
-        stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
+        stc.STC_P_DEFAULT       : 0,    # etc. space \r\n\\$\0 (non-identifier)
+        stc.STC_P_OPERATOR      : 'op', # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
         stc.STC_P_NUMBER        : 'suji',
@@ -2131,7 +2131,8 @@ class EditorInterface(CtrlInterface):
         sty = self.py_styles[st]
         if sty == 0:
             if c in " \t": return 'space'
-        if sty == 10:
+            if c in "\r\n": return 'linesep'
+        if sty == 'op':
             if c in ".":
                 if '...' in self.GetTextRange(pos-2, pos+3):
                     return 'ellipsis'
@@ -2139,7 +2140,6 @@ class EditorInterface(CtrlInterface):
             if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
-            if c in "`@=+-/*%<>&|^~!?": return "op"
         if c == 'f':
             if self.get_char(pos+1) in "\"\'": # f-string
                 return 'moji'
@@ -3002,6 +3002,7 @@ class Nautilus(Shell, EditorInterface):
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
+              'S-enter pressed' : (0, _F(self.openLine)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
@@ -3286,7 +3287,7 @@ class Nautilus(Shell, EditorInterface):
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
-        ## normal execute/run
+        ## normal execution
         if '\n' in text:
             self.Execute(text) # for multi-line commands
         else:
@@ -3308,6 +3309,10 @@ class Nautilus(Shell, EditorInterface):
         
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
+    
+    def openLine(self):
+        with self.save_excursion():
+            self.insertLineBreak()
     
     def duplicate_command(self, clear=True):
         if self.CanEdit():
@@ -3655,8 +3660,7 @@ class Nautilus(Shell, EditorInterface):
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
-                    .replace(os.linesep, lf)
-                    .rstrip(' \t'))
+                    .replace(os.linesep, lf))
     
     def clear(self):
         """Delete all text (override) put new prompt"""
@@ -3757,19 +3761,17 @@ class Nautilus(Shell, EditorInterface):
         command = self.regulate_cmd(text, eol=True)
         commands = []
         lf = '\n'
-        c = ''
+        cmd = ''
         for line in command.split(lf):
             lstr = line.lstrip()
-            if (lstr and lstr == line
-                and not any(lstr.startswith(x)
-                            for x in ('else', 'elif', 'except', 'finally'))):
-                if c:
-                    commands.append(c) # Add the previous command to the list
-                c = line
+            if lstr and lstr == line and not any( # no-indent line or else:
+                lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally')):
+                if cmd:
+                    commands.append(cmd) # Add the previous command to the list
+                cmd = line
             else:
-                c += lf + line # Multiline command; Add to the command
-        commands.append(c)
-        
+                cmd += lf + line # Multiline command; Add to the command
+        commands.append(cmd)
         self.Replace(self.bolc, self.eolc, '')
         for c in commands:
             self.write(c.replace(lf, os.linesep + sys.ps2))
@@ -3780,7 +3782,6 @@ class Nautilus(Shell, EditorInterface):
         (override) Check the clock time.
         """
         self.__time = self.clock()
-        
         return Shell.run(self, command, prompt, verbose)
     
     @staticmethod
