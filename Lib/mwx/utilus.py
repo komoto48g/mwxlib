@@ -329,7 +329,7 @@ def _extract_words_from_tokens(tokens, reverse=False):
     """Extract pythonic expressions from tokens
     default sep includes `@, binary-ops, and whitespaces, etc.
     """
-    sep = "`@=+-/*%<>&|^~,:; \t\r\n!?#"
+    sep = "`@=+-/*%<>&|^~!?,:; \t\r\n#"
     p, q = "({[", ")}]"
     if reverse:
         p, q = q, p
@@ -345,12 +345,12 @@ def _extract_words_from_tokens(tokens, reverse=False):
                 break
         elif not stack and c in sep: # ok
             break
-        words.append(c) # stack word
+        words.append(c)
     else:
         j = None
         if stack: # error("unclosed-paren", ''.join(stack))
             pass
-    del tokens[:j] # Erase the extracted token
+    del tokens[:j] # remove extracted tokens
     return ''.join(reversed(words) if reverse else words)
 
 
@@ -596,8 +596,7 @@ class FSM(dict):
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
             return retvals
-        else:
-            ## matching test using fnmatch
+        elif isinstance(event, str): # matching test using fnmatch
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
                     return self.call(pat, *args, **kwargs) # recursive call

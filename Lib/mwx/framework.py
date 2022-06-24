@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.8"
+__version__ = "0.62.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1798,8 +1798,8 @@ class EditorInterface(CtrlInterface):
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
         indent = self.py_calc_indent(self.cline) # check current/previous line
-        self.Replace(self.bol, p, indent)
-        self.goto_char(self.bol + len(indent) + offset)
+        self.Replace(self.bol, p, ' '*indent)
+        self.goto_char(self.bol + indent + offset)
     
     def py_outdent_line(self):
         """Outdent the current line"""
@@ -1808,39 +1808,38 @@ class EditorInterface(CtrlInterface):
         ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = text[:len(text)-len(lstr)-4] # cf. delete_backward_space_like_tab
-        self.Replace(self.bol, p, indent)
-        self.goto_char(self.bol + len(indent) + offset)
+        indent = len(text) - len(lstr) - 4 # cf. delete_backward_space_like_tab
+        self.Replace(self.bol, p, ' '*indent)
+        self.goto_char(self.bol + indent + offset)
+    
+    def py_indentation(self, line):
+        text = self.GetLine(line)
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip(' \t')
+        indent = len(text) - len(lstr)
+        return lstr, indent
     
     def py_calc_indent(self, line):
         """Calculate indent spaces from previous line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        text = self.GetLine(line - 1) # check previous line
-        text = self.py_strip_prompts(text)
-        lstr = text.lstrip()
-        if not lstr:
-            indent = text.strip('\r\n') # remove linesep: '\r' and '\n'
+        lstr, indent = self.py_indentation(line - 1) # check previous line
+        try:
+            tokens = list(shlex.shlex(lstr)) # strip comment
+        except ValueError:
+            return indent # no closing quotation/paren
         else:
-            indent = text[:len(text)-len(lstr)] # for multi-byte string
-            try:
-                tokens = list(shlex.shlex(lstr)) # strip comment
-                if not tokens:
-                    return indent
-                if tokens[-1] == ':':
-                    if re.match(self.py_indent_re, tokens[0]):
-                        indent += ' '*4
-                elif re.match(self.py_closing_re, tokens[0]):
-                    return indent[:-4]
-            except ValueError:
+            if not tokens:
                 return indent
-        
-        text = self.GetLine(line) # check current line
-        text = self.py_strip_prompts(text)
-        lstr = text.lstrip()
+            if tokens[-1] == '\\':
+                return indent + 2
+            if tokens[-1] == ':' and re.match(self.py_indent_re, tokens[0]):
+                return indent + 4
+            if re.match(self.py_closing_re, tokens[0]):
+                return indent - 4
+        lstr, _indent = self.py_indentation(line) # check current line
         if re.match(self.py_outdent_re, lstr):
-            indent = indent[:-4]
-        
+            indent -= 4
         return indent
     
     @classmethod
@@ -2108,8 +2107,8 @@ class EditorInterface(CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 0,  # space, \r\n\\$ (non-identifier)
-        stc.STC_P_OPERATOR      : 10, # `@=+-/*%<>&|^~!?([{<>}]).,:;
+        stc.STC_P_DEFAULT       : 0,    # etc. space \r\n\\$\0 (non-identifier)
+        stc.STC_P_OPERATOR      : 'op', # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
         stc.STC_P_NUMBER        : 'suji',
@@ -2132,7 +2131,8 @@ class EditorInterface(CtrlInterface):
         sty = self.py_styles[st]
         if sty == 0:
             if c in " \t": return 'space'
-        if sty == 10:
+            if c in "\r\n": return 'linesep'
+        if sty == 'op':
             if c in ".":
                 if '...' in self.GetTextRange(pos-2, pos+3):
                     return 'ellipsis'
@@ -2140,7 +2140,6 @@ class EditorInterface(CtrlInterface):
             if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
-            if c in "`@=+-/*%<>&|^~!?": return "op"
         if c == 'f':
             if self.get_char(pos+1) in "\"\'": # f-string
                 return 'moji'
@@ -3003,6 +3002,7 @@ class Nautilus(Shell, EditorInterface):
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
+              'S-enter pressed' : (0, _F(self.openLine)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
@@ -3287,7 +3287,7 @@ class Nautilus(Shell, EditorInterface):
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
-        ## normal execute/run
+        ## normal execution
         if '\n' in text:
             self.Execute(text) # for multi-line commands
         else:
@@ -3309,6 +3309,10 @@ class Nautilus(Shell, EditorInterface):
         
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # and do not skip to default autocomp mode
+    
+    def openLine(self):
+        with self.save_excursion():
+            self.insertLineBreak()
     
     def duplicate_command(self, clear=True):
         if self.CanEdit():
@@ -3656,8 +3660,7 @@ class Nautilus(Shell, EditorInterface):
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
-                    .replace(os.linesep, lf)
-                    .rstrip(' \t'))
+                    .replace(os.linesep, lf))
     
     def clear(self):
         """Delete all text (override) put new prompt"""
@@ -3758,19 +3761,17 @@ class Nautilus(Shell, EditorInterface):
         command = self.regulate_cmd(text, eol=True)
         commands = []
         lf = '\n'
-        c = ''
+        cmd = ''
         for line in command.split(lf):
             lstr = line.lstrip()
-            if (lstr and lstr == line
-                and not any(lstr.startswith(x)
-                            for x in ('else', 'elif', 'except', 'finally'))):
-                if c:
-                    commands.append(c) # Add the previous command to the list
-                c = line
+            if lstr and lstr == line and not any( # no-indent line or else:
+                lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally')):
+                if cmd:
+                    commands.append(cmd) # Add the previous command to the list
+                cmd = line
             else:
-                c += lf + line # Multiline command; Add to the command
-        commands.append(c)
-        
+                cmd += lf + line # Multiline command; Add to the command
+        commands.append(cmd)
         self.Replace(self.bolc, self.eolc, '')
         for c in commands:
             self.write(c.replace(lf, os.linesep + sys.ps2))
@@ -3781,7 +3782,6 @@ class Nautilus(Shell, EditorInterface):
         (override) Check the clock time.
         """
         self.__time = self.clock()
-        
         return Shell.run(self, command, prompt, verbose)
     
     @staticmethod
