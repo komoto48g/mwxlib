@@ -1798,8 +1798,8 @@ class EditorInterface(CtrlInterface):
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
         indent = self.py_calc_indent(self.cline) # check current/previous line
-        self.Replace(self.bol, p, indent)
-        self.goto_char(self.bol + len(indent) + offset)
+        self.Replace(self.bol, p, ' '*indent)
+        self.goto_char(self.bol + indent + offset)
     
     def py_outdent_line(self):
         """Outdent the current line"""
@@ -1808,39 +1808,38 @@ class EditorInterface(CtrlInterface):
         ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = text[:len(text)-len(lstr)-4] # cf. delete_backward_space_like_tab
-        self.Replace(self.bol, p, indent)
-        self.goto_char(self.bol + len(indent) + offset)
+        indent = len(text) - len(lstr) - 4 # cf. delete_backward_space_like_tab
+        self.Replace(self.bol, p, ' '*indent)
+        self.goto_char(self.bol + indent + offset)
+    
+    def py_indentation(self, line):
+        text = self.GetLine(line)
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip(' \t')
+        indent = len(text) - len(lstr)
+        return lstr, indent
     
     def py_calc_indent(self, line):
         """Calculate indent spaces from previous line
         (patch) `with` in wx.py.shell.Shell.prompt
         """
-        text = self.GetLine(line - 1) # check previous line
-        text = self.py_strip_prompts(text)
-        lstr = text.lstrip()
-        if not lstr:
-            indent = text.strip('\r\n') # remove linesep: '\r' and '\n'
+        lstr, indent = self.py_indentation(line - 1) # check previous line
+        try:
+            tokens = list(shlex.shlex(lstr)) # strip comment
+        except ValueError:
+            return indent # no closing quotation/paren
         else:
-            indent = text[:len(text)-len(lstr)] # for multi-byte string
-            try:
-                tokens = list(shlex.shlex(lstr)) # strip comment
-                if not tokens:
-                    return indent
-                if tokens[-1] == ':':
-                    if re.match(self.py_indent_re, tokens[0]):
-                        indent += ' '*4
-                elif re.match(self.py_closing_re, tokens[0]):
-                    return indent[:-4]
-            except ValueError:
+            if not tokens:
                 return indent
-        
-        text = self.GetLine(line) # check current line
-        text = self.py_strip_prompts(text)
-        lstr = text.lstrip()
+            if tokens[-1] == '\\':
+                return indent + 2
+            if tokens[-1] == ':' and re.match(self.py_indent_re, tokens[0]):
+                return indent + 4
+            if re.match(self.py_closing_re, tokens[0]):
+                return indent - 4
+        lstr, _indent = self.py_indentation(line) # check current line
         if re.match(self.py_outdent_re, lstr):
-            indent = indent[:-4]
-        
+            indent -= 4
         return indent
     
     @classmethod
