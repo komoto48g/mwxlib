@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.62.9"
+__version__ = "0.63.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1737,9 +1737,9 @@ class EditorInterface(CtrlInterface):
     def mark(self, v):
         if v != -1:
             self.__mark = v
-            line = self.LineFromPosition(v)
+            ln = self.LineFromPosition(v)
             self.MarkerDeleteAll(0)
-            self.MarkerAdd(line, 0)
+            self.MarkerAdd(ln, 0)
             self.handler('mark_set', v)
         else:
             del self.mark
@@ -1870,9 +1870,9 @@ class EditorInterface(CtrlInterface):
         try:
             del self.linemark
             if region:
-                p, q = region
+                p, q = (self.PositionFromLine(x) for x in region)
                 text = self.GetTextRange(p, q)
-                ln = self.LineFromPosition(p)
+                ln = region[0]
                 self.markline = ln
             else:
                 text = self.Text
@@ -1967,7 +1967,7 @@ class EditorInterface(CtrlInterface):
             if level == 0 or level == stc.STC_FOLDLEVELHEADERFLAG:
                 break
             le += 1
-        return [self.PositionFromLine(x) for x in (lc, le)]
+        return lc, le
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -2149,24 +2149,6 @@ class EditorInterface(CtrlInterface):
         """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
     
-    def get_text(self, start, end):
-        """Retrieve a range of text.
-        
-        Note: If p=-1, then p->TextLength.
-              i.e., get_text(0,-1) != Text[0:-1],
-              but get_text(0,None) == Text[0:None] is True.
-        """
-        n = self.TextLength
-        if start is None:
-            start = 0
-        elif start < 0:
-            start += n + 1 # Counts end-of-buffer (+1:\0)
-        if end is None:
-            end = n
-        elif end < 0:
-            end += n + 1
-        return self.GetTextRange(start, end)
-    
     anchor = property(
         lambda self: self.GetAnchor(),
         lambda self,v: self.SetAnchor(v))
@@ -2204,18 +2186,27 @@ class EditorInterface(CtrlInterface):
     @property
     def expr_at_caret(self):
         """A syntax unit (expression) at the caret-line"""
-        p = self.cpos
-        st = self.get_style(p-1)
-        if st == 'moji':
-            if st == self.get_style(p): # inside the string
-                return ''
-        elif st == 'comment':
+        p = q = self.cpos
+        lsty = self.get_style(p-1)
+        rsty = self.get_style(p)
+        if lsty == rsty == 'moji': # inside string
             return ''
-        text, lp = self.CurLine
-        ls, rs = text[:lp], text[lp:]
-        lhs = ut.get_words_backward(ls) # or ls.rpartition(' ')[-1]
-        rhs = ut.get_words_forward(rs) # or rs.partition(' ')[0]
-        return (lhs + rhs).strip()
+        elif lsty == 'suji' or rsty == 'suji':
+            styles = {'suji'}
+        elif lsty in ('word', 'moji', 'rparen')\
+          or rsty in ('word', 'moji', 'lparen'):
+            styles = {'word', 'moji', 'paren', 'space'}
+        else:
+            return ''
+        while 1:
+            p, start, sty = self.get_preceding_atom(p)
+            if sty not in styles:
+                break
+        while 1:
+            end, q, sty = self.get_following_atom(q)
+            if sty not in styles:
+                break
+        return self.GetTextRange(start, end).strip()
     
     @property
     def topic_at_caret(self):
@@ -2289,8 +2280,12 @@ class EditorInterface(CtrlInterface):
         st = self.get_style(p)
         if st == "lparen":
             q = self.BraceMatch(p)
-            if q != -1:
+            if q == -1:
+                q = self.TextLength
+                st = None # no closing paren
+            else:
                 q += 1
+                st = 'paren' # closed
         else:
             while self.get_style(q) == st and q < self.TextLength:
                 q += 1
@@ -2301,6 +2296,11 @@ class EditorInterface(CtrlInterface):
         st = self.get_style(p-1)
         if st == "rparen":
             p = self.BraceMatch(p-1)
+            if p == -1:
+                p = 0
+                st = None # no closing paren
+            else:
+                st = 'paren' # closed
         else:
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -2378,14 +2378,14 @@ class EditorInterface(CtrlInterface):
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
-        p, q, st = self.get_following_atom(self.cpos)
+        p, q, sty = self.get_following_atom(self.cpos)
         self.cpos = q
-        return st
+        return sty
     
     def selection_backward_atom(self):
-        p, q, st = self.get_preceding_atom(self.cpos)
+        p, q, sty = self.get_preceding_atom(self.cpos)
         self.cpos = p
-        return st
+        return sty
     
     def save_excursion(self):
         class Excursion(object):
@@ -3046,7 +3046,7 @@ class Nautilus(Shell, EditorInterface):
                 'S-tab pressed' : (1, self.on_completion_backward_history),
                   'M-p pressed' : (1, self.on_completion_forward_history),
                   'M-n pressed' : (1, self.on_completion_backward_history),
-                'enter pressed' : (0, lambda v: self.goto_char(self.TextLength)),
+                'enter pressed' : (0, lambda v: self.goto_char(self.eolc)),
                'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
@@ -3259,7 +3259,7 @@ class Nautilus(Shell, EditorInterface):
     def OnEnter(self, evt):
         """Called when enter pressed"""
         if not self.CanEdit(): # go back to the end of command line
-            self.goto_char(self.TextLength)
+            self.goto_char(self.eolc)
             if self.eolc < self.bolc: # check if prompt is in valid state
                 self.prompt()
                 evt.Skip()
@@ -3270,15 +3270,15 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
+        ## skip to wx.py.magic if cmdline begins with !(sx), ?(info), and ??(help)
         text = self.cmdline
-        
-        ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
         if not text or text[0] in '!?':
             evt.Skip()
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
-        tokens = ut.split_words(text)
+        ## tokens = ut.split_words(text)
+        tokens = list(self.cmdline_atoms())
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
@@ -3287,11 +3287,10 @@ class Nautilus(Shell, EditorInterface):
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
-        ## normal execution
         if '\n' in text:
             self.Execute(text) # for multi-line commands
         else:
-            evt.Skip()
+            evt.Skip() # => processLine
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -3386,6 +3385,7 @@ class Nautilus(Shell, EditorInterface):
                  + ''.join(_popiter(r, lambda c: c not in sep))
         
         lhs = ''
+        tokens = list(tokens)
         for i, c in enumerate(tokens):
             rest = tokens[i+1:]
             
@@ -3544,7 +3544,7 @@ class Nautilus(Shell, EditorInterface):
         if ln != -1:
             p = self.PositionFromLine(ln) + len(sys.ps1)
         else:
-            p = self.TextLength
+            p = self.eolc
         self.goto_char(p)
     
     ## --------------------------------
@@ -3579,24 +3579,31 @@ class Nautilus(Shell, EditorInterface):
         """full command-(multi-)line (excluding ps1:prompt)"""
         return self.GetTextRange(self.bolc, self.eolc)
     
+    def cmdline_atoms(self):
+        q = self.bolc
+        while q < self.eolc:
+            p, q, st = self.get_following_atom(q)
+            yield self.GetTextRange(p, q)
+    
     ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
     ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
     
     @property
     def Command(self):
-        """Extract a command from text which may include a shell prompt.
-        
-        Returns the command at the caret position.
-        """
+        """Extract a command from text which may include a shell prompt."""
         return self.getCommand()
     
     @property
     def MultilineCommand(self):
-        """Extract a multi-line command from the editor.
-        (override) Add limitation to avoid an infinite loop at EOF
-        
-        Returns the command at the caret position.
-        """
+        """Extract a multi-line command from the editor."""
+        p, q = (self.PositionFromLine(x) for x in self.region)
+        if p < q:
+            p += len(sys.ps1)
+        return self.GetTextRange(p, q)
+    
+    @property
+    def region(self):
+        """Positions of prompt head and tail (override)"""
         lc = self.cline
         le = lc + 1
         while lc > 0:
@@ -3604,16 +3611,14 @@ class Nautilus(Shell, EditorInterface):
             if not text.startswith(sys.ps2):
                 break
             lc -= 1
-        if not text.startswith(sys.ps1):
-            return ''
+        if not text.startswith(sys.ps1): # bad region
+            return lc, lc
         while le < self.LineCount:
             text = self.GetLine(le)
             if not text.startswith(sys.ps2):
                 break
             le += 1
-        p = self.PositionFromLine(lc) + len(sys.ps1)
-        q = self.PositionFromLine(le)
-        return self.GetTextRange(p, q)
+        return lc, le
     
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
@@ -3772,9 +3777,10 @@ class Nautilus(Shell, EditorInterface):
             else:
                 cmd += lf + line # Multiline command; Add to the command
         commands.append(cmd)
+        
         self.Replace(self.bolc, self.eolc, '')
-        for c in commands:
-            self.write(c.replace(lf, os.linesep + sys.ps2))
+        for cmd in commands:
+            self.write(cmd.replace(lf, os.linesep + sys.ps2))
             self.processLine()
     
     def run(self, command, prompt=True, verbose=True):
@@ -3819,7 +3825,7 @@ class Nautilus(Shell, EditorInterface):
         lines = tip.splitlines()
         if len(lines) > N:
             lines[N+1:] = ["\n...(snip) This tips are too long... "
-                          "Click to show more details."
+                           "Click to show more details."
                           ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
