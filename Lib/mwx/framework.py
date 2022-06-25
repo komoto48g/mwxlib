@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.0"
+__version__ = "0.63.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -3277,7 +3277,7 @@ class Nautilus(Shell, EditorInterface):
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
-        ## tokens = ut.split_words(text)
+        ## tokens = list(split_words(text))
         tokens = list(self.cmdline_atoms())
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
@@ -3853,7 +3853,7 @@ class Nautilus(Shell, EditorInterface):
         for text in _gen_text():
             if text:
                 try:
-                    tokens = ut.split_words(text)
+                    tokens = list(ut.split_words(text))
                     cmd = self.magic_interpret(tokens)
                     cmd = self.regulate_cmd(cmd)
                     tip = self.eval(cmd)
@@ -3872,7 +3872,7 @@ class Nautilus(Shell, EditorInterface):
         text = self.MultilineCommand
         if text:
             try:
-                tokens = ut.split_words(text)
+                tokens = list(ut.split_words(text))
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 cmd = compile(cmd, "<string>", "exec")
@@ -4160,7 +4160,7 @@ class Nautilus(Shell, EditorInterface):
     
     @staticmethod
     def get_words_hint(cmdl):
-        text = ut.get_words_backward(cmdl)
+        text = next(ut.split_words(cmdl, reverse=1))
         return text.rpartition('.') # -> text, sep, hint
 
 
