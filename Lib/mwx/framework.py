@@ -1737,9 +1737,9 @@ class EditorInterface(CtrlInterface):
     def mark(self, v):
         if v != -1:
             self.__mark = v
-            line = self.LineFromPosition(v)
+            ln = self.LineFromPosition(v)
             self.MarkerDeleteAll(0)
-            self.MarkerAdd(line, 0)
+            self.MarkerAdd(ln, 0)
             self.handler('mark_set', v)
         else:
             del self.mark
@@ -1870,9 +1870,9 @@ class EditorInterface(CtrlInterface):
         try:
             del self.linemark
             if region:
-                p, q = region
+                p, q = (self.PositionFromLine(x) for x in region)
                 text = self.GetTextRange(p, q)
-                ln = self.LineFromPosition(p)
+                ln = region[0]
                 self.markline = ln
             else:
                 text = self.Text
@@ -1967,7 +1967,7 @@ class EditorInterface(CtrlInterface):
             if level == 0 or level == stc.STC_FOLDLEVELHEADERFLAG:
                 break
             le += 1
-        return [self.PositionFromLine(x) for x in (lc, le)]
+        return lc, le
     
     def on_linesel_begin(self, evt):
         p = evt.Position
@@ -2369,14 +2369,14 @@ class EditorInterface(CtrlInterface):
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
-        p, q, st = self.get_following_atom(self.cpos)
+        p, q, sty = self.get_following_atom(self.cpos)
         self.cpos = q
-        return st
+        return sty
     
     def selection_backward_atom(self):
-        p, q, st = self.get_preceding_atom(self.cpos)
+        p, q, sty = self.get_preceding_atom(self.cpos)
         self.cpos = p
-        return st
+        return sty
     
     def save_excursion(self):
         class Excursion(object):
@@ -3581,19 +3581,20 @@ class Nautilus(Shell, EditorInterface):
     
     @property
     def Command(self):
-        """Extract a command from text which may include a shell prompt.
-        
-        Returns the command at the caret position.
-        """
+        """Extract a command from text which may include a shell prompt."""
         return self.getCommand()
     
     @property
     def MultilineCommand(self):
-        """Extract a multi-line command from the editor.
-        (override) Add limitation to avoid an infinite loop at EOF
-        
-        Returns the command at the caret position.
-        """
+        """Extract a multi-line command from the editor."""
+        p, q = (self.PositionFromLine(x) for x in self.region)
+        if p < q:
+            p += len(sys.ps1)
+        return self.GetTextRange(p, q)
+    
+    @property
+    def region(self):
+        """Positions of prompt head and tail (override)"""
         lc = self.cline
         le = lc + 1
         while lc > 0:
@@ -3601,16 +3602,14 @@ class Nautilus(Shell, EditorInterface):
             if not text.startswith(sys.ps2):
                 break
             lc -= 1
-        if not text.startswith(sys.ps1):
-            return ''
+        if not text.startswith(sys.ps1): # bad region
+            return lc, lc
         while le < self.LineCount:
             text = self.GetLine(le)
             if not text.startswith(sys.ps2):
                 break
             le += 1
-        p = self.PositionFromLine(lc) + len(sys.ps1)
-        q = self.PositionFromLine(le)
-        return self.GetTextRange(p, q)
+        return lc, le
     
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
