@@ -2186,18 +2186,27 @@ class EditorInterface(CtrlInterface):
     @property
     def expr_at_caret(self):
         """A syntax unit (expression) at the caret-line"""
-        p = self.cpos
-        st = self.get_style(p-1)
-        if st == 'moji':
-            if st == self.get_style(p): # inside the string
-                return ''
-        elif st == 'comment':
+        p = q = self.cpos
+        lsty = self.get_style(p-1)
+        rsty = self.get_style(p)
+        if lsty == rsty == 'moji': # inside string
             return ''
-        text, lp = self.CurLine
-        ls, rs = text[:lp], text[lp:]
-        lhs = ut.get_words_backward(ls) # or ls.rpartition(' ')[-1]
-        rhs = ut.get_words_forward(rs) # or rs.partition(' ')[0]
-        return (lhs + rhs).strip()
+        elif lsty == 'suji' or rsty == 'suji':
+            styles = {'suji'}
+        elif lsty in ('word', 'moji', 'rparen')\
+          or rsty in ('word', 'moji', 'lparen'):
+            styles = {'word', 'moji', 'paren', 'space'}
+        else:
+            return ''
+        while 1:
+            p, start, sty = self.get_preceding_atom(p)
+            if sty not in styles:
+                break
+        while 1:
+            end, q, sty = self.get_following_atom(q)
+            if sty not in styles:
+                break
+        return self.GetTextRange(start, end).strip()
     
     @property
     def topic_at_caret(self):
