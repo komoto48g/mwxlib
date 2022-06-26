@@ -128,9 +128,9 @@ See [key bindings](key-bindings.md) for more information.
                     predicates imported from inspect
                     e.g., isclass, ismodule, ismethod, isfunction, etc.
   
-  * info :  ?x (x@?) --> info(x) shows short information
-  * help : ??x (x@??) --> help(x) shows full description
-  * sx   :  !x (x@!) --> sx(x) executes command in external shell
+  * info :  ?x --> info(x) shows short information
+  * help : ??x --> help(x) shows full description
+  * sx   :  !x --> sx(x) executes command in external shell
     
     Note: The last three (*) are original syntax defined in wx.py.shell,
     at present version, enabled with USE_MAGIC switch being on
@@ -144,8 +144,8 @@ See [key bindings](key-bindings.md) for more information.
 
     @p          synonym of print
     @pp         synonym of pprint
-    @info   @?  short info
-    @help   @?? full description
+    @info       short info
+    @help       full description
     @dive       clone the shell with new target
     @timeit     measure the duration cpu time
     @profile    profile the func(*args, **kwargs)
