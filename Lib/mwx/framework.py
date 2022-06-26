@@ -1246,8 +1246,8 @@ class ShellFrame(MiniFrame):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         command = shell.cmdline
-        self.add_history(command, prefix=' '*4, suffix=None)
-        ## The cmdline ends with linesep (cf. regulate_cmd).
+        self.add_history(command, prefix=' '*4, suffix=None) # command ends with linesep
+        
         ## Logging debug history every step in case of crash.
         with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(command)
@@ -1951,6 +1951,8 @@ class EditorInterface(CtrlInterface):
                 break
             lc = la
         self.ToggleFold(lc)
+        self.goto_line(lc)
+        self.EnsureCaretVisible()
     
     @property
     def region(self):
@@ -3517,7 +3519,7 @@ class Nautilus(Shell, EditorInterface):
         
         Note: text is raw output:str with no magic cast
         """
-        ln = self.LineFromPosition(self.bolc)
+        ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
@@ -3529,7 +3531,7 @@ class Nautilus(Shell, EditorInterface):
         return (not err)
     
     def on_interp_error(self, e):
-        self.linemark = self.LineFromPosition(self.bolc)  + e.lineno - 1
+        self.linemark = self.cmdline_region[0] + e.lineno - 1
     
     def goto_previous_mark_arrow(self):
         ln = self.MarkerPrevious(self.cline-1, 1<<1) # previous white-arrow
@@ -3584,6 +3586,12 @@ class Nautilus(Shell, EditorInterface):
         while q < self.eolc:
             p, q, st = self.get_following_atom(q)
             yield self.GetTextRange(p, q)
+    
+    @property
+    def cmdline_region(self):
+        lc = self.LineFromPosition(self.bolc)
+        le = self.LineCount
+        return lc, le
     
     ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
     ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
@@ -3885,8 +3893,7 @@ class Nautilus(Shell, EditorInterface):
                 lines = [int(l) for f,l in err if f == "<string>"]
                 if lines:
                     if self.bolc <= self.cpos: # current-region is active?
-                        ln = self.LineFromPosition(self.bolc)
-                        self.linemark = ln + lines[-1] - 1
+                        self.linemark = self.cmdline_region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
         else:
             self.message("No region")
@@ -4160,7 +4167,7 @@ class Nautilus(Shell, EditorInterface):
     
     @staticmethod
     def get_words_hint(cmdl):
-        text = next(ut.split_words(cmdl, reverse=1))
+        text = next(ut.split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
 
 
