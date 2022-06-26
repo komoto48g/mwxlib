@@ -2136,21 +2136,30 @@ class EditorInterface(CtrlInterface):
             if c in "\r\n": return 'linesep'
         if sty == 'op':
             if c in ".":
-                if '...' in self.GetTextRange(pos-2, pos+3):
+                if '...' in self.get_text(pos-2, pos+3):
                     return 'ellipsis'
                 return 'word'
             if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
-        if c == 'f':
-            if self.get_char(pos+1) in "\"\'": # f-string
-                return 'moji'
         return sty
     
     def get_char(self, pos):
         """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
     
+    def get_text(self, start, end):
+        """Retrieve a range of text.
+        
+        The range must be given as 0 <= start:end <= TextLength,
+        otherwise it will be modified to be in [0:TextLength].
+        """
+        if start > end:
+            start, end = end, start
+        return self.GetTextRange(max(start, 0),
+                                 min(end, self.TextLength))
+
+
     anchor = property(
         lambda self: self.GetAnchor(),
         lambda self,v: self.SetAnchor(v))
