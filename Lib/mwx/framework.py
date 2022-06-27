@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.0"
+__version__ = "0.63.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1246,8 +1246,8 @@ class ShellFrame(MiniFrame):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         command = shell.cmdline
-        self.add_history(command, prefix=' '*4, suffix=None)
-        ## The cmdline ends with linesep (cf. regulate_cmd).
+        self.add_history(command, prefix=' '*4, suffix=None) # command ends with linesep
+        
         ## Logging debug history every step in case of crash.
         with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(command)
@@ -1951,6 +1951,8 @@ class EditorInterface(CtrlInterface):
                 break
             lc = la
         self.ToggleFold(lc)
+        self.goto_line(lc)
+        self.EnsureCaretVisible()
     
     @property
     def region(self):
@@ -2134,21 +2136,30 @@ class EditorInterface(CtrlInterface):
             if c in "\r\n": return 'linesep'
         if sty == 'op':
             if c in ".":
-                if '...' in self.GetTextRange(pos-2, pos+3):
+                if '...' in self.get_text(pos-2, pos+3):
                     return 'ellipsis'
                 return 'word'
             if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
-        if c == 'f':
-            if self.get_char(pos+1) in "\"\'": # f-string
-                return 'moji'
         return sty
     
     def get_char(self, pos):
         """Returns the character at the position."""
         return chr(self.GetCharAt(pos))
     
+    def get_text(self, start, end):
+        """Retrieve a range of text.
+        
+        The range must be given as 0 <= start:end <= TextLength,
+        otherwise it will be modified to be in [0:TextLength].
+        """
+        if start > end:
+            start, end = end, start
+        return self.GetTextRange(max(start, 0),
+                                 min(end, self.TextLength))
+
+
     anchor = property(
         lambda self: self.GetAnchor(),
         lambda self,v: self.SetAnchor(v))
@@ -2651,7 +2662,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
-            self.post_message("Loaded {!r} successfully.".format(filename))
+            self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2667,7 +2678,7 @@ class Editor(EditWindow, EditorInterface):
         if self.SaveFile(f):
             self.target = f
             self.filename = f
-            self.post_message("Saved {!r} successfully.".format(filename))
+            self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2763,9 +2774,9 @@ class Nautilus(Shell, EditorInterface):
                    p can be atom, callable, type (e.g., int, str, ...),
                        and any predicates such as inspect.isclass.
     
-    *      info :  ?x (x@?) --> info(x) shows short information
-    *      help : ??x (x@??) --> help(x) shows full description
-    *    system :  !x (x@!) --> sx(x) executes command in external shell
+    *      info :  ?x --> info(x) shows short information
+    *      help : ??x --> help(x) shows full description
+    *    system :  !x --> sx(x) executes command in external shell
     
     *  denotes original syntax defined in wx.py.shell,
        for which, at present version, enabled with USE_MAGIC switch being on
@@ -2773,8 +2784,8 @@ class Nautilus(Shell, EditorInterface):
     Shell built-in utility:
         @p          synonym of print
         @pp         synonym of pprint
-        @info   @?  short info
-        @help   @?? full description
+        @info       short info
+        @help       full description
         @dive       clone the shell with new target
         @timeit     measure the duration cpu time
         @profile    profile the func(*args, **kwargs)
@@ -3277,7 +3288,7 @@ class Nautilus(Shell, EditorInterface):
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
-        ## tokens = ut.split_words(text)
+        ## tokens = list(ut.split_words(text))
         tokens = list(self.cmdline_atoms())
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
@@ -3372,8 +3383,8 @@ class Nautilus(Shell, EditorInterface):
         
         Note: This is called before run, execute, and original magic.
         """
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] OPS; SEPARATORS (no space, no comma)
-        sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] OPS; SEPARATORS
+        sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] ops, seps (no space, no comma)
+        sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] ops, seps
         
         def _popiter(ls, f):
             p = f if callable(f) else re.compile(f).match
@@ -3389,7 +3400,8 @@ class Nautilus(Shell, EditorInterface):
         for i, c in enumerate(tokens):
             rest = tokens[i+1:]
             
-            if c == '@' and not lhs and '\n' in rest: # @dcor
+            if c == '@' and not lhs.strip('\r\n')\
+              and any(x[0] in '\r\n' for x in rest): # @dcor
                 pass
             elif c == '@':
                 f = "{rhs}({lhs})"
@@ -3517,7 +3529,7 @@ class Nautilus(Shell, EditorInterface):
         
         Note: text is raw output:str with no magic cast
         """
-        ln = self.LineFromPosition(self.bolc)
+        ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
         if not err:
             self.MarkerAdd(ln, 1) # white-arrow
@@ -3529,7 +3541,7 @@ class Nautilus(Shell, EditorInterface):
         return (not err)
     
     def on_interp_error(self, e):
-        self.linemark = self.LineFromPosition(self.bolc)  + e.lineno - 1
+        self.linemark = self.cmdline_region[0] + e.lineno - 1
     
     def goto_previous_mark_arrow(self):
         ln = self.MarkerPrevious(self.cline-1, 1<<1) # previous white-arrow
@@ -3585,6 +3597,12 @@ class Nautilus(Shell, EditorInterface):
             p, q, st = self.get_following_atom(q)
             yield self.GetTextRange(p, q)
     
+    @property
+    def cmdline_region(self):
+        lc = self.LineFromPosition(self.bolc)
+        le = self.LineCount
+        return lc, le
+    
     ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
     ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
     
@@ -3619,6 +3637,10 @@ class Nautilus(Shell, EditorInterface):
                 break
             le += 1
         return lc, le
+    
+    ## --------------------------------
+    ## Methods of the shell
+    ## --------------------------------
     
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
@@ -3658,10 +3680,48 @@ class Nautilus(Shell, EditorInterface):
             ## shell.__init__ よりも先に実行される
             pass
     
+    def execStartupScript(self, su):
+        """Execute the user's PYTHONSTARTUP script if they have one.
+        (override) Add globals when executing su:startupScript
+                   Fix history point
+        """
+        ## self.globals = self.locals
+        self.promptPosEnd = self.TextLength # fix history point
+        if su and os.path.isfile(su):
+            self.push("print('Startup script executed:', {0!r})\n".format(su))
+            self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
+            self.push("del _f\n")
+            self.interp.startupScript = su
+        else:
+            self.push("")
+            self.interp.startupScript = None
+    
+    def Paste(self, rectangle=False):
+        """Replace selection with clipboard contents.
+        (override) Remove ps1 and ps2 from the multi-line command to paste.
+                   Add offset for paste-rectangle mode.
+        """
+        if self.CanPaste() and wx.TheClipboard.Open():
+            data = wx.TextDataObject()
+            if wx.TheClipboard.GetData(data):
+                self.ReplaceSelection('')
+                text = data.GetText()
+                command = self.regulate_cmd(text, eol=True)
+                lf = '\n'
+                offset = ''
+                if rectangle:
+                    text, lp = self.CurLine
+                    offset = ' ' * (lp - len(sys.ps2))
+                self.write(command.replace(lf, os.linesep + sys.ps2 + offset))
+            wx.TheClipboard.Close()
+    
     def regulate_cmd(self, text, eol=None):
+        """Regulate text to executable command
+        eol: Replace line endings with OS-specific endings.
+        """
         if eol:
             text = self.fixLineEndings(text)
-        text = self.lstripPrompt(text)
+        text = self.lstripPrompt(text) # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
@@ -3696,25 +3756,6 @@ class Nautilus(Shell, EditorInterface):
             "#{!r}".format(wx.py.shell))))
         Shell.about(self)
     
-    def Paste(self, rectangle=False):
-        """Replace selection with clipboard contents.
-        (override) Remove ps1 and ps2 from the multi-line command to paste.
-                   Add offset for paste-rectangle mode.
-        """
-        if self.CanPaste() and wx.TheClipboard.Open():
-            data = wx.TextDataObject()
-            if wx.TheClipboard.GetData(data):
-                self.ReplaceSelection('')
-                text = data.GetText()
-                command = self.regulate_cmd(text, eol=True)
-                lf = '\n'
-                offset = ''
-                if rectangle:
-                    text, lp = self.CurLine
-                    offset = ' ' * (lp - len(sys.ps2))
-                self.write(command.replace(lf, os.linesep + sys.ps2 + offset))
-            wx.TheClipboard.Close()
-    
     def info(self, obj=None):
         """Short information"""
         if obj is None:
@@ -3741,36 +3782,18 @@ class Nautilus(Shell, EditorInterface):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
-    def execStartupScript(self, su):
-        """Execute the user's PYTHONSTARTUP script if they have one.
-        (override) Add globals when executing su:startupScript
-                   Fix history point
-        """
-        ## self.globals = self.locals
-        self.promptPosEnd = self.TextLength # fix history point
-        if su and os.path.isfile(su):
-            self.push("print('Startup script executed:', {0!r})\n".format(su))
-            self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
-            self.push("del _f\n")
-            self.interp.startupScript = su
-        else:
-            self.push("")
-            self.interp.startupScript = None
-    
     def Execute(self, text):
         """Replace selection with text and run commands.
         (override) Check the clock time,
                    patch for `finally` miss-indentation
         """
-        self.__time = self.clock()
         command = self.regulate_cmd(text, eol=True)
         commands = []
         lf = '\n'
         cmd = ''
-        for line in command.split(lf):
+        for line in command.splitlines():
             lstr = line.lstrip()
-            if lstr and lstr == line and not any( # no-indent line or else:
-                lstr.startswith(x) for x in ('else', 'elif', 'except', 'finally')):
+            if lstr and lstr == line and not re.match(self.py_outdent_re, lstr):
                 if cmd:
                     commands.append(cmd) # Add the previous command to the list
                 cmd = line
@@ -3779,6 +3802,7 @@ class Nautilus(Shell, EditorInterface):
         commands.append(cmd)
         
         self.Replace(self.bolc, self.eolc, '')
+        self.__time = self.clock()
         for cmd in commands:
             self.write(cmd.replace(lf, os.linesep + sys.ps2))
             self.processLine()
@@ -3853,7 +3877,7 @@ class Nautilus(Shell, EditorInterface):
         for text in _gen_text():
             if text:
                 try:
-                    tokens = ut.split_words(text)
+                    tokens = list(ut.split_words(text))
                     cmd = self.magic_interpret(tokens)
                     cmd = self.regulate_cmd(cmd)
                     tip = self.eval(cmd)
@@ -3872,7 +3896,7 @@ class Nautilus(Shell, EditorInterface):
         text = self.MultilineCommand
         if text:
             try:
-                tokens = ut.split_words(text)
+                tokens = list(ut.split_words(text))
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 cmd = compile(cmd, "<string>", "exec")
@@ -3885,8 +3909,7 @@ class Nautilus(Shell, EditorInterface):
                 lines = [int(l) for f,l in err if f == "<string>"]
                 if lines:
                     if self.bolc <= self.cpos: # current-region is active?
-                        ln = self.LineFromPosition(self.bolc)
-                        self.linemark = ln + lines[-1] - 1
+                        self.linemark = self.cmdline_region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
         else:
             self.message("No region")
@@ -4160,7 +4183,7 @@ class Nautilus(Shell, EditorInterface):
     
     @staticmethod
     def get_words_hint(cmdl):
-        text = ut.get_words_backward(cmdl)
+        text = next(ut.split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
 
 

@@ -283,25 +283,15 @@ if pp:
         pp.sort_dicts = True
 
 
-def get_words_backward(text):
-    tokens = _split_tokens(text)[::-1]
-    return _extract_words_from_tokens(tokens, reverse=1)
-
-
-def get_words_forward(text):
+def split_words(text, reverse=False):
     tokens = _split_tokens(text)
-    return _extract_words_from_tokens(tokens)
-
-
-def split_words(text):
-    phrases = []
-    tokens = _split_tokens(text)
+    if reverse:
+        tokens = tokens[::-1]
     while tokens:
-        words = _extract_words_from_tokens(tokens)
+        words = _extract_words_from_tokens(tokens, reverse)
         if not words:
             words = tokens.pop(0)
-        phrases.append(words)
-    return phrases
+        yield words
 
 
 def _split_tokens(text):
