@@ -3704,21 +3704,17 @@ class Nautilus(Shell, EditorInterface):
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                command = self.regulate_cmd(text, eol=True)
-                lf = '\n'
+                text = self.fixLineEndings(text)
+                command = self.regulate_cmd(text)
                 offset = ''
                 if rectangle:
                     text, lp = self.CurLine
                     offset = ' ' * (lp - len(sys.ps2))
-                self.write(command.replace(lf, os.linesep + sys.ps2 + offset))
+                self.write(command.replace('\n', os.linesep + sys.ps2 + offset))
             wx.TheClipboard.Close()
     
-    def regulate_cmd(self, text, eol=None):
-        """Regulate text to executable command
-        eol: Replace line endings with OS-specific endings.
-        """
-        if eol:
-            text = self.fixLineEndings(text)
+    def regulate_cmd(self, text):
+        """Regulate text to executable command"""
         text = self.lstripPrompt(text) # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
