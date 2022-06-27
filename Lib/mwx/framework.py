@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.1"
+__version__ = "0.63.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -3298,10 +3298,8 @@ class Nautilus(Shell, EditorInterface):
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
-        if '\n' in text:
-            self.Execute(text) # for multi-line commands
-        else:
-            evt.Skip() # => processLine
+        self.exec_cmdline()
+        ## evt.Skip() # => processLine
     
     def OnEnterDot(self, evt):
         """Called when dot(.) pressed"""
@@ -3706,21 +3704,17 @@ class Nautilus(Shell, EditorInterface):
             if wx.TheClipboard.GetData(data):
                 self.ReplaceSelection('')
                 text = data.GetText()
-                command = self.regulate_cmd(text, eol=True)
-                lf = '\n'
+                text = self.fixLineEndings(text)
+                command = self.regulate_cmd(text)
                 offset = ''
                 if rectangle:
                     text, lp = self.CurLine
                     offset = ' ' * (lp - len(sys.ps2))
-                self.write(command.replace(lf, os.linesep + sys.ps2 + offset))
+                self.write(command.replace('\n', os.linesep + sys.ps2 + offset))
             wx.TheClipboard.Close()
     
-    def regulate_cmd(self, text, eol=None):
-        """Regulate text to executable command
-        eol: Replace line endings with OS-specific endings.
-        """
-        if eol:
-            text = self.fixLineEndings(text)
+    def regulate_cmd(self, text):
+        """Regulate text to executable command"""
         text = self.lstripPrompt(text) # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
@@ -3782,12 +3776,49 @@ class Nautilus(Shell, EditorInterface):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
+    def exec_cmdline(self):
+        """Execute command-line directly"""
+        commands = []
+        cmd = ''
+        line = ''
+        for atom in self.cmdline_atoms():
+            line += atom
+            if atom[0] not in '\r\n':
+                continue
+            ln = self.lstripPrompt(line)
+            lstr = ln.lstrip()
+            if lstr and lstr == ln and not re.match(self.py_outdent_re, lstr):
+                if cmd:
+                    commands.append(cmd) # Add stacked commands to the list
+                cmd = ln
+            else:
+                cmd += line # multi-line command
+            line = ''
+        commands.append(cmd + line)
+        if len(commands) > 1:
+            suffix = sys.ps2
+            for j, cmd in enumerate(commands):
+                if re.match(self.py_indent_re, cmd): # code-block ...
+                    if not cmd.endswith(suffix):
+                        cmd = cmd + suffix
+                else:
+                    if cmd.endswith(suffix):
+                        cmd = cmd[:-len(suffix)]
+                    cmd = cmd.rstrip('\r\n')
+                commands[j] = cmd
+        
+        self.Replace(self.bolc, self.eolc, '')
+        self.__time = self.clock()
+        for cmd in commands:
+            self.write(cmd)
+            self.processLine()
+
     def Execute(self, text):
         """Replace selection with text and run commands.
         (override) Check the clock time,
                    patch for `finally` miss-indentation
         """
-        command = self.regulate_cmd(text, eol=True)
+        command = self.regulate_cmd(text)
         commands = []
         lf = '\n'
         cmd = ''
