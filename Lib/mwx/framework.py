@@ -2662,7 +2662,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
-            self.post_message("Loaded {!r} successfully.".format(filename))
+            self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -2678,7 +2678,7 @@ class Editor(EditWindow, EditorInterface):
         if self.SaveFile(f):
             self.target = f
             self.filename = f
-            self.post_message("Saved {!r} successfully.".format(filename))
+            self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
