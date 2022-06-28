@@ -243,13 +243,16 @@ class Debugger(Pdb):
             self.editor = self.parent.Scratch
         else:
             self.editor = self.parent.Log
-            if not self.code or self.code.co_filename != filename:
-                self.editor.load_cache(filename)
-        
+        t = True
         if self.code != code:
-            self.editor.markline = firstlineno - 1
-        self.editor.linemark = lineno - 1 # (->) pointer:marker
-        self.editor.goto_line_marker()
+            t = self.editor.load_cache(filename) # t:success
+            if t:
+                for ln in self.get_file_breaks(filename):
+                    self.add_marker(ln, 1)
+                self.editor.markline = firstlineno - 1
+        if t:
+            self.editor.linemark = lineno - 1 # (->) pointer:marker
+            self.editor.goto_line_marker()
         self.code = code
         self.target = filename
     
@@ -294,6 +297,7 @@ class Debugger(Pdb):
         """Called when a breakppoint is reached"""
         self.__indents = 2
         self.__breakpoint = None
+        self.shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
     
     ## --------------------------------
@@ -327,10 +331,11 @@ class Debugger(Pdb):
             if target == filename:
                 code = frame.f_code
                 if filename == self.parent.Scratch.target:
-                    ## TODO: line-hook (cannot get src from code)
-                    ## Currently, only call-hook mode is available.
-                    lcnt = 1
+                    ## trace-hook in scratch code
+                    lc, le = self.parent.Scratch.get_region(lineno-1)
+                    lcnt = le - lc
                 else:
+                    ## trace-hook in source file
                     src, lineno = inspect.getsourcelines(code)
                     lcnt = len(src)
                 if line == lineno:
