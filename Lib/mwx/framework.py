@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.3"
+__version__ = "0.63.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1942,8 +1942,7 @@ class EditorInterface(CtrlInterface):
                 break
             lc = la
         self.ToggleFold(lc)
-        self.goto_line(lc)
-        self.EnsureCaretVisible()
+        self.EnsureLineVisible(lc)
     
     def get_region(self, line):
         """Line numbers of folding head and tail"""
@@ -2090,10 +2089,25 @@ class EditorInterface(CtrlInterface):
         """
         n = self.LinesOnScreen() # lines completely visible
         m = n//2 if ln is None else ln % n if ln < n else n
-        w, h = self.PointFromPosition(self.cpos)
-        L = h // self.TextHeight(0)
-        ## self.ScrollLines(L - m) # a little delay?
-        self.ScrollToLine(self.FirstVisibleLine + L - m)
+        v = self.calc_vline(self.cpos)
+        self.ScrollToLine(v - m)
+    
+    def calc_vline(self, pos):
+        """Virtual line numberin the buffer window."""
+        w, h = self.PointFromPosition(pos)
+        return self.FirstVisibleLine + h//self.TextHeight(0)
+    
+    def EnsureLineVisible(self, line):
+        """Ensure a particular line is visible by scrolling the buffer
+        without expanding any header line hiding it.
+        """
+        n = self.LinesOnScreen() # lines completely visible
+        v = self.calc_vline(self.PositionFromLine(line))
+        lv = self.FirstVisibleLine
+        if v < lv:
+            self.ScrollToLine(v)
+        elif v > lv + n:
+            self.ScrollToLine(v - n)
     
     ## --------------------------------
     ## Attributes of the editor
