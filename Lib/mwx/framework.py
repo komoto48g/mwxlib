@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.2"
+__version__ = "0.63.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -992,13 +992,6 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         self.Scratch.target)
         
-        ## @self.Scratch.define_key('M-i')
-        ## def exec_region(v):
-        ##     self.Scratch.py_exec_region(self.current_shell.globals,
-        ##                                 self.current_shell.locals,
-        ##                                 self.Scratch.target,
-        ##                                 self.Scratch.region)
-        
         self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
         self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
         
@@ -1873,7 +1866,6 @@ class EditorInterface(CtrlInterface):
                 p, q = (self.PositionFromLine(x) for x in region)
                 text = self.GetTextRange(p, q)
                 ln = region[0]
-                self.markline = ln
             else:
                 text = self.Text
                 ln = 0
@@ -1954,10 +1946,9 @@ class EditorInterface(CtrlInterface):
         self.goto_line(lc)
         self.EnsureCaretVisible()
     
-    @property
-    def region(self):
-        """Positions of folding head and tail"""
-        lc = self.cline
+    def get_region(self, line):
+        """Line numbers of folding head and tail"""
+        lc = line
         le = lc + 1
         while 1:
             la = self.GetFoldParent(lc) # get folding root
@@ -2158,8 +2149,7 @@ class EditorInterface(CtrlInterface):
             start, end = end, start
         return self.GetTextRange(max(start, 0),
                                  min(end, self.TextLength))
-
-
+    
     anchor = property(
         lambda self: self.GetAnchor(),
         lambda self,v: self.SetAnchor(v))
@@ -3612,15 +3602,15 @@ class Nautilus(Shell, EditorInterface):
     @property
     def MultilineCommand(self):
         """Extract a multi-line command from the editor."""
-        p, q = (self.PositionFromLine(x) for x in self.region)
+        region = self.get_region(self.cline)
+        p, q = (self.PositionFromLine(x) for x in region)
         if p < q:
             p += len(sys.ps1)
         return self.GetTextRange(p, q)
     
-    @property
-    def region(self):
-        """Positions of prompt head and tail (override)"""
-        lc = self.cline
+    def get_region(self, line):
+        """Line numbers of prompt head and tail (override)"""
+        lc = line
         le = lc + 1
         while lc > 0:
             text = self.GetLine(lc)
