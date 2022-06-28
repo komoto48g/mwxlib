@@ -808,8 +808,8 @@ class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break target
     
     Args:
-         target : Inspection target (any wx.Object)
-                  If the target is None, it will be __main__.
+         target : Nautilus target object
+                  If None, it will be __main__.
     
     Attributes:
       rootshell : Nautilus root shell
@@ -829,9 +829,6 @@ class ShellFrame(MiniFrame):
                  style=wx.DEFAULT_FRAME_STYLE, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
-        if target is None:
-            target = parent or __import__("__main__")
-        
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
@@ -840,7 +837,8 @@ class ShellFrame(MiniFrame):
         self.Help = Editor(self, name="Help")
         self.History = Editor(self, name="History")
         
-        self.__shell = Nautilus(self, target,
+        self.__shell = Nautilus(self,
+            target=target or parent or __import__("__main__"),
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
         
         try:
@@ -979,8 +977,6 @@ class ShellFrame(MiniFrame):
         self.Scratch.set_style(Nautilus.STYLE)
         self.Scratch.show_folder()
         
-        self.Scratch.target = "<scratch>" # target name to debugger.watch
-        
         @self.Scratch.define_key('C-j')
         def eval_line(v):
             self.Scratch.py_eval_line(self.current_shell.globals,
@@ -990,7 +986,8 @@ class ShellFrame(MiniFrame):
         def exec_buffer(v):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
-                                        self.Scratch.target)
+                                        "<scratch>")
+        self.Scratch.codename = "<scratch>"
         
         self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
         self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
@@ -1031,7 +1028,7 @@ class ShellFrame(MiniFrame):
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
-                    "self.Log.load_file({!r}, {})".format(self.Log.target,
+                    "self.Log.load_file({!r}, {})".format(self.Log.filename,
                                                           self.Log.markline+1),
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
@@ -1871,6 +1868,8 @@ class EditorInterface(CtrlInterface):
                 ln = 0
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
+            self.codename = filename
+            self.code = code
             self.message("Evaluated {!r} successfully".format(filename))
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
@@ -2513,11 +2512,7 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def target(self):
-        return self.__codename
-    
-    @target.setter
-    def target(self, f):
-        self.__codename = f
+        return self.filename or self.codename
     
     @property
     def filename(self):
@@ -2534,7 +2529,7 @@ class Editor(EditWindow, EditorInterface):
     @property
     def mtdelta(self):
         if self.__mtime:
-            return os.path.getmtime(self.target) - self.__mtime
+            return os.path.getmtime(self.filename) - self.__mtime
     
     def __init__(self, parent, name="", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
@@ -2543,9 +2538,10 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.__name = name      # buffer-name
-        self.__codename = None  # target-code-name
         self.__filename = None  # buffer-file-name
         self.__mtime = None     # timestamp
+        self.codename = None
+        self.code = None
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## Don't allow DnD of text, file, whatever.
@@ -2570,9 +2566,9 @@ class Editor(EditWindow, EditorInterface):
             v.Skip()
         
         def activate(v):
-            title = "{} file: {}".format(self.name, self.target)
             if self.mtdelta:
-                self.message("{} has been modified externally.".format(title))
+                self.message("{!r} has been modified externally.".format(self.filename))
+            title = "{} file: {}".format(self.name, self.target)
             self.parent.handler('title_window', title)
             self.trace_position()
             v.Skip()
@@ -2617,7 +2613,6 @@ class Editor(EditWindow, EditorInterface):
             self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.target = filename
             self.filename = filename
             return True
         return False
@@ -2641,7 +2636,6 @@ class Editor(EditWindow, EditorInterface):
             p = -1
             lm = -1
         if self.LoadFile(f):
-            self.target = f
             self.filename = f
             if lineno:
                 self.markline = lineno - 1
@@ -2666,7 +2660,6 @@ class Editor(EditWindow, EditorInterface):
             return
         f = os.path.abspath(filename)
         if self.SaveFile(f):
-            self.target = f
             self.filename = f
             self.message("Saved {!r} successfully.".format(filename))
             return True
