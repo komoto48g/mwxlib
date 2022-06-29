@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.5"
+__version__ = "0.63.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -29,6 +29,7 @@ import pydoc
 import inspect
 import builtins
 import linecache
+import dis
 from pprint import pformat
 from importlib import reload, import_module
 try:
@@ -1896,9 +1897,10 @@ class EditorInterface(CtrlInterface):
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
         Note: Requires a code object compiled using py_exec_region.
+              If the code doesn't exists, it returns the folding region.
         """
         if not self.code:
-            return None
+            return self.get_region(line)
         lc, le = 0, self.LineCount
         linestarts = list((x[1]-1 for x in dis.findlinestarts(self.code)))
         for ln in reversed(linestarts):
@@ -2512,10 +2514,10 @@ class Editor(EditWindow, EditorInterface):
     Attributes:
            name : buffer-name (e.g. '*scratch*')
        filename : buffer-file-name (full-path)
-        mtdelta : timestamp diff (for checking external mod)
-           code : code object (compiled using py_exec_region)
        codename : code-file-name (e.g. '<scratch>')
+           code : code object compiled using py_exec_region
          target : filename or codename (referred by debugger)
+        mtdelta : timestamp delta (for checking external mod)
     """
     STYLE = { #<Editor>
         stc.STC_STYLE_DEFAULT     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
@@ -2714,6 +2716,8 @@ class Editor(EditWindow, EditorInterface):
                 self.Text = i.read()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
+            self.codename = None
+            self.code = None
             return True
         except Exception:
             return False
@@ -3835,7 +3839,7 @@ class Nautilus(Shell, EditorInterface):
         for cmd in commands:
             self.write(cmd)
             self.processLine()
-
+    
     def Execute(self, text):
         """Replace selection with text and run commands.
         (override) Check the clock time,
