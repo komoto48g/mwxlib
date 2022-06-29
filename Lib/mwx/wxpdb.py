@@ -302,13 +302,13 @@ class Debugger(Pdb):
     def on_quit(self):
         ## Called when the debugger is invalid status:
         ## e.g., (self.handler.current_state > 0 and not self.busy)
-        def _quit():
+        def _abort():
             self.reset()
             sys.settrace(None)
             threading.settrace(None)
-            self.shell.clearCommand() # erase invalid output
+            self.shell.clearCommand() # clear invalid output
             self.shell.prompt()
-        wx.CallAfter(_quit)
+        wx.CallAfter(_abort)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -358,6 +358,16 @@ class Debugger(Pdb):
             else:
                 return None
         return Pdb.dispatch_call(self, frame, arg)
+    
+    def dispatch_return(self, frame, arg):
+        if self.__breakpoint:
+            return None
+        return Pdb.dispatch_return(self, frame, arg)
+    
+    def dispatch_exception(self, frame, arg):
+        if self.__breakpoint:
+            return None
+        return Pdb.dispatch_exception(self, frame, arg)
     
     def set_trace(self, frame=None):
         if self.busy:
