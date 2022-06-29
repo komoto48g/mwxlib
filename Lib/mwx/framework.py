@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.4"
+__version__ = "0.63.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1382,6 +1382,10 @@ class ShellFrame(MiniFrame):
         yield from self.console.all_pages(type)
         yield from self.ghost.all_pages(type)
     
+    def find_editor(self, filename):
+        return next((ed for ed in self.ghost.all_pages(EditorInterface)
+                        if ed.target == filename), None)
+    
     @property
     def current_editor(self):
         """Currently focused editor or shell"""
@@ -1681,6 +1685,7 @@ class EditorInterface(CtrlInterface):
     
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
+    stc.STC_STYLE_CARETLINE = 40
     
     def _Marker(name, n):
         """Factory of markers property
@@ -1888,6 +1893,21 @@ class EditorInterface(CtrlInterface):
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
     
+    def py_get_region(self, line):
+        """Line numbers of code head and tail containing the line.
+        Note: Requires a code object compiled using py_exec_region.
+        """
+        if not self.code:
+            return None
+        lc, le = 0, self.LineCount
+        linestarts = list((x[1]-1 for x in dis.findlinestarts(self.code)))
+        for ln in reversed(linestarts):
+            if ln <= line:
+                lc = ln
+                break
+            le = ln
+        return lc, le
+    
     ## --------------------------------
     ## Fold / Unfold functions
     ## --------------------------------
@@ -1948,7 +1968,7 @@ class EditorInterface(CtrlInterface):
         self.EnsureLineVisible(lc)
     
     def get_region(self, line):
-        """Line numbers of folding head and tail"""
+        """Line numbers of folding head and tail containing the line."""
         lc = line
         le = lc + 1
         while 1:
@@ -2008,12 +2028,12 @@ class EditorInterface(CtrlInterface):
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(','))
         
-        if "STC_STYLE_DEFAULT" in spec:
-            self.StyleSetSpec(stc.STC_STYLE_DEFAULT, spec.pop("STC_STYLE_DEFAULT"))
+        if stc.STC_STYLE_DEFAULT in spec:
+            self.StyleSetSpec(stc.STC_STYLE_DEFAULT, spec.pop(stc.STC_STYLE_DEFAULT))
             self.StyleClearAll()
         
-        if "STC_STYLE_LINENUMBER" in spec:
-            lsc = _map(spec.get("STC_STYLE_LINENUMBER"))
+        if stc.STC_STYLE_LINENUMBER in spec:
+            lsc = _map(spec.get(stc.STC_STYLE_LINENUMBER))
             
             ## Set colors used as a chequeboard pattern,
             ## lo (back) one of the colors
@@ -2028,8 +2048,8 @@ class EditorInterface(CtrlInterface):
                 self.SetFoldMarginHiColour(True, lsc.get('fore'))
         
         ## Custom style for caret and line colour
-        if "STC_STYLE_CARETLINE" in spec:
-            lsc = _map(spec.pop("STC_STYLE_CARETLINE"))
+        if stc.STC_STYLE_CARETLINE in spec:
+            lsc = _map(spec.pop(stc.STC_STYLE_CARETLINE))
             
             self.SetCaretLineVisible(0)
             if 'fore' in lsc:
@@ -2044,14 +2064,14 @@ class EditorInterface(CtrlInterface):
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
         ## Custom indicator for search-word
-        if "STC_P_WORD3" in spec:
-            lsc = _map(spec.get("STC_P_WORD3"))
+        if stc.STC_P_WORD3 in spec:
+            lsc = _map(spec.pop(stc.STC_P_WORD3))
             
             self.IndicatorSetForeground(0, lsc.get('fore') or "red")
             self.IndicatorSetForeground(1, lsc.get('back') or "red")
         
         for key, value in spec.items():
-            self.StyleSetSpec(getattr(stc, key), value)
+            self.StyleSetSpec(key, value)
     
     def match_paren(self):
         p = self.cpos
@@ -2498,29 +2518,29 @@ class Editor(EditWindow, EditorInterface):
          target : filename or codename (referred by debugger)
     """
     STYLE = { #<Editor>
-        "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
-        "STC_STYLE_CARETLINE"   : "fore:#000000,back:#ffff7f,size:2",
-        "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#ffffb8,size:9",
-        "STC_STYLE_BRACELIGHT"  : "fore:#000000,back:#ffffb8,bold",
-        "STC_STYLE_BRACEBAD"    : "fore:#000000,back:#ff0000,bold",
-        "STC_STYLE_CONTROLCHAR" : "size:6",
-        "STC_P_DEFAULT"         : "fore:#000000,back:#ffffb8",
-        "STC_P_IDENTIFIER"      : "fore:#000000",
-        "STC_P_COMMENTLINE"     : "fore:#007f7f,back:#ffcfcf",
-        "STC_P_COMMENTBLOCK"    : "fore:#007f7f,back:#ffcfcf,eol",
-        "STC_P_CHARACTER"       : "fore:#7f7f7f",
-        "STC_P_STRING"          : "fore:#7f7f7f",
-        "STC_P_TRIPLE"          : "fore:#7f7f7f,eol",
-        "STC_P_TRIPLEDOUBLE"    : "fore:#7f7f7f,eol",
-        "STC_P_STRINGEOL"       : "fore:#7f7f7f",
-        "STC_P_WORD"            : "fore:#0000ff",
-        "STC_P_WORD2"           : "fore:#b8007f",
-        "STC_P_WORD3"           : "fore:#ff0000,back:#ffff00", # optional for search word
-        "STC_P_DEFNAME"         : "fore:#0000ff,bold",
-        "STC_P_CLASSNAME"       : "fore:#0000ff,bold",
-        "STC_P_DECORATOR"       : "fore:#e08040",
-        "STC_P_OPERATOR"        : "",
-        "STC_P_NUMBER"          : "fore:#7f0000",
+        stc.STC_STYLE_DEFAULT     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
+        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2",
+        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
+        stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
+        stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
+        stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_P_DEFAULT         : "fore:#000000,back:#ffffb8",
+        stc.STC_P_IDENTIFIER      : "fore:#000000",
+        stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
+        stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
+        stc.STC_P_CHARACTER       : "fore:#7f7f7f",
+        stc.STC_P_STRING          : "fore:#7f7f7f",
+        stc.STC_P_TRIPLE          : "fore:#7f7f7f,eol",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f,eol",
+        stc.STC_P_STRINGEOL       : "fore:#7f7f7f",
+        stc.STC_P_WORD            : "fore:#0000ff",
+        stc.STC_P_WORD2           : "fore:#b8007f",
+        stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
+        stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
+        stc.STC_P_CLASSNAME       : "fore:#0000ff,bold",
+        stc.STC_P_DECORATOR       : "fore:#e08040",
+        stc.STC_P_OPERATOR        : "",
+        stc.STC_P_NUMBER          : "fore:#7f0000",
     }
     
     parent = property(lambda self: self.__parent)
@@ -2835,29 +2855,29 @@ class Nautilus(Shell, EditorInterface):
         and the other half by K. O'moto.
     """
     STYLE = { #<Shell>
-        "STC_STYLE_DEFAULT"     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
-        "STC_STYLE_CARETLINE"   : "fore:#ffffff,back:#123460,size:2",
-        "STC_STYLE_LINENUMBER"  : "fore:#000000,back:#f0f0f0,size:9",
-        "STC_STYLE_BRACELIGHT"  : "fore:#ffffff,back:#202020,bold",
-        "STC_STYLE_BRACEBAD"    : "fore:#ffffff,back:#ff0000,bold",
-        "STC_STYLE_CONTROLCHAR" : "size:6",
-        "STC_P_DEFAULT"         : "fore:#cccccc,back:#202020",
-        "STC_P_IDENTIFIER"      : "fore:#cccccc",
-        "STC_P_COMMENTLINE"     : "fore:#42c18c,back:#004040",
-        "STC_P_COMMENTBLOCK"    : "fore:#42c18c,back:#004040,eol",
-        "STC_P_CHARACTER"       : "fore:#a0a0a0",
-        "STC_P_STRING"          : "fore:#a0a0a0",
-        "STC_P_TRIPLE"          : "fore:#a0a0a0,back:#004040,eol",
-        "STC_P_TRIPLEDOUBLE"    : "fore:#a0a0a0,back:#004040,eol",
-        "STC_P_STRINGEOL"       : "fore:#7f7f7f",
-        "STC_P_WORD"            : "fore:#80a0ff",
-        "STC_P_WORD2"           : "fore:#ff80ff",
-        "STC_P_WORD3"           : "fore:#ff0000,back:#ffff00", # optional for search word
-        "STC_P_DEFNAME"         : "fore:#f0f080,bold",
-        "STC_P_CLASSNAME"       : "fore:#f0f080,bold",
-        "STC_P_DECORATOR"       : "fore:#e08040",
-        "STC_P_OPERATOR"        : "",
-        "STC_P_NUMBER"          : "fore:#ffc080",
+        stc.STC_STYLE_DEFAULT     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
+        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2",
+        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
+        stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
+        stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
+        stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_P_DEFAULT         : "fore:#cccccc,back:#202020",
+        stc.STC_P_IDENTIFIER      : "fore:#cccccc",
+        stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
+        stc.STC_P_COMMENTBLOCK    : "fore:#42c18c,back:#004040,eol",
+        stc.STC_P_CHARACTER       : "fore:#a0a0a0",
+        stc.STC_P_STRING          : "fore:#a0a0a0",
+        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040,eol",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040,eol",
+        stc.STC_P_STRINGEOL       : "fore:#7f7f7f",
+        stc.STC_P_WORD            : "fore:#80a0ff",
+        stc.STC_P_WORD2           : "fore:#ff80ff",
+        stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
+        stc.STC_P_DEFNAME         : "fore:#f0f080,bold",
+        stc.STC_P_CLASSNAME       : "fore:#f0f080,bold",
+        stc.STC_P_DECORATOR       : "fore:#e08040",
+        stc.STC_P_OPERATOR        : "",
+        stc.STC_P_NUMBER          : "fore:#ffc080",
     }
     
     parent = property(lambda self: self.__parent)
@@ -3621,7 +3641,8 @@ class Nautilus(Shell, EditorInterface):
         return self.GetTextRange(p, q)
     
     def get_region(self, line):
-        """Line numbers of prompt head and tail (override)"""
+        """Line numbers of prompt head and tail containing the line.
+        (override)"""
         lc = line
         le = lc + 1
         while lc > 0:
@@ -3872,6 +3893,15 @@ class Nautilus(Shell, EditorInterface):
     ## --------------------------------
     ## Auto-comp actions of the shell
     ## --------------------------------
+    
+    def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
+        """Display argument spec and docstring in a popup window.
+        (override) Swap anchors to not scroll to the end of the line,
+                   and display a long hint at the insertion position.
+        """
+        Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
+        self.cpos, self.anchor = self.anchor, self.cpos
+        self.EnsureCaretVisible()
     
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
