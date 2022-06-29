@@ -43,6 +43,7 @@ class Debugger(Pdb):
            busy : The flag of being running now
         verbose : Verbose messages are output from Pdb
          editor : Editor to show the stack frame
+          shell : Shell for debug
     
     Key bindings:
             C-g : quit
@@ -93,7 +94,6 @@ class Debugger(Pdb):
         Pdb.__init__(self, *args, **kwargs)
         
         self.__shellframe = parent
-        self.__interactive = None
         self.__breakpoint = None
         self.__indents = 0
         self.shell = parent.rootshell
@@ -120,6 +120,7 @@ class Debugger(Pdb):
                   'trace_begin' : (2, dispatch),
             },
             1 : {
+                         'quit' : (0, self.on_quit), # [C-g] unwatch
                     'debug_end' : (0, self.on_debug_end, dispatch),
                    'debug_mark' : (1, self.on_debug_mark, dispatch),
                    'debug_next' : (1, self.on_debug_next, dispatch),
@@ -128,7 +129,7 @@ class Debugger(Pdb):
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
                   'C-s pressed' : (1, lambda v: self.send_input('s')),
                   'C-r pressed' : (1, lambda v: self.send_input('r')),
-                  'C-@ pressed' : (1, self.jump_to_entry),
+                  'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -137,7 +138,7 @@ class Debugger(Pdb):
             },
         })
     
-    def jump_to_entry(self, evt):
+    def jump_to_entry(self):
         """Jump to the first lineno of the code"""
         self.send_input('j {}'.format(self.editor.markline+1))
     
@@ -177,12 +178,14 @@ class Debugger(Pdb):
         """End tracing"""
         if not self.busy: # don't unset while debugging
             bp = self.__breakpoint
-            if not bp:
-                return
+            if bp:
+                self.reset()
+                sys.settrace(None)
+                threading.settrace(None)
+                self.handler('trace_end', bp)
+            ## delete bp *after* setting dispatcher -> None
             self.__breakpoint = None
-            sys.settrace(None)
-            threading.settrace(None)
-            self.handler('trace_end', bp)
+            self.handler('quit')
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
@@ -243,14 +246,13 @@ class Debugger(Pdb):
             self.editor = self.parent.Scratch
         else:
             self.editor = self.parent.Log
-        t = True
+        
         if self.code != code:
-            t = self.editor.load_cache(filename) # t:success
-            if t:
-                for ln in self.get_file_breaks(filename):
-                    self.add_marker(ln, 1)
+            self.editor.load_cache(filename)
             self.editor.markline = firstlineno - 1 # (o) entry:marker
-        if t:
+            for ln in self.get_file_breaks(filename):
+                self.add_marker(ln, 1)
+        if filename == self.editor.target:
             self.editor.linemark = lineno - 1 # (->) pointer:marker
             self.editor.goto_line_marker()
         self.code = code
@@ -279,7 +281,7 @@ class Debugger(Pdb):
         self.__indents = 0
         self.__interactive = None
         if self.editor:
-            self.editor.linemark = -1
+            del self.editor.linemark
         self.editor = None
         self.target = None
         self.code = None
@@ -287,7 +289,7 @@ class Debugger(Pdb):
         thread = threading.current_thread()
         if thread is not main:
             ## terminates the reader (main-thread)
-            wx.CallAfter(self.send_input, '\n')
+            self.send_input('\n')
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
@@ -299,6 +301,17 @@ class Debugger(Pdb):
         self.__breakpoint = None
         self.shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
+    
+    def on_quit(self):
+        ## Called when the debugger is invalid status:
+        ## e.g., (self.handler.current_state > 0 and not self.busy)
+        def _quit():
+            self.reset()
+            sys.settrace(None)
+            threading.settrace(None)
+            self.shell.clearCommand() # erase invalid output
+            self.shell.prompt()
+        wx.CallAfter(_quit)
     
     ## --------------------------------
     ## Override Bdb methods
@@ -338,10 +351,7 @@ class Debugger(Pdb):
                     ## trace-hook in source file
                     src, lineno = inspect.getsourcelines(code)
                     lcnt = len(src)
-                if line == lineno:
-                    self.handler('trace_hook', frame)
-                    self.handler('debug_begin', frame)
-                elif 0 < line - lineno < lcnt:
+                if 0 <= line - lineno < lcnt:
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
                 else:

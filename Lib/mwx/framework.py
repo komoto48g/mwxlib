@@ -1237,6 +1237,7 @@ class ShellFrame(MiniFrame):
                         sender=self, command=None, more=False)
         command = shell.cmdline
         self.add_history(command, prefix=' '*4, suffix=None) # command ends with linesep
+        self.message("Debugger is busy now (Press C-g to quit).")
         
         ## Logging debug history every step in case of crash.
         with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
@@ -1261,6 +1262,8 @@ class ShellFrame(MiniFrame):
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
+        if self.debugger.busy:
+            return
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
@@ -1701,9 +1704,9 @@ class EditorInterface(CtrlInterface):
         
         return property(fget, fset, fdel)
     
-    white_arrow = _Marker("white-arrow", 1)
-    red_arrow = _Marker("red-arrow", 2)
-    linemark = _Marker("line", 3)
+    white_arrow = _Marker("white-arrow", 1) # white-arrow_set/white-arrow_unset
+    red_arrow = _Marker("red-arrow", 2) # red-arrow_set/red-arrow_unset
+    linemark = _Marker("line", 3) # line_set/line_unset
     
     @property
     def markline(self):
@@ -1717,7 +1720,7 @@ class EditorInterface(CtrlInterface):
     def markline(self):
         del self.mark
     
-    ## markline = _Marker("mark", 3)
+    ## markline = _Marker("mark", 3) # mark_set/mark_unset
     
     @property
     def mark(self):
@@ -2488,8 +2491,11 @@ class Editor(EditWindow, EditorInterface):
 
     Attributes:
            name : buffer-name (e.g. '*scratch*')
-         target : target-code-name (e.g. '<scratch>' for debug)
        filename : buffer-file-name (full-path)
+        mtdelta : timestamp diff (for checking external mod)
+           code : code object (compiled using py_exec_region)
+       codename : code-file-name (e.g. '<scratch>')
+         target : filename or codename (referred by debugger)
     """
     STYLE = { #<Editor>
         "STC_STYLE_DEFAULT"     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
