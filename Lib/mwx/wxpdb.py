@@ -43,6 +43,7 @@ class Debugger(Pdb):
            busy : The flag of being running now
         verbose : Verbose messages are output from Pdb
          editor : Editor to show the stack frame
+          shell : Shell for debug
     
     Key bindings:
             C-g : quit
@@ -120,6 +121,7 @@ class Debugger(Pdb):
                   'trace_begin' : (2, dispatch),
             },
             1 : {
+                         'quit' : (0, self.on_quit), # [C-g] unwatch
                     'debug_end' : (0, self.on_debug_end, dispatch),
                    'debug_mark' : (1, self.on_debug_mark, dispatch),
                    'debug_next' : (1, self.on_debug_next, dispatch),
@@ -128,7 +130,7 @@ class Debugger(Pdb):
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
                   'C-s pressed' : (1, lambda v: self.send_input('s')),
                   'C-r pressed' : (1, lambda v: self.send_input('r')),
-                  'C-@ pressed' : (1, self.jump_to_entry),
+                  'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -137,7 +139,7 @@ class Debugger(Pdb):
             },
         })
     
-    def jump_to_entry(self, evt):
+    def jump_to_entry(self):
         """Jump to the first lineno of the code"""
         self.send_input('j {}'.format(self.editor.markline+1))
     
@@ -177,12 +179,13 @@ class Debugger(Pdb):
         """End tracing"""
         if not self.busy: # don't unset while debugging
             bp = self.__breakpoint
-            if not bp:
-                return
-            self.__breakpoint = None
-            sys.settrace(None)
-            threading.settrace(None)
-            self.handler('trace_end', bp)
+            if bp:
+                self.__breakpoint = None
+                self.reset()
+                sys.settrace(None)
+                threading.settrace(None)
+                self.handler('trace_end', bp)
+            self.handler('quit')
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
@@ -300,6 +303,17 @@ class Debugger(Pdb):
         self.shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
     
+    def on_quit(self):
+        ## Called when the debugger is invalid status:
+        ## e.g., (self.handler.current_state > 0 and not self.busy)
+        def _quit():
+            self.reset()
+            sys.settrace(None)
+            threading.settrace(None)
+            self.shell.clearCommand() # erase invalid output
+            self.shell.prompt()
+        wx.CallAfter(_quit)
+    
     ## --------------------------------
     ## Override Bdb methods
     ## --------------------------------
@@ -338,10 +352,7 @@ class Debugger(Pdb):
                     ## trace-hook in source file
                     src, lineno = inspect.getsourcelines(code)
                     lcnt = len(src)
-                if line == lineno:
-                    self.handler('trace_hook', frame)
-                    self.handler('debug_begin', frame)
-                elif 0 < line - lineno < lcnt:
+                if 0 <= line - lineno < lcnt:
                     ## continue to dispatch_line (in the code)
                     return self.trace_dispatch
                 else:
