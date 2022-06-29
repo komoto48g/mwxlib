@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.4"
+__version__ = "0.63.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -3872,6 +3872,15 @@ class Nautilus(Shell, EditorInterface):
     ## --------------------------------
     ## Auto-comp actions of the shell
     ## --------------------------------
+    
+    def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
+        """Display argument spec and docstring in a popup window.
+        (override) Swap anchors to not scroll to the end of the line,
+                   and display a long hint at the insertion position.
+        """
+        Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
+        self.cpos, self.anchor = self.anchor, self.cpos
+        self.EnsureCaretVisible()
     
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
