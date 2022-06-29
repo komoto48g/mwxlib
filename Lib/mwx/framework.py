@@ -1382,6 +1382,10 @@ class ShellFrame(MiniFrame):
         yield from self.console.all_pages(type)
         yield from self.ghost.all_pages(type)
     
+    def find_editor(self, filename):
+        return next((ed for ed in self.ghost.all_pages(EditorInterface)
+                        if ed.target == filename), None)
+    
     @property
     def current_editor(self):
         """Currently focused editor or shell"""
@@ -1888,6 +1892,21 @@ class EditorInterface(CtrlInterface):
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
     
+    def py_get_region(self, line):
+        """Line numbers of code head and tail containing the line.
+        Note: Requires a code object compiled using py_exec_region.
+        """
+        if not self.code:
+            return None
+        lc, le = 0, self.LineCount
+        linestarts = list((x[1]-1 for x in dis.findlinestarts(self.code)))
+        for ln in reversed(linestarts):
+            if ln <= line:
+                lc = ln
+                break
+            le = ln
+        return lc, le
+    
     ## --------------------------------
     ## Fold / Unfold functions
     ## --------------------------------
@@ -1948,7 +1967,7 @@ class EditorInterface(CtrlInterface):
         self.EnsureLineVisible(lc)
     
     def get_region(self, line):
-        """Line numbers of folding head and tail"""
+        """Line numbers of folding head and tail containing the line."""
         lc = line
         le = lc + 1
         while 1:
@@ -3622,7 +3641,8 @@ class Nautilus(Shell, EditorInterface):
         return self.GetTextRange(p, q)
     
     def get_region(self, line):
-        """Line numbers of prompt head and tail (override)"""
+        """Line numbers of prompt head and tail containing the line.
+        (override)"""
         lc = line
         le = lc + 1
         while lc > 0:
