@@ -923,6 +923,13 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
+        def skip(v):
+            if self.debugger.handler.current_state\
+              and not self.debugger.busy:
+                self.message("- The current status of debugger is not valid. "
+                             "- Press C-g to quit.")
+            v.Skip()
+        
         def fork(v):
             """Fork key events to the debugger"""
             self.debugger.handler(self.handler.event, v)
