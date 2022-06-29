@@ -3285,8 +3285,7 @@ class Nautilus(Shell, EditorInterface):
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
-        ## tokens = list(ut.split_words(text))
-        tokens = list(self.cmdline_atoms())
+        tokens = list(ut.split_words(text))
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
