@@ -242,10 +242,7 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        if filename == self.parent.Scratch.target:
-            self.editor = self.parent.Scratch
-        else:
-            self.editor = self.parent.Log
+        self.editor = self.parent.find_editor(filename) or self.parent.Log
         
         if self.code != code:
             self.editor.load_cache(filename)
@@ -331,6 +328,8 @@ class Debugger(Pdb):
                     self.handler('debug_begin', frame)
                 else:
                     return None
+            else:
+                return None
         return Pdb.dispatch_line(self, frame)
     
     def dispatch_call(self, frame, arg):
@@ -342,17 +341,17 @@ class Debugger(Pdb):
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
-                code = frame.f_code
-                if filename == self.parent.Scratch.target:
+                editor = self.parent.find_editor(filename)
+                if editor and editor.code:
                     ## trace-hook in scratch code
-                    lc, le = self.parent.Scratch.get_region(lineno-1)
+                    lc, le = editor.get_region(lineno-1)
                     lcnt = le - lc
                 else:
                     ## trace-hook in source file
-                    src, lineno = inspect.getsourcelines(code)
+                    src, lineno = inspect.getsourcelines(frame.f_code)
                     lcnt = len(src)
                 if 0 <= line - lineno < lcnt:
-                    ## continue to dispatch_line (in the code)
+                    ## continue to dispatch_line
                     return self.trace_dispatch
                 else:
                     return None
