@@ -94,7 +94,6 @@ class Debugger(Pdb):
         Pdb.__init__(self, *args, **kwargs)
         
         self.__shellframe = parent
-        self.__interactive = None
         self.__breakpoint = None
         self.__indents = 0
         self.shell = parent.rootshell
@@ -180,11 +179,12 @@ class Debugger(Pdb):
         if not self.busy: # don't unset while debugging
             bp = self.__breakpoint
             if bp:
-                self.__breakpoint = None
                 self.reset()
                 sys.settrace(None)
                 threading.settrace(None)
                 self.handler('trace_end', bp)
+            ## delete bp *after* setting dispatcher -> None
+            self.__breakpoint = None
             self.handler('quit')
     
     def debug(self, target, *args, **kwargs):
@@ -246,14 +246,13 @@ class Debugger(Pdb):
             self.editor = self.parent.Scratch
         else:
             self.editor = self.parent.Log
-        t = True
+        
         if self.code != code:
-            t = self.editor.load_cache(filename) # t:success
-            if t:
-                for ln in self.get_file_breaks(filename):
-                    self.add_marker(ln, 1)
+            self.editor.load_cache(filename)
             self.editor.markline = firstlineno - 1 # (o) entry:marker
-        if t:
+            for ln in self.get_file_breaks(filename):
+                self.add_marker(ln, 1)
+        if filename == self.editor.target:
             self.editor.linemark = lineno - 1 # (->) pointer:marker
             self.editor.goto_line_marker()
         self.code = code
@@ -282,7 +281,7 @@ class Debugger(Pdb):
         self.__indents = 0
         self.__interactive = None
         if self.editor:
-            self.editor.linemark = -1
+            del self.editor.linemark
         self.editor = None
         self.target = None
         self.code = None
@@ -290,7 +289,7 @@ class Debugger(Pdb):
         thread = threading.current_thread()
         if thread is not main:
             ## terminates the reader (main-thread)
-            wx.CallAfter(self.send_input, '\n')
+            self.send_input('\n')
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
