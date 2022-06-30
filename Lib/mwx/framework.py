@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.6"
+__version__ = "0.63.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2268,17 +2268,16 @@ class EditorInterface(CtrlInterface):
         topic = self.SelectedText
         if topic:
             return topic
-        with self.save_excursion():
+        else:
             delims = "({[<>]}),:; \t\r\n"
-            p = q = self.cpos
-            c = self.get_char(p-1)
-            if c not in delims:
+            p = q = r = self.cpos
+            if self.get_char(p-1) not in delims:
                 self.WordLeft()
                 p = self.cpos
-            c = self.get_char(q)
-            if c not in delims:
+            if self.get_char(q) not in delims:
                 self.WordRightEnd()
                 q = self.cpos
+            self.cpos = self.anchor = r # save_excursion
             return self.GetTextRange(p, q)
     
     def get_right_paren(self, p):
@@ -2439,22 +2438,21 @@ class EditorInterface(CtrlInterface):
         self.cpos = p
         return sty
     
-    def save_excursion(self):
-        class Excursion(object):
-            def __init__(self, win):
-                self._win = win
-            
-            def __enter__(self):
-                self.pos = self._win.cpos
-                self.vpos = self._win.GetScrollPos(wx.VERTICAL)
-                self.hpos = self._win.GetScrollPos(wx.HORIZONTAL)
-            
-            def __exit__(self, t, v, tb):
-                self._win.GotoPos(self.pos)
-                self._win.ScrollToLine(self.vpos)
-                self._win.SetXOffset(self.hpos)
-            
-        return Excursion(self)
+    class Excursion:
+        def __init__(self, obj):
+            self._obj = obj
+        
+        def __enter__(self):
+            self.cpos = self._obj.cpos
+            self.apos = self._obj.anchor
+            self.vpos = self._obj.GetScrollPos(wx.VERTICAL)
+            self.hpos = self._obj.GetScrollPos(wx.HORIZONTAL)
+        
+        def __exit__(self, t, v, tb):
+            self._obj.GotoPos(self.cpos)
+            self._obj.SetAnchor(self.apos)
+            self._obj.ScrollToLine(self.vpos)
+            self._obj.SetXOffset(self.hpos)
     
     ## --------------------------------
     ## Editor/ edit, eat, kill,..
@@ -3358,8 +3356,9 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip(False)            # and do not skip to default autocomp mode
     
     def openLine(self):
-        with self.save_excursion():
-            self.insertLineBreak()
+        p = self.cpos
+        self.insertLineBreak()
+        self.cpos = self.anchor = p # save_excursion
     
     def duplicate_command(self, clear=True):
         if self.CanEdit():
@@ -3916,9 +3915,13 @@ class Nautilus(Shell, EditorInterface):
         (override) Swap anchors to not scroll to the end of the line,
                    and display a long hint at the insertion position.
         """
+        vpos = self.GetScrollPos(wx.VERTICAL)
+        hpos = self.GetScrollPos(wx.HORIZONTAL)
         Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
         self.cpos, self.anchor = self.anchor, self.cpos
-        self.EnsureCaretVisible()
+        ## self.EnsureCaretVisible()
+        self.ScrollToLine(vpos)
+        self.SetXOffset(hpos)
     
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
