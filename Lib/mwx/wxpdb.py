@@ -120,7 +120,7 @@ class Debugger(Pdb):
                   'trace_begin' : (2, dispatch),
             },
             1 : {
-                         'quit' : (0, self.on_quit), # [C-g] unwatch
+                        'abort' : (0, ), # [C-g] unwatch
                     'debug_end' : (0, self.on_debug_end, dispatch),
                    'debug_mark' : (1, self.on_debug_mark, dispatch),
                    'debug_next' : (1, self.on_debug_next, dispatch),
@@ -178,14 +178,17 @@ class Debugger(Pdb):
         """End tracing"""
         if not self.busy: # don't unset while debugging
             bp = self.__hookpoint
-            if bp:
-                self.reset()
-                sys.settrace(None)
-                threading.settrace(None)
-                self.handler('trace_end', bp)
+            self.reset()
+            sys.settrace(None)
+            threading.settrace(None)
             ## delete bp *after* setting dispatcher -> None
             self.__hookpoint = None
-            self.handler('quit')
+            if bp:
+                self.handler('trace_end', bp)
+            else:
+                ## Called to abort when the debugger is invalid status:
+                ## e.g., (self.handler.current_state > 0 and not self.busy)
+                self.handler('abort')
     
     def debug(self, target, *args, **kwargs):
         if not callable(target):
@@ -298,17 +301,6 @@ class Debugger(Pdb):
         self.__hookpoint = None
         self.shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
-    
-    def on_quit(self):
-        ## Called when the debugger is invalid status:
-        ## e.g., (self.handler.current_state > 0 and not self.busy)
-        def _abort():
-            self.reset()
-            sys.settrace(None)
-            threading.settrace(None)
-            self.shell.clearCommand() # clear invalid output
-            self.shell.prompt()
-        wx.CallAfter(_abort)
     
     ## --------------------------------
     ## Override Bdb methods

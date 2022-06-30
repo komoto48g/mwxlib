@@ -1265,8 +1265,12 @@ class ShellFrame(MiniFrame):
     
     def start_trace(self, line, editor):
         if not self.debugger.busy:
-            self.debugger.editor = editor
-            self.debugger.watch((editor.target, line+1))
+            if not editor.target:
+                self.message("- No compiled target")
+            else:
+                self.debugger.unwatch()
+                self.debugger.editor = editor
+                self.debugger.watch((editor.target, line+1))
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
