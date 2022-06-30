@@ -1019,8 +1019,8 @@ class ShellFrame(MiniFrame):
     def load_session(self):
         """Load session from file"""
         try:
-            self.Scratch.LoadFile(self.SCRATCH_FILE)
-            self.Log.LoadFile(self.LOGGING_FILE)
+            self.Scratch.load_file(self.SCRATCH_FILE)
+            self.Log.load_file(self.LOGGING_FILE)
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1033,8 +1033,8 @@ class ShellFrame(MiniFrame):
     def save_session(self):
         """Save session to file"""
         try:
-            self.Scratch.SaveFile(self.SCRATCH_FILE)
-            self.Log.SaveFile(self.LOGGING_FILE)
+            self.Scratch.save_file(self.SCRATCH_FILE)
+            self.Log.save_file(self.LOGGING_FILE)
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
@@ -1057,7 +1057,7 @@ class ShellFrame(MiniFrame):
     
     def Destroy(self):
         try:
-            self.History.SaveFile(self.HISTORY_FILE)
+            self.History.save_file(self.HISTORY_FILE)
             self.save_session()
         finally:
             self._mgr.UnInit()
@@ -1193,7 +1193,7 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        return self.Log.load_file(filename, lineno, focus=0)
+        return self.Log.load_file(filename, lineno, show=1, focus=0)
     
     @postcall
     def debug(self, obj, *args, **kwargs):
@@ -1271,6 +1271,7 @@ class ShellFrame(MiniFrame):
             if not editor.target:
                 self.message("- No compiled target")
             else:
+                self.debugger.unwatch()
                 self.debugger.editor = editor
                 self.debugger.watch((editor.target, line+1))
         editor.MarkerDeleteAll(4)
@@ -2565,7 +2566,7 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def target(self):
-        return self.filename or self.codename
+        return self.codename or self.filename
     
     @property
     def filename(self):
@@ -2670,7 +2671,7 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    def load_file(self, filename, lineno=0, show=True, focus=True):
+    def load_file(self, filename, lineno=0, show=False, focus=False):
         """Wrapped method of LoadFile
         filename : buffer-file-name:str
           lineno : mark the specified line (>=1)
