@@ -88,13 +88,13 @@ class Debugger(Pdb):
         """The current state is trace mode
         """
         ## cf. (self.handler.current_state == 2)
-        return self.__breakpoint is not None
+        return self.__hookpoint is not None
     
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
         self.__shellframe = parent
-        self.__breakpoint = None
+        self.__hookpoint = None
         self.__indents = 0
         self.shell = parent.rootshell
         self.editor = None
@@ -168,7 +168,7 @@ class Debugger(Pdb):
                 return
             elif not bp[0]: # no target
                 return
-            self.__breakpoint = bp
+            self.__hookpoint = bp
             self.reset()
             sys.settrace(self.trace_dispatch)
             threading.settrace(self.trace_dispatch)
@@ -177,14 +177,14 @@ class Debugger(Pdb):
     def unwatch(self):
         """End tracing"""
         if not self.busy: # don't unset while debugging
-            bp = self.__breakpoint
+            bp = self.__hookpoint
             if bp:
                 self.reset()
                 sys.settrace(None)
                 threading.settrace(None)
                 self.handler('trace_end', bp)
             ## delete bp *after* setting dispatcher -> None
-            self.__breakpoint = None
+            self.__hookpoint = None
             self.handler('quit')
     
     def debug(self, target, *args, **kwargs):
@@ -219,7 +219,7 @@ class Debugger(Pdb):
         Note: self.busy -> False or None
         """
         shell = self.shell
-        self.__breakpoint = None
+        self.__hookpoint = None
         self.__interactive = self.shell.cpos
         self.stdin.input = '' # clear stdin buffer
         def _continue():
@@ -295,7 +295,7 @@ class Debugger(Pdb):
     def on_trace_hook(self, frame):
         """Called when a breakppoint is reached"""
         self.__indents = 2
-        self.__breakpoint = None
+        self.__hookpoint = None
         self.shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
     
@@ -318,8 +318,8 @@ class Debugger(Pdb):
         """Invoke user function and return trace function for line event.
         (override) Watch the breakpoint
         """
-        if self.__breakpoint:
-            target, line = self.__breakpoint
+        if self.__hookpoint:
+            target, line = self.__hookpoint
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
@@ -336,8 +336,8 @@ class Debugger(Pdb):
         """Invoke user function and return trace function for call event.
         (override) Watch the breakpoint
         """
-        if self.__breakpoint:
-            target, line = self.__breakpoint
+        if self.__hookpoint:
+            target, line = self.__hookpoint
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
@@ -360,12 +360,12 @@ class Debugger(Pdb):
         return Pdb.dispatch_call(self, frame, arg)
     
     def dispatch_return(self, frame, arg):
-        if self.__breakpoint:
+        if self.__hookpoint:
             return None
         return Pdb.dispatch_return(self, frame, arg)
     
     def dispatch_exception(self, frame, arg):
-        if self.__breakpoint:
+        if self.__hookpoint:
             return None
         return Pdb.dispatch_exception(self, frame, arg)
     
