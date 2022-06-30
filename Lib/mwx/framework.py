@@ -924,10 +924,13 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
         def skip(v):
-            if self.debugger.handler.current_state\
-              and not self.debugger.busy:
-                self.message("- The current status of debugger is not valid. "
-                             "- Press C-g to quit.")
+            if self.debugger.handler.current_state:
+                if self.debugger.tracing:
+                    self.message("- The current status is tracing. "
+                                 "- Press C-g to quit.")
+                elif not self.debugger.busy:
+                    self.message("- The current status of debugger is not valid. "
+                                 "- Press C-g to quit.")
             v.Skip()
         
         def fork(v):
@@ -1265,8 +1268,11 @@ class ShellFrame(MiniFrame):
     
     def start_trace(self, line, editor):
         if not self.debugger.busy:
-            self.debugger.editor = editor
-            self.debugger.watch((editor.target, line+1))
+            if not editor.target:
+                self.message("- No compiled target")
+            else:
+                self.debugger.editor = editor
+                self.debugger.watch((editor.target, line+1))
         editor.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
