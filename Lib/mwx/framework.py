@@ -1880,22 +1880,16 @@ class EditorInterface(CtrlInterface):
             dirname = os.path.dirname(filename)
             if os.path.isdir(dirname) and dirname not in sys.path:
                 sys.path.append(dirname)
+        if region:
+            p, q = (self.PositionFromLine(x) for x in region)
+            text = self.GetTextRange(p, q)
+            ln = region[0]
+        else:
+            text = self.Text
+            ln = 0
         try:
-            del self.linemark
-            if region:
-                p, q = (self.PositionFromLine(x) for x in region)
-                text = self.GetTextRange(p, q)
-                ln = region[0]
-            else:
-                text = self.Text
-                ln = 0
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
-            self.codename = filename
-            self.code = code
-            self.message("Evaluated {!r} successfully".format(filename))
-            dispatcher.send(signal='Interpreter.push',
-                            sender=self, command=None, more=False)
         except Exception as e:
             err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                              traceback.format_exc(), re.M)
@@ -1907,6 +1901,13 @@ class EditorInterface(CtrlInterface):
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
+        else:
+            self.codename = filename
+            self.code = code
+            self.handler('py_region_executed', self)
+            self.message("Evaluated {!r} successfully".format(filename))
+            dispatcher.send(signal='Interpreter.push',
+                            sender=self, command=None, more=False)
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
@@ -3982,16 +3983,17 @@ class Nautilus(Shell, EditorInterface):
         status = "No word"
         for text in _gen_text():
             if text:
+                tokens = list(ut.split_words(text))
                 try:
-                    tokens = list(ut.split_words(text))
                     cmd = self.magic_interpret(tokens)
                     cmd = self.regulate_cmd(cmd)
                     tip = self.eval(cmd)
+                except Exception as e:
+                    status = "- {}: {!r}".format(e, text)
+                else:
                     self.CallTipShow(self.cpos, pformat(tip))
                     self.message(cmd)
                     return
-                except Exception as e:
-                    status = "- {}: {!r}".format(e, text)
         self.message(status)
     
     def exec_region(self, evt):
@@ -4001,14 +4003,12 @@ class Nautilus(Shell, EditorInterface):
         
         text = self.MultilineCommand
         if text:
+            tokens = list(ut.split_words(text))
             try:
-                tokens = list(ut.split_words(text))
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 cmd = compile(cmd, "<string>", "exec")
                 self.exec(cmd)
-                del self.linemark
-                self.message("Evaluated successfully.")
             except Exception as e:
                 err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                                  traceback.format_exc(), re.M)
@@ -4017,6 +4017,9 @@ class Nautilus(Shell, EditorInterface):
                     if self.bolc <= self.cpos: # current-region is active?
                         self.linemark = self.cmdline_region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
+            else:
+                del self.linemark
+                self.message("Evaluated successfully.")
         else:
             self.message("No region")
     
