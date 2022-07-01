@@ -710,10 +710,9 @@ class MatplotPanel(wx.Panel):
         del self.__prev
     
     ## def OnZoomMove(self, evt):
-    ##     """Zoom
-    ##     apted from http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744
-    ##     matplotlib.backends.backend_wx - NavigationToolbar2Wx.draw_rubberband
-    ##     """
+    ##     """Zoom"""
+    ##     ## http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744
+    ##     ## matplotlib.backends.backend_wx - NavigationToolbar2Wx.draw_rubberband
     ##     dc = wx.ClientDC(self.canvas)
     ##     
     ##     ## Set logical function to XOR for rubberbanding

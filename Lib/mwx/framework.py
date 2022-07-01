@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.7"
+__version__ = "0.63.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -318,6 +318,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self._window_handler('focus_kill', v))
         self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self._window_handler('window_enter', v))
         self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self._window_handler('window_leave', v))
+        self.Bind(wx.EVT_WINDOW_DESTROY, lambda v: self._window_handler('window_destroy', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
@@ -1559,13 +1560,12 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                       'motion' : (0, skip),
-                  'select_line' : (100, skip, self.on_linesel_begin),
+                  'select_line' : (100, self.on_linesel_begin),
             },
             100 : {
-                       'motion' : (100, skip, self.on_linesel_motion),
-                 'capture_lost' : (0, skip, self.on_linesel_end),
-             'Lbutton released' : (0, skip, self.on_linesel_end),
+                       'motion' : (100, self.on_linesel_motion),
+                 'capture_lost' : (0, self.on_linesel_end),
+             'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
                     '* pressed' : (0, _P), # skip to the parent.handler
@@ -1579,10 +1579,10 @@ class EditorInterface(CtrlInterface):
         })
         
         self.Bind(wx.EVT_MOTION,
-                  lambda v: self.handler('motion', v))
+                  lambda v: self.handler('motion', v) or v.Skip())
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                  lambda v: self.handler('capture_lost', v))
+                  lambda v: self.handler('capture_lost', v) or v.Skip())
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -1880,22 +1880,16 @@ class EditorInterface(CtrlInterface):
             dirname = os.path.dirname(filename)
             if os.path.isdir(dirname) and dirname not in sys.path:
                 sys.path.append(dirname)
+        if region:
+            p, q = (self.PositionFromLine(x) for x in region)
+            text = self.GetTextRange(p, q)
+            ln = region[0]
+        else:
+            text = self.Text
+            ln = 0
         try:
-            del self.linemark
-            if region:
-                p, q = (self.PositionFromLine(x) for x in region)
-                text = self.GetTextRange(p, q)
-                ln = region[0]
-            else:
-                text = self.Text
-                ln = 0
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
-            self.codename = filename
-            self.code = code
-            self.message("Evaluated {!r} successfully".format(filename))
-            dispatcher.send(signal='Interpreter.push',
-                            sender=self, command=None, more=False)
         except Exception as e:
             err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                              traceback.format_exc(), re.M)
@@ -1907,6 +1901,13 @@ class EditorInterface(CtrlInterface):
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
+        else:
+            self.codename = filename
+            self.code = code
+            self.handler('py_region_executed', self)
+            self.message("Evaluated {!r} successfully".format(filename))
+            dispatcher.send(signal='Interpreter.push',
+                            sender=self, command=None, more=False)
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
@@ -2012,6 +2013,7 @@ class EditorInterface(CtrlInterface):
                 if q == self.TextLength:
                     q -= 1
         self._anchors = [p, q]
+        evt.Skip()
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
@@ -2027,11 +2029,13 @@ class EditorInterface(CtrlInterface):
         else:
             self.cpos = p
             self.anchor = qo
+        evt.Skip()
     
     def on_linesel_end(self, evt):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
+        evt.Skip()
     
     ## --------------------------------
     ## Preferences / Appearance
@@ -2598,36 +2602,27 @@ class Editor(EditWindow, EditorInterface):
         self.code = None
         
         ## To prevent @filling crash (Never access to DropTarget)
-        ## Don't allow DnD of text, file, whatever.
+        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        self.Bind(stc.EVT_STC_SAVEPOINTLEFT,
-                  lambda v: self.handler('savepoint_left', v))
+        self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
+        self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavepointReached)
         
-        self.Bind(stc.EVT_STC_SAVEPOINTREACHED,
-                  lambda v: self.handler('savepoint_reached', v))
-        
-        def on_savepoint_leave(v):
-            if self.__mtime:
-                self.Parent.set_page_caption(self, '* ' + self.name)
+        @self.handler.bind('window_destroy')
+        def destroy(v):
+            self.handler('editor_deleted', self)
             v.Skip()
         
-        def on_savepoint_reach(v):
-            if self.__mtime:
-                self.Parent.set_page_caption(self, self.name)
-            v.Skip()
-        
+        @self.handler.bind('focus_set')
         def activate(v):
-            if self.mtdelta:
-                self.message("{!r} has been modified externally.".format(self.filename))
-            title = "{} file: {}".format(self.name, self.target)
-            self.parent.handler('title_window', title)
-            self.trace_position()
+            self.handler('editor_activated', self)
             v.Skip()
         
+        @self.handler.bind('focus_kill')
         def inactivate(v):
+            self.handler('editor_inactivated', self)
             v.Skip()
         
         def dispatch(v):
@@ -2637,14 +2632,16 @@ class Editor(EditWindow, EditorInterface):
         
         self.handler.update({ # DNA<Editor>
             None : {
-                    'focus_set' : [ None, activate ],
-                   'focus_kill' : [ None, inactivate ],
                   'stc_updated' : [ None, ],
+                 'editor_saved' : [ None, ],
+                'editor_loaded' : [ None, self.on_activated ],
+               'editor_deleted' : [ None, ],
+             'editor_activated' : [ None, self.on_activated ],
+           'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch ],
             '*button* released' : [ None, dispatch ],
-               'savepoint_left' : [ None, on_savepoint_leave ],
-            'savepoint_reached' : [ None, on_savepoint_reach ],
+           'py_region_executed' : [ None, self.on_activated ],
             },
         })
         
@@ -2659,6 +2656,30 @@ class Editor(EditWindow, EditorInterface):
             self.trace_position()
             self.handler('stc_updated', evt)
         evt.Skip()
+    
+    def OnSavePointLeft(self, evt):
+        if self.__mtime:
+            self.Parent.set_page_caption(self, '* ' + self.name)
+        evt.Skip()
+    
+    def OnSavepointReached(self, evt):
+        if self.__mtime:
+            self.Parent.set_page_caption(self, self.name)
+        evt.Skip()
+    
+    def on_activated(self, editor):
+        """Called when editor:self is activated."""
+        if self.mtdelta:
+            self.message("{!r} has been modified externally.".format(self.filename))
+        title = "{} file: {}".format(self.name, self.target)
+        if self.codename and self.filename:
+            title += self.filename
+        self.parent.handler('title_window', title)
+        self.trace_position()
+    
+    def on_inactivated(self, editor):
+        """Called when editor:self is inactivated."""
+        pass
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
@@ -2700,6 +2721,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
+            self.handler('editor_loaded', self)
             self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
@@ -2715,6 +2737,7 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.filename = f
+            self.handler('editor_saved', self)
             self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
@@ -2976,7 +2999,7 @@ class Nautilus(Shell, EditorInterface):
             Nautilus.modules = ut.find_modules(force)
         
         ## To prevent @filling crash (Never access to DropTarget)
-        ## Don't allow DnD of text, file, whatever.
+        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
         ## some autocomp settings
@@ -2987,15 +3010,17 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         
+        @self.handler.bind('window_destroy')
         def destroy(v):
             self.handler('shell_deleted', self)
             v.Skip()
-        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
+        @self.handler.bind('focus_set')
         def activate(v):
             self.handler('shell_activated', self)
             v.Skip()
         
+        @self.handler.bind('focus_kill')
         def inactivate(v):
             self.handler('shell_inactivated', self)
             v.Skip()
@@ -3019,8 +3044,6 @@ class Nautilus(Shell, EditorInterface):
         
         self.handler.update({ # DNA<Nautilus>
             None : {
-                    'focus_set' : [ None, activate ],
-                   'focus_kill' : [ None, inactivate ],
                   'stc_updated' : [ None, ],
                  'shell_cloned' : [ None, ],
                 'shell_deleted' : [ None, self.on_deleted ],
@@ -3960,16 +3983,17 @@ class Nautilus(Shell, EditorInterface):
         status = "No word"
         for text in _gen_text():
             if text:
+                tokens = list(ut.split_words(text))
                 try:
-                    tokens = list(ut.split_words(text))
                     cmd = self.magic_interpret(tokens)
                     cmd = self.regulate_cmd(cmd)
                     tip = self.eval(cmd)
+                except Exception as e:
+                    status = "- {}: {!r}".format(e, text)
+                else:
                     self.CallTipShow(self.cpos, pformat(tip))
                     self.message(cmd)
                     return
-                except Exception as e:
-                    status = "- {}: {!r}".format(e, text)
         self.message(status)
     
     def exec_region(self, evt):
@@ -3979,14 +4003,12 @@ class Nautilus(Shell, EditorInterface):
         
         text = self.MultilineCommand
         if text:
+            tokens = list(ut.split_words(text))
             try:
-                tokens = list(ut.split_words(text))
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 cmd = compile(cmd, "<string>", "exec")
                 self.exec(cmd)
-                del self.linemark
-                self.message("Evaluated successfully.")
             except Exception as e:
                 err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                                  traceback.format_exc(), re.M)
@@ -3995,6 +4017,9 @@ class Nautilus(Shell, EditorInterface):
                     if self.bolc <= self.cpos: # current-region is active?
                         self.linemark = self.cmdline_region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
+            else:
+                del self.linemark
+                self.message("Evaluated successfully.")
         else:
             self.message("No region")
     
