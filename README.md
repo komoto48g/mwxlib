@@ -95,6 +95,7 @@ which has the following features:
 
 
 ## Autocomp key bindings:
+
         C-up : [0] retrieve previous history
       C-down : [0] retrieve next history
     M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
@@ -165,12 +166,11 @@ See [key bindings](key-bindings.md) for more information.
 The Ghost in the shell (g.i.t.s) is the help system for divers,
 which is a notebook-style window consists of four editors:
 - scratch buffer
-    + a temporary buffer used as big-tooltip
+    + a temporary buffer
 - Help buffer
-    + for piping text from help() and info()
+    + piping text from info(?) and help(??)
 - Logging buffer
-    + for logging Clipboard communication across the shell
-    + free memo space
+    + logging debug process
 - History buffer
     + read-only buffer of the input-history
 
