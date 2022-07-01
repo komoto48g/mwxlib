@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.8"
+__version__ = "0.63.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1245,6 +1245,7 @@ class ShellFrame(MiniFrame):
             self.linfo.watch(ls)
         self.on_title_window(frame)
         self.popup_window(self.debugger.editor, focus=0)
+        self.debugger.editor.EnsureVisible(frame.f_lineno)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         command = shell.cmdline
@@ -1917,12 +1918,12 @@ class EditorInterface(CtrlInterface):
         if not self.code:
             return self.get_region(line)
         lc, le = 0, self.LineCount
-        linestarts = list((x[1]-1 for x in dis.findlinestarts(self.code)))
-        for ln in reversed(linestarts):
-            if ln <= line:
-                lc = ln
+        linestarts = list(dis.findlinestarts(self.code))
+        for i, ln in reversed(linestarts):
+            if line >= ln-1:
+                lc = ln-1
                 break
-            le = ln
+            le = ln-1
         return lc, le
     
     ## --------------------------------
@@ -2537,11 +2538,11 @@ class Editor(EditWindow, EditorInterface):
     """
     STYLE = { #<Editor>
         stc.STC_STYLE_DEFAULT     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
-        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
         stc.STC_P_DEFAULT         : "fore:#000000,back:#ffffb8",
         stc.STC_P_IDENTIFIER      : "fore:#000000",
         stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
@@ -2673,7 +2674,7 @@ class Editor(EditWindow, EditorInterface):
             self.message("{!r} has been modified externally.".format(self.filename))
         title = "{} file: {}".format(self.name, self.target)
         if self.codename and self.filename:
-            title += self.filename
+            title += ' ' + self.filename
         self.parent.handler('title_window', title)
         self.trace_position()
     
@@ -2895,11 +2896,11 @@ class Nautilus(Shell, EditorInterface):
     """
     STYLE = { #<Shell>
         stc.STC_STYLE_DEFAULT     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
-        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
         stc.STC_P_DEFAULT         : "fore:#cccccc,back:#202020",
         stc.STC_P_IDENTIFIER      : "fore:#cccccc",
         stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
@@ -3519,6 +3520,7 @@ class Nautilus(Shell, EditorInterface):
         builtins.watch = watchit
         builtins.filling = filling
         builtins.profile = profile
+        builtins.disco = dis.dis
     
     def on_deleted(self, shell):
         """Called before shell:self is killed.
