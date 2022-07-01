@@ -56,6 +56,15 @@ class Inspector(it.InspectionTree, CtrlInterface):
         def activate(v):
             self.parent.handler('title_window', self.__class__.__name__)
             v.Skip()
+        
+        @self.handler.bind('f4 pressed')
+        def hillilght(v):
+            if self.__widget:
+                self.highlighter.HighlightCurrentItem(self)
+        
+        @self.handler.bind('f5 pressed')
+        def refresh(v):
+            self.BuildTree(self.__widget)
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -154,12 +163,12 @@ class Inspector(it.InspectionTree, CtrlInterface):
             (10, "&Inspection Tool", Icon('inspect'),
                 lambda v: watchit(obj)),
             (),
-            (11, "Refresh", miniIcon('Refresh'),
-                lambda v: self.BuildTree(obj)),
-                 
-            (12, "Highlight", miniIcon('HighlightItem'),
+            (11, "Highlight\tf4", miniIcon('HighlightItem'),
                 lambda v: self.highlighter.HighlightCurrentItem(self),
                 lambda v: v.Enable(obj is not None)),
+                
+            (12, "Refresh\tf5", miniIcon('Refresh'),
+                lambda v: self.BuildTree(obj)),
         ))
         evt.Skip()
 
