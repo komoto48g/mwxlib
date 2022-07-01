@@ -313,12 +313,12 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self._mouse_handler('Xbutton2 dclick', v))
         
         ## self.Bind(wx.EVT_MOTION, lambda v: self._window_handler('motion', v))
-        self.Bind(wx.EVT_WINDOW_DESTROY, lambda v: self._window_handler('window_destroy', v))
         
         self.Bind(wx.EVT_SET_FOCUS, lambda v: self._window_handler('focus_set', v))
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self._window_handler('focus_kill', v))
         self.Bind(wx.EVT_ENTER_WINDOW, lambda v: self._window_handler('window_enter', v))
         self.Bind(wx.EVT_LEAVE_WINDOW, lambda v: self._window_handler('window_leave', v))
+        self.Bind(wx.EVT_WINDOW_DESTROY, lambda v: self._window_handler('window_destroy', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down"""
@@ -1560,13 +1560,12 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                       'motion' : (0, skip),
-                  'select_line' : (100, skip, self.on_linesel_begin),
+                  'select_line' : (100, self.on_linesel_begin),
             },
             100 : {
-                       'motion' : (100, skip, self.on_linesel_motion),
-                 'capture_lost' : (0, skip, self.on_linesel_end),
-             'Lbutton released' : (0, skip, self.on_linesel_end),
+                       'motion' : (100, self.on_linesel_motion),
+                 'capture_lost' : (0, self.on_linesel_end),
+             'Lbutton released' : (0, self.on_linesel_end),
             },
             'C-x' : {
                     '* pressed' : (0, _P), # skip to the parent.handler
@@ -1580,10 +1579,10 @@ class EditorInterface(CtrlInterface):
         })
         
         self.Bind(wx.EVT_MOTION,
-                  lambda v: self.handler('motion', v))
+                  lambda v: self.handler('motion', v) or v.Skip())
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                  lambda v: self.handler('capture_lost', v))
+                  lambda v: self.handler('capture_lost', v) or v.Skip())
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -2013,6 +2012,7 @@ class EditorInterface(CtrlInterface):
                 if q == self.TextLength:
                     q -= 1
         self._anchors = [p, q]
+        evt.Skip()
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
@@ -2028,11 +2028,13 @@ class EditorInterface(CtrlInterface):
         else:
             self.cpos = p
             self.anchor = qo
+        evt.Skip()
     
     def on_linesel_end(self, evt):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
+        evt.Skip()
     
     ## --------------------------------
     ## Preferences / Appearance
@@ -2631,13 +2633,14 @@ class Editor(EditWindow, EditorInterface):
             None : {
                   'stc_updated' : [ None, ],
                  'editor_saved' : [ None, ],
-                'editor_loaded' : [ None, ],
+                'editor_loaded' : [ None, self.on_activated ],
                'editor_deleted' : [ None, ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch ],
             '*button* released' : [ None, dispatch ],
+           'py_region_executed' : [ None, self.on_activated ],
             },
         })
         
@@ -2668,6 +2671,8 @@ class Editor(EditWindow, EditorInterface):
         if self.mtdelta:
             self.message("{!r} has been modified externally.".format(self.filename))
         title = "{} file: {}".format(self.name, self.target)
+        if self.codename and self.filename:
+            title += self.filename
         self.parent.handler('title_window', title)
         self.trace_position()
     
