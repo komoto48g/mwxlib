@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.7"
+__version__ = "0.63.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -313,6 +313,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: self._mouse_handler('Xbutton2 dclick', v))
         
         ## self.Bind(wx.EVT_MOTION, lambda v: self._window_handler('motion', v))
+        self.Bind(wx.EVT_WINDOW_DESTROY, lambda v: self._window_handler('window_destroy', v))
         
         self.Bind(wx.EVT_SET_FOCUS, lambda v: self._window_handler('focus_set', v))
         self.Bind(wx.EVT_KILL_FOCUS, lambda v: self._window_handler('focus_kill', v))
@@ -2598,36 +2599,27 @@ class Editor(EditWindow, EditorInterface):
         self.code = None
         
         ## To prevent @filling crash (Never access to DropTarget)
-        ## Don't allow DnD of text, file, whatever.
+        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
-        self.Bind(stc.EVT_STC_SAVEPOINTLEFT,
-                  lambda v: self.handler('savepoint_left', v))
+        self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
+        self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavepointReached)
         
-        self.Bind(stc.EVT_STC_SAVEPOINTREACHED,
-                  lambda v: self.handler('savepoint_reached', v))
-        
-        def on_savepoint_leave(v):
-            if self.__mtime:
-                self.Parent.set_page_caption(self, '* ' + self.name)
+        @self.handler.bind('window_destroy')
+        def destroy(v):
+            self.handler('editor_deleted', self)
             v.Skip()
         
-        def on_savepoint_reach(v):
-            if self.__mtime:
-                self.Parent.set_page_caption(self, self.name)
-            v.Skip()
-        
+        @self.handler.bind('focus_set')
         def activate(v):
-            if self.mtdelta:
-                self.message("{!r} has been modified externally.".format(self.filename))
-            title = "{} file: {}".format(self.name, self.target)
-            self.parent.handler('title_window', title)
-            self.trace_position()
+            self.handler('editor_activated', self)
             v.Skip()
         
+        @self.handler.bind('focus_kill')
         def inactivate(v):
+            self.handler('editor_inactivated', self)
             v.Skip()
         
         def dispatch(v):
@@ -2637,14 +2629,15 @@ class Editor(EditWindow, EditorInterface):
         
         self.handler.update({ # DNA<Editor>
             None : {
-                    'focus_set' : [ None, activate ],
-                   'focus_kill' : [ None, inactivate ],
                   'stc_updated' : [ None, ],
+                 'editor_saved' : [ None, ],
+                'editor_loaded' : [ None, ],
+               'editor_deleted' : [ None, ],
+             'editor_activated' : [ None, self.on_activated ],
+           'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch ],
             '*button* released' : [ None, dispatch ],
-               'savepoint_left' : [ None, on_savepoint_leave ],
-            'savepoint_reached' : [ None, on_savepoint_reach ],
             },
         })
         
@@ -2659,6 +2652,28 @@ class Editor(EditWindow, EditorInterface):
             self.trace_position()
             self.handler('stc_updated', evt)
         evt.Skip()
+    
+    def OnSavePointLeft(self, evt):
+        if self.__mtime:
+            self.Parent.set_page_caption(self, '* ' + self.name)
+        evt.Skip()
+    
+    def OnSavepointReached(self, evt):
+        if self.__mtime:
+            self.Parent.set_page_caption(self, self.name)
+        evt.Skip()
+    
+    def on_activated(self, editor):
+        """Called when editor:self is activated."""
+        if self.mtdelta:
+            self.message("{!r} has been modified externally.".format(self.filename))
+        title = "{} file: {}".format(self.name, self.target)
+        self.parent.handler('title_window', title)
+        self.trace_position()
+    
+    def on_inactivated(self, editor):
+        """Called when editor:self is inactivated."""
+        pass
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
@@ -2700,6 +2715,7 @@ class Editor(EditWindow, EditorInterface):
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
+            self.handler('editor_loaded', self)
             self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
@@ -2715,6 +2731,7 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.filename = f
+            self.handler('editor_saved', self)
             self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
@@ -2976,7 +2993,7 @@ class Nautilus(Shell, EditorInterface):
             Nautilus.modules = ut.find_modules(force)
         
         ## To prevent @filling crash (Never access to DropTarget)
-        ## Don't allow DnD of text, file, whatever.
+        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
         self.SetDropTarget(None)
         
         ## some autocomp settings
@@ -2987,15 +3004,17 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         
+        @self.handler.bind('window_destroy')
         def destroy(v):
             self.handler('shell_deleted', self)
             v.Skip()
-        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
+        @self.handler.bind('focus_set')
         def activate(v):
             self.handler('shell_activated', self)
             v.Skip()
         
+        @self.handler.bind('focus_kill')
         def inactivate(v):
             self.handler('shell_inactivated', self)
             v.Skip()
@@ -3019,8 +3038,6 @@ class Nautilus(Shell, EditorInterface):
         
         self.handler.update({ # DNA<Nautilus>
             None : {
-                    'focus_set' : [ None, activate ],
-                   'focus_kill' : [ None, inactivate ],
                   'stc_updated' : [ None, ],
                  'shell_cloned' : [ None, ],
                 'shell_deleted' : [ None, self.on_deleted ],
