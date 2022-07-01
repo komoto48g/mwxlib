@@ -1020,8 +1020,8 @@ class ShellFrame(MiniFrame):
     def load_session(self):
         """Load session from file"""
         try:
-            self.Scratch.load_file(self.SCRATCH_FILE)
-            self.Log.load_file(self.LOGGING_FILE)
+            self.Scratch.LoadFile(self.SCRATCH_FILE)
+            self.Log.LoadFile(self.LOGGING_FILE)
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1034,8 +1034,8 @@ class ShellFrame(MiniFrame):
     def save_session(self):
         """Save session to file"""
         try:
-            self.Scratch.save_file(self.SCRATCH_FILE)
-            self.Log.save_file(self.LOGGING_FILE)
+            self.Scratch.SaveFile(self.SCRATCH_FILE)
+            self.Log.SaveFile(self.LOGGING_FILE)
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
@@ -1058,7 +1058,7 @@ class ShellFrame(MiniFrame):
     
     def Destroy(self):
         try:
-            self.History.save_file(self.HISTORY_FILE)
+            self.History.SaveFile(self.HISTORY_FILE)
             self.save_session()
         finally:
             self._mgr.UnInit()
@@ -2694,13 +2694,13 @@ class Editor(EditWindow, EditorInterface):
         return False
     
     def load_file(self, filename, lineno=0, show=False, focus=False):
-        """Wrapped method of LoadFile
+        """Wrapped method of LoadFile; Associates the file with `filename`.
         filename : buffer-file-name:str
           lineno : mark the specified line (>=1)
             show : popup editor window when success
            focus : set the focus if the window is displayed
         
-        Note: the file will be reloaded without confirmation.
+        Note: The file will be reloaded without confirmation.
         """
         if not filename:
             return
@@ -2728,10 +2728,10 @@ class Editor(EditWindow, EditorInterface):
         return False
     
     def save_file(self, filename):
-        """Wrapped method of SaveFile
+        """Wrapped method of SaveFile; Associates the file with `filename`.
         filename : buffer-file-name:str
         
-        Note: the file will be overwritten without confirmation.
+        Note: The file will be overwritten without confirmation.
         """
         if not filename:
             return
@@ -2744,7 +2744,7 @@ class Editor(EditWindow, EditorInterface):
         return False
     
     def LoadFile(self, filename):
-        """Load the contents of filename into the editor.
+        """Load the contents of file into the editor.
         (override) Use default file-io-encoding and original eol-code.
         """
         try:
@@ -2759,7 +2759,7 @@ class Editor(EditWindow, EditorInterface):
             return False
     
     def SaveFile(self, filename):
-        """Write the contents of the editor to filename.
+        """Write the contents of the editor to file.
         (override) Use default file-io-encoding and original eol-code.
         """
         try:
