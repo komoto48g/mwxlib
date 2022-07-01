@@ -315,7 +315,7 @@ class Debugger(Pdb):
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
-                if line <= lineno:
+                if lineno >= line:
                     self.handler('trace_hook', frame)
                     self.handler('debug_begin', frame)
                 else:
@@ -333,17 +333,7 @@ class Debugger(Pdb):
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
-                editor = self.parent.find_editor(filename)
-                if editor and editor.code:
-                    ## trace-hook in scratch code
-                    lc, le = editor.get_region(lineno-1)
-                    lcnt = le - lc
-                else:
-                    ## trace-hook in source file
-                    src, lineno = inspect.getsourcelines(frame.f_code)
-                    lcnt = len(src)
-                if 0 <= line - lineno < lcnt:
-                    ## continue to dispatch_line
+                if lineno <= line: # continue to dispatch_line
                     return self.trace_dispatch
                 else:
                     return None
