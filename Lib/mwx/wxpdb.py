@@ -63,12 +63,18 @@ class Debugger(Pdb):
     handler = property(lambda self: self.__handler)
     
     @property
-    def shell(self):
+    def target(self):
+        if self.editor:
+            return self.editor.target
+    
+    @property
+    def interactive_shell(self):
         return self.__shell
     
-    @shell.setter
-    def shell(self, v):
+    @interactive_shell.setter
+    def interactive_shell(self, v):
         self.__shell = v
+        ## Don't use rawinput
         self.stdin = self.__shell.interp.stdin
         self.stdout = self.__shell.interp.stdout
     
@@ -96,9 +102,8 @@ class Debugger(Pdb):
         self.__shellframe = parent
         self.__hookpoint = None
         self.__indents = 0
-        self.shell = parent.rootshell
+        self.interactive_shell = parent.rootshell
         self.editor = None
-        self.target = None
         self.code = None
         
         def _input(msg):
@@ -221,9 +226,9 @@ class Debugger(Pdb):
         """Called before set_trace
         Note: self.busy -> False or None
         """
-        shell = self.shell
+        shell = self.interactive_shell
         self.__hookpoint = None
-        self.__interactive = self.shell.cpos
+        self.__interactive = shell.cpos
         self.stdin.input = '' # clear stdin buffer
         def _continue():
             if wx.IsBusy():
@@ -234,8 +239,6 @@ class Debugger(Pdb):
     
     def on_debug_mark(self, frame):
         """Called when interaction"""
-        if frame is None:
-            self.handler('debug_end', frame) # emergency stop?
         code = frame.f_code
         filename = code.co_filename
         firstlineno = code.co_firstlineno
@@ -245,26 +248,23 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        self.editor = self.parent.find_editor(filename) or self.parent.Log
-        
+        editor = self.parent.find_editor(filename) or self.parent.Log
         if self.code != code:
-            self.editor.load_cache(filename)
-            self.editor.markline = firstlineno - 1 # (o) entry:marker
+            editor.load_cache(filename)
+            editor.markline = firstlineno - 1 # (o) entry:marker
             for ln in self.get_file_breaks(filename):
                 self.add_marker(ln, 1)
-        if filename == self.editor.target:
-            self.editor.linemark = lineno - 1 # (->) pointer:marker
-            self.editor.goto_line_marker()
+        if filename == editor.target:
+            editor.linemark = lineno - 1 # (->) pointer:marker
+            editor.goto_line_marker()
+        self.editor = editor
         self.code = code
-        self.target = filename
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)"""
-        if frame is None:
-            self.handler('debug_end', frame) # emergency stop?
         pos = self.__interactive
         def _post():
-            shell = self.shell
+            shell = self.interactive_shell
             out = shell.GetTextRange(pos, shell.cpos)
             if out == self.prompt or out.endswith(self.prompt*2):
                 shell.cpos -= len(self.prompt) # backward selection
@@ -280,10 +280,8 @@ class Debugger(Pdb):
         """
         self.__indents = 0
         self.__interactive = None
-        if self.editor:
-            del self.editor.linemark
+        del self.editor.linemark
         self.editor = None
-        self.target = None
         self.code = None
         main = threading.main_thread()
         thread = threading.current_thread()
@@ -299,7 +297,7 @@ class Debugger(Pdb):
         """Called when a breakppoint is reached"""
         self.__indents = 2
         self.__hookpoint = None
-        self.shell.write('\n', -1) # move to eolc and insert LFD
+        self.interactive_shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
     
     ## --------------------------------
@@ -460,9 +458,6 @@ if __name__ == "__main__":
         dbg.handler.debug = 4
         dbg.verbose = 0
         echo.debug = 1
-        ## shell.write("self.shell.about()")
-        ## shell.write("self.shellframe.debug(self.About)")
-        shell.write("self.shellframe.debug(self.shell.about)")
         self.Show()
     frm.Show()
     app.MainLoop()

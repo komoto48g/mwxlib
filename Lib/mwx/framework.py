@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.9"
+__version__ = "0.64.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -776,7 +776,7 @@ class AuiNotebook(aui.AuiNotebook):
             if type is None or isinstance(win, type):
                 yield win
     
-    def show_page(self, win, show=True):
+    def show_page(self, win):
         j = self.GetPageIndex(win)
         if j != -1:
             if j != self.Selection:
@@ -790,7 +790,8 @@ class AuiNotebook(aui.AuiNotebook):
             self.AddPage(win, caption or typename(win.target))
             if self.PageCount > 1:
                 self.TabCtrlHeight = -1
-        return self.show_page(win, show)
+        if show:
+            self.show_page(win)
     
     def remove_page(self, win):
         """Remove page from the console"""
@@ -958,11 +959,10 @@ class ShellFrame(MiniFrame):
                     '* pressed' : (0, skip, fork), # => debugger
                   'C-g pressed' : (0, self.Quit, fork), # => debugger
                    'f1 pressed' : (0, self.About),
-                  'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.popup_window, self.ghost, None, doc="Toggle ghost")),
+                  'f11 pressed' : (0, _F(self.toggle_window, self.ghost, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, ),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
@@ -1128,6 +1128,15 @@ class ShellFrame(MiniFrame):
         )
         self.popup_window(self.Help, focus=0)
     
+    def find_pane(self, win):
+        for pane in self._mgr.GetAllPanes():
+            nb = pane.window
+            if nb is win or nb.GetPageIndex(win) != -1:
+                return pane
+    
+    def toggle_window(self, win, focus=False):
+        self.popup_window(win, show=None, focus=focus)
+    
     def popup_window(self, win, show=True, focus=True):
         """Show the notebook page and move the focus
         win : page or window to popup
@@ -1136,10 +1145,9 @@ class ShellFrame(MiniFrame):
         wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
-            if nb is win or nb.show_page(win, show):
+            if nb is win or nb.show_page(win): # find and select page
                 break
         else:
-            ## print("- No such window: {}.".format(win))
             return
         if show is None:
             show = not pane.IsShown()
@@ -1175,7 +1183,7 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         self.linfo.unwatch()
         self.debugger.unwatch()
-        shell = self.debugger.shell # reset interp locals
+        shell = self.debugger.interactive_shell # reset interp locals
         del shell.locals
         del shell.globals
         self.on_title_window(self.current_shell.target) # reset title
@@ -1211,11 +1219,11 @@ class ShellFrame(MiniFrame):
             self.popup_window(self.monitor, focus=0)
         elif callable(obj):
             try:
-                shell = self.debugger.shell
-                self.debugger.shell = self.current_shell
+                shell = self.debugger.interactive_shell
+                self.debugger.interactive_shell = self.current_shell
                 self.debugger.debug(obj, *args, **kwargs)
             finally:
-                self.debugger.shell = shell
+                self.debugger.interactive_shell = shell
         else:
             print("- cannot debug {!r}".format(obj))
             print("  The debug target must be callable or wx.Object.")
@@ -1224,7 +1232,7 @@ class ShellFrame(MiniFrame):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        shell = self.debugger.shell
+        shell = self.debugger.interactive_shell
         shell.write("#<-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
         shell.SetFocus()
@@ -1234,7 +1242,7 @@ class ShellFrame(MiniFrame):
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
-        shell = self.debugger.shell
+        shell = self.debugger.interactive_shell
         gs = frame.f_globals
         ls = frame.f_locals
         shell.globals = gs
@@ -1258,7 +1266,7 @@ class ShellFrame(MiniFrame):
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
-        shell = self.debugger.shell
+        shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
         self.add_history("--> End of debugger")
@@ -1310,11 +1318,10 @@ class ShellFrame(MiniFrame):
     def on_title_window(self, obj):
         self.SetTitle("Nautilus - {}".format(obj))
     
-    def add_help(self, text, show=True, focus=False):
+    def add_help(self, text):
         """Puts text to the help buffer"""
         self.Help.Text = text
-        if show is not None:
-            self.popup_window(self.Help, show, focus)
+        self.popup_window(self.Help, show=1, focus=0)
     
     def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
         """Add command:str to the history buffer
@@ -1422,32 +1429,6 @@ class ShellFrame(MiniFrame):
     ## --------------------------------
     ## Find text dialog
     ## --------------------------------
-    
-    def OnFilterText(self, evt):
-        win = self.current_editor
-        text = win.topic_at_caret
-        if not text:
-            self.message("- No word to filter")
-            for i in range(2):
-                win.SetIndicatorCurrent(i)
-                win.IndicatorClearRange(0, win.TextLength)
-            return
-        word = text.encode() # for multi-byte string
-        raw = win.TextRaw
-        lw = len(word)
-        pos = -1
-        n = 0
-        while 1:
-            pos = raw.find(word, pos+1)
-            if pos < 0:
-                break
-            for i in range(2):
-                win.SetIndicatorCurrent(i)
-                win.IndicatorFillRange(pos, lw)
-            n += 1
-        self.message("{}: {} found".format(text, n))
-        self.findData.FindString = text
-    
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     ## Note: This interface is common to editors
     
@@ -1546,6 +1527,7 @@ class EditorInterface(CtrlInterface):
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
                                        _F(self.recenter),
                                        _F(self.SetFocus)),
+                  'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)),   # override delete-line
@@ -1561,7 +1543,15 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
+                 'select_indic' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin),
+            },
+            10 : {
+                         'quit' : (0, self.on_filter_text_exit),
+                    '* pressed' : (0, self.on_filter_text_exit),
+                   'up pressed' : (10, skip),
+                 'down pressed' : (10, skip),
+                'enter pressed' : (0, self.on_filter_text_selection),
             },
             100 : {
                        'motion' : (100, self.on_linesel_motion),
@@ -1599,10 +1589,31 @@ class EditorInterface(CtrlInterface):
         ## This event occurs when lines that are hidden should be made visible.
         self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
         
+        def indic(evt):
+            i = self.IndicatorValue # current indicator(1) <- filter_text
+            pos = evt.Position
+            p = self.IndicatorStart(i, pos)
+            q = self.IndicatorEnd(i, pos)
+            self.goto_char(pos)
+            self.handler('select_indic', self.GetTextRange(p, q)) or evt.Skip()
+        
+        self.Bind(stc.EVT_STC_INDICATOR_CLICK, indic)
+        
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
         self.SetKeyWords(1, ' '.join(builtins.__dict__) + ' self this')
+        
+        ## AutoComp setting
+        self.AutoCompSetAutoHide(False)
+        self.AutoCompSetIgnoreCase(True)
+        ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
+        self.AutoCompSetMaxWidth(80)
+        self.AutoCompSetMaxHeight(10)
+        
+        ## To prevent @filling crash (Never access to DropTarget)
+        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
+        self.SetDropTarget(None)
         
         ## Global style for all languages
         ## wx.Font style
@@ -1682,10 +1693,11 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
+        self.IndicatorSetHoverForeground(1, "blue")
         
         ## Custom indicator for match_paren
-        self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
-        self.IndicatorSetForeground(2, "light gray")
+        ## self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
+        ## self.IndicatorSetForeground(2, "light gray")
         
         ## Custom style of control-char, wrap-mode
         ## self.UseTabs = False
@@ -1930,6 +1942,9 @@ class EditorInterface(CtrlInterface):
     ## Fold / Unfold functions
     ## --------------------------------
     
+    def is_folder_shown(self):
+        return self.GetMarginSensitive(0)
+    
     def show_folder(self, show=True, colour=None):
         """Show folder margin
         
@@ -2090,6 +2105,7 @@ class EditorInterface(CtrlInterface):
             
             self.IndicatorSetForeground(0, lsc.get('fore') or "red")
             self.IndicatorSetForeground(1, lsc.get('back') or "red")
+            self.IndicatorSetHoverForeground(1, "blue")
         
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
@@ -2286,6 +2302,10 @@ class EditorInterface(CtrlInterface):
             self.cpos = self.anchor = r # save_excursion
             return self.GetTextRange(p, q)
     
+    ## --------------------------------
+    ## Editor/ search functions
+    ## --------------------------------
+    
     def get_right_paren(self, p):
         if self.get_char(p) in "({[<": # left-parentheses, <
             q = self.BraceMatch(p)
@@ -2362,6 +2382,67 @@ class EditorInterface(CtrlInterface):
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
         return p, q, st
+    
+    def search_pattern(self, pattern):
+        """Yields str-positions (start, end) with `pattern` re-matched."""
+        for m in re.finditer(pattern, self.Text):
+            yield m.span(0)
+    
+    def search_text(self, text):
+        """Yields raw-positions where `text` is found."""
+        word = text.encode()
+        raw = self.TextRaw
+        pos = -1
+        while 1:
+            pos = raw.find(word, pos+1)
+            if pos < 0:
+                break
+            yield pos
+    
+    def filter_text(self, text=None):
+        self.__lines = []
+        if not text:
+            text = self.topic_at_caret
+        if not text:
+            self.message("- No word to filter")
+            for i in range(2):
+                self.SetIndicatorCurrent(i)
+                self.IndicatorClearRange(0, self.TextLength)
+            return
+        lw = len(text.encode()) # for multi-byte string
+        lines = []
+        for p in self.search_text(text):
+            lines.append(self.LineFromPosition(p))
+            for i in range(2):
+                self.SetIndicatorCurrent(i)
+                self.IndicatorFillRange(p, lw)
+        self.__lines = sorted(set(lines)) # keep order, no duplication
+        self.message("{}: {} found".format(text, len(lines)))
+        self.parent.findData.FindString = text
+    
+    def on_filter_text_enter(self, evt):
+        if not self.__lines:
+            self.handler('quit', evt)
+            return
+        lines = ["{:4d} {}".format(x+1, self.GetLine(x)) for x in self.__lines]
+        self.AutoCompSetSeparator(ord('\n'))
+        self.AutoCompShow(0, '\n'.join(lines)) # cf. gen_autocomp
+        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
+                  handler=self.on_filter_text_selection)
+        ## evt.Skip()
+    
+    def on_filter_text_exit(self, evt):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
+                    handler=self.on_filter_text_selection)
+        ## evt.Skip()
+    
+    def on_filter_text_selection(self, evt):
+        line = self.__lines[self.AutoCompGetCurrent()]
+        self.goto_line(line)
+        self.recenter()
+        self.on_filter_text_exit(evt)
     
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
@@ -2536,7 +2617,7 @@ class Editor(EditWindow, EditorInterface):
          target : filename or codename (referred by debugger)
         mtdelta : timestamp delta (for checking external mod)
     """
-    STYLE = { #<Editor>
+    STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
@@ -2601,10 +2682,6 @@ class Editor(EditWindow, EditorInterface):
         self.__mtime = None     # timestamp
         self.codename = None
         self.code = None
-        
-        ## To prevent @filling crash (Never access to DropTarget)
-        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
-        self.SetDropTarget(None)
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -2894,7 +2971,7 @@ class Nautilus(Shell, EditorInterface):
         Half-baked by Patrik K. O'Brien,
         and the other half by K. O'moto.
     """
-    STYLE = { #<Shell>
+    STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
@@ -2998,15 +3075,6 @@ class Nautilus(Shell, EditorInterface):
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
             Nautilus.modules = ut.find_modules(force)
-        
-        ## To prevent @filling crash (Never access to DropTarget)
-        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
-        self.SetDropTarget(None)
-        
-        ## some autocomp settings
-        self.AutoCompSetAutoHide(False)
-        self.AutoCompSetIgnoreCase(True)
-        ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
