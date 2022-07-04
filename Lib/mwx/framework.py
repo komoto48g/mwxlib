@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.9"
+__version__ = "0.64.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1175,7 +1175,7 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         self.linfo.unwatch()
         self.debugger.unwatch()
-        shell = self.debugger.shell # reset interp locals
+        shell = self.debugger.interactive_shell # reset interp locals
         del shell.locals
         del shell.globals
         self.on_title_window(self.current_shell.target) # reset title
@@ -1211,11 +1211,11 @@ class ShellFrame(MiniFrame):
             self.popup_window(self.monitor, focus=0)
         elif callable(obj):
             try:
-                shell = self.debugger.shell
-                self.debugger.shell = self.current_shell
+                shell = self.debugger.interactive_shell
+                self.debugger.interactive_shell = self.current_shell
                 self.debugger.debug(obj, *args, **kwargs)
             finally:
-                self.debugger.shell = shell
+                self.debugger.interactive_shell = shell
         else:
             print("- cannot debug {!r}".format(obj))
             print("  The debug target must be callable or wx.Object.")
@@ -1224,7 +1224,7 @@ class ShellFrame(MiniFrame):
     
     def on_debug_begin(self, frame):
         """Called before set_trace"""
-        shell = self.debugger.shell
+        shell = self.debugger.interactive_shell
         shell.write("#<-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
         shell.SetFocus()
@@ -1234,7 +1234,7 @@ class ShellFrame(MiniFrame):
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
-        shell = self.debugger.shell
+        shell = self.debugger.interactive_shell
         gs = frame.f_globals
         ls = frame.f_locals
         shell.globals = gs
@@ -1258,7 +1258,7 @@ class ShellFrame(MiniFrame):
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
-        shell = self.debugger.shell
+        shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
         self.add_history("--> End of debugger")
@@ -2536,7 +2536,7 @@ class Editor(EditWindow, EditorInterface):
          target : filename or codename (referred by debugger)
         mtdelta : timestamp delta (for checking external mod)
     """
-    STYLE = { #<Editor>
+    STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
@@ -2894,7 +2894,7 @@ class Nautilus(Shell, EditorInterface):
         Half-baked by Patrik K. O'Brien,
         and the other half by K. O'moto.
     """
-    STYLE = { #<Shell>
+    STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
