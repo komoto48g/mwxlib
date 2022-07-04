@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.63.9"
+__version__ = "0.64.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -958,7 +958,6 @@ class ShellFrame(MiniFrame):
                     '* pressed' : (0, skip, fork), # => debugger
                   'C-g pressed' : (0, self.Quit, fork), # => debugger
                    'f1 pressed' : (0, self.About),
-                  'M-f pressed' : (0, self.OnFilterText),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
@@ -1422,32 +1421,6 @@ class ShellFrame(MiniFrame):
     ## --------------------------------
     ## Find text dialog
     ## --------------------------------
-    
-    def OnFilterText(self, evt):
-        win = self.current_editor
-        text = win.topic_at_caret
-        if not text:
-            self.message("- No word to filter")
-            for i in range(2):
-                win.SetIndicatorCurrent(i)
-                win.IndicatorClearRange(0, win.TextLength)
-            return
-        word = text.encode() # for multi-byte string
-        raw = win.TextRaw
-        lw = len(word)
-        pos = -1
-        n = 0
-        while 1:
-            pos = raw.find(word, pos+1)
-            if pos < 0:
-                break
-            for i in range(2):
-                win.SetIndicatorCurrent(i)
-                win.IndicatorFillRange(pos, lw)
-            n += 1
-        self.message("{}: {} found".format(text, n))
-        self.findData.FindString = text
-    
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     ## Note: This interface is common to editors
     
@@ -1546,6 +1519,7 @@ class EditorInterface(CtrlInterface):
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
                                        _F(self.recenter),
                                        _F(self.SetFocus)),
+                  'M-f pressed' : (0, _F(self.filter_text)),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)),   # override delete-line
@@ -2286,6 +2260,10 @@ class EditorInterface(CtrlInterface):
             self.cpos = self.anchor = r # save_excursion
             return self.GetTextRange(p, q)
     
+    ## --------------------------------
+    ## Editor/ search functions
+    ## --------------------------------
+    
     def get_right_paren(self, p):
         if self.get_char(p) in "({[<": # left-parentheses, <
             q = self.BraceMatch(p)
@@ -2362,6 +2340,40 @@ class EditorInterface(CtrlInterface):
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
         return p, q, st
+    
+    def search_pattern(self, pattern):
+        """Yields str-positions (start, end) with `pattern` re-matched."""
+        for m in re.finditer(pattern, self.Text):
+            yield m.span(0)
+    
+    def search_text(self, text):
+        """Yields raw-positions where `text` is found."""
+        word = text.encode()
+        raw = self.TextRaw
+        pos = -1
+        while 1:
+            pos = raw.find(word, pos+1)
+            if pos < 0:
+                break
+            yield pos
+    
+    def filter_text(self):
+        text = self.topic_at_caret
+        if not text:
+            self.message("- No word to filter")
+            for i in range(2):
+                self.SetIndicatorCurrent(i)
+                self.IndicatorClearRange(0, self.TextLength)
+            return
+        lw = len(text.encode()) # for multi-byte string
+        n = 0
+        for p in self.search_text(text):
+            for i in range(2):
+                self.SetIndicatorCurrent(i)
+                self.IndicatorFillRange(p, lw)
+            n += 1
+        self.message("{}: {} found".format(text, n))
+        self.parent.findData.FindString = text
     
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
