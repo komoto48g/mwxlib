@@ -776,7 +776,7 @@ class AuiNotebook(aui.AuiNotebook):
             if type is None or isinstance(win, type):
                 yield win
     
-    def show_page(self, win, show=True):
+    def show_page(self, win):
         j = self.GetPageIndex(win)
         if j != -1:
             if j != self.Selection:
@@ -790,7 +790,8 @@ class AuiNotebook(aui.AuiNotebook):
             self.AddPage(win, caption or typename(win.target))
             if self.PageCount > 1:
                 self.TabCtrlHeight = -1
-        return self.show_page(win, show)
+        if show:
+            self.show_page(win)
     
     def remove_page(self, win):
         """Remove page from the console"""
@@ -961,7 +962,7 @@ class ShellFrame(MiniFrame):
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.popup_window, self.ghost, None, doc="Toggle ghost")),
+                  'f11 pressed' : (0, _F(self.toggle_window, self.ghost, doc="Toggle ghost")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, ),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
@@ -1127,6 +1128,15 @@ class ShellFrame(MiniFrame):
         )
         self.popup_window(self.Help, focus=0)
     
+    def find_pane(self, win):
+        for pane in self._mgr.GetAllPanes():
+            nb = pane.window
+            if nb is win or nb.GetPageIndex(win) != -1:
+                return pane
+    
+    def toggle_window(self, win, focus=False):
+        self.popup_window(win, show=None, focus=focus)
+    
     def popup_window(self, win, show=True, focus=True):
         """Show the notebook page and move the focus
         win : page or window to popup
@@ -1135,10 +1145,9 @@ class ShellFrame(MiniFrame):
         wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
-            if nb is win or nb.show_page(win, show):
+            if nb is win or nb.show_page(win): # find and select page
                 break
         else:
-            ## print("- No such window: {}.".format(win))
             return
         if show is None:
             show = not pane.IsShown()
@@ -1309,11 +1318,10 @@ class ShellFrame(MiniFrame):
     def on_title_window(self, obj):
         self.SetTitle("Nautilus - {}".format(obj))
     
-    def add_help(self, text, show=True, focus=False):
+    def add_help(self, text):
         """Puts text to the help buffer"""
         self.Help.Text = text
-        if show is not None:
-            self.popup_window(self.Help, show, focus)
+        self.popup_window(self.Help, show=1, focus=0)
     
     def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
         """Add command:str to the history buffer
@@ -1933,6 +1941,9 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Fold / Unfold functions
     ## --------------------------------
+    
+    def is_folder_shown(self):
+        return self.GetMarginSensitive(0)
     
     def show_folder(self, show=True, colour=None):
         """Show folder margin
