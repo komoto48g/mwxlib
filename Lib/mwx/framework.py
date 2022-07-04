@@ -1519,7 +1519,7 @@ class EditorInterface(CtrlInterface):
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
                                        _F(self.recenter),
                                        _F(self.SetFocus)),
-                  'M-f pressed' : (0, _F(self.filter_text)),
+                  'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)),   # override delete-line
@@ -1535,7 +1535,15 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
+                 'select_indic' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin),
+            },
+            10 : {
+                         'quit' : (0, self.on_filter_text_exit),
+                    '* pressed' : (0, self.on_filter_text_exit),
+                   'up pressed' : (10, skip),
+                 'down pressed' : (10, skip),
+                'enter pressed' : (0, self.on_filter_text_selection),
             },
             100 : {
                        'motion' : (100, self.on_linesel_motion),
@@ -1573,10 +1581,31 @@ class EditorInterface(CtrlInterface):
         ## This event occurs when lines that are hidden should be made visible.
         self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
         
+        def indic(evt):
+            i = self.IndicatorValue # current indicator(1) <- filter_text
+            pos = evt.Position
+            p = self.IndicatorStart(i, pos)
+            q = self.IndicatorEnd(i, pos)
+            self.goto_char(pos)
+            self.handler('select_indic', self.GetTextRange(p, q)) or evt.Skip()
+        
+        self.Bind(stc.EVT_STC_INDICATOR_CLICK, indic)
+        
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
         self.SetKeyWords(1, ' '.join(builtins.__dict__) + ' self this')
+        
+        ## AutoComp setting
+        self.AutoCompSetAutoHide(False)
+        self.AutoCompSetIgnoreCase(True)
+        ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
+        self.AutoCompSetMaxWidth(80)
+        self.AutoCompSetMaxHeight(10)
+        
+        ## To prevent @filling crash (Never access to DropTarget)
+        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
+        self.SetDropTarget(None)
         
         ## Global style for all languages
         ## wx.Font style
@@ -1656,10 +1685,11 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
+        self.IndicatorSetHoverForeground(1, "blue")
         
         ## Custom indicator for match_paren
-        self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
-        self.IndicatorSetForeground(2, "light gray")
+        ## self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
+        ## self.IndicatorSetForeground(2, "light gray")
         
         ## Custom style of control-char, wrap-mode
         ## self.UseTabs = False
@@ -2064,6 +2094,7 @@ class EditorInterface(CtrlInterface):
             
             self.IndicatorSetForeground(0, lsc.get('fore') or "red")
             self.IndicatorSetForeground(1, lsc.get('back') or "red")
+            self.IndicatorSetHoverForeground(1, "blue")
         
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
@@ -2357,8 +2388,10 @@ class EditorInterface(CtrlInterface):
                 break
             yield pos
     
-    def filter_text(self):
-        text = self.topic_at_caret
+    def filter_text(self, text=None):
+        self.__lines = []
+        if not text:
+            text = self.topic_at_caret
         if not text:
             self.message("- No word to filter")
             for i in range(2):
@@ -2366,14 +2399,39 @@ class EditorInterface(CtrlInterface):
                 self.IndicatorClearRange(0, self.TextLength)
             return
         lw = len(text.encode()) # for multi-byte string
-        n = 0
+        lines = []
         for p in self.search_text(text):
+            lines.append(self.LineFromPosition(p))
             for i in range(2):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
-            n += 1
-        self.message("{}: {} found".format(text, n))
+        self.__lines = sorted(set(lines)) # keep order, no duplication
+        self.message("{}: {} found".format(text, len(lines)))
         self.parent.findData.FindString = text
+    
+    def on_filter_text_enter(self, evt):
+        if not self.__lines:
+            self.handler('quit', evt)
+            return
+        lines = ["{:4d} {}".format(x+1, self.GetLine(x)) for x in self.__lines]
+        self.AutoCompSetSeparator(ord('\n'))
+        self.AutoCompShow(0, '\n'.join(lines)) # cf. gen_autocomp
+        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
+                  handler=self.on_filter_text_selection)
+        ## evt.Skip()
+    
+    def on_filter_text_exit(self, evt):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
+                    handler=self.on_filter_text_selection)
+        ## evt.Skip()
+    
+    def on_filter_text_selection(self, evt):
+        line = self.__lines[self.AutoCompGetCurrent()]
+        self.goto_line(line)
+        self.recenter()
+        self.on_filter_text_exit(evt)
     
     ## --------------------------------
     ## Editor/ goto, skip, selection,..
@@ -2613,10 +2671,6 @@ class Editor(EditWindow, EditorInterface):
         self.__mtime = None     # timestamp
         self.codename = None
         self.code = None
-        
-        ## To prevent @filling crash (Never access to DropTarget)
-        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
-        self.SetDropTarget(None)
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -3010,15 +3064,6 @@ class Nautilus(Shell, EditorInterface):
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
             Nautilus.modules = ut.find_modules(force)
-        
-        ## To prevent @filling crash (Never access to DropTarget)
-        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
-        self.SetDropTarget(None)
-        
-        ## some autocomp settings
-        self.AutoCompSetAutoHide(False)
-        self.AutoCompSetIgnoreCase(True)
-        ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
