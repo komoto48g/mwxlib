@@ -1407,14 +1407,14 @@ class ShellFrame(MiniFrame):
         yield from self.ghost.all_pages(type)
     
     def find_editor(self, filename):
-        return next((ed for ed in self.ghost.all_pages(EditorInterface)
+        return next((ed for ed in self.ghost.all_pages(Editor)
                         if ed.target == filename), None)
     
     @property
     def current_editor(self):
         """Currently focused editor or shell"""
         win = wx.Window.FindFocus()
-        if win in self.all_pages(EditorInterface):
+        if win in self.all_pages(EditWindow):
             return win
         return self.console.CurrentPage
     
@@ -1432,15 +1432,12 @@ class ShellFrame(MiniFrame):
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     ## Note: This interface is common to editors
     
-    target_editor = None
-    
     def OnFindText(self, evt):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
             return
         
         win = self.current_editor
-        self.target_editor = win
         self.findData.FindString = win.topic_at_caret
         self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
                             style=(wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN))
@@ -1452,9 +1449,7 @@ class ShellFrame(MiniFrame):
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = wx.Window.FindFocus()
-        if win not in self.all_pages(EditorInterface):
-            win = self.target_editor or self.console.CurrentPage
+        win = self.current_editor
         win.DoFindNext(data, self.findDlg or win)
         if self.findDlg:
             self.OnFindClose(None)
@@ -3131,7 +3126,7 @@ class Nautilus(Shell, EditorInterface):
              '*[LR]win pressed' : (-1, ),
                  '*f12 pressed' : (-2, self.on_exit_escmap, self.on_enter_notemode),
             },
-            -2 : {
+            -2 : { # Note mode
                   'C-g pressed' : (0, self.on_exit_notemode),
                  '*f12 pressed' : (0, self.on_exit_notemode),
                'escape pressed' : (0, self.on_exit_notemode),
@@ -3194,9 +3189,6 @@ class Nautilus(Shell, EditorInterface):
            '[a-z0-9_] released' : (1, self.call_history_comp),
             'S-[a-z\\] pressed' : (1, skip),
            'S-[a-z\\] released' : (1, self.call_history_comp),
-                  ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
-                  ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
-                  ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
                  '*alt pressed' : (1, ),
                 '*ctrl pressed' : (1, ),
                '*shift pressed' : (1, ),
@@ -3230,9 +3222,6 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (2, self.exec_region),
                   'C-h pressed' : (2, self.call_helpTip),
                   'M-h pressed' : (2, self.call_helpTip2),
-                  ## 'M-. pressed' : (2, self.on_completion),
-                  ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
-                  ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -3266,9 +3255,6 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (3, self.exec_region),
                   'C-h pressed' : (3, self.call_helpTip),
                   'M-h pressed' : (3, self.call_helpTip2),
-                  ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
-                  ## 'M-/ pressed' : (3, self.on_completion),
-                  ## 'M-, pressed' : (4, clear, self.call_text_autocomp),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -3302,9 +3288,6 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (4, self.exec_region),
                   'C-h pressed' : (4, self.call_helpTip),
                   'M-h pressed' : (4, self.call_helpTip2),
-                  ## 'M-. pressed' : (2, clear, self.call_word_autocomp),
-                  ## 'M-/ pressed' : (3, clear, self.call_apropos_autocomp),
-                  ## 'M-, pressed' : (4, self.on_completion),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
                '*shift pressed' : (4, ),
