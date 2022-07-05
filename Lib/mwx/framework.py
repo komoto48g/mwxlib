@@ -844,6 +844,19 @@ class ShellFrame(MiniFrame):
             target=target or parent or __import__("__main__"),
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
         
+        ## Add useful global abbreviations to builtins
+        builtins.apropos = apropos
+        builtins.reload = reload
+        builtins.partial = partial
+        builtins.p = print
+        builtins.pp = pp
+        builtins.mro = mro
+        builtins.where = where
+        builtins.watch = watchit
+        builtins.filling = filling
+        builtins.profile = profile
+        builtins.disco = dis.dis
+        
         try:
             from wxpdb import Debugger
             from wxwit import Inspector
@@ -1407,7 +1420,7 @@ class ShellFrame(MiniFrame):
         yield from self.ghost.all_pages(type)
     
     def find_editor(self, filename):
-        return next((ed for ed in self.ghost.all_pages(Editor)
+        return next((ed for ed in self.ghost.all_pages(EditWindow)
                         if ed.target == filename), None)
     
     @property
@@ -3554,25 +3567,6 @@ class Nautilus(Shell, EditorInterface):
             lhs += c # store in lhs; no more processing
         return lhs
     
-    def setBuiltinKeywords(self):
-        """Create pseudo keywords as part of builtins
-        (override) Add more helper functions
-        """
-        Shell.setBuiltinKeywords(self)
-        
-        ## Add more useful global abbreviations to builtins
-        builtins.apropos = apropos
-        builtins.reload = reload
-        builtins.partial = partial
-        builtins.p = print
-        builtins.pp = pp
-        builtins.mro = mro
-        builtins.where = where
-        builtins.watch = watchit
-        builtins.filling = filling
-        builtins.profile = profile
-        builtins.disco = dis.dis
-    
     def on_deleted(self, shell):
         """Called before shell:self is killed.
         Delete target shell to prevent referencing the dead shell.
@@ -3606,7 +3600,7 @@ class Nautilus(Shell, EditorInterface):
             builtins.debug = self.parent.debug
             builtins.load = self.parent.load
         except AttributeError:
-            builtins.debug = monit
+            pass
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated.
