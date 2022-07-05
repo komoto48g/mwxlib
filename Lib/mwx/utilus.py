@@ -182,6 +182,7 @@ def typename(obj, docp=False, qualp=False, signature=False):
     """
     _mods = (None, "__main__",
                    "mwx.utilus",
+                   "mwx.nutshell",
                    "mwx.framework",
                    )
     if hasattr(obj, '__name__'): # class, module, method, function, etc.
