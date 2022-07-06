@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.1"
+__version__ = "0.65.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -968,6 +968,7 @@ class ShellFrame(MiniFrame):
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
                   'f11 pressed' : (0, _F(self.toggle_window, self.ghost, doc="Toggle ghost")),
+                'S-f11 pressed' : (0, _F(self.toggle_window, self.watcher, doc="Toggle watcher")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, ),
                   'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
@@ -1226,6 +1227,7 @@ class ShellFrame(MiniFrame):
             try:
                 shell = self.debugger.interactive_shell
                 self.debugger.interactive_shell = self.current_shell
+                self.debugger.editor = self.Log # set default logger
                 self.debugger.debug(obj, *args, **kwargs)
             finally:
                 self.debugger.interactive_shell = shell
