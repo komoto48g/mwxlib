@@ -320,7 +320,10 @@ class EditorInterface(CtrlInterface):
     
     @markline.setter
     def markline(self, v):
-        self.mark = self.PositionFromLine(v)
+        if v != -1:
+            self.mark = self.PositionFromLine(v)
+        else:
+            del self.mark
     
     @markline.deleter
     def markline(self):
@@ -1048,7 +1051,7 @@ class EditorInterface(CtrlInterface):
         return True
     
     def goto_line(self, ln, selection=False):
-        if ln is None:
+        if ln is None or ln < 0:
             return
         ## if ln < 0:
         ##     ln += self.LineCount
@@ -1371,18 +1374,17 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if f == self.filename: # save pos/markers before loading
             p = self.cpos
-            lm = self.linemark
+            ## lm = self.linemark
         else:
             p = -1
-            lm = -1
+            ## lm = -1
         if self.LoadFile(f):
             self.filename = f
             if lineno:
                 self.markline = lineno - 1
-                self.goto_line(lineno - 1)
-            elif p != -1:
-                self.goto_char(p)
-            self.linemark = lm
+            if p != -1:
+                self.goto_char(p) # restore position
+            ## self.linemark = lm
             wx.CallAfter(self.recenter)
             if show:
                 self.parent.handler('popup_window', self, show, focus)
