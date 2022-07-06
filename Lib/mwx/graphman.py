@@ -20,6 +20,7 @@ from wx import aui
 ## import wx.lib.agw.aui as aui
 try:
     import framework as mwx
+    from utilus import funcall as _F
     from controls import Icon
     from controls import ControlPanel
     from framework import CtrlInterface
@@ -27,6 +28,7 @@ try:
     from matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
+    from .utilus import funcall as _F
     from .controls import Icon
     from .controls import ControlPanel
     from .framework import CtrlInterface
@@ -41,8 +43,6 @@ from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 from pprint import pprint, pformat
 from importlib import reload, import_module
-
-_F = mwx.funcall
 
 
 class Thread(object):
