@@ -371,6 +371,139 @@ class EditorInterface(CtrlInterface):
             self.recenter()
     
     ## --------------------------------
+    ## Attributes of the editor
+    ## --------------------------------
+    py_styles = {
+        stc.STC_P_DEFAULT       : 0,    # etc. space \r\n\\$\0 (non-identifier)
+        stc.STC_P_OPERATOR      : 'op', # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
+        stc.STC_P_COMMENTLINE   : 'comment',
+        stc.STC_P_COMMENTBLOCK  : 'comment',
+        stc.STC_P_NUMBER        : 'suji',
+        stc.STC_P_STRING        : 'moji',
+        stc.STC_P_STRINGEOL     : 'moji',
+        stc.STC_P_CHARACTER     : 'moji',
+        stc.STC_P_TRIPLE        : 'moji',
+        stc.STC_P_TRIPLEDOUBLE  : 'moji',
+        stc.STC_P_IDENTIFIER    : 'word',
+        stc.STC_P_WORD2         : 'word',
+        stc.STC_P_DECORATOR     : 'word',
+        stc.STC_P_WORD          : 'keyword',
+        stc.STC_P_CLASSNAME     : 'class',
+        stc.STC_P_DEFNAME       : 'def',
+    }
+    
+    def get_style(self, pos):
+        c = self.get_char(pos)
+        st = self.GetStyleAt(pos)
+        sty = self.py_styles[st]
+        if sty == 0:
+            if c in " \t": return 'space'
+            if c in "\r\n": return 'linesep'
+        if sty == 'op':
+            if c in ".":
+                if '...' in self.get_text(pos-2, pos+3):
+                    return 'ellipsis'
+                return 'word'
+            if c in ",:;": return 'sep'
+            if c in "({[": return 'lparen'
+            if c in ")}]": return 'rparen'
+        return sty
+    
+    def get_char(self, pos):
+        """Returns the character at the position."""
+        return chr(self.GetCharAt(pos))
+    
+    def get_text(self, start, end):
+        """Retrieve a range of text.
+        
+        The range must be given as 0 <= start:end <= TextLength,
+        otherwise it will be modified to be in [0:TextLength].
+        """
+        if start > end:
+            start, end = end, start
+        return self.GetTextRange(max(start, 0),
+                                 min(end, self.TextLength))
+    
+    anchor = property(
+        lambda self: self.GetAnchor(),
+        lambda self,v: self.SetAnchor(v))
+    
+    cpos = property(
+        lambda self: self.GetCurrentPos(),
+        lambda self,v: self.SetCurrentPos(v))
+    
+    cline = property(
+        lambda self: self.GetCurrentLine(),
+        lambda self,v: self.SetCurrentPos(self.PositionFromLine(v)))
+    
+    @property
+    def bol(self):
+        """beginning of line"""
+        text, lp = self.CurLine
+        return self.cpos - lp
+    
+    @property
+    def eol(self):
+        """end of line"""
+        text, lp = self.CurLine
+        text = text.strip('\r\n') # remove linesep: '\r' and '\n'
+        return (self.cpos - lp + len(text.encode()))
+    
+    @property
+    def caretline(self):
+        """Text of the range (bol, eol) at the caret-line
+        
+        Similar to CurLine, but with the trailing crlf truncated.
+        For shells, the leading prompt is also be truncated due to overridden bol.
+        """
+        return self.GetTextRange(self.bol, self.eol)
+    
+    @property
+    def expr_at_caret(self):
+        """A syntax unit (expression) at the caret-line"""
+        p = q = self.cpos
+        lsty = self.get_style(p-1)
+        rsty = self.get_style(p)
+        if lsty == rsty == 'moji': # inside string
+            return ''
+        elif lsty == 'suji' or rsty == 'suji':
+            styles = {'suji'}
+        elif lsty in ('word', 'moji', 'rparen')\
+          or rsty in ('word', 'moji', 'lparen'):
+            styles = {'word', 'moji', 'paren', 'space'}
+        else:
+            return ''
+        while 1:
+            p, start, sty = self.get_preceding_atom(p)
+            if sty not in styles:
+                break
+        while 1:
+            end, q, sty = self.get_following_atom(q)
+            if sty not in styles:
+                break
+        return self.GetTextRange(start, end).strip()
+    
+    @property
+    def topic_at_caret(self):
+        """Topic word at the caret or selected substring
+        The caret scouts back and forth to scoop a topic.
+        """
+        topic = self.SelectedText
+        if topic:
+            return topic
+        else:
+            delims = "({[<>]}),:; \t\r\n"
+            p = q = self.cpos
+            if self.get_char(p-1) not in delims:
+                self.WordLeft()
+                p = self.cpos
+            if self.get_char(q) not in delims:
+                self.WordRightEnd()
+                q = self.cpos
+            self.cpos = self.anchor = p # save_excursion
+            return self.GetTextRange(p, q)
+    
+    ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
     py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
@@ -755,140 +888,7 @@ class EditorInterface(CtrlInterface):
             self.ScrollToLine(vl - n//2)
     
     ## --------------------------------
-    ## Attributes of the editor
-    ## --------------------------------
-    py_styles = {
-        stc.STC_P_DEFAULT       : 0,    # etc. space \r\n\\$\0 (non-identifier)
-        stc.STC_P_OPERATOR      : 'op', # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
-        stc.STC_P_COMMENTLINE   : 'comment',
-        stc.STC_P_COMMENTBLOCK  : 'comment',
-        stc.STC_P_NUMBER        : 'suji',
-        stc.STC_P_STRING        : 'moji',
-        stc.STC_P_STRINGEOL     : 'moji',
-        stc.STC_P_CHARACTER     : 'moji',
-        stc.STC_P_TRIPLE        : 'moji',
-        stc.STC_P_TRIPLEDOUBLE  : 'moji',
-        stc.STC_P_IDENTIFIER    : 'word',
-        stc.STC_P_WORD2         : 'word',
-        stc.STC_P_DECORATOR     : 'word',
-        stc.STC_P_WORD          : 'keyword',
-        stc.STC_P_CLASSNAME     : 'class',
-        stc.STC_P_DEFNAME       : 'def',
-    }
-    
-    def get_style(self, pos):
-        c = self.get_char(pos)
-        st = self.GetStyleAt(pos)
-        sty = self.py_styles[st]
-        if sty == 0:
-            if c in " \t": return 'space'
-            if c in "\r\n": return 'linesep'
-        if sty == 'op':
-            if c in ".":
-                if '...' in self.get_text(pos-2, pos+3):
-                    return 'ellipsis'
-                return 'word'
-            if c in ",:;": return 'sep'
-            if c in "({[": return 'lparen'
-            if c in ")}]": return 'rparen'
-        return sty
-    
-    def get_char(self, pos):
-        """Returns the character at the position."""
-        return chr(self.GetCharAt(pos))
-    
-    def get_text(self, start, end):
-        """Retrieve a range of text.
-        
-        The range must be given as 0 <= start:end <= TextLength,
-        otherwise it will be modified to be in [0:TextLength].
-        """
-        if start > end:
-            start, end = end, start
-        return self.GetTextRange(max(start, 0),
-                                 min(end, self.TextLength))
-    
-    anchor = property(
-        lambda self: self.GetAnchor(),
-        lambda self,v: self.SetAnchor(v))
-    
-    cpos = property(
-        lambda self: self.GetCurrentPos(),
-        lambda self,v: self.SetCurrentPos(v))
-    
-    cline = property(
-        lambda self: self.GetCurrentLine(),
-        lambda self,v: self.SetCurrentPos(self.PositionFromLine(v)))
-    
-    @property
-    def bol(self):
-        """beginning of line"""
-        text, lp = self.CurLine
-        return self.cpos - lp
-    
-    @property
-    def eol(self):
-        """end of line"""
-        text, lp = self.CurLine
-        text = text.strip('\r\n') # remove linesep: '\r' and '\n'
-        return (self.cpos - lp + len(text.encode()))
-    
-    @property
-    def caretline(self):
-        """Text of the range (bol, eol) at the caret-line
-        
-        Similar to CurLine, but with the trailing crlf truncated.
-        For shells, the leading prompt is also be truncated due to overridden bol.
-        """
-        return self.GetTextRange(self.bol, self.eol)
-    
-    @property
-    def expr_at_caret(self):
-        """A syntax unit (expression) at the caret-line"""
-        p = q = self.cpos
-        lsty = self.get_style(p-1)
-        rsty = self.get_style(p)
-        if lsty == rsty == 'moji': # inside string
-            return ''
-        elif lsty == 'suji' or rsty == 'suji':
-            styles = {'suji'}
-        elif lsty in ('word', 'moji', 'rparen')\
-          or rsty in ('word', 'moji', 'lparen'):
-            styles = {'word', 'moji', 'paren', 'space'}
-        else:
-            return ''
-        while 1:
-            p, start, sty = self.get_preceding_atom(p)
-            if sty not in styles:
-                break
-        while 1:
-            end, q, sty = self.get_following_atom(q)
-            if sty not in styles:
-                break
-        return self.GetTextRange(start, end).strip()
-    
-    @property
-    def topic_at_caret(self):
-        """Topic word at the caret or selected substring
-        The caret scouts back and forth to scoop a topic.
-        """
-        topic = self.SelectedText
-        if topic:
-            return topic
-        else:
-            delims = "({[<>]}),:; \t\r\n"
-            p = q = self.cpos
-            if self.get_char(p-1) not in delims:
-                self.WordLeft()
-                p = self.cpos
-            if self.get_char(q) not in delims:
-                self.WordRightEnd()
-                q = self.cpos
-            self.cpos = self.anchor = p # save_excursion
-            return self.GetTextRange(p, q)
-    
-    ## --------------------------------
-    ## Editor/ search functions
+    ## Search functions
     ## --------------------------------
     
     def get_right_paren(self, p):
@@ -1032,7 +1032,7 @@ class EditorInterface(CtrlInterface):
         self.on_filter_text_exit(evt)
     
     ## --------------------------------
-    ## Editor/ goto, skip, selection,..
+    ## goto, skip, selection, etc.
     ## --------------------------------
     
     def goto_char(self, pos, selection=False):
@@ -1129,7 +1129,7 @@ class EditorInterface(CtrlInterface):
             self._obj.SetXOffset(self.hpos)
     
     ## --------------------------------
-    ## Editor/ edit, eat, kill,..
+    ## Edit: insert, eat, kill, etc.
     ## --------------------------------
     
     def clear(self):
