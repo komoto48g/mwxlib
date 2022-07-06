@@ -1375,7 +1375,7 @@ class ShellFrame(MiniFrame):
     
     def duplicate_line(self, clear=True):
         """Duplicate an expression at the caret-line"""
-        win = self.current_editor
+        win = self.current_editor or self.current_shell
         text = win.SelectedText or win.expr_at_caret
         if text:
             shell = self.current_shell
@@ -1421,7 +1421,7 @@ class ShellFrame(MiniFrame):
         win = wx.Window.FindFocus()
         if win in self.all_pages(EditWindow):
             return win
-        return self.console.CurrentPage
+        ## return self.console.CurrentPage
     
     @property
     def current_shell(self):
@@ -1435,14 +1435,16 @@ class ShellFrame(MiniFrame):
     ## Find text dialog
     ## --------------------------------
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
-    ## Note: This interface is common to editors
+    
+    __find_target = None
     
     def OnFindText(self, evt):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
             return
         
-        win = self.current_editor
+        win = self.current_editor or self.current_shell
+        self.__find_target = win
         self.findData.FindString = win.topic_at_caret
         self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
                             style=(wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN))
@@ -1454,10 +1456,11 @@ class ShellFrame(MiniFrame):
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = self.current_editor
+        win = self.current_editor or self.__find_target or self.current_shell
         win.DoFindNext(data, self.findDlg or win)
         if self.findDlg:
             self.OnFindClose(None)
+        win.EnsureLineMoreOnScreen(win.cline)
     
     def OnFindPrev(self, evt):
         self.OnFindNext(evt, backward=True)

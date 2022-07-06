@@ -571,7 +571,7 @@ class EditorInterface(CtrlInterface):
                 break
             lc = la
         self.ToggleFold(lc)
-        self.EnsureLineVisible(lc)
+        self.EnsureLineOnScreen(lc)
     
     def get_region(self, line):
         """Line numbers of folding head and tail containing the line."""
@@ -718,29 +718,41 @@ class EditorInterface(CtrlInterface):
     def recenter(self, ln=None):
         """Scroll the cursor line to the center of screen
         If ln=0, the cursor moves to the top of the screen.
-        If ln=-1, moves to the bottom
+        If ln=-1 (ln=n-1), moves to the bottom
         """
         n = self.LinesOnScreen() # lines completely visible
-        m = n//2 if ln is None else ln % n if ln < n else n
-        v = self.calc_vline(self.cpos)
-        self.ScrollToLine(v - m)
+        m = n//2 if ln is None else ln % n if ln < n else n # ln[0:n]
+        vl = self.calc_vline(self.cline)
+        self.ScrollToLine(vl - m)
     
-    def calc_vline(self, pos):
+    def calc_vline(self, line):
         """Virtual line numberin the buffer window."""
+        pos = self.PositionFromLine(line)
         w, h = self.PointFromPosition(pos)
         return self.FirstVisibleLine + h//self.TextHeight(0)
     
-    def EnsureLineVisible(self, line):
+    def EnsureLineOnScreen(self, line):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
         """
         n = self.LinesOnScreen() # lines completely visible
-        v = self.calc_vline(self.PositionFromLine(line))
-        lv = self.FirstVisibleLine
-        if v < lv:
-            self.ScrollToLine(v)
-        elif v > lv + n:
-            self.ScrollToLine(v - n)
+        hl = self.FirstVisibleLine
+        vl = self.calc_vline(line)
+        if vl < hl:
+            self.ScrollToLine(vl)
+        elif vl > hl + n - 1:
+            self.ScrollToLine(vl - n + 1)
+    
+    def EnsureLineMoreOnScreen(self, line):
+        """Ensure a particular line is visible by scrolling the buffer
+        without expanding any header line hiding it.
+        If the line is at the screen edge, recenter it.
+        """
+        n = self.LinesOnScreen() # lines completely visible
+        hl = self.FirstVisibleLine
+        vl = self.calc_vline(line)
+        if not hl < vl < hl + n - 1:
+            self.ScrollToLine(vl - n//2)
     
     ## --------------------------------
     ## Attributes of the editor
