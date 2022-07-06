@@ -2393,7 +2393,6 @@ class Nautilus(Shell, EditorInterface):
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
             if wx.TheClipboard.GetData(data):
-                self.ReplaceSelection('')
                 text = data.GetText()
                 text = self.fixLineEndings(text)
                 command = self.regulate_cmd(text)
@@ -2401,7 +2400,8 @@ class Nautilus(Shell, EditorInterface):
                 if rectangle:
                     text, lp = self.CurLine
                     offset = ' ' * (lp - len(sys.ps2))
-                self.write(command.replace('\n', os.linesep + sys.ps2 + offset))
+                self.ReplaceSelection(
+                    command.replace('\n', os.linesep + sys.ps2 + offset))
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):

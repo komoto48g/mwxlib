@@ -9,10 +9,12 @@ import sys
 import wx
 try:
     import framework as mwx
+    from utilus import funcall as _F
     from matplot2 import MatplotPanel
     from matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 except ImportError:
     from . import framework as mwx
+    from .utilus import funcall as _F
     from .matplot2 import MatplotPanel
     from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 from matplotlib import cm
@@ -23,8 +25,6 @@ import cv2
 import numpy as np
 from numpy import pi, nan
 from scipy import ndimage as ndi
-
-_F = mwx.funcall
 
 
 def imbuffer(img):
