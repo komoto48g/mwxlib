@@ -865,14 +865,14 @@ class EditorInterface(CtrlInterface):
             return topic
         else:
             delims = "({[<>]}),:; \t\r\n"
-            p = q = r = self.cpos
+            p = q = self.cpos
             if self.get_char(p-1) not in delims:
                 self.WordLeft()
                 p = self.cpos
             if self.get_char(q) not in delims:
                 self.WordRightEnd()
                 q = self.cpos
-            self.cpos = self.anchor = r # save_excursion
+            self.cpos = self.anchor = p # save_excursion
             return self.GetTextRange(p, q)
     
     ## --------------------------------
@@ -997,9 +997,11 @@ class EditorInterface(CtrlInterface):
         if not self.__lines:
             self.handler('quit', evt)
             return
-        lines = ["{:4d} {}".format(x+1, self.GetLine(x)) for x in self.__lines]
+        def _format(ln):
+            return "{:4d} {}".format(ln+1, self.GetLine(ln).rstrip())
         self.AutoCompSetSeparator(ord('\n'))
-        self.AutoCompShow(0, '\n'.join(lines)) # cf. gen_autocomp
+        self.AutoCompShow(0, '\n'.join(map(_format, self.__lines))) # cf. gen_autocomp
+        self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
                   handler=self.on_filter_text_selection)
         ## evt.Skip()
