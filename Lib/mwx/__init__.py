@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """mwxlib framework (based on matplotlib/wx)
 """
-from .framework import __version__, __author__
 from .utilus import apropos, typename, FSM
+from .framework import __version__, __author__
 from .framework import pack, Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame
 

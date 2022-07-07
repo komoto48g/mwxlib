@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.2"
+__version__ = "0.65.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1607,6 +1607,8 @@ if 1:
     frm.editor.handler.debug = 4
     frm.shellframe.handler.debug = 4
     frm.shellframe.rootshell.handler.debug = 4
+    ## frm.shellframe.debugger.skip = []
+    frm.shellframe.debugger.skip.remove(FSM.__module__)
     if 0:
         frm.shellframe.rootshell.ViewEOL = 1
         frm.shellframe.Scratch.ViewEOL = 1
