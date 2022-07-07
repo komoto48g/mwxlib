@@ -473,7 +473,7 @@ class EditorInterface(CtrlInterface):
             styles = {'suji'}
         elif lsty in ('word', 'moji', 'rparen')\
           or rsty in ('word', 'moji', 'lparen'):
-            styles = {'word', 'moji', 'paren', 'space'}
+            styles = {'word', 'moji', 'paren'}
         else:
             return ''
         while 1:
