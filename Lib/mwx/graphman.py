@@ -349,10 +349,6 @@ class Layer(ControlPanel, CtrlInterface):
         """Initialize me safely (to be overridden)"""
         pass
     
-    ## def Destroy(self):
-    ##     """Called from parent (to be overridden) -> destroy"""
-    ##     return ControlPanel.Destroy(self)
-    
     def load_session(self, session):
         """Restore settings from a session file (to be overridden)"""
         if 'params' in session:
@@ -962,13 +958,13 @@ class Frame(mwx.Frame):
             return name
     
     @staticmethod
-    def register(cls, rebase=None):
+    def register(cls, module=None):
         """Register dummy plug <module.Frame.register.<locals>._Plugin>
         Add module.Plugin(Layer)
         """
-        module = rebase or inspect.getmodule(cls) # rebsae or __main__
+        if not module:
+            module = inspect.getmodule(cls) # rebase module or __main__
         
-        ## Plugin(Layer) is cls
         if _isLayer(cls):
             warnings.warn("Use class name 'Plugin' instead of {!r}."
                           .format(cls.__name__), UserWarning)
@@ -976,7 +972,6 @@ class Frame(mwx.Frame):
             module.Plugin = cls
             return cls
         
-        ## Plugin(Layer) has cls as class wrapper
         class _Plugin(Layer):
             def Init(self):
                 self.plug = cls(self)
