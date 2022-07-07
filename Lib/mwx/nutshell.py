@@ -1374,18 +1374,16 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if f == self.filename: # save pos/markers before loading
             p = self.cpos
-            ## lm = self.linemark
         else:
             p = -1
-            ## lm = -1
         if self.LoadFile(f):
             self.filename = f
             if lineno:
                 self.markline = lineno - 1
+                self.goto_marker()
             if p != -1:
                 self.goto_char(p) # restore position
-            ## self.linemark = lm
-            wx.CallAfter(self.recenter)
+                self.recenter()
             if show:
                 self.parent.handler('popup_window', self, show, focus)
             self.handler('editor_loaded', self)
