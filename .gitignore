@@ -16,7 +16,7 @@ etc/
 icon*/
 test*/
 vclip/
-wxNautilus/
+wx*/
 !Lib/mwx/
 
 # Byte-compiled / optimized / DLL files

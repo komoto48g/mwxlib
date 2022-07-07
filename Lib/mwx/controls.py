@@ -11,11 +11,11 @@ import numpy as np
 from numpy import nan, inf
 try:
     from utilus import SSM
-    import framework as mwx
+    from framework import pack, Menu
     import images
 except ImportError:
     from .utilus import SSM
-    from . import framework as mwx
+    from .framework import pack, Menu
     from . import images
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -415,7 +415,7 @@ class Knob(wx.Panel):
         self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
         self.SetSizer(
-            mwx.pack(self, (
+            pack(self, (
                 (self.label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
                 (self.text,  0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, tw and 1),
                 (self.ctrl,  c, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, cw and 1),
@@ -560,7 +560,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
         
-        self.SetSizer(mwx.pack(self, [], orient=wx.VERTICAL))
+        self.SetSizer(pack(self, [], orient=wx.VERTICAL))
         self.SetupScrolling()
         
         self.__groups = []
@@ -579,7 +579,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                 lambda v: self.reset_params(),
                 lambda v: v.Enable(self.__params != [])),
         ]
-        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: mwx.Menu.Popup(self, self.Menu))
+        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.Menu))
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
         
         self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnRecalcLayout)
@@ -687,12 +687,12 @@ class ControlPanel(scrolled.ScrolledPanel):
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 1:
-            objs = [mwx.pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
+            objs = [pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
                         style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
                             for i in range(0, len(objs), row)]
         
         p = wx.EXPAND if expand > 0 else align
-        sizer = mwx.pack(self, objs, label=title, orient=wx.VERTICAL,
+        sizer = pack(self, objs, label=title, orient=wx.VERTICAL,
                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
@@ -722,7 +722,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         if fix:
             self.Sizer.Fit(self)
     
-    pack = mwx.pack
+    pack = pack
     
     ## --------------------------------
     ## 外部入出力／クリップボード通信
@@ -1013,7 +1013,7 @@ class TextCtrl(wx.Panel):
         self.btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
-            mwx.pack(self, (
+            pack(self, (
                 (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
                 (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             ))
@@ -1080,7 +1080,7 @@ class Choice(wx.Panel):
         self.btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
-            mwx.pack(self, (
+            pack(self, (
                 (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
                 (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             ))
@@ -1214,7 +1214,7 @@ class Gauge(wx.Panel):
 
 if __name__ == "__main__":
     from numpy import pi
-    from framework import CtrlInterface
+    from framework import CtrlInterface, Frame
     
     class TestPanel(ControlPanel, CtrlInterface):
         def __init__(self, *args, **kwargs):
@@ -1270,7 +1270,7 @@ if __name__ == "__main__":
             ## )
     
     app = wx.App()
-    frm = mwx.Frame(None)
+    frm = Frame(None)
     frm.panel = TestPanel(frm)
     frm.Fit()
     frm.Show()
