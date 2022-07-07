@@ -743,7 +743,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     
     def reset_params(self, argv=None, checked_only=False, **kwargs):
         params = self.get_params(checked_only)
-        if not argv:
+        if argv is None:
             for p in params:
                 try:
                     p.reset(**kwargs)
@@ -767,7 +767,8 @@ class ControlPanel(scrolled.ScrolledPanel):
     
     def paste_from_clipboard(self, checked_only=False, **kwargs):
         text = Clipboard.read()
-        self.reset_params(text.split('\t'), checked_only, **kwargs)
+        if text:
+            self.reset_params(text.split('\t'), checked_only, **kwargs)
 
 
 class Clipboard:
