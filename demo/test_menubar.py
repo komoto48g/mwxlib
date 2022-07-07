@@ -9,7 +9,7 @@ class Frame(mwx.Frame):
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
-        ## Do not use menu IDs in [ID_LOWEST(4999):D_HIGHEST(5999)]
+        ## Do not use menu IDs in [ID_LOWEST(4999):ID_HIGHEST(5999)]
         
         self.menubar["File"][0:0] = [
             (101, "&Open\tctrl+o", "Opent the document", Icon('open'),
@@ -52,5 +52,6 @@ class Frame(mwx.Frame):
 if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
+    frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
     app.MainLoop()

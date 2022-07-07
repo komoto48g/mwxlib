@@ -185,8 +185,7 @@ class Layer(ControlPanel, CtrlInterface):
     """Graphman.Layer
     
     Attributes:
-           menu : menu string in parent menubar
-        menustr : menu-item string in parent menubar
+        menukey : menu item key:str in parent menubar
        category : title of notebook holder, otherwise None for single pane
         caption : flag to set the pane caption to be visible
                   a string can also be specified (default is __module__)
@@ -198,8 +197,19 @@ class Layer(ControlPanel, CtrlInterface):
           graph : parent.graph window
          otuput : parent.output window
     """
-    menu = "Plugins"
-    menustr = property(lambda self: "&"+self.__module__)
+    @property
+    def menu(self): # for backward compatibility
+        if self.menukey:
+            head, sep, tail = self.menukey.rpartition('/')
+            return head or "Plugins"
+    
+    @property
+    def menustr(self): # for backward compatibility
+        if self.menukey:
+            head, sep, tail = self.menukey.rpartition('/')
+            return tail or self.__module__
+    
+    menukey = property(lambda self: "Plugins/&" + self.__module__)
     menuicon = None
     caption = True
     category = None
@@ -343,12 +353,12 @@ class Layer(ControlPanel, CtrlInterface):
     ##     """Called from parent (to be overridden) -> destroy"""
     ##     return ControlPanel.Destroy(self)
     
-    def init_session(self, session):
+    def load_session(self, session):
         """Restore settings from a session file (to be overridden)"""
         if 'params' in session:
             self.parameters = session['params']
     
-    load_session = init_session # for backward compatibility
+    init_session = load_session # for backward compatibility
     
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
@@ -716,7 +726,7 @@ class Frame(mwx.Frame):
                 [cmenu(i,c) for i,c in enumerate(colours) if not c.islower()]),
         ]
         
-        self.menubar[Layer.menu] = [ # Plugins menu
+        self.menubar["Plugins"] = [ # default Plugins menu
             (mwx.ID_(100), "&Load Plugs", "Load plugins", Icon('load'),
                 self.OnLoadPlugins),
             

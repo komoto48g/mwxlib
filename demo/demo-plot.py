@@ -11,7 +11,7 @@ from mwx.graphman import Layer, Frame
 
 
 class Plugin(Layer):
-    menu = "Plugins/&Demo"
+    menukey = "Plugins/&Demo/"
     
     def Init(self):
         axes = self.graph.axes

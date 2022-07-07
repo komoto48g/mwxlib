@@ -14,8 +14,7 @@ from mwx.graphman import Layer, Frame
 class Plugin(Layer):
     """Plugin template ver.1
     """
-    menu = "Plugins/&Template"
-    menustr = "&template ver.1"
+    menukey = "Plugins/&Template/&template ver.1"
     category = "Test"
     caption = True
     
