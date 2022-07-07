@@ -566,27 +566,27 @@ class GraphPlot(MatplotPanel):
             },
         })
         
-        def Icon(key):
+        def _Icon(key):
             return wx.ArtProvider.GetBitmap(key, size=(14,14))
         
         self.Menu += [
             (),
-            (wx.ID_COPY, "&Copy buffer\t(C-c)", "Copy buffer to clipboard", Icon(wx.ART_COPY),
+            (wx.ID_COPY, "&Copy buffer\t(C-c)", "Copy buffer to clipboard", _Icon(wx.ART_COPY),
                 lambda v: self.write_buffer_to_clipboard(),
                 lambda v: v.Enable(self.frame is not None)),
                 
-            (wx.ID_PASTE, "&Paste buffer\t(C-v)", "Paste from clipboard", Icon(wx.ART_PASTE),
+            (wx.ID_PASTE, "&Paste buffer\t(C-v)", "Paste from clipboard", _Icon(wx.ART_PASTE),
                 lambda v: self.read_buffer_from_clipboard()),
             (),
             (mwx.ID_(510), "&Invert Color", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.invert_cmap(),
                 lambda v: v.Check(self.get_cmap()[-2:] == "_r")),
             (),
-            (wx.ID_CLOSE, "&Kill buffer\t(C-k)", "Kill buffer", Icon(wx.ART_DELETE),
+            (wx.ID_CLOSE, "&Kill buffer\t(C-k)", "Kill buffer", _Icon(wx.ART_DELETE),
                 lambda v: self.kill_buffer(),
                 lambda v: v.Enable(self.frame is not None)),
                 
-            (wx.ID_CLOSE_ALL, "&Kill all buffer\t(C-S-k)", "Kill buffers", Icon(wx.ART_DELETE),
+            (wx.ID_CLOSE_ALL, "&Kill all buffer\t(C-S-k)", "Kill buffers", _Icon(wx.ART_DELETE),
                 lambda v: self.kill_buffer_all(),
                 lambda v: v.Enable(self.frame is not None)),
         ]

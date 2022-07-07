@@ -26,9 +26,7 @@ __pycache__/
 # Distribution / packaging
 build/
 dist/
-## lib/
-lib/*.py
-lib/jtools/
+lib/
 lib64/
 *.egg-info/
 *.egg

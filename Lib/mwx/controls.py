@@ -660,7 +660,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                row=1, expand=0, border=2, hspacing=1, vspacing=1,
                show=True, visible=True, fix=True, align=wx.ALIGN_LEFT,
                **kwargs):
-        """Do layout (cf. Layout) using mwx.pack
+        """Do layout (cf. Layout)
         
           title : box header string (default is None - no box)
            objs : list of Params, wx.Objects, tuple of sizing, or None
@@ -871,7 +871,7 @@ Icon.custom_images = dict((k, v) for k, v in images.__dict__.items()
                           if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
 
 
-def _bmpIcon(v):
+def _Icon(v):
     if isinstance(v, str):
         return Icon(v)
     return v
@@ -888,12 +888,12 @@ class Button(pb.PlateButton):
     Args:
           label : button label
         handler : event handler when the button is pressed
-           icon : key:str for button icon
+           icon : key:str or bitmap for button icon
             tip : tip:str displayed on the button
        **kwargs : keywords for wx.lib.platebtn.PlateButton
     
     Attributes:
-           icon : key:str for Icon
+           icon : key:str or bitmap
     """
     @property
     def icon(self):
@@ -902,7 +902,7 @@ class Button(pb.PlateButton):
     @icon.setter
     def icon(self, v):
         self.__icon = v
-        self.SetBitmap(_bmpIcon(v))
+        self.SetBitmap(_Icon(v))
         self.Refresh()
     
     def __init__(self, parent, label='',
@@ -933,12 +933,12 @@ class ToggleButton(wx.ToggleButton):
     Args:
           label : button label
         handler : event handler when the button is pressed
-           icon : key:str for button icon
+           icon : key:str or bitmap for button icon
             tip : tip:str displayed on the button
        **kwargs : keywords for wx.ToggleButton
     
     Attributes:
-           icon : key:str for Icon
+           icon : key:str or bitmap
     
     Note:
         To get the status, check Value or event.GetInt or event.IsChecked.
@@ -952,9 +952,9 @@ class ToggleButton(wx.ToggleButton):
         self.__icon = v
         if isinstance(v, tuple):
             v, w = v
-            self.SetBitmapPressed(_bmpIcon(w))
+            self.SetBitmapPressed(_Icon(w))
         if v:
-            self.SetBitmap(_bmpIcon(v))
+            self.SetBitmap(_Icon(v))
         self.Refresh()
     
     def __init__(self, parent, label='',
@@ -976,7 +976,7 @@ class TextCtrl(wx.Panel):
           label : button label
         handler : event handler when text is entered
         updater : event handler when the button is pressed
-           icon : key:str for button icon
+           icon : key:str or bitmap for button icon
             tip : tip:str displayed on the button
        readonly : flag:bool for wx.TE_READONLY
        **kwargs : keywords for wx.TextCtrl
@@ -984,7 +984,7 @@ class TextCtrl(wx.Panel):
     
     Attributes:
           Value : textctrl value:str
-           icon : Icon key:str
+           icon : key:str or bitmap
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
@@ -1033,7 +1033,7 @@ class Choice(wx.Panel):
           label : button label
         handler : event handler when text is entered or item is selected
         updater : event handler when the button is pressed
-           icon : key:str for button icon
+           icon : key:str or bitmap for button icon
             tip : tip:str displayed on the button
        readonly : flag:bool for wx.TE_READONLY
       selection : initial selection:int for combobox
@@ -1043,7 +1043,7 @@ class Choice(wx.Panel):
     Attributes:
       Selection : combobox selection:int
           Value : combobox value:str
-           icon : Icon key:str
+           icon : key:str or bitmap
     
     Note:
         If the input item is not found in the choices,
