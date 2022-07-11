@@ -181,8 +181,8 @@ def _isLayer(obj):
     return hasattr(obj, 'category') #<class 'Layer'>
 
 
-class Layer(ControlPanel, CtrlInterface):
-    """Graphman.Layer
+class LayerInterface(CtrlInterface):
+    """Graphman.Layer interface mixin
     
     Attributes:
         menukey : menu item key:str in parent menubar
@@ -255,13 +255,25 @@ class Layer(ControlPanel, CtrlInterface):
                     art.remove()
                 self.Arts.remove(art)
     
-    def __init__(self, parent, session=None, **kwargs):
-        kwargs.setdefault('size', (130, 24)) # keep minimum size
-        ControlPanel.__init__(self, parent, **kwargs)
+    def __init__(self, parent, session=None):
         CtrlInterface.__init__(self)
         
         self.__parent = parent
         self.__artists = []
+        
+        self.parameters = None # => reset
+        
+        def copy_params(evt, **kwargs):
+            if self.parameters:
+                return self.copy_to_clipboard(**kwargs)
+        
+        def paste_params(evt, **kwargs):
+            if self.parameters:
+                return self.paste_from_clipboard(**kwargs)
+        
+        def reset_params(evt, **kwargs):
+            if self.parameters:
+                return self.reset_params(**kwargs)
         
         self.handler.append({ # DNA<Layer>
             None : {
@@ -276,13 +288,13 @@ class Layer(ControlPanel, CtrlInterface):
                   'page_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
             },
             0 : {
-                  'C-c pressed' : (0, _F(self.copy_to_clipboard)),
-                'C-S-c pressed' : (0, _F(self.copy_to_clipboard, checked_only=1)),
-                  'C-v pressed' : (0, _F(self.paste_from_clipboard)),
-                'C-S-v pressed' : (0, _F(self.paste_from_clipboard, checked_only=1)),
-                  'C-n pressed' : (0, _F(self.Draw, False), _F(self.reset_params)),
-                'C-S-n pressed' : (0, _F(self.Draw, False), _F(self.reset_params, checked_only=1)),
-            }
+                  'C-c pressed' : (0, _F(copy_params)),
+                'C-S-c pressed' : (0, _F(copy_params, checked_only=1)),
+                  'C-v pressed' : (0, _F(paste_params)),
+                'C-S-v pressed' : (0, _F(paste_params, checked_only=1)),
+                  'C-n pressed' : (0, _F(self.Draw, False), _F(reset_params)),
+                'C-S-n pressed' : (0, _F(self.Draw, False), _F(reset_params, checked_only=1)),
+            },
         })
         
         self.menu = [
@@ -315,6 +327,8 @@ class Layer(ControlPanel, CtrlInterface):
             (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
+        self.Bind(wx.EVT_CONTEXT_MENU,
+                  lambda v: mwx.Menu.Popup(self, self.Menu))
         
         @self.handler.bind('window_destroy')
         def destroy(evt):
@@ -385,6 +399,15 @@ class Layer(ControlPanel, CtrlInterface):
         except RuntimeError as e:
             print("- {}: Artists failed to draw: {}".format(self.__module__, e))
             del self.Arts
+
+
+class Layer(ControlPanel, LayerInterface):
+    """Graphman.Layer
+    """
+    def __init__(self, parent, session=None, **kwargs):
+        kwargs.setdefault('size', (130, 24)) # keep minimum size
+        ControlPanel.__init__(self, parent, **kwargs)
+        LayerInterface.__init__(self, parent, session)
 
 
 class Graph(GraphPlot):
@@ -968,14 +991,13 @@ class Frame(mwx.Frame):
             module.Plugin = cls
             return cls
         
-        class _Plugin(Layer):
-            def Init(self):
-                self.plug = cls(self)
-                cls.parent = property(lambda p: self.parent)
-                cls.message = property(lambda p: self.message)
-                self.layout((self.plug,), expand=2, title=None, border=0)
+        class _Plugin(cls, LayerInterface):
+            def __init__(self, parent, session=None, **kwargs):
+                kwargs.setdefault('size', (130, 24)) # keep minimum size
+                cls.__init__(self, parent, **kwargs)
+                LayerInterface.__init__(self, parent, session)
         
-        _Plugin.__module__ = module.__name__
+        _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
         _Plugin.__doc__ = cls.__doc__
         module.Plugin = _Plugin
