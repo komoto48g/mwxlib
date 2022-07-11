@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.3"
+__version__ = "0.65.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -827,14 +827,15 @@ class ShellFrame(MiniFrame):
         except ImportError:
             from .nutshell import Editor, Nautilus
         
+        self.__shell = Nautilus(self,
+            target=target or parent or __import__("__main__"),
+            style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
+            **kwargs)
+        
         self.Scratch = Editor(self, name="Scratch")
         self.Log = Editor(self, name="Log")
         self.Help = Editor(self, name="Help")
         self.History = Editor(self, name="History")
-        
-        self.__shell = Nautilus(self,
-            target=target or parent or __import__("__main__"),
-            style=(wx.CLIP_CHILDREN | wx.BORDER_NONE), **kwargs)
         
         ## Add useful global abbreviations to builtins
         builtins.apropos = apropos
@@ -874,30 +875,32 @@ class ShellFrame(MiniFrame):
                                  )
         self.inspector = Inspector(self)
         self.monitor = EventMonitor(self)
-        self.ginfo = LocalsWatcher(self)
-        self.linfo = LocalsWatcher(self)
+        self.ginfo = LocalsWatcher(self, name="globals")
+        self.linfo = LocalsWatcher(self, name="locals")
         
         self.console = AuiNotebook(self, size=(600,400))
         self.console.AddPage(self.__shell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
+        self.console.Name = "console"
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClosing)
         
         self.ghost = AuiNotebook(self, size=(600,400))
-        self.ghost.AddPage(self.Scratch, "*Scratch*")
+        self.ghost.AddPage(self.Scratch, "*scratch*")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
         self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
         self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
-        self.ghost.TabCtrlHeight = -1
+        self.ghost.Name = "ghost"
         
         self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
+        self.watcher.Name = "watcher"
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)

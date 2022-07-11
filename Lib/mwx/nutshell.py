@@ -288,8 +288,8 @@ class EditorInterface(CtrlInterface):
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
     
-    def _Marker(name, n):
-        """Factory of markers property
+    def _Marker(marker, n):
+        """Factory of marker property
         """
         def fget(self):
             return self.MarkerNext(0, 1<<n)
@@ -298,7 +298,7 @@ class EditorInterface(CtrlInterface):
             if line != -1:
                 self.MarkerDeleteAll(n)
                 self.MarkerAdd(line, n)
-                self.handler('{}_set'.format(name), line)
+                self.handler('{}_set'.format(marker), line)
             else:
                 fdel(self)
         
@@ -306,7 +306,7 @@ class EditorInterface(CtrlInterface):
             line = fget(self)
             if line != -1:
                 self.MarkerDeleteAll(n)
-                self.handler('{}_unset'.format(name), line)
+                self.handler('{}_unset'.format(marker), line)
         
         return property(fget, fset, fdel)
     
@@ -1200,11 +1200,11 @@ class Editor(EditWindow, EditorInterface):
     """Python code editor
 
     Attributes:
-           name : buffer-name (e.g. '*scratch*')
+           Name : buffer-name (e.g. '*scratch*')
        filename : buffer-file-name (full-path)
        codename : code-file-name (e.g. '<scratch>')
            code : code object compiled using py_exec_region
-         target : filename or codename (referred by debugger)
+         target : codename or filename (referred by debugger)
         mtdelta : timestamp delta (for checking external mod)
     """
     STYLE = {
@@ -1237,10 +1237,6 @@ class Editor(EditWindow, EditorInterface):
     message = property(lambda self: self.__parent.message)
     
     @property
-    def name(self):
-        return self.__name
-    
-    @property
     def target(self):
         return self.codename or self.filename
     
@@ -1261,13 +1257,13 @@ class Editor(EditWindow, EditorInterface):
         if self.__mtime:
             return os.path.getmtime(self.filename) - self.__mtime
     
-    def __init__(self, parent, name="", **kwargs):
+    def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.__name = name      # buffer-name
+        self.Name = name        # buffer-name (=> wx.Window.Name)
         self.__filename = None  # buffer-file-name
         self.__mtime = None     # timestamp
         self.codename = None
@@ -1327,19 +1323,19 @@ class Editor(EditWindow, EditorInterface):
     
     def OnSavePointLeft(self, evt):
         if self.__mtime:
-            self.Parent.set_page_caption(self, '* ' + self.name)
+            self.Parent.set_page_caption(self, '* ' + self.Name)
         evt.Skip()
     
     def OnSavepointReached(self, evt):
         if self.__mtime:
-            self.Parent.set_page_caption(self, self.name)
+            self.Parent.set_page_caption(self, self.Name)
         evt.Skip()
     
     def on_activated(self, editor):
         """Called when editor:self is activated."""
         if self.mtdelta:
             self.message("{!r} has been modified externally.".format(self.filename))
-        title = "{} file: {}".format(self.name, self.target)
+        title = "{} file: {}".format(self.Name, self.target)
         if self.codename and self.filename:
             title += ' ' + self.filename
         self.parent.handler('title_window', title)
@@ -1635,7 +1631,7 @@ class Nautilus(Shell, EditorInterface):
     
     modules = None
     
-    def __init__(self, parent, target,
+    def __init__(self, parent, target, name="root",
                  introText=None,
                  startupScript=None,
                  execStartupScript=True,
@@ -1653,6 +1649,7 @@ class Nautilus(Shell, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.target = target
+        self.Name = name
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2550,7 +2547,7 @@ class Nautilus(Shell, EditorInterface):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
         
         ## Make shell:clone in the console
-        shell = Nautilus(self.parent, target,
+        shell = Nautilus(self.parent, target, name="clone",
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
         self.parent.handler('add_shell', shell)
         self.handler('shell_cloned', shell)
