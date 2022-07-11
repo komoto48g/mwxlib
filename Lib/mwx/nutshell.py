@@ -773,47 +773,47 @@ class EditorInterface(CtrlInterface):
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(','))
         
-        if stc.STC_STYLE_DEFAULT in spec:
-            self.StyleSetSpec(stc.STC_STYLE_DEFAULT, spec.pop(stc.STC_STYLE_DEFAULT))
+        ## Apply the default style first
+        default = spec.pop(stc.STC_STYLE_DEFAULT, '')
+        if default:
+            self.StyleSetSpec(stc.STC_STYLE_DEFAULT, default)
             self.StyleClearAll()
         
-        if stc.STC_STYLE_LINENUMBER in spec:
-            lsc = _map(spec.get(stc.STC_STYLE_LINENUMBER))
-            
+        ## Add style to the folding margin
+        item = _map(spec.get(stc.STC_STYLE_LINENUMBER, ''))
+        if item:
             ## Set colors used as a chequeboard pattern,
             ## lo (back) one of the colors
             ## hi (fore) the other color
             if self.GetMarginSensitive(2):
                 ## 12 pixel chequeboard, fore being default colour
-                self.SetFoldMarginColour(True, lsc.get('back'))
+                self.SetFoldMarginColour(True, item.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
             else:
                 ## one pixel solid line, the same colour as the line number
-                self.SetFoldMarginColour(True, lsc.get('fore'))
-                self.SetFoldMarginHiColour(True, lsc.get('fore'))
+                self.SetFoldMarginColour(True, item.get('fore'))
+                self.SetFoldMarginHiColour(True, item.get('fore'))
         
         ## Custom style for caret and line colour
-        if stc.STC_STYLE_CARETLINE in spec:
-            lsc = _map(spec.pop(stc.STC_STYLE_CARETLINE))
-            
+        item = _map(spec.pop(stc.STC_STYLE_CARETLINE, ''))
+        if item:
             self.SetCaretLineVisible(0)
-            if 'fore' in lsc:
-                self.SetCaretForeground(lsc['fore'])
-            if 'back' in lsc:
-                self.SetCaretLineBackground(lsc['back'])
+            if 'fore' in item:
+                self.SetCaretForeground(item['fore'])
+            if 'back' in item:
+                self.SetCaretLineBackground(item['back'])
                 self.SetCaretLineVisible(1)
-            if 'size' in lsc:
-                self.SetCaretWidth(int(lsc['size']))
+            if 'size' in item:
+                self.SetCaretWidth(int(item['size']))
                 self.SetCaretStyle(stc.STC_CARETSTYLE_LINE)
-            if 'bold' in lsc:
+            if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
         ## Custom indicator for search-word
-        if stc.STC_P_WORD3 in spec:
-            lsc = _map(spec.pop(stc.STC_P_WORD3))
-            
-            self.IndicatorSetForeground(0, lsc.get('fore') or "red")
-            self.IndicatorSetForeground(1, lsc.get('back') or "red")
+        item = _map(spec.pop(stc.STC_P_WORD3, ''))
+        if item:
+            self.IndicatorSetForeground(0, item.get('fore') or "red")
+            self.IndicatorSetForeground(1, item.get('back') or "red")
             self.IndicatorSetHoverForeground(1, "blue")
         
         for key, value in spec.items():
@@ -907,7 +907,7 @@ class EditorInterface(CtrlInterface):
     def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'moji':
-            if self.get_char(p) not in "bfru\"\'":
+            if self.get_style(p-1) == 'moji': # inside string
                 return
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
@@ -925,7 +925,7 @@ class EditorInterface(CtrlInterface):
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'moji':
-            if self.get_char(p-1) not in "\"\'":
+            if self.get_style(p) == 'moji': # inside string
                 return
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
