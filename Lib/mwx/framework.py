@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.4"
+__version__ = "0.65.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -727,13 +727,20 @@ class AuiNotebook(aui.AuiNotebook):
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         self.parent = self.Parent
         
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
+    
+    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
+        tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
+        page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
+        if getattr(page, 'menu'):
+            Menu.Popup(self, page.menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
         page = self.CurrentPage
         if page:
-            self.parent.handler('page_shown', page)
+            page.handler('page_shown', page)
         evt.Skip()
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -744,7 +751,7 @@ class AuiNotebook(aui.AuiNotebook):
             if not win.IsShownOnScreen():
                 ## Check if the (selected) window is hidden now.
                 ## False means that the page will be hidden by the window.
-                self.parent.handler('page_hidden', page)
+                page.handler('page_hidden', page)
         evt.Skip()
     
     def get_page_caption(self, win):
@@ -1465,6 +1472,7 @@ class ShellFrame(MiniFrame):
         win.DoFindNext(data, self.findDlg or win)
         if self.findDlg:
             self.OnFindClose(None)
+        win.EnsureVisible(win.cline)
         win.EnsureLineMoreOnScreen(win.cline)
     
     def OnFindPrev(self, evt):
