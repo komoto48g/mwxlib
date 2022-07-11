@@ -1030,6 +1030,7 @@ class EditorInterface(CtrlInterface):
     
     def on_filter_text_selection(self, evt):
         line = self.__lines[self.AutoCompGetCurrent()]
+        self.EnsureVisible(line) # expand if folded
         self.goto_line(line)
         self.recenter()
         self.on_filter_text_exit(evt)
@@ -1257,6 +1258,15 @@ class Editor(EditWindow, EditorInterface):
         if self.__mtime:
             return os.path.getmtime(self.filename) - self.__mtime
     
+    @property
+    def menu(self):
+        def _menu(j, f, ln):
+            k = "{}:{}".format(f, ln)
+            return (j, k, k, wx.ITEM_CHECK,
+                    lambda v: self.load_file(f, ln),
+                    lambda v: v.Check(self.filename == f))
+        return (_menu(j, *kv) for j, kv in enumerate(self.history.items()))
+    
     def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -1268,6 +1278,7 @@ class Editor(EditWindow, EditorInterface):
         self.__mtime = None     # timestamp
         self.codename = None
         self.code = None
+        self.history = {}
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1345,6 +1356,10 @@ class Editor(EditWindow, EditorInterface):
         """Called when editor:self is inactivated."""
         pass
     
+    def push_current(self, filename, lineno):
+        if filename:
+            self.history[filename] = lineno
+    
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename, globals)
@@ -1374,6 +1389,7 @@ class Editor(EditWindow, EditorInterface):
             p = -1
         if self.LoadFile(f):
             self.filename = f
+            self.push_current(f, lineno) # save current
             if lineno:
                 self.markline = lineno - 1
                 self.goto_marker()

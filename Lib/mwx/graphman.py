@@ -197,17 +197,7 @@ class Layer(ControlPanel, CtrlInterface):
           graph : parent.graph window
          otuput : parent.output window
     """
-    @property
-    def menu(self): # for backward compatibility
-        if self.menukey:
-            head, sep, tail = self.menukey.rpartition('/')
-            return head or "Plugins"
-    
-    @property
-    def menustr(self): # for backward compatibility
-        if self.menukey:
-            head, sep, tail = self.menukey.rpartition('/')
-            return tail or self.__module__
+    Menu = property(lambda self: self.menu) # for backward compatibility
     
     menukey = property(lambda self: "Plugins/&" + self.__module__)
     menuicon = None
@@ -295,7 +285,7 @@ class Layer(ControlPanel, CtrlInterface):
             }
         })
         
-        self.Menu = [
+        self.menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
                 lambda v: self.copy_to_clipboard(),
                 lambda v: v.Enable(bool(self.parameters))),
@@ -509,6 +499,7 @@ class AuiNotebook(aui.AuiNotebook):
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
           &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
         aui.AuiNotebook.__init__(self, *args, **kwargs)
+        self.parent = self.Parent
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
@@ -517,7 +508,8 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        mwx.Menu.Popup(self, page.Menu)
+        if getattr(page, 'menu'):
+            mwx.Menu.Popup(self, page.menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
         page = self.CurrentPage
@@ -720,10 +712,10 @@ class Frame(mwx.Frame):
             ##     lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
             ##     
             ("Standard Color",
-                [cmenu(i,c) for i,c in enumerate(colours) if c.islower()]),
+                [cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
                 
             ("Another Color",
-                [cmenu(i,c) for i,c in enumerate(colours) if not c.islower()]),
+                [cmenu(i, c) for i, c in enumerate(colours) if not c.islower()]),
         ]
         
         self.menubar["Plugins"] = [ # default Plugins menu
@@ -756,8 +748,8 @@ class Frame(mwx.Frame):
         })
         
         ## Add main-menu to context-menu
-        self.graph.Menu += self.menubar["Edit"][2:8]
-        self.output.Menu += self.menubar["Edit"][2:8]
+        self.graph.menu += self.menubar["Edit"][2:8]
+        self.output.menu += self.menubar["Edit"][2:8]
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
@@ -1173,16 +1165,19 @@ class Frame(mwx.Frame):
             module.ID_ = Frame.__new_ID_
             Frame.__new_ID_ += 1
         
-        if plug.menu:
-            doc = (plug.__doc__ or name).strip().splitlines()[0]
+        if plug.menukey:
+            menu, sep, tail = plug.menukey.rpartition('/')
+            text = tail or plug.__module__
+            hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
-                module.ID_, plug.menustr, doc, wx.ITEM_CHECK, Icon(plug.menuicon),
+                module.ID_, text, hint, wx.ITEM_CHECK, Icon(plug.menuicon),
                 lambda v: self.show_pane(name, v.IsChecked()),
                 lambda v: v.Check(self.get_pane(name).IsShown()),
             )
-            menu = self.menubar[plug.menu] or []
-            self.menubar[plug.menu] = menu + [plug.__Menu_item]
-            self.menubar.update(plug.menu)
+            if menu not in self.menubar:
+                self.menubar[menu] = []
+            self.menubar[menu] += [plug.__Menu_item]
+            self.menubar.update(menu)
         return None
     
     def unload_plug(self, name):
@@ -1199,8 +1194,9 @@ class Frame(mwx.Frame):
             del self.plugins[name]
             
             if plug.__Menu_item:
-                self.menubar[plug.menu].remove(plug.__Menu_item)
-                self.menubar.update(plug.menu)
+                menu, sep, tail = plug.menukey.rpartition('/')
+                self.menubar[menu].remove(plug.__Menu_item)
+                self.menubar.update(menu)
             
             nb = plug.__notebook
             if nb:

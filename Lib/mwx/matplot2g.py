@@ -569,7 +569,7 @@ class GraphPlot(MatplotPanel):
         def _Icon(key):
             return wx.ArtProvider.GetBitmap(key, size=(14,14))
         
-        self.Menu += [
+        self.menu += [
             (),
             (wx.ID_COPY, "&Copy buffer\t(C-c)", "Copy buffer to clipboard", _Icon(wx.ART_COPY),
                 lambda v: self.write_buffer_to_clipboard(),
@@ -592,14 +592,14 @@ class GraphPlot(MatplotPanel):
         ]
         
         ## modeline menu: バッファリストメニューを追加する
-        def menu(j, s):
+        def _menu(j, s):
             return (j, s, s, wx.ITEM_CHECK,
                 lambda v: self.select(s),
                 lambda v: v.Check(self.frame is not None and self.frame.name == s))
         
         self.modeline.Bind(wx.EVT_CONTEXT_MENU, lambda v:
             mwx.Menu.Popup(self,
-                (menu(j, art.name) for j,art in enumerate(self.__Arts))))
+                (_menu(j, art.name) for j, art in enumerate(self.__Arts))))
         
         self.modeline.Show(1)
         self.Layout()

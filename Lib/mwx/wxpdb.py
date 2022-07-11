@@ -161,7 +161,9 @@ class Debugger(Pdb):
         wx.CallAfter(_send)
     
     def message(self, msg, indent=-1):
-        """(override) Add prefix to msg"""
+        """(override) Add prefix and insert msg at the end of command-line."""
+        shell = self.interactive_shell
+        shell.goto_char(shell.eolc)
         prefix = self.indent if indent < 0 else ' ' * indent
         print("{}{}".format(prefix, msg), file=self.stdout)
     
@@ -251,6 +253,7 @@ class Debugger(Pdb):
         editor = self.parent.find_editor(filename) or self.parent.Log
         if self.code != code:
             editor.load_cache(filename)
+            editor.push_current(filename, firstlineno) # save current
             editor.markline = firstlineno - 1 # (o) entry:marker
             for ln in self.get_file_breaks(filename):
                 self.add_marker(ln, 1)
