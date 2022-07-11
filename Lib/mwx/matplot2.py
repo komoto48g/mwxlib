@@ -261,7 +261,7 @@ class MatplotPanel(wx.Panel):
             default = NORMAL
         )
         
-        self.Menu = [
+        self.menu = [
             (mwx.ID_(501), "&Copy image", "Copy canvas image to clipboard",
                 lambda v: self.copy_to_clipboard()),
                 
@@ -486,7 +486,7 @@ class MatplotPanel(wx.Panel):
     def on_menu(self, evt): #<matplotlib.backend_bases.MouseEvent>
         if self.__isMenu:
             self.canvas.SetFocus()
-            mwx.Menu.Popup(self, self.Menu)
+            mwx.Menu.Popup(self, self.menu)
         self.__isMenu = 0
     
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>

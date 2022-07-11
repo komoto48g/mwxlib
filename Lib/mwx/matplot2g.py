@@ -569,7 +569,7 @@ class GraphPlot(MatplotPanel):
         def _Icon(key):
             return wx.ArtProvider.GetBitmap(key, size=(14,14))
         
-        self.Menu += [
+        self.menu += [
             (),
             (wx.ID_COPY, "&Copy buffer\t(C-c)", "Copy buffer to clipboard", _Icon(wx.ART_COPY),
                 lambda v: self.write_buffer_to_clipboard(),

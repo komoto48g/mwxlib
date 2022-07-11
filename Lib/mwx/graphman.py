@@ -197,6 +197,8 @@ class Layer(ControlPanel, CtrlInterface):
           graph : parent.graph window
          otuput : parent.output window
     """
+    Menu = property(lambda self: self.menu) # for backward compatibility
+    
     menukey = property(lambda self: "Plugins/&" + self.__module__)
     menuicon = None
     caption = True
@@ -283,7 +285,7 @@ class Layer(ControlPanel, CtrlInterface):
             }
         })
         
-        self.Menu = [
+        self.menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
                 lambda v: self.copy_to_clipboard(),
                 lambda v: v.Enable(bool(self.parameters))),
@@ -506,8 +508,8 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if getattr(page, 'Menu'):
-            mwx.Menu.Popup(self, page.Menu)
+        if getattr(page, 'menu'):
+            mwx.Menu.Popup(self, page.menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
         page = self.CurrentPage
@@ -746,8 +748,8 @@ class Frame(mwx.Frame):
         })
         
         ## Add main-menu to context-menu
-        self.graph.Menu += self.menubar["Edit"][2:8]
-        self.output.Menu += self.menubar["Edit"][2:8]
+        self.graph.menu += self.menubar["Edit"][2:8]
+        self.output.menu += self.menubar["Edit"][2:8]
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         

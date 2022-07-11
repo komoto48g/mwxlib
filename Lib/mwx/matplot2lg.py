@@ -435,7 +435,7 @@ class LineProfile(LinePlot):
         }
         self.modeline.Show(1)
         
-        self.Menu += [
+        self.menu += [
             (),
             (mwx.ID_(511), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),

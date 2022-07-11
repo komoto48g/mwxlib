@@ -566,7 +566,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.__groups = []
         self.__params = []
         
-        self.Menu = [
+        self.menu = [
             (wx.ID_COPY, "&Copy params", "Copy params",
                 lambda v: self.copy_to_clipboard(),
                 lambda v: v.Enable(self.__params != [])),
@@ -579,7 +579,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                 lambda v: self.reset_params(),
                 lambda v: v.Enable(self.__params != [])),
         ]
-        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.Menu))
+        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
         
         self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnRecalcLayout)
