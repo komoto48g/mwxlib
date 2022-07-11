@@ -592,14 +592,14 @@ class GraphPlot(MatplotPanel):
         ]
         
         ## modeline menu: バッファリストメニューを追加する
-        def menu(j, s):
+        def _menu(j, s):
             return (j, s, s, wx.ITEM_CHECK,
                 lambda v: self.select(s),
                 lambda v: v.Check(self.frame is not None and self.frame.name == s))
         
         self.modeline.Bind(wx.EVT_CONTEXT_MENU, lambda v:
             mwx.Menu.Popup(self,
-                (menu(j, art.name) for j,art in enumerate(self.__Arts))))
+                (_menu(j, art.name) for j, art in enumerate(self.__Arts))))
         
         self.modeline.Show(1)
         self.Layout()
