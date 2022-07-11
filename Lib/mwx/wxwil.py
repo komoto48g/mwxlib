@@ -7,9 +7,13 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import wx
 from wx.py import dispatcher
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+try:
+    from framework import CtrlInterface
+except ImportError:
+    from .framework import CtrlInterface
 
 
-class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
+class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Locals info watcher
     
     Attributes:
@@ -23,6 +27,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin):
         wx.ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
+        CtrlInterface.__init__(self)
         
         self.__shellframe = parent
         self.__locals = {}
