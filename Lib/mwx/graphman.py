@@ -548,7 +548,7 @@ class Frame(mwx.Frame):
     """
     graph = property(lambda self: self.__graph)
     output = property(lambda self: self.__output)
-    histogram = property(lambda self: self.__histogram)
+    histogram = property(lambda self: self.__histgrm)
     
     selected_view = property(lambda self: self.__view)
     
@@ -592,15 +592,19 @@ class Frame(mwx.Frame):
         self.__graph = Graph(self, log=self.statusbar, margin=None, size=(200,200))
         self.__output = Graph(self, log=self.statusbar, margin=None, size=(200,200))
         
+        self.__histgrm = Histogram(self, log=self.statusbar, margin=None, size=(130,65))
+        self.__histgrm.attach(self.graph)
+        self.__histgrm.attach(self.output)
+        
         self.__graphic_windows = [
             self.__graph,
             self.__output,
         ]
-        self.select_view(self.__graph)
+        self.select_view(self.graph)
         
-        self.__histogram = Histogram(self, log=self.statusbar, margin=None, size=(130,65))
-        self.__histogram.attach(self.graph)
-        self.__histogram.attach(self.output)
+        self.graph.Name = "graph"
+        self.output.Name = "output"
+        self.histogram.Name = "histogram"
         
         self._mgr.AddPane(self.graph,
                           aui.AuiPaneInfo().CenterPane().CloseButton(1)
@@ -1144,6 +1148,7 @@ class Frame(mwx.Frame):
             else:
                 size = plug.GetSize() + (2,30)
                 nb = AuiNotebook(self)
+                nb.Name = title
                 nb.AddPage(plug, caption)
                 self._mgr.AddPane(nb, aui.AuiPaneInfo()
                                          .Name(title).Caption(title)
@@ -1160,7 +1165,7 @@ class Frame(mwx.Frame):
         ## set reference of notebook (optional)
         plug.__notebook = nb
         plug.__Menu_item = None
-        
+        plug.Name = name
         self.update_pane(name, **props)
         
         ## Create a menu
@@ -1272,7 +1277,7 @@ class Frame(mwx.Frame):
                 if plug.thread and plug.thread.active:
                     plug.thread.active = 0 # worker-thread から直接切り替える
                     plug.thread.Stop()     # main-thread @postcall で終了させる
-            except AttributeError as e:
+            except AttributeError:
                 pass
     
     ## --------------------------------

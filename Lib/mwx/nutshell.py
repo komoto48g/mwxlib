@@ -288,8 +288,8 @@ class EditorInterface(CtrlInterface):
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
     
-    def _Marker(name, n):
-        """Factory of markers property
+    def _Marker(marker, n):
+        """Factory of marker property
         """
         def fget(self):
             return self.MarkerNext(0, 1<<n)
@@ -298,7 +298,7 @@ class EditorInterface(CtrlInterface):
             if line != -1:
                 self.MarkerDeleteAll(n)
                 self.MarkerAdd(line, n)
-                self.handler('{}_set'.format(name), line)
+                self.handler('{}_set'.format(marker), line)
             else:
                 fdel(self)
         
@@ -306,7 +306,7 @@ class EditorInterface(CtrlInterface):
             line = fget(self)
             if line != -1:
                 self.MarkerDeleteAll(n)
-                self.handler('{}_unset'.format(name), line)
+                self.handler('{}_unset'.format(marker), line)
         
         return property(fget, fset, fdel)
     
@@ -773,47 +773,47 @@ class EditorInterface(CtrlInterface):
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(','))
         
-        if stc.STC_STYLE_DEFAULT in spec:
-            self.StyleSetSpec(stc.STC_STYLE_DEFAULT, spec.pop(stc.STC_STYLE_DEFAULT))
+        ## Apply the default style first
+        default = spec.pop(stc.STC_STYLE_DEFAULT, '')
+        if default:
+            self.StyleSetSpec(stc.STC_STYLE_DEFAULT, default)
             self.StyleClearAll()
         
-        if stc.STC_STYLE_LINENUMBER in spec:
-            lsc = _map(spec.get(stc.STC_STYLE_LINENUMBER))
-            
+        ## Add style to the folding margin
+        item = _map(spec.get(stc.STC_STYLE_LINENUMBER, ''))
+        if item:
             ## Set colors used as a chequeboard pattern,
             ## lo (back) one of the colors
             ## hi (fore) the other color
             if self.GetMarginSensitive(2):
                 ## 12 pixel chequeboard, fore being default colour
-                self.SetFoldMarginColour(True, lsc.get('back'))
+                self.SetFoldMarginColour(True, item.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
             else:
                 ## one pixel solid line, the same colour as the line number
-                self.SetFoldMarginColour(True, lsc.get('fore'))
-                self.SetFoldMarginHiColour(True, lsc.get('fore'))
+                self.SetFoldMarginColour(True, item.get('fore'))
+                self.SetFoldMarginHiColour(True, item.get('fore'))
         
         ## Custom style for caret and line colour
-        if stc.STC_STYLE_CARETLINE in spec:
-            lsc = _map(spec.pop(stc.STC_STYLE_CARETLINE))
-            
+        item = _map(spec.pop(stc.STC_STYLE_CARETLINE, ''))
+        if item:
             self.SetCaretLineVisible(0)
-            if 'fore' in lsc:
-                self.SetCaretForeground(lsc['fore'])
-            if 'back' in lsc:
-                self.SetCaretLineBackground(lsc['back'])
+            if 'fore' in item:
+                self.SetCaretForeground(item['fore'])
+            if 'back' in item:
+                self.SetCaretLineBackground(item['back'])
                 self.SetCaretLineVisible(1)
-            if 'size' in lsc:
-                self.SetCaretWidth(int(lsc['size']))
+            if 'size' in item:
+                self.SetCaretWidth(int(item['size']))
                 self.SetCaretStyle(stc.STC_CARETSTYLE_LINE)
-            if 'bold' in lsc:
+            if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
         ## Custom indicator for search-word
-        if stc.STC_P_WORD3 in spec:
-            lsc = _map(spec.pop(stc.STC_P_WORD3))
-            
-            self.IndicatorSetForeground(0, lsc.get('fore') or "red")
-            self.IndicatorSetForeground(1, lsc.get('back') or "red")
+        item = _map(spec.pop(stc.STC_P_WORD3, ''))
+        if item:
+            self.IndicatorSetForeground(0, item.get('fore') or "red")
+            self.IndicatorSetForeground(1, item.get('back') or "red")
             self.IndicatorSetHoverForeground(1, "blue")
         
         for key, value in spec.items():
@@ -907,7 +907,7 @@ class EditorInterface(CtrlInterface):
     def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'moji':
-            if self.get_char(p) not in "bfru\"\'":
+            if self.get_style(p-1) == 'moji': # inside string
                 return
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
@@ -925,7 +925,7 @@ class EditorInterface(CtrlInterface):
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'moji':
-            if self.get_char(p-1) not in "\"\'":
+            if self.get_style(p) == 'moji': # inside string
                 return
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -1200,45 +1200,41 @@ class Editor(EditWindow, EditorInterface):
     """Python code editor
 
     Attributes:
-           name : buffer-name (e.g. '*scratch*')
+           Name : buffer-name (e.g. '*scratch*')
        filename : buffer-file-name (full-path)
        codename : code-file-name (e.g. '<scratch>')
            code : code object compiled using py_exec_region
-         target : filename or codename (referred by debugger)
+         target : codename or filename (referred by debugger)
         mtdelta : timestamp delta (for checking external mod)
     """
     STYLE = {
-        stc.STC_STYLE_DEFAULT     : "fore:#000000,back:#ffffb8,size:9,face:MS Gothic",
+        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
-        stc.STC_P_DEFAULT         : "fore:#000000,back:#ffffb8",
+        stc.STC_P_DEFAULT         : "fore:#000000",
+        stc.STC_P_OPERATOR        : "fore:#000000",
         stc.STC_P_IDENTIFIER      : "fore:#000000",
         stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
         stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
+        stc.STC_P_NUMBER          : "fore:#7f0000",
+        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf,eol",
         stc.STC_P_CHARACTER       : "fore:#7f7f7f",
         stc.STC_P_STRING          : "fore:#7f7f7f",
-        stc.STC_P_TRIPLE          : "fore:#7f7f7f,eol",
-        stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f,eol",
-        stc.STC_P_STRINGEOL       : "fore:#7f7f7f",
+        stc.STC_P_TRIPLE          : "fore:#7f7f7f",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
+        stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
         stc.STC_P_WORD2           : "fore:#b8007f",
         stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
-        stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
-        stc.STC_P_CLASSNAME       : "fore:#0000ff,bold",
         stc.STC_P_DECORATOR       : "fore:#e08040",
-        stc.STC_P_OPERATOR        : "",
-        stc.STC_P_NUMBER          : "fore:#7f0000",
     }
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    
-    @property
-    def name(self):
-        return self.__name
     
     @property
     def target(self):
@@ -1261,13 +1257,13 @@ class Editor(EditWindow, EditorInterface):
         if self.__mtime:
             return os.path.getmtime(self.filename) - self.__mtime
     
-    def __init__(self, parent, name="", **kwargs):
+    def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.__name = name      # buffer-name
+        self.Name = name        # buffer-name (=> wx.Window.Name)
         self.__filename = None  # buffer-file-name
         self.__mtime = None     # timestamp
         self.codename = None
@@ -1327,19 +1323,19 @@ class Editor(EditWindow, EditorInterface):
     
     def OnSavePointLeft(self, evt):
         if self.__mtime:
-            self.Parent.set_page_caption(self, '* ' + self.name)
+            self.Parent.set_page_caption(self, '* ' + self.Name)
         evt.Skip()
     
     def OnSavepointReached(self, evt):
         if self.__mtime:
-            self.Parent.set_page_caption(self, self.name)
+            self.Parent.set_page_caption(self, self.Name)
         evt.Skip()
     
     def on_activated(self, editor):
         """Called when editor:self is activated."""
         if self.mtdelta:
             self.message("{!r} has been modified externally.".format(self.filename))
-        title = "{} file: {}".format(self.name, self.target)
+        title = "{} file: {}".format(self.Name, self.target)
         if self.codename and self.filename:
             title += ' ' + self.filename
         self.parent.handler('title_window', title)
@@ -1559,29 +1555,29 @@ class Nautilus(Shell, EditorInterface):
         and the other half by K. O'moto.
     """
     STYLE = {
-        stc.STC_STYLE_DEFAULT     : "fore:#cccccc,back:#202020,size:9,face:MS Gothic",
+        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#202020,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
-        stc.STC_P_DEFAULT         : "fore:#cccccc,back:#202020",
+        stc.STC_P_DEFAULT         : "fore:#cccccc",
+        stc.STC_P_OPERATOR        : "fore:#cccccc",
         stc.STC_P_IDENTIFIER      : "fore:#cccccc",
         stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
         stc.STC_P_COMMENTBLOCK    : "fore:#42c18c,back:#004040,eol",
+        stc.STC_P_NUMBER          : "fore:#ffc080",
+        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#004040,eol",
         stc.STC_P_CHARACTER       : "fore:#a0a0a0",
         stc.STC_P_STRING          : "fore:#a0a0a0",
         stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040,eol",
         stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040,eol",
-        stc.STC_P_STRINGEOL       : "fore:#7f7f7f",
-        stc.STC_P_WORD            : "fore:#80a0ff",
+        stc.STC_P_CLASSNAME       : "fore:#ffe000,bold",
+        stc.STC_P_DEFNAME         : "fore:#ffff80,bold",
+        stc.STC_P_WORD            : "fore:#80c0ff",
         stc.STC_P_WORD2           : "fore:#ff80ff",
         stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
-        stc.STC_P_DEFNAME         : "fore:#f0f080,bold",
-        stc.STC_P_CLASSNAME       : "fore:#f0f080,bold",
         stc.STC_P_DECORATOR       : "fore:#e08040",
-        stc.STC_P_OPERATOR        : "",
-        stc.STC_P_NUMBER          : "fore:#ffc080",
     }
     
     parent = property(lambda self: self.__parent)
@@ -1635,7 +1631,7 @@ class Nautilus(Shell, EditorInterface):
     
     modules = None
     
-    def __init__(self, parent, target,
+    def __init__(self, parent, target, name="root",
                  introText=None,
                  startupScript=None,
                  execStartupScript=True,
@@ -1653,6 +1649,7 @@ class Nautilus(Shell, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.target = target
+        self.Name = name
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2550,7 +2547,7 @@ class Nautilus(Shell, EditorInterface):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
         
         ## Make shell:clone in the console
-        shell = Nautilus(self.parent, target,
+        shell = Nautilus(self.parent, target, name="clone",
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
         self.parent.handler('add_shell', shell)
         self.handler('shell_cloned', shell)
