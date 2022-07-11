@@ -1361,9 +1361,9 @@ class Editor(EditWindow, EditorInterface):
         """Called when editor:self is inactivated."""
         pass
     
-    def push_current(self, filename, lineno):
-        if filename:
-            self.history[filename] = lineno
+    def push_current(self):
+        if self.__mtime:
+            self.history[self.filename] = self.markline + 1
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
@@ -1392,15 +1392,16 @@ class Editor(EditWindow, EditorInterface):
             p = self.cpos
         else:
             p = -1
+        self.push_current() # save cache
         if self.LoadFile(f):
             self.filename = f
-            self.push_current(f, lineno) # save current
             if lineno:
                 self.markline = lineno - 1
                 self.goto_marker()
             if p != -1:
                 self.goto_char(p) # restore position
                 self.recenter()
+            self.push_current() # save current
             if show:
                 self.parent.handler('popup_window', self, show, focus)
             self.handler('editor_loaded', self)
