@@ -689,11 +689,15 @@ class EditorInterface(CtrlInterface):
             self.handler('select_line', evt)
     
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
+        """Popup context menu"""
+        def _Icon(key):
+            return wx.ArtProvider.GetBitmap(key, size=(16,16))
+        
         Menu.Popup(self, [
-            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+            (wx.ID_DOWN, "&Fold ALL", _Icon(wx.ART_MINUS),
                 lambda v: self.FoldAll(0)),
                 
-            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+            (wx.ID_UP, "&Expand ALL", _Icon(wx.ART_PLUS),
                 lambda v: self.FoldAll(1)),
         ])
     
@@ -1260,12 +1264,13 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def menu(self):
+        """Yields context menu"""
         def _menu(j, f, ln):
-            k = "{}:{}".format(f, ln)
-            return (j, k, k, wx.ITEM_CHECK,
+            text = "{}:{}".format(f, ln)
+            return (j, text, '', wx.ITEM_CHECK,
                     lambda v: self.load_file(f, ln),
                     lambda v: v.Check(self.filename == f))
-        return (_menu(j, *kv) for j, kv in enumerate(self.history.items()))
+        return (_menu(j+1, *kv) for j, kv in enumerate(self.history.items()))
     
     def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
