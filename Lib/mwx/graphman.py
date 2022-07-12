@@ -508,7 +508,7 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if getattr(page, 'menu'):
+        if getattr(page, 'menu', None):
             mwx.Menu.Popup(self, page.menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -696,14 +696,14 @@ class Frame(mwx.Frame):
                 lambda v: v.Check(self.__view.get_cmap()[-2:] == "_r")),
         ]
         
-        def cmenu(i, name):
+        def _cmenu(i, name):
             return (mwx.ID_(30 + i), "&" + name, name, wx.ITEM_CHECK,
                 lambda v: self.__view.set_cmap(name),
                 lambda v: v.Check(self.__view.get_cmap() == name
                                or self.__view.get_cmap() == name+"_r"),
             )
         colours = [c for c in dir(cm) if c[-2:] != "_r"
-                    and isinstance(getattr(cm,c), colors.LinearSegmentedColormap)]
+                    and isinstance(getattr(cm, c), colors.LinearSegmentedColormap)]
         
         self.menubar["Edit"] += [
             (),
@@ -712,10 +712,10 @@ class Frame(mwx.Frame):
             ##     lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
             ##     
             ("Standard Color",
-                [cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
+                [_cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
                 
             ("Another Color",
-                [cmenu(i, c) for i, c in enumerate(colours) if not c.islower()]),
+                [_cmenu(i, c) for i, c in enumerate(colours) if not c.islower()]),
         ]
         
         self.menubar["Plugins"] = [ # default Plugins menu

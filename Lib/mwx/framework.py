@@ -731,7 +731,7 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if getattr(page, 'menu'):
+        if getattr(page, 'menu', None):
             Menu.Popup(self, page.menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -1133,12 +1133,6 @@ class ShellFrame(MiniFrame):
         )
         self.popup_window(self.Help, focus=0)
     
-    def find_pane(self, win):
-        for pane in self._mgr.GetAllPanes():
-            nb = pane.window
-            if nb is win or nb.GetPageIndex(win) != -1:
-                return pane
-    
     def toggle_window(self, win, focus=False):
         self.popup_window(win, None, focus)
     
@@ -1146,6 +1140,7 @@ class ShellFrame(MiniFrame):
         """Show the notebook page and move the focus
         win : page or window to popup
        show : True, False, otherwise None:toggle
+              The pane window will be hidden if no show.
         """
         wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
@@ -1155,7 +1150,7 @@ class ShellFrame(MiniFrame):
         else:
             return
         if show is None:
-            show = not pane.IsShown()
+            show = not pane.IsShown() # toggle show
         nb.Show(show)
         pane.Show(show)
         self._mgr.Update()
@@ -1198,8 +1193,9 @@ class ShellFrame(MiniFrame):
     def load(self, obj, show=True, focus=False):
         """Load file @where the object is defined.
             obj : target object
-           show : popup editor window when success
-          focus : set the focus if the window is displayed
+           show : Popup editor window when success.
+                  The pane window will not be hidden even if no show.
+          focus : Set the focus if the window is displayed.
         """
         if not isinstance(obj, str):
             obj = where(obj)
@@ -1335,7 +1331,7 @@ class ShellFrame(MiniFrame):
     def add_help(self, text):
         """Puts text to the help buffer"""
         self.Help.Text = text
-        self.popup_window(self.Help, show=1, focus=0)
+        self.popup_window(self.Help, focus=0)
     
     def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
         """Add command:str to the history buffer
