@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.6"
+__version__ = "0.65.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -220,13 +220,8 @@ class KeyCtrlInterfaceMixin(object):
         evt.Skip()
     post_command_hook.__name__ = str('skip')
     
-    def define_handler(self, keymap, action=None, mode='', *args, **kwargs):
-        """Define [map key mode] action in the default state.
-        
-        If no action, it invalidates the key and returns @decor(binder).
-        key must be in C-M-S order (ctrl + alt(meta) + shift).
-        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
-        """
+    def _define_handler(self, keymap, action=None, mode='', *args, **kwargs):
+        """Define [map key mode] action in the default state."""
         state = self.handler.default_state
         map, sep, key = regulate_key(keymap).rpartition(' ')
         map = map.strip()
@@ -247,17 +242,19 @@ class KeyCtrlInterfaceMixin(object):
             return action
         else:
             self.handler.update({map: {key: [state]}})
-            return lambda f: self.define_handler(keymap, f, mode, *args, **kwargs)
-    
-    ## def undefine_handler(self, keymap, mode=''):
-    ##     self.define_handler(keymap, None, mode)
+            return lambda f: self._define_handler(keymap, f, mode, *args, **kwargs)
     
     def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key pressed:mode] action in the default state."""
-        return self.define_handler(keymap, action, 'pressed', *args, **kwargs)
+        """Define [map key pressed:mode] action in the default state.
+        
+        If no action, it invalidates the key and returns @decor(binder).
+        The key must be in C-M-S order (ctrl + alt(meta) + shift).
+        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
+        """
+        return self._define_handler(keymap, action, 'pressed', *args, **kwargs)
     
-    ## def undefine_key(self, keymap):
-    ##     self.define_key(keymap, None)
+    def undefine_key(self, keymap):
+        self.define_key(keymap, None)
     
     def interactive_call(self, action, *args, **kwargs):
         f = ut.funcall(action, *args, **kwargs)
@@ -591,7 +588,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def post_command_hook(self, evt):
         pass
-    post_command_hook.__name__ = str('stop') # no skip
+    post_command_hook.__name__ = str('noskip') # Don't skip the event
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
@@ -675,7 +672,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     
     def post_command_hook(self, evt):
         pass
-    post_command_hook.__name__ = str('stop') # no skip
+    post_command_hook.__name__ = str('noskip') # Don't skip the event
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
