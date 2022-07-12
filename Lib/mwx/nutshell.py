@@ -4,9 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.64.0"
-__author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
-
 from functools import wraps
 import traceback
 import warnings
@@ -2449,24 +2446,15 @@ class Nautilus(Shell, EditorInterface):
     
     ## input = classmethod(Shell.ask)
     
-    def about(self):
-        """About the shell (to be overridden)"""
-        self.write('\n'.join((
-            "#<module 'mwx' from {!r}>".format(__file__),
-            "Author: {!r}".format(__author__),
-            "Version: {!s}".format(__version__),
-            "#{!r}".format(wx.py.shell))))
-        Shell.about(self)
-    
-    def info(self, obj=None):
+    def info(self, obj):
         """Short information"""
-        if obj is None:
-            obj = self
+        ## if obj is None:
+        ##     obj = self
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
         self.parent.handler('add_help', doc) or print(doc)
     
-    def help(self, obj=None):
+    def help(self, obj):
         """Full description"""
         ## if obj is None:
         ##     self.message("Currently redirected to stdin/stdout.")
