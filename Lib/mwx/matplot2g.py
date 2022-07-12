@@ -567,7 +567,7 @@ class GraphPlot(MatplotPanel):
         })
         
         def _Icon(key):
-            return wx.ArtProvider.GetBitmap(key, size=(14,14))
+            return wx.ArtProvider.GetBitmap(key, size=(16,16))
         
         self.menu += [
             (),

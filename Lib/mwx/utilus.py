@@ -734,8 +734,8 @@ class FSM(dict):
         transaction = context[event]
         if action is None:
             return lambda f: self.bind(event, f, state, state2)
-        if not callable(action):
-            raise TypeError("{!r} is not callable".format(action))
+        
+        assert callable(action), "{!r} is not callable".format(action)
         if action not in transaction:
             try:
                 transaction.append(action)
@@ -765,8 +765,8 @@ class FSM(dict):
         transaction = context[event]
         if action is None:
             return all([self.unbind(event, act, state) for act in transaction[1:]])
-        if not callable(action):
-            raise TypeError("{!r} is not callable".format(action))
+        
+        assert callable(action), "{!r} is not callable".format(action)
         if action in transaction:
             try:
                 transaction.remove(action)

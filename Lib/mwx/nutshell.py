@@ -4,9 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.64.0"
-__author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
-
 from functools import wraps
 import traceback
 import warnings
@@ -689,11 +686,15 @@ class EditorInterface(CtrlInterface):
             self.handler('select_line', evt)
     
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
+        """Popup context menu"""
+        def _Icon(key):
+            return wx.ArtProvider.GetBitmap(key, size=(16,16))
+        
         Menu.Popup(self, [
-            (1, "&Fold ALL", wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16,16)),
+            (wx.ID_DOWN, "&Fold ALL", _Icon(wx.ART_MINUS),
                 lambda v: self.FoldAll(0)),
                 
-            (2, "&Expand ALL", wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16,16)),
+            (wx.ID_UP, "&Expand ALL", _Icon(wx.ART_PLUS),
                 lambda v: self.FoldAll(1)),
         ])
     
@@ -1260,12 +1261,13 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def menu(self):
+        """Yields context menu"""
         def _menu(j, f, ln):
-            k = "{}:{}".format(f, ln)
-            return (j, k, k, wx.ITEM_CHECK,
+            text = "{}:{}".format(f, ln)
+            return (j, text, '', wx.ITEM_CHECK,
                     lambda v: self.load_file(f, ln),
                     lambda v: v.Check(self.filename == f))
-        return (_menu(j, *kv) for j, kv in enumerate(self.history.items()))
+        return (_menu(j+1, *kv) for j, kv in enumerate(self.history.items()))
     
     def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
@@ -1356,9 +1358,9 @@ class Editor(EditWindow, EditorInterface):
         """Called when editor:self is inactivated."""
         pass
     
-    def push_current(self, filename, lineno):
-        if filename:
-            self.history[filename] = lineno
+    def push_current(self):
+        if self.__mtime:
+            self.history[self.filename] = self.markline + 1
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
@@ -1387,15 +1389,16 @@ class Editor(EditWindow, EditorInterface):
             p = self.cpos
         else:
             p = -1
+        self.push_current() # save cache
         if self.LoadFile(f):
             self.filename = f
-            self.push_current(f, lineno) # save current
             if lineno:
                 self.markline = lineno - 1
                 self.goto_marker()
             if p != -1:
                 self.goto_char(p) # restore position
                 self.recenter()
+            self.push_current() # save current
             if show:
                 self.parent.handler('popup_window', self, show, focus)
             self.handler('editor_loaded', self)
@@ -2443,24 +2446,15 @@ class Nautilus(Shell, EditorInterface):
     
     ## input = classmethod(Shell.ask)
     
-    def about(self):
-        """About the shell (to be overridden)"""
-        self.write('\n'.join((
-            "#<module 'mwx' from {!r}>".format(__file__),
-            "Author: {!r}".format(__author__),
-            "Version: {!s}".format(__version__),
-            "#{!r}".format(wx.py.shell))))
-        Shell.about(self)
-    
-    def info(self, obj=None):
+    def info(self, obj):
         """Short information"""
-        if obj is None:
-            obj = self
+        ## if obj is None:
+        ##     obj = self
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
         self.parent.handler('add_help', doc) or print(doc)
     
-    def help(self, obj=None):
+    def help(self, obj):
         """Full description"""
         ## if obj is None:
         ##     self.message("Currently redirected to stdin/stdout.")
