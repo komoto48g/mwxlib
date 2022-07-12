@@ -964,7 +964,6 @@ class ShellFrame(MiniFrame):
                   'add_history' : [ None, self.add_history ],
                      'add_help' : [ None, self.add_help ],
                     'add_shell' : [ None, self.console.add_page ],
-                 'popup_window' : [ None, self.popup_window ],
                  'title_window' : [ None, self.on_title_window ],
             },
             0 : {
@@ -986,13 +985,6 @@ class ShellFrame(MiniFrame):
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
             'C-x' : {
-                    'l pressed' : (0, _F(self.popup_window, self.Log, doc="Show log")),
-                    'h pressed' : (0, _F(self.popup_window, self.Help, doc="Show help")),
-                  'S-h pressed' : (0, _F(self.popup_window, self.History, doc="Show history")),
-                    'j pressed' : (0, _F(self.popup_window, self.Scratch, doc="Show scratch")),
-                    'm pressed' : (0, _F(self.popup_window, self.monitor, doc="Show monitor")),
-                    'i pressed' : (0, _F(self.popup_window, self.inspector, doc="Show inspector")),
-                 'home pressed' : (0, _F(self.popup_window, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
             },
@@ -1148,7 +1140,7 @@ class ShellFrame(MiniFrame):
                 return pane
     
     def toggle_window(self, win, focus=False):
-        self.popup_window(win, show=None, focus=focus)
+        self.popup_window(win, None, focus)
     
     def popup_window(self, win, show=True, focus=True):
         """Show the notebook page and move the focus
