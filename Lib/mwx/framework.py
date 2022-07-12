@@ -1203,7 +1203,12 @@ class ShellFrame(MiniFrame):
         self.message("Quit")
         evt.Skip()
     
-    def load(self, obj):
+    def load(self, obj, show=True, focus=False):
+        """Load file @where the object is defined.
+            obj : target object
+           show : popup editor window when success
+          focus : set the focus if the window is displayed
+        """
         if not isinstance(obj, str):
             obj = where(obj)
         if obj is None:
@@ -1215,7 +1220,10 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        return self.Log.load_file(filename, lineno, show=1, focus=0)
+        if self.Log.load_file(filename, lineno):
+            self.Log.goto_marker()
+            if show:
+                self.popup_window(self.Log, show, focus)
     
     @postcall
     def debug(self, obj, *args, **kwargs):
