@@ -1222,7 +1222,7 @@ class Editor(EditWindow, EditorInterface):
         stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
         stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
         stc.STC_P_NUMBER          : "fore:#7f0000",
-        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf,eol",
+        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf",
         stc.STC_P_CHARACTER       : "fore:#7f7f7f",
         stc.STC_P_STRING          : "fore:#7f7f7f",
         stc.STC_P_TRIPLE          : "fore:#7f7f7f",
@@ -1373,34 +1373,23 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    def load_file(self, filename, lineno=0, show=False, focus=False):
+    def load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile; Associates the file with `filename`.
         filename : buffer-file-name:str
           lineno : mark the specified line (>=1)
-            show : popup editor window when success
-           focus : set the focus if the window is displayed
         
         Note: The file will be reloaded without confirmation.
         """
         if not filename:
             return
         f = os.path.abspath(filename)
-        if f == self.filename: # save pos/markers before loading
-            p = self.cpos
-        else:
-            p = -1
         self.push_current() # save cache
         if self.LoadFile(f):
             self.filename = f
             if lineno:
                 self.markline = lineno - 1
                 self.goto_marker()
-            if p != -1:
-                self.goto_char(p) # restore position
-                self.recenter()
             self.push_current() # save current
-            if show:
-                self.parent.handler('popup_window', self, show, focus)
             self.handler('editor_loaded', self)
             self.message("Loaded {!r} successfully.".format(filename))
             return True

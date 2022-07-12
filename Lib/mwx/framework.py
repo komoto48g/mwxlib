@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.6"
+__version__ = "0.65.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -220,13 +220,8 @@ class KeyCtrlInterfaceMixin(object):
         evt.Skip()
     post_command_hook.__name__ = str('skip')
     
-    def define_handler(self, keymap, action=None, mode='', *args, **kwargs):
-        """Define [map key mode] action in the default state.
-        
-        If no action, it invalidates the key and returns @decor(binder).
-        key must be in C-M-S order (ctrl + alt(meta) + shift).
-        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
-        """
+    def _define_handler(self, keymap, action=None, mode='', *args, **kwargs):
+        """Define [map key mode] action in the default state."""
         state = self.handler.default_state
         map, sep, key = regulate_key(keymap).rpartition(' ')
         map = map.strip()
@@ -247,17 +242,19 @@ class KeyCtrlInterfaceMixin(object):
             return action
         else:
             self.handler.update({map: {key: [state]}})
-            return lambda f: self.define_handler(keymap, f, mode, *args, **kwargs)
-    
-    ## def undefine_handler(self, keymap, mode=''):
-    ##     self.define_handler(keymap, None, mode)
+            return lambda f: self._define_handler(keymap, f, mode, *args, **kwargs)
     
     def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key pressed:mode] action in the default state."""
-        return self.define_handler(keymap, action, 'pressed', *args, **kwargs)
+        """Define [map key pressed:mode] action in the default state.
+        
+        If no action, it invalidates the key and returns @decor(binder).
+        The key must be in C-M-S order (ctrl + alt(meta) + shift).
+        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
+        """
+        return self._define_handler(keymap, action, 'pressed', *args, **kwargs)
     
-    ## def undefine_key(self, keymap):
-    ##     self.define_key(keymap, None)
+    def undefine_key(self, keymap):
+        self.define_key(keymap, None)
     
     def interactive_call(self, action, *args, **kwargs):
         f = ut.funcall(action, *args, **kwargs)
@@ -591,7 +588,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     def post_command_hook(self, evt):
         pass
-    post_command_hook.__name__ = str('stop') # no skip
+    post_command_hook.__name__ = str('noskip') # Don't skip the event
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
@@ -675,7 +672,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     
     def post_command_hook(self, evt):
         pass
-    post_command_hook.__name__ = str('stop') # no skip
+    post_command_hook.__name__ = str('noskip') # Don't skip the event
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
@@ -734,7 +731,7 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if getattr(page, 'menu'):
+        if getattr(page, 'menu', None):
             Menu.Popup(self, page.menu)
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -967,7 +964,6 @@ class ShellFrame(MiniFrame):
                   'add_history' : [ None, self.add_history ],
                      'add_help' : [ None, self.add_help ],
                     'add_shell' : [ None, self.console.add_page ],
-                 'popup_window' : [ None, self.popup_window ],
                  'title_window' : [ None, self.on_title_window ],
             },
             0 : {
@@ -989,13 +985,6 @@ class ShellFrame(MiniFrame):
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
             'C-x' : {
-                    'l pressed' : (0, _F(self.popup_window, self.Log, doc="Show log")),
-                    'h pressed' : (0, _F(self.popup_window, self.Help, doc="Show help")),
-                  'S-h pressed' : (0, _F(self.popup_window, self.History, doc="Show history")),
-                    'j pressed' : (0, _F(self.popup_window, self.Scratch, doc="Show scratch")),
-                    'm pressed' : (0, _F(self.popup_window, self.monitor, doc="Show monitor")),
-                    'i pressed' : (0, _F(self.popup_window, self.inspector, doc="Show inspector")),
-                 'home pressed' : (0, _F(self.popup_window, self.rootshell, doc="Show root shell")),
                     'p pressed' : (0, _F(self.other_editor, p=-1)),
                     'n pressed' : (0, _F(self.other_editor, p=+1)),
             },
@@ -1144,19 +1133,14 @@ class ShellFrame(MiniFrame):
         )
         self.popup_window(self.Help, focus=0)
     
-    def find_pane(self, win):
-        for pane in self._mgr.GetAllPanes():
-            nb = pane.window
-            if nb is win or nb.GetPageIndex(win) != -1:
-                return pane
-    
     def toggle_window(self, win, focus=False):
-        self.popup_window(win, show=None, focus=focus)
+        self.popup_window(win, None, focus)
     
     def popup_window(self, win, show=True, focus=True):
         """Show the notebook page and move the focus
         win : page or window to popup
        show : True, False, otherwise None:toggle
+              The pane window will be hidden if no show.
         """
         wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
@@ -1166,7 +1150,7 @@ class ShellFrame(MiniFrame):
         else:
             return
         if show is None:
-            show = not pane.IsShown()
+            show = not pane.IsShown() # toggle show
         nb.Show(show)
         pane.Show(show)
         self._mgr.Update()
@@ -1206,7 +1190,13 @@ class ShellFrame(MiniFrame):
         self.message("Quit")
         evt.Skip()
     
-    def load(self, obj):
+    def load(self, obj, show=True, focus=False):
+        """Load file @where the object is defined.
+            obj : target object
+           show : Popup editor window when success.
+                  The pane window will not be hidden even if no show.
+          focus : Set the focus if the window is displayed.
+        """
         if not isinstance(obj, str):
             obj = where(obj)
         if obj is None:
@@ -1218,7 +1208,10 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        return self.Log.load_file(filename, lineno, show=1, focus=0)
+        if self.Log.load_file(filename, lineno):
+            self.Log.goto_marker()
+            if show:
+                self.popup_window(self.Log, show, focus)
     
     @postcall
     def debug(self, obj, *args, **kwargs):
@@ -1338,7 +1331,7 @@ class ShellFrame(MiniFrame):
     def add_help(self, text):
         """Puts text to the help buffer"""
         self.Help.Text = text
-        self.popup_window(self.Help, show=1, focus=0)
+        self.popup_window(self.Help, focus=0)
     
     def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
         """Add command:str to the history buffer
