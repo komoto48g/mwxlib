@@ -237,6 +237,9 @@ def where(obj):
         name = obj.tb_frame.f_code.co_name
         return "{}:{}:{}".format(filename, lineno, name)
     
+    if inspect.isbuiltin(obj):
+        return None
+    
     def _where(obj):
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
@@ -244,17 +247,24 @@ def where(obj):
         if not lineno:
             return filename
         return "{}:{}:{}".format(filename, lineno, name)
+    
     try:
         try:
             return _where(obj) # module, class, method, function, frame, or code
         except TypeError:
             return _where(obj.__class__) # otherwise, class of the object
     except Exception:
+        pass
+    ## The source code cannot be retrieved.
+    ## Try to get filename where the object is defined.
+    try:
         try:
-            return inspect.getfile(obj) # compiled file ?
+            return inspect.getfile(obj) # compiled file?
         except TypeError:
-            ## return inspect.getmodule(obj) # module or None ?
-            return None
+            return inspect.getfile(obj.__class__) # or a special class?
+    except Exception:
+        pass
+    return None
 
 
 def mro(obj):
