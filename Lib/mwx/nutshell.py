@@ -1580,12 +1580,12 @@ class Nautilus(Shell, EditorInterface):
         stc.STC_P_STRING          : "fore:#a0a0a0",
         stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040,eol",
         stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040,eol",
-        stc.STC_P_CLASSNAME       : "fore:#ffe000,bold",
-        stc.STC_P_DEFNAME         : "fore:#ffff80,bold",
+        stc.STC_P_CLASSNAME       : "fore:#61d6d6,bold",
+        stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
         stc.STC_P_WORD            : "fore:#80c0ff",
         stc.STC_P_WORD2           : "fore:#ff80ff",
         stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
-        stc.STC_P_DECORATOR       : "fore:#e08040",
+        stc.STC_P_DECORATOR       : "fore:#ff8040",
     }
     
     parent = property(lambda self: self.__parent)
