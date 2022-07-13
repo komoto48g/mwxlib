@@ -1746,5 +1746,6 @@ if __name__ == "__main__":
     frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\lineprofile.py")
     frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\ffmpeg_viewer.py")
     
+    frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
     app.MainLoop()
