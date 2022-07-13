@@ -253,8 +253,9 @@ class Debugger(Pdb):
         editor = self.parent.find_editor(filename) or self.parent.Log
         if self.code != code:
             editor.load_cache(filename)
-            editor.markline = firstlineno - 1 # (o) entry:marker
-            editor.push_current()
+            if filename == editor.target:
+                editor.markline = firstlineno - 1 # (o) entry:marker
+                editor.push_current()
             for ln in self.get_file_breaks(filename):
                 self.add_marker(ln, 1)
         if filename == editor.target:

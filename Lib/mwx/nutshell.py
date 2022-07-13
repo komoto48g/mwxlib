@@ -1276,8 +1276,7 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name        # buffer-name (=> wx.Window.Name)
-        self.__filename = None  # buffer-file-name
-        self.__mtime = None     # timestamp
+        self.filename = None    # buffer-file-name
         self.codename = None
         self.code = None
         self.history = {}
@@ -2626,8 +2625,8 @@ class Nautilus(Shell, EditorInterface):
                                  traceback.format_exc(), re.M)
                 lines = [int(l) for f,l in err if f == "<string>"]
                 if lines:
-                    if self.bolc <= self.cpos: # current-region is active?
-                        self.linemark = self.cmdline_region[0] + lines[-1] - 1
+                    region = self.get_region(self.cline)
+                    self.linemark = region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
             else:
                 del self.linemark
