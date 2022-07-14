@@ -97,7 +97,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.InsertItem(i, key)
             self.SetItem(i, 1, vstr)
             self.blink(i)
-            ## self.EnsureVisible(i)
+            self.EnsureVisible(i)
     
     def blink(self, i):
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):

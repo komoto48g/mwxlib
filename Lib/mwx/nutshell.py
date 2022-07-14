@@ -362,7 +362,7 @@ class EditorInterface(CtrlInterface):
     
     def set_line_marker(self):
         if self.linemark == self.cline:
-            self.linemark = -1 # toggle show
+            self.linemark = -1 # toggle marker
         else:
             self.linemark = self.cline
     
@@ -627,8 +627,8 @@ class EditorInterface(CtrlInterface):
             self.codename = filename
             self.code = code
             del self.red_arrow
-            self.message("Evaluated {!r} successfully".format(filename))
             self.handler('py_region_executed', self)
+            self.message("Evaluated {!r} successfully".format(filename))
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
@@ -1387,9 +1387,8 @@ class Editor(EditWindow, EditorInterface):
         self.push_current() # save cache
         if self.LoadFile(f):
             self.filename = f
-            if lineno:
-                self.markline = lineno - 1
-                self.goto_marker()
+            self.markline = lineno - 1 # set or unset mark
+            self.goto_marker()
             self.push_current() # save current
             self.handler('editor_loaded', self)
             self.message("Loaded {!r} successfully.".format(filename))
@@ -2328,7 +2327,7 @@ class Nautilus(Shell, EditorInterface):
     
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
-        (override) mark points before push.
+        (override) Mark points before push.
         """
         try:
             self.on_text_input(command)

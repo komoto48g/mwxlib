@@ -5,6 +5,8 @@
 *.pptx
 *.docx
 *.xlsx
+*.bat
+*.cmd
 *.l
 *.log
 *.txt

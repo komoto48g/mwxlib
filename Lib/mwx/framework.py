@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.9"
+__version__ = "0.66.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1205,9 +1205,10 @@ class ShellFrame(MiniFrame):
             filename = obj
             lineno = 0
         if self.Log.load_file(filename, lineno):
-            self.Log.goto_marker()
             if show:
                 self.popup_window(self.Log, show, focus)
+            return True
+        return False
     
     @postcall
     def debug(self, obj, *args, **kwargs):
