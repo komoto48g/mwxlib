@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.65.8"
+__version__ = "0.65.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1005,15 +1005,11 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         "<scratch>")
         self.Scratch.codename = "<scratch>"
-        
-        self.Scratch.handler.bind('line_set', _F(self.start_trace, self.Scratch))
-        self.Scratch.handler.bind('line_unset', _F(self.stop_trace, self.Scratch))
+        self.trace(self.Scratch)
         
         ## text-mode
         self.Log.show_folder()
-        
-        self.Log.handler.bind('line_set', _F(self.start_trace, self.Log))
-        self.Log.handler.bind('line_unset', _F(self.stop_trace, self.Log))
+        self.trace(self.Log)
         
         self.Init()
     
@@ -1263,7 +1259,6 @@ class ShellFrame(MiniFrame):
             self.linfo.watch(ls)
         self.on_title_window(frame)
         self.popup_window(self.debugger.editor, focus=0)
-        self.debugger.editor.EnsureVisible(frame.f_lineno)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         command = shell.cmdline
@@ -1285,6 +1280,15 @@ class ShellFrame(MiniFrame):
         self.on_title_window(shell.target)
         del shell.locals
         del shell.globals
+    
+    def trace(self, editor, activate=True):
+        """Set the editor pointer traceable"""
+        if activate:
+            editor.handler.bind('pointer_set', _F(self.start_trace, editor))
+            editor.handler.bind('pointer_unset', _F(self.stop_trace, editor))
+        else:
+            editor.handler.unbind('pointer_set')
+            editor.handler.unbind('pointer_unset')
     
     def start_trace(self, line, editor):
         if not self.debugger.busy:
