@@ -604,19 +604,20 @@ class EditorInterface(CtrlInterface):
         if region:
             p, q = (self.PositionFromLine(x) for x in region)
             text = self.GetTextRange(p, q)
-            ln = region[0]
         else:
             text = self.Text
-            ln = 0
+            region = (0, self.LineCount)
         try:
             code = compile(text, filename, "exec")
             exec(code, globals, locals)
+            dispatcher.send(signal='Interpreter.push',
+                            sender=self, command=None, more=False)
         except Exception as e:
             err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                              traceback.format_exc(), re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
-                lx = ln + lines[-1] - 1
+                lx = region[0] + lines[-1] - 1
                 self.red_arrow = lx
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
@@ -625,10 +626,9 @@ class EditorInterface(CtrlInterface):
         else:
             self.codename = filename
             self.code = code
-            self.handler('py_region_executed', self)
+            del self.red_arrow
             self.message("Evaluated {!r} successfully".format(filename))
-            dispatcher.send(signal='Interpreter.push',
-                            sender=self, command=None, more=False)
+            self.handler('py_region_executed', self)
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
@@ -2290,17 +2290,18 @@ class Nautilus(Shell, EditorInterface):
     
     @property
     def Command(self):
-        """Extract a command from text which may include a shell prompt."""
+        """Extract a command from the editor."""
         return self.getCommand()
     
     @property
     def MultilineCommand(self):
         """Extract a multi-line command from the editor."""
         region = self.get_region(self.cline)
-        p, q = (self.PositionFromLine(x) for x in region)
-        if p < q:
+        if region:
+            p, q = (self.PositionFromLine(x) for x in region)
             p += len(sys.ps1)
-        return self.GetTextRange(p, q)
+            return self.GetTextRange(p, q)
+        return ''
     
     def get_region(self, line):
         """Line numbers of prompt head and tail containing the line.
@@ -2313,7 +2314,7 @@ class Nautilus(Shell, EditorInterface):
                 break
             lc -= 1
         if not text.startswith(sys.ps1): # bad region
-            return lc, lc
+            return None
         while le < self.LineCount:
             text = self.GetLine(le)
             if not text.startswith(sys.ps2):
@@ -2614,25 +2615,26 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
+        filename = "<input>"
+        region = self.get_region(self.cline)
         text = self.MultilineCommand
         if text:
             tokens = list(ut.split_words(text))
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
-                cmd = compile(cmd, "<string>", "exec")
-                self.exec(cmd)
+                code = compile(cmd, filename, "exec")
+                self.exec(code)
             except Exception as e:
                 err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
                                  traceback.format_exc(), re.M)
-                lines = [int(l) for f,l in err if f == "<string>"]
+                lines = [int(l) for f,l in err if f == filename]
                 if lines:
-                    region = self.get_region(self.cline)
                     self.linemark = region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
             else:
                 del self.linemark
-                self.message("Evaluated successfully.")
+                self.message("Evaluated {!r} successfully".format(filename))
         else:
             self.message("No region")
     
