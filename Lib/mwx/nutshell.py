@@ -240,7 +240,7 @@ class EditorInterface(CtrlInterface):
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o blue-mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff') # > white-arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000') # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')   # >> pointer
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')   # >> blue-pointer
         self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', 'yellow')  # >> red-pointer
         
         v = ('white', 'black')
@@ -309,7 +309,7 @@ class EditorInterface(CtrlInterface):
     
     white_arrow = _Marker("white-arrow", 1) # white-arrow_set/white-arrow_unset
     red_arrow = _Marker("red-arrow", 2) # red-arrow_set/red-arrow_unset
-    linemark = _Marker("line", 3) # line_set/line_unset
+    linemark = _Marker("pointer", 3) # pointer_set/pointer_unset
     
     @property
     def markline(self):
@@ -356,6 +356,7 @@ class EditorInterface(CtrlInterface):
     
     def goto_marker(self):
         if self.mark != -1:
+            self.EnsureVisible(self.markline)
             self.goto_char(self.mark)
             self.recenter()
     
@@ -367,6 +368,7 @@ class EditorInterface(CtrlInterface):
     
     def goto_line_marker(self):
         if self.linemark != -1:
+            self.EnsureVisible(self.linemark)
             self.goto_line(self.linemark)
             self.recenter()
     
