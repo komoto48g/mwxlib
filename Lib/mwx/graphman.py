@@ -401,7 +401,7 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(ControlPanel, LayerInterface):
+class Layer(LayerInterface, ControlPanel):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
