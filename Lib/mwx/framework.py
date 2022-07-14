@@ -1115,7 +1115,7 @@ class ShellFrame(MiniFrame):
             "#<module 'mwx' from {!r}>".format(__file__),
             "Author: {!r}".format(__author__),
             "Version: {!s}".format(__version__),
-            self.rootshell.__doc__,
+            self.rootshell.__class__.__doc__,
             
             "================================\n" # Thanks to wx.py.shell
             "#{!r}".format(wx.py.shell),
