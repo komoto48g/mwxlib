@@ -263,7 +263,11 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
-        self.IndicatorSetHoverForeground(1, "blue")
+        try:
+            self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
+            self.IndicatorSetHoverForeground(1, "blue")
+        except AttributeError:
+            pass
         
         ## Custom indicator for match_paren
         ## self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
@@ -817,7 +821,11 @@ class EditorInterface(CtrlInterface):
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
             self.IndicatorSetForeground(1, item.get('back') or "red")
-            self.IndicatorSetHoverForeground(1, "blue")
+            try:
+                self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
+                self.IndicatorSetHoverForeground(1, "blue")
+            except AttributeError:
+                pass
         
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
@@ -1286,7 +1294,7 @@ class Editor(EditorInterface, EditWindow):
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
-        self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavepointReached)
+        self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         
         @self.handler.bind('window_destroy')
         def destroy(v):
@@ -1340,7 +1348,7 @@ class Editor(EditorInterface, EditWindow):
             self.Parent.set_page_caption(self, '* ' + self.Name)
         evt.Skip()
     
-    def OnSavepointReached(self, evt):
+    def OnSavePointReached(self, evt):
         if self.__mtime:
             self.Parent.set_page_caption(self, self.Name)
         evt.Skip()

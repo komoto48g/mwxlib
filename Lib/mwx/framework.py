@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.66.0"
+__version__ = "0.66.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -725,8 +725,9 @@ class AuiNotebook(aui.AuiNotebook):
         self.parent = self.Parent
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
+        if wx.VERSION >= (4,1,0):
+            self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+            self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
@@ -819,8 +820,9 @@ class ShellFrame(MiniFrame):
     """
     rootshell = property(lambda self: self.__shell)
     
-    def __init__(self, parent, target=None, title=None, size=(1000,500),
-                 style=wx.DEFAULT_FRAME_STYLE, **kwargs):
+    def __init__(self, parent, target=None, title=None, size=(1280,720),
+                 style=wx.DEFAULT_FRAME_STYLE,
+                 alone=False, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         self.statusbar.resize((-1,120))
@@ -924,7 +926,8 @@ class ShellFrame(MiniFrame):
         self._mgr.Update()
         
         self.Unbind(wx.EVT_CLOSE)
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        if not alone:
+            self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
