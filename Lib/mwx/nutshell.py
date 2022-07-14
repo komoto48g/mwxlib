@@ -1200,7 +1200,7 @@ class EditorInterface(CtrlInterface):
         self.ReplaceSelection('')
 
 
-class Editor(EditWindow, EditorInterface):
+class Editor(EditorInterface, EditWindow):
     """Python code editor
 
     Attributes:
@@ -1487,7 +1487,7 @@ class Interpreter(interpreter.Interpreter):
             return interpreter.Interpreter.getCallTip(self, *args, **kwargs)
 
 
-class Nautilus(Shell, EditorInterface):
+class Nautilus(EditorInterface, Shell):
     """Nautilus in the Shell with Editor interface
     
     Features:
@@ -2053,9 +2053,6 @@ class Nautilus(Shell, EditorInterface):
         self.promptPosEnd = self.TextLength
         self.message("")
     
-    def wrap(self, mode=1):
-        EditorInterface.wrap(self, mode)
-    
     ## --------------------------------
     ## Magic caster of the shell
     ## --------------------------------
@@ -2409,10 +2406,8 @@ class Nautilus(Shell, EditorInterface):
     def clear(self):
         """Delete all text (override) put new prompt"""
         self.ClearAll()
-        
-        self.promptPosStart = 0
+        self.promptPosStart = 0 # CanEdit:True
         self.promptPosEnd = 0
-        self.more = False
         self.prompt()
     
     def write(self, text, pos=None):
