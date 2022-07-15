@@ -31,24 +31,24 @@ import wx
 
 
 def deb(target=None, app=None, locals=None, **kwargs):
-    """Dive into the process from your diving point
+    """Dive into the process
     
  @@ Divers:
-    This will execute your startup script $(PYTHONSTARTUP).
+    This will execute the startup script $(PYTHONSTARTUP).
     
     Args:
-         target : Object or module.
-                  Default None sets target to __main__.
-            app : An instance of App.
-                  Default None may create a local App and the mainloop.
-                  If app is True, neither the app nor the mainloop will be created.
-                  If app is given and the mainloop has not yet started,
-                  the app will enter the mainloop.
+         target : Object or module (default None).
+                  If None, the target is set to `__main__`.
+            app : An instance of wx.App (default None).
+                  If None, the app and the mainloop will be created.
+                  If specified, the app will enter the mainloop locally.
+                  Otherwise, neither the app nor the mainloop will be created.
          locals : Additional context of the shell
        **kwargs : Nautilus arguments
             introText : introductory of the shell
-        startupScript : startup script (default None)
-    execStartupScript : execute your startup script ($PYTHONSTARTUP:~/.py)
+        startupScript : startup script file (default None)
+    execStartupScript : True => execute the startup script ($PYTHONSTARTUP:~/.py)
+          ensureClose : True => EVT_CLOSE surely close the window
     """
     quote_unqoute = """
         Anything one man can imagine, other man can make real.
@@ -56,10 +56,12 @@ def deb(target=None, app=None, locals=None, **kwargs):
         """
     kwargs.setdefault("introText",
                       "mwx {}".format(__version__) + quote_unqoute)
+    kwargs.setdefault("execStartupScript", True)
+    kwargs.setdefault("ensureClose", True)
     
-    app = app or wx.GetApp() or wx.App()
+    if app is None:
+        app = wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
-    frame.Unbind(wx.EVT_CLOSE) # EVT_CLOSE surely close the window
     frame.Show()
     shell = frame.rootshell
     shell.SetFocus()

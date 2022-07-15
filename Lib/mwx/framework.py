@@ -822,7 +822,7 @@ class ShellFrame(MiniFrame):
     
     def __init__(self, parent, target=None, title=None, size=(1280,720),
                  style=wx.DEFAULT_FRAME_STYLE,
-                 alone=False, **kwargs):
+                 ensureClose=False, **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         self.statusbar.resize((-1,120))
@@ -925,9 +925,10 @@ class ShellFrame(MiniFrame):
         
         self._mgr.Update()
         
+        self.__standalone = ensureClose
+        
         self.Unbind(wx.EVT_CLOSE)
-        if not alone:
-            self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
@@ -1090,7 +1091,7 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer is cleared.")
-            del self.Log.linemark # [line_unset] => debugger.unwatch
+            del self.Log.linemark # [pointer_unset] => debugger.unwatch
             del self.Scratch.linemark
         
         pane = self._mgr.GetPane(self.ghost)
@@ -1099,7 +1100,11 @@ class ShellFrame(MiniFrame):
             self.monitor.unwatch()
             self.ginfo.unwatch()
             self.linfo.unwatch()
-        self.Show(0) # Don't destroy the window
+        
+        if self.__standalone:
+            evt.Skip() # Close the window
+        else:
+            self.Show(0) # Don't destroy the window
     
     def OnDestroy(self, evt):
         nb = self.console
