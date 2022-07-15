@@ -197,8 +197,6 @@ class LayerInterface(CtrlInterface):
           graph : parent.graph window
          otuput : parent.output window
     """
-    Menu = property(lambda self: self.menu) # for backward compatibility
-    
     menukey = property(lambda self: "Plugins/&" + self.__module__)
     menuicon = None
     caption = True
@@ -328,7 +326,7 @@ class LayerInterface(CtrlInterface):
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
-                  lambda v: mwx.Menu.Popup(self, self.Menu))
+                  lambda v: mwx.Menu.Popup(self, self.menu))
         
         @self.handler.bind('window_destroy')
         def destroy(evt):
