@@ -273,7 +273,6 @@ class Debugger(Pdb):
             if out == self.prompt or out.endswith(self.prompt*2):
                 shell.cpos -= len(self.prompt) # backward selection
                 shell.ReplaceSelection('')
-                shell.goto_char(-1)
                 shell.prompt()
             self.__interactive = shell.cpos
         wx.CallAfter(_post)

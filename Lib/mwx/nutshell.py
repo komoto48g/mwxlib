@@ -1098,6 +1098,14 @@ class EditorInterface(CtrlInterface):
     def end_of_line(self):
         self.goto_char(self.eol)
     
+    def beginning_of_buffer(self):
+        self.mark = self.cpos
+        self.goto_char(0)
+    
+    def end_of_buffer(self):
+        self.mark = self.cpos
+        self.goto_char(self.TextLength)
+    
     def goto_matched_paren(self):
         p = self.cpos
         return (self.goto_char(self.get_left_paren(p))
@@ -2034,10 +2042,11 @@ class Nautilus(EditorInterface, Shell):
     def duplicate_command(self, clear=True):
         if self.CanEdit():
             return
-        cmd = self.getMultilineCommand()
+        cmd = self.MultilineCommand
         if cmd:
+            self.mark = self.cpos
             if clear:
-                self.clearCommand()
+                self.clearCommand() # => move to the prompt end
             self.write(cmd, -1)
     
     def on_enter_escmap(self, evt):
@@ -2312,7 +2321,7 @@ class Nautilus(EditorInterface, Shell):
         (override)"""
         lc = line
         le = lc + 1
-        while lc > 0:
+        while lc >= 0:
             text = self.GetLine(lc)
             if not text.startswith(sys.ps2):
                 break
@@ -2387,7 +2396,7 @@ class Nautilus(EditorInterface, Shell):
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
         (override) Remove ps1 and ps2 from the multi-line command to paste.
-                   Add offset for paste-rectangle mode.
+                   Add offset in paste-rectangle mode.
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
@@ -2395,12 +2404,11 @@ class Nautilus(EditorInterface, Shell):
                 text = data.GetText()
                 text = self.fixLineEndings(text)
                 command = self.regulate_cmd(text)
-                offset = ''
+                ps = sys.ps2
                 if rectangle:
                     text, lp = self.CurLine
-                    offset = ' ' * (lp - len(sys.ps2))
-                self.ReplaceSelection(
-                    command.replace('\n', os.linesep + sys.ps2 + offset))
+                    ps += ' ' * (lp - len(sys.ps2)) # add offset
+                self.ReplaceSelection(command.replace('\n', os.linesep + ps))
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
@@ -2419,7 +2427,9 @@ class Nautilus(EditorInterface, Shell):
         self.prompt()
     
     def write(self, text, pos=None):
-        """Display text in the shell (override) add pos:option"""
+        """Display text in the shell
+        (override) Append text if it is editable at the position.
+        """
         if pos is not None:
             if pos < 0:
                 pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)

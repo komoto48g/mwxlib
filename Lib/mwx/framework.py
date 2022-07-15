@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.66.1"
+__version__ = "0.66.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1397,8 +1397,9 @@ class ShellFrame(MiniFrame):
         text = win.SelectedText or win.expr_at_caret
         if text:
             shell = self.current_shell
+            win.mark = win.cpos
             if clear:
-                shell.clearCommand()
+                shell.clearCommand() # => move to the prompt end
             shell.write(text, -1)
             shell.SetFocus()
     
