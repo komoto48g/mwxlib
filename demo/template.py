@@ -5,8 +5,8 @@
 Version: 1.0
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-import wx
 import cv2
+import wx
 from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 
@@ -40,7 +40,7 @@ class Plugin(Layer):
         k = self.ksize.value
         src = self.graph.buffer
         dst = cv2.GaussianBlur(src, (k,k), 0.)
-        self.output.load(dst, name='*gauss*')
+        self.output.load(dst, name="*gauss*")
 
 
 if __name__ == "__main__":

@@ -56,7 +56,7 @@ pip uninstall mwxlib
 
 # Features
 
-![intro](doc/image/intro.gif)
+![intro](demo/image/demo-shell.gif)
 The animation shows how the Nautilus works, which is embedded in a simple PyEditor app.
 
 As you are diving into the python process,
@@ -110,10 +110,6 @@ which has the following features:
   * All completions [1--5] are incremental when pressed any alnums, and decremental when backspace.  
 See [key bindings](key-bindings.md) for more information.
 
-<!--
-![autocomp](doc/image/autocomp.gif)
--->
-
 
 ## Magic syntax:
 
@@ -136,10 +132,6 @@ See [key bindings](key-bindings.md) for more information.
     Note: The last three (*) are original syntax defined in wx.py.shell,
     at present version, enabled with USE_MAGIC switch being on
 
-<!--
-![apropos](doc/image/apropos.gif)
--->
-
 
 ## built-in utility:
 
@@ -156,10 +148,6 @@ See [key bindings](key-bindings.md) for more information.
     @where      filename and lineno or module
     @debug      open pdb or show event-watcher and widget-tree
 
-<!--
-![utils-mod](doc/image/utils-mod.gif)
--->
-
 
 ## Ghost in the shell
 
@@ -173,11 +161,6 @@ which is a notebook-style window consists of four editors:
     + logging debug process
 - History buffer
     + read-only buffer of the input-history
-
-<!--
-![utils-ghost](doc/image/utils-ghost.gif)
-The animation shows how to inspect *blurring*-functions of OpenCV.
--->
 
 
 ## Authors

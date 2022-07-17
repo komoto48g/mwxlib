@@ -36,15 +36,15 @@ class Plugin(Layer):
                         size=(200,22),
                         )
         self.choice = Choice(self, label="ctrl label",
-                         handler=lambda v: self.statusline(v.Value, "selected"),
-                         updater=lambda v: self.statusline(v.Value, "update"),
-                         choices=['1','2','3'],
-                         tip="this is a choice",
-                         icon=wx.ART_NEW,
-                         readonly=0,
-                         selection=0,
-                         size=(200,22),
-                         )
+                        handler=lambda v: self.statusline(v.Value, "selected"),
+                        updater=lambda v: self.statusline(v.Value, "update"),
+                        choices=['1','2','3'],
+                        tip="this is a choice",
+                        icon=wx.ART_NEW,
+                        readonly=0,
+                        selection=0,
+                        size=(200,22),
+                        )
         self.layout((
                 self.btn,
                 self.btn2,

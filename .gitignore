@@ -12,6 +12,8 @@
 *.txt
 Makefile
 exclude_files
+
+# Resources
 c/
 doc/
 etc/
