@@ -530,7 +530,7 @@ class EditorInterface(CtrlInterface):
     
     def py_indent_line(self):
         """Indent the current line"""
-        text = self.caretline  # w/ no-prompt cf. CurLine
+        text = self.caretline  # w/ no-prompt
         lstr = text.lstrip()   # w/ no-indent
         ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
@@ -541,7 +541,7 @@ class EditorInterface(CtrlInterface):
     
     def py_outdent_line(self):
         """Outdent the current line"""
-        text = self.caretline  # w/ no-prompt cf. CurLine
+        text = self.caretline  # w/ no-prompt
         lstr = text.lstrip()   # w/ no-indent
         ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
@@ -558,9 +558,7 @@ class EditorInterface(CtrlInterface):
         return lstr, indent
     
     def py_calc_indent(self, line):
-        """Calculate indent spaces from previous line
-        (patch) `with` in wx.py.shell.Shell.prompt
-        """
+        """Calculate indent spaces from previous line."""
         lstr, indent = self.py_indentation(line - 1) # check previous line
         try:
             tokens = list(shlex.shlex(lstr)) # strip comment
@@ -1086,7 +1084,7 @@ class EditorInterface(CtrlInterface):
         self.goto_char(p)
     
     def back_to_indentation(self):
-        text = self.caretline # w/ no-prompt cf. CurLine
+        text = self.caretline # w/ no-prompt
         lstr = text.lstrip()  # w/ no-indent
         self.goto_char(self.bol + len(text) - len(lstr)) # for multi-byte string
         self.ScrollToColumn(0)
@@ -1976,7 +1974,7 @@ class Nautilus(EditorInterface, Shell):
     
     def OnBackspace(self, evt):
         """Called when backspace (or *left) pressed
-        Backspace-guard from Autocomp eating over a prompt white
+        Backspace-guard from Autocomp eating over a prompt whitespace
         """
         if self.cpos == self.bolc:
             ## do not skip to prevent autocomp eats prompt,
@@ -2050,24 +2048,23 @@ class Nautilus(EditorInterface, Shell):
             self.write(cmd, -1)
     
     def on_enter_escmap(self, evt):
-        self._caret = self.CaretPeriod
+        self.__caret_mode = self.CaretPeriod
         self.CaretPeriod = 0
         self.message("ESC-")
     
     def on_exit_escmap(self, evt):
-        self.CaretPeriod = self._caret
+        self.CaretPeriod = self.__caret_mode
         self.message("ESC {}".format(evt.key))
     
     def on_enter_notemode(self, evt):
         self.noteMode = True
-        self._caret = self.CaretForeground
+        self.__caret_mode = self.CaretForeground
         self.CaretForeground = 'red'
         self.message("Note mode")
     
     def on_exit_notemode(self, evt):
         self.noteMode = False
-        self.CaretForeground = self._caret
-        self.promptPosEnd = self.TextLength
+        self.CaretForeground = self.__caret_mode
         self.message("")
     
     ## --------------------------------
@@ -2449,8 +2446,6 @@ class Nautilus(EditorInterface, Shell):
     
     def info(self, obj):
         """Short information"""
-        ## if obj is None:
-        ##     obj = self
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
         self.parent.handler('add_help', doc) or print(doc)
@@ -2513,11 +2508,10 @@ class Nautilus(EditorInterface, Shell):
     def Execute(self, text):
         """Replace selection with text and run commands.
         (override) Check the clock time,
-                   patch for `finally` miss-indentation
+                   Patch `finally` miss-indentation
         """
         command = self.regulate_cmd(text)
         commands = []
-        lf = '\n'
         cmd = ''
         for line in command.splitlines():
             lstr = line.lstrip()
@@ -2526,13 +2520,13 @@ class Nautilus(EditorInterface, Shell):
                     commands.append(cmd) # Add the previous command to the list
                 cmd = line
             else:
-                cmd += lf + line # Multiline command; Add to the command
+                cmd += '\n' + line # Multiline command; Add to the command
         commands.append(cmd)
         
         self.Replace(self.bolc, self.eolc, '')
         self.__time = self.clock()
         for cmd in commands:
-            self.write(cmd.replace(lf, os.linesep + sys.ps2))
+            self.write(cmd.replace('\n', os.linesep + sys.ps2))
             self.processLine()
     
     def run(self, command, prompt=True, verbose=True):
@@ -2695,7 +2689,7 @@ class Nautilus(EditorInterface, Shell):
         self.message("")
     
     def skipback_autocomp(self, evt):
-        """Don't eat backward prompt white"""
+        """Don't eat backward prompt whitespace"""
         if self.cpos == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
