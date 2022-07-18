@@ -2397,18 +2397,26 @@ class Nautilus(EditorInterface, Shell):
         """Replace selection with clipboard contents.
         (override) Remove ps1 and ps2 from the multi-line command to paste.
                    Add offset in paste-rectangle mode.
+                   Don't relplace the last crlf to ps.
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
             if wx.TheClipboard.GetData(data):
                 text = data.GetText()
-                text = self.fixLineEndings(text)
-                command = self.regulate_cmd(text)
+                command = text.rstrip()
+                command = self.fixLineEndings(command)
+                command = self.regulate_cmd(command)
+                _text, lp = self.CurLine
                 ps = sys.ps2
                 if rectangle:
-                    text, lp = self.CurLine
                     ps += ' ' * (lp - len(sys.ps2)) # add offset
+                if lp == 0:
+                    self.ReplaceSelection(ps)
                 self.ReplaceSelection(command.replace('\n', os.linesep + ps))
+                ws = text[len(command):] # the rest whitespace
+                if self.cpos == self.eolc: # caret at the end of the buffer
+                    ws = ws.replace('\n', os.linesep + ps)
+                self.write(ws)
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
