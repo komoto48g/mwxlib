@@ -870,29 +870,37 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     @wraps(f)
     def _Act2(*v):
         return f(*args, **kwargs) # function with no explicit args
+    _Act2.__name__ += str("~")
     
     action = _Act
     
     def _explicit_args(argv, defaults):
         """The rest of argv that must be given explicitly in f"""
         N = len(argv)
-        n = len(args) + int(inspect.ismethod(f)) # given *args but eliminates self
+        n = len(args)
         j = len(defaults) if defaults else 0     # number of defaults defined in f
         rest = set(argv[n:]) - set(argv[N-j:])   # rest of argv given by **kwargs
         return rest - set(kwargs)
     
     if not inspect.isbuiltin(f):
-        argv, _varargs, _keywords, defaults,\
-          _kwonlyargs, _kwonlydefaults, _annotations = inspect.getfullargspec(f)
-        if _varargs:
-            ## warnings.warn("Used handler *args, but none is passed to {!r}."
-            ##               .format(f.__name__), UserWarning)
-            ## print('-', where(inspect.currentframe().f_back))
+        sig = inspect.signature(f)
+        argv = []
+        defaults = []
+        varargs = None
+        varkwargs = None
+        for k, v in sig.parameters.items():
+            if v.kind <= 1: # POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD
+                argv.append(k)
+                if v.default != v.empty:
+                    defaults.append(v.default)
+            if v.kind == 2: # VAR_POSITIONAL (*args)
+                varargs = k
+            if v.kind == 4: # VAR_KEYWORD (**kwargs)
+                varkwargs = k
+        if varargs:
             action = _Act
-            pass
         elif not _explicit_args(argv, defaults):
             action = _Act2
-            action.__name__ += str("~")
     else:
         ## Builtin functions don't have an argspec that we can get.
         ## Try alalyzing the doc:str to get argspec info.
@@ -910,7 +918,6 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
             defaults = re.findall(r"\w+\s*=(\w+)", argspec)
             if not _explicit_args(argv, defaults):
                 action = _Act2
-                action.__name__ += str("~~")
                 if len(docs) > 1:
                     action.__doc__ = '\n'.join(docs[1:])
     
