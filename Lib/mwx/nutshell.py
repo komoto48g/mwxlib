@@ -2541,21 +2541,23 @@ class Nautilus(EditorInterface, Shell):
         """Execute command-line directly"""
         commands = []
         cmd = ''
-        line = ''
+        lines = ''
         for atom in self.cmdline_atoms():
-            line += atom
+            lines += atom
             if atom[0] not in '\r\n':
                 continue
-            ln = self.lstripPrompt(line)
-            lstr = ln.lstrip()
-            if lstr and lstr == ln and not re.match(self.py_outdent_re, lstr):
+            line = self.lstripPrompt(lines)
+            lstr = line.lstrip()
+            if (lstr and lstr == line # no indent
+                and not lstr.startswith('#') # no comment
+                and not re.match(self.py_outdent_re, lstr)): # no outdent pattern
                 if cmd:
                     commands.append(cmd) # Add stacked commands to the list
-                cmd = ln
+                cmd = line
             else:
-                cmd += line # multi-line command
-            line = ''
-        commands.append(cmd + line)
+                cmd += lines # multi-line command
+            lines = ''
+        commands.append(cmd + lines)
         if len(commands) > 1:
             suffix = sys.ps2
             for j, cmd in enumerate(commands):
@@ -2584,7 +2586,9 @@ class Nautilus(EditorInterface, Shell):
         cmd = ''
         for line in command.splitlines():
             lstr = line.lstrip()
-            if lstr and lstr == line and not re.match(self.py_outdent_re, lstr):
+            if (lstr and lstr == line # no indent
+                and not lstr.startswith('#') # no comment
+                and not re.match(self.py_outdent_re, lstr)): # no outdent pattern
                 if cmd:
                     commands.append(cmd) # Add the previous command to the list
                 cmd = line
@@ -2699,7 +2703,6 @@ class Nautilus(EditorInterface, Shell):
             self.CallTipCancel()
         
         filename = "<input>"
-        region = self.get_region(self.cline)
         text = self.MultilineCommand
         if text:
             tokens = list(ut.split_words(text))
@@ -2713,6 +2716,7 @@ class Nautilus(EditorInterface, Shell):
                                  traceback.format_exc(), re.M)
                 lines = [int(l) for f,l in err if f == filename]
                 if lines:
+                    region = self.get_region(self.cline)
                     self.linemark = region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
             else:
