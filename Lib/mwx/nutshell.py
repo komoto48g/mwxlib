@@ -2472,17 +2472,17 @@ class Nautilus(EditorInterface, Shell):
                 command = text.rstrip()
                 command = self.fixLineEndings(command)
                 command = self.regulate_cmd(command)
-                _text, lp = self.CurLine
+                endl = text[len(command):] # the rest whitespace
                 ps = sys.ps2
-                if rectangle:
-                    ps += ' ' * (lp - len(sys.ps2)) # add offset
-                if lp == 0:
-                    self.ReplaceSelection(ps)
-                self.ReplaceSelection(command.replace('\n', os.linesep + ps))
-                ws = text[len(command):] # the rest whitespace
                 if self.cpos == self.eolc: # caret at the end of the buffer
-                    ws = ws.replace('\n', os.linesep + ps)
-                self.write(ws)
+                    endl = endl.replace('\n', os.linesep + ps)
+                _text, lp = self.CurLine
+                if rectangle:
+                    ps += ' ' * (lp - len(ps)) # add offset
+                if lp == 0:
+                    command = ps + command # paste-line
+                command = command.replace('\n', os.linesep + ps)
+                self.ReplaceSelection(command + endl)
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
