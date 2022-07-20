@@ -235,8 +235,6 @@ class Debugger(Pdb):
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
-            shell.prompt()
-            shell.SetFocus()
         wx.CallAfter(_continue)
     
     def on_debug_mark(self, frame):
