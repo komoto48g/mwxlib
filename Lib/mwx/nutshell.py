@@ -546,20 +546,14 @@ class EditorInterface(CtrlInterface):
         ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = len(text) - len(lstr) - 4 # cf. delete_backward_space_like_tab
+        indent = len(text) - len(lstr) - 4
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
-    def py_indentation(self, line):
-        text = self.GetLine(line)
-        text = self.py_strip_prompts(text)
-        lstr = text.lstrip(' \t')
-        indent = len(text) - len(lstr)
-        return lstr, indent
-    
     def py_calc_indent(self, line):
         """Calculate indent spaces from previous line."""
-        lstr, indent = self.py_indentation(line - 1) # check previous line
+        text = self.GetLine(line - 1)
+        lstr, indent = self.py_strip_indents(text) # check previous line
         try:
             tokens = list(shlex.shlex(lstr)) # strip comment
         except ValueError:
@@ -573,13 +567,23 @@ class EditorInterface(CtrlInterface):
                 return indent + 4
             if re.match(self.py_closing_re, tokens[0]):
                 return indent - 4
-        lstr, _indent = self.py_indentation(line) # check current line
+        text = self.GetLine(line)
+        lstr, _indent = self.py_strip_indents(text) # check current line
         if re.match(self.py_outdent_re, lstr):
             indent -= 4
         return indent
     
     @classmethod
+    def py_strip_indents(self, text):
+        """Returns left-stripped text and the number of indents."""
+        text = self.py_strip_prompts(text)
+        lstr = text.lstrip(' \t')
+        indent = len(text) - len(lstr)
+        return lstr, indent
+    
+    @classmethod
     def py_strip_prompts(self, text):
+        """Returns text without a leading prompt."""
         for ps in (sys.ps1, sys.ps2, sys.ps3):
             if text.startswith(ps):
                 text = text[len(ps):]
@@ -647,6 +651,55 @@ class EditorInterface(CtrlInterface):
                 break
             le = ln-1
         return lc, le
+    
+    comment_prefix = "## "
+    
+    def comment_out_selection(self, from_=None, to_=None):
+        """Comment out the selected text."""
+        if from_ is not None: self.cpos = from_
+        if to_ is not None: self.anchor = to_
+        prefix = self.comment_prefix
+        with self.Preselection(self):
+            text = re.sub("^", prefix, self.SelectedText, flags=re.M)
+            ## Don't comment out the last (blank) line.
+            if text.endswith(prefix):
+                text = text[:-len(prefix)]
+            self.ReplaceSelection(text)
+    
+    def uncomment_selection(self, from_=None, to_=None):
+        """Uncomment the selected text."""
+        if from_ is not None: self.cpos = from_
+        if to_ is not None: self.anchor = to_
+        with self.Preselection(self):
+            text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
+            self.ReplaceSelection(text)
+    
+    def comment_out(self):
+        if not self.CanEdit():
+            return
+        if self.SelectedText:
+            self.comment_out_selection()
+        else:
+            ## align with current or previous indent position
+            self.back_to_indentation()
+            text = self.GetLine(self.cline - 1)
+            lstr, j = self.py_strip_indents(text)
+            if lstr.startswith('#'):
+                text = self.GetLine(self.cline)
+                lstr, k = self.py_strip_indents(text)
+                self.goto_char(self.bol + min(j, k))
+            self.comment_out_selection(self.cpos, self.eol)
+            self.LineDown()
+    
+    def uncomment(self):
+        if not self.CanEdit():
+            return
+        if self.SelectedText:
+            self.uncomment_selection()
+        else:
+            self.back_to_indentation()
+            self.uncomment_selection(self.cpos, self.eol)
+            self.LineDown()
     
     ## --------------------------------
     ## Fold / Unfold functions
@@ -1148,6 +1201,22 @@ class EditorInterface(CtrlInterface):
             self._obj.SetAnchor(self.apos)
             self._obj.ScrollToLine(self.vpos)
             self._obj.SetXOffset(self.hpos)
+    
+    class Preselection:
+        def __init__(self, obj):
+            self._obj = obj
+        
+        def __enter__(self):
+            self.cpos = self._obj.cpos
+            self.anchor = self._obj.anchor
+        
+        def __exit__(self, t, v, tb):
+            p = self.cpos
+            q = self.anchor
+            if p < q:
+                self._obj.cpos = p
+            else:
+                self._obj.anchor = q
     
     ## --------------------------------
     ## Edit: insert, eat, kill, etc.
