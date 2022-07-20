@@ -599,22 +599,9 @@ class EditorInterface(CtrlInterface):
         except Exception as e:
             self.message("- {}".format(e))
     
-    def py_exec_region(self, globals, locals, filename=None, region=None):
-        if not filename:
-            filename = "<string>"
-        else:
-            ## to eval file, add path to sys
-            dirname = os.path.dirname(filename)
-            if os.path.isdir(dirname) and dirname not in sys.path:
-                sys.path.append(dirname)
-        if region:
-            p, q = (self.PositionFromLine(x) for x in region)
-            text = self.GetTextRange(p, q)
-        else:
-            text = self.Text
-            region = (0, self.LineCount)
+    def py_exec_region(self, globals, locals, filename):
         try:
-            code = compile(text, filename, "exec")
+            code = compile(self.Text, filename, "exec")
             exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
@@ -623,7 +610,7 @@ class EditorInterface(CtrlInterface):
                              traceback.format_exc(), re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
-                lx = region[0] + lines[-1] - 1
+                lx = lines[-1] - 1
                 self.red_arrow = lx
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
