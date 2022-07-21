@@ -202,7 +202,6 @@ class LayerInterface(CtrlInterface):
          otuput : parent.output window
     """
     menukey = property(lambda self: "Plugins/&" + self.__module__)
-    menuicon = None
     caption = True
     category = None
     dockable = True
@@ -917,12 +916,13 @@ class Frame(mwx.Frame):
         
         plug = self.get_plug(name)
         if plug:
-            if not isinstance(plug.dockable, bool): # prior to dock:kwargs
-                kwargs.update(dock=plug.dockable)
+            dock = plug.dockable
+            if not isinstance(dock, bool): # prior to kwargs
+                kwargs.update(dock=dock)
             if not plug.caption:
-                pane.CaptionVisible(False)
-                pane.Gripper(plug.dockable not in (0, 5)) # show grip
-            pane.Dockable(plug.dockable)
+                pane.CaptionVisible(False)       # no caption bar
+                pane.Gripper(dock not in (0, 5)) # show a grip when docked
+            pane.Dockable(dock)
         
         dock = kwargs.get('dock')
         pane.dock_direction = dock or 0
@@ -1195,7 +1195,7 @@ class Frame(mwx.Frame):
             text = tail or plug.__module__
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
-                module.ID_, text, hint, wx.ITEM_CHECK, Icon(plug.menuicon),
+                module.ID_, text, hint, wx.ITEM_CHECK,
                 lambda v: self.show_pane(name, v.IsChecked()),
                 lambda v: v.Check(self.get_pane(name).IsShown()),
             )
