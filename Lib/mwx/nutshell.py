@@ -606,8 +606,8 @@ class EditorInterface(CtrlInterface):
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except Exception as e:
-            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
-                             traceback.format_exc(), re.M)
+            msg = traceback.format_exc()
+            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
                 lx = lines[-1] - 1
@@ -616,6 +616,7 @@ class EditorInterface(CtrlInterface):
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
+            ## print(msg, file=sys.__stderr__)
         else:
             self.codename = filename
             self.code = code
@@ -2279,13 +2280,7 @@ class Nautilus(EditorInterface, Shell):
         """
         ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
-        if not err:
-            self.MarkerAdd(ln, 1) # white-arrow
-        else:
-            self.MarkerAdd(ln, 2) # red-arrow
-            lines = [int(l) for f,l in err if f == "<string>"]
-            if lines:
-                self.linemark = ln + lines[-1] - 1
+        self.MarkerAdd(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
     def on_interp_error(self, e):
@@ -2699,13 +2694,14 @@ class Nautilus(EditorInterface, Shell):
                 code = compile(cmd, filename, "exec")
                 self.exec(code)
             except Exception as e:
-                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
-                                 traceback.format_exc(), re.M)
+                msg = traceback.format_exc()
+                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
                 lines = [int(l) for f,l in err if f == filename]
                 if lines:
                     region = self.get_region(self.cline)
                     self.linemark = region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
+                ## print(msg, file=sys.__stderr__)
             else:
                 del self.linemark
                 self.message("Evaluated {!r} successfully".format(filename))
