@@ -172,7 +172,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
-def typename(obj, docp=False, qualp=False, signature=False):
+def typename(obj, docp=False, qualp=False):
     """Typename of the obj object
     
     retval -> module:obj<doc>       when obj is callable and qualp=False
@@ -207,12 +207,6 @@ def typename(obj, docp=False, qualp=False, signature=False):
     
     if docp and callable(obj) and obj.__doc__:
         name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
-    
-    if signature and callable(obj):
-         try:
-             name += str(inspect.signature(obj)) # concat the signature
-         except ValueError:
-             pass
     return name
 
 
@@ -237,8 +231,8 @@ def where(obj):
         name = obj.tb_frame.f_code.co_name
         return "{}:{}:{}".format(filename, lineno, name)
     
-    if inspect.isbuiltin(obj):
-        return None
+    ## if inspect.isbuiltin(obj):
+    ##     return None
     
     def _where(obj):
         filename = inspect.getsourcefile(obj)
@@ -264,6 +258,9 @@ def where(obj):
             return inspect.getfile(obj.__class__) # or a special class?
     except Exception:
         pass
+    
+    if hasattr(obj, '__module__'):
+        return obj.__module__
     return None
 
 
