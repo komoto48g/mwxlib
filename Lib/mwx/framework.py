@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.66.7"
+__version__ = "0.66.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -725,9 +725,8 @@ class AuiNotebook(aui.AuiNotebook):
         self.parent = self.Parent
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
-        if wx.VERSION >= (4,1,0):
-            self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
-            self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
@@ -1162,7 +1161,7 @@ class ShellFrame(MiniFrame):
             wnd.SetFocus()
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
-        nb = self.console
+        nb = evt.EventObject
         if nb.CurrentPage is self.rootshell:
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
