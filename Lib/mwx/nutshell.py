@@ -606,8 +606,8 @@ class EditorInterface(CtrlInterface):
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except Exception as e:
-            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
-                             traceback.format_exc(), re.M)
+            msg = traceback.format_exc()
+            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
                 lx = lines[-1] - 1
@@ -616,6 +616,7 @@ class EditorInterface(CtrlInterface):
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
             self.message("- {}".format(e))
+            ## print(msg, file=sys.__stderr__)
         else:
             self.codename = filename
             self.code = code
@@ -1089,6 +1090,7 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     
     def goto_char(self, pos, selection=False):
+        """Goto char position with selection."""
         if pos is None or pos < 0:
             return
         ## if pos < 0:
@@ -1101,6 +1103,7 @@ class EditorInterface(CtrlInterface):
         return True
     
     def goto_line(self, ln, selection=False):
+        """Goto line with selection."""
         if ln is None or ln < 0:
             return
         ## if ln < 0:
@@ -1811,12 +1814,12 @@ class Nautilus(EditorInterface, Shell):
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
                'C-left pressed' : (0, self.OnBackspace),
-                 ## 'C-up pressed' : (0, _F(self.OnHistoryReplace, +1, doc="prev-command")),
-               ## 'C-down pressed' : (0, _F(self.OnHistoryReplace, -1, doc="next-command")),
-               ## 'C-S-up pressed' : (0, ), # -> Shell.OnHistoryInsert(+1) 無効
-             ## 'C-S-down pressed' : (0, ), # -> Shell.OnHistoryInsert(-1) 無効
-                 'M-up pressed' : (0, _F(self.goto_previous_mark_arrow)),
-               'M-down pressed' : (0, _F(self.goto_next_mark_arrow)),
+                  'C-[ pressed' : (0, _F(self.goto_previous_mark_arrow)),
+                'C-S-[ pressed' : (0, _F(self.goto_previous_mark_arrow, selection=1)),
+                  'C-] pressed' : (0, _F(self.goto_next_mark_arrow)),
+                'C-S-] pressed' : (0, _F(self.goto_next_mark_arrow, selection=1)),
+                 'M-up pressed' : (0, _F(self.goto_previous_white_arrow)),
+               'M-down pressed' : (0, _F(self.goto_next_white_arrow)),
                 'C-S-c pressed' : (0, skip),
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
@@ -2123,6 +2126,24 @@ class Nautilus(EditorInterface, Shell):
         self.CaretForeground = self.__caret_mode
         self.message("")
     
+    def goto_previous_white_arrow(self):
+        ln = self.MarkerPrevious(self.cline-1, 0b010) # previous white-arrow
+        p = self.PositionFromLine(ln) + len(sys.ps1)
+        self.goto_char(p if ln != -1 else 0)
+    
+    def goto_next_white_arrow(self):
+        ln = self.MarkerNext(self.cline+1, 0b010) # next white-arrow
+        p = self.PositionFromLine(ln) + len(sys.ps1)
+        self.goto_char(p if ln != -1 else self.eolc)
+    
+    def goto_previous_mark_arrow(self, selection=False):
+        ln = self.MarkerPrevious(self.cline-1, 0b110) # previous white/red-arrow
+        self.goto_line(ln if ln != -1 else 0, selection)
+    
+    def goto_next_mark_arrow(self, selection=False):
+        ln = self.MarkerNext(self.cline+1, 0b110) # next white/red-arrow
+        self.goto_line(ln if ln != -1 else self.LineCount, selection)
+    
     ## --------------------------------
     ## Magic caster of the shell
     ## --------------------------------
@@ -2279,33 +2300,11 @@ class Nautilus(EditorInterface, Shell):
         """
         ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
-        if not err:
-            self.MarkerAdd(ln, 1) # white-arrow
-        else:
-            self.MarkerAdd(ln, 2) # red-arrow
-            lines = [int(l) for f,l in err if f == "<string>"]
-            if lines:
-                self.linemark = ln + lines[-1] - 1
+        self.MarkerAdd(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
     def on_interp_error(self, e):
         self.linemark = self.cmdline_region[0] + e.lineno - 1
-    
-    def goto_previous_mark_arrow(self):
-        ln = self.MarkerPrevious(self.cline-1, 1<<1) # previous white-arrow
-        if ln != -1:
-            p = self.PositionFromLine(ln) + len(sys.ps1)
-        else:
-            p = 0
-        self.goto_char(p)
-    
-    def goto_next_mark_arrow(self):
-        ln = self.MarkerNext(self.cline+1, 1<<1) # next white-arrow
-        if ln != -1:
-            p = self.PositionFromLine(ln) + len(sys.ps1)
-        else:
-            p = self.eolc
-        self.goto_char(p)
     
     ## --------------------------------
     ## Attributes of the shell
@@ -2699,13 +2698,14 @@ class Nautilus(EditorInterface, Shell):
                 code = compile(cmd, filename, "exec")
                 self.exec(code)
             except Exception as e:
-                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)",
-                                 traceback.format_exc(), re.M)
+                msg = traceback.format_exc()
+                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
                 lines = [int(l) for f,l in err if f == filename]
                 if lines:
                     region = self.get_region(self.cline)
                     self.linemark = region[0] + lines[-1] - 1
                 self.message("- {}".format(e))
+                ## print(msg, file=sys.__stderr__)
             else:
                 del self.linemark
                 self.message("Evaluated {!r} successfully".format(filename))
