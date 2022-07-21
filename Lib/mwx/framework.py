@@ -1014,6 +1014,9 @@ class ShellFrame(MiniFrame):
         self.Log.show_folder()
         self.trace(self.Log)
         
+        self.Log.ReadOnly = True
+        self.History.ReadOnly = True
+        
         self.Init()
     
     SESSION_FILE = ut.get_rootpath("debrc")
@@ -1289,9 +1292,9 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
     
-    def trace(self, editor, activate=True):
+    def trace(self, editor, active=True):
         """Set the editor pointer traceable"""
-        if activate:
+        if active:
             editor.handler.bind('pointer_set', _F(self.start_trace, editor))
             editor.handler.bind('pointer_unset', _F(self.stop_trace, editor))
         else:
@@ -1355,20 +1358,15 @@ class ShellFrame(MiniFrame):
         if not command or command.isspace():
             return
         
-        ed = self.History
-        ed.ReadOnly = 0
-        ed.goto_char(ed.TextLength)
-        if prefix:
-            command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
-        if suffix:
-            command += suffix
-        ed.write(command)
-        if noerr is not None:
-            if noerr:
-                ed.MarkerAdd(ed.cline, 1) # white-arrow
-            else:
-                ed.MarkerAdd(ed.cline, 2) # red-arrow
-        ed.ReadOnly = 1
+        with self.History.off_readonly() as ed:
+            ed.goto_char(ed.TextLength)
+            if prefix:
+                command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
+            if suffix:
+                command += suffix
+            ed.write(command)
+            if noerr is not None:
+                ed.MarkerAdd(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     
     def other_editor(self, p=1, mod=True):
         "Move focus to other page (no loop)"

@@ -1203,6 +1203,15 @@ class EditorInterface(CtrlInterface):
             else:
                 self.anchor = q
     
+    @contextlib.contextmanager
+    def off_readonly(self):
+        try:
+            r = self.ReadOnly
+            self.ReadOnly = 0
+            yield self
+        finally:
+            self.ReadOnly = r
+    
     ## --------------------------------
     ## Edit: insert, eat, kill, etc.
     ## --------------------------------
@@ -1485,7 +1494,8 @@ class Editor(EditorInterface, EditWindow):
         """
         try:
             with open(filename, "r", encoding='utf-8', newline='') as i:
-                self.Text = i.read()
+                with self.off_readonly():
+                    self.Text = i.read()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.codename = None
