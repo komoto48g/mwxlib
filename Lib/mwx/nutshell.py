@@ -1444,7 +1444,8 @@ class Editor(EditorInterface, EditWindow):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename, globals)
         if lines:
-            self.Text = ''.join(lines)
+            with self.off_readonly():
+                self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.filename = filename
