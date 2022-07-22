@@ -27,6 +27,7 @@ import linecache
 import dis
 from pprint import pformat
 from importlib import import_module
+import contextlib
 try:
     import utilus as ut
     from utilus import funcall as _F
@@ -647,7 +648,7 @@ class EditorInterface(CtrlInterface):
         if from_ is not None: self.cpos = from_
         if to_ is not None: self.anchor = to_
         prefix = self.comment_prefix
-        with self.Preselection(self):
+        with self.pre_selection():
             text = re.sub("^", prefix, self.SelectedText, flags=re.M)
             ## Don't comment out the last (blank) line.
             if text.endswith(prefix):
@@ -658,7 +659,7 @@ class EditorInterface(CtrlInterface):
         """Uncomment the selected text."""
         if from_ is not None: self.cpos = from_
         if to_ is not None: self.anchor = to_
-        with self.Preselection(self):
+        with self.pre_selection():
             text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
             self.ReplaceSelection(text)
     
@@ -699,7 +700,7 @@ class EditorInterface(CtrlInterface):
     def show_folder(self, show=True, colour=None):
         """Show folder margin
         
-        Call this method before set_style.
+        Call me before set_style.
         Or else the margin color will be default light gray
         
         If show is True, the colour is used for margin hi-colour (default :g).
@@ -1176,37 +1177,40 @@ class EditorInterface(CtrlInterface):
         self.cpos = p
         return sty
     
-    class Excursion:
-        def __init__(self, obj):
-            self._obj = obj
-        
-        def __enter__(self):
-            self.cpos = self._obj.cpos
-            self.apos = self._obj.anchor
-            self.vpos = self._obj.GetScrollPos(wx.VERTICAL)
-            self.hpos = self._obj.GetScrollPos(wx.HORIZONTAL)
-        
-        def __exit__(self, t, v, tb):
-            self._obj.GotoPos(self.cpos)
-            self._obj.SetAnchor(self.apos)
-            self._obj.ScrollToLine(self.vpos)
-            self._obj.SetXOffset(self.hpos)
-    
-    class Preselection:
-        def __init__(self, obj):
-            self._obj = obj
-        
-        def __enter__(self):
-            self.cpos = self._obj.cpos
-            self.anchor = self._obj.anchor
-        
-        def __exit__(self, t, v, tb):
+    @contextlib.contextmanager
+    def save_excursion(self):
+        try:
             p = self.cpos
             q = self.anchor
+            vpos = self.GetScrollPos(wx.VERTICAL)
+            hpos = self.GetScrollPos(wx.HORIZONTAL)
+            yield
+        finally:
+            self.GotoPos(p)
+            self.SetAnchor(q)
+            self.ScrollToLine(vpos)
+            self.SetXOffset(hpos)
+    
+    @contextlib.contextmanager
+    def pre_selection(self):
+        try:
+            p = self.cpos
+            q = self.anchor
+            yield p, q
+        finally:
             if p < q:
-                self._obj.cpos = p
+                self.cpos = p
             else:
-                self._obj.anchor = q
+                self.anchor = q
+    
+    @contextlib.contextmanager
+    def off_readonly(self):
+        try:
+            r = self.ReadOnly
+            self.ReadOnly = 0
+            yield self
+        finally:
+            self.ReadOnly = r
     
     ## --------------------------------
     ## Edit: insert, eat, kill, etc.
@@ -1440,7 +1444,8 @@ class Editor(EditorInterface, EditWindow):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename, globals)
         if lines:
-            self.Text = ''.join(lines)
+            with self.off_readonly():
+                self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.filename = filename
@@ -1490,7 +1495,8 @@ class Editor(EditorInterface, EditWindow):
         """
         try:
             with open(filename, "r", encoding='utf-8', newline='') as i:
-                self.Text = i.read()
+                with self.off_readonly():
+                    self.Text = i.read()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.codename = None
@@ -1872,9 +1878,7 @@ class Nautilus(EditorInterface, Shell):
                    'up pressed' : (2, self.on_completion_backward),
                  'down pressed' : (2, self.on_completion_forward),
                 '*left pressed' : (2, skip),
-               '*left released' : (2, self.call_word_autocomp),
                '*right pressed' : (2, skip),
-              '*right released' : (2, self.call_word_autocomp),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
@@ -1903,9 +1907,7 @@ class Nautilus(EditorInterface, Shell):
                    'up pressed' : (3, self.on_completion_backward),
                  'down pressed' : (3, self.on_completion_forward),
                 '*left pressed' : (3, skip),
-               '*left released' : (3, self.call_apropos_autocomp),
                '*right pressed' : (3, skip),
-              '*right released' : (3, self.call_apropos_autocomp),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
@@ -1933,9 +1935,7 @@ class Nautilus(EditorInterface, Shell):
                    'up pressed' : (4, self.on_completion_backward),
                  'down pressed' : (4, self.on_completion_forward),
                 '*left pressed' : (4, skip),
-               '*left released' : (4, self.call_text_autocomp),
                '*right pressed' : (4, skip),
-              '*right released' : (4, self.call_text_autocomp),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
@@ -1963,9 +1963,7 @@ class Nautilus(EditorInterface, Shell):
                    'up pressed' : (5, self.on_completion_backward),
                  'down pressed' : (5, self.on_completion_forward),
                 '*left pressed' : (5, skip),
-               '*left released' : (5, self.call_module_autocomp),
                '*right pressed' : (5, skip),
-              '*right released' : (5, self.call_module_autocomp),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),

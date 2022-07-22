@@ -177,8 +177,12 @@ class Thread(object):
 
 
 def _isLayer(obj):
-    ## return isinstance(obj, Layer) # Note: False if __main__.Layer
-    return hasattr(obj, 'category') #<class 'Layer'>
+    """Check if obj is an instance of Layer."""
+    ## If this script file is executed i.e., `this` module is __main__,
+    ## this.Layer <class '__main__.Layer'> is not <mwx.graphman.Layer>.
+    ## So, we check it in two ways:
+    return isinstance(obj, LayerInterface)\
+        or isinstance(obj, CtrlInterface) and hasattr(obj, 'category')
 
 
 class LayerInterface(CtrlInterface):
@@ -198,7 +202,6 @@ class LayerInterface(CtrlInterface):
          otuput : parent.output window
     """
     menukey = property(lambda self: "Plugins/&" + self.__module__)
-    menuicon = None
     caption = True
     category = None
     dockable = True
@@ -913,12 +916,13 @@ class Frame(mwx.Frame):
         
         plug = self.get_plug(name)
         if plug:
-            if not isinstance(plug.dockable, bool): # prior to dock:kwargs
-                kwargs.update(dock=plug.dockable)
+            dock = plug.dockable
+            if not isinstance(dock, bool): # prior to kwargs
+                kwargs.update(dock=dock)
             if not plug.caption:
-                pane.CaptionVisible(False)
-                pane.Gripper(plug.dockable not in (0, 5)) # show grip
-            pane.Dockable(plug.dockable)
+                pane.CaptionVisible(False)       # no caption bar
+                pane.Gripper(dock not in (0, 5)) # show a grip when docked
+            pane.Dockable(dock)
         
         dock = kwargs.get('dock')
         pane.dock_direction = dock or 0
@@ -1063,11 +1067,12 @@ class Frame(mwx.Frame):
                   floating_pos=None, floating_size=None,
                   force=False, session=None, **kwargs):
         """Load plugin
-        The module root must have <class Plugin> derived from <mwx.graphman.Layer>
+        
+        The root module must have a class `Plugin` <mwx.graphman.Layer>
         
         root : Layer module, or name of the module
-               A wx.Window object can be given (called 'dummy-plug'),
-               but don't use this mode in release versions.
+               Any wx.Window object can be specified (as dummy-plug),
+                 however, do not use this mode in release versions.
         show : the pane is shown after loaded
        force : force loading even if it is already loaded
      session : Conditions for initializing the plug and starting session
@@ -1190,7 +1195,7 @@ class Frame(mwx.Frame):
             text = tail or plug.__module__
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
-                module.ID_, text, hint, wx.ITEM_CHECK, Icon(plug.menuicon),
+                module.ID_, text, hint, wx.ITEM_CHECK,
                 lambda v: self.show_pane(name, v.IsChecked()),
                 lambda v: v.Check(self.get_pane(name).IsShown()),
             )
@@ -1201,7 +1206,7 @@ class Frame(mwx.Frame):
         return None
     
     def unload_plug(self, name):
-        """Unload plugin module and detach the pane from UI manager"""
+        """Unload plugin and detach the pane from UI manager"""
         try:
             plug = self.get_plug(name)
             if not plug:
@@ -1761,10 +1766,10 @@ if __name__ == "__main__":
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
     ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
-    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\viewfft.py")
-    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\viewframe.py")
-    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\lineprofile.py")
-    frm.require(r"C:\usr\home\lib\python\wxNautilus\Layer\ffmpeg_viewer.py")
+    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\viewfft.py")
+    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\viewframe.py")
+    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\lineprofile.py")
+    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\ffmpeg_viewer.py")
     
     frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
