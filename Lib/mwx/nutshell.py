@@ -529,6 +529,7 @@ class EditorInterface(CtrlInterface):
         else:
             self.py_outdent_line()
     
+    @editable
     def py_indent_line(self):
         """Indent the current line"""
         text = self.caretline  # w/ no-prompt
@@ -540,6 +541,7 @@ class EditorInterface(CtrlInterface):
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
+    @editable
     def py_outdent_line(self):
         """Outdent the current line"""
         text = self.caretline  # w/ no-prompt
@@ -663,9 +665,8 @@ class EditorInterface(CtrlInterface):
             text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
             self.ReplaceSelection(text)
     
+    @editable
     def comment_out(self):
-        if not self.CanEdit():
-            return
         if self.SelectedText:
             self.comment_out_selection()
         else:
@@ -680,9 +681,8 @@ class EditorInterface(CtrlInterface):
             self.comment_out_selection(self.cpos, self.eol)
             self.LineDown()
     
+    @editable
     def uncomment(self):
-        if not self.CanEdit():
-            return
         if self.SelectedText:
             self.uncomment_selection()
         else:
@@ -1196,7 +1196,7 @@ class EditorInterface(CtrlInterface):
         try:
             p = self.cpos
             q = self.anchor
-            yield p, q
+            yield
         finally:
             if p < q:
                 self.cpos = p
@@ -1657,8 +1657,8 @@ class Nautilus(EditorInterface, Shell):
         stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#004040,eol",
         stc.STC_P_CHARACTER       : "fore:#a0a0a0",
         stc.STC_P_STRING          : "fore:#a0a0a0",
-        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040,eol",
-        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040,eol",
+        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040",
         stc.STC_P_CLASSNAME       : "fore:#61d6d6,bold",
         stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
         stc.STC_P_WORD            : "fore:#80c0ff",
@@ -2102,7 +2102,7 @@ class Nautilus(EditorInterface, Shell):
             self.mark = self.cpos
             if clear:
                 self.clearCommand() # => move to the prompt end
-            self.write(cmd, -1)
+            self.write(cmd.rstrip(), -1)
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
@@ -2486,7 +2486,7 @@ class Nautilus(EditorInterface, Shell):
     
     def write(self, text, pos=None):
         """Display text in the shell
-        (override) Append text if it is editable at the position.
+        (override) Append text if it is writable at the position.
         """
         if pos is not None:
             if pos < 0:
