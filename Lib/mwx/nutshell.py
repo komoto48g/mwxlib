@@ -40,9 +40,9 @@ except ImportError:
 
 def editable(f):
     @wraps(f)
-    def _f(self):
+    def _f(self, *args, **kwargs):
         if self.CanEdit():
-            return f(self)
+            return f(self, *args, **kwargs)
     return _f
 
 
@@ -645,10 +645,11 @@ class EditorInterface(CtrlInterface):
     
     comment_prefix = "## "
     
+    @editable
     def comment_out_selection(self, from_=None, to_=None):
         """Comment out the selected text."""
-        if from_ is not None: self.cpos = from_
-        if to_ is not None: self.anchor = to_
+        if from_ is not None: self.anchor = from_
+        if to_ is not None: self.cpos = to_
         prefix = self.comment_prefix
         with self.pre_selection():
             text = re.sub("^", prefix, self.SelectedText, flags=re.M)
@@ -657,16 +658,17 @@ class EditorInterface(CtrlInterface):
                 text = text[:-len(prefix)]
             self.ReplaceSelection(text)
     
+    @editable
     def uncomment_selection(self, from_=None, to_=None):
         """Uncomment the selected text."""
-        if from_ is not None: self.cpos = from_
-        if to_ is not None: self.anchor = to_
+        if from_ is not None: self.anchor = from_
+        if to_ is not None: self.cpos = to_
         with self.pre_selection():
             text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
             self.ReplaceSelection(text)
     
     @editable
-    def comment_out(self):
+    def comment_out_line(self):
         if self.SelectedText:
             self.comment_out_selection()
         else:
@@ -682,7 +684,7 @@ class EditorInterface(CtrlInterface):
             self.LineDown()
     
     @editable
-    def uncomment(self):
+    def uncomment_line(self):
         if self.SelectedText:
             self.uncomment_selection()
         else:
