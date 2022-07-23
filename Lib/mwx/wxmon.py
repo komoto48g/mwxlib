@@ -47,13 +47,9 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     Attributes:
         parent : shellframe
         target : widget to monitor
-    dummy_hook : If True, the debugger calls handlers sequentially.
-                 If False, handlers are hooked in true event-chain.
     """
     parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__widget)
-    
-    dummy_hook = False
     
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
@@ -249,15 +245,8 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetItem(i, j, str(v))
         
         if self.IsItemChecked(i):
-            if self.dummy_hook:
-                actions = self.get_actions(evt.EventType, self.__widget)
-                if actions:
-                    self.CheckItem(i, False)
-                    for f in actions:
-                        self.parent.debugger.trace(f, evt)
-            else:
-                self.CheckItem(i, False)
-                self.parent.debugger.set_trace()
+            self.CheckItem(i, False)
+            self.parent.debugger.set_trace()
         self.blink(i)
     
     def append(self, event):
