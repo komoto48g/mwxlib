@@ -864,11 +864,13 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     assert isinstance(alias, (str, type(None)))
     
     @wraps(f)
-    def _Act(*v):
+    def _Act(*v, **kw):
+        kwargs.update(kw)
         return f(*(v + args), **kwargs) # function with event args
     
     @wraps(f)
-    def _Act2(*v):
+    def _Act2(*v, **kw):
+        kwargs.update(kw)
         return f(*args, **kwargs) # function with no explicit args
     _Act2.__name__ += str("~")
     
@@ -877,10 +879,9 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     def _explicit_args(argv, defaults):
         """The rest of argv that must be given explicitly in f"""
         N = len(argv)
-        n = len(args)
-        j = len(defaults) if defaults else 0     # number of defaults defined in f
-        rest = set(argv[n:]) - set(argv[N-j:])   # rest of argv given by **kwargs
-        return rest - set(kwargs)
+        j = len(defaults)
+        i = len(args)
+        return set(argv[i:N-j]) - set(kwargs)
     
     if not inspect.isbuiltin(f):
         sig = inspect.signature(f)

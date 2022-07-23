@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.0"
+__version__ = "0.67.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -220,19 +220,15 @@ class KeyCtrlInterfaceMixin(object):
         evt.Skip()
     post_command_hook.__name__ = str('skip')
     
-    def _define_handler(self, keymap, action=None, mode='', *args, **kwargs):
-        """Define [map key mode] action in the default state."""
+    def _define_handler(self, map, key, action=None, *args, **kwargs):
+        """Define [map key-mode] action."""
         state = self.handler.default_state
-        map, sep, key = regulate_key(keymap).rpartition(' ')
-        map = map.strip()
         if not map:
             map = state
         elif map == '*':
             map = state = None
-        elif map not in self.handler: # make spec keymap
-            self.make_keymap(map)
-        if mode:
-            key += ' ' + mode
+        elif map not in self.handler:
+            self.make_keymap(map) # make new keymap
         if action:
             f = self.interactive_call(action, *args, **kwargs)
             if map != state:
@@ -242,16 +238,19 @@ class KeyCtrlInterfaceMixin(object):
             return action
         else:
             self.handler.update({map: {key: [state]}})
-            return lambda f: self._define_handler(keymap, f, mode, *args, **kwargs)
+            return lambda f: self._define_handler(map, key, f, *args, **kwargs)
     
     def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key pressed:mode] action in the default state.
+        """Define [map key pressed:mode] action.
         
         If no action, it invalidates the key and returns @decor(binder).
         The key must be in C-M-S order (ctrl + alt(meta) + shift).
         Note: kwargs `doc` and `alias` are reserved as kw-only-args.
         """
-        return self._define_handler(keymap, action, 'pressed', *args, **kwargs)
+        map, sep, key = regulate_key(keymap).rpartition(' ')
+        map = map.strip()
+        key = key + ' pressed'
+        return self._define_handler(map, key, action, *args, **kwargs)
     
     def undefine_key(self, keymap):
         self.define_key(keymap, None)
