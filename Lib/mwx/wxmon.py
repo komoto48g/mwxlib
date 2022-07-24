@@ -317,8 +317,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         item = self.__items[i] if i != -1 else []
         obj = self.__widget
         wnd = self.__prev
-        
-        Menu.Popup(self, (
+        menu = [
             ('No Item selected', item) if not item
         else
             (item[1], Icon('copy'), (
@@ -338,7 +337,8 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             (12, "Stop watching {}".format(obj.__class__.__name__), Icon('exit'),
                  lambda v: self.unwatch(),
                  lambda v: v.Enable(obj is not None)),
-        ))
+        ]
+        Menu.Popup(self, menu)
 
 
 if __name__ == "__main__":
