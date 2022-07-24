@@ -8,9 +8,11 @@ import wx
 from wx.py import dispatcher
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
-    from framework import CtrlInterface
+    from framework import CtrlInterface, Menu
+    from controls import Icon, Clipboard
 except ImportError:
-    from .framework import CtrlInterface
+    from .framework import CtrlInterface, Menu
+    from .controls import Icon, Clipboard
 
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
@@ -42,6 +44,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
         ## dispatcher.connect(receiver=self._update, signal="Shell.addHistory")
@@ -129,6 +132,20 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.Select(i, item in ls)
             if item == f:
                 self.Focus(i)
+    
+    def OnContextMenu(self, evt):
+        def copy():
+            def _T(i):
+                return '\t'.join(self.__items[i])
+            Clipboard.write('\n'.join(_T(i) for i in selected_items))
+        
+        selected_items = list(filter(self.IsSelected, range(self.ItemCount)))
+        menu = [
+            (1, "Copy data", Icon('copy'),
+                lambda v: copy(),
+                lambda v: v.Enable(selected_items != [])),
+        ]
+        Menu.Popup(self, menu)
 
 
 if __name__ == "__main__":
