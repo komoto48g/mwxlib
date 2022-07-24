@@ -836,7 +836,7 @@ class ShellFrame(MiniFrame):
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
             **kwargs)
         
-        self.Scratch = Editor(self, name="Scratch")
+        self.Scratch = Editor(self, name="*scratch*")
         self.Log = Editor(self, name="Log")
         self.Help = Editor(self, name="Help")
         self.History = Editor(self, name="History")
@@ -1006,14 +1006,17 @@ class ShellFrame(MiniFrame):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
                                         "<scratch>")
-        self.Scratch.codename = "<scratch>"
         self.trace(self.Scratch)
         
         ## text-mode
         self.Log.show_folder()
-        self.trace(self.Log)
-        
         self.Log.ReadOnly = True
+        self.trace(self.Log) # enable trace mode
+        
+        self.Help.show_folder()
+        self.Help.ReadOnly = False
+        
+        self.History.show_folder()
         self.History.ReadOnly = True
         
         self.Init()
