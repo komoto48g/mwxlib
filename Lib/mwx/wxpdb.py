@@ -272,6 +272,7 @@ class Debugger(Pdb):
                 shell.cpos -= len(self.prompt) # backward selection
                 shell.ReplaceSelection('')
                 shell.prompt()
+            shell.EnsureCaretVisible()
             self.__interactive = shell.cpos
         wx.CallAfter(_post)
     
@@ -304,6 +305,12 @@ class Debugger(Pdb):
     ## --------------------------------
     ## Override Bdb methods
     ## --------------------------------
+    
+    def break_anywhere(self, frame):
+        """(override) Return False
+        even if there is any breakpoint for frame's filename.
+        """
+        return False
     
     def dispatch_line(self, frame):
         """Invoke user function and return trace function for line event.
