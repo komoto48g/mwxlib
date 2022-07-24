@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.1"
+__version__ = "0.67.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1274,11 +1274,12 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.debugger.editor, focus=0)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
+        
+        ## Logging debug history every step in case of crash.
         command = shell.cmdline
         self.add_history(command, prefix=' '*4, suffix=None) # command ends with linesep
         self.message("Debugger is busy now (Press C-g to quit).")
         
-        ## Logging debug history every step in case of crash.
         with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(command)
     

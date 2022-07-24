@@ -404,10 +404,10 @@ class EditorInterface(CtrlInterface):
         st = self.GetStyleAt(pos)
         sty = self.py_styles[st]
         if sty == 0:
-            if c in " \t": return 'space'
-            if c in "\r\n": return 'linesep'
+            if c in ' \t': return 'space'
+            if c in '\r\n': return 'linesep'
         if sty == 'op':
-            if c in ".":
+            if c in '.':
                 if '...' in self.get_text(pos-2, pos+3):
                     return 'ellipsis'
                 return 'word'
@@ -2577,14 +2577,26 @@ class Nautilus(EditorInterface, Shell):
             else:
                 cmd += lines # multi-line command
             lines = ''
-        commands.append(cmd + lines)
+        if lines.startswith(sys.ps2):
+            line = self.lstripPrompt(lines)
+            lstr = line.lstrip()
+            if lstr and lstr == line: # ps + no indent
+                commands += [cmd, line]
+            else:
+                commands.append(cmd + lines)
+        else:
+            commands.append(cmd + lines)
         if len(commands) > 1:
             suffix = sys.ps2
             for j, cmd in enumerate(commands):
-                if re.match(self.py_indent_re, cmd): # code-block ...
+                if re.match(self.py_indent_re, cmd):
+                    ## multi-line code-block ends with [\r\n... ]
+                    if not cmd.endswith(os.linesep):
+                        cmd = cmd.rstrip('\r\n') + os.linesep
                     if not cmd.endswith(suffix):
                         cmd = cmd + suffix
                 else:
+                    ## single line of code ends without [\r\n... ]
                     if cmd.endswith(suffix):
                         cmd = cmd[:-len(suffix)]
                     cmd = cmd.rstrip('\r\n')
