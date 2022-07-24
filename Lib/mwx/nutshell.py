@@ -1283,12 +1283,14 @@ class Editor(EditorInterface, EditWindow):
     """Python code editor
 
     Attributes:
-           Name : buffer-name (e.g. '*scratch*')
+           Name : buffer-name (e.g. '*scratch*') => wx.Window.Name
        filename : buffer-file-name (full-path)
        codename : code-file-name (e.g. '<scratch>')
            code : code object compiled using py_exec_region
          target : codename or filename (referred by debugger)
         mtdelta : timestamp delta (for checking external mod)
+    buffer_list : list of data [codename, filename, lineno]
+   buffer_index : index of the currently loaded data
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1340,27 +1342,17 @@ class Editor(EditorInterface, EditWindow):
         if self.__mtime:
             return os.path.getmtime(self.filename) - self.__mtime
     
-    @property
-    def menu(self):
-        """Yields context menu"""
-        def _menu(j, f, ln):
-            text = "{}:{}".format(f, ln)
-            return (j, text, '', wx.ITEM_CHECK,
-                    lambda v: self.load_file(f, ln),
-                    lambda v: v.Check(self.filename == f))
-        return (_menu(j+1, *kv) for j, kv in enumerate(self.history.items()))
-    
     def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.Name = name        # buffer-name (=> wx.Window.Name)
-        self.filename = None    # buffer-file-name
+        self.Name = name
+        self.filename = None
         self.codename = None
         self.code = None
-        self.history = {}
+        self.buffer_list = []
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1438,9 +1430,50 @@ class Editor(EditorInterface, EditWindow):
         """Called when editor:self is inactivated."""
         pass
     
+    @property
+    def menu(self):
+        """Yields context menu"""
+        def _load(f, ln):
+            self.load_file(f, ln)
+            self.SetFocus()
+        def _menu(j, f, ln, *_):
+            return (j+1, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
+                lambda v: _load(f, ln),
+                lambda v: v.Check(self.filename == f))
+        return (_menu(j, *x) for j, x in enumerate(self.buffer_list))
+    
+    @property
+    def buffer_index(self):
+        return next((j for j, x in enumerate(self.buffer_list)
+                                if x[0] == self.filename), -1)
+    
     def push_current(self):
-        if self.__mtime:
-            self.history[self.filename] = self.markline + 1
+        if self.filename:
+            data = [self.filename, self.markline + 1,
+                    self.codename, self.code,
+                    ]
+            j = self.buffer_index
+            if j != -1:
+                self.buffer_list[j][:] = data
+            else:
+                self.buffer_list.append(data)
+    
+    def pop_current(self):
+        ls = self.buffer_list
+        if self.filename:
+            j = self.buffer_index
+            del ls[j]
+            self.filename = None # clear to not push-current again
+                                 # while loading the previous buffer
+            if not ls:
+                with self.off_readonly():
+                    self.Text = '' # clear cache
+                self.EmptyUndoBuffer()
+                self.SetSavePoint()
+                return
+            if j > len(ls) - 1:
+                j -= 1
+            self.load_file(*ls[j][:2])
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
@@ -1455,19 +1488,21 @@ class Editor(EditorInterface, EditWindow):
         return False
     
     def load_file(self, filename, lineno=0):
-        """Wrapped method of LoadFile; Associates the file with `filename`.
+        """Wrapped method of LoadFile
         filename : buffer-file-name:str
           lineno : mark the specified line (>=1)
         
         Note: The file will be reloaded without confirmation.
         """
         if not filename:
-            return
+            return None
         f = os.path.abspath(filename)
         self.push_current() # save cache
         if self.LoadFile(f):
             self.filename = f
             self.markline = lineno - 1 # set or unset mark
+            self.codename = None
+            self.code = None
             self.goto_marker()
             self.push_current() # save current
             self.handler('editor_loaded', self)
@@ -1476,16 +1511,17 @@ class Editor(EditorInterface, EditWindow):
         return False
     
     def save_file(self, filename):
-        """Wrapped method of SaveFile; Associates the file with `filename`.
+        """Wrapped method of SaveFile
         filename : buffer-file-name:str
         
         Note: The file will be overwritten without confirmation.
         """
         if not filename:
-            return
+            return None
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.filename = f
+            self.push_current() # save current
             self.handler('editor_saved', self)
             self.message("Saved {!r} successfully.".format(filename))
             return True
@@ -1501,8 +1537,6 @@ class Editor(EditorInterface, EditWindow):
                     self.Text = i.read()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.codename = None
-            self.code = None
             return True
         except Exception:
             return False
