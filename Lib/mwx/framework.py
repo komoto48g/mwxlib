@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.3"
+__version__ = "0.67.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1024,14 +1024,14 @@ class ShellFrame(MiniFrame):
     
     SESSION_FILE = ut.get_rootpath("debrc")
     SCRATCH_FILE = ut.get_rootpath("deb-scratch.py")
-    LOGGING_FILE = ut.get_rootpath("deb-logging.log")
+    ## LOGGING_FILE = ut.get_rootpath("deb-logging.log")
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
     def load_session(self):
         """Load session from file"""
         try:
             self.Scratch.LoadFile(self.SCRATCH_FILE)
-            self.Log.LoadFile(self.LOGGING_FILE)
+            
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1045,18 +1045,21 @@ class ShellFrame(MiniFrame):
         """Save session to file"""
         try:
             self.Scratch.SaveFile(self.SCRATCH_FILE)
-            self.Log.SaveFile(self.LOGGING_FILE)
+            
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
-                    "self.Log.load_file({!r}, {})".format(self.Log.filename,
-                                                          self.Log.markline+1),
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                     ""
                 )))
+                def save_history(name):
+                    editor = getattr(self, name)
+                    for x in editor.buffer_list:
+                        o.write("self.{}.load_file({!r}, {})\n".format(name, *x))
+                save_history("Log")
             return True
         except Exception:
             traceback.print_exc()

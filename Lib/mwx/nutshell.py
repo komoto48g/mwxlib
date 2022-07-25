@@ -1389,6 +1389,7 @@ class Editor(EditorInterface, EditWindow):
            'py_region_executed' : [ None, self.on_activated ],
             },
         })
+        self.define_key('C-x C-k', self.pop_current)
         
         self.set_style(self.STYLE)
     
@@ -1460,14 +1461,13 @@ class Editor(EditorInterface, EditWindow):
         if self.filename:
             j = self.buffer_index
             del ls[j]
-            self.filename = None # clear to not push-current again
-                                 # while loading the previous buffer
-            if not ls:
+            if ls:
+                self.filename = None # not to push-current the previous buffer
+                if j > len(ls) - 1:
+                    j -= 1
+                self.load_file(*ls[j][:2])
+            else:
                 self.clear()
-                return
-            if j > len(ls) - 1:
-                j -= 1
-            self.load_file(*ls[j][:2])
     
     def clear(self):
         with self.off_readonly():
