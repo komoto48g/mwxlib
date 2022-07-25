@@ -1218,10 +1218,6 @@ class EditorInterface(CtrlInterface):
     ## Edit: insert, eat, kill, etc.
     ## --------------------------------
     
-    def clear(self):
-        """Delete all text"""
-        self.ClearAll()
-    
     @editable
     def eat_white_forward(self):
         p = self.cpos
@@ -1289,7 +1285,7 @@ class Editor(EditorInterface, EditWindow):
            code : code object compiled using py_exec_region
          target : codename or filename (referred by debugger)
         mtdelta : timestamp delta (for checking external mod)
-    buffer_list : list of data [codename, filename, lineno]
+    buffer_list : list of data [filename, lineno, codename, code]
    buffer_index : index of the currently loaded data
     """
     STYLE = {
@@ -1434,7 +1430,8 @@ class Editor(EditorInterface, EditWindow):
     def menu(self):
         """Yields context menu"""
         def _load(f, ln):
-            self.load_file(f, ln)
+            if not self.load_file(f, ln):
+                self.clear()
             self.SetFocus()
         def _menu(j, f, ln, *_):
             return (j+1, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
@@ -1466,14 +1463,20 @@ class Editor(EditorInterface, EditWindow):
             self.filename = None # clear to not push-current again
                                  # while loading the previous buffer
             if not ls:
-                with self.off_readonly():
-                    self.Text = '' # clear cache
-                self.EmptyUndoBuffer()
-                self.SetSavePoint()
+                self.clear()
                 return
             if j > len(ls) - 1:
                 j -= 1
             self.load_file(*ls[j][:2])
+    
+    def clear(self):
+        with self.off_readonly():
+            self.ClearAll() # clear cache
+        self.EmptyUndoBuffer()
+        self.SetSavePoint()
+        self.filename = None
+        self.codename = None
+        self.code = None
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
