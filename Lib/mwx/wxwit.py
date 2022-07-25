@@ -150,8 +150,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.SelectItem(item)
         obj = self.__widget
-        
-        Menu.Popup(self, (
+        menu = [
             (1, "&Dive into the shell", Icon('core'),
                 lambda v: self.dive(obj),
                 lambda v: v.Enable(obj is not None)),
@@ -169,7 +168,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 
             (12, "Refresh\tf5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
-        ))
+        ]
+        Menu.Popup(self, menu)
         evt.Skip()
 
 
