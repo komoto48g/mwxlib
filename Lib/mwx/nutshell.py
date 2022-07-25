@@ -1404,12 +1404,12 @@ class Editor(EditorInterface, EditWindow):
     
     def OnSavePointLeft(self, evt):
         if self.__mtime:
-            self.Parent.set_page_caption(self, '* ' + self.Name)
+            self.parent.handler('caption_page', self, '* ' + self.Name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
         if self.__mtime:
-            self.Parent.set_page_caption(self, self.Name)
+            self.parent.handler('caption_page', self, self.Name)
         evt.Skip()
     
     def on_activated(self, editor):

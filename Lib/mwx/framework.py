@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.2"
+__version__ = "0.67.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -967,6 +967,7 @@ class ShellFrame(MiniFrame):
                      'add_help' : [ None, self.add_help ],
                     'add_shell' : [ None, self.console.add_page ],
                  'title_window' : [ None, self.on_title_window ],
+                 'caption_page' : [ None, self.on_caption_page ]
             },
             0 : {
                     '* pressed' : (0, skip, fork), # => debugger
@@ -1344,7 +1345,12 @@ class ShellFrame(MiniFrame):
         self.inspector.set_colour(widget, 'black')
     
     def on_title_window(self, obj):
+        """Set title to the frame."""
         self.SetTitle("Nautilus - {}".format(obj))
+    
+    def on_caption_page(self, page, caption):
+        """Set caption to the tab control."""
+        page.Parent.set_page_caption(page, caption)
     
     def add_help(self, text):
         """Puts text to the help buffer"""
