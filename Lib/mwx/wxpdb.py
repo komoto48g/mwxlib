@@ -254,7 +254,7 @@ class Debugger(Pdb):
             if filename == editor.target:
                 editor.markline = firstlineno - 1 # (o) entry:marker
                 editor.push_current()
-            for ln in self.get_file_breaks(filename):
+            for ln in self.get_file_breaks(filename): # (>>) bp:white-arrow
                 self.add_marker(ln, 1)
         if filename == editor.target:
             editor.linemark = lineno - 1 # (->) pointer:marker

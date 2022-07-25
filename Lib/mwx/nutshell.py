@@ -623,6 +623,7 @@ class EditorInterface(CtrlInterface):
         else:
             self.codename = filename
             self.code = code
+            self.push_current()
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
@@ -1389,6 +1390,7 @@ class Editor(EditorInterface, EditWindow):
            'py_region_executed' : [ None, self.on_activated ],
             },
         })
+        self.define_key('C-x k', self.clear_all)
         self.define_key('C-x C-k', self.pop_current)
         
         self.set_style(self.STYLE)
@@ -1450,15 +1452,16 @@ class Editor(EditorInterface, EditWindow):
             data = [self.filename, self.markline + 1,
                     self.codename, self.code,
                     ]
+            ls = self.buffer_list
             j = self.buffer_index
             if j != -1:
-                self.buffer_list[j][:] = data
+                ls[j][:] = data
             else:
-                self.buffer_list.append(data)
+                ls.append(data)
     
     def pop_current(self):
-        ls = self.buffer_list
         if self.filename:
+            ls = self.buffer_list
             j = self.buffer_index
             del ls[j]
             if ls:
@@ -1478,6 +1481,10 @@ class Editor(EditorInterface, EditWindow):
         self.codename = None
         self.code = None
     
+    def clear_all(self):
+        del self.buffer_list[:]
+        self.clear()
+    
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename, globals)
@@ -1487,6 +1494,7 @@ class Editor(EditorInterface, EditWindow):
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.filename = filename
+            self.push_current()
             return True
         return False
     
