@@ -220,14 +220,26 @@ class KeyCtrlInterfaceMixin(object):
         evt.Skip()
     post_command_hook.__name__ = str('skip')
     
-    def _define_handler(self, map, key, action=None, *args, **kwargs):
-        """Define [map key-mode] action."""
+    def _get_keymap_state(self, keymap, mode='pressed'):
+        map, sep, key = regulate_key(keymap).rpartition(' ')
+        map = map.strip()
+        event = key + ' ' + mode
         state = self.handler.default_state
         if not map:
             map = state
         elif map == '*':
             map = state = None
-        elif map not in self.handler:
+        return map, event, state
+    
+    def define_key(self, keymap, action=None, *args, **kwargs):
+        """Define [map key pressed] action.
+        
+        If no action, it invalidates the key and returns @decor(binder).
+        The key must be in C-M-S order (ctrl + alt(meta) + shift).
+        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
+        """
+        map, key, state = self._get_keymap_state(keymap)
+        if map not in self.handler:
             self.make_keymap(map) # make new keymap
         if action:
             f = self.interactive_call(action, *args, **kwargs)
@@ -238,22 +250,16 @@ class KeyCtrlInterfaceMixin(object):
             return action
         else:
             self.handler.update({map: {key: [state]}})
-            return lambda f: self._define_handler(map, key, f, *args, **kwargs)
-    
-    def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key pressed:mode] action.
-        
-        If no action, it invalidates the key and returns @decor(binder).
-        The key must be in C-M-S order (ctrl + alt(meta) + shift).
-        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
-        """
-        map, sep, key = regulate_key(keymap).rpartition(' ')
-        map = map.strip()
-        key = key + ' pressed'
-        return self._define_handler(map, key, action, *args, **kwargs)
+            return lambda f: self.define_key(keymap, f, *args, **kwargs)
     
     def undefine_key(self, keymap):
-        self.define_key(keymap, None)
+        """Delete [map key pressed] context."""
+        map, key, state = self._get_keymap_state(keymap)
+        try:
+            del self.handler[map][key]
+            return True
+        except KeyError:
+            return False
     
     def interactive_call(self, action, *args, **kwargs):
         f = ut.funcall(action, *args, **kwargs)

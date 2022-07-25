@@ -771,7 +771,9 @@ class FSM(dict):
         
         transaction = context[event]
         if action is None:
-            return all([self.unbind(event, act, state) for act in transaction[1:]])
+            for act in transaction[1:]:
+                self.unbind(event, act, state)
+            return True
         
         assert callable(action), "{!r} is not callable".format(action)
         if action in transaction:
