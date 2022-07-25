@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.4"
+__version__ = "0.67.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -721,6 +721,7 @@ class AuiNotebook(aui.AuiNotebook):
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
           &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
         aui.AuiNotebook.__init__(self, *args, **kwargs)
+        
         self.parent = self.Parent
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
@@ -743,7 +744,7 @@ class AuiNotebook(aui.AuiNotebook):
         page = self.CurrentPage
         obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
         if obj is self.ActiveTabCtrl:
-            win = obj.Pages[evt.Selection].window
+            win = obj.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
             if not win.IsShownOnScreen():
                 ## Check if the (selected) window is hidden now.
                 ## False means that the page will be hidden by the window.
@@ -774,24 +775,19 @@ class AuiNotebook(aui.AuiNotebook):
             return True
     
     def add_page(self, win, caption=None, show=True):
-        """Add page to the console"""
         j = self.GetPageIndex(win)
         if j == -1:
             self.AddPage(win, caption or typename(win.target))
-            if self.PageCount > 1:
-                self.TabCtrlHeight = -1
         if show:
             self.show_page(win)
     
     def remove_page(self, win):
-        """Remove page from the console"""
         j = self.GetPageIndex(win)
         if j != -1:
             self.RemovePage(j)
         win.Show(0)
     
     def delete_page(self, win):
-        """Delete page from the console"""
         j = self.GetPageIndex(win)
         if j != -1:
             self.DeletePage(j) # Destroy the window
@@ -929,8 +925,6 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         self.Bind(wx.EVT_SHOW, self.OnShow)
-        self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -1114,15 +1108,6 @@ class ShellFrame(MiniFrame):
         else:
             self.Show(0) # Don't destroy the window
     
-    def OnDestroy(self, evt):
-        nb = self.console
-        if nb and nb.PageCount == 1:
-            nb.TabCtrlHeight = 0
-        evt.Skip()
-    
-    def OnCreate(self, evt):
-        evt.Skip()
-    
     def About(self, evt=None):
         self.Help.SetText('\n\n'.join((
             "#<module 'mwx' from {!r}>".format(__file__),
@@ -1175,14 +1160,13 @@ class ShellFrame(MiniFrame):
             nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
     
     def OnConsolePageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
-        win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if win is self.rootshell:
-            self.message("- Don't remove the root shell.")
-        else:
+        win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook.
+        if win is not self.rootshell:
             evt.Skip()
     
     ## --------------------------------
