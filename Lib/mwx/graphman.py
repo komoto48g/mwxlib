@@ -24,6 +24,7 @@ try:
     from controls import Icon
     from controls import ControlPanel
     from framework import CtrlInterface
+    from framework import AuiNotebook
     from matplot2g import GraphPlot
     from matplot2lg import Histogram
 except ImportError:
@@ -32,6 +33,7 @@ except ImportError:
     from .controls import Icon
     from .controls import ControlPanel
     from .framework import CtrlInterface
+    from .framework import AuiNotebook
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
 from matplotlib import cm
@@ -515,43 +517,6 @@ class MyFileDropLoader(wx.FileDropTarget):
         if paths:
             self.loader.load_frame(paths, self.target)
         return True
-
-
-class AuiNotebook(aui.AuiNotebook):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('style',
-            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-          &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
-        aui.AuiNotebook.__init__(self, *args, **kwargs)
-        
-        self.parent = self.Parent
-        
-        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
-    
-    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
-        page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if getattr(page, 'menu', None):
-            mwx.Menu.Popup(self, page.menu)
-    
-    def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.CurrentPage
-        if page:
-            page.handler('page_shown', page)
-        evt.Skip()
-    
-    def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.CurrentPage
-        obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
-        if obj is self.ActiveTabCtrl:
-            win = obj.Pages[evt.Selection].window
-            if not win.IsShownOnScreen():
-                ## Check if the (selected) window is hidden now.
-                ## False means that the page will be hidden by the window.
-                page.handler('page_hidden', page)
-        evt.Skip()
 
 
 class Frame(mwx.Frame):
