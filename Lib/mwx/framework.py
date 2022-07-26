@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.5"
+__version__ = "0.67.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -920,7 +920,7 @@ class ShellFrame(MiniFrame):
                              .Caption("Ghost in the Shell").Right().Show(0))
         
         self._mgr.AddPane(self.watcher,
-                          aui.AuiPaneInfo().Name("wathcer")
+                          aui.AuiPaneInfo().Name("watcher")
                              .Caption("Locals watch").Float().Show(0))
         
         self._mgr.Update()
@@ -1053,6 +1053,9 @@ class ShellFrame(MiniFrame):
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
+                    "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
+                    "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
+                    "self._mgr.Update()",
                     ""
                 )))
                 def save_history(name):
