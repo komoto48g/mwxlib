@@ -772,31 +772,6 @@ class AuiNotebook(aui.AuiNotebook):
             win = self.GetPage(j)
             if type is None or isinstance(win, type):
                 yield win
-    
-    def show_page(self, win):
-        j = self.GetPageIndex(win)
-        if j != -1:
-            if j != self.Selection:
-                self.Selection = j # move focus to AuiTab?
-            return True
-    
-    def add_page(self, win, caption=None, show=True):
-        j = self.GetPageIndex(win)
-        if j == -1:
-            self.AddPage(win, caption or typename(win.target))
-        if show:
-            self.show_page(win)
-    
-    def remove_page(self, win):
-        j = self.GetPageIndex(win)
-        if j != -1:
-            self.RemovePage(j)
-        win.Show(0)
-    
-    def delete_page(self, win):
-        j = self.GetPageIndex(win)
-        if j != -1:
-            self.DeletePage(j) # Destroy the window
 
 
 class ShellFrame(MiniFrame):
@@ -965,7 +940,7 @@ class ShellFrame(MiniFrame):
                   'monitor_end' : [ None, self.on_monitor_end ],
                   'add_history' : [ None, self.add_history ],
                      'add_help' : [ None, self.add_help ],
-                    'add_shell' : [ None, self.console.add_page ],
+                    'add_shell' : [ None, self.add_shell ],
                  'title_window' : [ None, self.on_title_window ],
                  'caption_page' : [ None, self.on_caption_page ]
             },
@@ -1151,8 +1126,13 @@ class ShellFrame(MiniFrame):
         wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
-            if nb is win or nb.show_page(win): # find and select page
+            if nb is win:
                 break
+            j = nb.GetPageIndex(win) # find and select page
+            if j != -1:
+                if j != nb.Selection:
+                    nb.Selection = j # the focus is moved
+                    break
         else:
             return
         if show is None:
@@ -1175,8 +1155,10 @@ class ShellFrame(MiniFrame):
     def OnConsolePageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
         tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
         win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook.
-        if win is not self.rootshell:
-            evt.Skip()
+        if win is self.rootshell:
+            ## self.message("- Don't close the root shell.")
+            return
+        evt.Skip()
     
     ## --------------------------------
     ## Actions for handler
@@ -1405,6 +1387,10 @@ class ShellFrame(MiniFrame):
             shell.write(text, -1)
             shell.SetFocus()
     
+    def add_shell(self, shell, caption=None):
+        self.console.AddPage(shell, caption or typename(shell.target))
+        shell.SetFocus()
+    
     def clear_shell(self):
         """Clear the current shell"""
         shell = self.current_shell
@@ -1419,9 +1405,11 @@ class ShellFrame(MiniFrame):
         """Close the current shell"""
         shell = self.current_shell
         if shell is self.rootshell:
-            self.message("- Don't remove the root shell.")
+            ## self.message("- Don't close the root shell.")
             return
-        self.console.delete_page(shell)
+        j = self.console.GetPageIndex(shell)
+        if j != -1:
+            self.console.DeletePage(j) # Destroy the window
     
     ## --------------------------------
     ## Attributes of the Console
