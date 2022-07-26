@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.6"
+__version__ = "0.67.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1093,25 +1093,26 @@ class ShellFrame(MiniFrame):
             self.Show(0) # Don't destroy the window
     
     def About(self, evt=None):
-        self.Help.SetText('\n\n'.join((
-            "#<module 'mwx' from {!r}>".format(__file__),
-            "Author: {!r}".format(__author__),
-            "Version: {!s}".format(__version__),
-            self.rootshell.__class__.__doc__,
-            
-            "================================\n" # Thanks to wx.py.shell
-            "#{!r}".format(wx.py.shell),
-            "Author: {!r}".format(wx.py.version.__author__),
-            "Version: {!s}".format(wx.py.version.VERSION),
-            wx.py.__doc__,
-            wx.py.shell.__doc__,
-            "*original{}".format(wx.py.shell.HELP_TEXT.lower().replace('\n', '\n\t')),
-            
-            "================================\n" # Thanks are also due to Phoenix/wxWidgets
-            "#{!r}".format(wx),
-            "To show the credit, press C-M-Mbutton.",
-            ))
-        )
+        with self.Help.off_readonly():
+            self.Help.SetText('\n\n'.join((
+                "#<module 'mwx' from {!r}>".format(__file__),
+                "Author: {!r}".format(__author__),
+                "Version: {!s}".format(__version__),
+                self.rootshell.__class__.__doc__,
+                
+                "================================\n" # Thanks to wx.py.shell
+                "#{!r}".format(wx.py.shell),
+                "Author: {!r}".format(wx.py.version.__author__),
+                "Version: {!s}".format(wx.py.version.VERSION),
+                wx.py.__doc__,
+                wx.py.shell.__doc__,
+                "*original{}".format(wx.py.shell.HELP_TEXT.lower().replace('\n', '\n\t')),
+                
+                "================================\n" # Thanks are also due to Phoenix/wxWidgets
+                "#{!r}".format(wx),
+                "To show the credit, press C-M-Mbutton.",
+                ))
+            )
         self.popup_window(self.Help, focus=0)
     
     def toggle_window(self, win, focus=False):
@@ -1332,7 +1333,8 @@ class ShellFrame(MiniFrame):
     
     def add_help(self, text):
         """Puts text to the help buffer"""
-        self.Help.Text = text
+        with self.Help.off_readonly():
+            self.Help.SetText(text)
         self.popup_window(self.Help, focus=0)
     
     def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
