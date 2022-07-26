@@ -2169,6 +2169,9 @@ class Nautilus(EditorInterface, Shell):
     def on_exit_notemode(self, evt):
         self.noteMode = False
         self.CaretForeground = self.__caret_mode
+        self.goto_char(self.bolc)
+        self.promptPosEnd = 0
+        self.prompt()
         self.message("")
     
     def goto_previous_white_arrow(self):
