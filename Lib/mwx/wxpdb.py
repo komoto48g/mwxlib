@@ -252,7 +252,7 @@ class Debugger(Pdb):
         editor = self.parent.find_editor(code)
         if editor:
             if code != editor.buffer.code:
-                editor.restore(code)
+                editor.restore_buffer(code)
         else:
             editor = self.parent.find_editor(filename) or self.parent.Log
             if filename != editor.buffer.filename:

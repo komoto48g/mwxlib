@@ -1462,7 +1462,7 @@ class Editor(EditorInterface, EditWindow):
         def _menu(j, data):
             f, ln = data.filename, data.lineno
             return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
-                lambda v: self.restore(f) and self.SetFocus(),
+                lambda v: self.restore_buffer(f) and self.SetFocus(),
                 lambda v: v.Check(f == self.buffer.filename))
         return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
     
@@ -1510,24 +1510,23 @@ class Editor(EditorInterface, EditWindow):
         del self.__buffers[:]
         self.clear()
     
-    def restore(self, file):
-        """Restore buffer with spedified file-like object."""
+    def restore_buffer(self, f):
+        """Restore buffer with spedified f:filename or code.
+        Note: STC data such as `UndoBuffer` is not restored.
+        """
         for buffer in self.__buffers:
-            if file in buffer:
-                return self.load_buffer(buffer)
-    
-    def load_buffer(self, buffer):
-        self.push_current() # save cache
-        self.buffer = buffer
-        if self.LoadFile(buffer.filename):
-            self.markline = buffer.lineno - 1 # set or unset mark
-            self.goto_marker()
-            self.handler('buffer_loaded', self)
-            return True
-        return False
+            if f in buffer:
+                self.push_current() # save cache
+                self.buffer = buffer
+                if self.LoadFile(buffer.filename):
+                    self.markline = buffer.lineno - 1 # set or unset mark
+                    self.goto_marker()
+                    self.handler('buffer_loaded', self)
+                    return True
+                return False
     
     def load_cache(self, f, globals=None):
-        """Load cached file
+        """Load cached script file using linecache.
         Note: The file will be reloaded without confirmation.
         """
         linecache.checkcache(f)

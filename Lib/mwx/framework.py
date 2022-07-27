@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.8"
+__version__ = "0.67.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1034,8 +1034,9 @@ class ShellFrame(MiniFrame):
                 def save_history(name):
                     editor = getattr(self, name)
                     for data in editor.buffer_list:
-                        o.write("self.{}.load_file({!r}, {})\n"
-                                .format(name, data.filename, data.lineno))
+                        if data.filename:
+                            o.write("self.{}.load_file({!r}, {})\n"
+                                    .format(name, data.filename, data.lineno))
                 save_history("Log")
                 save_history("Scratch")
             return True
@@ -1425,13 +1426,13 @@ class ShellFrame(MiniFrame):
             return page
         return self.rootshell
     
-    def find_editor(self, file):
-        """Find the editor which has the spedified file,
-        where the `file` can be filename:str or code object.
+    def find_editor(self, f):
+        """Find the editor which has the spedified f:object,
+        where `f` can be filename or code object.
         """
         for editor in self.ghost.all_pages(EditWindow):
             for buffer in editor.buffer_list:
-                if file in buffer:
+                if f in buffer:
                     return editor
     
     ## --------------------------------
