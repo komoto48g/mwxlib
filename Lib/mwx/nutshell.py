@@ -24,10 +24,11 @@ import pydoc
 import inspect
 import builtins
 import linecache
-import dis
 from pprint import pformat
 from importlib import import_module
 import contextlib
+import dis
+import copy
 try:
     import utilus as ut
     from utilus import funcall as _F
@@ -621,8 +622,8 @@ class EditorInterface(CtrlInterface):
             self.message("- {}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
-            self.codename = filename
-            self.code = code
+            self.buffer.codename = filename
+            self.buffer.code = code
             self.push_current()
             del self.red_arrow
             self.handler('py_region_executed', self)
@@ -633,10 +634,10 @@ class EditorInterface(CtrlInterface):
         Note: Requires a code object compiled using py_exec_region.
               If the code doesn't exists, it returns the folding region.
         """
-        if not self.code:
+        if not self.buffer.code:
             return self.get_region(line)
         lc, le = 0, self.LineCount
-        linestarts = list(dis.findlinestarts(self.code))
+        linestarts = list(dis.findlinestarts(self.buffer.code))
         for i, ln in reversed(linestarts):
             if line >= ln-1:
                 lc = ln-1
@@ -1276,17 +1277,68 @@ class EditorInterface(CtrlInterface):
         self.ReplaceSelection('')
 
 
+class Buffer:
+    """Data class of buffer
+    
+    Attributes:
+       filename : buffer-file-name
+         lineno : marked lineno (>=1)
+       codename : code-file-name (e.g. '<scratch>')
+           code : code object compiled using py_exec_region
+        mtdelta : timestamp delta (for checking external mod)
+    """
+    def __init__(self, data=None):
+        (self.filename, self.lineno,
+         self.codename, self.code) = data or (None, 0, None, None)
+    
+    def __eq__(self, buf):
+        return (self.filename == buf.filename
+            and self.codename == buf.codename
+            and self.code is buf.code)
+    
+    def __contains__(self, v):
+        if isinstance(v, str):
+            if v.startswith('<'):
+                return v == self.codename
+            else:
+                return v == self.filename
+        elif inspect.iscode(v) and self.code:
+            return v is self.code\
+                or v in self.code.co_consts
+    
+    @property
+    def name(self):
+        if self.codename and self.filename:
+            return "{} {}".format(self.codename, self.filename)
+        else:
+            return self.codename or self.filename
+    
+    @property
+    def filename(self):
+        return self.__filename
+    
+    @filename.setter
+    def filename(self, f):
+        if f and os.path.isfile(f):
+            self.__mtime = os.path.getmtime(f)
+        else:
+            self.__mtime = None
+        self.__filename = f
+    
+    @property
+    def mtdelta(self):
+        if self.__mtime:
+            return os.path.getmtime(self.filename) - self.__mtime
+
+
 class Editor(EditorInterface, EditWindow):
     """Python code editor
 
     Attributes:
            Name : buffer-name (e.g. '*scratch*') => wx.Window.Name
-       filename : buffer-file-name (full-path)
-       codename : code-file-name (e.g. '<scratch>')
-           code : code object compiled using py_exec_region
          target : codename or filename (referred by debugger)
-        mtdelta : timestamp delta (for checking external mod)
-    buffer_list : list of data [filename, lineno, codename, code]
+         buffer : current buffer
+    buffer_list : list of buffer data
    buffer_index : index of the currently loaded data
     """
     STYLE = {
@@ -1320,24 +1372,7 @@ class Editor(EditorInterface, EditWindow):
     
     @property
     def target(self):
-        return self.codename or self.filename
-    
-    @property
-    def filename(self):
-        return self.__filename
-    
-    @filename.setter
-    def filename(self, f):
-        if f and os.path.isfile(f):
-            self.__mtime = os.path.getmtime(f)
-        else:
-            self.__mtime = None
-        self.__filename = f
-    
-    @property
-    def mtdelta(self):
-        if self.__mtime:
-            return os.path.getmtime(self.filename) - self.__mtime
+        return self.buffer.codename or self.buffer.filename
     
     def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
@@ -1346,20 +1381,13 @@ class Editor(EditorInterface, EditWindow):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.filename = None
-        self.codename = None
-        self.code = None
+        self.buffer = Buffer()
         self.buffer_list = []
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
-        
-        @self.handler.bind('window_destroy')
-        def destroy(v):
-            self.handler('editor_deleted', self)
-            v.Skip()
         
         @self.handler.bind('focus_set')
         def activate(v):
@@ -1379,9 +1407,9 @@ class Editor(EditorInterface, EditWindow):
         self.handler.update({ # DNA<Editor>
             None : {
                   'stc_updated' : [ None, ],
-                 'editor_saved' : [ None, ],
-                'editor_loaded' : [ None, self.on_activated ],
-               'editor_deleted' : [ None, ],
+                 'buffer_saved' : [ None, ],
+                'buffer_loaded' : [ None, self.on_activated ],
+              'buffer_unloaded' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
@@ -1406,22 +1434,21 @@ class Editor(EditorInterface, EditWindow):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        if self.__mtime:
+        if self.buffer.filename:
             self.parent.handler('caption_page', self, '* ' + self.Name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.__mtime:
+        if self.buffer.filename:
             self.parent.handler('caption_page', self, self.Name)
         evt.Skip()
     
     def on_activated(self, editor):
         """Called when editor:self is activated."""
-        if self.mtdelta:
-            self.message("{!r} has been modified externally.".format(self.filename))
-        title = "{} file: {}".format(self.Name, self.target)
-        if self.codename and self.filename:
-            title += ' ' + self.filename
+        if self.buffer.mtdelta:
+            self.message("{!r} has been modified externally."
+                         .format(self.buffer.filename))
+        title = "{} file: {}".format(self.Name, self.buffer.name)
         self.parent.handler('title_window', title)
         self.trace_position()
     
@@ -1432,58 +1459,68 @@ class Editor(EditorInterface, EditWindow):
     @property
     def menu(self):
         """Yields context menu"""
-        def _load(f, ln):
-            if not self.load_file(f, ln):
-                self.clear()
-            self.SetFocus()
-        def _menu(j, f, ln, *_):
-            return (j+1, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
-                lambda v: _load(f, ln),
-                lambda v: v.Check(self.filename == f))
-        return (_menu(j, *x) for j, x in enumerate(self.buffer_list))
+        def _menu(j, data):
+            f, ln = data.filename, data.lineno
+            return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
+                lambda v: self.restore(f) and self.SetFocus(),
+                lambda v: v.Check(f == self.buffer.filename))
+        return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
     
     @property
     def buffer_index(self):
         return next((j for j, x in enumerate(self.buffer_list)
-                                if x[0] == self.filename), -1)
+                        if x.filename == self.buffer.filename), -1)
     
     def push_current(self):
-        if self.filename:
-            data = [self.filename, self.markline + 1,
-                    self.codename, self.code,
-                    ]
-            ls = self.buffer_list
+        if self.buffer.filename:
+            self.buffer.lineno = self.markline + 1
+            data = copy.copy(self.buffer) # add snapshot to the list
             j = self.buffer_index
             if j != -1:
-                ls[j][:] = data
+                self.buffer_list[j] = data
             else:
-                ls.append(data)
+                self.buffer_list.append(data)
     
     def pop_current(self):
-        if self.filename:
-            ls = self.buffer_list
+        if self.buffer.filename:
             j = self.buffer_index
-            del ls[j]
-            if ls:
-                self.filename = None # not to push-current the previous buffer
-                if j > len(ls) - 1:
+            del self.buffer_list[j]
+            self.clear() # not to push-current the previous buffer
+            if self.buffer_list:
+                if j > len(self.buffer_list) - 1:
                     j -= 1
-                self.load_file(*ls[j][:2])
-            else:
-                self.clear()
+                self.buffer = self.buffer_list[j]
+                self.load_file(self.buffer.filename, self.buffer.lineno)
     
     def clear(self):
         with self.off_readonly():
             self.ClearAll() # clear cache
         self.EmptyUndoBuffer()
         self.SetSavePoint()
-        self.filename = None
-        self.codename = None
-        self.code = None
+        self.buffer.filename = None
+        self.buffer.codename = None
+        self.buffer.code = None
+        self.handler('buffer_unloaded', self)
     
     def clear_all(self):
         del self.buffer_list[:]
         self.clear()
+    
+    def restore(self, file):
+        """Restore buffer with spedified file-like object."""
+        for buffer in self.buffer_list:
+            if file in buffer:
+                return self.load_buffer(buffer)
+    
+    def load_buffer(self, buffer):
+        self.push_current() # save cache
+        self.buffer = buffer
+        if self.LoadFile(buffer.filename):
+            self.markline = buffer.lineno - 1 # set or unset mark
+            self.goto_marker()
+            self.handler('buffer_loaded', self)
+            return True
+        return False
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
@@ -1493,16 +1530,13 @@ class Editor(EditorInterface, EditWindow):
                 self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.filename = filename
+            self.buffer.filename = filename
             self.push_current()
             return True
         return False
     
     def load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile
-        filename : buffer-file-name:str
-          lineno : mark the specified line (>=1)
-        
         Note: The file will be reloaded without confirmation.
         """
         if not filename:
@@ -1510,30 +1544,28 @@ class Editor(EditorInterface, EditWindow):
         f = os.path.abspath(filename)
         self.push_current() # save cache
         if self.LoadFile(f):
-            self.filename = f
             self.markline = lineno - 1 # set or unset mark
-            self.codename = None
-            self.code = None
             self.goto_marker()
+            self.buffer.filename = f
+            self.buffer.codename = None
+            self.buffer.code = None
             self.push_current() # save current
-            self.handler('editor_loaded', self)
+            self.handler('buffer_loaded', self)
             self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
     def save_file(self, filename):
         """Wrapped method of SaveFile
-        filename : buffer-file-name:str
-        
         Note: The file will be overwritten without confirmation.
         """
         if not filename:
             return None
         f = os.path.abspath(filename)
         if self.SaveFile(f):
-            self.filename = f
+            self.buffer.filename = f
             self.push_current() # save current
-            self.handler('editor_saved', self)
+            self.handler('buffer_saved', self)
             self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
@@ -1784,6 +1816,7 @@ class Nautilus(EditorInterface, Shell):
                                 # Parent:<AuiNotebook>
         self.target = target
         self.Name = name
+        self.buffer = Buffer() # overwrite buffer <wx.py.buffer>
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC

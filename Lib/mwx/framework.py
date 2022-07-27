@@ -1033,8 +1033,9 @@ class ShellFrame(MiniFrame):
                 )))
                 def save_history(name):
                     editor = getattr(self, name)
-                    for x in editor.buffer_list:
-                        o.write("self.{}.load_file({!r}, {})\n".format(name, *x))
+                    for data in editor.buffer_list:
+                        o.write("self.{}.load_file({!r}, {})\n"
+                                .format(name, data.filename, data.lineno))
                 save_history("Log")
             return True
         except Exception:
