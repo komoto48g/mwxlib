@@ -1522,16 +1522,23 @@ class Editor(EditorInterface, EditWindow):
             return True
         return False
     
-    def load_cache(self, filename, globals=None):
-        linecache.checkcache(filename)
-        lines = linecache.getlines(filename, globals)
+    def load_cache(self, f, globals=None):
+        """Load cached file
+        Note: The file will be reloaded without confirmation.
+        """
+        linecache.checkcache(f)
+        lines = linecache.getlines(f, globals)
         if lines:
+            self.push_current()
             with self.off_readonly():
                 self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.buffer.filename = filename
+            self.buffer.filename = f
+            self.buffer.codename = None
+            self.buffer.code = None
             self.push_current()
+            self.handler('buffer_loaded', self)
             return True
         return False
     
@@ -1551,7 +1558,7 @@ class Editor(EditorInterface, EditWindow):
             self.buffer.code = None
             self.push_current() # save current
             self.handler('buffer_loaded', self)
-            self.message("Loaded {!r} successfully.".format(filename))
+            ## self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -1566,7 +1573,7 @@ class Editor(EditorInterface, EditWindow):
             self.buffer.filename = f
             self.push_current() # save current
             self.handler('buffer_saved', self)
-            self.message("Saved {!r} successfully.".format(filename))
+            ## self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
