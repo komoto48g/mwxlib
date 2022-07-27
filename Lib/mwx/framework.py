@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.7"
+__version__ = "0.67.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -955,8 +955,6 @@ class ShellFrame(MiniFrame):
                 'S-f11 pressed' : (0, _F(self.toggle_window, self.watcher, doc="Toggle watcher")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, ),
-                  'C-d pressed' : (0, _F(self.duplicate_line, clear=0)),
-                'C-S-d pressed' : (0, _F(self.duplicate_line, clear=1)),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
               'M-right pressed' : (0, _F(self.other_window, p=+1)),
              'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
@@ -1133,7 +1131,7 @@ class ShellFrame(MiniFrame):
             if j != -1:
                 if j != nb.Selection:
                     nb.Selection = j # the focus is moved
-                    break
+                break
         else:
             return
         if show is None:
@@ -1377,18 +1375,6 @@ class ShellFrame(MiniFrame):
                 j %= len(pages)
             pages[j].SetFocus()
     
-    def duplicate_line(self, clear=True):
-        """Duplicate an expression at the caret-line"""
-        win = self.current_editor or self.current_shell
-        text = win.SelectedText or win.expr_at_caret
-        if text:
-            shell = self.current_shell
-            win.mark = win.cpos
-            if clear:
-                shell.clearCommand() # => move to the prompt end
-            shell.write(text, -1)
-            shell.SetFocus()
-    
     def add_shell(self, shell, caption=None):
         self.console.AddPage(shell, caption or typename(shell.target))
         shell.SetFocus()
@@ -1432,7 +1418,6 @@ class ShellFrame(MiniFrame):
         win = wx.Window.FindFocus()
         if win in self.all_pages(EditWindow):
             return win
-        ## return self.console.CurrentPage
     
     @property
     def current_shell(self):
