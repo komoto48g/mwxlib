@@ -1338,7 +1338,7 @@ class Editor(EditorInterface, EditWindow):
            Name : buffer-name (e.g. '*scratch*') => wx.Window.Name
          target : codename or filename (referred by debugger)
          buffer : current buffer
-    buffer_list : list of buffer data
+    buffer_list : list of all buffer data
    buffer_index : index of the currently loaded data
     """
     STYLE = {
@@ -1382,7 +1382,7 @@ class Editor(EditorInterface, EditWindow):
                                 # Parent:<AuiNotebook>
         self.Name = name
         self.buffer = Buffer()
-        self.buffer_list = []
+        self.__buffers = []
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1464,11 +1464,15 @@ class Editor(EditorInterface, EditWindow):
             return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
                 lambda v: self.restore(f) and self.SetFocus(),
                 lambda v: v.Check(f == self.buffer.filename))
-        return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
+        return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
+    
+    @property
+    def buffer_list(self):
+        return self.__buffers or [self.buffer]
     
     @property
     def buffer_index(self):
-        return next((j for j, x in enumerate(self.buffer_list)
+        return next((j for j, x in enumerate(self.__buffers)
                         if x.filename == self.buffer.filename), -1)
     
     def push_current(self):
@@ -1477,19 +1481,19 @@ class Editor(EditorInterface, EditWindow):
             data = copy.copy(self.buffer) # add snapshot to the list
             j = self.buffer_index
             if j != -1:
-                self.buffer_list[j] = data
+                self.__buffers[j] = data
             else:
-                self.buffer_list.append(data)
+                self.__buffers.append(data)
     
     def pop_current(self):
         if self.buffer.filename:
             j = self.buffer_index
-            del self.buffer_list[j]
+            del self.__buffers[j]
             self.clear() # not to push-current the previous buffer
-            if self.buffer_list:
-                if j > len(self.buffer_list) - 1:
+            if self.__buffers:
+                if j > len(self.__buffers) - 1:
                     j -= 1
-                self.buffer = self.buffer_list[j]
+                self.buffer = self.__buffers[j]
                 self.load_file(self.buffer.filename, self.buffer.lineno)
     
     def clear(self):
@@ -1503,12 +1507,12 @@ class Editor(EditorInterface, EditWindow):
         self.handler('buffer_unloaded', self)
     
     def clear_all(self):
-        del self.buffer_list[:]
+        del self.__buffers[:]
         self.clear()
     
     def restore(self, file):
         """Restore buffer with spedified file-like object."""
-        for buffer in self.buffer_list:
+        for buffer in self.__buffers:
             if file in buffer:
                 return self.load_buffer(buffer)
     
@@ -1522,16 +1526,23 @@ class Editor(EditorInterface, EditWindow):
             return True
         return False
     
-    def load_cache(self, filename, globals=None):
-        linecache.checkcache(filename)
-        lines = linecache.getlines(filename, globals)
+    def load_cache(self, f, globals=None):
+        """Load cached file
+        Note: The file will be reloaded without confirmation.
+        """
+        linecache.checkcache(f)
+        lines = linecache.getlines(f, globals)
         if lines:
+            self.push_current()
             with self.off_readonly():
                 self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.buffer.filename = filename
+            self.buffer.filename = f
+            self.buffer.codename = None
+            self.buffer.code = None
             self.push_current()
+            self.handler('buffer_loaded', self)
             return True
         return False
     
@@ -1551,7 +1562,7 @@ class Editor(EditorInterface, EditWindow):
             self.buffer.code = None
             self.push_current() # save current
             self.handler('buffer_loaded', self)
-            self.message("Loaded {!r} successfully.".format(filename))
+            ## self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
@@ -1566,7 +1577,7 @@ class Editor(EditorInterface, EditWindow):
             self.buffer.filename = f
             self.push_current() # save current
             self.handler('buffer_saved', self)
-            self.message("Saved {!r} successfully.".format(filename))
+            ## self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     

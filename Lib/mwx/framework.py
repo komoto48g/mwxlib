@@ -1037,6 +1037,7 @@ class ShellFrame(MiniFrame):
                         o.write("self.{}.load_file({!r}, {})\n"
                                 .format(name, data.filename, data.lineno))
                 save_history("Log")
+                save_history("Scratch")
             return True
         except Exception:
             traceback.print_exc()
@@ -1409,10 +1410,6 @@ class ShellFrame(MiniFrame):
         yield from self.console.all_pages(type)
         yield from self.ghost.all_pages(type)
     
-    def find_editor(self, filename):
-        return next((ed for ed in self.ghost.all_pages(EditWindow)
-                        if ed.target == filename), None)
-    
     @property
     def current_editor(self):
         """Currently focused editor or shell"""
@@ -1427,6 +1424,15 @@ class ShellFrame(MiniFrame):
         if isinstance(page, type(self.rootshell)): #<Nautilus>
             return page
         return self.rootshell
+    
+    def find_editor(self, file):
+        """Find the editor which has the spedified file,
+        where the `file` can be filename:str or code object.
+        """
+        for editor in self.ghost.all_pages(EditWindow):
+            for buffer in editor.buffer_list:
+                if file in buffer:
+                    return editor
     
     ## --------------------------------
     ## Find text dialog
