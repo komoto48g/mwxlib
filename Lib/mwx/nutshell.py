@@ -1291,6 +1291,21 @@ class Buffer:
         (self.filename, self.lineno,
          self.codename, self.code) = data or (None, 0, None, None)
     
+    def __eq__(self, buf):
+        return (self.filename == buf.filename
+            and self.codename == buf.codename
+            and self.code is buf.code)
+    
+    def __contains__(self, v):
+        if isinstance(v, str):
+            if v.startswith('<'):
+                return v == self.codename
+            else:
+                return v == self.filename
+        elif inspect.iscode(v) and self.code:
+            return v is self.code\
+                or v in self.code.co_consts
+    
     @property
     def name(self):
         if self.codename and self.filename:
@@ -1444,14 +1459,10 @@ class Editor(EditorInterface, EditWindow):
     @property
     def menu(self):
         """Yields context menu"""
-        def _load_file(f, ln):
-            if not self.load_file(f, ln):
-                self.clear()
-            self.SetFocus()
         def _menu(j, data):
             f, ln = data.filename, data.lineno
             return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
-                lambda v: _load_file(f, ln),
+                lambda v: self.restore(f) and self.SetFocus(),
                 lambda v: v.Check(f == self.buffer.filename))
         return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
     
@@ -1494,6 +1505,22 @@ class Editor(EditorInterface, EditWindow):
     def clear_all(self):
         del self.buffer_list[:]
         self.clear()
+    
+    def restore(self, file):
+        """Restore buffer with spedified file-like object."""
+        for buffer in self.buffer_list:
+            if file in buffer:
+                return self.load_buffer(buffer)
+    
+    def load_buffer(self, buffer):
+        self.push_current() # save cache
+        self.buffer = buffer
+        if self.LoadFile(buffer.filename):
+            self.markline = buffer.lineno - 1 # set or unset mark
+            self.goto_marker()
+            self.handler('buffer_loaded', self)
+            return True
+        return False
     
     def load_cache(self, filename, globals=None):
         linecache.checkcache(filename)
