@@ -101,7 +101,7 @@ class Debugger(Pdb):
         
         self.__shellframe = parent
         self.__hookpoint = None
-        self.__indents = 0
+        self.__indents = 2
         self.interactive_shell = parent.rootshell
         self.editor = None
         self.code = None
@@ -230,6 +230,7 @@ class Debugger(Pdb):
         """
         shell = self.interactive_shell
         self.__hookpoint = None
+        self.__indents = 2
         self.__interactive = shell.cpos
         self.stdin.input = '' # clear stdin buffer
         def _continue():
@@ -249,6 +250,7 @@ class Debugger(Pdb):
             filename = inspect.getfile(module)
         
         editor = self.parent.find_editor(filename) or self.parent.Log
+        
         if self.code != code:
             editor.load_cache(filename)
             if filename == editor.target:
@@ -280,7 +282,6 @@ class Debugger(Pdb):
         """Called after set_quit
         Note: self.busy -> True (until this stage)
         """
-        self.__indents = 0
         self.__interactive = None
         del self.editor.linemark
         self.editor = None
@@ -297,7 +298,6 @@ class Debugger(Pdb):
     
     def on_trace_hook(self, frame):
         """Called when a breakppoint is reached"""
-        self.__indents = 2
         self.__hookpoint = None
         self.interactive_shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
@@ -418,7 +418,8 @@ class Debugger(Pdb):
         """
         self.message("$(retval) = {!r}".format(return_value), indent=0)
         Pdb.user_return(self, frame, return_value)
-        self.__indents -= 2
+        if self.__indents > 2:
+            self.__indents -= 2
     
     @echo
     def user_exception(self, frame, exc_info):
