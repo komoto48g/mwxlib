@@ -1366,18 +1366,13 @@ class Editor(EditorInterface, EditWindow):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.buffer_list = []
         self.buffer = Buffer()
+        self.buffer_list = []
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
-        
-        @self.handler.bind('window_destroy')
-        def destroy(v):
-            self.handler('editor_deleted', self)
-            v.Skip()
         
         @self.handler.bind('focus_set')
         def activate(v):
@@ -1397,9 +1392,9 @@ class Editor(EditorInterface, EditWindow):
         self.handler.update({ # DNA<Editor>
             None : {
                   'stc_updated' : [ None, ],
-                 'editor_saved' : [ None, ],
-                'editor_loaded' : [ None, self.on_activated ],
-               'editor_deleted' : [ None, ],
+                 'buffer_saved' : [ None, ],
+                'buffer_loaded' : [ None, self.on_activated ],
+              'buffer_unloaded' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
@@ -1494,6 +1489,7 @@ class Editor(EditorInterface, EditWindow):
         self.buffer.filename = None
         self.buffer.codename = None
         self.buffer.code = None
+        self.handler('buffer_unloaded', self)
     
     def clear_all(self):
         del self.buffer_list[:]
@@ -1527,7 +1523,7 @@ class Editor(EditorInterface, EditWindow):
             self.buffer.codename = None
             self.buffer.code = None
             self.push_current() # save current
-            self.handler('editor_loaded', self)
+            self.handler('buffer_loaded', self)
             self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
@@ -1542,7 +1538,7 @@ class Editor(EditorInterface, EditWindow):
         if self.SaveFile(f):
             self.buffer.filename = f
             self.push_current() # save current
-            self.handler('editor_saved', self)
+            self.handler('buffer_saved', self)
             self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
