@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.67.9"
+__version__ = "0.68.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -21,7 +21,6 @@ from wx.py import dispatcher
 from wx.py.editwindow import EditWindow
 from importlib import reload
 import builtins
-import dis
 try:
     import utilus as ut
     from utilus import funcall as _F
@@ -829,7 +828,6 @@ class ShellFrame(MiniFrame):
         builtins.watch = watchit
         builtins.filling = filling
         builtins.profile = profile
-        builtins.disco = dis.dis
         
         try:
             from wxpdb import Debugger
@@ -1003,10 +1001,10 @@ class ShellFrame(MiniFrame):
     def load_session(self):
         """Load session from file"""
         try:
-            self.Scratch.LoadFile(self.SCRATCH_FILE)
-            
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
+            if not self.Scratch.buffer.filename:
+                self.Scratch.LoadFile(self.SCRATCH_FILE)
             return True
         except FileNotFoundError:
             pass
@@ -1017,8 +1015,6 @@ class ShellFrame(MiniFrame):
     def save_session(self):
         """Save session to file"""
         try:
-            self.Scratch.SaveFile(self.SCRATCH_FILE)
-            
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
@@ -1033,12 +1029,14 @@ class ShellFrame(MiniFrame):
                 )))
                 def save_history(name):
                     editor = getattr(self, name)
-                    for data in editor.buffer_list:
-                        if data.filename:
-                            o.write("self.{}.load_file({!r}, {})\n"
-                                    .format(name, data.filename, data.lineno))
+                    for buffer in editor.buffer_list:
+                        if buffer.filename:
+                            o.write("self.{}.load_file({!r}, {})\n".format(
+                                    name, buffer.filename, buffer.lineno))
                 save_history("Log")
                 save_history("Scratch")
+            if not self.Scratch.buffer.filename:
+                self.Scratch.SaveFile(self.SCRATCH_FILE)
             return True
         except Exception:
             traceback.print_exc()
