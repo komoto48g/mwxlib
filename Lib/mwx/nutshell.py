@@ -27,8 +27,8 @@ import linecache
 from pprint import pformat
 from importlib import import_module
 import contextlib
-import dis
 import copy
+import dis
 try:
     import utilus as ut
     from utilus import funcall as _F
@@ -106,7 +106,7 @@ class EditorInterface(CtrlInterface):
                   'C-t pressed' : (0, ),                    # override transpose-line
                 'C-S-f pressed' : (0, _F(self.set_marker)), # override mark
               'C-space pressed' : (0, _F(self.set_marker)),
-              'S-space pressed' : (0, _F(self.set_line_marker)),
+            'C-S-space pressed' : (0, _F(self.set_line_marker)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -595,13 +595,28 @@ class EditorInterface(CtrlInterface):
         return text
     
     def py_eval_line(self, globals, locals):
-        try:
-            cmd = self.SelectedText or self.caretline
-            tip = eval(cmd, globals, locals)
-            self.CallTipShow(self.cpos, pformat(tip))
-            self.message(cmd)
-        except Exception as e:
-            self.message("- {}".format(e))
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.caretline
+                yield self.expr_at_caret
+        
+        status = "No words"
+        for text in filter(None, _gen_text()):
+            try:
+                tip = eval(text, globals, locals)
+            except Exception as e:
+                status = "- {}: {!r}".format(e, text)
+            else:
+                self.CallTipShow(self.cpos, pformat(tip))
+                self.message(text)
+                return
+        self.message(status)
     
     def py_exec_region(self, globals, locals, filename):
         try:
@@ -1047,7 +1062,7 @@ class EditorInterface(CtrlInterface):
         if not text:
             text = self.topic_at_caret
         if not text:
-            self.message("- No word to filter")
+            self.message("- No words")
             for i in range(2):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorClearRange(0, self.TextLength)
@@ -2441,7 +2456,7 @@ class Nautilus(EditorInterface, Shell):
         le = self.LineCount
         return lc, le
     
-    ## cf. getCommand() -> caret-line-text that has a prompt (>>>|...)
+    ## cf. getCommand() -> caret-line that starts with a prompt
     ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
     
     @property
@@ -2765,25 +2780,24 @@ class Nautilus(EditorInterface, Shell):
             text = self.SelectedText
             if text:
                 yield text
-                return
-            yield self.Command
-            yield self.expr_at_caret
-            yield self.MultilineCommand
+            else:
+                yield self.Command
+                yield self.expr_at_caret
+                yield self.MultilineCommand
         
-        status = "No word"
-        for text in _gen_text():
-            if text:
-                tokens = list(ut.split_words(text))
-                try:
-                    cmd = self.magic_interpret(tokens)
-                    cmd = self.regulate_cmd(cmd)
-                    tip = self.eval(cmd)
-                except Exception as e:
-                    status = "- {}: {!r}".format(e, text)
-                else:
-                    self.CallTipShow(self.cpos, pformat(tip))
-                    self.message(cmd)
-                    return
+        status = "No words"
+        for text in filter(None, _gen_text()):
+            tokens = ut.split_words(text)
+            try:
+                cmd = self.magic_interpret(tokens)
+                cmd = self.regulate_cmd(cmd)
+                tip = self.eval(cmd)
+            except Exception as e:
+                status = "- {}: {!r}".format(e, text)
+            else:
+                self.CallTipShow(self.cpos, pformat(tip))
+                self.message(cmd)
+                return
         self.message(status)
     
     def exec_region(self, evt):
@@ -2794,7 +2808,7 @@ class Nautilus(EditorInterface, Shell):
         filename = "<input>"
         text = self.MultilineCommand
         if text:
-            tokens = list(ut.split_words(text))
+            tokens = ut.split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
