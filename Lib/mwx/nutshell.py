@@ -535,7 +535,6 @@ class EditorInterface(CtrlInterface):
         """Indent the current line"""
         text = self.caretline  # w/ no-prompt
         lstr = text.lstrip()   # w/ no-indent
-        ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
         indent = self.py_calc_indent(self.cline) # check current/previous line
@@ -547,7 +546,6 @@ class EditorInterface(CtrlInterface):
         """Outdent the current line"""
         text = self.caretline  # w/ no-prompt
         lstr = text.lstrip()   # w/ no-indent
-        ## p = self.eol - len(lstr)
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
         indent = len(text) - len(lstr) - 4
@@ -1149,7 +1147,8 @@ class EditorInterface(CtrlInterface):
     def back_to_indentation(self):
         text = self.caretline # w/ no-prompt
         lstr = text.lstrip()  # w/ no-indent
-        self.goto_char(self.bol + len(text) - len(lstr)) # for multi-byte string
+        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        self.goto_char(p)
         self.ScrollToColumn(0)
     
     def beginning_of_line(self):
@@ -1307,7 +1306,8 @@ class Buffer:
          self.codename, self.code) = data or (None, 0, None, None)
     
     def __eq__(self, buf):
-        return (self.filename == buf.filename
+        return (type(self) is type(buf)
+            and self.filename == buf.filename
             and self.codename == buf.codename
             and self.code is buf.code)
     
@@ -1493,12 +1493,11 @@ class Editor(EditorInterface, EditWindow):
     def push_current(self):
         if self.buffer.filename:
             self.buffer.lineno = self.markline + 1
-            data = copy.copy(self.buffer) # add snapshot to the list
             j = self.buffer_index
             if j != -1:
-                self.__buffers[j] = data
+                self.__buffers[j] = self.buffer
             else:
-                self.__buffers.append(data)
+                self.__buffers.append(self.buffer)
     
     def pop_current(self):
         if self.buffer.filename:
@@ -1516,9 +1515,7 @@ class Editor(EditorInterface, EditWindow):
             self.ClearAll() # clear cache
         self.EmptyUndoBuffer()
         self.SetSavePoint()
-        self.buffer.filename = None
-        self.buffer.codename = None
-        self.buffer.code = None
+        self.buffer = Buffer()
         self.handler('buffer_unloaded', self)
     
     def clear_all(self):
@@ -1534,13 +1531,13 @@ class Editor(EditorInterface, EditWindow):
                 self.push_current() # save cache
                 self.buffer = buffer
                 if self.LoadFile(buffer.filename):
-                    self.markline = buffer.lineno - 1 # set or unset mark
+                    self.markline = buffer.lineno - 1
                     self.goto_marker()
                     self.handler('buffer_loaded', self)
                     return True
                 return False
     
-    def load_cache(self, f, globals=None):
+    def load_cache(self, f, lineno=0, globals=None):
         """Load cached script file using linecache.
         Note: The file will be reloaded without confirmation.
         """
@@ -1552,9 +1549,9 @@ class Editor(EditorInterface, EditWindow):
                 self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.buffer.filename = f
-            self.buffer.codename = None
-            self.buffer.code = None
+            self.markline = lineno - 1
+            self.goto_marker()
+            self.buffer = Buffer([f, lineno, None, None])
             self.push_current()
             self.handler('buffer_loaded', self)
             return True
@@ -1569,11 +1566,9 @@ class Editor(EditorInterface, EditWindow):
         f = os.path.abspath(filename)
         self.push_current() # save cache
         if self.LoadFile(f):
-            self.markline = lineno - 1 # set or unset mark
+            self.markline = lineno - 1
             self.goto_marker()
-            self.buffer.filename = f
-            self.buffer.codename = None
-            self.buffer.code = None
+            self.buffer = Buffer([f, lineno, None, None])
             self.push_current() # save current
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
