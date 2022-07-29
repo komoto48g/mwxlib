@@ -1524,10 +1524,13 @@ class Editor(EditorInterface, EditWindow):
     
     def restore_buffer(self, f):
         """Restore buffer with spedified f:filename or code.
+        
         Note: STC data such as `UndoBuffer` is not restored.
         """
         for buffer in self.__buffers:
             if f in buffer:
+                if self.buffer is buffer or not self.confirm_load():
+                    return None
                 self.push_current() # save cache
                 self.buffer = buffer
                 if self.LoadFile(buffer.filename):
@@ -1539,26 +1542,28 @@ class Editor(EditorInterface, EditWindow):
     
     def load_cache(self, f, lineno=0, globals=None):
         """Load cached script file using linecache.
+        
         Note: The file will be reloaded without confirmation.
         """
         linecache.checkcache(f)
         lines = linecache.getlines(f, globals)
         if lines:
-            self.push_current()
+            self.push_current() # save cache
             with self.off_readonly():
                 self.Text = ''.join(lines)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer([f, lineno, None, None])
-            self.push_current()
+            self.buffer = Buffer((f, lineno, None, None))
+            self.push_current() # save current
             self.handler('buffer_loaded', self)
             return True
         return False
     
     def load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile
+        
         Note: The file will be reloaded without confirmation.
         """
         if not filename:
@@ -1568,7 +1573,7 @@ class Editor(EditorInterface, EditWindow):
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer([f, lineno, None, None])
+            self.buffer = Buffer((f, lineno, None, None))
             self.push_current() # save current
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -1577,6 +1582,7 @@ class Editor(EditorInterface, EditWindow):
     
     def save_file(self, filename):
         """Wrapped method of SaveFile
+        
         Note: The file will be overwritten without confirmation.
         """
         if not filename:
@@ -1615,6 +1621,36 @@ class Editor(EditorInterface, EditWindow):
             return True
         except Exception:
             return False
+    
+    def confirm_load(self):
+        """Confirm the loading with the dialog."""
+        if self.IsModified()\
+          or (not self.buffer.filename and self.Text):
+            if wx.MessageBox(
+                    "You are leaving unsaved contents.\n\n"
+                    "The contents will be discarded.\n"
+                    "Continue loading?",
+                    "Load",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The load has been canceled.")
+                return None
+        return True
+    
+    def confirm_save(self):
+        """Confirm the saving with the dialog."""
+        if self.buffer.mtdelta:
+            if wx.MessageBox( # Note: dialog makes focus off
+                    "The file has been modified externally.\n\n"
+                    "The contents will be overwritten.\n"
+                    "Continue saving?",
+                    "Save",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The save has been canceled.")
+                return None
+        elif not self.IsModified():
+            self.post_message("No need to save.")
+            return False
+        return True
 
 
 class Interpreter(interpreter.Interpreter):
