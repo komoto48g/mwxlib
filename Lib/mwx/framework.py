@@ -1137,6 +1137,13 @@ class ShellFrame(MiniFrame):
             return
         if show is None:
             show = not pane.IsShown() # toggle show
+        if show:
+            ## Modify aui pane floating position when shown,
+            ## (partially) due to the bug with wxWidgets 3.17 -- 3.20.
+            w, h = wx.DisplaySize()
+            x, y = pane.floating_pos
+            if x > w or y > h:
+                pane.floating_pos = wx.GetMousePosition()
         nb.Show(show)
         pane.Show(show)
         self._mgr.Update()
