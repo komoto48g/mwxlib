@@ -644,7 +644,8 @@ class EditorInterface(CtrlInterface):
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
-        Note: Requires a code object compiled using py_exec_region.
+        
+        Note: It requires a code object compiled using py_exec_region.
               If the code doesn't exists, it returns the folding region.
         """
         if not self.buffer.code:
@@ -715,7 +716,7 @@ class EditorInterface(CtrlInterface):
         return self.GetMarginSensitive(0)
     
     def show_folder(self, show=True, colour=None):
-        """Show folder margin
+        """Show folder margin.
         
         Call me before set_style.
         Or else the margin color will be default light gray
@@ -907,20 +908,20 @@ class EditorInterface(CtrlInterface):
             self.BraceHighlight(-1,-1) # no highlight
     
     def over(self, mode=1):
-        """Set insert or overtype
+        """Set insert or overtype.
         mode in {0:insert, 1:over, None:toggle}
         """
         self.Overtype = mode if mode is not None else not self.Overtype
     
     def wrap(self, mode=1):
-        """Sets whether text is word wrapped
+        """Sets whether text is word wrapped.
         (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
                             3:whitespace-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
     
     def recenter(self, ln=None):
-        """Scroll the cursor line to the center of screen
+        """Scroll the cursor line to the center of screen.
         If ln=0, the cursor moves to the top of the screen.
         If ln=-1 (ln=n-1), moves to the bottom
         """
@@ -1269,7 +1270,7 @@ class EditorInterface(CtrlInterface):
     
     @editable
     def insert_space_like_tab(self):
-        """Insert half-width spaces forward as if feeling like a tab
+        """Insert half-width spaces forward as if feeling like [tab].
         タブの気持ちになって半角スペースを入力する
         """
         self.eat_white_forward()
@@ -1278,7 +1279,7 @@ class EditorInterface(CtrlInterface):
     
     @editable
     def delete_backward_space_like_tab(self):
-        """Delete half-width spaces backward as if feeling like a S-tab
+        """Delete half-width spaces backward as if feeling like [S-tab].
         シフト+タブの気持ちになって半角スペースを消す
         """
         self.eat_white_forward()
@@ -1342,8 +1343,9 @@ class Buffer:
     
     @property
     def mtdelta(self):
-        if self.__mtime:
-            return os.path.getmtime(self.filename) - self.__mtime
+        f = self.filename
+        if f and os.path.isfile(f):
+            return os.path.getmtime(f) - self.__mtime
 
 
 class Editor(EditorInterface, EditWindow):
@@ -1422,7 +1424,7 @@ class Editor(EditorInterface, EditWindow):
         self.handler.update({ # DNA<Editor>
             None : {
                   'stc_updated' : [ None, ],
-                 'buffer_saved' : [ None, ],
+                 'buffer_saved' : [ None, self.on_activated ],
                 'buffer_loaded' : [ None, self.on_activated ],
               'buffer_unloaded' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
@@ -1479,6 +1481,7 @@ class Editor(EditorInterface, EditWindow):
             return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
                 lambda v: self.restore_buffer(f) and self.SetFocus(),
                 lambda v: v.Check(f == self.buffer.filename))
+        
         return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
     
     @property
@@ -2420,7 +2423,7 @@ class Nautilus(EditorInterface, Shell):
             pass
     
     def on_text_input(self, text):
-        """Called when [Enter] text (before push)
+        """Called when [Enter] text (before push).
         Mark points, reset history point, etc.
         
         Note: text is raw input:str with no magic cast
@@ -2430,7 +2433,7 @@ class Nautilus(EditorInterface, Shell):
             self.historyIndex = -1
     
     def on_text_output(self, text):
-        """Called when [Enter] text (after push)
+        """Called when [Enter] text (after push).
         Set markers at the last command line.
         
         Note: text is raw output:str with no magic cast
