@@ -607,11 +607,11 @@ class EditorInterface(CtrlInterface):
         status = "No words"
         for text in filter(None, _gen_text()):
             try:
-                tip = eval(text, globals, locals)
+                obj = eval(text, globals, locals)
             except Exception as e:
                 status = "- {}: {!r}".format(e, text)
             else:
-                self.CallTipShow(self.cpos, pformat(tip))
+                self.CallTipShow(self.cpos, pformat(obj))
                 self.message(text)
                 return
         self.message(status)
@@ -2825,11 +2825,11 @@ class Nautilus(EditorInterface, Shell):
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
-                tip = self.eval(cmd)
+                obj = self.eval(cmd)
             except Exception as e:
                 status = "- {}: {!r}".format(e, text)
             else:
-                self.CallTipShow(self.cpos, pformat(tip))
+                self.CallTipShow(self.cpos, pformat(obj))
                 self.message(cmd)
                 return
         self.message(status)
@@ -2872,9 +2872,11 @@ class Nautilus(EditorInterface, Shell):
         if text:
             try:
                 text = introspect.getRoot(text, terminator='(')
-                self.help(self.eval(text))
+                obj = self.eval(text)
             except Exception as e:
                 self.message("- {} : {!r}".format(e, text))
+            else:
+                self.help(obj)
     
     def call_helpTip(self, evt):
         """Show tooltips for the selected topic"""
@@ -2990,9 +2992,8 @@ class Nautilus(EditorInterface, Shell):
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
-            j = 0 if words else -1
             
-            self.__comp_ind = j
+            self.__comp_ind = 0 if words else -1
             self.__comp_hint = hint
             self.__comp_words = words
             
