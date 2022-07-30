@@ -280,7 +280,7 @@ class EditorInterface(CtrlInterface):
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
         self.TabWidth = 4
-        self.EOLMode = stc.STC_EOL_LF
+        ## self.EOLMode = stc.STC_EOL_LF
         self.WrapMode = stc.STC_WRAP_NONE
         self.WrapIndentMode = stc.STC_WRAPINDENT_SAME
         self.IndentationGuides = stc.STC_IV_LOOKFORWARD
@@ -290,6 +290,10 @@ class EditorInterface(CtrlInterface):
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
+    
+    ## --------------------------------
+    ## Marker attributes of the editor
+    ## --------------------------------
     
     def _Marker(marker, n):
         """Factory of marker property
@@ -377,6 +381,16 @@ class EditorInterface(CtrlInterface):
             self.EnsureVisible(self.linemark)
             self.goto_line(self.linemark)
             self.recenter()
+    
+    def exchange_point_and_mark(self):
+        p = self.cpos
+        q = self.mark
+        if q != -1:
+            self.goto_char(q)
+            self.recenter()
+            self.mark = p
+        else:
+            self.post_message("No marks")
     
     ## --------------------------------
     ## Attributes of the editor
@@ -670,7 +684,8 @@ class EditorInterface(CtrlInterface):
         with self.pre_selection():
             text = re.sub("^", prefix, self.SelectedText, flags=re.M)
             ## Don't comment out the last (blank) line.
-            if text.endswith(prefix):
+            lines = text.splitlines()
+            if len(lines) > 1 and lines[-1].endswith(prefix):
                 text = text[:-len(prefix)]
             self.ReplaceSelection(text)
     
@@ -1476,10 +1491,15 @@ class Editor(EditorInterface, EditWindow):
     @property
     def menu(self):
         """Yields context menu"""
+        def _restore_buffer(f):
+            if f != self.buffer.filename and self.confirm_load():
+                self.restore_buffer(f)
+                self.SetFocus()
+        
         def _menu(j, data):
             f, ln = data.filename, data.lineno
             return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
-                lambda v: self.restore_buffer(f) and self.SetFocus(),
+                lambda v: _restore_buffer(f),
                 lambda v: v.Check(f == self.buffer.filename))
         
         return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
@@ -1530,10 +1550,10 @@ class Editor(EditorInterface, EditWindow):
         
         Note: STC data such as `UndoBuffer` is not restored.
         """
+        if f is self.buffer:
+            return None
         for buffer in self.__buffers:
-            if f in buffer:
-                if self.buffer is buffer or not self.confirm_load():
-                    return None
+            if f in buffer or f is buffer:
                 self.push_current() # save cache
                 self.buffer = buffer
                 if self.LoadFile(buffer.filename):
@@ -2528,7 +2548,7 @@ class Nautilus(EditorInterface, Shell):
         return lc, le
     
     ## --------------------------------
-    ## Methods of the shell
+    ## Execution methods of the shell
     ## --------------------------------
     
     def push(self, command, **kwargs):
