@@ -857,8 +857,8 @@ class Frame(mwx.Frame):
                 if show:
                     nb.SetSelection(nb.GetPageIndex(plug))
             if show:
-                ## Modify aui pane floating position when shown,
-                ## (partially) due to the bug with wxWidgets 3.17 -- 3.20.
+                ## Modify aui pane floating position when it is shown,
+                ## to address a known bug with wxWidgets 3.17 -- 3.20.
                 w, h = wx.DisplaySize()
                 x, y = pane.floating_pos
                 if x > w or y > h:
