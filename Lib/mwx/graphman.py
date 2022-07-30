@@ -203,7 +203,8 @@ class LayerInterface(CtrlInterface):
           graph : parent.graph window
          otuput : parent.output window
     """
-    menukey = property(lambda self: "Plugins/&" + self.__module__)
+    MENU = "Plugins" # default menu for Plugins
+    menukey = property(lambda self: "{}/&{}".format(MENU, self.__module__))
     caption = True
     category = None
     dockable = True
@@ -404,7 +405,7 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(LayerInterface, ControlPanel):
+class Layer(ControlPanel, LayerInterface):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
@@ -708,7 +709,7 @@ class Frame(mwx.Frame):
                 [_cmenu(i, c) for i, c in enumerate(colours) if not c.islower()]),
         ]
         
-        self.menubar["Plugins"] = [ # default Plugins menu
+        self.menubar[Layer.MENU] = [
             (mwx.ID_(100), "&Load Plugs", "Load plugins", Icon('load'),
                 self.OnLoadPlugins),
             
@@ -857,8 +858,8 @@ class Frame(mwx.Frame):
                 if show:
                     nb.SetSelection(nb.GetPageIndex(plug))
             if show:
-                ## Modify aui pane floating position when shown,
-                ## (partially) due to the bug with wxWidgets 3.17 -- 3.20.
+                ## Modify aui pane floating position when it is shown,
+                ## to address a known bug with wxWidgets 3.17 -- 3.20.
                 w, h = wx.DisplaySize()
                 x, y = pane.floating_pos
                 if x > w or y > h:
@@ -1163,6 +1164,7 @@ class Frame(mwx.Frame):
         
         if plug.menukey:
             menu, sep, tail = plug.menukey.rpartition('/')
+            menu = menu or Layer.MENU
             text = tail or plug.__module__
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
@@ -1191,6 +1193,7 @@ class Frame(mwx.Frame):
             
             if plug.__Menu_item:
                 menu, sep, tail = plug.menukey.rpartition('/')
+                menu = menu or Layer.MENU
                 self.menubar[menu].remove(plug.__Menu_item)
                 self.menubar.update(menu)
             

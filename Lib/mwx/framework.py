@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.1"
+__version__ = "0.68.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -37,7 +37,8 @@ def postcall(f):
     """
     @wraps(f)
     def _f(*args, **kwargs):
-        wx.CallAfter(f, *args, **kwargs)
+        ## wx.CallAfter(f, *args, **kwargs)
+        wx.CallAfter(wx.CallLater, 5, f, *args, **kwargs)
     return _f
 
 
@@ -263,9 +264,9 @@ class KeyCtrlInterfaceMixin(object):
     def interactive_call(self, action, *args, **kwargs):
         f = ut.funcall(action, *args, **kwargs)
         @wraps(f)
-        def _echo(*v):
+        def _echo(*v, **kw):
             self.message(f.__name__)
-            return f(*v)
+            return f(*v, **kw)
         return _echo
 
 
@@ -883,7 +884,7 @@ class ShellFrame(MiniFrame):
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
-        self._mgr.SetDockSizeConstraint(0.45, 0.5) # (w, h)/N
+        self._mgr.SetDockSizeConstraint(0.5, 0.5) # (w, h)/N
         
         self._mgr.AddPane(self.console,
                           aui.AuiPaneInfo().Name("console").CenterPane().Show(1))
@@ -1138,8 +1139,8 @@ class ShellFrame(MiniFrame):
         if show is None:
             show = not pane.IsShown() # toggle show
         if show:
-            ## Modify aui pane floating position when shown,
-            ## (partially) due to the bug with wxWidgets 3.17 -- 3.20.
+            ## Modify aui pane floating position when it is shown,
+            ## to address a known bug with wxWidgets 3.17 -- 3.20.
             w, h = wx.DisplaySize()
             x, y = pane.floating_pos
             if x > w or y > h:
