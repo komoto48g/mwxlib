@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.3"
+__version__ = "0.68.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -37,8 +37,7 @@ def postcall(f):
     """
     @wraps(f)
     def _f(*args, **kwargs):
-        ## wx.CallAfter(f, *args, **kwargs)
-        wx.CallAfter(wx.CallLater, 5, f, *args, **kwargs)
+        wx.CallAfter(f, *args, **kwargs)
     return _f
 
 
