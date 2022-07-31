@@ -204,7 +204,7 @@ class LayerInterface(CtrlInterface):
          otuput : parent.output window
     """
     MENU = "Plugins" # default menu for Plugins
-    menukey = property(lambda self: "{}/&{}".format(MENU, self.__module__))
+    menukey = property(lambda self: "{}/&{}".format(self.MENU, self.__module__))
     caption = True
     category = None
     dockable = True
@@ -377,7 +377,7 @@ class LayerInterface(CtrlInterface):
         return self.parent.get_pane(self).IsShown()
     
     def Show(self, show=True):
-        """Show associated pane"""
+        """Show associated pane (override) window."""
         wx.CallAfter(self.parent.show_pane, self, show)
     
     Drawn = property(
@@ -405,7 +405,7 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(ControlPanel, LayerInterface):
+class Layer(LayerInterface, ControlPanel):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
@@ -965,7 +965,7 @@ class Frame(mwx.Frame):
             module.Plugin = cls
             return cls
         
-        class _Plugin(cls, LayerInterface):
+        class _Plugin(LayerInterface, cls):
             def __init__(self, parent, session=None, **kwargs):
                 kwargs.setdefault('size', (130, 24)) # keep minimum size
                 cls.__init__(self, parent, **kwargs)
