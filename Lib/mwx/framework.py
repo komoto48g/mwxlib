@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.2"
+__version__ = "0.68.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -266,7 +266,8 @@ class KeyCtrlInterfaceMixin(object):
         @wraps(f)
         def _echo(*v, **kw):
             self.message(f.__name__)
-            return f(*v, **kw)
+            ## return f(*v, **kw)
+            return wx.CallAfter(wx.CallLater, 5, f, *v, **kw)
         return _echo
 
 
