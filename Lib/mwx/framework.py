@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.4"
+__version__ = "0.68.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -177,6 +177,8 @@ class KeyCtrlInterfaceMixin(object):
     def make_keymap(self, keymap):
         """Make a basis of extension map in the handler.
         """
+        assert isinstance(keymap, str)
+        
         def _Pass(v):
             self.message("{} {}".format(keymap, v.key))
         _Pass.__name__ = str('pass')
@@ -644,6 +646,8 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             self.Close()
         
         self.__handler = FSM({ # DNA<Frame>
+                None : {
+                },
                 0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
@@ -708,6 +712,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             self.Close()
         
         self.__handler = FSM({ # DNA<MiniFrame>
+                None : {
+                },
                 0 : {
                     '* pressed' : (0, skip),
                   'M-q pressed' : (0, close),
