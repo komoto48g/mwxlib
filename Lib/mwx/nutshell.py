@@ -673,56 +673,6 @@ class EditorInterface(CtrlInterface):
             le = ln-1
         return lc, le
     
-    comment_prefix = "## "
-    
-    @editable
-    def comment_out_selection(self, from_=None, to_=None):
-        """Comment out the selected text."""
-        if from_ is not None: self.anchor = from_
-        if to_ is not None: self.cpos = to_
-        prefix = self.comment_prefix
-        with self.pre_selection():
-            text = re.sub("^", prefix, self.SelectedText, flags=re.M)
-            ## Don't comment out the last (blank) line.
-            lines = text.splitlines()
-            if len(lines) > 1 and lines[-1].endswith(prefix):
-                text = text[:-len(prefix)]
-            self.ReplaceSelection(text)
-    
-    @editable
-    def uncomment_selection(self, from_=None, to_=None):
-        """Uncomment the selected text."""
-        if from_ is not None: self.anchor = from_
-        if to_ is not None: self.cpos = to_
-        with self.pre_selection():
-            text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
-            self.ReplaceSelection(text)
-    
-    @editable
-    def comment_out_line(self):
-        if self.SelectedText:
-            self.comment_out_selection()
-        else:
-            ## align with current or previous indent position
-            self.back_to_indentation()
-            text = self.GetLine(self.cline - 1)
-            lstr, j = self.py_strip_indents(text)
-            if lstr.startswith('#'):
-                text = self.GetLine(self.cline)
-                lstr, k = self.py_strip_indents(text)
-                self.goto_char(self.bol + min(j, k))
-            self.comment_out_selection(self.cpos, self.eol)
-            self.LineDown()
-    
-    @editable
-    def uncomment_line(self):
-        if self.SelectedText:
-            self.uncomment_selection()
-        else:
-            self.back_to_indentation()
-            self.uncomment_selection(self.cpos, self.eol)
-            self.LineDown()
-    
     ## --------------------------------
     ## Fold / Unfold functions
     ## --------------------------------
@@ -1055,10 +1005,27 @@ class EditorInterface(CtrlInterface):
                 p -= 1
         return p, q, st
     
-    def search_pattern(self, pattern):
-        """Yields str-positions (start, end) with `pattern` re-matched."""
-        for m in re.finditer(pattern, self.Text):
-            yield m.span(0)
+    def grep_forward(self, pattern):
+        text = self.GetTextRange(self.eol, self.TextLength)
+        errs = re.finditer(pattern, text, re.M)
+        for err in errs:
+            p, q = err.span()
+            self.goto_char(q + self.eol)
+            self.goto_char(self.bol)
+            self.mark = self.cpos
+            self.EnsureVisible(self.cline)
+            yield err
+    
+    def grep_barckward(self, pattern):
+        text = self.GetTextRange(0, self.cpos)
+        errs = re.finditer(pattern, text, re.M)
+        for err in reversed(list(errs)):
+            p, q = err.span()
+            self.goto_char(p)
+            self.goto_char(self.bol)
+            self.mark = self.cpos
+            self.EnsureVisible(self.cline)
+            yield err
     
     def search_text(self, text):
         """Yields raw-positions where `text` is found."""
@@ -1247,8 +1214,57 @@ class EditorInterface(CtrlInterface):
             self.ReadOnly = r
     
     ## --------------------------------
-    ## Edit: insert, eat, kill, etc.
+    ## Edit: insert, eat, kill, comment
     ## --------------------------------
+    comment_prefix = "## "
+    
+    @editable
+    def comment_out_selection(self, from_=None, to_=None):
+        """Comment out the selected text."""
+        if from_ is not None: self.anchor = from_
+        if to_ is not None: self.cpos = to_
+        prefix = self.comment_prefix
+        with self.pre_selection():
+            text = re.sub("^", prefix, self.SelectedText, flags=re.M)
+            ## Don't comment out the last (blank) line.
+            lines = text.splitlines()
+            if len(lines) > 1 and lines[-1].endswith(prefix):
+                text = text[:-len(prefix)]
+            self.ReplaceSelection(text)
+    
+    @editable
+    def uncomment_selection(self, from_=None, to_=None):
+        """Uncomment the selected text."""
+        if from_ is not None: self.anchor = from_
+        if to_ is not None: self.cpos = to_
+        with self.pre_selection():
+            text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
+            self.ReplaceSelection(text)
+    
+    @editable
+    def comment_out_line(self):
+        if self.SelectedText:
+            self.comment_out_selection()
+        else:
+            ## align with current or previous indent position
+            self.back_to_indentation()
+            text = self.GetLine(self.cline - 1)
+            lstr, j = self.py_strip_indents(text)
+            if lstr.startswith('#'):
+                text = self.GetLine(self.cline)
+                lstr, k = self.py_strip_indents(text)
+                self.goto_char(self.bol + min(j, k))
+            self.comment_out_selection(self.cpos, self.eol)
+            self.LineDown()
+    
+    @editable
+    def uncomment_line(self):
+        if self.SelectedText:
+            self.uncomment_selection()
+        else:
+            self.back_to_indentation()
+            self.uncomment_selection(self.cpos, self.eol)
+            self.LineDown()
     
     @editable
     def eat_white_forward(self):
