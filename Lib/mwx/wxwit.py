@@ -142,7 +142,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         item = evt.GetItem()
         if item:
             obj = self.GetItemData(item)
-            evt.SetToolTip("id={:#x}".format(id(obj)))
+            evt.SetToolTip("id=0x{:X}".format(id(obj)))
         evt.Skip()
     
     def OnRightDown(self, evt):

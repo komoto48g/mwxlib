@@ -1548,6 +1548,8 @@ class Editor(EditorInterface, EditWindow):
                     j -= 1
                 self.buffer = self.__buffers[j]
                 self.load_file(self.buffer.filename, self.buffer.lineno)
+        else:
+            self.clear()
     
     def clear(self):
         with self.off_readonly():
@@ -1663,8 +1665,7 @@ class Editor(EditorInterface, EditWindow):
     
     def confirm_load(self):
         """Confirm the loading with the dialog."""
-        if self.IsModified()\
-          or (not self.buffer.filename and self.Text):
+        if self.IsModified() and self.buffer.filename:
             if wx.MessageBox(
                     "You are leaving unsaved contents.\n\n"
                     "The contents will be discarded.\n"
