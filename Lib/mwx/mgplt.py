@@ -52,12 +52,10 @@ class Gnuplot(object):
             os.remove(self.tempfile)
     
     def __call__(self, text):
-        for t in text.splitlines():
-            cmd = t.strip()
-            if cmd:
-                self.__gnuplot.stdin.write((cmd + '\n').encode())
-                if self.debug:
-                    print("pgnupot>", cmd)
+        for cmd in filter(None, (t.strip() for t in text.splitlines())):
+            self.__gnuplot.stdin.write((cmd + '\n').encode())
+            if self.debug:
+                print("pgnupot>", cmd)
         self.__gnuplot.stdin.flush()
         return self
     
@@ -90,7 +88,7 @@ class Gnuplot(object):
                         opts.append("w l")
                 else:
                     opts.append(v)
-                    
+            
             while len(data) > len(opts): # opts 指定の数が足りない場合 (maybe+1)
                 opts.append("w l")
             
