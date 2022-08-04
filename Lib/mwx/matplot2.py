@@ -46,13 +46,11 @@ class MatplotPanel(wx.Panel):
     """MPL panel for general graph
     
     Attributes:
-        axes        : <matplotlib.axes.Axes>
         figure      : <matplotlib.figure.Figure>
+        canvas      : <matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
+        toolbar     : <matplotlib.backends.backend_wx.NavigationToolbar2Wx>
         cursor      : <matplotlib.widgets.Cursor>
-        canvas      : WxAgg.FigureCanvas
-        toolbar     : WxAgg.NavigationToolbar2
-        selected    : selected points <matplotlib.lines.Line2D>
-        Selector    : selected points arrays (xx, yy)
+        selected    : Selected points <matplotlib.lines.Line2D>
     """
     handler = property(lambda self: self.__handler)
     
@@ -314,29 +312,32 @@ class MatplotPanel(wx.Panel):
     ## Property of the current frame
     ## --------------------------------
     
-    frame = property(lambda self: self) # to be overridden (handler process `frame` in draw)
+    ## to be overridden (referenced in draw).
+    frame = property(lambda self: self)
     
-    axes = property(lambda self: self.figure.axes[0])
+    axes = property(
+        lambda self: self.figure.axes[0],
+        doc="The first figure axes <matplotlib.axes.Axes>")
     
     xbound = property(
         lambda self: np.array(self.axes.get_xbound()),
         lambda self,v: self.axes.set_xbound(v),
-        doc = "x-axis numerical bounds where lowerBound < upperBound)")
+        doc="x-axis numerical bounds where lowerBound < upperBound)")
     
     ybound = property(
         lambda self: np.array(self.axes.get_ybound()),
         lambda self,v: self.axes.set_ybound(v),
-        doc = "y-axis numerical bounds where lowerBound < upperBound)")
+        doc="y-axis numerical bounds where lowerBound < upperBound)")
     
     xlim = property(
         lambda self: np.array(self.axes.get_xlim()),
         lambda self,v: self.axes.set_xlim(v),
-        doc = "x-axis range [left, right]")
+        doc="x-axis range [left, right]")
     
     ylim = property(
         lambda self: np.array(self.axes.get_ylim()),
         lambda self,v: self.axes.set_ylim(v),
-        doc = "y-axis range [bottom, top]")
+        doc="y-axis range [bottom, top]")
     
     @property
     def ddpu(self):
@@ -452,6 +453,7 @@ class MatplotPanel(wx.Panel):
     
     @property
     def Selector(self):
+        """Selected points array [[x],[y]]."""
         return np.array(self.selected.get_data(orig=0))
     
     @Selector.setter

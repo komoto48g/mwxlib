@@ -54,9 +54,9 @@ def imconvert(src, cutoff=0, threshold=24e6, binning=1):
             beta = -a * alpha
     
     Args:
-        cutoff : cutoff score [%] to cut the upper/lower limits
-        threshold : limit bytes of image (to make matplotlib light)
-        binning : minimum binning number of src array
+        cutoff      : cutoff score [%] to cut the upper/lower limits
+        threshold   : limit bytes of image (to make matplotlib light)
+        binning     : minimum binning number of src array
     """
     if src.dtype in (np.complex64, np.complex128): # maybe fft pattern
         src = np.log(1 + abs(src))
@@ -93,7 +93,7 @@ def imconvert(src, cutoff=0, threshold=24e6, binning=1):
     img = np.uint8((src - a) * r) # copy buffer
     img[src < a] = 0
     img[src > b] = 255
-    return bins, (a,b), img
+    return bins, (a, b), img
 
 
 def _Property(name):
@@ -114,18 +114,17 @@ class AxesImagePhantom(object):
         localunit   : initial localunit
         attributes  : additional info:dict
     
-    Attributes:
-        unit        : logical length per pixel arb.unit [u/pixel]
-        image       : image <numpy.ndarray> (dtype:uint8)
-        buffer      : raw buffer <numpy.ndarray>
-        binning     : binning size of image
-        attributes  : optional. miscellaneous info about the frame/buffer
-        pathname    : optional. fullpath of buffer, when bounds to file
-        annotation  : optional. annotation of the buffer
+    The displayed image is an array<uint8> converted from buffer by `imconvert`.
+    
+    >>> binning, vlim, image = imconvert(self.buffer,
+    ...     cutoff = self.parent.score_percentile,
+    ...     threshold = self.parent.nbytes_threshold,
+    ... )
     
     Note:
-          ( ･ω･)? Current verision of wxagg limits < 24M bytes?
-          The image pixel size must be reduced by resizing or binning.
+        Due to the problem of performance,
+        the image pixel size could be reduced by binning.
+        ( ･ω･)? Current verision of wxagg limits < 24M bytes?
     """
     def __init__(self, parent, buf, name, show=True,
                  localunit=None, aspect=1.0, **attributes):
@@ -160,24 +159,35 @@ class AxesImagePhantom(object):
     parent = property(lambda self: self.__owner)
     artist = property(lambda self: self.__art)
     name = property(lambda self: self.__name)
-    image = property(lambda self: self.__art.get_array())
-    buffer = property(lambda self: self.__buf)
+    buffer = property(lambda self: self.__buf)  # buffer.setter is defined below.
     binning = property(lambda self: self.__bins)
-    vlim = property(lambda self: self.__vlim)
+    
+    image = property(
+        lambda self: self.__art.get_array(),
+        doc="A displayed image array<uint8>.")
+    
+    vlim = property(
+        lambda self: self.__vlim,
+        doc="Image lower/upper values.")
     
     clim = property(
         lambda self: self.__art.get_clim(),
-        lambda self,v: self.__art.set_clim(v))
+        lambda self,v: self.__art.set_clim(v),
+        doc="Buffer lower/upper values.")
     
-    attributes = property(lambda self: self.__attributes)
+    attributes = property(
+        lambda self: self.__attributes,
+        doc="Miscellaneous info about the frame/buffer.")
     
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
-        lambda self,v: self.update_attributes({'pathname': v}))
+        lambda self,v: self.update_attributes({'pathname': v}),
+        doc="A fullpath of buffer, when bounds to file.")
     
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
-        lambda self,v: self.update_attributes({'annotation': v}))
+        lambda self,v: self.update_attributes({'annotation': v}),
+        doc="Annotation of the buffer.")
     
     def update_attributes(self, attr=None, **kwargs):
         """Update frame-specifc attributes
@@ -217,6 +227,7 @@ class AxesImagePhantom(object):
     
     @property
     def unit(self):
+        """Logical length per pixel arb.unit [u/pixel]."""
         return self.__localunit or self.parent.globalunit
     
     @unit.setter
@@ -287,7 +298,7 @@ class AxesImagePhantom(object):
     
     @property
     def roi(self):
-        """buffer in ROI (region of interest)"""
+        """Current buffer ROI (region of interest)"""
         if self.parent.Region.size:
             nx, ny = self.xytopixel(self.parent.Region)
             sx = slice(max(0,nx[0]), nx[1]) # nx slice
@@ -391,21 +402,6 @@ class Clipboard:
 
 class GraphPlot(MatplotPanel):
     """Graph panel for 2D graph
-    
-    Attributes:
-        axes        : a figure axes <matplotlib.axes.Axes>
-        frame       : current art <matplotlib.image.AxesImage>
-        buffer      : current data array <numpy.ndarray>; complex is not supported.
-        image       : current image array <numpy.ndarray>; uint8
-        unit        : logical length per pixel arb.unit [u/pixel]
-        roi         : current buffer in ROI (region of interest)
-        
-        Selector    : selected points array ([x],[y])
-        Markers     : marked points data array ([x],[y])
-        Region      : rectangle points data array ((l,r),(b,t))
-        
-        nbytes_threshold : image size threshold (for display)
-        score_percentile : image cutoff percentiles
     """
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
@@ -796,20 +792,20 @@ class GraphPlot(MatplotPanel):
     ## Property of frame / drawer
     ## --------------------------------
     
-    ## image bytes max when loading matplotlib wxagg backend
+    #: image bytes max for loading matplotlib wxagg backend
     nbytes_threshold = 24e6
     
-    ## cutoff score percentiles
+    #: image cutoff score percentiles
     score_percentile = 0.01
     
     @property
     def all_frames(self):
-        """list of arts <matplotlib.image.AxesImage>"""
+        """List of arts <matplotlib.image.AxesImage>"""
         return self.__Arts
     
     @property
     def frame(self):
-        """current art <matplotlib.image.AxesImage>"""
+        """Current art <matplotlib.image.AxesImage>"""
         if self.__Arts and self.__index is not None:
             return self.__Arts[self.__index]
     
@@ -817,16 +813,16 @@ class GraphPlot(MatplotPanel):
         lambda self: self.frame and self.frame.buffer,
         lambda self,v: self.__setitem__(self.__index, v),
         lambda self: self.__delitem__(self.__index),
-        doc = "current buffer array")
+        doc="current buffer array")
     
     newbuffer = property(
         lambda self: None,
         lambda self,v: self.load(v),
-        doc = "new buffer loader")
+        doc="new buffer loader")
     
     @property
     def unit(self):
-        """logical length per pixel arb.unit [u/pixel]"""
+        """Logical length per pixel arb.unit [u/pixel]."""
         return self.__unit
     
     @unit.setter
@@ -1183,8 +1179,8 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     
     def calc_point(self, x, y, centred=True):
-        """Restrict point (x,y) in image area
-        if centred, correct the point to the center of the nearest pixel.
+        """Restrict point (x,y) in image area.
+        If centred, correct the point to the center of the nearest pixel.
         """
         l,r,b,t = self.frame.get_extent()
         nx, ny = self.frame.xytopixel(
@@ -1329,7 +1325,7 @@ class GraphPlot(MatplotPanel):
     
     @property
     def Region(self):
-        """Region of interest [l,r] [b,t]"""
+        """Rectangle points data array [l,r],[b,t]."""
         x, y = self.rected.get_data(orig=0)
         if len(x) and len(y):
             xo, x = min(x), max(x)
@@ -1541,12 +1537,12 @@ class GraphPlot(MatplotPanel):
     ## Markers interface
     ## --------------------------------
     
-    ## plot markers 最大(表示)数を制限する
+    #: Limit number of markers to display 最大(表示)数を制限する
     maxnum_markers = 1000
     
     @property
     def Markers(self):
-        """Marked poitns [[x],[y]]"""
+        """Marked poitns data array [[x],[y]]."""
         xm, ym = self.marked.get_data(orig=0)
         return np.array((xm, ym))
     

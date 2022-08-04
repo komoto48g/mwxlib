@@ -53,18 +53,22 @@ class Thread(object):
     The worker:thread runs the given target:f of owner:object.
     
     Attributes:
-        target  : A target method of the Layer
-        result  : A variable that retains the last retval of f
-        worker  : reference of the worker thread
-        owner   : reference of the handler owner (was typ. f.__self__)
-                  if None, the thread_event is handled by its own handler
-        active  : flag of being kept going
-                  Check this to see the worker is running and intended being kept going
-        running : flag of being running now
-                  Watch this to verify the worker is alive after it has been inactivated
-        event   : A common event flag to interrupt the process
+        target  : A target method of the Layer.
+        result  : A variable that retains the last retval of f.
+        worker  : Reference of the worker thread.
+        owner   : Reference of the handler owner (was typ. f.__self__).
+                  If None, the thread_event is handled by its own handler.
+        event   : A common event flag to interrupt the process.
     
-    Note:
+    There are two flags to check the thread status:
+    
+     - active   : A flag of being kept going
+                  Check this to see the worker is running and intended being kept going
+     - running  : A flag of being running now
+                  Watch this to verify the worker is alive after it has been inactivated
+    
+    The event object can be used to suspend/resume the thread:
+    
         1. event.clear -> clear flag:False so that the thread suspends when wait is called
         2. event.wait -> wait until the chequer flag to be set True
         3. event.set -> set flag:True to resume the thread
@@ -190,7 +194,8 @@ def _isLayer(obj):
 class LayerInterface(CtrlInterface):
     """Graphman.Layer interface mixin
     
-    Attributes:
+    The layer properties can be switched by the following classvars::
+    
         menukey     : menu item key:str in parent menubar
         category    : title of notebook holder, otherwise None for single pane
         caption     : flag to set the pane caption to be visible
@@ -199,9 +204,9 @@ class LayerInterface(CtrlInterface):
                       type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
         reloadable  : flag to set the Layer to be reloadable
         unloadable  : flag to set the Layer to be unloadable
-        parent      : parent <Frame> is not always equal to Parent when floating
-        graph       : parent.graph window
-        otuput      : parent.output window
+    
+    Note:
+        parent <Frame> is not always equal to Parent when floating.
     """
     MENU = "Plugins" # default menu for Plugins
     menukey = property(lambda self: "{}/&{}".format(self.MENU, self.__module__))
@@ -874,8 +879,9 @@ class Frame(mwx.Frame):
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane
         
-        Note: This is called automatically from load_plug,
-              and should not be called directly from user.
+        Note:
+            This is called automatically from load_plug,
+            and should not be called directly from user.
         """
         pane = self.get_pane(name)
         
@@ -931,8 +937,9 @@ class Frame(mwx.Frame):
         """Get named plug window
         If not found, try to load it once.
         
-        Note: When called in thread, the display of AuiPane might be broken.
-              Reload this from menu with [C-M-S] key after the thread exits.
+        Note:
+            When called in thread, the display of AuiPane might be broken.
+            Reload this from menu with [C-M-S] key after the thread exits.
         """
         plug = self.get_plug(name)
         if not plug:
@@ -980,8 +987,9 @@ class Frame(mwx.Frame):
     def load_module(self, root, force, session, **props):
         """Load module of plugin (internal use only)
         
-        Note: This is called automatically from load_plug,
-              and should not be called directly from user.
+        Note:
+            This is called automatically from load_plug,
+            and should not be called directly from user.
         """
         if hasattr(root, '__file__'): #<class 'module'>
             rootpath = root.__file__
@@ -1059,7 +1067,6 @@ class Frame(mwx.Frame):
         
         Note:
             The root module must have a class `Plugin` <mwx.graphman.Layer>
-        
         """
         props = dict(show=show,
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,

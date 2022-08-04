@@ -463,27 +463,26 @@ class FSM(dict):
         contexts: map of context <DNA>
             {state: {event: transaction (next_state, actions ...)}}
             
-            - The state `None` is a wildcard (as executed any time).
-            - An event (str) can include wildcards ``*?[]`` (fnmatch rule).
-            - Actions must accept the same args as __call__.
+            * The state `None` is a wildcard (as executed any time).
+            * An event (str) can include wildcards ``*?[]`` (fnmatch rule).
+            * Actions must accept the same args as __call__.
     
     If no action, FSM carries out only a transition.
     The transition is always done before actions.
     
-    Attributes:
-        debug : verbose level
-            [0] no trace, warnings only
-            [1] trace when state transits
-            [2] + when different event comes
-            [3] + all events and actions
-            [4] ++ all events (+ including state:None)
-            [5] ++ all events (even if no actions + state:None)
-            [8] +++ max verbose level to put all args and kwargs
-        default_state : referred as default state sucn as global-map
-            default=None is given as an argument of the init.
-            If there is only one state, that state will be the default.
-        current_state : referred as the current state
-        previous_state : (read-only, internal use only)
+    To debug FSM handler, set ``debug`` switch as follows::
+    
+        [0] no trace, warnings only
+        [1] trace when state transits
+        [2] + when different event comes
+        [3] + trace all events and actions
+        [4] ++ all events (+ including state:None)
+        [5] ++ all events (even if no actions + state:None)
+        [8] +++ (max verbose level) to put all args and kwargs.
+    
+    Note:
+        A default=None is given as an argument of the init.
+        If there is only one state, that state will be the default.
     
     Note:
         There is no enter/exit event handler.
@@ -535,10 +534,12 @@ class FSM(dict):
         First, call handlers with the state:None.
         Then, call handlers with the current state.
         
-        Returns depending on the context:
-            process the event (with actions) -> [retvals]
-            process the event (no actions) -> []
-            no event:transaction -> None
+        Returns:
+            list or None depending on the handler
+            
+            - process the event (with actions) -> [retvals]
+            - process the event (no actions) -> []
+            - no event:transaction -> None
         """
         recept = False # Is transaction performed?
         retvals = [] # retvals of actions
@@ -576,7 +577,11 @@ class FSM(dict):
         2. try actions after transition
         
         Returns:
-            list or None
+            list or None depending on the handler
+            
+            - process the event (with actions) -> [retvals]
+            - process the event (no actions) -> []
+            - no event:transaction -> None
         """
         context = self[self.__state]
         if event in context:
@@ -869,8 +874,8 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     Returns:
         lambda: Decorated function f as `alias<doc>`
         
-            - Act1 := lambda *v,**kw: f(*(v+args), **(kwargs|kw)))
-            - Act2 := lambda *v,**kw: f(*args, **(kwargs|kw)))
+        >>> Act1 = lambda *v,**kw: f(*(v+args), **(kwargs|kw))
+        >>> Act2 = lambda *v,**kw: f(*args, **(kwargs|kw))
         
         Act1 that accepts event arguments if there are any 
         remaining arguments that must be explicitly specified in f.

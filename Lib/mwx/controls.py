@@ -35,14 +35,6 @@ class Param(object):
         tip     : tooltip:str shown on the associated knobs
     
     Attributes:
-        min, max    : lower and upper limits
-        std_value   : standard value (default None)
-        value       : current value := std_value + offset
-        offset      : if std_value is None, this is the same as value.
-        range       : Index range
-        index       : knob index -> value
-        check       : knob check (undefined)
-        
         knobs       : knob list
         tip         : doc:str also shown as a tooltip
         callback    : single state machine that handles following events
@@ -152,6 +144,7 @@ class Param(object):
     
     @property
     def check(self):
+        """A knob check property (user defined)."""
         return self.__check
     
     @check.setter
@@ -173,6 +166,7 @@ class Param(object):
     
     @property
     def value(self):
+        """Current value := std_value + offset"""
         return self.__value
     
     @value.setter
@@ -181,6 +175,7 @@ class Param(object):
     
     @property
     def std_value(self):
+        """A standard value (default None)."""
         return self.__std_value
     
     @std_value.setter
@@ -191,6 +186,9 @@ class Param(object):
     
     @property
     def offset(self):
+        """Offset value
+        If std_value is None, this is the same as value.
+        """
         if self.std_value is not None:
             return self.value - self.std_value
         return self.value
@@ -207,6 +205,7 @@ class Param(object):
     
     @property
     def range(self):
+        """Index range"""
         return self.__range
     
     @range.setter
@@ -220,6 +219,7 @@ class Param(object):
     
     @property
     def index(self):
+        """A knob index -> value"""
         return int(np.searchsorted(self.range, self.value))
     
     @index.setter
@@ -243,14 +243,6 @@ class LParam(Param):
         tip     : tooltip:str shown on the associated knobs
     
     Attributes:
-        min, max    : lower and upper limits
-        std_value   : standard value (default None)
-        value       : current value := std_value + offset
-        offset      : if std_value is None, this is the same as value.
-        range       : Index range
-        index       : knob index -> value
-        check       : knob check (undefined)
-        
         knobs       : knob list
         tip         : doc:str also shown as a tooltip
         callback    : single state machine that handles following events
@@ -269,6 +261,7 @@ class LParam(Param):
     
     @property
     def range(self):
+        """Index range"""
         return np.arange(self.min, self.max + self.step, self.step)
     
     @range.setter
@@ -283,6 +276,9 @@ class LParam(Param):
     
     @property
     def index(self):
+        """A knob index -> value
+        Returns -1 if the value is nan or inf.
+        """
         if self.value in (nan, inf):
             return -1
         return int(round((self.value - self.min) / self.step))

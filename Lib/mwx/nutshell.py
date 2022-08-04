@@ -660,8 +660,9 @@ class EditorInterface(CtrlInterface):
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
         
-        Note: It requires a code object compiled using py_exec_region.
-              If the code doesn't exists, it returns the folding region.
+        Note:
+            It requires a code object compiled using `py_exec_region`.
+            If the code doesn't exists, it returns the folding region.
         """
         if not self.buffer.code:
             return self.get_region(line)
@@ -1329,10 +1330,10 @@ class Buffer:
     """Data class of buffer
     
     Attributes:
-        filename: buffer-file-name
-        lineno  : marked lineno (>=1)
-        codename: code-file-name (e.g. '<scratch>')
-        code    : code object compiled using py_exec_region
+        filename    : buffer-file-name
+        lineno      : marked lineno (>=1)
+        codename    : code-file-name (e.g. '<scratch>')
+        code        : code object compiled using `py_exec_region`.
     """
     def __init__(self, data=None):
         (self.filename, self.lineno,
@@ -1566,7 +1567,7 @@ class Editor(EditorInterface, EditWindow):
         self.clear()
     
     def restore_buffer(self, f):
-        """Restore buffer with spedified f:filename or code.
+        """Restore buffer with specified f:filename or code.
         
         Note: STC data such as `UndoBuffer` is not restored.
         """
@@ -1792,7 +1793,7 @@ class Nautilus(EditorInterface, Shell):
         @help       : full description
         @dive       : clone the shell with new target
         @timeit     : measure the duration cpu time
-        @profile    : profile the ``func(*args, **kwargs)``
+        @profile    : profile a single function call
         @filling    : inspection using wx.lib.filling.Filling
         @watch      : inspection using wx.lib.inspection.InspectionTool
         @edit       : open file with your editor (undefined)
@@ -1802,25 +1803,25 @@ class Nautilus(EditorInterface, Shell):
     
     Autocomp-key bindings::
     
-               C-up : [0] retrieve previous history
-             C-down : [0] retrieve next history
-           M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
-           M-h, C-h : [0] call tooltip of help (for the func selected or focused)
-                TAB : [1] history-comp-mode
-                M-p : [1] retrieve previous history in comp-mode
-                M-n : [1] retrieve next history in comp-mode
-                M-. : [2] word-comp-mode
-                M-/ : [3] apropos-comp-mode
-                M-, : [4] text-comp-mode
-                M-m : [5] module-comp-mode
+        C-up        : [0] retrieve previous history
+        C-down      : [0] retrieve next history
+        C-j, M-j    : [0] call tooltip of eval (for the word selected or focused)
+        C-h, M-h    : [0] call tooltip of help (for the func selected or focused)
+        TAB         : [1] history-comp-mode
+        M-p         : [1] retrieve previous history in comp-mode
+        M-n         : [1] retrieve next history in comp-mode
+        M-.         : [2] word-comp-mode
+        M-/         : [3] apropos-comp-mode
+        M-,         : [4] text-comp-mode
+        M-m         : [5] module-comp-mode
         
         Autocomps are incremental when pressed any alnums,
-                and decremental when backspace.
+                  and decremental when backspace.
     
     Enter-key bindings::
     
-            C-enter : insert-line-break
-            M-enter : duplicate-command
+        C-enter     : insert-line-break
+        M-enter     : duplicate-command
     
     The most convenient way to see the details of keymaps on the shell is as follows::
     
@@ -2360,10 +2361,11 @@ class Nautilus(EditorInterface, Shell):
         """Called when [Enter] command, or eval-time for tooltip
         
         Interpret magic syntax
-            quoteback : x`y --> y=x
-            pullback  : x@y --> y(x)
-            partial   : x@(y1,...,yn) --> partial(y1,...,yn)(x)
-            apropos   : x.y?p --> apropos(x,y,...,p)
+        
+            - quoteback : x`y --> y=x
+            - pullback  : x@y --> y(x)
+            - partial   : x@(y1,...,yn) --> partial(y1,...,yn)(x)
+            - apropos   : x.y?p --> apropos(x,y,...,p)
         
         Note:
             This is called before run, execute, and original magic.

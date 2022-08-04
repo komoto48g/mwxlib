@@ -238,7 +238,9 @@ class KeyCtrlInterfaceMixin(object):
         
         If no action, it invalidates the key and returns @decor(binder).
         The key must be in C-M-S order (ctrl + alt(meta) + shift).
-        Note: kwargs `doc` and `alias` are reserved as kw-only-args.
+        
+        Note:
+            kwargs `doc` and `alias` are reserved as kw-only-args.
         """
         map, key, state = self._get_keymap_state(keymap)
         if map not in self.handler:
@@ -796,10 +798,9 @@ class ShellFrame(MiniFrame):
                   If None, it will be `__main__`.
     
     Attributes:
-        rootshell   : the root shell
-        watcher     : Notebook of global/locals info watcher
         console     : Notebook of shells
         ghost       : Notebook of editors and inspectors
+        watcher     : Notebook of global/locals info watcher
         Scratch     : buffer for scratch (tooltip)
         Help        : buffer for help
         Log         : buffer for logging
@@ -807,7 +808,7 @@ class ShellFrame(MiniFrame):
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
     """
-    rootshell = property(lambda self: self.__shell)
+    rootshell = property(lambda self: self.__shell) #: the root shell
     
     def __init__(self, parent, target=None, title=None, size=(1280,720),
                  style=wx.DEFAULT_FRAME_STYLE,
@@ -1449,7 +1450,7 @@ class ShellFrame(MiniFrame):
         return self.rootshell
     
     def find_editor(self, f):
-        """Find the editor which has the spedified f:object,
+        """Find the editor which has the specified f:object,
         where `f` can be filename or code object.
         """
         for editor in self.ghost.all_pages(EditWindow):
