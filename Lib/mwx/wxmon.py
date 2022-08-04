@@ -43,10 +43,6 @@ else:
 
 class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     """Event monitor
-    
-    Attributes:
-        parent : shellframe
-        target : widget to monitor
     """
     parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__widget)

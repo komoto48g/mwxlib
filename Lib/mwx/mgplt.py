@@ -24,7 +24,6 @@ class Gnuplot(object):
     """Gnuplot - gnuplot:pipe wrapper
     """
     debug = 0
-    data_format = "{:e}".format
     
     PGNUPLOT = "gnuplot" # Note: gnuplot/pgnuplot is integrated
     
@@ -39,6 +38,8 @@ class Gnuplot(object):
         print("Launching new gnuplot...")
         self.__gnuplot = Popen([self.PGNUPLOT],
                                shell=True, stdin=PIPE)
+        
+        self.data_format = "{:e}".format
         self.startupfile = startup or ""
         self.tempfile = tempfile.mktemp()
         self.debug = debug
@@ -134,11 +135,8 @@ class Gnuplot(object):
 
 class GnuplotFrame(mwx.Frame):
     """Gnuplot Frame
-    
-    Attributes:
-        gnuplot : single class object
     """
-    gnuplot = property(lambda self: self.__gplot)
+    gnuplot = property(lambda self: self.__gplot) #: single class object
     
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)

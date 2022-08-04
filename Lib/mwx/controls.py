@@ -25,29 +25,24 @@ class Param(object):
     """Standard Parameter
     
     Args:
-           name : label
-          range : range
-          value : std_value (default is None)
-            fmt : text formatter or format:str (default is '%g')
+        name    : label
+        range   : range
+        value   : std_value (default is None)
+        fmt     : text formatter or format:str (default is '%g')
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
-            tip : tooltip:str shown on the associated knobs
+        tip     : tooltip:str shown on the associated knobs
     
     Attributes:
-        min,max : lower and upper limits
-      std_value : standard value (default None)
-          value : current value := std_value + offset
-         offset : if std_value is None, this is the same as value.
-          knobs : knob list
-          index : knob index -> value
-          check : knob check (undefined)
-            tip : doc:str also shown as a tooltip
-       callback : single state machine that handles following events:
-                control -> when index changed by knobs or reset (call handler)
-                check -> when check ticks on/off (call updater)
-                overflow -> when value overflows
-                underflow -> when value underflows
+        knobs       : knob list
+        tip         : doc:str also shown as a tooltip
+        callback    : single state machine that handles following events
+        
+            - control -> when index changed by knobs or reset (handler)
+            - check   -> when check ticks on/off (updater)
+            - overflow -> when value overflows
+            - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
                  handler=None, updater=None, tip=None):
@@ -149,6 +144,7 @@ class Param(object):
     
     @property
     def check(self):
+        """A knob check property (user defined)."""
         return self.__check
     
     @check.setter
@@ -170,6 +166,7 @@ class Param(object):
     
     @property
     def value(self):
+        """Current value := std_value + offset"""
         return self.__value
     
     @value.setter
@@ -178,6 +175,7 @@ class Param(object):
     
     @property
     def std_value(self):
+        """A standard value (default None)."""
         return self.__std_value
     
     @std_value.setter
@@ -188,6 +186,9 @@ class Param(object):
     
     @property
     def offset(self):
+        """Offset value
+        If std_value is None, this is the same as value.
+        """
         if self.std_value is not None:
             return self.value - self.std_value
         return self.value
@@ -204,6 +205,7 @@ class Param(object):
     
     @property
     def range(self):
+        """Index range"""
         return self.__range
     
     @range.setter
@@ -217,6 +219,7 @@ class Param(object):
     
     @property
     def index(self):
+        """A knob index -> value"""
         return int(np.searchsorted(self.range, self.value))
     
     @index.setter
@@ -230,29 +233,24 @@ class LParam(Param):
     """Linear Parameter
     
     Args:
-           name : label
-          range : range [min:max:step]
-          value : std_value (default is None)
-            fmt : text formatter or format:str (default is '%g')
+        name    : label
+        range   : range [min:max:step]
+        value   : std_value (default is None)
+        fmt     : text formatter or format:str (default is '%g')
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
-            tip : tooltip:str shown on the associated knobs
+        tip     : tooltip:str shown on the associated knobs
     
     Attributes:
-        min,max : lower and upper limits
-      std_value : standard value (default None)
-          value : current value := std_value + offset
-         offset : if std_value is None, this is the same as value.
-          knobs : knob list
-          index : knob index -> value
-          check : knob check (undefined)
-            tip : doc:str also shown as a tooltip
-       callback : single state machine that handles following events:
-                control -> when index changed by knobs or reset (call handler)
-                check -> when check ticks on/off (call updater)
-                overflow -> when value overflows
-                underflow -> when value underflows
+        knobs       : knob list
+        tip         : doc:str also shown as a tooltip
+        callback    : single state machine that handles following events
+        
+            - control -> when index changed by knobs or reset (handler)
+            - check   -> when check ticks on/off (updater)
+            - overflow -> when value overflows
+            - underflow -> when value underflows
     """
     min = property(lambda self: self.__min)
     max = property(lambda self: self.__max)
@@ -263,6 +261,7 @@ class LParam(Param):
     
     @property
     def range(self):
+        """Index range"""
         return np.arange(self.min, self.max + self.step, self.step)
     
     @range.setter
@@ -277,6 +276,9 @@ class LParam(Param):
     
     @property
     def index(self):
+        """A knob index -> value
+        Returns -1 if the value is nan or inf.
+        """
         if self.value in (nan, inf):
             return -1
         return int(round((self.value - self.min) / self.step))
@@ -295,25 +297,25 @@ class Knob(wx.Panel):
     
     In addition to direct key input to the textctrl,
     [up][down][wheelup][wheeldown] keys can be used,
-      w/modifiers: S- 2x, C- 16x, and M- 256x steps.
+    with modifiers S- 2x, C- 16x, and M- 256x steps.
     [Mbutton] resets to the std. value if it exists.
     
     Args:
-          param : <Param> or <LParam> object
-           type : ctrl type (slider[*], [hv]spin, choice, None)
-          style : style of label
+        param   : <Param> or <LParam> object
+        type    : ctrl type (slider[*], [hv]spin, choice, None)
+        style   : style of label
                   None -> static text (default)
                   chkbox -> label with check box
                   button -> label with flat button
-       editable : textctrl is editable or readonly
-       lw,tw,cw : width of label, textbox, and ctrl
-              h : height of widget (default 22 for Windows)
-    
-    Attributes:
-          param : <Param> object referred from knobs
+        editable: textctrl is editable or readonly
+        lw      : width of label
+        tw      : width of textbox
+        cw      : width of ctrl
+        h       : height of widget (defaults to 22)
     """
     @property
     def param(self):
+        """Param object referred from knobs"""
         return self.__par
     
     @param.setter
@@ -662,18 +664,20 @@ class ControlPanel(scrolled.ScrolledPanel):
                **kwargs):
         """Do layout (cf. Layout)
         
-          title : box header string (default is None - no box)
-           objs : list of Params, wx.Objects, tuple of sizing, or None
-            row : number of row to arange widgets
-           show : fold or unfold the boxed group
-         expand : (0) fixed size
-                  (1) to expand horizontally
-                  (2) to exapnd horizontally and vertically
-         border : size of outline border
-    [hv]spacing : spacing among packed objs inside the group
-          align : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
-            fix : tell sizer to fix the minimum layout
-       **kwargs : extra keyword arguments given for Knob
+        Args:
+            title   : box header string (default is None - no box)
+            objs    : list of Params, wx.Objects, tuple of sizing, or None
+            row     : number of row to arange widgets
+            show    : fold or unfold the boxed group
+            expand  : (0) fixed size
+                      (1) to expand horizontally
+                      (2) to exapnd horizontally and vertically
+            border  : size of outline border
+            hspacing: horizontal spacing among packed objs inside the group
+            vspacing: vertical spacing among packed objs inside the group
+            fix     : tell sizer to fix the minimum layout
+            align   : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
+            **kwargs: extra keyword arguments given for Knob
         """
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
         assert not isinstance(objs, str)
@@ -887,17 +891,15 @@ class Button(pb.PlateButton):
     """Flat button
     
     Args:
-          label : button label
+        label   : button label
         handler : event handler when the button is pressed
-           icon : key:str or bitmap for button icon
-            tip : tip:str displayed on the button
-       **kwargs : keywords for wx.lib.platebtn.PlateButton
-    
-    Attributes:
-           icon : key:str or bitmap
+        icon    : key:str or bitmap for button icon
+        tip     : tip:str displayed on the button
+        **kwargs: keywords for wx.lib.platebtn.PlateButton
     """
     @property
     def icon(self):
+        """key:str or bitmap"""
         return self.__icon
     
     @icon.setter
@@ -932,20 +934,18 @@ class ToggleButton(wx.ToggleButton):
     """Togglable button
     
     Args:
-          label : button label
+        label   : button label
         handler : event handler when the button is pressed
-           icon : key:str or bitmap for button icon
-            tip : tip:str displayed on the button
-       **kwargs : keywords for wx.ToggleButton
-    
-    Attributes:
-           icon : key:str or bitmap
+        icon    : key:str or bitmap for button icon
+        tip     : tip:str displayed on the button
+        **kwargs: keywords for wx.ToggleButton
     
     Note:
         To get the status, check Value or event.GetInt or event.IsChecked.
     """
     @property
     def icon(self):
+        """key:str or bitmap"""
         return self.__icon
     
     @icon.setter
@@ -974,27 +974,25 @@ class TextCtrl(wx.Panel):
     """Text panel
     
     Args:
-          label : button label
+        label   : button label
         handler : event handler when text is entered
         updater : event handler when the button is pressed
-           icon : key:str or bitmap for button icon
-            tip : tip:str displayed on the button
-       readonly : flag:bool for wx.TE_READONLY
-       **kwargs : keywords for wx.TextCtrl
-            e.g., value:str
-    
-    Attributes:
-          Value : textctrl value:str
-           icon : key:str or bitmap
+        icon    : key:str or bitmap for button icon
+        tip     : tip:str displayed on the button
+        readonly: flag:bool for wx.TE_READONLY
+        **kwargs: keywords for wx.TextCtrl
+                  e.g., value:str
     """
     Value = property(
         lambda self: self.ctrl.GetValue(),
-        lambda self,v: self.ctrl.SetValue(v))
+        lambda self,v: self.ctrl.SetValue(v),
+        doc="textctrl value:str")
     
     value = Value # internal use only
     
     @property
     def icon(self):
+        """key:str or bitmap"""
         return self.btn.icon
     
     @icon.setter
@@ -1031,20 +1029,15 @@ class Choice(wx.Panel):
     """Editable Choice (ComboBox) panel
     
     Args:
-          label : button label
+        label   : button label
         handler : event handler when text is entered or item is selected
         updater : event handler when the button is pressed
-           icon : key:str or bitmap for button icon
-            tip : tip:str displayed on the button
-       readonly : flag:bool for wx.TE_READONLY
-      selection : initial selection:int for combobox
-       **kwargs : keywords for wx.TextCtrl
-            e.g., choices:list
-    
-    Attributes:
-      Selection : combobox selection:int
-          Value : combobox value:str
-           icon : key:str or bitmap
+        icon    : key:str or bitmap for button icon
+        tip     : tip:str displayed on the button
+        readonly: flag:bool for wx.TE_READONLY
+        selection: initial selection:int for combobox
+        **kwargs: keywords for wx.TextCtrl
+                  e.g., choices:list
     
     Note:
         If the input item is not found in the choices,
@@ -1052,16 +1045,19 @@ class Choice(wx.Panel):
     """
     Selection = property(
         lambda self: self.ctrl.GetSelection(),
-        lambda self,v: self.ctrl.SetSelection(v))
+        lambda self,v: self.ctrl.SetSelection(v),
+        doc="combobox selection:int")
     
     Value = property(
         lambda self: self.ctrl.GetValue(),
-        lambda self,v: self.ctrl.SetValue(v))
+        lambda self,v: self.ctrl.SetValue(v),
+        doc="combobox value:str")
     
     value = Value # internal use only
     
     @property
     def icon(self):
+        """key:str or bitmap"""
         return self.btn.icon
     
     @icon.setter

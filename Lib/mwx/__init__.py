@@ -31,24 +31,26 @@ import wx
 
 
 def deb(target=None, app=None, locals=None, **kwargs):
-    """Dive into the process
-    
- @@ Divers:
-    This will execute the startup script $(PYTHONSTARTUP).
+    """Dive into the process.
     
     Args:
-         target : Object or module (default None).
+        target  : Object or module (default None).
                   If None, the target is set to `__main__`.
-            app : An instance of wx.App (default None).
+        app     : An instance of wx.App (default None).
                   If None, the app and the mainloop will be created.
                   If specified, the app will enter the mainloop locally.
                   Otherwise, neither the app nor the mainloop will be created.
-         locals : Additional context of the shell
-       **kwargs : Nautilus arguments
-            introText : introductory of the shell
-        startupScript : startup script file (default None)
-    execStartupScript : True => execute the startup script ($PYTHONSTARTUP:~/.py)
-          ensureClose : True => EVT_CLOSE surely close the window
+        locals  : Additional context of the shell
+        
+        **kwargs : Nautilus arguments
+        
+            - introText         : introductory of the shell
+            - startupScript     : startup script file (default None)
+            - execStartupScript : True => execute the startup script
+            - ensureClose       : True => EVT_CLOSE surely close the window
+    
+    Note:
+        This will execute the startup script $(PYTHONSTARTUP).
     """
     quote_unqoute = """
         Anything one man can imagine, other man can make real.
