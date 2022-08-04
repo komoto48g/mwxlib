@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.5"
+__version__ = "0.68.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -141,11 +141,16 @@ def hotkey(evt):
     mod = ""
     for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
                 (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                (wx.WXK_CONTROL, 'C-'),
-                (wx.WXK_ALT,     'M-'),
-                (wx.WXK_SHIFT,   'S-')):
-        if key != k and wx.GetKeyState(k):
+                ## (wx.WXK_CONTROL, 'C-'),
+                ## (wx.WXK_ALT,     'M-'),
+                ## (wx.WXK_SHIFT,   'S-')
+                ):
+        if key != k and wx.GetKeyState(k): # Note: lazy-eval state
             mod += v
+    
+    if evt.controlDown or evt.cmdDown: mod += "C-"
+    if evt.altDown or evt.metaDown: mod += "M-"
+    if evt.shiftDown: mod += "S-"
     
     key = speckeys.get(key) or chr(key).lower()
     evt.key = mod + key
@@ -267,8 +272,7 @@ class KeyCtrlInterfaceMixin(object):
         @wraps(f)
         def _echo(*v, **kw):
             self.message(f.__name__)
-            ## return f(*v, **kw)
-            return wx.CallAfter(wx.CallLater, 5, f, *v, **kw)
+            return f(*v, **kw)
         return _echo
 
 

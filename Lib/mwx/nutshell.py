@@ -646,7 +646,7 @@ class EditorInterface(CtrlInterface):
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
-            self.message("- {}".format(e))
+            self.message("- {!r}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
             self.buffer.codename = filename
@@ -2892,7 +2892,7 @@ class Nautilus(EditorInterface, Shell):
                 if lines:
                     region = self.get_region(self.cline)
                     self.linemark = region[0] + lines[-1] - 1
-                self.message("- {}".format(e))
+                self.message("- {!r}".format(e))
                 ## print(msg, file=sys.__stderr__)
             else:
                 del self.linemark
