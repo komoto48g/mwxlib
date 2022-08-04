@@ -53,16 +53,16 @@ class Thread(object):
     The worker:thread runs the given target:f of owner:object.
     
     Attributes:
-         target : A target method of the Layer
-         result : A variable that retains the last retval of f
-         worker : reference of the worker thread
-          owner : reference of the handler owner (was typ. f.__self__)
+        target  : A target method of the Layer
+        result  : A variable that retains the last retval of f
+        worker  : reference of the worker thread
+        owner   : reference of the handler owner (was typ. f.__self__)
                   if None, the thread_event is handled by its own handler
-         active : flag of being kept going
+        active  : flag of being kept going
                   Check this to see the worker is running and intended being kept going
         running : flag of being running now
                   Watch this to verify the worker is alive after it has been inactivated
-          event : A common event flag to interrupt the process
+        event   : A common event flag to interrupt the process
     
     Note:
         1. event.clear -> clear flag:False so that the thread suspends when wait is called
@@ -70,7 +70,7 @@ class Thread(object):
         3. event.set -> set flag:True to resume the thread
         
         The event.wait blocks until the internal flag is True when it is False
-            and returns immediately when it is True.
+        and returns immediately when it is True.
     """
     @property
     def running(self):
@@ -191,17 +191,17 @@ class LayerInterface(CtrlInterface):
     """Graphman.Layer interface mixin
     
     Attributes:
-        menukey : menu item key:str in parent menubar
-       category : title of notebook holder, otherwise None for single pane
-        caption : flag to set the pane caption to be visible
-                  a string can also be specified (default is __module__)
-       dockable : flag to set the pane to be dockable
-                  type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
-     reloadable : flag to set the Layer to be reloadable
-     unloadable : flag to set the Layer to be unloadable
-         parent : parent <Frame> is not always equal to Parent when floating
-          graph : parent.graph window
-         otuput : parent.output window
+        menukey     : menu item key:str in parent menubar
+        category    : title of notebook holder, otherwise None for single pane
+        caption     : flag to set the pane caption to be visible
+                      a string can also be specified (default is __module__)
+        dockable    : flag to set the pane to be dockable
+                      type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
+        reloadable  : flag to set the Layer to be reloadable
+        unloadable  : flag to set the Layer to be unloadable
+        parent      : parent <Frame> is not always equal to Parent when floating
+        graph       : parent.graph window
+        otuput      : parent.output window
     """
     MENU = "Plugins" # default menu for Plugins
     menukey = property(lambda self: "{}/&{}".format(self.MENU, self.__module__))
@@ -1040,22 +1040,26 @@ class Frame(mwx.Frame):
                   force=False, session=None, **kwargs):
         """Load plugin
         
-        The root module must have a class `Plugin` <mwx.graphman.Layer>
-        
-        root : Layer module, or name of the module
-               Any wx.Window object can be specified (as dummy-plug),
-                 however, do not use this mode in release versions.
-        show : the pane is shown after loaded
-       force : force loading even if it is already loaded
-     session : Conditions for initializing the plug and starting session
-        dock : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
-       layer : dock_layer
-         pos : dock_pos
-         row : dock_row position
-        prop : dock_proportion < 1e6 ?
-   floating_ : pos/size of floating window
+        Args:
+            root    : Layer module, or name of the module.
+                      Any wx.Window object can be specified (as dummy-plug).
+                      However, do not use this mode in release versions.
+            show    : the pane is shown after loaded
+            force   : force loading even if it is already loaded
+            session : Conditions for initializing the plug and starting session
+            dock    : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
+            layer   : dock_layer
+            pos     : dock_pos
+            row     : dock_row position
+            prop    : dock_proportion < 1e6 ?
+            floating_pos : posision of floating window
+            floating_size : size of floating window
         
         retval -> None if succeeded else False
+        
+        Note:
+            The root module must have a class `Plugin` <mwx.graphman.Layer>
+        
         """
         props = dict(show=show,
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,

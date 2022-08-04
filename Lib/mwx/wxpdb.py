@@ -35,22 +35,19 @@ class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
     Args:
-         parent : shellframe
-          stdin : shell.interp.stdin
-         stdout : shell.interp.stdout
+        parent  : shellframe
+        stdin   : shell.interp.stdin
+        stdout  : shell.interp.stdout
     
     Attributes:
-           busy : The flag of being running now
-        verbose : Verbose messages are output from Pdb
-         editor : Editor to show the stack frame
-          shell : Shell for debug
+        editor  : Editor to show the stack frame
     
     Key bindings:
-            C-g : quit
-            C-q : quit
-            C-n : next
-            C-r : return
-            C-s : step
+        C-g     : quit
+        C-q     : quit
+        C-n     : next
+        C-r     : return
+        C-s     : step
     """
     prefix1 = "> "
     prefix2 = "-> "
@@ -80,7 +77,7 @@ class Debugger(Pdb):
     
     @property
     def busy(self):
-        """The current state is debug mode
+        """The current state is debug mode.
         True from entering `set_trace` until the end of `set_quit`
         """
         ## cf. (self.handler.current_state == 1)
@@ -91,7 +88,7 @@ class Debugger(Pdb):
     
     @property
     def tracing(self):
-        """The current state is trace mode
+        """The current state is trace mode.
         """
         ## cf. (self.handler.current_state == 2)
         return self.__hookpoint is not None
@@ -313,14 +310,15 @@ class Debugger(Pdb):
     ## --------------------------------
     
     def break_anywhere(self, frame):
-        """(override) Return False
+        """(override) Return False,
         even if there is any breakpoint for frame's filename.
         """
         return False
     
     def dispatch_line(self, frame):
         """Invoke user function and return trace function for line event.
-        (override) Watch the breakpoint
+        
+        (override) Watch the hookpoint.
         """
         if self.__hookpoint:
             target, line = self.__hookpoint
@@ -338,7 +336,8 @@ class Debugger(Pdb):
     
     def dispatch_call(self, frame, arg):
         """Invoke user function and return trace function for call event.
-        (override) Watch the breakpoint
+        
+        (override) Watch the hookpoint.
         """
         if self.__hookpoint:
             target, line = self.__hookpoint
@@ -354,11 +353,19 @@ class Debugger(Pdb):
         return Pdb.dispatch_call(self, frame, arg)
     
     def dispatch_return(self, frame, arg):
+        """Invoke user function and return trace function for return event.
+        
+        (override) Watch the hookpoint.
+        """
         if self.__hookpoint:
             return None
         return Pdb.dispatch_return(self, frame, arg)
     
     def dispatch_exception(self, frame, arg):
+        """Invoke user function and return trace function for exception event.
+        
+        (override) Watch the hookpoint.
+        """
         if self.__hookpoint:
             return None
         return Pdb.dispatch_exception(self, frame, arg)
@@ -391,8 +398,9 @@ class Debugger(Pdb):
     @echo
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
-        (override) Change prompt_prefix;
-                   Add pointer:marker when step next or jump
+        
+        (override) Change prompt_prefix.
+                   Add pointer:marker when step next or jump.
         """
         frame, lineno = frame_lineno
         self.handler('debug_mark', frame)
@@ -403,8 +411,9 @@ class Debugger(Pdb):
     @echo
     def user_call(self, frame, argument_list):
         """--Call--
-        (override) Show message to record the history
-                   Add indent spaces
+        
+        (override) Show message to record the history.
+                   Add indent spaces.
         """
         if not self.verbose:
             self.message("{}{}".format(self.prefix1, where(frame)), indent=0)
@@ -419,8 +428,9 @@ class Debugger(Pdb):
     @echo
     def user_return(self, frame, return_value):
         """--Return--
-        (override) Show message to record the history
-                   Remove indent spaces
+        
+        (override) Show message to record the history.
+                   Remove indent spaces.
         """
         self.message("$(retval) = {!r}".format(return_value), indent=0)
         Pdb.user_return(self, frame, return_value)
@@ -430,7 +440,8 @@ class Debugger(Pdb):
     @echo
     def user_exception(self, frame, exc_info):
         """--Exception--
-        (override) Update exception:markers
+        
+        (override) Update exception:markers.
         """
         t, v, tb = exc_info
         self.add_marker(tb.tb_lineno, 2)
@@ -440,7 +451,8 @@ class Debugger(Pdb):
     @echo
     def bp_commands(self, frame):
         """--Break--
-        (override) Update breakpoint:markers every time the frame changes
+        
+        (override) Update breakpoint:markers every time the frame changes.
         """
         filename = frame.f_code.co_filename
         breakpoints = self.get_file_breaks(filename)

@@ -17,10 +17,6 @@ except ImportError:
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Locals info watcher
-    
-    Attributes:
-        parent : shellframe
-        target : locals:dict to watch
     """
     parent = property(lambda self: self.__shellframe)
     target = property(lambda self: self.__locals)

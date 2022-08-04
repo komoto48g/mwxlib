@@ -15,7 +15,7 @@ exclude_files
 
 # Resources
 c/
-doc/
+docs/
 etc/
 icon*/
 test*/

@@ -165,7 +165,8 @@ def regulate_key(key):
 class KeyCtrlInterfaceMixin(object):
     """Keymap interface mixin
     
-    keymap : event key name that excluds 'pressed'
+    keymap::
+    
         global-map : 0 (default)
          ctl-x-map : 'C-x'
           spec-map : 'C-c'
@@ -376,29 +377,33 @@ def ID_(id):
 def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     """Do layout
     
-    Usage:
-        self.SetSizer(
+    Examples:
+        >>> self.SetSizer(
             pack(self, (
                 (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
                 ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
-            ))
-        )
-    items : wx objects (with some packing parameters)
-          - (obj, 1) -> sized with ratio 1 (orient と同方向)
-                        他に 0 以外を指定しているオブジェクトとエリアを分け合う
-          - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
-          - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
-          - ((-1,-1), 1, wx.EXPAND) -> stretched space
-          - (-1,-1) -> padding space
-          - None -> phantom
- **kwargs : 
-   orient : HORIZONTAL or VERTICAL
-    style : (proportion, flag, border)
-            flag-expansion -> EXPAND, SHAPED
-            flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
-            flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
-                          ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
-    label : label of StaticBox
+                ))
+            )
+    
+    Args:
+        items   : wx objects (with some packing parameters)
+        
+                - (obj, 1) -> sized with ratio 1 (orient と同方向)
+                  他に 0 以外を指定しているオブジェクトとエリアを分け合う
+                - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
+                - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
+                - ((-1,-1), 1, wx.EXPAND) -> stretched space
+                - (-1,-1) -> padding space
+                - None -> phantom
+        
+        orient  : HORIZONTAL or VERTICAL
+        label   : StaticBox label
+        style   : Sizer option (proportion, flag, border)
+        
+                - flag-expansion -> EXPAND, SHAPED
+                - flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
+                - flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
+                                ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     """
     if style is None:
         style = (0, wx.EXPAND | wx.ALL, 0)
@@ -431,14 +436,17 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
 class Menu(wx.Menu):
     """Construct menu
     
-    item: (id, text, hint, style, icon,  ... Menu.Append arguments
-             action, updater, highlight) ... Menu Event handlers
-        
-        style -> menu style (ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO)
-         icon -> menu icon (bitmap)
-       action -> EVT_MENU handler
-      updater -> EVT_UPDATE_UI handler
-    highlight -> EVT_MENU_HIGHLIGHT handler
+    Args:
+        values : list of MenuItem args
+    
+    (id, text, hint, style, icon,  ... Menu.Append arguments
+       action, updater, highlight) ... Menu Event handlers
+    
+        - style -> menu style (ITEM_NORMAL, ITEM_CHECK, ITEM_RADIO)
+        - icon -> menu icon (bitmap)
+        - action -> EVT_MENU handler
+        - updater -> EVT_UPDATE_UI handler
+        - highlight -> EVT_MENU_HIGHLIGHT handler
     """
     def __init__(self, owner, values):
         wx.Menu.__init__(self)
@@ -485,14 +493,14 @@ class MenuBar(wx.MenuBar, TreeList):
     """Construct menubar as is ordered menu:list
     リストの順番どおりに GUI 上にマップしたメニューバーを構築する
     
-    root:TreeList is a nested list (as directory structrue)
-    ├ [key, [item,
-    │        item,...]],
-    ：
-    ├ [key, [item,
-    │        item,
-    │        submenu => [key, [item,
-    ：        ...               item,...]],
+    >>> root
+        ├ [key, [item,
+        │        item,...]],
+        │
+        ├ [key, [item,
+        │        item,
+        │        submenu => [key, [item,
+        ：        ...               item,...]],
     """
     def __init__(self, *args, **kwargs):
         wx.MenuBar.__init__(self, *args, **kwargs)
@@ -554,8 +562,8 @@ class StatusBar(wx.StatusBar):
     """Construct statusbar with read/write
     
     Attributes:
-          field : list of field widths
-           pane : index of status text field
+        field   : list of field widths
+        pane    : index of status text field
     """
     lock = None
     
@@ -586,9 +594,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """Frame base class
     
     Attributes:
-        menubar : MenuBar
-      statusbar : StatusBar
-     shellframe : mini-frame of the shell
+        menubar     : MenuBar
+        statusbar   : StatusBar
+        shellframe  : mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
     message = property(lambda self: self.statusbar)
@@ -673,8 +681,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """MiniFrame base class
     
     Attributes:
-        menubar : MenuBar (not created by default)
-      statusbar : StatusBar (not shown by default)
+        menubar     : MenuBar (not created by default)
+        statusbar   : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
     message = property(lambda self: self.statusbar)
@@ -784,20 +792,20 @@ class ShellFrame(MiniFrame):
     """MiniFrame of shell for inspection, debug, and break target
     
     Args:
-         target : target object of the rootshell
-                  If None, it will be __main__.
+         target : target object of the rootshell.
+                  If None, it will be `__main__`.
     
     Attributes:
-      rootshell : the root shell
-        watcher : Notebook of global/locals info watcher
-        console : Notebook of shells
-          ghost : Notebook of editors and inspectors
-        Scratch : buffer for scratch (tooltip)
-           Help : buffer for help
-            Log : buffer for logging
-        History : shell history (read-only)
-        monitor : wxmon.EventMonitor object
-      inspector : wxwit.Inspector object
+        rootshell   : the root shell
+        watcher     : Notebook of global/locals info watcher
+        console     : Notebook of shells
+        ghost       : Notebook of editors and inspectors
+        Scratch     : buffer for scratch (tooltip)
+        Help        : buffer for help
+        Log         : buffer for logging
+        History     : buffer for shell history
+        monitor     : wxmon.EventMonitor object
+        inspector   : wxwit.Inspector object
     """
     rootshell = property(lambda self: self.__shell)
     
@@ -1193,10 +1201,12 @@ class ShellFrame(MiniFrame):
     
     def load(self, obj, show=True, focus=False):
         """Load file @where the object is defined.
-            obj : target object
-           show : Popup editor window when success.
-                  The pane window will not be hidden even if no show.
-          focus : Set the focus if the window is displayed.
+        
+        Args:
+            obj     : target object.
+            show    : Popup editor window when success.
+                      The pane window will not be hidden even if no show.
+            focus   : Set the focus if the window is displayed.
         """
         if not isinstance(obj, str):
             obj = where(obj)
@@ -1561,8 +1571,9 @@ def watchit(widget=None, **kwargs):
     """Diver's watch to go deep into the wx process to inspect the widget
     Wx.py tool for watching tree structure and events across the wx.Objects
     
-  **kwargs : InspectionTool arguments
-    pos, size, conifg, locals, and app
+    Args:
+        **kwargs: InspectionTool arguments such as
+                  pos, size, conifg, locals, and app
     """
     from wx.lib.inspection import InspectionTool
     if widget:

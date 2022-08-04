@@ -46,13 +46,13 @@ class MatplotPanel(wx.Panel):
     """MPL panel for general graph
     
     Attributes:
-           axes : <matplotlib.axes.Axes>
-         figure : <matplotlib.figure.Figure>
-         cursor : <matplotlib.widgets.Cursor>
-         canvas : WxAgg.FigureCanvas
-        toolbar : WxAgg.NavigationToolbar2
-       selected : selected points <matplotlib.lines.Line2D>
-       Selector : selected points arrays (xx, yy)
+        axes        : <matplotlib.axes.Axes>
+        figure      : <matplotlib.figure.Figure>
+        cursor      : <matplotlib.widgets.Cursor>
+        canvas      : WxAgg.FigureCanvas
+        toolbar     : WxAgg.NavigationToolbar2
+        selected    : selected points <matplotlib.lines.Line2D>
+        Selector    : selected points arrays (xx, yy)
     """
     handler = property(lambda self: self.__handler)
     

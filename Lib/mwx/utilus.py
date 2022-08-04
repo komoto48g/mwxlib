@@ -175,10 +175,13 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
 def typename(obj, docp=False, qualp=False):
     """Typename of the obj object
     
-    retval -> module:obj<doc>       when obj is callable and qualp=False
-              module:class<doc>     when obj is a class or an instance object3
-              module:class.obj<doc> when obj is an atom or callable and qualp=True
-              type<obj>             otherwise
+    Returns:
+        str: One of the following formatted object names:
+        
+        - module:obj<doc>       when obj is callable and qualp=False.
+        - module:class<doc>     when obj is a class or an instance object.
+        - module:class.obj<doc> when obj is an atom or callable and qualp=True.
+        - type<obj>             otherwise.
     """
     _mods = (None, "__main__",
                    "mwx.utilus",
@@ -456,19 +459,16 @@ class SSM(OrderedDict):
 class FSM(dict):
     """Finite State Machine
     
-    DNA: map of context
-        { state : initial state
-            { event : event key <str>
-                transaction (next_state, *actions ...) }
-        }
-        state: None is a wildcard (as executed any time)
-        event is a string that can include wildcards `*?[]` (fnmatch rule)
-        actions must accept the same *args of function as __call__(*args)
+    Args:
+        contexts: map of context <DNA>
+            {state: {event: transaction (next_state, actions ...)}}
+            
+            - The state `None` is a wildcard (as executed any time).
+            - An event (str) can include wildcards ``*?[]`` (fnmatch rule).
+            - Actions must accept the same args as __call__.
     
     If no action, FSM carries out only a transition.
     The transition is always done before actions.
-    
-    Note: There is no enter/exit event handler.
     
     Attributes:
         debug : verbose level
@@ -483,7 +483,10 @@ class FSM(dict):
             default=None is given as an argument of the init.
             If there is only one state, that state will be the default.
         current_state : referred as the current state
-       previous_state : (read-only, internal use only)
+        previous_state : (read-only, internal use only)
+    
+    Note:
+        There is no enter/exit event handler.
     """
     debug = 0
     default_state = None
@@ -567,11 +570,13 @@ class FSM(dict):
             return retvals
     
     def call(self, event, *args, **kwargs):
-        """Invoke the event handlers
-        Process:
-            1. transit the state
-            2. try actions after transition
-        retval -> list or None
+        """Invoke the event handlers.
+        
+        1. transit the state
+        2. try actions after transition
+        
+        Returns:
+            list or None
         """
         context = self[self.__state]
         if event in context:
@@ -654,7 +659,7 @@ class FSM(dict):
         return {event:transaction[:] for event, transaction in context.items()}
     
     def validate(self, state):
-        """Sort and move to end items with key which includes `*?[]`"""
+        """Sort and move to end items with key which includes ``*?[]``"""
         context = self[state]
         ast = []
         bra = []
@@ -707,7 +712,8 @@ class FSM(dict):
                         self[k].pop(event) # remove null event:transaction
     
     def bind(self, event, action=None, state=None, state2=None):
-        """Append a transaction to the context
+        """Append a transaction to the context.
+        
         equiv. self[state] += {event : [state2, action]}
         
         The transaction is exepcted to be a list (not a tuple).
@@ -752,8 +758,9 @@ class FSM(dict):
         return action
     
     def unbind(self, event, action=None, state=None):
-        """Remove a transaction from the context
-        equiv. self[state] -= {event : [*, action]}
+        """Remove a transaction from the context.
+        
+        equiv. self[state] -= {event : [?, action]}
         
         The transaction is exepcted to be a list (not a tuple).
         If no action, it will remove the transaction from the context.
@@ -856,10 +863,18 @@ class TreeList(object):
 def funcall(f, *args, doc=None, alias=None, **kwargs):
     """Decorator of event handler
     
-    Check if the event argument can be omitted,
-    and required arguments are given by kwargs.
+    Check if the event argument can be omitted
+    and required arguments are given by args and kwargs.
     
-    retval -> (lambda *v: f`alias<doc>`(*args, **kwargs))
+    Returns:
+        lambda: Decorated function f as `alias<doc>`
+        
+            - Act1 := lambda *v,**kw: f(*(v+args), **(kwargs|kw)))
+            - Act2 := lambda *v,**kw: f(*args, **(kwargs|kw)))
+        
+        Act1 that accepts event arguments if there are any 
+        remaining arguments that must be explicitly specified in f.
+        Otherwise, Act2 that ignores event arguments.
     """
     assert callable(f)
     assert isinstance(doc, (str, type(None)))

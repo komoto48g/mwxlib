@@ -25,6 +25,7 @@ setup(
         'mwx',
     ],
     
+    ## install_requires = open("requirements.txt").read().splitlines(),
     install_requires = [
         'wxpython',
         'numpy',
@@ -33,29 +34,27 @@ setup(
         'matplotlib',
         'opencv-python',
     ],
-    ## install_requires = open("requirements.txt").read().splitlines(),
     
     ## This is necessary for egg distribution to include *.txt files
-    package_data={
+    package_data = {
         "mwx": [
             # no *.txt files to be included
         ],
     },
     include_package_data = True,
     
+    ## License and classifiers for PyPi distribution
     license = 'MIT',
     
-    classifiers=[
+    classifiers = [
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering :: Image Processing',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    ## entry_points = {
-    ##     'console_scripts': ['mwxlib = mwx.framework:deb']
-    ## },
 )

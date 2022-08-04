@@ -60,7 +60,8 @@ def ask(f, prompt="Enter value", type=str):
 class EditorInterface(CtrlInterface):
     """Python code editor interface with Keymap
     
-    Note: This class should be mixed-in `wx.stc.StyledTextCtrl`
+    Note:
+        This class should be mixed-in `wx.stc.StyledTextCtrl`
     """
     def __init__(self):
         CtrlInterface.__init__(self)
@@ -102,9 +103,9 @@ class EditorInterface(CtrlInterface):
                   'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
-                'C-S-l pressed' : (0, _F(self.recenter)),   # override delete-line
-                  'C-t pressed' : (0, ),                    # override transpose-line
-                'C-S-f pressed' : (0, _F(self.set_marker)), # override mark
+                'C-S-l pressed' : (0, _F(self.recenter)),   # overrides delete-line
+                  'C-t pressed' : (0, ),                    # overrides transpose-line
+                'C-S-f pressed' : (0, _F(self.set_marker)), # overrides mark
               'C-space pressed' : (0, _F(self.set_marker)),
             'C-S-space pressed' : (0, _F(self.set_line_marker)),
           'C-backspace pressed' : (0, skip),
@@ -880,6 +881,7 @@ class EditorInterface(CtrlInterface):
     
     def wrap(self, mode=1):
         """Sets whether text is word wrapped.
+        
         (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
                             3:whitespace-wrap, None:toggle}
         """
@@ -1327,11 +1329,10 @@ class Buffer:
     """Data class of buffer
     
     Attributes:
-       filename : buffer-file-name
-         lineno : marked lineno (>=1)
-       codename : code-file-name (e.g. '<scratch>')
-           code : code object compiled using py_exec_region
-        mtdelta : timestamp delta (for checking external mod)
+        filename: buffer-file-name
+        lineno  : marked lineno (>=1)
+        codename: code-file-name (e.g. '<scratch>')
+        code    : code object compiled using py_exec_region
     """
     def __init__(self, data=None):
         (self.filename, self.lineno,
@@ -1374,6 +1375,7 @@ class Buffer:
     
     @property
     def mtdelta(self):
+        """timestamp delta (for checking external mod)"""
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
@@ -1383,11 +1385,8 @@ class Editor(EditorInterface, EditWindow):
     """Python code editor
 
     Attributes:
-           Name : buffer-name (e.g. '*scratch*') => wx.Window.Name
-         target : codename or filename (referred by debugger)
-         buffer : current buffer
-    buffer_list : list of all buffer data
-   buffer_index : index of the currently loaded data
+        Name    : buffer-name (e.g. '*scratch*') => wx.Window.Name
+        buffer  : current buffer
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1420,6 +1419,7 @@ class Editor(EditorInterface, EditWindow):
     
     @property
     def target(self):
+        """codename or filename (referred by debugger)"""
         return self.buffer.codename or self.buffer.filename
     
     def __init__(self, parent, name="editor", **kwargs):
@@ -1522,10 +1522,12 @@ class Editor(EditorInterface, EditWindow):
     
     @property
     def buffer_list(self):
+        """list of all buffer data"""
         return self.__buffers or [self.buffer]
     
     @property
     def buffer_index(self):
+        """index of the currently loaded data"""
         return next((j for j, x in enumerate(self.__buffers)
                         if x.filename == self.buffer.filename), -1)
     
@@ -1639,6 +1641,7 @@ class Editor(EditorInterface, EditWindow):
     
     def LoadFile(self, filename):
         """Load the contents of file into the editor.
+        
         (override) Use default file-io-encoding and original eol-code.
         """
         try:
@@ -1653,6 +1656,7 @@ class Editor(EditorInterface, EditWindow):
     
     def SaveFile(self, filename):
         """Write the contents of the editor to file.
+        
         (override) Use default file-io-encoding and original eol-code.
         """
         try:
@@ -1702,6 +1706,7 @@ class Interpreter(interpreter.Interpreter):
     
     def runcode(self, code):
         """Execute a code object.
+        
         (override) Add globals referenced by the debugger in the parent:shell.
         """
         try:
@@ -1713,6 +1718,7 @@ class Interpreter(interpreter.Interpreter):
     
     def showtraceback(self):
         """Display the exception that just occurred.
+        
         (override) Pass the traceback info to the parent:shell.
         """
         interpreter.Interpreter.showtraceback(self)
@@ -1724,6 +1730,7 @@ class Interpreter(interpreter.Interpreter):
     
     def showsyntaxerror(self, filename=None):
         """Display the syntax error that just occurred.
+        
         (override) Pass the syntax error info to the parent:shell.
         """
         interpreter.Interpreter.showsyntaxerror(self, filename)
@@ -1733,6 +1740,7 @@ class Interpreter(interpreter.Interpreter):
     
     def getCallTip(self, *args, **kwargs):
         """Return call tip text for a command.
+        
         (override) Ignore DeprecationWarning: for function,
                    `formatargspec` is deprecated since Python 3.5.
         """
@@ -1745,76 +1753,86 @@ class Nautilus(EditorInterface, Shell):
     """Nautilus in the Shell with Editor interface
     
     Features:
+        
         All objects in the process can be accessed using
-           self : the target of the shell
-           this : the module which includes target
-    
-    Magic syntax:
-      quoteback : x`y --> y=x  | x`y`z --> z=y=x
-       pullback : x@y --> y(x) | x@y@z --> z(y(x))
-        apropos : x.y? [not] p --> shows apropos (not-)matched by predicates p
-                   equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
-                   y can contain regular expressions.
-                       (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
-                   p can be atom, callable, type (e.g., int, str, ...),
-                       and any predicates such as inspect.isclass.
-    
-    *      info :  ?x --> info(x) shows short information
-    *      help : ??x --> help(x) shows full description
-    *    system :  !x --> sx(x) executes command in external shell
-    
-    *  denotes original syntax defined in wx.py.shell,
-       for which, at present version, enabled with USE_MAGIC switch being on
-    
-    Shell built-in utility:
-        @p          synonym of print
-        @pp         synonym of pprint
-        @info       short info
-        @help       full description
-        @dive       clone the shell with new target
-        @timeit     measure the duration cpu time
-        @profile    profile the func(*args, **kwargs)
-        @filling    inspection using wx.lib.filling.Filling
-        @watch      inspection using wx.lib.inspection.InspectionTool
-        @edit       open file with your editor (undefined)
-        @load       load file in the buffer
-        @where      filename and lineno or module
-        @debug      open pdb or show event-watcher and widget-tree
-    
-    Autocomp key bindings:
-           C-up : [0] retrieve previous history
-         C-down : [0] retrieve next history
-       M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
-       M-h, C-h : [0] call tooltip of help (for the func selected or focused)
-            TAB : [1] history-comp-mode
-            M-p : [1] retrieve previous history in comp-mode
-            M-n : [1] retrieve next history in comp-mode
-            M-. : [2] word-comp-mode
-            M-/ : [3] apropos-comp-mode
-            M-, : [4] text-comp-mode
-            M-m : [5] module-comp-mode
-    
-    * Autocomps are incremental when pressed any alnums,
-                and decremental when backspace.
-    
-    Enter key bindings:
-        C-enter : insert-line-break
-        M-enter : duplicate-command
-    
-    This module is based on wx.py.shell.
+        
+        - self : the target of the shell
+        - this : the module which includes target
+        
+        This module is based on wx.py.shell.
         Some of the original key bindings are overridden.
         To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
+        
         The original key bindings are mapped in esc-map,
         e.g., if you want to do 'select-all', type [ESC C-a], not [C-a]
+        
+    Magic syntax::
+        
+        - quoteback : x`y --> y=x  | x`y`z --> z=y=x
+        - pullback  : x@y --> y(x) | x@y@z --> z(y(x))
+        - apropos   : x.y? [not] p --> shows apropos (not-)matched by predicates p
+                      equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
+                      y can contain regular expressions.
+                      (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
+                      p can be atom, callable, type (e.g., int, str, ...),
+                      and any predicates such as inspect.isclass.
+        
+        * info      :  ?x --> info(x) shows short information
+        * help      : ??x --> help(x) shows full description
+        * sx        :  !x --> sx(x) executes command in external shell
+        
+        ``*`` denotes the original syntax defined in wx.py.shell,
+        for which, at present version, enabled with USE_MAGIC switch being on
     
-    The most convenient way to see the details of keymaps on the shell:
+    Shell built-in utility::
+    
+        @p          : synonym of print
+        @pp         : synonym of pprint
+        @info       : short info
+        @help       : full description
+        @dive       : clone the shell with new target
+        @timeit     : measure the duration cpu time
+        @profile    : profile the ``func(*args, **kwargs)``
+        @filling    : inspection using wx.lib.filling.Filling
+        @watch      : inspection using wx.lib.inspection.InspectionTool
+        @edit       : open file with your editor (undefined)
+        @load       : load file in the buffer
+        @where      : filename and lineno or module
+        @debug      : open pdb or show event-watcher and widget-tree
+    
+    Autocomp-key bindings::
+    
+               C-up : [0] retrieve previous history
+             C-down : [0] retrieve next history
+           M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
+           M-h, C-h : [0] call tooltip of help (for the func selected or focused)
+                TAB : [1] history-comp-mode
+                M-p : [1] retrieve previous history in comp-mode
+                M-n : [1] retrieve next history in comp-mode
+                M-. : [2] word-comp-mode
+                M-/ : [3] apropos-comp-mode
+                M-, : [4] text-comp-mode
+                M-m : [5] module-comp-mode
+        
+        Autocomps are incremental when pressed any alnums,
+                and decremental when backspace.
+    
+    Enter-key bindings::
+    
+            C-enter : insert-line-break
+            M-enter : duplicate-command
+    
+    The most convenient way to see the details of keymaps on the shell is as follows::
+    
         >>> self.shell.handler @p
-         or self.shell.handler @filling
+        ... (or) ...
+        >>> self.shell.handler @filling
     
     A flaky nutshell:
+    
         With great oven by Robin Dunn,
         Half-baked by Patrik K. O'Brien,
-        and the other half by K. O'moto.
+        and this other half by K. O'moto.
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#202020,size:9,face:MS Gothic",
@@ -2206,7 +2224,7 @@ class Nautilus(EditorInterface, Shell):
         evt.Skip()
     
     def OnBackspace(self, evt):
-        """Called when backspace (or *left) pressed
+        """Called when backspace (or left key) pressed
         Backspace-guard from Autocomp eating over a prompt whitespace
         """
         if self.cpos == self.bolc:
@@ -2328,6 +2346,7 @@ class Nautilus(EditorInterface, Shell):
     @classmethod
     def magic(self, cmd):
         """Called before command pushed
+        
         (override) disable old magic: `f x --> f(x)`
         """
         if cmd:
@@ -2339,13 +2358,15 @@ class Nautilus(EditorInterface, Shell):
     @classmethod
     def magic_interpret(self, tokens):
         """Called when [Enter] command, or eval-time for tooltip
-        Interpret magic syntax
-           quoteback : x`y --> y=x
-            pullback : x@y --> y(x)
-             partial : x@(y1,...,yn) --> partial(y1,...,yn)(x)
-             apropos : x.y?p --> apropos(x,y,...,p)
         
-        Note: This is called before run, execute, and original magic.
+        Interpret magic syntax
+            quoteback : x`y --> y=x
+            pullback  : x@y --> y(x)
+            partial   : x@(y1,...,yn) --> partial(y1,...,yn)(x)
+            apropos   : x.y?p --> apropos(x,y,...,p)
+        
+        Note:
+            This is called before run, execute, and original magic.
         """
         sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] ops, seps (no space, no comma)
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] ops, seps
@@ -2546,8 +2567,7 @@ class Nautilus(EditorInterface, Shell):
         return ''
     
     def get_region(self, line):
-        """Line numbers of prompt head and tail containing the line.
-        (override)"""
+        """Line numbers of prompt head and tail containing the line."""
         lc = line
         le = lc + 1
         while lc >= 0:
@@ -2570,6 +2590,7 @@ class Nautilus(EditorInterface, Shell):
     
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
+        
         (override) Mark points before push.
         """
         try:
@@ -2579,8 +2600,9 @@ class Nautilus(EditorInterface, Shell):
         Shell.push(self, command, **kwargs)
     
     def addHistory(self, command):
-        """Add command to the command history
-        (override) if the command is new (i.e., not found in the head of the list).
+        """Add command to the command history.
+        
+        (override) If the command is new (i.e., not found in the head of the list).
                    Then, write the command to History buffer.
         """
         if not command:
@@ -2608,6 +2630,7 @@ class Nautilus(EditorInterface, Shell):
     
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
+        
         (override) Add globals when executing su:startupScript
                    Fix history point
         """
@@ -2624,6 +2647,7 @@ class Nautilus(EditorInterface, Shell):
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
+        
         (override) Remove ps1 and ps2 from the multi-line command to paste.
                    Add offset in paste-rectangle mode.
                    Don't relplace the last crlf to ps.
@@ -2665,6 +2689,7 @@ class Nautilus(EditorInterface, Shell):
     
     def write(self, text, pos=None):
         """Display text in the shell
+        
         (override) Append text if it is writable at the position.
         """
         if pos is not None:
@@ -2753,6 +2778,7 @@ class Nautilus(EditorInterface, Shell):
     
     def Execute(self, text):
         """Replace selection with text and run commands.
+        
         (override) Check the clock time,
                    Patch `finally` miss-indentation
         """
@@ -2779,6 +2805,7 @@ class Nautilus(EditorInterface, Shell):
     
     def run(self, command, prompt=True, verbose=True):
         """Execute command as if it was typed in directly.
+        
         (override) Check the clock time.
         """
         self.__time = self.clock()
@@ -2812,6 +2839,7 @@ class Nautilus(EditorInterface, Shell):
     
     def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
         """Display argument spec and docstring in a popup window.
+        
         (override) Swap anchors to not scroll to the end of the line,
                    and display a long hint at the insertion position.
         """
@@ -2825,6 +2853,7 @@ class Nautilus(EditorInterface, Shell):
     
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
+        
         (override) Snip the tip of max N lines if it is too long.
                    Keep the tip for calltip-click event.
         """
