@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.6"
+__version__ = "0.68.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1006,7 +1006,7 @@ class ShellFrame(MiniFrame):
         self.trace(self.Log) # enable trace mode
         
         self.Help.show_folder()
-        self.Help.ReadOnly = False
+        self.Help.ReadOnly = True
         
         self.History.show_folder()
         self.History.ReadOnly = True
@@ -1015,16 +1015,17 @@ class ShellFrame(MiniFrame):
     
     SESSION_FILE = ut.get_rootpath("debrc")
     SCRATCH_FILE = ut.get_rootpath("deb-scratch.py")
-    ## LOGGING_FILE = ut.get_rootpath("deb-logging.log")
+    LOGGING_FILE = ut.get_rootpath("deb-logging.log")
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
     def load_session(self):
         """Load session from file"""
         try:
+            if not self.Scratch.buffer.filename:
+                self.Scratch.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
+                self.Scratch.push_current()
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
-            if not self.Scratch.buffer.filename:
-                self.Scratch.LoadFile(self.SCRATCH_FILE)
             return True
         except FileNotFoundError:
             pass
@@ -1047,14 +1048,14 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                def save_history(name):
-                    editor = getattr(self, name)
-                    for buffer in editor.buffer_list:
-                        if buffer.filename:
-                            o.write("self.{}.load_file({!r}, {})\n".format(
-                                    name, buffer.filename, buffer.lineno))
-                save_history("Log")
-                save_history("Scratch")
+                for buffer in self.Log.buffer_list:
+                    if buffer.filename:
+                        o.write("self.Log.load_file({!r}, {})\n".format(
+                                buffer.filename, buffer.lineno))
+                for buffer in self.Scratch.buffer_list:
+                    if buffer.filename:
+                        o.write("self.Scratch.load_file({!r}, {})\n".format(
+                                buffer.filename, buffer.lineno))
             if not self.Scratch.buffer.filename:
                 self.Scratch.SaveFile(self.SCRATCH_FILE)
             return True
