@@ -1334,10 +1334,12 @@ class Buffer:
         lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
+        text        : string buffer
     """
     def __init__(self, data=None):
         (self.filename, self.lineno,
          self.codename, self.code) = data or (None, 0, None, None)
+        self.text = ''
     
     def __eq__(self, buf):
         return (type(self) is type(buf)
@@ -1346,14 +1348,11 @@ class Buffer:
             and self.code is buf.code)
     
     def __contains__(self, v):
-        if isinstance(v, str):
-            if v.startswith('<'):
-                return v == self.codename
-            else:
-                return v == self.filename
-        elif inspect.iscode(v) and self.code:
+        if inspect.iscode(v) and self.code:
             return v is self.code\
                 or v in self.code.co_consts
+        else:
+            return v in (self.filename, self.codename)
     
     @property
     def name(self):
@@ -1386,8 +1385,8 @@ class Editor(EditorInterface, EditWindow):
     """Python code editor
 
     Attributes:
-        Name    : buffer-name (e.g. '*scratch*') => wx.Window.Name
-        buffer  : current buffer
+        Name        : buffer-name (e.g. '*scratch*') => wx.Window.Name
+        buffer      : current buffer
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1431,7 +1430,7 @@ class Editor(EditorInterface, EditWindow):
                                 # Parent:<AuiNotebook>
         self.Name = name
         self.buffer = Buffer()
-        self.__buffers = []
+        self.__buffers = [self.buffer] # Emulates multi-page editor
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1467,8 +1466,8 @@ class Editor(EditorInterface, EditWindow):
            'py_region_executed' : [ None, self.on_activated ],
             },
         })
-        self.define_key('C-x k', self.clear_all)
-        self.define_key('C-x C-k', self.pop_current)
+        self.define_key('C-x k', self.clear_buffer, alias="kill-all-buffer")
+        self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
         
         self.set_style(self.STYLE)
     
@@ -1508,81 +1507,73 @@ class Editor(EditorInterface, EditWindow):
     @property
     def menu(self):
         """Yields context menu"""
-        def _restore_buffer(f):
+        def _load_buffer(f):
             if f != self.buffer.filename and self.confirm_load():
+                self.push_current() # save cache
                 self.restore_buffer(f)
                 self.SetFocus()
         
         def _menu(j, data):
             f, ln = data.filename, data.lineno
             return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
-                lambda v: _restore_buffer(f),
+                lambda v: _load_buffer(f),
                 lambda v: v.Check(f == self.buffer.filename))
         
-        return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
+        if len(self.buffer_list) > 1:
+            return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
     
     @property
     def buffer_list(self):
-        """list of all buffer data"""
-        return self.__buffers or [self.buffer]
+        """List of all buffers."""
+        return self.__buffers
     
     @property
     def buffer_index(self):
-        """index of the currently loaded data"""
-        return next((j for j, x in enumerate(self.__buffers)
-                        if x.filename == self.buffer.filename), -1)
+        """Index of the currently loaded data."""
+        return self.buffer_list.index(self.buffer) # cf. __eq__
     
     def push_current(self):
-        if self.buffer.filename:
-            self.buffer.lineno = self.markline + 1
-            j = self.buffer_index
-            if j != -1:
-                self.__buffers[j] = self.buffer
-            else:
-                self.__buffers.append(self.buffer)
+        self.buffer.lineno = self.markline + 1
+        self.buffer.text = self.Text
+        if self.buffer not in self.buffer_list:  # cf. __eq__
+            self.buffer_list.append(self.buffer)
     
     def pop_current(self):
-        if self.buffer.filename:
-            j = self.buffer_index
-            del self.__buffers[j]
-            self.clear() # not to push-current the previous buffer
-            if self.__buffers:
-                if j > len(self.__buffers) - 1:
-                    j -= 1
-                self.buffer = self.__buffers[j]
-                self.load_file(self.buffer.filename, self.buffer.lineno)
+        j = self.buffer_list.index(self.buffer)  # cf. __eq__
+        del self.buffer_list[j]
+        if self.buffer_list:
+            if j > len(self.buffer_list) - 1:
+                j -= 1
+            self.restore_buffer(self.buffer_list[j])
         else:
-            self.clear()
-    
-    def clear(self):
-        with self.off_readonly():
-            self.ClearAll() # clear cache
-        self.EmptyUndoBuffer()
-        self.SetSavePoint()
-        self.buffer = Buffer()
+            self.clear_buffer()
         self.handler('buffer_unloaded', self)
     
-    def clear_all(self):
-        del self.__buffers[:]
-        self.clear()
+    def _setText(self, text):
+        with self.off_readonly():
+            self.Text = text
+        self.EmptyUndoBuffer()
+        self.SetSavePoint()
+    
+    def clear_buffer(self):
+        self._setText('')
+        self.buffer = Buffer()
+        self.buffer_list[:] = [self.buffer]
     
     def restore_buffer(self, f):
         """Restore buffer with specified f:filename or code.
         
         Note: STC data such as `UndoBuffer` is not restored.
         """
-        if f is self.buffer:
-            return None
-        for buffer in self.__buffers:
+        for buffer in self.buffer_list:
             if f in buffer or f is buffer:
-                self.push_current() # save cache
                 self.buffer = buffer
-                if self.LoadFile(buffer.filename):
-                    self.markline = buffer.lineno - 1
-                    self.goto_marker()
-                    self.handler('buffer_loaded', self)
-                    return True
-                return False
+                self._setText(buffer.text)
+                self.markline = buffer.lineno - 1
+                self.goto_marker()
+                self.handler('buffer_loaded', self)
+                return True
+        return False
     
     def load_cache(self, f, lineno=0, globals=None):
         """Load cached script file using linecache.
@@ -1593,14 +1584,11 @@ class Editor(EditorInterface, EditWindow):
         lines = linecache.getlines(f, globals)
         if lines:
             self.push_current() # save cache
-            with self.off_readonly():
-                self.Text = ''.join(lines)
-            self.EmptyUndoBuffer()
-            self.SetSavePoint()
+            self._setText(''.join(lines))
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = Buffer((f, lineno, None, None))
-            self.push_current() # save current
+            self.push_current()
             self.handler('buffer_loaded', self)
             return True
         return False
@@ -1618,7 +1606,7 @@ class Editor(EditorInterface, EditWindow):
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = Buffer((f, lineno, None, None))
-            self.push_current() # save current
+            self.push_current()
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
             return True
@@ -1634,7 +1622,7 @@ class Editor(EditorInterface, EditWindow):
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.buffer.filename = f
-            self.push_current() # save current
+            self.push_current()
             self.handler('buffer_saved', self)
             ## self.message("Saved {!r} successfully.".format(filename))
             return True
