@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.68.7"
+__version__ = "0.68.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -832,7 +832,7 @@ class ShellFrame(MiniFrame):
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
             **kwargs)
         
-        self.Scratch = Editor(self, name="*scratch*")
+        self.Scratch = Editor(self, name="Scratch")
         self.Log = Editor(self, name="Log")
         self.Help = Editor(self, name="Help")
         self.History = Editor(self, name="History")
@@ -886,7 +886,7 @@ class ShellFrame(MiniFrame):
         self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClosing)
         
         self.ghost = AuiNotebook(self, size=(600,400))
-        self.ghost.AddPage(self.Scratch, "*scratch*")
+        self.ghost.AddPage(self.Scratch, "Scratch")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
@@ -1021,7 +1021,7 @@ class ShellFrame(MiniFrame):
     def load_session(self):
         """Load session from file"""
         try:
-            if not self.Scratch.buffer.filename:
+            if self.Scratch.buffer.mtdelta is None:
                 self.Scratch.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
                 self.Scratch.push_current()
             with open(self.SESSION_FILE) as i:
@@ -1048,16 +1048,22 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
+                self.Log.push_current()
                 for buffer in self.Log.buffer_list:
-                    if buffer.filename:
+                    if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
+                self.Scratch.push_current()
                 for buffer in self.Scratch.buffer_list:
-                    if buffer.filename:
+                    if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-            if not self.Scratch.buffer.filename:
-                self.Scratch.SaveFile(self.SCRATCH_FILE)
+                    else:
+                        f = open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='')
+                        f.write(buffer.text)
+            
+            ## if self.Scratch.buffer.mtdelta is None:
+            ##     self.Scratch.SaveFile(self.SCRATCH_FILE)
             return True
         except Exception:
             traceback.print_exc()
