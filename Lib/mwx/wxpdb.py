@@ -60,11 +60,6 @@ class Debugger(Pdb):
     handler = property(lambda self: self.__handler)
     
     @property
-    def target(self):
-        if self.editor:
-            return self.editor.target
-    
-    @property
     def interactive_shell(self):
         return self.__shell
     

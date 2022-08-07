@@ -391,7 +391,7 @@ class EditorInterface(CtrlInterface):
             self.recenter()
             self.mark = p
         else:
-            self.post_message("No marks")
+            self.message("No marks")
     
     ## --------------------------------
     ## Attributes of the editor
@@ -1336,9 +1336,11 @@ class Buffer:
         code        : code object compiled using `py_exec_region`.
         text        : string buffer
     """
-    def __init__(self, data=None):
-        (self.filename, self.lineno,
-         self.codename, self.code) = data or (None, 0, None, None)
+    def __init__(self, filename=None, lineno=0):
+        self.filename = filename
+        self.lineno = 0
+        self.codename = None
+        self.code = None
         self.text = ''
     
     def __eq__(self, buf):
@@ -1353,6 +1355,9 @@ class Buffer:
                 or v in self.code.co_consts
         else:
             return v in (self.filename, self.codename)
+    
+    def __str__(self):
+        return "{}:{}".format(self.name, self.lineno)
     
     @property
     def name(self):
@@ -1383,9 +1388,12 @@ class Buffer:
 
 class Editor(EditorInterface, EditWindow):
     """Python code editor
-
+    
+    Args:
+        name        : buffer-name (e.g. 'Scratch') => wx.Window.Name
+    
     Attributes:
-        Name        : buffer-name (e.g. '*scratch*') => wx.Window.Name
+        Name        : buffer-name
         buffer      : current buffer
     """
     STYLE = {
@@ -1482,12 +1490,12 @@ class Editor(EditorInterface, EditWindow):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        if self.buffer.filename:
+        if self.buffer.mtdelta is not None:
             self.parent.handler('caption_page', self, '* ' + self.Name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.buffer.filename:
+        if self.buffer.mtdelta is not None:
             self.parent.handler('caption_page', self, self.Name)
         evt.Skip()
     
@@ -1507,17 +1515,16 @@ class Editor(EditorInterface, EditWindow):
     @property
     def menu(self):
         """Yields context menu"""
-        def _load_buffer(f):
-            if f != self.buffer.filename and self.confirm_load():
-                self.push_current() # save cache
+        def _change_buffer(f):
+            if f != self.buffer and self.confirm_load():
+                self.push_current() # cache current
                 self.restore_buffer(f)
                 self.SetFocus()
         
         def _menu(j, data):
-            f, ln = data.filename, data.lineno
-            return (j, "{}:{}".format(f, ln), '', wx.ITEM_CHECK,
-                lambda v: _load_buffer(f),
-                lambda v: v.Check(f == self.buffer.filename))
+            return (j, str(data), '', wx.ITEM_CHECK,
+                lambda v: _change_buffer(data),
+                lambda v: v.Check(data is self.buffer))
         
         if len(self.buffer_list) > 1:
             return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
@@ -1532,33 +1539,42 @@ class Editor(EditorInterface, EditWindow):
         """Index of the currently loaded data."""
         return self.buffer_list.index(self.buffer) # cf. __eq__
     
+    @property
+    def default_buffer(self):
+        """The *default* (0th) buffer."""
+        return self.buffer_list[0]
+    
     def push_current(self):
+        """Push the current buffer to the buffer list."""
         self.buffer.lineno = self.markline + 1
         self.buffer.text = self.Text
         if self.buffer not in self.buffer_list:  # cf. __eq__
             self.buffer_list.append(self.buffer)
     
     def pop_current(self):
+        """Pop the current buffer from the buffer list."""
         j = self.buffer_list.index(self.buffer)  # cf. __eq__
         del self.buffer_list[j]
-        if self.buffer_list:
-            if j > len(self.buffer_list) - 1:
+        self.handler('buffer_unloaded', self)
+        
+        ## switch to one of the remaining buffers.
+        rest = self.buffer_list
+        if rest:
+            if j > len(rest) - 1:
                 j -= 1
-            self.restore_buffer(self.buffer_list[j])
+            self.restore_buffer(rest[j])
         else:
             self.clear_buffer()
-        self.handler('buffer_unloaded', self)
-    
-    def _setText(self, text):
-        with self.off_readonly():
-            self.Text = text
-        self.EmptyUndoBuffer()
-        self.SetSavePoint()
     
     def clear_buffer(self):
-        self._setText('')
+        """Initialize buffer and list of buffers."""
+        with self.off_readonly():
+            self.ClearAll()
+            self.EmptyUndoBuffer()
+            self.SetSavePoint()
         self.buffer = Buffer()
         self.buffer_list[:] = [self.buffer]
+        self.parent.handler('caption_page', self, self.Name)
     
     def restore_buffer(self, f):
         """Restore buffer with specified f:filename or code.
@@ -1568,7 +1584,14 @@ class Editor(EditorInterface, EditWindow):
         for buffer in self.buffer_list:
             if f in buffer or f is buffer:
                 self.buffer = buffer
-                self._setText(buffer.text)
+                if self.buffer.mtdelta is not None:
+                    self.LoadFile(buffer.filename) # restore text from file
+                else:
+                    with self.off_readonly():
+                        self.Text = buffer.text # text from cache (*default*)
+                        self.EmptyUndoBuffer()
+                        self.SetSavePoint()
+                    self.parent.handler('caption_page', self, self.Name)
                 self.markline = buffer.lineno - 1
                 self.goto_marker()
                 self.handler('buffer_loaded', self)
@@ -1583,11 +1606,14 @@ class Editor(EditorInterface, EditWindow):
         linecache.checkcache(f)
         lines = linecache.getlines(f, globals)
         if lines:
-            self.push_current() # save cache
-            self._setText(''.join(lines))
+            self.push_current() # cache current
+            with self.off_readonly():
+                self.Text = ''.join(lines)
+                self.EmptyUndoBuffer()
+                self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer((f, lineno, None, None))
+            self.buffer = Buffer(f, lineno)
             self.push_current()
             self.handler('buffer_loaded', self)
             return True
@@ -1601,11 +1627,11 @@ class Editor(EditorInterface, EditWindow):
         if not filename:
             return None
         f = os.path.abspath(filename)
-        self.push_current() # save cache
+        self.push_current() # cache current
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer((f, lineno, None, None))
+            self.buffer = Buffer(f, lineno)
             self.push_current()
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -1658,7 +1684,7 @@ class Editor(EditorInterface, EditWindow):
     
     def confirm_load(self):
         """Confirm the loading with the dialog."""
-        if self.IsModified() and self.buffer.filename:
+        if self.IsModified() and self.buffer.mtdelta is not None:
             if wx.MessageBox(
                     "You are leaving unsaved contents.\n\n"
                     "The contents will be discarded.\n"
@@ -1672,7 +1698,7 @@ class Editor(EditorInterface, EditWindow):
     def confirm_save(self):
         """Confirm the saving with the dialog."""
         if self.buffer.mtdelta:
-            if wx.MessageBox( # Note: dialog makes focus off
+            if wx.MessageBox(
                     "The file has been modified externally.\n\n"
                     "The contents will be overwritten.\n"
                     "Continue saving?",
@@ -1919,7 +1945,7 @@ class Nautilus(EditorInterface, Shell):
                                 # Parent:<AuiNotebook>
         self.target = target
         self.Name = name
-        self.buffer = Buffer() # overwrite buffer <wx.py.buffer>
+        self.buffer = Buffer()  # overwrite buffer <wx.py.buffer>
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
