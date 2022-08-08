@@ -13,11 +13,17 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 
 - ~~Python 2.7~~ (PY2 support has ended since 0.50)
-- Python 3.5 or later
+- ~~Python 3.5~~ (PY35 support has ended since 0.70)
+    - wxpython <= 4.0.7
+- Python 3.6 -- 3.9
+    - wxpython >= 4.1.1
     - numpy
     - pillow
     - matplotlib
-    - wxpython >= 4.0.7
+    - opencv-python
+- Python 3.10
+    - A version of wxpython for PY310 has not yet released on PyPi.
+      Please download the latest  snapshot from https://wxpython.org/Phoenix/snapshot-builds/
 
 ### Installing
 
@@ -56,7 +62,7 @@ pip uninstall mwxlib
 
 # Features
 
-![intro](demo/image/demo-shell.gif)
+![intro](./demo/image/demo-shell.gif)
 The animation shows how the Nautilus works, which is embedded in a simple PyEditor app.
 
 As you are diving into the python process,
@@ -77,7 +83,7 @@ which has the following features:
 2. Objective magic syntax is implemented.
     - [ ` ] quoteback
     - [@] pullback
-3. Powerful inspectoin utillities are compiled.
+3. Powerful inspectoin utilities are compiled.
     - Filling
     - InspectionTool
     - Ghost in the shell
