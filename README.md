@@ -1,7 +1,6 @@
 # mwxlib
 
-Python package based on matplotlib/wx
-and wxPython shell extension library
+Python package based on matplotlib/wx and wxPython shell extension library
 
 See [Demo Script and Gallery](./demo/readme.md).
 
@@ -21,9 +20,9 @@ These instructions will get you a copy of the project up and running on your loc
     - pillow
     - matplotlib
     - opencv-python
-- Python 3.10
-    - A version of wxpython for PY310 has not yet released on PyPi.
-      Please download the latest  snapshot from https://wxpython.org/Phoenix/snapshot-builds/
+- Python 3.10  
+    A version of wxpython for PY310 has not yet released on PyPi.
+    Please download the latest  snapshot from https://wxpython.org/Phoenix/snapshot-builds/
 
 ### Installing
 
@@ -62,7 +61,7 @@ pip uninstall mwxlib
 
 # Features
 
-![intro](./demo/image/demo-shell.gif)
+![intro](./demo/images/demo-shell.gif)
 The animation shows how the Nautilus works, which is embedded in a simple PyEditor app.
 
 As you are diving into the python process,
