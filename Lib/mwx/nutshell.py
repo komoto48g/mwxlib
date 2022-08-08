@@ -2673,9 +2673,9 @@ class Nautilus(EditorInterface, Shell):
             if wx.TheClipboard.GetData(data):
                 text = data.GetText()
                 command = text.rstrip()
+                endl = text[len(command):] # the rest whitespace
                 command = self.fixLineEndings(command)
                 command = self.regulate_cmd(command)
-                endl = text[len(command):] # the rest whitespace
                 ps = sys.ps2
                 if self.cpos == self.eolc: # caret at the end of the buffer
                     endl = endl.replace('\n', os.linesep + ps)

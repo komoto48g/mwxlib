@@ -221,9 +221,10 @@ class Debugger(Pdb):
         Note: self.busy -> False or None
         """
         shell = self.interactive_shell
+        shell.goto_char(shell.eolc)
+        self.__interactive = shell.cpos
         self.__hookpoint = None
         self.__indents = 2
-        self.__interactive = shell.cpos
         self.stdin.input = '' # clear stdin buffer
         def _continue():
             if wx.IsBusy():
@@ -267,6 +268,7 @@ class Debugger(Pdb):
         pos = self.__interactive
         def _post():
             shell = self.interactive_shell
+            shell.goto_char(shell.eolc)
             out = shell.GetTextRange(pos, shell.cpos)
             if out == self.prompt or out.endswith(self.prompt*2):
                 shell.cpos -= len(self.prompt) # backward selection
