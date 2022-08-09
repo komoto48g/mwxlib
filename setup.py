@@ -3,6 +3,8 @@
 from setuptools import setup 
 from Lib.mwx import __version__, __author__
 
+## __version__ = "0.69.0rc4" #  TestPyPI
+
 setup(
     name = "mwxlib",
     version = __version__,
@@ -13,6 +15,8 @@ setup(
     url = "https://github.com/komoto48g/mwxlib",
     
     ## long_description_content_type = "text/markdown",
+    ## long_description = open('README.md').read(),
+    
     long_description = open('README.rst').read(),
     
     ## Description of the package in the distribution
