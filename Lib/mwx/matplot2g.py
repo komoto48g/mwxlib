@@ -894,7 +894,7 @@ class GraphPlot(MatplotPanel):
         MatplotPanel.on_focus_kill(self, evt)
         if self.frame:
             self.handler('frame_deselected', self.frame)
-            self.on_picker_lock(evt)
+            ## self.on_picker_lock(evt)
     
     def get_cmap(self):
         if self.frame:
