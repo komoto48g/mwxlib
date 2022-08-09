@@ -148,9 +148,9 @@ def hotkey(evt):
         if key != k and wx.GetKeyState(k): # Note: lazy-eval state
             mod += v
     
-    if evt.controlDown or evt.cmdDown: mod += "C-"
-    if evt.altDown or evt.metaDown: mod += "M-"
-    if evt.shiftDown: mod += "S-"
+    if key != wx.WXK_CONTROL and (evt.controlDown or evt.cmdDown): mod += "C-"
+    if key != wx.WXK_ALT     and (evt.altDown or evt.metaDown): mod += "M-"
+    if key != wx.WXK_SHIFT   and evt.shiftDown: mod += "S-"
     
     key = speckeys.get(key) or chr(key).lower()
     evt.key = mod + key
@@ -1059,8 +1059,8 @@ class ShellFrame(MiniFrame):
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
                     else:
-                        f = open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='')
-                        f.write(buffer.text)
+                        with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
+                            f.write(buffer.text)
             
             ## if self.Scratch.buffer.mtdelta is None:
             ##     self.Scratch.SaveFile(self.SCRATCH_FILE)
