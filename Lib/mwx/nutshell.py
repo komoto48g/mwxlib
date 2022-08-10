@@ -2847,6 +2847,7 @@ class Nautilus(EditorInterface, Shell):
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
         self.parent.handler('add_shell', shell)
         self.handler('shell_cloned', shell)
+        shell.SetFocus()
         return shell
     
     ## --------------------------------
