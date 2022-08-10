@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.0"
+__version__ = "0.69.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -839,6 +839,7 @@ class ShellFrame(MiniFrame):
         
         ## Add useful global abbreviations to builtins
         builtins.apropos = apropos
+        builtins.typename = typename
         builtins.reload = reload
         builtins.partial = partial
         builtins.p = print
@@ -1360,7 +1361,8 @@ class ShellFrame(MiniFrame):
     
     def on_title_window(self, obj):
         """Set title to the frame."""
-        self.SetTitle("Nautilus - {}".format(obj))
+        self.SetTitle("Nautilus - {}".format(
+                      obj if isinstance(obj, str) else repr(obj)))
     
     def on_caption_page(self, page, caption):
         """Set caption to the tab control."""
