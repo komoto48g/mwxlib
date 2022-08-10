@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.1"
+__version__ = "0.69.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1104,8 +1104,8 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer is cleared.")
-            del self.Log.linemark # [pointer_unset] => debugger.unwatch
-            del self.Scratch.linemark
+            del self.Log.pointer # [pointer_unset] => debugger.unwatch
+            del self.Scratch.pointer
         
         pane = self._mgr.GetPane(self.ghost)
         if pane.IsDocked():

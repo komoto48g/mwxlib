@@ -253,7 +253,7 @@ class Debugger(Pdb):
         
         if filename == editor.target:
             editor.markline = firstlineno - 1 # (o) entry:marker
-            editor.linemark = lineno - 1 # (->) pointer:marker
+            editor.pointer = lineno - 1 # (->) pointer:marker
             editor.goto_line_marker()
             editor.push_current()
         
@@ -283,7 +283,7 @@ class Debugger(Pdb):
         Note: self.busy -> True (until this stage)
         """
         self.__interactive = None
-        del self.editor.linemark
+        del self.editor.pointer
         self.editor = None
         self.code = None
         main = threading.main_thread()

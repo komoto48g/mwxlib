@@ -320,7 +320,7 @@ class EditorInterface(CtrlInterface):
     
     white_arrow = _Marker("white-arrow", 1) # white-arrow_set/white-arrow_unset
     red_arrow = _Marker("red-arrow", 2) # red-arrow_set/red-arrow_unset
-    linemark = _Marker("pointer", 3) # pointer_set/pointer_unset
+    pointer = _Marker("pointer", 3) # pointer_set/pointer_unset
     
     @property
     def markline(self):
@@ -372,15 +372,15 @@ class EditorInterface(CtrlInterface):
             self.recenter()
     
     def set_line_marker(self):
-        if self.linemark == self.cline:
-            self.linemark = -1 # toggle marker
+        if self.pointer == self.cline:
+            self.pointer = -1 # toggle marker
         else:
-            self.linemark = self.cline
+            self.pointer = self.cline
     
     def goto_line_marker(self):
-        if self.linemark != -1:
-            self.EnsureVisible(self.linemark)
-            self.goto_line(self.linemark)
+        if self.pointer != -1:
+            self.EnsureVisible(self.pointer)
+            self.goto_line(self.pointer)
             self.recenter()
     
     def exchange_point_and_mark(self):
@@ -1620,7 +1620,7 @@ class Editor(EditorInterface, EditWindow):
         return False
     
     def load_file(self, filename, lineno=0):
-        """Wrapped method of LoadFile
+        """Wrapped method of LoadFile.
         
         Note: The file will be reloaded without confirmation.
         """
@@ -1639,7 +1639,7 @@ class Editor(EditorInterface, EditWindow):
         return False
     
     def save_file(self, filename):
-        """Wrapped method of SaveFile
+        """Wrapped method of SaveFile.
         
         Note: The file will be overwritten without confirmation.
         """
@@ -2518,7 +2518,7 @@ class Nautilus(EditorInterface, Shell):
         return (not err)
     
     def on_interp_error(self, e):
-        self.linemark = self.cmdline_region[0] + e.lineno - 1
+        self.pointer = self.cmdline_region[0] + e.lineno - 1
     
     ## --------------------------------
     ## Attributes of the shell
@@ -2937,11 +2937,11 @@ class Nautilus(EditorInterface, Shell):
                 lines = [int(l) for f,l in err if f == filename]
                 if lines:
                     region = self.get_region(self.cline)
-                    self.linemark = region[0] + lines[-1] - 1
+                    self.pointer = region[0] + lines[-1] - 1
                 self.message("- {!r}".format(e))
                 ## print(msg, file=sys.__stderr__)
             else:
-                del self.linemark
+                del self.pointer
                 self.message("Evaluated {!r} successfully".format(filename))
         else:
             self.message("No region")

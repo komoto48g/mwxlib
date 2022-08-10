@@ -124,6 +124,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
     """Prints a list of objects having expression rexpr in obj.
     """
     name = alias or typename(obj)
+    
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
                   .replace('\\A','[A-Z0-9]')) #\A: 
     
@@ -148,6 +149,9 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
               rexpr, name, type(obj), pred and pred.__name__))
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
+        except re.error as e:
+            print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
+        else:
             keys = sorted(filter(p.search, wdir(obj)), key=lambda s:s.upper())
             n = 0
             for key in keys:
@@ -169,8 +173,6 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
                 print("found {} of {} words with :{}".format(n, len(keys), pred.__name__))
             else:
                 print("found {} words.".format(len(keys)))
-        except re.error as e:
-            print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
 def typename(obj, docp=False, qualp=True):
