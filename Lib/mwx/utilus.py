@@ -15,6 +15,7 @@ import os
 import re
 import fnmatch
 import pkgutil
+import pydoc
 import inspect
 from inspect import (isclass, ismodule, ismethod, isbuiltin,
                      isfunction, isgenerator, isframe, iscode, istraceback)
@@ -119,8 +120,8 @@ def wdir(obj):
         return keys
 
 
-def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
-    """Put a list of objects having expression rexpr in obj
+def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
+    """Prints a list of objects having expression rexpr in obj.
     """
     name = alias or typename(obj)
     rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
@@ -144,7 +145,7 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
         warnings.simplefilter('ignore', DeprecationWarning)
         
         print("matching to {!r} in {} {} :{}".format(
-              rexpr, name, type(obj), pred and typename(pred)))
+              rexpr, name, type(obj), pred and pred.__name__))
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
             keys = sorted(filter(p.search, wdir(obj)), key=lambda s:s.upper())
@@ -165,48 +166,29 @@ def apropos(obj, rexpr, ignorecase=True, alias=None, pred=None, locals=None):
                     word = word[:80] + '...' # truncate words +3 ellipsis
                 print("    {}.{:<36s} {}".format(name, key, word))
             if pred:
-                print("found {} of {} words with :{}".format(n, len(keys), typename(pred)))
+                print("found {} of {} words with :{}".format(n, len(keys), pred.__name__))
             else:
                 print("found {} words.".format(len(keys)))
         except re.error as e:
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
 
 
-def typename(obj, docp=False, qualp=False):
-    """Typename of the obj object
-    
-    Returns:
-        str: One of the following formatted object names:
-        
-        - module:obj<doc>       when obj is callable and qualp=False.
-        - module:class<doc>     when obj is a class or an instance object.
-        - module:class.obj<doc> when obj is an atom or callable and qualp=True.
-        - type<obj>             otherwise.
+def typename(obj, docp=False, qualp=True):
+    """Formatted object type name.
     """
-    _mods = (None, "__main__",
-                   "mwx.utilus",
-                   "mwx.nutshell",
-                   "mwx.framework",
-                   )
-    if hasattr(obj, '__name__'): # class, module, method, function, etc.
-        name = obj.__name__
+    if hasattr(obj, '__name__'): # module, class, method, function, etc.
         if qualp:
-            if hasattr(obj, '__qualname__'):
-                name = obj.__qualname__
-        
-        if hasattr(obj, '__module__'): # -> module:name
-            module = obj.__module__
-            if module not in _mods:
-                name = module + ':' + name
-        
+            name = getattr(obj, '__qualname__', obj.__name__)
+        else:
+            name = obj.__name__
     elif hasattr(obj, '__module__'): # atom -> module.class
         name = obj.__class__.__name__
-        module = obj.__module__
-        if module not in _mods:
-            name = module + '.' + name
     else:
-        ## return "{}<{!r}>".format(type(obj), pydoc.describe(obj))
-        return str(type(obj))
+        return pydoc.describe(obj) # atom -> short description
+    
+    modname = getattr(obj, '__module__', None)
+    if modname and modname != "__main__" and not modname.startswith('mwx'):
+        name = modname + '.' + name
     
     if docp and callable(obj) and obj.__doc__:
         name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
@@ -268,9 +250,9 @@ def where(obj):
 
 
 def mro(obj):
-    """Show @mro (method resolution order) of obj:class
+    """Show @mro (method resolution order) of obj.
     
-    A list of filenames and lineno, or the module-names
+    Prints a list of filenames and lineno, or the module-names.
     """
     if not isinstance(obj, type):
         obj = type(obj)
@@ -327,7 +309,7 @@ def _split_tokens(text):
 
 
 def _extract_words_from_tokens(tokens, reverse=False):
-    """Extract pythonic expressions from tokens
+    """Extract pythonic expressions from tokens.
     default sep includes `@, binary-ops, and whitespaces, etc.
     """
     sep = "`@=+-/*%<>&|^~!?,:; \t\r\n#"
@@ -400,7 +382,7 @@ def find_modules(force=False, verbose=True):
 
 
 def get_rootpath(f):
-    """Return pathname ~/.mwxlib/f
+    """Return pathname ~/.mwxlib/f.
     If ~/.mwxlib/ does not exist, it will be created.
     """
     home = os.path.normpath(os.path.expanduser("~/.mwxlib"))
@@ -421,7 +403,7 @@ class SSM(OrderedDict):
             act(*args, **kwargs)
     
     def __repr__(self):
-        return "<{} object at 0x{:X}>".format(typename(self), id(self))
+        return "<{} object at 0x{:X}>".format(self.__class__.__name__, id(self))
     
     def __str__(self):
         def _name(a):
@@ -524,7 +506,7 @@ class FSM(dict):
         raise Exception("FSM:logic-error: undefined state {!r}".format(key))
     
     def __repr__(self):
-        return "<{} object at 0x{:X}>".format(typename(self), id(self))
+        return "<{} object at 0x{:X}>".format(self.__class__.__name__, id(self))
     
     def __str__(self):
         return '\n'.join("[ {!r} ]\n{!s}".format(k, v) for k, v in self.items())
@@ -599,7 +581,7 @@ class FSM(dict):
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "      to : {}".format(self.__state),
-                              "  action : {}".format(typename(act)),
+                              "  action : {}".format(act),
                               "    args : {}".format(args),
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
@@ -616,7 +598,7 @@ class FSM(dict):
         v = self.debug
         if v and self.__state is not None:
             transaction = self[self.__prev_state].get(pattern) or []
-            actions = ', '.join(typename(a) for a in transaction[1:])
+            actions = ', '.join(a.__name__ for a in transaction[1:])
             if (v > 0 and self.__prev_state != self.__state
              or v > 1 and self.__prev_event != self.__event
              or v > 2 and actions
@@ -628,7 +610,7 @@ class FSM(dict):
         
         elif v > 3: # state is None
             transaction = self[None].get(pattern) or []
-            actions = ', '.join(typename(a) for a in transaction[1:])
+            actions = ', '.join(a.__name__ for a in transaction[1:])
             if actions or v > 4:
                 self.log("\t| {0!r} {a}".format(
                     self.__event,
@@ -894,7 +876,6 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     def _Act2(*v, **kw):
         kwargs.update(kw)
         return f(*args, **kwargs) # function with no explicit args
-    _Act2.__name__ += str("~")
     
     action = _Act
     
