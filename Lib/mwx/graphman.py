@@ -367,8 +367,6 @@ class LayerInterface(CtrlInterface):
         if 'params' in session:
             self.parameters = session['params']
     
-    init_session = load_session # for backward compatibility
-    
     def save_session(self, session):
         """Save settings in a session file (to be overridden)"""
         if self.parameters:
@@ -410,13 +408,17 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(LayerInterface, ControlPanel):
+class Layer(ControlPanel, LayerInterface):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
         kwargs.setdefault('size', (130, 24)) # keep minimum size
         ControlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
+    
+    ## (override)
+    Show = LayerInterface.Show
+    IsShown = LayerInterface.IsShown
 
 
 class Graph(GraphPlot):
@@ -972,11 +974,14 @@ class Frame(mwx.Frame):
             module.Plugin = cls
             return cls
         
-        class _Plugin(LayerInterface, cls):
+        class _Plugin(cls, LayerInterface):
             def __init__(self, parent, session=None, **kwargs):
                 kwargs.setdefault('size', (130, 24)) # keep minimum size
                 cls.__init__(self, parent, **kwargs)
                 LayerInterface.__init__(self, parent, session)
+            ## (override)
+            Show = LayerInterface.Show
+            IsShown = LayerInterface.IsShown
         
         _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
