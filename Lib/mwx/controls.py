@@ -327,8 +327,9 @@ class Knob(wx.Panel):
         self.update_ctrl()
     
     def __init__(self, parent, param, type='slider',
-                 style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22):
-        wx.Panel.__init__(self, parent)
+                 style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22,
+                 **kwargs):
+        wx.Panel.__init__(self, parent, **kwargs)
         self.__bit = 1
         self.__par = param
         self.__par.knobs.append(self) # パラメータの関連付けを行う
@@ -485,16 +486,18 @@ class Knob(wx.Panel):
             if evt.ShiftDown():   bit *= 2
             if evt.ControlDown(): bit *= 16
             if evt.AltDown():     bit *= 256
+        v = self.__par
         j = self.ctrl.GetValue() + bit
-        if j != self.__par.index:
-            self.__par.index = j
-            self.__par.reset(self.__par.value)
+        if j != v.index:
+            v.index = j
+            v.reset(v.value)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
+        v = self.__par
         j = self.ctrl.GetValue()
-        if j != self.__par.index:
-            self.__par.index = j
-            self.__par.reset(self.__par.value)
+        if j != v.index:
+            v.index = j
+            v.reset(v.value)
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
