@@ -17,20 +17,22 @@ except ImportError:
 
 class Inspector(it.InspectionTree, CtrlInterface):
     """Widget inspection tool
-    """
-    parent = property(lambda self: self.__shellframe)
-    target = property(lambda self: self.__widget)
     
+    Attributes:
+        parent : shellframe
+        target : widget to inspect
+    """
     def __init__(self, parent, *args, **kwargs):
         it.InspectionTree.__init__(self, parent, *args, **kwargs)
         CtrlInterface.__init__(self)
         
-        self.__shellframe = parent
-        self.__widget = None
-        self._noWatchList = [self]
+        self.parent = parent
+        self.target = None
         self.toolFrame = self
         self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
+        
+        self._noWatchList = [self, self.GetTopLevelParent()]
         
         self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
@@ -55,12 +57,12 @@ class Inspector(it.InspectionTree, CtrlInterface):
         
         @self.handler.bind('f4 pressed')
         def hillilght(v):
-            if self.__widget:
+            if self.target:
                 self.highlighter.HighlightCurrentItem(self)
         
         @self.handler.bind('f5 pressed')
         def refresh(v):
-            self.BuildTree(self.__widget)
+            self.BuildTree(self.target)
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -69,9 +71,9 @@ class Inspector(it.InspectionTree, CtrlInterface):
     
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj"""
-        if self.__widget is obj:
+        if self.target is obj:
             return
-        self.__widget = obj
+        self.target = obj
         item = self.FindWidgetItem(obj)
         if item:
             self.EnsureVisible(item)
@@ -80,7 +82,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.BuildTree(obj)
     
     def GetTextForWidget(self, obj):
-        """Returns the string to be used in the tree for a widget
+        """Returns the string to be used in the tree for a widget.
         (override) make better object name and Id
         """
         clsname = obj.__class__.__name__
@@ -102,13 +104,11 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.timer.Start(500)
     
     def unwatch(self):
-        self.__widget = None
+        self.target = None
         self.timer.Stop()
     
     def dive(self, obj):
         shell = self.parent.rootshell.clone(obj)
-        ## self._noWatchList.append(shell)
-        ## self.parent.load(obj)
         self.SetObj(obj)
         return shell
     
@@ -118,19 +118,14 @@ class Inspector(it.InspectionTree, CtrlInterface):
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
-        if wnd:
-            if (wnd is self.__widget
-                or wnd in self._noWatchList
-                ## or wnd in self.Parent.Children
-                or wnd is self.GetTopLevelParent()):
-                return
+        if wnd and wnd is not self.target and wnd not in self._noWatchList:
             self.SetObj(wnd)
         evt.Skip()
     
     def OnShow(self, evt):
         if evt.IsShown():
             if not self.built:
-                self.BuildTree(self.__widget)
+                self.BuildTree(self.target)
         self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
     
@@ -145,7 +140,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         item, flags = self.HitTest(evt.Position)
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.SelectItem(item)
-        obj = self.__widget
+        obj = self.target
         menu = [
             (1, "&Dive into the shell", Icon('core'),
                 lambda v: self.dive(obj),
@@ -175,10 +170,11 @@ def miniIcon(key, size=(16,16)):
 
 
 if __name__ == "__main__":
-    from graphman import Frame
+    from framework import Frame
     
     app = wx.App()
     frm = Frame(None)
-    frm.load_plug(Inspector, show=1) #>>> self.plug.watch(self.plug)
+    frm.plug = Inspector(frm)
+    frm.plug.watch(frm)
     frm.Show()
     app.MainLoop()

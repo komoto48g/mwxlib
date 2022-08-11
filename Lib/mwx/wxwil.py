@@ -17,20 +17,22 @@ except ImportError:
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Locals info watcher
-    """
-    parent = property(lambda self: self.__shellframe)
-    target = property(lambda self: self.__locals)
     
+    Attributes:
+        parent : shellframe
+        target : locals:dict to watch
+    """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
-        self.__shellframe = parent
-        self.__locals = {}
+        self.parent = parent
+        self.target = {}
+        
         self.__dir = True # sort direction
-        self.__items = []
+        self.__items = [] # list of data:str
         
         self.alist = (
             ("key", 140),
@@ -43,16 +45,12 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
-        ## dispatcher.connect(receiver=self._update, signal="Shell.addHistory")
-        ## dispatcher.connect(receiver=self._update, signal="Shell.clearHistory")
     
     def _update(self, *args, **kwargs):
         if not self:
             dispatcher.disconnect(receiver=self._update, signal='Interpreter.push')
-            ## dispatcher.disconnect(receiver=self._update, signal="Shell.addHistory")
-            ## dispatcher.disconnect(receiver=self._update, signal="Shell.clearHistory")
             return
-        self.update(self.__locals)
+        self.update(self.target)
     
     def watch(self, locals):
         self.clear()
@@ -60,11 +58,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             ## wx.MessageBox("Cannot watch the locals.\n\n"
             ##               "- {!r} is not a dict object.".format(locals))
             return
-        self.__locals = locals
-        self.update(self.__locals)
+        self.target = locals
+        self.update(self.target)
     
     def unwatch(self):
-        self.__locals = None
+        self.target = None
     
     def clear(self):
         self.DeleteAllItems()
@@ -145,10 +143,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
 
 if __name__ == "__main__":
-    from graphman import Frame
+    from framework import Frame
     
     app = wx.App()
     frm = Frame(None)
-    frm.load_plug(LocalsWatcher, show=1) #>>> self.plug.watch(locals())
+    frm.plug = LocalsWatcher(frm)
+    frm.plug.watch(vars(frm))
     frm.Show()
     app.MainLoop()

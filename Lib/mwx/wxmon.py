@@ -43,20 +43,21 @@ else:
 
 class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     """Event monitor
-    """
-    parent = property(lambda self: self.__shellframe)
-    target = property(lambda self: self.__widget)
     
+    Attributes:
+        parent : shellframe
+        target : widget to monitor
+    """
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
+        self.parent = parent
+        self.target = None
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.__shellframe = parent
-        self.__widget = None
         self.__prev = None
         self.__dir = True # sort direction
         self.__items = []
@@ -143,7 +144,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                 print("- No such event: {}".format(event))
     
     def watch(self, widget):
-        """Begin watching"""
+        """Begin watching the widget."""
         if not widget:
             self.unwatch()
             return
@@ -153,7 +154,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         self.unwatch()
         self.clear()
-        self.__widget = widget
+        self.target = widget
         ssmap = self.dump(widget, verbose=1)
         for binder in self.get_watchlist():
             event = binder.typeId
@@ -168,8 +169,8 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.parent.handler('monitor_begin', widget)
     
     def unwatch(self):
-        """End watching"""
-        widget = self.__widget
+        """End watching the widget."""
+        widget = self.target
         if not widget:
             return
         for binder in self.get_watchlist():
@@ -177,7 +178,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                 print("- Failed to unbind {}:{}".format(binder.typeId, binder))
         self.parent.handler('monitor_end', widget)
         self.__prev = widget
-        self.__widget = None
+        self.target = None
     
     def onWatchedEvent(self, evt):
         if self:
@@ -185,7 +186,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         evt.Skip()
     
     def dump(self, widget, verbose=True):
-        """Dump all event handlers bound to the widget"""
+        """Dump all event handlers bound to the widget."""
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
         if not hasattr(widget, '__event_handler__'):
@@ -311,7 +312,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnContextMenu(self, evt):
         i = self.FocusedItem
         item = self.__items[i] if i != -1 else []
-        obj = self.__widget
+        obj = self.target
         wnd = self.__prev
         menu = [
             ('No Item selected', item) if not item
@@ -338,11 +339,11 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
 
 
 if __name__ == "__main__":
-    from graphman import Frame
+    from framework import Frame
     
     app = wx.App()
     frm = Frame(None)
-    frm.load_plug(EventMonitor, show=1) #>>> self.plug.watch(self.plug)
-    frm.get_plug("wxmon").plug.watch(frm.shellframe.ghost)
+    frm.plug = EventMonitor(frm)
+    frm.plug.watch(frm)
     frm.Show()
     app.MainLoop()
