@@ -1567,7 +1567,7 @@ class Editor(EditorInterface, EditWindow):
             self.clear_buffer()
     
     def clear_buffer(self):
-        """Initialize buffer and list of buffers."""
+        """Initialize list of buffers."""
         with self.off_readonly():
             self.ClearAll()
             self.EmptyUndoBuffer()
@@ -2427,7 +2427,7 @@ class Nautilus(EditorInterface, Shell):
                 cc, pred = re.search(r"(\?+)\s*(.*)", c + ''.join(rest)).groups()
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=locals())".format(
-                        head, hint.strip(), len(cc)<2, pred or None))
+                        head.strip(), hint.strip(), len(cc)<2, pred or None))
             
             if c == ';':
                 return lhs + c + self.magic_interpret(rest)
