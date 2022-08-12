@@ -45,9 +45,11 @@ class Debugger(Pdb):
     Key bindings:
         C-g     : quit
         C-q     : quit
-        C-n     : next
-        C-r     : return
-        C-s     : step
+        C-n     : next   (step-over)
+        C-s     : step   (setep-in)
+        C-r     : return (step-out)
+        C-b     : set a breakpoint at the current line.
+        C-@     : jump to the first-lineno of the code.
     """
     prefix1 = "> "
     prefix2 = "-> "
@@ -126,6 +128,7 @@ class Debugger(Pdb):
                   'C-n pressed' : (1, lambda v: self.send_input('n')),
                   'C-s pressed' : (1, lambda v: self.send_input('s')),
                   'C-r pressed' : (1, lambda v: self.send_input('r')),
+                  'C-b pressed' : (1, lambda v: self.set_breakpoint()),
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
             },
             2 : {
@@ -135,16 +138,26 @@ class Debugger(Pdb):
             },
         })
     
+    def set_breakpoint(self):
+        """Set a breakpoint at the current line."""
+        filename = self.curframe.f_code.co_filename
+        ln = self.editor.cline + 1
+        if ln not in self.get_file_breaks(filename):
+            self.send_input('b {}'.format(ln))
+    
     def jump_to_entry(self):
-        """Jump to the first lineno of the code"""
+        """Jump to the first lineno of the code."""
         self.send_input('j {}'.format(self.editor.markline+1))
     
-    def add_marker(self, lineno, style):
-        """Add a mrker to lineno, with the following style markers:
+    def set_marker(self, lineno, style):
+        """Set a marker to lineno, with the following style markers:
         [1] white-arrow for breakpoints
         [2] red-arrow for exception
         """
-        self.editor.MarkerAdd(lineno-1, style)
+        if lineno:
+            self.editor.MarkerAdd(lineno-1, style)
+        else:
+            self.editor.MarkerDeleteAll(style)
     
     def send_input(self, c):
         """Send input:str @postcall"""
@@ -258,7 +271,7 @@ class Debugger(Pdb):
             editor.push_current()
         
         for ln in self.get_file_breaks(filename):
-            self.add_marker(ln, 1) # (>>) bp:white-arrow
+            self.set_marker(ln, 1) # (>>) bp:white-arrow
         
         self.editor = editor
         self.code = code
@@ -378,7 +391,7 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.add_marker(lineno, 1)
+        self.set_marker(lineno, 1)
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
@@ -441,7 +454,7 @@ class Debugger(Pdb):
         (override) Update exception:markers.
         """
         t, v, tb = exc_info
-        self.add_marker(tb.tb_lineno, 2)
+        self.set_marker(tb.tb_lineno, 2)
         self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
     
@@ -453,8 +466,9 @@ class Debugger(Pdb):
         """
         filename = frame.f_code.co_filename
         breakpoints = self.get_file_breaks(filename)
+        self.set_marker(None, 1)
         for lineno in breakpoints:
-            self.add_marker(lineno, 1)
+            self.set_marker(lineno, 1)
         return Pdb.bp_commands(self, frame)
     
     @echo
@@ -470,7 +484,7 @@ class Debugger(Pdb):
 
 
 if __name__ == "__main__":
-    from mwx import Frame
+    from framework import Frame
     
     app = wx.App()
     frm = Frame(None)
