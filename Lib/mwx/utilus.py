@@ -583,7 +583,7 @@ class FSM(dict):
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "      to : {}".format(self.__state),
-                              "  action : {}".format(act),
+                              "  action : {}".format(act.__name__),
                               "    args : {}".format(args),
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
