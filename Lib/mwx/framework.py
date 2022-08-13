@@ -986,10 +986,6 @@ class ShellFrame(MiniFrame):
              'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
-            'C-x' : {
-                    'p pressed' : (0, _F(self.other_editor, p=-1)),
-                    'n pressed' : (0, _F(self.other_editor, p=+1)),
-            },
         })
         
         ## py-mode
