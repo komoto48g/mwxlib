@@ -58,7 +58,7 @@ def ask(f, prompt="Enter value", type=str):
 
 
 class EditorInterface(CtrlInterface):
-    """Python code editor interface with Keymap
+    """Interface of Python code editor.
     
     Note:
         This class should be mixed-in `wx.stc.StyledTextCtrl`
@@ -1392,8 +1392,8 @@ class Buffer:
             return os.path.getmtime(f) - self.__mtime
 
 
-class Editor(EditorInterface, EditWindow):
-    """Python code editor
+class Editor(EditWindow, EditorInterface):
+    """Python code editor.
     
     Args:
         name        : buffer-name (e.g. 'Scratch') => wx.Window.Name
@@ -1770,8 +1770,8 @@ class Interpreter(interpreter.Interpreter):
             return interpreter.Interpreter.getCallTip(self, *args, **kwargs)
 
 
-class Nautilus(EditorInterface, Shell):
-    """Nautilus in the Shell with Editor interface
+class Nautilus(Shell, EditorInterface):
+    """Nautilus in the Shell with Editor interface.
     
     Features:
         
@@ -1931,6 +1931,9 @@ class Nautilus(EditorInterface, Shell):
         self.interp.globals = self.__target.__dict__
     
     modules = None
+    
+    ## (override)
+    wrap = EditorInterface.wrap
     
     def __init__(self, parent, target, name="root",
                  introText=None,
