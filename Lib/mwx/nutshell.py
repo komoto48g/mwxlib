@@ -58,7 +58,7 @@ def ask(f, prompt="Enter value", type=str):
 
 
 class EditorInterface(CtrlInterface):
-    """Python code editor interface with Keymap
+    """Interface of Python code editor.
     
     Note:
         This class should be mixed-in `wx.stc.StyledTextCtrl`
@@ -144,9 +144,6 @@ class EditorInterface(CtrlInterface):
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
-        
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                  lambda v: self.handler('capture_lost', v) or v.Skip())
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -273,8 +270,11 @@ class EditorInterface(CtrlInterface):
             pass
         
         ## Custom indicator for match_paren
-        ## self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
-        ## self.IndicatorSetForeground(2, "light gray")
+        self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
+        self.IndicatorSetForeground(2, "light gray")
+        
+        ## Custom annotation
+        self.AnnotationSetVisible(stc.STC_ANNOTATION_BOXED)
         
         ## Custom style of control-char, wrap-mode
         ## self.UseTabs = False
@@ -291,6 +291,7 @@ class EditorInterface(CtrlInterface):
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
+    stc.STC_STYLE_ANNOTATION = 41
     
     ## --------------------------------
     ## Marker attributes of the editor
@@ -647,6 +648,8 @@ class EditorInterface(CtrlInterface):
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
+                self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
+                self.AnnotationSetText(lx, str(e))
             self.message("- {!r}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
@@ -656,6 +659,7 @@ class EditorInterface(CtrlInterface):
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
+            self.AnnotationClearAll()
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
@@ -846,21 +850,22 @@ class EditorInterface(CtrlInterface):
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
             self.IndicatorSetForeground(1, item.get('back') or "red")
-            try:
-                self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
-                self.IndicatorSetHoverForeground(1, "blue")
-            except AttributeError:
-                pass
+        
+        ## Custom style for annotation
+        self.StyleSetSpec(stc.STC_STYLE_ANNOTATION, "fore:#7f0000,back:#ff7f7f")
         
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
     
     def match_paren(self):
+        self.SetIndicatorCurrent(2)
+        self.IndicatorClearRange(0, self.TextLength)
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched the preceding char
+                self.IndicatorFillRange(q, p-q)
                 return q
             else:
                 self.BraceBadLight(p-1)
@@ -868,6 +873,7 @@ class EditorInterface(CtrlInterface):
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched the following char
+                self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
@@ -1386,8 +1392,8 @@ class Buffer:
             return os.path.getmtime(f) - self.__mtime
 
 
-class Editor(EditorInterface, EditWindow):
-    """Python code editor
+class Editor(EditWindow, EditorInterface):
+    """Python code editor.
     
     Args:
         name        : buffer-name (e.g. 'Scratch') => wx.Window.Name
@@ -1713,6 +1719,8 @@ class Editor(EditorInterface, EditWindow):
 
 
 class Interpreter(interpreter.Interpreter):
+    """Interpreter based on code.InteractiveInterpreter.
+    """
     def __init__(self, *args, **kwargs):
         parent = kwargs.pop('interpShell')
         interpreter.Interpreter.__init__(self, *args, **kwargs)
@@ -1741,7 +1749,10 @@ class Interpreter(interpreter.Interpreter):
         t, v, tb = sys.exc_info()
         v.lineno = tb.tb_next.tb_lineno
         v.filename = tb.tb_next.tb_frame.f_code.co_filename
-        self.parent.handler('interp_error', v)
+        try:
+            self.parent.handler('interp_error', v)
+        except AttributeError:
+            pass
     
     def showsyntaxerror(self, filename=None):
         """Display the syntax error that just occurred.
@@ -1751,7 +1762,10 @@ class Interpreter(interpreter.Interpreter):
         interpreter.Interpreter.showsyntaxerror(self, filename)
         
         t, v, tb = sys.exc_info()
-        self.parent.handler('interp_error', v)
+        try:
+            self.parent.handler('interp_error', v)
+        except AttributeError:
+            pass
     
     def getCallTip(self, *args, **kwargs):
         """Return call tip text for a command.
@@ -1764,8 +1778,8 @@ class Interpreter(interpreter.Interpreter):
             return interpreter.Interpreter.getCallTip(self, *args, **kwargs)
 
 
-class Nautilus(EditorInterface, Shell):
-    """Nautilus in the Shell with Editor interface
+class Nautilus(Shell, EditorInterface):
+    """Nautilus in the Shell with Editor interface.
     
     Features:
         
@@ -1925,6 +1939,9 @@ class Nautilus(EditorInterface, Shell):
         self.interp.globals = self.__target.__dict__
     
     modules = None
+    
+    ## (override)
+    wrap = EditorInterface.wrap
     
     def __init__(self, parent, target, name="root",
                  introText=None,
