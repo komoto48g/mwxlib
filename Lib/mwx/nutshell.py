@@ -270,8 +270,11 @@ class EditorInterface(CtrlInterface):
             pass
         
         ## Custom indicator for match_paren
-        ## self.IndicatorSetStyle(2, stc.STC_INDIC_PLAIN)
-        ## self.IndicatorSetForeground(2, "light gray")
+        self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
+        self.IndicatorSetForeground(2, "light gray")
+        
+        ## Custom annotation
+        self.AnnotationSetVisible(stc.STC_ANNOTATION_BOXED)
         
         ## Custom style of control-char, wrap-mode
         ## self.UseTabs = False
@@ -288,6 +291,7 @@ class EditorInterface(CtrlInterface):
     ## custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
+    stc.STC_STYLE_ANNOTATION = 41
     
     ## --------------------------------
     ## Marker attributes of the editor
@@ -644,6 +648,8 @@ class EditorInterface(CtrlInterface):
                 self.goto_line(lx)
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
+                self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
+                self.AnnotationSetText(lx, str(e))
             self.message("- {!r}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
@@ -653,6 +659,7 @@ class EditorInterface(CtrlInterface):
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
+            self.AnnotationClearAll()
     
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
@@ -843,21 +850,22 @@ class EditorInterface(CtrlInterface):
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
             self.IndicatorSetForeground(1, item.get('back') or "red")
-            try:
-                self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
-                self.IndicatorSetHoverForeground(1, "blue")
-            except AttributeError:
-                pass
+        
+        ## Custom style for annotation
+        self.StyleSetSpec(stc.STC_STYLE_ANNOTATION, "fore:#7f0000,back:#ff7f7f")
         
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
     
     def match_paren(self):
+        self.SetIndicatorCurrent(2)
+        self.IndicatorClearRange(0, self.TextLength)
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched the preceding char
+                self.IndicatorFillRange(q, p-q)
                 return q
             else:
                 self.BraceBadLight(p-1)
@@ -865,6 +873,7 @@ class EditorInterface(CtrlInterface):
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched the following char
+                self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
