@@ -140,14 +140,16 @@ class Debugger(Pdb):
     
     def set_breakpoint(self):
         """Set a breakpoint at the current line."""
-        filename = self.curframe.f_code.co_filename
-        ln = self.editor.cline + 1
-        if ln not in self.get_file_breaks(filename):
-            self.send_input('b {}'.format(ln))
+        if self.busy:
+            filename = self.curframe.f_code.co_filename
+            ln = self.editor.cline + 1
+            if ln not in self.get_file_breaks(filename):
+                self.send_input('b {}'.format(ln))
     
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
-        self.send_input('j {}'.format(self.editor.markline+1))
+        if self.busy:
+            self.send_input('j {}'.format(self.editor.markline+1))
     
     def set_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -163,7 +165,8 @@ class Debugger(Pdb):
         """Send input:str @postcall"""
         def _send():
             self.stdin.input = c
-        wx.CallAfter(_send)
+        if self.busy:
+            wx.CallAfter(_send)
     
     def message(self, msg, indent=-1):
         """(override) Add prefix and insert msg at the end of command-line."""
