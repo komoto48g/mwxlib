@@ -1719,6 +1719,8 @@ class Editor(EditWindow, EditorInterface):
 
 
 class Interpreter(interpreter.Interpreter):
+    """Interpreter based on code.InteractiveInterpreter.
+    """
     def __init__(self, *args, **kwargs):
         parent = kwargs.pop('interpShell')
         interpreter.Interpreter.__init__(self, *args, **kwargs)
@@ -1747,7 +1749,10 @@ class Interpreter(interpreter.Interpreter):
         t, v, tb = sys.exc_info()
         v.lineno = tb.tb_next.tb_lineno
         v.filename = tb.tb_next.tb_frame.f_code.co_filename
-        self.parent.handler('interp_error', v)
+        try:
+            self.parent.handler('interp_error', v)
+        except AttributeError:
+            pass
     
     def showsyntaxerror(self, filename=None):
         """Display the syntax error that just occurred.
@@ -1757,7 +1762,10 @@ class Interpreter(interpreter.Interpreter):
         interpreter.Interpreter.showsyntaxerror(self, filename)
         
         t, v, tb = sys.exc_info()
-        self.parent.handler('interp_error', v)
+        try:
+            self.parent.handler('interp_error', v)
+        except AttributeError:
+            pass
     
     def getCallTip(self, *args, **kwargs):
         """Return call tip text for a command.
