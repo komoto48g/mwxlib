@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.4"
+__version__ = "0.69.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1052,22 +1052,21 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                self.Log.push_current()
                 for buffer in self.Log.buffer_list:
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-                self.Scratch.push_current()
+                self.Log.push_current()
+                with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
+                    f.write(self.Log.default_buffer.text)
+                
                 for buffer in self.Scratch.buffer_list:
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-                    else:
-                        with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
-                            f.write(buffer.text)
-            
-            ## if self.Scratch.buffer.mtdelta is None:
-            ##     self.Scratch.SaveFile(self.SCRATCH_FILE)
+                self.Scratch.push_current()
+                with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
+                    f.write(self.Scratch.default_buffer.text)
             return True
         except Exception:
             traceback.print_exc()
