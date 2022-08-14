@@ -116,7 +116,7 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                 'select_indic' : (10, self.filter_text, self.on_filter_text_enter),
+                 'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin),
             },
             10 : {
@@ -160,12 +160,14 @@ class EditorInterface(CtrlInterface):
         self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
         
         def indic(evt):
-            i = self.IndicatorValue # current indicator(1) <- filter_text
+            ## i = self.IndicatorValue #? -> 1 常に１が返される▲ BUG of wx.stc ?
             pos = evt.Position
-            p = self.IndicatorStart(i, pos)
-            q = self.IndicatorEnd(i, pos)
-            self.goto_char(pos)
-            self.handler('select_indic', self.GetTextRange(p, q)) or evt.Skip()
+            if self.IndicatorValueAt(0, pos): # check indicator [0]
+                p = self.IndicatorStart(0, pos)
+                q = self.IndicatorEnd(0, pos)
+                self.goto_char(pos)
+                self.handler('select_itext', self.GetTextRange(p, q))
+            evt.Skip()
         
         self.Bind(stc.EVT_STC_INDICATOR_CLICK, indic)
         
@@ -254,7 +256,7 @@ class EditorInterface(CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicator for search-word
+        ## Custom indicator [0,1] for search-word
         try:
             self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
@@ -269,7 +271,7 @@ class EditorInterface(CtrlInterface):
         except AttributeError:
             pass
         
-        ## Custom indicator for match_paren
+        ## Custom indicator [2] for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
         
@@ -1793,7 +1795,7 @@ class Nautilus(Shell, EditorInterface):
         To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
         
         The original key bindings are mapped in esc-map,
-        e.g., if you want to do 'select-all', type [ESC C-a], not [C-a]
+        e.g., if you want to do 'select-all', type [ESC C-a], not [C-a].
         
     Magic syntax::
         
@@ -1801,9 +1803,9 @@ class Nautilus(Shell, EditorInterface):
         - pullback  : x@y --> y(x) | x@y@z --> z(y(x))
         - apropos   : x.y? [not] p --> shows apropos (not-)matched by predicates p
                       equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
-                      y can contain regular expressions.
-                      (RE) \\a:[a-z], \\A:[A-Z] can be used in addition.
-                      p can be atom, callable, type (e.g., int, str, ...),
+                      ``y`` can contain regular expressions except for a dot.
+                      ``y`` can contain abbreviations: \\a:[a-z], \\A:[A-Z] .
+                      ``p`` can be atom, callable, type (e.g., int, str, ...),
                       and any predicates such as inspect.isclass.
         
         * info      :  ?x --> info(x) shows short information
@@ -1811,7 +1813,7 @@ class Nautilus(Shell, EditorInterface):
         * sx        :  !x --> sx(x) executes command in external shell
         
         ``*`` denotes the original syntax defined in wx.py.shell,
-        for which, at present version, enabled with USE_MAGIC switch being on
+        for which, at present version, enabled with USE_MAGIC switch being on.
     
     Shell built-in utility::
     
@@ -1854,7 +1856,7 @@ class Nautilus(Shell, EditorInterface):
     The most convenient way to see the details of keymaps on the shell is as follows::
     
         >>> self.shell.handler @p
-        ... (or) ...
+        ... # or
         >>> self.shell.handler @filling
     
     A flaky nutshell:
