@@ -3117,7 +3117,8 @@ class Nautilus(Shell, EditorInterface):
             m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
                 text, hints = m.groups()
-                if hints and not hints.strip().endswith(','):
+                if not hints or hints.strip().endswith(','):
+                    self.message("[module]>>> waiting for key input...")
                     return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
