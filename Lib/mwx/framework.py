@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.3"
+__version__ = "0.69.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -986,10 +986,6 @@ class ShellFrame(MiniFrame):
              'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
              'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
-            'C-x' : {
-                    'p pressed' : (0, _F(self.other_editor, p=-1)),
-                    'n pressed' : (0, _F(self.other_editor, p=+1)),
-            },
         })
         
         ## py-mode
@@ -1056,22 +1052,21 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                self.Log.push_current()
                 for buffer in self.Log.buffer_list:
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-                self.Scratch.push_current()
+                self.Log.push_current()
+                with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
+                    f.write(self.Log.default_buffer.text)
+                
                 for buffer in self.Scratch.buffer_list:
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-                    else:
-                        with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
-                            f.write(buffer.text)
-            
-            ## if self.Scratch.buffer.mtdelta is None:
-            ##     self.Scratch.SaveFile(self.SCRATCH_FILE)
+                self.Scratch.push_current()
+                with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
+                    f.write(self.Scratch.default_buffer.text)
             return True
         except Exception:
             traceback.print_exc()
@@ -1280,7 +1275,8 @@ class ShellFrame(MiniFrame):
         shell.SetFocus()
         self.Show()
         self.popup_window(self.linfo, focus=0)
-        self.add_history("<-- Beginning of debugger")
+        ## self.add_history("<-- Beginning of debugger")
+        self.Log.default_buffer.text += "<-- Beginning of debugger\r\n"
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
@@ -1298,20 +1294,24 @@ class ShellFrame(MiniFrame):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         
-        ## Logging debug history every step in case of crash.
-        command = shell.cmdline
-        self.add_history(command, prefix=' '*4, suffix=None) # command ends with linesep
         self.message("Debugger is busy now (Press C-g to quit).")
         
-        with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
-            o.write(command)
+        ## Logging debug every step in case of crash.
+        command = shell.cmdline
+        if command and not command.isspace():
+            command = re.sub(r"^(.*)", r"    \1", command, flags=re.M)
+            ## self.add_history(command, suffix=None)
+            ## with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
+            ##     o.write(command)
+            self.Log.default_buffer.text += command
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
         shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
-        self.add_history("--> End of debugger")
+        ## self.add_history("--> End of debugger")
+        self.Log.default_buffer.text += "--> End of debugger\r\n"
         self.linfo.unwatch()
         self.ginfo.unwatch()
         self.on_title_window(shell.target)
