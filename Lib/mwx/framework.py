@@ -1275,7 +1275,8 @@ class ShellFrame(MiniFrame):
         shell.SetFocus()
         self.Show()
         self.popup_window(self.linfo, focus=0)
-        self.add_history("<-- Beginning of debugger")
+        ## self.add_history("<-- Beginning of debugger")
+        self.Log.default_buffer.text += "<-- Beginning of debugger\r\n"
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
@@ -1293,20 +1294,24 @@ class ShellFrame(MiniFrame):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         
-        ## Logging debug history every step in case of crash.
-        command = shell.cmdline
-        self.add_history(command, prefix=' '*4, suffix=None) # command ends with linesep
         self.message("Debugger is busy now (Press C-g to quit).")
         
-        with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
-            o.write(command)
+        ## Logging debug every step in case of crash.
+        command = shell.cmdline
+        if command and not command.isspace():
+            command = re.sub(r"^(.*)", r"    \1", command, flags=re.M)
+            ## self.add_history(command, suffix=None)
+            ## with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
+            ##     o.write(command)
+            self.Log.default_buffer.text += command
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
         shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
-        self.add_history("--> End of debugger")
+        ## self.add_history("--> End of debugger")
+        self.Log.default_buffer.text += "--> End of debugger\r\n"
         self.linfo.unwatch()
         self.ginfo.unwatch()
         self.on_title_window(shell.target)
