@@ -1244,7 +1244,11 @@ class Frame(mwx.Frame):
             return
         if plug.reloadable:
             current_session = {}
-            plug.save_session(current_session)
+            try:
+                plug.save_session(current_session)
+            except Exception:
+                traceback.print_exc()
+                print("- Failed to save session: {}".format(plug))
             return self.load_plug(plug.__module__, force=1, session=current_session)
         return False
     
