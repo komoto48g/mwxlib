@@ -6,6 +6,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from collections import OrderedDict
 from functools import wraps
+from bdb import BdbQuit
 import traceback
 import warnings
 import shlex
@@ -578,6 +579,8 @@ class FSM(dict):
                 try:
                     ret = act(*args, **kwargs) # try actions after transition
                     retvals.append(ret)
+                except BdbQuit:
+                    pass
                 except Exception as e:
                     self.dump("- FSM:exception: {!r}".format(e),
                               "   event : {}".format(event),
