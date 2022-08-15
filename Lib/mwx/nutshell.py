@@ -1445,7 +1445,7 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.buffer = Buffer()
+        self.buffer = Buffer("*{}*".format(self.Name.lower()))
         self.__buffers = [self.buffer] # Emulates multi-page editor
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1524,7 +1524,7 @@ class Editor(EditWindow, EditorInterface):
     def menu(self):
         """Yields context menu"""
         def _change_buffer(f):
-            if f != self.buffer and self.confirm_load():
+            if f is not self.buffer and self.confirm_load():
                 self.push_current() # cache current
                 self.restore_buffer(f)
                 self.SetFocus()
@@ -1580,7 +1580,7 @@ class Editor(EditWindow, EditorInterface):
             self.ClearAll()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.buffer = Buffer()
+        self.buffer = Buffer("*{}*".format(self.Name.lower()))
         self.buffer_list[:] = [self.buffer]
         self.parent.handler('caption_page', self, self.Name)
     
