@@ -924,7 +924,7 @@ class EditorInterface(CtrlInterface):
         elif vl > hl + n - 1:
             self.ScrollToLine(vl - n + 1)
     
-    def EnsureLineMoreOnScreen(self, line):
+    def EnsureLineMoreOnScreen(self, line, offset=0):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
         If the line is at the screen edge, recenter it.
@@ -932,7 +932,7 @@ class EditorInterface(CtrlInterface):
         n = self.LinesOnScreen() # lines completely visible
         hl = self.FirstVisibleLine
         vl = self.calc_vline(line)
-        if not hl < vl < hl + n - 1:
+        if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
     
     ## --------------------------------
@@ -1351,12 +1351,6 @@ class Buffer:
         self.code = None
         self.text = ''
     
-    def __eq__(self, buf):
-        return (type(self) is type(buf)
-            and self.filename == buf.filename
-            and self.codename == buf.codename
-            and self.code is buf.code)
-    
     def __contains__(self, v):
         if inspect.iscode(v) and self.code:
             return v is self.code\
@@ -1445,8 +1439,9 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.buffer = Buffer("*{}*".format(self.Name.lower()))
-        self.__buffers = [self.buffer] # Emulates multi-page editor
+        self.default_name = "*{}*".format(self.Name.lower())
+        self.buffer = Buffer(self.default_name)
+        self.__buffers = [self.buffer]
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1523,7 +1518,7 @@ class Editor(EditWindow, EditorInterface):
     @property
     def menu(self):
         """Yields context menu"""
-        def _change_buffer(f):
+        def _swap_buffer(f):
             if f is not self.buffer and self.confirm_load():
                 self.push_current() # cache current
                 self.restore_buffer(f)
@@ -1531,7 +1526,7 @@ class Editor(EditWindow, EditorInterface):
         
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
-                lambda v: _change_buffer(data),
+                lambda v: _swap_buffer(data),
                 lambda v: v.Check(data is self.buffer))
         
         if len(self.buffer_list) > 1:
@@ -1539,7 +1534,7 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def buffer_list(self):
-        """List of all buffers."""
+        """A list of all buffers that emulate multi-page editor."""
         return self.__buffers
     
     @property
@@ -1580,30 +1575,35 @@ class Editor(EditWindow, EditorInterface):
             self.ClearAll()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.buffer = Buffer("*{}*".format(self.Name.lower()))
+        self.buffer = Buffer(self.default_name)
         self.buffer_list[:] = [self.buffer]
         self.parent.handler('caption_page', self, self.Name)
+    
+    def find_buffer(self, f):
+        for buffer in self.buffer_list:
+            if f in buffer or f is buffer:
+                return buffer
     
     def restore_buffer(self, f):
         """Restore buffer with specified f:filename or code.
         
         Note: STC data such as `UndoBuffer` is not restored.
         """
-        for buffer in self.buffer_list:
-            if f in buffer or f is buffer:
-                self.buffer = buffer
-                if self.buffer.mtdelta is not None:
-                    self.LoadFile(buffer.filename) # restore text from file
-                else:
-                    with self.off_readonly():
-                        self.Text = buffer.text # text from cache (*default*)
-                        self.EmptyUndoBuffer()
-                        self.SetSavePoint()
-                    self.parent.handler('caption_page', self, self.Name)
-                self.markline = buffer.lineno - 1
-                self.goto_marker()
-                self.handler('buffer_loaded', self)
-                return True
+        buffer = self.find_buffer(f)
+        if buffer:
+            self.buffer = buffer
+            if self.buffer.mtdelta is not None:
+                self.LoadFile(buffer.filename) # restore text from file
+            else:
+                with self.off_readonly():
+                    self.Text = buffer.text # text from cache (*default*)
+                    self.EmptyUndoBuffer()
+                    self.SetSavePoint()
+                self.parent.handler('caption_page', self, self.Name)
+            self.markline = buffer.lineno - 1
+            self.goto_marker()
+            self.handler('buffer_loaded', self)
+            return True
         return False
     
     def load_cache(self, f, lineno=0, globals=None):
@@ -1621,7 +1621,7 @@ class Editor(EditWindow, EditorInterface):
                 self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
             self.push_current()
             self.handler('buffer_loaded', self)
             return True
@@ -1639,7 +1639,7 @@ class Editor(EditWindow, EditorInterface):
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
             self.push_current()
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -2064,6 +2064,7 @@ class Nautilus(Shell, EditorInterface):
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpTip2),
                     '. pressed' : (2, self.OnEnterDot),
+                  'C-. pressed' : (2, self.OnExtraDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
@@ -2110,6 +2111,8 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
+                  'C-. pressed' : (2, skip),
+                 'C-. released' : (2, self.call_word_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
             'S-[a-z\\] pressed' : (2, skip),
@@ -2247,13 +2250,12 @@ class Nautilus(Shell, EditorInterface):
         """Called when space pressed"""
         if not self.CanEdit():
             return
-        
         cmdl = self.cmdlc
         if re.match(r"import\s*", cmdl)\
           or re.match(r"from\s*$", cmdl)\
           or re.match(r"from\s+([\w.]+)\s+import\s*", cmdl):
             self.ReplaceSelection(' ')
-            self.handler('M-m pressed', None) # call_module_autocomp
+            self.handler('M-m pressed', None) # => call_module_autocomp
             return
         evt.Skip()
     
@@ -2301,21 +2303,32 @@ class Nautilus(Shell, EditorInterface):
         ## evt.Skip() # => processLine
     
     def OnEnterDot(self, evt):
-        """Called when dot(.) pressed"""
+        """Called when dot [.] pressed"""
         if not self.CanEdit():
+            self.handler('quit', evt)
             return
-        
         p = self.cpos
         st = self.get_style(p-1)
         if st in ('moji', 'word', 'rparen'):
             pass
         elif st in (0, 'space', 'sep', 'lparen'):
-            self.ReplaceSelection('self') # replace [.] --> [self.]
+            ## self.ReplaceSelection('self') # replace [.] --> [self.]
+            pass
         else:
-            self.handler('quit', evt) # => quit autocomp mode
+            self.handler('quit', evt)
         
         self.ReplaceSelection('.') # just write down a dot.
-        evt.Skip(False)            # and do not skip to default autocomp mode
+        evt.Skip(False)            # do not skip to default autocomp mode
+    
+    def OnExtraDot(self, evt):
+        """Called when ex-dot [C-.] pressed"""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        p = self.cpos
+        st = self.get_style(p-1)
+        if st in (0, 'space', 'sep', 'lparen'):
+            self.ReplaceSelection('self.')
     
     def openLine(self):
         p = self.cpos
@@ -2870,7 +2883,7 @@ class Nautilus(Shell, EditorInterface):
         return shell
     
     ## --------------------------------
-    ## Auto-comp actions of the shell
+    ## Autocomp actions of the shell
     ## --------------------------------
     
     def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):

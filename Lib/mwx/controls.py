@@ -1252,11 +1252,11 @@ if __name__ == "__main__":
                 row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22,
             )
-            ## self.layout(
-            ##     self.params, title="V2",
-            ##     row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-            ##     type='spin', style='button', lw=-1, tw=60, cw=-1,
-            ## )
+            self.layout(
+                self.params, title="V2",
+                row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
+                type='spin', style='button', lw=-1, tw=60, cw=-1,
+            )
             ## self.layout((
             ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
             ##         for type in (
