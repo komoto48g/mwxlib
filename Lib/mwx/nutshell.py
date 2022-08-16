@@ -2064,6 +2064,7 @@ class Nautilus(Shell, EditorInterface):
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpTip2),
                     '. pressed' : (2, self.OnEnterDot),
+                  'C-. pressed' : (2, self.OnExtraDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
@@ -2110,6 +2111,8 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
+                  'C-. pressed' : (2, skip),
+                 'C-. released' : (2, self.call_word_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
             'S-[a-z\\] pressed' : (2, skip),
@@ -2247,13 +2250,12 @@ class Nautilus(Shell, EditorInterface):
         """Called when space pressed"""
         if not self.CanEdit():
             return
-        
         cmdl = self.cmdlc
         if re.match(r"import\s*", cmdl)\
           or re.match(r"from\s*$", cmdl)\
           or re.match(r"from\s+([\w.]+)\s+import\s*", cmdl):
             self.ReplaceSelection(' ')
-            self.handler('M-m pressed', None) # call_module_autocomp
+            self.handler('M-m pressed', None) # => call_module_autocomp
             return
         evt.Skip()
     
@@ -2301,21 +2303,32 @@ class Nautilus(Shell, EditorInterface):
         ## evt.Skip() # => processLine
     
     def OnEnterDot(self, evt):
-        """Called when dot(.) pressed"""
+        """Called when dot [.] pressed"""
         if not self.CanEdit():
+            self.handler('quit', evt)
             return
-        
         p = self.cpos
         st = self.get_style(p-1)
         if st in ('moji', 'word', 'rparen'):
             pass
         elif st in (0, 'space', 'sep', 'lparen'):
-            self.ReplaceSelection('self') # replace [.] --> [self.]
+            ## self.ReplaceSelection('self') # replace [.] --> [self.]
+            pass
         else:
-            self.handler('quit', evt) # => quit autocomp mode
+            self.handler('quit', evt)
         
         self.ReplaceSelection('.') # just write down a dot.
-        evt.Skip(False)            # and do not skip to default autocomp mode
+        evt.Skip(False)            # do not skip to default autocomp mode
+    
+    def OnExtraDot(self, evt):
+        """Called when ex-dot [C-.] pressed"""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        p = self.cpos
+        st = self.get_style(p-1)
+        if st in (0, 'space', 'sep', 'lparen'):
+            self.ReplaceSelection('self.')
     
     def openLine(self):
         p = self.cpos
@@ -2870,7 +2883,7 @@ class Nautilus(Shell, EditorInterface):
         return shell
     
     ## --------------------------------
-    ## Auto-comp actions of the shell
+    ## Autocomp actions of the shell
     ## --------------------------------
     
     def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
