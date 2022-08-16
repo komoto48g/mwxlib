@@ -1541,18 +1541,18 @@ class Editor(EditWindow, EditorInterface):
     @property
     def buffer_index(self):
         """Index of the currently loaded data."""
-        return self.buffer_list.index(self.buffer) # cf. __eq__
+        return self.buffer_list.index(self.buffer)
     
     def push_current(self):
         """Push the current buffer to the buffer list."""
         self.buffer.lineno = self.markline + 1
         self.buffer.text = self.Text
-        if self.buffer not in self.buffer_list:  # cf. __eq__
+        if self.buffer not in self.buffer_list:
             self.buffer_list.append(self.buffer)
     
     def pop_current(self):
         """Pop the current buffer from the buffer list."""
-        j = self.buffer_list.index(self.buffer)  # cf. __eq__
+        j = self.buffer_list.index(self.buffer)
         del self.buffer_list[j]
         self.handler('buffer_unloaded', self)
         
@@ -1566,7 +1566,11 @@ class Editor(EditWindow, EditorInterface):
             self.clear_buffer()
     
     def clear_buffer(self):
-        """Initialize list of buffers."""
+        """Initialize list of buffers.
+        
+        Note:
+            All buffers will be cleared without confirmation.
+        """
         with self.off_readonly():
             self.ClearAll()
             self.EmptyUndoBuffer()
@@ -1584,7 +1588,9 @@ class Editor(EditWindow, EditorInterface):
     def restore_buffer(self, f):
         """Restore buffer with specified f:filename or code.
         
-        Note: STC data such as `UndoBuffer` is not restored.
+        Note:
+            The buffer will be restored without confirmation.
+            STC data such as `UndoBuffer` is not restored.
         """
         buffer = self.find_buffer(f)
         if buffer:
@@ -1599,11 +1605,13 @@ class Editor(EditWindow, EditorInterface):
             return True
         return False
     
-    def load_cache(self, f, lineno=0, globals=None):
+    def load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache.
         
-        Note: The file will be reloaded without confirmation.
+        Note:
+            The file will be reloaded without confirmation.
         """
+        f = os.path.abspath(filename)
         linecache.checkcache(f)
         lines = linecache.getlines(f, globals)
         if lines:
@@ -1623,10 +1631,9 @@ class Editor(EditWindow, EditorInterface):
     def load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile.
         
-        Note: The file will be reloaded without confirmation.
+        Note:
+            The file will be reloaded without confirmation.
         """
-        if not filename:
-            return None
         f = os.path.abspath(filename)
         self.push_current() # cache current
         if self.LoadFile(f):
@@ -1642,10 +1649,9 @@ class Editor(EditWindow, EditorInterface):
     def save_file(self, filename):
         """Wrapped method of SaveFile.
         
-        Note: The file will be overwritten without confirmation.
+        Note:
+            The file will be overwritten without confirmation.
         """
-        if not filename:
-            return None
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.buffer.filename = f
@@ -2480,10 +2486,10 @@ class Nautilus(Shell, EditorInterface):
     def on_activated(self, shell):
         """Called when shell:self is activated.
         Reset localvars and builtins assigned for the shell target.
-        
-        Note: the target could be referred from other shells.
         """
-        ## self.target = shell.target # Don't overwrite locals here
+        ## self.target = shell.target # Don't set target (locals) here,
+                                      # it could be referred from debugger.
+        
         self.parent.handler('title_window', self.target)
         self.trace_position()
         try:
@@ -2525,7 +2531,8 @@ class Nautilus(Shell, EditorInterface):
         """Called when [Enter] text (before push).
         Mark points, reset history point, etc.
         
-        Note: text is raw input:str with no magic cast
+        Note:
+            Argument `text` is raw input:str with no magic cast.
         """
         if text.rstrip():
             self.__eolc_mark = self.eolc
@@ -2535,7 +2542,8 @@ class Nautilus(Shell, EditorInterface):
         """Called when [Enter] text (after push).
         Set markers at the last command line.
         
-        Note: text is raw output:str with no magic cast
+        Note:
+            Argument `text` is raw output:str with no magic cast.
         """
         ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
