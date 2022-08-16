@@ -1351,12 +1351,6 @@ class Buffer:
         self.code = None
         self.text = ''
     
-    def __eq__(self, buf):
-        return (type(self) is type(buf)
-            and self.filename == buf.filename
-            and self.codename == buf.codename
-            and self.code is buf.code)
-    
     def __contains__(self, v):
         if inspect.iscode(v) and self.code:
             return v is self.code\
@@ -1445,8 +1439,9 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.buffer = Buffer("*{}*".format(self.Name.lower()))
-        self.__buffers = [self.buffer] # Emulates multi-page editor
+        self.default_name = "*{}*".format(self.Name.lower())
+        self.buffer = Buffer(self.default_name)
+        self.__buffers = [self.buffer]
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1539,7 +1534,7 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def buffer_list(self):
-        """List of all buffers."""
+        """A list of all buffers that emulate multi-page editor."""
         return self.__buffers
     
     @property
@@ -1580,30 +1575,35 @@ class Editor(EditWindow, EditorInterface):
             self.ClearAll()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.buffer = Buffer("*{}*".format(self.Name.lower()))
+        self.buffer = Buffer(self.default_name)
         self.buffer_list[:] = [self.buffer]
         self.parent.handler('caption_page', self, self.Name)
+    
+    def find_buffer(self, f):
+        for buffer in self.buffer_list:
+            if f in buffer or f is buffer:
+                return buffer
     
     def restore_buffer(self, f):
         """Restore buffer with specified f:filename or code.
         
         Note: STC data such as `UndoBuffer` is not restored.
         """
-        for buffer in self.buffer_list:
-            if f in buffer or f is buffer:
-                self.buffer = buffer
-                if self.buffer.mtdelta is not None:
-                    self.LoadFile(buffer.filename) # restore text from file
-                else:
-                    with self.off_readonly():
-                        self.Text = buffer.text # text from cache (*default*)
-                        self.EmptyUndoBuffer()
-                        self.SetSavePoint()
-                    self.parent.handler('caption_page', self, self.Name)
-                self.markline = buffer.lineno - 1
-                self.goto_marker()
-                self.handler('buffer_loaded', self)
-                return True
+        buffer = self.find_buffer(f)
+        if buffer:
+            self.buffer = buffer
+            if self.buffer.mtdelta is not None:
+                self.LoadFile(buffer.filename) # restore text from file
+            else:
+                with self.off_readonly():
+                    self.Text = buffer.text # text from cache (*default*)
+                    self.EmptyUndoBuffer()
+                    self.SetSavePoint()
+                self.parent.handler('caption_page', self, self.Name)
+            self.markline = buffer.lineno - 1
+            self.goto_marker()
+            self.handler('buffer_loaded', self)
+            return True
         return False
     
     def load_cache(self, f, lineno=0, globals=None):
@@ -1621,7 +1621,7 @@ class Editor(EditWindow, EditorInterface):
                 self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
             self.push_current()
             self.handler('buffer_loaded', self)
             return True
@@ -1639,7 +1639,7 @@ class Editor(EditWindow, EditorInterface):
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
             self.push_current()
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
