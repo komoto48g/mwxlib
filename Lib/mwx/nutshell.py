@@ -657,7 +657,6 @@ class EditorInterface(CtrlInterface):
         else:
             self.buffer.codename = filename
             self.buffer.code = code
-            self.push_current()
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
@@ -1440,7 +1439,8 @@ class Editor(EditWindow, EditorInterface):
                                 # Parent:<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(self.Name.lower())
-        self.buffer = Buffer(self.default_name)
+        self.default_buffer = Buffer(self.default_name)
+        self.buffer = self.default_buffer
         self.__buffers = [self.buffer]
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1523,6 +1523,7 @@ class Editor(EditWindow, EditorInterface):
                 self.push_current() # cache current
                 self.restore_buffer(f)
                 self.SetFocus()
+                self.parent.handler('caption_page', self, self.Name)
         
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
@@ -1541,11 +1542,6 @@ class Editor(EditWindow, EditorInterface):
     def buffer_index(self):
         """Index of the currently loaded data."""
         return self.buffer_list.index(self.buffer) # cf. __eq__
-    
-    @property
-    def default_buffer(self):
-        """The *default* (0th) buffer."""
-        return self.buffer_list[0]
     
     def push_current(self):
         """Push the current buffer to the buffer list."""
@@ -1575,8 +1571,9 @@ class Editor(EditWindow, EditorInterface):
             self.ClearAll()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.buffer = Buffer(self.default_name)
-        self.buffer_list[:] = [self.buffer]
+        self.buffer = self.default_buffer
+        self.__buffers = [self.buffer]
+        self.push_current()
         self.parent.handler('caption_page', self, self.Name)
     
     def find_buffer(self, f):
@@ -1592,17 +1589,13 @@ class Editor(EditWindow, EditorInterface):
         buffer = self.find_buffer(f)
         if buffer:
             self.buffer = buffer
-            if self.buffer.mtdelta is not None:
-                self.LoadFile(buffer.filename) # restore text from file
-            else:
-                with self.off_readonly():
-                    self.Text = buffer.text # text from cache (*default*)
-                    self.EmptyUndoBuffer()
-                    self.SetSavePoint()
-                self.parent.handler('caption_page', self, self.Name)
+            text = ''.join(linecache.getlines(buffer.filename)) or buffer.text
+            with self.off_readonly():
+                self.Text = text
+                self.EmptyUndoBuffer()
+                self.SetSavePoint()
             self.markline = buffer.lineno - 1
             self.goto_marker()
-            self.handler('buffer_loaded', self)
             return True
         return False
     
@@ -1621,7 +1614,7 @@ class Editor(EditWindow, EditorInterface):
                 self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
             self.handler('buffer_loaded', self)
             return True
@@ -1639,7 +1632,7 @@ class Editor(EditWindow, EditorInterface):
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
