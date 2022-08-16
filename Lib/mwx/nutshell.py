@@ -924,7 +924,7 @@ class EditorInterface(CtrlInterface):
         elif vl > hl + n - 1:
             self.ScrollToLine(vl - n + 1)
     
-    def EnsureLineMoreOnScreen(self, line):
+    def EnsureLineMoreOnScreen(self, line, offset=0):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
         If the line is at the screen edge, recenter it.
@@ -932,7 +932,7 @@ class EditorInterface(CtrlInterface):
         n = self.LinesOnScreen() # lines completely visible
         hl = self.FirstVisibleLine
         vl = self.calc_vline(line)
-        if not hl < vl < hl + n - 1:
+        if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
     
     ## --------------------------------
@@ -1523,7 +1523,7 @@ class Editor(EditWindow, EditorInterface):
     @property
     def menu(self):
         """Yields context menu"""
-        def _change_buffer(f):
+        def _swap_buffer(f):
             if f is not self.buffer and self.confirm_load():
                 self.push_current() # cache current
                 self.restore_buffer(f)
@@ -1531,7 +1531,7 @@ class Editor(EditWindow, EditorInterface):
         
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
-                lambda v: _change_buffer(data),
+                lambda v: _swap_buffer(data),
                 lambda v: v.Check(data is self.buffer))
         
         if len(self.buffer_list) > 1:
