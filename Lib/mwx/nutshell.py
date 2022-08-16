@@ -1521,7 +1521,7 @@ class Editor(EditWindow, EditorInterface):
         def _swap_buffer(f):
             if f is not self.buffer and self.confirm_load():
                 self.push_current() # cache current
-                self.restore_buffer(f)
+                self.swap_buffer(f)
                 self.SetFocus()
                 self.parent.handler('caption_page', self, self.Name)
         
@@ -1561,7 +1561,7 @@ class Editor(EditWindow, EditorInterface):
         if rest:
             if j > len(rest) - 1:
                 j -= 1
-            self.restore_buffer(rest[j])
+            self.swap_buffer(rest[j])
         else:
             self.clear_buffer()
     
@@ -1585,15 +1585,17 @@ class Editor(EditWindow, EditorInterface):
             if f in buffer or f is buffer:
                 return buffer
     
-    def restore_buffer(self, f):
-        """Restore buffer with specified f:filename or code.
+    def swap_buffer(self, f):
+        """Replace buffer with specified f:filename or code.
         
         Note:
-            The buffer will be restored without confirmation.
+            The buffer will be swapped without confirmation.
             STC data such as `UndoBuffer` is not restored.
         """
         buffer = self.find_buffer(f)
         if buffer:
+            if buffer is self.buffer:
+                return True
             self.buffer = buffer
             text = ''.join(linecache.getlines(buffer.filename)) or buffer.text
             with self.off_readonly():
