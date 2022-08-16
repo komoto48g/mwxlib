@@ -238,9 +238,8 @@ class Debugger(Pdb):
         where `f` can be filename or code object.
         """
         for editor in self.parent.ghost.all_pages(stc.StyledTextCtrl):
-            for buffer in editor.buffer_list:
-                if f in buffer:
-                    return editor
+            if editor.swap_buffer(f):
+                return editor
     
     def on_debug_begin(self, frame):
         """Called before set_trace
@@ -268,12 +267,9 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        editor = self.find_editor(code)
-        if editor:
-            if code not in editor.buffer.code.co_consts:
-                editor.restore_buffer(code)
-        else:
-            editor = self.find_editor(filename) or self.parent.Log
+        editor = self.find_editor(code) or self.find_editor(filename)
+        if not editor:
+            editor = self.parent.Log
             if filename != editor.buffer.filename:
                 editor.load_cache(filename)
         

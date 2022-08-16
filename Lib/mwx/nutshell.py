@@ -657,7 +657,6 @@ class EditorInterface(CtrlInterface):
         else:
             self.buffer.codename = filename
             self.buffer.code = code
-            self.push_current()
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
@@ -1440,7 +1439,8 @@ class Editor(EditWindow, EditorInterface):
                                 # Parent:<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(self.Name.lower())
-        self.buffer = Buffer(self.default_name)
+        self.default_buffer = Buffer(self.default_name)
+        self.buffer = self.default_buffer
         self.__buffers = [self.buffer]
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1521,8 +1521,9 @@ class Editor(EditWindow, EditorInterface):
         def _swap_buffer(f):
             if f is not self.buffer and self.confirm_load():
                 self.push_current() # cache current
-                self.restore_buffer(f)
+                self.swap_buffer(f)
                 self.SetFocus()
+                self.parent.handler('caption_page', self, self.Name)
         
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
@@ -1540,23 +1541,18 @@ class Editor(EditWindow, EditorInterface):
     @property
     def buffer_index(self):
         """Index of the currently loaded data."""
-        return self.buffer_list.index(self.buffer) # cf. __eq__
-    
-    @property
-    def default_buffer(self):
-        """The *default* (0th) buffer."""
-        return self.buffer_list[0]
+        return self.buffer_list.index(self.buffer)
     
     def push_current(self):
         """Push the current buffer to the buffer list."""
         self.buffer.lineno = self.markline + 1
         self.buffer.text = self.Text
-        if self.buffer not in self.buffer_list:  # cf. __eq__
+        if self.buffer not in self.buffer_list:
             self.buffer_list.append(self.buffer)
     
     def pop_current(self):
         """Pop the current buffer from the buffer list."""
-        j = self.buffer_list.index(self.buffer)  # cf. __eq__
+        j = self.buffer_list.index(self.buffer)
         del self.buffer_list[j]
         self.handler('buffer_unloaded', self)
         
@@ -1565,18 +1561,23 @@ class Editor(EditWindow, EditorInterface):
         if rest:
             if j > len(rest) - 1:
                 j -= 1
-            self.restore_buffer(rest[j])
+            self.swap_buffer(rest[j])
         else:
             self.clear_buffer()
     
     def clear_buffer(self):
-        """Initialize list of buffers."""
+        """Initialize list of buffers.
+        
+        Note:
+            All buffers will be cleared without confirmation.
+        """
         with self.off_readonly():
             self.ClearAll()
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.buffer = Buffer(self.default_name)
-        self.buffer_list[:] = [self.buffer]
+        self.buffer = self.default_buffer
+        self.__buffers = [self.buffer]
+        self.push_current()
         self.parent.handler('caption_page', self, self.Name)
     
     def find_buffer(self, f):
@@ -1584,33 +1585,35 @@ class Editor(EditWindow, EditorInterface):
             if f in buffer or f is buffer:
                 return buffer
     
-    def restore_buffer(self, f):
-        """Restore buffer with specified f:filename or code.
+    def swap_buffer(self, f):
+        """Replace buffer with specified f:filename or code.
         
-        Note: STC data such as `UndoBuffer` is not restored.
+        Note:
+            The buffer will be swapped without confirmation.
+            STC data such as `UndoBuffer` is not restored.
         """
         buffer = self.find_buffer(f)
         if buffer:
+            if buffer is self.buffer:
+                return True
             self.buffer = buffer
-            if self.buffer.mtdelta is not None:
-                self.LoadFile(buffer.filename) # restore text from file
-            else:
-                with self.off_readonly():
-                    self.Text = buffer.text # text from cache (*default*)
-                    self.EmptyUndoBuffer()
-                    self.SetSavePoint()
-                self.parent.handler('caption_page', self, self.Name)
+            text = ''.join(linecache.getlines(buffer.filename)) or buffer.text
+            with self.off_readonly():
+                self.Text = text
+                self.EmptyUndoBuffer()
+                self.SetSavePoint()
             self.markline = buffer.lineno - 1
             self.goto_marker()
-            self.handler('buffer_loaded', self)
             return True
         return False
     
-    def load_cache(self, f, lineno=0, globals=None):
+    def load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache.
         
-        Note: The file will be reloaded without confirmation.
+        Note:
+            The file will be reloaded without confirmation.
         """
+        f = os.path.abspath(filename)
         linecache.checkcache(f)
         lines = linecache.getlines(f, globals)
         if lines:
@@ -1621,7 +1624,7 @@ class Editor(EditWindow, EditorInterface):
                 self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
             self.handler('buffer_loaded', self)
             return True
@@ -1630,16 +1633,15 @@ class Editor(EditWindow, EditorInterface):
     def load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile.
         
-        Note: The file will be reloaded without confirmation.
+        Note:
+            The file will be reloaded without confirmation.
         """
-        if not filename:
-            return None
         f = os.path.abspath(filename)
         self.push_current() # cache current
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_marker()
-            self.buffer = self.find_buffer(f) or Buffer(f, lineno)
+            self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
             self.handler('buffer_loaded', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -1649,10 +1651,9 @@ class Editor(EditWindow, EditorInterface):
     def save_file(self, filename):
         """Wrapped method of SaveFile.
         
-        Note: The file will be overwritten without confirmation.
+        Note:
+            The file will be overwritten without confirmation.
         """
-        if not filename:
-            return None
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.buffer.filename = f
@@ -2487,10 +2488,10 @@ class Nautilus(Shell, EditorInterface):
     def on_activated(self, shell):
         """Called when shell:self is activated.
         Reset localvars and builtins assigned for the shell target.
-        
-        Note: the target could be referred from other shells.
         """
-        ## self.target = shell.target # Don't overwrite locals here
+        ## self.target = shell.target # Don't set target (locals) here,
+                                      # it could be referred from debugger.
+        
         self.parent.handler('title_window', self.target)
         self.trace_position()
         try:
@@ -2532,7 +2533,8 @@ class Nautilus(Shell, EditorInterface):
         """Called when [Enter] text (before push).
         Mark points, reset history point, etc.
         
-        Note: text is raw input:str with no magic cast
+        Note:
+            Argument `text` is raw input:str with no magic cast.
         """
         if text.rstrip():
             self.__eolc_mark = self.eolc
@@ -2542,7 +2544,8 @@ class Nautilus(Shell, EditorInterface):
         """Called when [Enter] text (after push).
         Set markers at the last command line.
         
-        Note: text is raw output:str with no magic cast
+        Note:
+            Argument `text` is raw output:str with no magic cast.
         """
         ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
