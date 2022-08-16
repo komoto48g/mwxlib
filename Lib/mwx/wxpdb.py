@@ -15,6 +15,7 @@ import inspect
 import threading
 from importlib import import_module
 import wx
+from wx import stc
 try:
     from utilus import FSM, where
 except ImportError:
@@ -232,6 +233,15 @@ class Debugger(Pdb):
     ## Actions for handler
     ## --------------------------------
     
+    def find_editor(self, f):
+        """Find parent editor which has the specified f:object,
+        where `f` can be filename or code object.
+        """
+        for editor in self.parent.ghost.all_pages(stc.StyledTextCtrl):
+            for buffer in editor.buffer_list:
+                if f in buffer:
+                    return editor
+    
     def on_debug_begin(self, frame):
         """Called before set_trace
         Note: self.busy -> False or None
@@ -258,19 +268,20 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        editor = self.parent.find_editor(code)
+        editor = self.find_editor(code)
         if editor:
-            if code != editor.buffer.code:
+            if code not in editor.buffer.code.co_consts:
                 editor.restore_buffer(code)
         else:
-            editor = self.parent.find_editor(filename) or self.parent.Log
+            editor = self.find_editor(filename) or self.parent.Log
             if filename != editor.buffer.filename:
                 editor.load_cache(filename)
         
         if filename == editor.target:
             editor.markline = firstlineno - 1 # (o) entry:marker
             editor.pointer = lineno - 1 # (->) pointer:marker
-            editor.goto_line_marker()
+            ## editor.goto_line_marker()
+            editor.EnsureLineMoreOnScreen(lineno - 1)
             editor.push_current()
         
         for ln in self.get_file_breaks(filename):

@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.5"
+__version__ = "0.69.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -18,7 +18,6 @@ import wx
 from wx import aui
 from wx import stc
 from wx.py import dispatcher
-from wx.py.editwindow import EditWindow
 from importlib import reload
 import builtins
 try:
@@ -1458,7 +1457,7 @@ class ShellFrame(MiniFrame):
     def current_editor(self):
         """Currently focused editor or shell"""
         win = wx.Window.FindFocus()
-        if win in self.all_pages(EditWindow):
+        if win in self.all_pages(stc.StyledTextCtrl):
             return win
     
     @property
@@ -1468,15 +1467,6 @@ class ShellFrame(MiniFrame):
         if isinstance(page, type(self.rootshell)): #<Nautilus>
             return page
         return self.rootshell
-    
-    def find_editor(self, f):
-        """Find the editor which has the specified f:object,
-        where `f` can be filename or code object.
-        """
-        for editor in self.ghost.all_pages(EditWindow):
-            for buffer in editor.buffer_list:
-                if f in buffer:
-                    return editor
     
     ## --------------------------------
     ## Find text dialog
