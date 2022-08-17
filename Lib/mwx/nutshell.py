@@ -1594,7 +1594,7 @@ class Editor(EditWindow, EditorInterface):
         """
         buffer = self.find_buffer(f)
         if buffer:
-            if buffer is self.buffer:
+            if buffer is self.buffer: # Don't load the same buffer.
                 return True
             self.buffer = buffer
             text = ''.join(linecache.getlines(buffer.filename)) or buffer.text
