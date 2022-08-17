@@ -1371,7 +1371,11 @@ class ShellFrame(MiniFrame):
     
     def on_caption_page(self, page, caption):
         """Set caption to the tab control."""
-        page.Parent.set_page_caption(page, caption)
+        try:
+            ## the page must have parent:AuiNotebook
+            page.Parent.set_page_caption(page, caption)
+        except AttributeError:
+            pass
     
     def add_log(self, text):
         """Add text to the logging buffer."""

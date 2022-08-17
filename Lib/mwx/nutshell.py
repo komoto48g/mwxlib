@@ -1472,9 +1472,7 @@ class Editor(EditWindow, EditorInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                   'stc_updated' : [ None, ],
-                 'buffer_saved' : [ None, self.on_activated ],
-                'buffer_loaded' : [ None, self.on_activated ],
-              'buffer_unloaded' : [ None, self.on_activated ],
+               'buffer_updated' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
@@ -1504,8 +1502,7 @@ class Editor(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.buffer.mtdelta is not None:
-            self.parent.handler('caption_page', self, self.Name)
+        self.parent.handler('caption_page', self, self.Name)
         evt.Skip()
     
     def on_activated(self, editor):
@@ -1529,7 +1526,6 @@ class Editor(EditWindow, EditorInterface):
                 self.push_current() # cache current
                 self.swap_buffer(f)
                 self.SetFocus()
-                self.parent.handler('caption_page', self, self.Name)
         
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
@@ -1560,7 +1556,6 @@ class Editor(EditWindow, EditorInterface):
         """Pop the current buffer from the buffer list."""
         j = self.buffer_list.index(self.buffer)
         del self.buffer_list[j]
-        self.handler('buffer_unloaded', self)
         
         ## switch to one of the remaining buffers.
         rest = self.buffer_list
@@ -1588,7 +1583,7 @@ class Editor(EditWindow, EditorInterface):
         self.__buffers = [self.buffer]
         self._reset()
         self.push_current()
-        self.parent.handler('caption_page', self, self.Name)
+        self.handler('buffer_updated', self)
     
     def find_buffer(self, f):
         for buffer in self.buffer_list:
@@ -1610,6 +1605,7 @@ class Editor(EditWindow, EditorInterface):
             self._reset(buffer.filetext or buffer.text)
             self.markline = buffer.lineno - 1
             self.goto_marker()
+            self.handler('buffer_updated', self)
             return True
         return False
     
@@ -1629,7 +1625,7 @@ class Editor(EditWindow, EditorInterface):
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
-            self.handler('buffer_loaded', self)
+            self.handler('buffer_updated', self)
             return True
         return False
     
@@ -1646,7 +1642,7 @@ class Editor(EditWindow, EditorInterface):
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
-            self.handler('buffer_loaded', self)
+            self.handler('buffer_updated', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
@@ -1661,7 +1657,7 @@ class Editor(EditWindow, EditorInterface):
         if self.SaveFile(f):
             self.buffer.filename = f
             self.push_current()
-            self.handler('buffer_saved', self)
+            self.handler('buffer_updated', self)
             ## self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
