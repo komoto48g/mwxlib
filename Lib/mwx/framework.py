@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.7"
+__version__ = "0.69.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -222,7 +222,10 @@ class KeyCtrlInterfaceMixin(object):
     
     def post_command_hook(self, evt):
         keymap = self.handler.previous_state
-        self.message("{} {}".format(keymap, evt.key))
+        if keymap:
+            self.message("{} {}".format(keymap, evt.key))
+        else:
+            self.message(evt.key)
         evt.Skip()
     post_command_hook.__name__ = str('skip')
     
@@ -238,7 +241,7 @@ class KeyCtrlInterfaceMixin(object):
         return map, event, state
     
     def define_key(self, keymap, action=None, *args, **kwargs):
-        """Define [map key pressed] action.
+        """Define [map key (pressed)] action.
         
         If no action, it invalidates the key and returns @decor(binder).
         The key must be in C-M-S order (ctrl + alt(meta) + shift).
@@ -261,7 +264,7 @@ class KeyCtrlInterfaceMixin(object):
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
     
     def undefine_key(self, keymap):
-        """Delete [map key pressed] context."""
+        """Delete [map key (pressed)] context."""
         map, key, state = self._get_keymap_state(keymap)
         try:
             del self.handler[map][key]
@@ -963,9 +966,10 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                  'add_history' : [ None, self.add_history ],
-                     'add_help' : [ None, self.add_help ],
                     'add_shell' : [ None, self.add_shell ],
+                      'add_log' : [ None, self.add_log ],
+                     'add_help' : [ None, self.add_help ],
+                  'add_history' : [ None, self.add_history ],
                  'title_window' : [ None, self.on_title_window ],
                  'caption_page' : [ None, self.on_caption_page ]
             },
@@ -1072,7 +1076,9 @@ class ShellFrame(MiniFrame):
             print("- Failed to save session")
     
     def Init(self):
-        self.add_history("#! Opened: <{}>".format(datetime.datetime.now()))
+        msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
+        self.add_history(msg)
+        self.add_log(msg)
         self.load_session()
     
     def Destroy(self):
@@ -1274,8 +1280,7 @@ class ShellFrame(MiniFrame):
         shell.SetFocus()
         self.Show()
         self.popup_window(self.linfo, focus=0)
-        ## self.add_history("<-- Beginning of debugger")
-        self.Log.default_buffer.text += "<-- Beginning of debugger\r\n"
+        self.add_log("<-- Beginning of debugger\r\n")
     
     def on_debug_next(self, frame):
         """Called from cmdloop"""
@@ -1293,24 +1298,18 @@ class ShellFrame(MiniFrame):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
         
-        self.message("Debugger is busy now (Press C-g to quit).")
-        
-        ## Logging debug every step in case of crash.
         command = shell.cmdline
         if command and not command.isspace():
             command = re.sub(r"^(.*)", r"    \1", command, flags=re.M)
-            ## self.add_history(command, suffix=None)
-            ## with open(self.HISTORY_FILE, 'a', encoding='utf-8', newline='') as o:
-            ##     o.write(command)
-            self.Log.default_buffer.text += command
+            self.add_log(command)
+        self.message("Debugger is busy now (Press C-g to quit).")
     
     def on_debug_end(self, frame):
         """Called after set_quit"""
         shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
-        ## self.add_history("--> End of debugger")
-        self.Log.default_buffer.text += "--> End of debugger\r\n"
+        self.add_log("--> End of debugger\r\n")
         self.linfo.unwatch()
         self.ginfo.unwatch()
         self.on_title_window(shell.target)
@@ -1372,31 +1371,41 @@ class ShellFrame(MiniFrame):
     
     def on_caption_page(self, page, caption):
         """Set caption to the tab control."""
-        page.Parent.set_page_caption(page, caption)
+        try:
+            ## the page must have parent:AuiNotebook
+            page.Parent.set_page_caption(page, caption)
+        except AttributeError:
+            pass
+    
+    def add_log(self, text):
+        """Add text to the logging buffer."""
+        buffer = self.Log.default_buffer
+        buffer.text += text
+        if self.Log.buffer is buffer:
+            with self.Log.off_readonly():
+                self.Log.Text = buffer.text
+        ## Logging text every step in case of crash.
+        with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
+            f.write(text)
     
     def add_help(self, text):
-        """Puts text to the help buffer"""
+        """Add text to the help buffer."""
         with self.Help.off_readonly():
-            self.Help.SetText(text)
+            self.Help.Text = text
         self.popup_window(self.Help, focus=0)
     
-    def add_history(self, command, noerr=None, prefix=None, suffix=os.linesep):
-        """Add command:str to the history buffer
+    def add_history(self, text, noerr=None):
+        """Add text to the history buffer.
         
         noerr: Add marker, otherwise None if no marker is needed.
         prefix: Add prefix:str at the beginning of each line.
-        suffix: Add linesep at the end of the command
+        suffix: Add linesep at the end of the text
         """
-        if not command or command.isspace():
+        if not text or text.isspace():
             return
-        
         with self.History.off_readonly() as ed:
-            ed.goto_char(ed.TextLength)
-            if prefix:
-                command = re.sub(r"^(.*)", prefix + r"\1", command, flags=re.M)
-            if suffix:
-                command += suffix
-            ed.write(command)
+            ed.goto_char(ed.TextLength) # line to set an arrow marker
+            ed.write(text)
             if noerr is not None:
                 ed.MarkerAdd(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     

@@ -1385,6 +1385,12 @@ class Buffer:
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
+    
+    @property
+    def filetext(self):
+        f = self.filename
+        if f and os.path.isfile(f):
+            return ''.join(linecache.getlines(f))
 
 
 class Editor(EditWindow, EditorInterface):
@@ -1466,9 +1472,7 @@ class Editor(EditWindow, EditorInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                   'stc_updated' : [ None, ],
-                 'buffer_saved' : [ None, self.on_activated ],
-                'buffer_loaded' : [ None, self.on_activated ],
-              'buffer_unloaded' : [ None, self.on_activated ],
+               'buffer_updated' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
               '*button* dclick' : [ None, dispatch ],
@@ -1477,7 +1481,7 @@ class Editor(EditWindow, EditorInterface):
            'py_region_executed' : [ None, self.on_activated ],
             },
         })
-        self.define_key('C-x k', self.clear_buffer, alias="kill-all-buffer")
+        self.define_key('C-x k', self.clear_all, alias="kill-all-buffer")
         self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
         
         self.set_style(self.STYLE)
@@ -1498,8 +1502,7 @@ class Editor(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.buffer.mtdelta is not None:
-            self.parent.handler('caption_page', self, self.Name)
+        self.parent.handler('caption_page', self, self.Name)
         evt.Skip()
     
     def on_activated(self, editor):
@@ -1523,7 +1526,6 @@ class Editor(EditWindow, EditorInterface):
                 self.push_current() # cache current
                 self.swap_buffer(f)
                 self.SetFocus()
-                self.parent.handler('caption_page', self, self.Name)
         
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
@@ -1554,7 +1556,6 @@ class Editor(EditWindow, EditorInterface):
         """Pop the current buffer from the buffer list."""
         j = self.buffer_list.index(self.buffer)
         del self.buffer_list[j]
-        self.handler('buffer_unloaded', self)
         
         ## switch to one of the remaining buffers.
         rest = self.buffer_list
@@ -1563,22 +1564,26 @@ class Editor(EditWindow, EditorInterface):
                 j -= 1
             self.swap_buffer(rest[j])
         else:
-            self.clear_buffer()
+            self.clear_all()
     
-    def clear_buffer(self):
+    def _reset(self, text=''):
+        """Clear the current buffer."""
+        with self.off_readonly():
+            self.Text = text
+            self.EmptyUndoBuffer()
+            self.SetSavePoint()
+    
+    def clear_all(self):
         """Initialize list of buffers.
         
         Note:
             All buffers will be cleared without confirmation.
         """
-        with self.off_readonly():
-            self.ClearAll()
-            self.EmptyUndoBuffer()
-            self.SetSavePoint()
         self.buffer = self.default_buffer
         self.__buffers = [self.buffer]
+        self._reset()
         self.push_current()
-        self.parent.handler('caption_page', self, self.Name)
+        self.handler('buffer_updated', self)
     
     def find_buffer(self, f):
         for buffer in self.buffer_list:
@@ -1594,16 +1599,13 @@ class Editor(EditWindow, EditorInterface):
         """
         buffer = self.find_buffer(f)
         if buffer:
-            if buffer is self.buffer:
+            if buffer is self.buffer: # Don't load the same buffer.
                 return True
             self.buffer = buffer
-            text = ''.join(linecache.getlines(buffer.filename)) or buffer.text
-            with self.off_readonly():
-                self.Text = text
-                self.EmptyUndoBuffer()
-                self.SetSavePoint()
+            self._reset(buffer.filetext or buffer.text)
             self.markline = buffer.lineno - 1
             self.goto_marker()
+            self.handler('buffer_updated', self)
             return True
         return False
     
@@ -1618,15 +1620,12 @@ class Editor(EditWindow, EditorInterface):
         lines = linecache.getlines(f, globals)
         if lines:
             self.push_current() # cache current
-            with self.off_readonly():
-                self.Text = ''.join(lines)
-                self.EmptyUndoBuffer()
-                self.SetSavePoint()
+            self._reset(''.join(lines))
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
-            self.handler('buffer_loaded', self)
+            self.handler('buffer_updated', self)
             return True
         return False
     
@@ -1643,7 +1642,7 @@ class Editor(EditWindow, EditorInterface):
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.push_current()
-            self.handler('buffer_loaded', self)
+            self.handler('buffer_updated', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
@@ -1658,7 +1657,7 @@ class Editor(EditWindow, EditorInterface):
         if self.SaveFile(f):
             self.buffer.filename = f
             self.push_current()
-            self.handler('buffer_saved', self)
+            self.handler('buffer_updated', self)
             ## self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
