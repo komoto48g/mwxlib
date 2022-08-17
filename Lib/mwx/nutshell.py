@@ -1483,7 +1483,7 @@ class Editor(EditWindow, EditorInterface):
            'py_region_executed' : [ None, self.on_activated ],
             },
         })
-        self.define_key('C-x k', self.clear_buffer, alias="kill-all-buffer")
+        self.define_key('C-x k', self.clear_all, alias="kill-all-buffer")
         self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
         
         self.set_style(self.STYLE)
@@ -1569,7 +1569,7 @@ class Editor(EditWindow, EditorInterface):
                 j -= 1
             self.swap_buffer(rest[j])
         else:
-            self.clear_buffer()
+            self.clear_all()
     
     def _reset(self, text=''):
         """Clear the current buffer."""
@@ -1578,7 +1578,7 @@ class Editor(EditWindow, EditorInterface):
             self.EmptyUndoBuffer()
             self.SetSavePoint()
     
-    def clear_buffer(self):
+    def clear_all(self):
         """Initialize list of buffers.
         
         Note:
