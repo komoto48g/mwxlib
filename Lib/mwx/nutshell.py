@@ -27,7 +27,6 @@ import linecache
 from pprint import pformat
 from importlib import import_module
 import contextlib
-import copy
 import dis
 try:
     import utilus as ut
@@ -2309,13 +2308,10 @@ class Nautilus(Shell, EditorInterface):
             return
         p = self.cpos
         st = self.get_style(p-1)
-        if st in ('moji', 'word', 'rparen'):
-            pass
-        elif st in (0, 'space', 'sep', 'lparen'):
-            ## self.ReplaceSelection('self') # replace [.] --> [self.]
-            pass
-        else:
-            self.handler('quit', evt)
+        if p == self.bolc:
+            self.ReplaceSelection('self') # replace [.] --> [self.]
+        elif st not in ('moji', 'word', 'rparen'):
+            self.handler('quit', evt) # don't enter autocomp
         
         self.ReplaceSelection('.') # just write down a dot.
         evt.Skip(False)            # do not skip to default autocomp mode
@@ -2327,7 +2323,7 @@ class Nautilus(Shell, EditorInterface):
             return
         p = self.cpos
         st = self.get_style(p-1)
-        if st in (0, 'space', 'sep', 'lparen'):
+        if st in (0, 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self.')
     
     def openLine(self):
