@@ -190,7 +190,7 @@ class AxesImagePhantom(object):
         doc="Annotation of the buffer.")
     
     def update_attributes(self, attr=None, **kwargs):
-        """Update frame-specifc attributes
+        """Update frame-specifc attributes.
         The frame holds any attributes with dictionary
         There are some keys which acts as the value setter when given,
         `annotation` also shows the message with infobar
@@ -275,7 +275,7 @@ class AxesImagePhantom(object):
         return self.parent.index(self)
     
     def update_buffer(self, buf=None):
-        """Update buffer and the image"""
+        """Update buffer and the image."""
         if buf is not None:
             self.__buf = imbuffer(buf)
         
@@ -289,7 +289,7 @@ class AxesImagePhantom(object):
         self.parent.handler('frame_modified', self)
     
     def update_extent(self):
-        """Update logical extent of the image"""
+        """Update logical extent of the image."""
         h, w = self.__buf.shape[:2]
         ux, uy = self.xy_unit
         w *= ux/2
@@ -316,7 +316,7 @@ class AxesImagePhantom(object):
         self.update_buffer(v)
     
     def xytoc(self, x, y=None, nearest=True):
-        """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel
+        """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
         if nearest is False, retval is interpolated with spline
         """
         h, w = self.__buf.shape[:2]
@@ -329,9 +329,9 @@ class AxesImagePhantom(object):
         return ndi.map_coordinates(self.__buf, np.vstack([ny, nx])) # spline value
     
     def xytopixel(self, x, y=None, cast=True):
-        """Convert xydata (x,y) -> [ny,nx] pixel (cast to integer)"""
+        """Convert xydata (x,y) -> [ny,nx] pixel (cast to integer)."""
         def pixel_cast(n):
-            """Convert pixel-based length to pixel number"""
+            """Convert pixel-based length to pixel number."""
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
             x, y = x
@@ -346,7 +346,7 @@ class AxesImagePhantom(object):
         return (nx-0.5, ny-0.5)
     
     def xyfrompixel(self, nx, ny=None):
-        """Convert pixel [nx,ny] -> (x,y) xydata (float number)"""
+        """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
         if ny is None:
             nx, ny = nx
         if not isinstance(nx, np.ndarray): nx = np.array(nx)
@@ -846,7 +846,7 @@ class GraphPlot(MatplotPanel):
     globalunit = unit
     
     def update_markup_ratio(self, r):
-        """Modify markup objects position"""
+        """Modify markup objects position."""
         if self.Selector.size: self.Selector *= r
         if self.Markers.size: self.Markers *= r
         if self.Region.size: self.Region *= r
@@ -861,14 +861,14 @@ class GraphPlot(MatplotPanel):
         del self[:]
     
     def update_axis(self):
-        """Reset display range (xylim's), update home position"""
+        """Reset display range (xylim's), update home position."""
         if self.frame:
             self.axes.axis(self.frame.get_extent()) # reset xlim and ylim
             self.update_position()
             self.draw()
     
     def fit_to_canvas(self):
-        """fit display range (xylim's) to canvas"""
+        """fit display range (xylim's) to canvas."""
         x, y = self.xlim, self.ylim
         w, h = self.canvas.GetSize()
         r = h/w
@@ -884,13 +884,13 @@ class GraphPlot(MatplotPanel):
         self.draw()
     
     def on_focus_set(self, evt):
-        """Called when focus is set (override)"""
+        """Called when focus is set (override)."""
         MatplotPanel.on_focus_set(self, evt)
         if self.frame:
             self.handler('frame_selected', self.frame)
     
     def on_focus_kill(self, evt):
-        """Called when focus is killed (override)"""
+        """Called when focus is killed (override)."""
         MatplotPanel.on_focus_kill(self, evt)
         if self.frame:
             self.handler('frame_deselected', self.frame)
@@ -914,7 +914,7 @@ class GraphPlot(MatplotPanel):
             self.set_cmap(name + "_r" if name[-2:] != "_r" else name[:-2])
     
     def trace_point(self, x, y, type=None):
-        """Puts (override) a message of points x and y"""
+        """Puts (override) a message of points x and y."""
         if self.frame:
             if not hasattr(x, '__iter__'): # called from OnMotion
                 nx, ny = self.frame.xytopixel(x, y)
@@ -949,7 +949,7 @@ class GraphPlot(MatplotPanel):
                     "crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
     
     def writeln(self):
-        """Puts (override) attributes of current frame to the modeline"""
+        """Puts (override) attributes of current frame to the modeline."""
         if not self.modeline.IsShown():
             return
         if self.frame:
@@ -980,7 +980,7 @@ class GraphPlot(MatplotPanel):
     clipboard_data = None
     
     def write_buffer_to_clipboard(self):
-        """Copy - Write buffer data to clipboard"""
+        """Copy - Write buffer data to clipboard."""
         if not self.frame:
             self.message("No frame")
             return
@@ -997,7 +997,7 @@ class GraphPlot(MatplotPanel):
             traceback.print_exc()
     
     def read_buffer_from_clipboard(self):
-        """Paste - Read buffer data from clipboard"""
+        """Paste - Read buffer data from clipboard."""
         try:
             name = GraphPlot.clipboard_name
             data = GraphPlot.clipboard_data
@@ -1014,7 +1014,7 @@ class GraphPlot(MatplotPanel):
             traceback.print_exc()
     
     def create_colorbar(self):
-        """make colorbar
+        """Make a colorbar.
         The colorbar is plotted in self.figure.axes[1] (second axes)
         """
         from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -1039,7 +1039,7 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
-        """Pickup image and other arts
+        """Pickup image and other arts.
         Called (maybe) after mouse buttons are pressed.
         """
         ## canvas 全体に有効だが，分割された axes (colorbar 領域など) は無効
@@ -1109,7 +1109,7 @@ class GraphPlot(MatplotPanel):
     interpolation_mode = 'bilinear'
     
     def OnDraw(self, evt):
-        """Called before canvas.draw (overridden)"""
+        """Called before canvas.draw (overridden)."""
         if not self.interpolation_mode:
             return
         if self.frame:
@@ -1123,17 +1123,17 @@ class GraphPlot(MatplotPanel):
                 self.frame.set_interpolation('nearest')
     
     def OnMotion(self, evt):
-        """Called when mouse moves in axes (overridden)"""
+        """Called when mouse moves in axes (overridden)."""
         if self.frame and self.Selector.shape[1] < 2:
             self.trace_point(evt.xdata, evt.ydata, type=NORMAL)
     
     def OnPageDown(self, evt):
-        """next page"""
+        """Next page."""
         if self.frame and self.__index < len(self)-1:
             self.select(self.__index + 1)
     
     def OnPageUp(self, evt):
-        """previous page"""
+        """Previous page."""
         if self.frame and self.__index > 0:
             self.select(self.__index - 1)
     
@@ -1347,7 +1347,7 @@ class GraphPlot(MatplotPanel):
             self.handler('region_removed', self.frame)
     
     def get_current_rect(self):
-        """Currently selected region"""
+        """Currently selected region."""
         if self.__rectsel:
             x, y = self.rected.get_data(orig=0)
             return np.array((x, y))
@@ -1566,7 +1566,7 @@ class GraphPlot(MatplotPanel):
             self.handler('mark_removed', self.frame)
     
     def get_current_mark(self):
-        """Currently selected mark"""
+        """Currently selected mark."""
         xm, ym = self.marked.get_data(orig=0)
         return np.take((xm, ym), self.__marksel, axis=1)
     
@@ -1738,7 +1738,6 @@ if __name__ == "__main__":
     frm.graph.create_colorbar()
     
     def _plot(graph, r=10):
-        """円弧を描くテスト"""
         ux = uy = graph.unit
         t = np.arange(0,4,0.01) * pi
         x = r * ux * np.cos(t)

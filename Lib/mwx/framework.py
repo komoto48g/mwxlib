@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.8"
+__version__ = "0.69.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -328,7 +328,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _W('capture_changed', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
-        """Called when key down"""
+        """Called when key down."""
         if evt.EventObject is not self:
             evt.Skip()
             return
@@ -338,14 +338,14 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             evt.Skip()
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
-        """Called when key up"""
+        """Called when key up."""
         key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
     
     def on_mousewheel(self, evt): #<wx._core.MouseEvent>
-        """Called when wheel event
+        """Called when wheel event.
         Trigger event: 'key+wheel[up|down|right|left] pressed'
         """
         if evt.GetWheelAxis():
@@ -358,7 +358,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__key = ''
     
     def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
-        """Called when mouse event
+        """Called when mouse event.
         Trigger event: 'key+[LMRX]button pressed/released/dclick'
         """
         event = self.__key + event # 'C-M-S-K+[LMRX]button pressed/released/dclick'
@@ -531,7 +531,7 @@ class MenuBar(wx.MenuBar, TreeList):
         return next((item.SubMenu for item in root.MenuItems if item.ItemLabel == key), None)
     
     def update(self, key):
-        """Update items of the menu that has specified key:root/branch
+        """Update items of the menu that has specified key:root/branch.
         Call when the menulist is changed.
         """
         if self.Parent:
@@ -554,7 +554,7 @@ class MenuBar(wx.MenuBar, TreeList):
                 self.Enable(menu.Id, menu.MenuItemCount > 0) # 空のサブメニューは無効にする
     
     def reset(self):
-        """Recreates menubar if the Parent were attached by SetMenuBar
+        """Recreates menubar if the Parent were attached by SetMenuBar.
         Call when the menulist is changed.
         """
         if self.Parent:
@@ -656,7 +656,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         
         ## AcceleratorTable mimic
         def hook_char(evt):
-            """Called when key down"""
+            """Called when key down."""
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
@@ -665,7 +665,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         def close(v):
-            """Close the window"""
+            """Close the window."""
             self.Close()
         
         self.__handler = FSM({ # DNA<Frame>
@@ -719,7 +719,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         
         ## AcceleratorTable mimic
         def hook_char(evt):
-            """Called when key down"""
+            """Called when key down."""
             if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
                 evt.Skip()
             else:
@@ -731,7 +731,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
         def close(v):
-            """Close the window"""
+            """Close the window."""
             self.Close()
         
         self.__handler = FSM({ # DNA<MiniFrame>
@@ -796,7 +796,7 @@ class AuiNotebook(aui.AuiNotebook):
         tab.Refresh()
     
     def all_pages(self, type=None):
-        """Yields all pages of the specified type in the notebooks"""
+        """Yields all pages of the specified type in the notebooks."""
         for j in range(self.PageCount):
             win = self.GetPage(j)
             if type is None or isinstance(win, type):
@@ -953,7 +953,7 @@ class ShellFrame(MiniFrame):
             v.Skip()
         
         def fork(v):
-            """Fork key events to the debugger"""
+            """Fork key events to the debugger."""
             self.debugger.handler(self.handler.event, v)
         
         self.handler.update({ # DNA<ShellFrame>
@@ -1026,7 +1026,7 @@ class ShellFrame(MiniFrame):
     HISTORY_FILE = ut.get_rootpath("deb-history.log")
     
     def load_session(self):
-        """Load session from file"""
+        """Load session from file."""
         try:
             if self.Scratch.buffer.mtdelta is None:
                 self.Scratch.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
@@ -1041,7 +1041,7 @@ class ShellFrame(MiniFrame):
             print("- Failed to load session")
     
     def save_session(self):
-        """Save session to file"""
+        """Save session to file."""
         try:
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
@@ -1153,10 +1153,12 @@ class ShellFrame(MiniFrame):
         self.popup_window(win, None, focus)
     
     def popup_window(self, win, show=True, focus=True):
-        """Show the notebook page and move the focus
-        win : page or window to popup
-       show : True, False, otherwise None:toggle
-              The pane window will be hidden if no show.
+        """Show the notebook page and move the focus.
+        
+        Args:
+            win  : page or window to popup
+            show : True, False, otherwise None:toggle
+                   The pane window will be hidden if no show.
         """
         wnd = win if focus else wx.Window.FindFocus() # original focus
         for pane in self._mgr.GetAllPanes():
@@ -1273,7 +1275,7 @@ class ShellFrame(MiniFrame):
                           "Unable to debug {!r}".format(obj))
     
     def on_debug_begin(self, frame):
-        """Called before set_trace"""
+        """Called before set_trace."""
         shell = self.debugger.interactive_shell
         shell.write("#<-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
@@ -1283,7 +1285,7 @@ class ShellFrame(MiniFrame):
         self.add_log("<-- Beginning of debugger\r\n")
     
     def on_debug_next(self, frame):
-        """Called from cmdloop"""
+        """Called from cmdloop."""
         shell = self.debugger.interactive_shell
         gs = frame.f_globals
         ls = frame.f_locals
@@ -1305,7 +1307,7 @@ class ShellFrame(MiniFrame):
         self.message("Debugger is busy now (Press C-g to quit).")
     
     def on_debug_end(self, frame):
-        """Called after set_quit"""
+        """Called after set_quit."""
         shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
@@ -1317,7 +1319,7 @@ class ShellFrame(MiniFrame):
         del shell.globals
     
     def trace(self, editor, active=True):
-        """Set the editor pointer traceable"""
+        """Set the editor pointer traceable."""
         if active:
             editor.handler.bind('pointer_set', _F(self.start_trace, editor))
             editor.handler.bind('pointer_unset', _F(self.stop_trace, editor))
@@ -1344,24 +1346,24 @@ class ShellFrame(MiniFrame):
         editor.MarkerAdd(line, 4)
     
     def on_trace_begin(self, frame):
-        """Called when set-trace"""
+        """Called when set-trace."""
         self.message("Debugger has started tracing {}.".format(frame))
     
     def on_trace_hook(self, frame):
-        """Called when a breakpoint is reached"""
+        """Called when a breakpoint is reached."""
         self.message("Debugger hooked {}".format(frame))
     
     def on_trace_end(self, frame):
-        """Called when unset-trace"""
+        """Called when unset-trace."""
         self.message("Debugger has stopped tracing {}.".format(frame))
     
     def on_monitor_begin(self, widget):
-        """Called when monitor watch"""
+        """Called when monitor watch."""
         self.inspector.set_colour(widget, 'blue')
         self.load(widget)
     
     def on_monitor_end(self, widget):
-        """Called when monitor unwatch"""
+        """Called when monitor unwatch."""
         self.inspector.set_colour(widget, 'black')
     
     def on_title_window(self, obj):
@@ -1434,17 +1436,17 @@ class ShellFrame(MiniFrame):
         shell.SetFocus()
     
     def clear_shell(self):
-        """Clear the current shell"""
+        """Clear the current shell."""
         shell = self.current_shell
         shell.clear()
     
     def clone_shell(self, target=None):
-        """Clone the current shell"""
+        """Clone the current shell."""
         shell = self.current_shell
         return shell.clone(target or shell.target)
     
     def close_shell(self):
-        """Close the current shell"""
+        """Close the current shell."""
         shell = self.current_shell
         if shell is self.rootshell:
             ## self.message("- Don't close the root shell.")
@@ -1458,20 +1460,20 @@ class ShellFrame(MiniFrame):
     ## --------------------------------
     
     def all_pages(self, type=None):
-        """Yields all pages of the specified type in the notebooks"""
+        """Yields all pages of the specified type in the notebooks."""
         yield from self.console.all_pages(type)
         yield from self.ghost.all_pages(type)
     
     @property
     def current_editor(self):
-        """Currently focused editor or shell"""
+        """Currently focused editor or shell."""
         win = wx.Window.FindFocus()
         if win in self.all_pages(stc.StyledTextCtrl):
             return win
     
     @property
     def current_shell(self):
-        """Currently selected shell or rootshell"""
+        """Currently selected shell or rootshell."""
         page = self.console.CurrentPage
         if isinstance(page, type(self.rootshell)): #<Nautilus>
             return page
@@ -1588,8 +1590,8 @@ def profile(obj, *args, **kwargs):
 
 
 def watchit(widget=None, **kwargs):
-    """Diver's watch to go deep into the wx process to inspect the widget
-    Wx.py tool for watching tree structure and events across the wx.Objects
+    """Diver's watch to go deep into the wx process to inspect the widget.
+    Wx.py tool for watching tree structure and events across the wx.Objects.
     
     Args:
         **kwargs: InspectionTool arguments such as
@@ -1605,7 +1607,7 @@ def watchit(widget=None, **kwargs):
 
 
 def monit(widget=None, **kwargs):
-    """Wx.py tool for watching events of the widget
+    """Wx.py tool for watching events of the widget.
     """
     from wx.lib.eventwatcher import EventWatcher
     ew = EventWatcher(None, **kwargs)
@@ -1615,7 +1617,7 @@ def monit(widget=None, **kwargs):
 
 
 def filling(obj=None, label=None, **kwargs):
-    """Wx.py tool for watching ingredients of the widget
+    """Wx.py tool for watching ingredients of the widget.
     """
     from wx.py.filling import FillingFrame
     frame = FillingFrame(rootObject=obj,

@@ -103,7 +103,7 @@ class Param(object):
             la.remove(f)
     
     def reset(self, v=None, backcall=True):
-        """Reset value when indexed (by knobs) with callback"""
+        """Reset value when indexed (by knobs) with callback."""
         if v is None or v == '':
             v = self.std_value
             if v is None:
@@ -315,7 +315,7 @@ class Knob(wx.Panel):
     """
     @property
     def param(self):
-        """Param object referred from knobs"""
+        """Param object referred from knobs."""
         return self.__par
     
     @param.setter
@@ -639,7 +639,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         return self.Sizer.IsShown(groupid % len(self.__groups))
     
     def show(self, groupid, p=True):
-        """show/hide all including the box"""
+        """Show/hide all including the box."""
         ## child = self.Sizer.Children[groupid]
         ## child.Show(p)
         self.Sizer.Show(groupid % len(self.__groups), p)
@@ -652,7 +652,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         return not any(cc.IsShown() for cc in child.Sizer.Children)
     
     def fold(self, groupid, p=True):
-        """fold/unfold the boxed group"""
+        """Fold/unfold the boxed group."""
         child = self.Sizer.Children[groupid]
         if isinstance(child.Sizer, wx.StaticBoxSizer) and child.IsShown():
             for cc in child.Sizer.Children: # child of child <wx._core.SizerItem>
@@ -665,7 +665,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                row=1, expand=0, border=2, hspacing=1, vspacing=1,
                show=True, visible=True, fix=True, align=wx.ALIGN_LEFT,
                **kwargs):
-        """Do layout (cf. Layout)
+        """Do layout (cf. Layout).
         
         Args:
             title   : box header string (default is None - no box)
@@ -924,7 +924,7 @@ class Button(pb.PlateButton):
         self.icon = icon
     
     def SetBitmap(self, bmp):
-        """Set the bitmap displayed in the button
+        """Set the bitmap displayed in the button.
         (override) If it fails, it clears the bitmap.
         """
         try:

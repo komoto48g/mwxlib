@@ -299,7 +299,7 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     
     def _Marker(marker, n):
-        """Factory of marker property
+        """Factory of marker property.
         """
         def fget(self):
             return self.MarkerNext(0, 1<<n)
@@ -463,20 +463,20 @@ class EditorInterface(CtrlInterface):
     
     @property
     def bol(self):
-        """beginning of line"""
+        """Beginning of line."""
         text, lp = self.CurLine
         return self.cpos - lp
     
     @property
     def eol(self):
-        """end of line"""
+        """End of line."""
         text, lp = self.CurLine
         text = text.strip('\r\n') # remove linesep: '\r' and '\n'
         return (self.cpos - lp + len(text.encode()))
     
     @property
     def caretline(self):
-        """Text of the range (bol, eol) at the caret-line
+        """Text of the range (bol, eol) at the caret-line.
         
         Similar to CurLine, but with the trailing crlf truncated.
         For shells, the leading prompt is also be truncated due to overridden bol.
@@ -485,7 +485,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def expr_at_caret(self):
-        """A syntax unit (expression) at the caret-line"""
+        """A syntax unit (expression) at the caret-line."""
         p = q = self.cpos
         lsty = self.get_style(p-1)
         rsty = self.get_style(p)
@@ -510,7 +510,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def topic_at_caret(self):
-        """Topic word at the caret or selected substring
+        """Topic word at the caret or selected substring.
         The caret scouts back and forth to scoop a topic.
         """
         topic = self.SelectedText
@@ -549,7 +549,7 @@ class EditorInterface(CtrlInterface):
     
     @editable
     def py_indent_line(self):
-        """Indent the current line"""
+        """Indent the current line."""
         text = self.caretline  # w/ no-prompt
         lstr = text.lstrip()   # w/ no-indent
         p = self.bol + len(text) - len(lstr) # for multi-byte string
@@ -560,7 +560,7 @@ class EditorInterface(CtrlInterface):
     
     @editable
     def py_outdent_line(self):
-        """Outdent the current line"""
+        """Outdent the current line."""
         text = self.caretline  # w/ no-prompt
         lstr = text.lstrip()   # w/ no-indent
         p = self.bol + len(text) - len(lstr) # for multi-byte string
@@ -721,7 +721,7 @@ class EditorInterface(CtrlInterface):
             self.handler('select_line', evt)
     
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
-        """Popup context menu"""
+        """Popup context menu."""
         def _Icon(key):
             return wx.ArtProvider.GetBitmap(key, size=(16,16))
         
@@ -1380,7 +1380,7 @@ class Buffer:
     
     @property
     def mtdelta(self):
-        """timestamp delta (for checking external mod)"""
+        """Timestamp delta (for checking external mod)."""
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
@@ -1433,7 +1433,7 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def target(self):
-        """codename or filename (referred by debugger)"""
+        """Returns codename or filename (referred by debugger)."""
         return self.buffer.codename or self.buffer.filename
     
     def __init__(self, parent, name="editor", **kwargs):
@@ -1464,7 +1464,7 @@ class Editor(EditWindow, EditorInterface):
             v.Skip()
         
         def dispatch(v):
-            """Fork mouse events to the parent"""
+            """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
             v.Skip()
         
@@ -1519,7 +1519,7 @@ class Editor(EditWindow, EditorInterface):
     
     @property
     def menu(self):
-        """Yields context menu"""
+        """Yields context menu."""
         def _swap_buffer(f):
             if f is not self.buffer and self.confirm_load():
                 self.push_current() # cache current
@@ -1784,7 +1784,7 @@ class Nautilus(Shell, EditorInterface):
     
     Features:
         
-        All objects in the process can be accessed using
+        All objects in the process can be accessed using,
         
         - self : the target of the shell
         - this : the module which includes target
@@ -1899,7 +1899,7 @@ class Nautilus(Shell, EditorInterface):
     
     @target.setter
     def target(self, obj):
-        """Reset the shell target object; Rename the parent title
+        """Reset the shell target object; Rename the parent title.
         """
         if not hasattr(obj, '__dict__'):
             raise TypeError("Unable to target primitive object: {!r}".format(obj))
@@ -2005,7 +2005,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler(self.handler.event, v)
         
         def dispatch(v):
-            """Fork mouse events to the parent"""
+            """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
             v.Skip()
         
@@ -2246,7 +2246,7 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip()
     
     def OnSpace(self, evt):
-        """Called when space pressed"""
+        """Called when space pressed."""
         if not self.CanEdit():
             return
         cmdl = self.cmdlc
@@ -2259,7 +2259,7 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip()
     
     def OnBackspace(self, evt):
-        """Called when backspace (or left key) pressed
+        """Called when backspace (or left key) pressed.
         Backspace-guard from Autocomp eating over a prompt whitespace
         """
         if self.cpos == self.bolc:
@@ -2269,7 +2269,7 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip()
     
     def OnEnter(self, evt):
-        """Called when enter pressed"""
+        """Called when enter pressed."""
         if not self.CanEdit(): # go back to the end of command line
             self.goto_char(self.eolc)
             if self.eolc < self.bolc: # check if prompt is in valid state
@@ -2302,7 +2302,7 @@ class Nautilus(Shell, EditorInterface):
         ## evt.Skip() # => processLine
     
     def OnEnterDot(self, evt):
-        """Called when dot [.] pressed"""
+        """Called when dot [.] pressed."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
@@ -2317,7 +2317,7 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip(False)            # do not skip to default autocomp mode
     
     def OnExtraDot(self, evt):
-        """Called when ex-dot [C-.] pressed"""
+        """Called when ex-dot [C-.] pressed."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
@@ -2388,7 +2388,7 @@ class Nautilus(Shell, EditorInterface):
     
     @classmethod
     def magic(self, cmd):
-        """Called before command pushed
+        """Called before command pushed.
         
         (override) disable old magic: `f x --> f(x)`
         """
@@ -2400,7 +2400,7 @@ class Nautilus(Shell, EditorInterface):
     
     @classmethod
     def magic_interpret(self, tokens):
-        """Called when [Enter] command, or eval-time for tooltip
+        """Called when [Enter] command, or eval-time for tooltip.
         
         Interpret magic syntax
         
@@ -2564,7 +2564,7 @@ class Nautilus(Shell, EditorInterface):
     
     @property
     def bol(self):
-        """beginning of line (override) excluding prompt"""
+        """beginning of line (override) excluding prompt."""
         text, lp = self.CurLine
         for ps in (sys.ps1, sys.ps2, sys.ps3):
             if text.startswith(ps):
@@ -2574,12 +2574,12 @@ class Nautilus(Shell, EditorInterface):
     
     @property
     def cmdlc(self):
-        """cull command-line (excluding ps1:prompt)"""
+        """Cull command-line (excluding ps1:prompt)."""
         return self.GetTextRange(self.bol, self.cpos)
     
     @property
     def cmdline(self):
-        """full command-(multi-)line (excluding ps1:prompt)"""
+        """Full command-(multi-)line (excluding ps1:prompt)."""
         return self.GetTextRange(self.bolc, self.eolc)
     
     def cmdline_atoms(self):
@@ -2719,7 +2719,7 @@ class Nautilus(Shell, EditorInterface):
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
-        """Regulate text to executable command"""
+        """Regulate text to executable command."""
         text = self.lstripPrompt(text) # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
@@ -2727,14 +2727,14 @@ class Nautilus(Shell, EditorInterface):
                     .replace(os.linesep, lf))
     
     def clear(self):
-        """Delete all text (override) put new prompt"""
+        """Delete all text (override) put new prompt."""
         self.ClearAll()
         self.promptPosStart = 0 # CanEdit:True
         self.promptPosEnd = 0
         self.prompt()
     
     def write(self, text, pos=None):
-        """Display text in the shell
+        """Display text in the shell.
         
         (override) Append text if it is writable at the position.
         """
@@ -2748,13 +2748,13 @@ class Nautilus(Shell, EditorInterface):
     ## input = classmethod(Shell.ask)
     
     def info(self, obj):
-        """Short information"""
+        """Short information."""
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
         self.parent.handler('add_help', doc) or print(doc)
     
     def help(self, obj):
-        """Full description"""
+        """Full description."""
         ## if obj is None:
         ##     self.message("Currently redirected to stdin/stdout.")
         ##     wx.CallAfter(pydoc.help)
@@ -2772,7 +2772,7 @@ class Nautilus(Shell, EditorInterface):
                         sender=self, command=None, more=False)
     
     def exec_cmdline(self):
-        """Execute command-line directly"""
+        """Execute command-line directly."""
         commands = []
         cmd = ''
         lines = ''
@@ -2913,13 +2913,13 @@ class Nautilus(Shell, EditorInterface):
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
     def gen_autocomp(self, offset, words, sep=' '):
-        """Call AutoCompShow for the specified words"""
+        """Call AutoCompShow for the specified words."""
         if words:
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(offset, sep.join(words))
     
     def eval_line(self, evt):
-        """Call ToolTip of the selected word or line"""
+        """Call ToolTip of the selected word or line."""
         if self.CallTipActive():
             self.CallTipCancel()
             
@@ -2948,7 +2948,7 @@ class Nautilus(Shell, EditorInterface):
         self.message(status)
     
     def exec_region(self, evt):
-        """Call ToolTip of the selected region"""
+        """Call ToolTip of the selected region."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -2977,7 +2977,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("No region")
     
     def call_helpTip2(self, evt):
-        """Show help:str for the selected topic"""
+        """Show help:str for the selected topic."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -2992,7 +2992,7 @@ class Nautilus(Shell, EditorInterface):
                 self.help(obj)
     
     def call_helpTip(self, evt):
-        """Show tooltips for the selected topic"""
+        """Show tooltips for the selected topic."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -3007,7 +3007,7 @@ class Nautilus(Shell, EditorInterface):
                 self.message("- {} : {!r}".format(e, text))
     
     def clear_autocomp(self, evt):
-        """Clear Autocomp, selection, and message"""
+        """Clear Autocomp, selection, and message."""
         if self.AutoCompActive():
             self.AutoCompCancel()
         if self.CanEdit():
@@ -3015,7 +3015,7 @@ class Nautilus(Shell, EditorInterface):
         self.message("")
     
     def skipback_autocomp(self, evt):
-        """Don't eat backward prompt whitespace"""
+        """Don't eat backward prompt whitespace."""
         if self.cpos == self.bolc:
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
@@ -3023,7 +3023,7 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip()
     
     def process_autocomp(self, evt):
-        """Feel like pressing {tab}"""
+        """Feel like pressing {tab}."""
         if self.AutoCompActive():
             wx.UIActionSimulator().KeyDown(wx.WXK_TAB)
         else:
@@ -3051,7 +3051,7 @@ class Nautilus(Shell, EditorInterface):
     
     @postcall
     def on_completion(self, evt, step=0):
-        """Show completion with selection"""
+        """Show completion with selection."""
         try:
             N = len(self.__comp_words)
             j = self.__comp_ind + step
@@ -3066,7 +3066,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("no completion words")
     
     def call_history_comp(self, evt):
-        """Called when history-comp mode"""
+        """Called when history-comp mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
@@ -3095,7 +3095,7 @@ class Nautilus(Shell, EditorInterface):
             raise
     
     def call_text_autocomp(self, evt):
-        """Called when text-comp mode"""
+        """Called when text-comp mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
@@ -3117,7 +3117,7 @@ class Nautilus(Shell, EditorInterface):
             raise
     
     def call_module_autocomp(self, evt):
-        """Called when module-comp mode"""
+        """Called when module-comp mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
@@ -3182,7 +3182,7 @@ class Nautilus(Shell, EditorInterface):
             raise
     
     def call_word_autocomp(self, evt):
-        """Called when word-comp mode"""
+        """Called when word-comp mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
@@ -3213,7 +3213,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("- {} : {!r}".format(e, text))
     
     def call_apropos_autocomp(self, evt):
-        """Called when apropos mode"""
+        """Called when apropos mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return

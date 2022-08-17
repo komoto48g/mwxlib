@@ -417,7 +417,7 @@ class SSM(OrderedDict):
                          for k, v in self.items())
     
     def bind(self, event, action=None):
-        """Append a transaction to the context"""
+        """Append a transaction to the context."""
         transaction = self[event]
         if action is None:
             return lambda f: self.bind(event, f)
@@ -428,7 +428,7 @@ class SSM(OrderedDict):
         return action
     
     def unbind(self, event, action=None):
-        """Remove a transaction from the context"""
+        """Remove a transaction from the context."""
         transaction = self[event]
         if action is None:
             del self[event]
@@ -485,7 +485,7 @@ class FSM(dict):
         self.__debcall__(self.__event)
     
     def clear(self, state):
-        """Reset current and previous states"""
+        """Reset current and previous states."""
         self.__state = state
         self.__prev_state = state
         self.__event = None
@@ -515,7 +515,7 @@ class FSM(dict):
         return '\n'.join("[ {!r} ]\n{!s}".format(k, v) for k, v in self.items())
     
     def __call__(self, event, *args, **kwargs):
-        """Handle the event
+        """Handle the event.
         First, call handlers with the state:None.
         Then, call handlers with the current state.
         
@@ -640,7 +640,7 @@ class FSM(dict):
     
     @staticmethod
     def duplicate(context):
-        """Duplicate the transaction:list in the context
+        """Duplicate the transaction:list in the context.
         
         This method is used for the contexts given to :append and :update
         so that the original transaction (if they are lists) is not removed.
@@ -651,7 +651,7 @@ class FSM(dict):
         return {event:transaction[:] for event, transaction in context.items()}
     
     def validate(self, state):
-        """Sort and move to end items with key which includes ``*?[]``"""
+        """Sort and move to end items with key which includes ``*?[]``."""
         context = self[state]
         ast = []
         bra = []
@@ -668,7 +668,7 @@ class FSM(dict):
         context.update(sorted(ast, reverse=1, key=lambda v:len(v[0])))
     
     def update(self, contexts):
-        """Update each context or Add new contexts"""
+        """Update each context or Add new contexts."""
         for k, v in contexts.items():
             if k in self:
                 self[k].update(self.duplicate(v))
@@ -677,7 +677,7 @@ class FSM(dict):
             self.validate(k)
     
     def append(self, contexts):
-        """Append new contexts"""
+        """Append new contexts."""
         for k, v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
@@ -691,7 +691,7 @@ class FSM(dict):
             self.validate(k)
     
     def remove(self, contexts):
-        """Remove old contexts"""
+        """Remove old contexts."""
         for k, v in contexts.items():
             if k in self:
                 for event, transaction in v.items():
@@ -885,7 +885,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     action = _Act
     
     def _explicit_args(argv, defaults):
-        """The rest of argv that must be given explicitly in f"""
+        """The rest of argv that must be given explicitly in f."""
         N = len(argv)
         j = len(defaults)
         i = len(args)

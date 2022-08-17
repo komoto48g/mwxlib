@@ -132,7 +132,7 @@ class LinePlot(MatplotPanel):
             else: return 0 # outside
     
     def OnDraw(self, evt):
-        """Called before canvas.draw"""
+        """Called before canvas.draw."""
         self.annotate()
     
     def OnMotion(self, evt):
@@ -337,7 +337,7 @@ class Histogram(LinePlot):
     ## --------------------------------
     
     def OnDraw(self, evt):
-        """Called before canvas.draw"""
+        """Called before canvas.draw."""
         ## LinePlot.OnDraw(self, evt) ---> do not annotate
         
         if self.__frame:
@@ -613,7 +613,7 @@ class LineProfile(LinePlot):
             self.draw()
     
     def OnDraw(self, evt):
-        """Called before canvas.draw"""
+        """Called before canvas.draw."""
         LinePlot.OnDraw(self, evt)
         
         x, y = self.plotdata
