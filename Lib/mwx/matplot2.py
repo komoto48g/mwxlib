@@ -273,7 +273,7 @@ class MatplotPanel(wx.Panel):
         self.__isDragging = False # True if dragging. (None if dblclicked)
     
     def clear(self):
-        """Initialize the plot figure"""
+        """Initialize the plot figure."""
         #<matplotlib.axes.Axes>
         self.figure.clear()
         self.figure.add_subplot(111) # cf. add_axes(rect=(l,b,w,h))
@@ -288,7 +288,7 @@ class MatplotPanel(wx.Panel):
         self.cursor.visible = 1
     
     def draw(self, art=None):
-        """Draw the plot
+        """Draw the plot.
         Called every time the drawing is updated.
         """
         if isinstance(art, matplotlib.artist.Artist):
@@ -389,7 +389,7 @@ class MatplotPanel(wx.Panel):
         evt.Skip()
     
     def escape(self, evt=None):
-        """Feel like pressing {escape}
+        """Feel like pressing {escape}.
         エスケープキーを押した気持ちになる
         """
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
@@ -419,7 +419,7 @@ class MatplotPanel(wx.Panel):
     ##         self.canvas.draw()
     
     def copy_to_clipboard(self):
-        """Copy canvas image to clipboard"""
+        """Copy canvas image to clipboard."""
         self.message("Copy image to clipboard")
         try:
             b = self.selected.get_visible()
@@ -492,7 +492,7 @@ class MatplotPanel(wx.Panel):
         self.__isMenu = 0
     
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
-        """Find index near (x,y) and set the Selector
+        """Find index near (x,y) and set the Selector.
         Called (maybe) after mouse button pressed.
         """
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
@@ -519,26 +519,26 @@ class MatplotPanel(wx.Panel):
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
-        """Called when key down"""
+        """Called when key down."""
         key = mwx.hotkey(evt)
         self.__key = mwx.regulate_key(key + '+')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
     def on_hotkey_ndrag(self, evt): #<wx._core.KeyEvent>
-        """Called when key down while dragging"""
+        """Called when key down while dragging."""
         if self.__isDragging:
             self.on_hotkey_press(evt)
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
-        """Called when key up"""
+        """Called when key up."""
         key = mwx.hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
     
     def _on_mouse_event(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called in the mouse event handlers
+        """Called in the mouse event handlers.
         Save the current event and overwrite evt.key with modifiers
         """
         if not evt.inaxes or evt.inaxes is not self.axes:
@@ -553,7 +553,7 @@ class MatplotPanel(wx.Panel):
         return key
     
     def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called when the mouse button is pressed"""
+        """Called when the mouse button is pressed."""
         self.p_event = evt
         key = self._on_mouse_event(evt)
         if evt.dblclick:
@@ -564,7 +564,7 @@ class MatplotPanel(wx.Panel):
             self.handler('{}button pressed'.format(key), evt)
     
     def on_button_release(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called when the mouse button is released"""
+        """Called when the mouse button is released."""
         key = self._on_mouse_event(evt)
         if self.__isDragging:
             self.__isDragging = False
@@ -577,7 +577,7 @@ class MatplotPanel(wx.Panel):
         self.p_event = None
     
     def on_motion_notify(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called when the mouse is moved"""
+        """Called when the mouse is moved."""
         key = self._on_mouse_event(evt)
         if evt.button in (1,2,3):
             if self.__isDragging:
@@ -598,7 +598,7 @@ class MatplotPanel(wx.Panel):
             self.handler('{} motion'.format(event), evt)
     
     def on_scroll(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called when scrolling the mouse wheel"""
+        """Called when scrolling the mouse wheel."""
         self.p_event = evt
         key = self._on_mouse_event(evt)
         self.handler('{} pressed'.format(key), evt)
@@ -615,32 +615,32 @@ class MatplotPanel(wx.Panel):
         self.toolbar.push_current()
     
     def OnDraw(self, evt):
-        """Called before canvas.draw"""
+        """Called before canvas.draw."""
         pass
     
     def OnMotion(self, evt):
-        """Called when mouse moves in axes"""
+        """Called when mouse moves in axes."""
         if not self.Selector.size:
             self.trace_point(evt.xdata, evt.ydata)
     
     def OnForwardPosition(self, evt):
-        """Go forward view position"""
+        """Go forward view position."""
         self.toolbar.forward()
         self.draw()
     
     def OnBackPosition(self, evt):
-        """Go backward view position"""
+        """Go backward view position."""
         self.toolbar.back()
         self.draw()
     
     def OnHomePosition(self, evt):
-        """Go back to home position"""
+        """Go back to home position."""
         self.toolbar.home()
         self.update_position()
         self.draw()
     
     def OnEscapeSelection(self, evt):
-        """Escape from selection"""
+        """Escape from selection."""
         del self.Selector
     
     ## def OnShiftLimit(self, evt, r=0.1):
@@ -682,7 +682,7 @@ class MatplotPanel(wx.Panel):
             self.draw()
     
     def OnPanBegin(self, evt):
-        """Toolbar pan - While panning, press x/y to constrain the direction"""
+        """Toolbar pan - While panning, press x/y to constrain the direction."""
         ## self.toolbar.set_cursor(2)
         self.set_wxcursor(wx.CURSOR_HAND)
         self.toolbar.pan()
@@ -697,7 +697,7 @@ class MatplotPanel(wx.Panel):
         del self.__prev
     
     def OnZoomBegin(self, evt):
-        """Toolbar zoom - While zooming, press x/y to constrain the direction"""
+        """Toolbar zoom - While zooming, press x/y to constrain the direction."""
         ## self.toolbar.set_cursor(3)
         self.set_wxcursor(wx.CURSOR_CROSS)
         self.toolbar.zoom()

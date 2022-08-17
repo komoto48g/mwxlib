@@ -132,7 +132,7 @@ class Thread(object):
         self.handler(event, self)
     
     def __call__(self, f, *args, **kwargs):
-        """Decorator of thread starter function"""
+        """Decorator of thread starter function."""
         @wraps(f)
         def _f(*v):
             return self.Start(f, *v+args, **kwargs)
@@ -248,7 +248,7 @@ class LayerInterface(CtrlInterface):
         self.__artists = []
     
     def attach_artists(self, axes, *args):
-        """Attach unbound artists (e.g., patches) to the given axes
+        """Attach unbound artists (e.g., patches) to the given axes.
         If axes is None, the arts will be removed from their axes.
         """
         if axes:
@@ -359,16 +359,16 @@ class LayerInterface(CtrlInterface):
                 self.layout((bmp, txt), row=2)
     
     def Init(self):
-        """Initialize me safely (to be overridden)"""
+        """Initialize me safely (to be overridden)."""
         pass
     
     def load_session(self, session):
-        """Restore settings from a session file (to be overridden)"""
+        """Restore settings from a session file (to be overridden)."""
         if 'params' in session:
             self.parameters = session['params']
     
     def save_session(self, session):
-        """Save settings in a session file (to be overridden)"""
+        """Save settings in a session file (to be overridden)."""
         if self.parameters:
             session['params'] = self.parameters
     
@@ -391,7 +391,7 @@ class LayerInterface(CtrlInterface):
         return any(art.get_visible() for art in self.Arts)
     
     def Draw(self, show=None):
-        """Draw artists
+        """Draw artists.
         If show is None:default, draw only when the pane is visible.
         """
         if not self.Arts:
@@ -450,14 +450,14 @@ class Graph(GraphPlot):
             self.draw()
     
     def toggle_infobar(self):
-        """Toggle infobar (frame.annotation)"""
+        """Toggle infobar (frame.annotation)."""
         if self.infobar.IsShown():
             self.infobar.Dismiss()
         elif self.frame:
             self.infobar.ShowMessage(str(self.frame.annotation))
     
     def update_infobar(self, frame):
-        """Show infobar (frame.annotation)"""
+        """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
             self.infobar.ShowMessage(str(frame.annotation))
     
@@ -548,8 +548,8 @@ class Frame(mwx.Frame):
     
     @property
     def graphic_windows(self):
-        """graphic windows list
-        including [0] graph [1] output [2:] others(user-defined)
+        """Graphic windows list.
+        [0] graph [1] output [2:] others(user-defined)
         """
         return self.__graphic_windows
     
@@ -763,7 +763,7 @@ class Frame(mwx.Frame):
     sync_switch = True
     
     def sync(self, a, b):
-        """synchronize b to a"""
+        """Synchronize b to a."""
         if (self.sync_switch
             and a.frame and b.frame
             and a.frame.unit == b.frame.unit
@@ -823,7 +823,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     
     def get_pane(self, name):
-        """Get named pane or notebook pane"""
+        """Get named pane or notebook pane."""
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
@@ -833,7 +833,7 @@ class Frame(mwx.Frame):
         return self._mgr.GetPane(name)
     
     def show_pane(self, name, show=True):
-        """Show named pane or notebook pane"""
+        """Show named pane or notebook pane."""
         pane = self.get_pane(name)
         
         if not pane.IsOk():
@@ -856,7 +856,7 @@ class Frame(mwx.Frame):
         self._mgr.Update()
     
     def _show_pane(self, name, show=True):
-        """Show named pane window (internal use only)"""
+        """Show named pane window (internal use only)."""
         pane = self.get_pane(name)
         plug = self.get_plug(name)
         if plug:
@@ -879,7 +879,7 @@ class Frame(mwx.Frame):
         pane.Show(show)
     
     def update_pane(self, name, show=False, **kwargs):
-        """Update the layout of the pane
+        """Update the layout of the pane.
         
         Note:
             This is called automatically from load_plug,
@@ -936,7 +936,7 @@ class Frame(mwx.Frame):
     __new_ID_ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
     
     def require(self, name):
-        """Get named plug window
+        """Get named plug window.
         If not found, try to load it once.
         
         Note:
@@ -950,7 +950,7 @@ class Frame(mwx.Frame):
         return plug
     
     def get_plug(self, name):
-        """Find named plug window in registered plugins"""
+        """Find named plug window in registered plugins."""
         if isinstance(name, str):
             if name.endswith(".py") or name.endswith(".pyc"):
                 name,_ = os.path.splitext(os.path.basename(name))
@@ -961,8 +961,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def register(cls, module=None):
-        """Register dummy plug <module.Frame.register.<locals>._Plugin>
-        Add module.Plugin(Layer)
+        """Register dummy plug; Add module.Plugin(Layer).
         """
         if not module:
             module = inspect.getmodule(cls) # rebase module or __main__
@@ -990,7 +989,7 @@ class Frame(mwx.Frame):
         return _Plugin
     
     def load_module(self, root, force, session, **props):
-        """Load module of plugin (internal use only)
+        """Load module of plugin (internal use only).
         
         Note:
             This is called automatically from load_plug,
@@ -1051,7 +1050,7 @@ class Frame(mwx.Frame):
                   dock=False, layer=0, pos=0, row=0, prop=10000,
                   floating_pos=None, floating_size=None,
                   force=False, session=None, **kwargs):
-        """Load plugin
+        """Load plugin.
         
         Args:
             root    : Layer module, or name of the module.
@@ -1195,7 +1194,7 @@ class Frame(mwx.Frame):
         return None
     
     def unload_plug(self, name):
-        """Unload plugin and detach the pane from UI manager"""
+        """Unload plugin and detach the pane from UI manager."""
         try:
             plug = self.get_plug(name)
             if not plug:
@@ -1259,7 +1258,7 @@ class Frame(mwx.Frame):
         self.edit(self.plugins[plug.__module__])
     
     def inspect_plug(self, name):
-        """Dive into the process to inspect plugs in the shell
+        """Dive into the process to inspect plugs in the shell.
         """
         plug = self.get_plug(name)
         if not plug:
@@ -1285,7 +1284,7 @@ class Frame(mwx.Frame):
                     self.load_plug(path)
     
     def Quit(self, evt):
-        """Stop all Layer.thread"""
+        """Stop all Layer.thread."""
         for name in self.plugins:
             plug = self.get_plug(name)
             try:
@@ -1301,7 +1300,7 @@ class Frame(mwx.Frame):
     ATTRIBUTESFILE = "results.index"
     
     def import_index(self, f=None, view=None):
-        """Load frames :ref to the Index file
+        """Load frames :ref to the Index file.
         """
         if view not in self.graphic_windows:
             view = self.selected_view
@@ -1332,7 +1331,7 @@ class Frame(mwx.Frame):
         return frames
     
     def export_index(self, f=None, frames=None):
-        """Save frames :ref to the Index file
+        """Save frames :ref to the Index file.
         """
         if not frames:
             frames = self.selected_view.all_frames
@@ -1384,7 +1383,7 @@ class Frame(mwx.Frame):
     
     @classmethod
     def read_attributes(self, f):
-        """Read attributes file"""
+        """Read attributes file."""
         try:
             res = OrderedDict()
             mis = OrderedDict()
@@ -1415,7 +1414,7 @@ class Frame(mwx.Frame):
     
     @classmethod
     def write_attributes(self, f, frames):
-        """Write attributes file"""
+        """Write attributes file."""
         try:
             res, mis = self.read_attributes(f)
             new = OrderedDict((x.name, x.attributes) for x in frames)
@@ -1437,7 +1436,7 @@ class Frame(mwx.Frame):
             return new, mis # finally raises no exception
     
     def load_frame(self, paths=None, view=None):
-        """Load frame(s) from paths to the view window
+        """Load frame(s) from paths to the view window.
         
         Load buffer and the attributes of the frame.
         If the file names duplicate, the latter takes priority.
@@ -1456,7 +1455,7 @@ class Frame(mwx.Frame):
         return frames
     
     def save_frame(self, path=None, frame=None):
-        """Save frame to the path
+        """Save frame to the path.
         
         Save buffer and the attributes of the frame.
         """
@@ -1478,7 +1477,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def read_buffer(path):
-        """Read buffer from file path (to be overridden)"""
+        """Read buffer from file path (to be overridden)."""
         buf = Image.open(path)
         info = {}
         if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
@@ -1492,7 +1491,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def write_buffer(path, buf):
-        """Write buffer to file path (to be overridden)"""
+        """Write buffer to file path (to be overridden)."""
         try:
             img = Image.fromarray(buf)
             img.save(path) # PIL saves as L,I,F,RGB.
@@ -1503,7 +1502,7 @@ class Frame(mwx.Frame):
             raise
     
     def load_buffer(self, paths=None, view=None):
-        """Load buffers from paths to the view window
+        """Load buffers from paths to the view window.
         
         If no view given, the currently selected view is chosen.
         """
@@ -1563,7 +1562,7 @@ class Frame(mwx.Frame):
         return frames
     
     def save_buffer(self, path=None, frame=None):
-        """Save a buffer of the frame to the path
+        """Save a buffer of the frame to the path.
         
         If no view given, the currently selected view is chosen.
         """
@@ -1597,7 +1596,7 @@ class Frame(mwx.Frame):
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
-        """Export buffers to the path as multi-page tiff"""
+        """Export buffers to the path as multi-page tiff."""
         if not frames:
             frames = self.selected_view.all_frames
             if not frames:
@@ -1636,7 +1635,7 @@ class Frame(mwx.Frame):
     session_file = None
     
     def load_session(self, f=None, flush=True):
-        """Load session from file"""
+        """Load session from file."""
         if not f:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.jssn)|*.jssn",
@@ -1671,7 +1670,7 @@ class Frame(mwx.Frame):
         return True
     
     def save_session_as(self):
-        """Save session as (new file)"""
+        """Save session as (new file)."""
         with wx.FileDialog(self, "Save session as",
                 defaultFile=self.session_file or '',
                 wildcard="Session file (*.jssn)|*.jssn",
@@ -1681,7 +1680,7 @@ class Frame(mwx.Frame):
             return False
     
     def save_session(self, f=None):
-        """Save session to file"""
+        """Save session to file."""
         f = f or self.session_file
         if not f:
             return self.save_session_as()

@@ -85,7 +85,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
         def dispatch(v):
-            """Fork mouse events to the parent"""
+            """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
             v.Skip()
         
@@ -128,12 +128,12 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     
     @staticmethod
     def get_watchlist():
-        """All watched event binders except noWatchList"""
+        """All watched event binders except noWatchList."""
         return (x for x in ew._eventBinders if x not in ew._noWatchList)
     
     @staticmethod
     def get_actions(event, widget):
-        """Wx.PyEventBinder and the handlers"""
+        """Wx.PyEventBinder and the handlers."""
         if widget and hasattr(widget, '__event_handler__'):
             try:
                 handlers = widget.__event_handler__[event]

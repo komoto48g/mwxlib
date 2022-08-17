@@ -163,7 +163,7 @@ class Debugger(Pdb):
             self.editor.MarkerDeleteAll(style)
     
     def send_input(self, c):
-        """Send input:str @postcall"""
+        """Send input:str @postcall."""
         def _send():
             self.stdin.input = c
         if self.busy:
@@ -177,7 +177,7 @@ class Debugger(Pdb):
         print("{}{}".format(prefix, msg), file=self.stdout)
     
     def watch(self, bp):
-        """Start tracing"""
+        """Start tracing."""
         if not self.busy: # don't set while debugging
             if not bp:
                 self.unwatch()
@@ -191,7 +191,7 @@ class Debugger(Pdb):
             self.handler('trace_begin', bp)
     
     def unwatch(self):
-        """End tracing"""
+        """End tracing."""
         if not self.busy: # don't unset while debugging
             bp = self.__hookpoint
             self.reset()
@@ -242,7 +242,7 @@ class Debugger(Pdb):
                 return editor
     
     def on_debug_begin(self, frame):
-        """Called before set_trace
+        """Called before set_trace.
         Note: self.busy -> False or None
         """
         shell = self.interactive_shell
@@ -257,7 +257,7 @@ class Debugger(Pdb):
         wx.CallAfter(_continue)
     
     def on_debug_mark(self, frame):
-        """Called when interaction"""
+        """Called when interaction."""
         code = frame.f_code
         filename = code.co_filename
         firstlineno = code.co_firstlineno
@@ -287,7 +287,7 @@ class Debugger(Pdb):
         self.code = code
     
     def on_debug_next(self, frame):
-        """Called in preloop (cmdloop)"""
+        """Called in preloop (cmdloop)."""
         pos = self.__interactive
         def _post():
             shell = self.interactive_shell
@@ -302,7 +302,7 @@ class Debugger(Pdb):
         wx.CallAfter(_post)
     
     def on_debug_end(self, frame):
-        """Called after set_quit
+        """Called after set_quit.
         Note: self.busy -> True (until this stage)
         """
         self.__interactive = None
@@ -320,7 +320,7 @@ class Debugger(Pdb):
         wx.CallAfter(_continue)
     
     def on_trace_hook(self, frame):
-        """Called when a breakppoint is reached"""
+        """Called when a breakppoint is reached."""
         self.__hookpoint = None
         self.interactive_shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
