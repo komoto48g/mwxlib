@@ -919,8 +919,9 @@ class GraphPlot(MatplotPanel):
             if not hasattr(x, '__iter__'): # called from OnMotion
                 nx, ny = self.frame.xytopixel(x, y)
                 z = self.frame.xytoc(x, y)
-                self.message("[{:-4d}, {:-4d}]"
-                    " ({:-8.3f}, {:-8.3f}) value: {}".format(nx, ny, x, y, z))
+                self.message(
+                    "[{:-4d},{:-4d}] "
+                    "({:-8.3f},{:-8.3f}) value: {}".format(nx, ny, x, y, z))
                 return
             
             if len(x) == 0: # no selection
@@ -945,7 +946,8 @@ class GraphPlot(MatplotPanel):
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
                 self.message("[Region] "
-                    "Shape: [{0:4d}, {1:4d}] "
+                    ## "Size: [{0:4d}, {1:4d}] "
+                    ## "Point: [{2:4d}, {3:4d}] "
                     "crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
     
     def writeln(self):
@@ -1328,8 +1330,8 @@ class GraphPlot(MatplotPanel):
         """Rectangle points data array [l,r],[b,t]."""
         x, y = self.rected.get_data(orig=0)
         if len(x) and len(y):
-            xo, x = min(x), max(x)
-            yo, y = min(y), max(y)
+            xo, x = min(x), max(x) #= x[[0, 2]]
+            yo, y = min(y), max(y) #= y[[0, 2]]
             return np.array(((xo, x), (yo, y)))
         return np.resize(0., (2,0))
     
