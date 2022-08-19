@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.69.9"
+__version__ = "0.70.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1005,12 +1005,14 @@ class ShellFrame(MiniFrame):
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
                                         "<scratch>")
-        self.trace(self.Scratch)
+        
+        self.set_property(self.Scratch, traceable=True)
         
         ## text-mode
         self.Log.show_folder()
         self.Log.ReadOnly = True
-        self.trace(self.Log) # enable trace mode
+        
+        self.set_property(self.Log, traceable=True)
         
         self.Help.show_folder()
         self.Help.ReadOnly = True
@@ -1126,6 +1128,23 @@ class ShellFrame(MiniFrame):
         else:
             self.Show(0) # Don't destroy the window
     
+    def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
+        nb = evt.EventObject
+        if nb.CurrentPage is self.rootshell:
+            nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        else:
+            nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
+        evt.Skip()
+    
+    def OnConsolePageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
+        tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
+        win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook.
+        if win is self.rootshell:
+            ## self.message("- Don't close the root shell.")
+            return
+        evt.Skip()
+    
     def About(self, evt=None):
         with self.Help.off_readonly():
             self.Help.SetText('\n\n'.join((
@@ -1186,23 +1205,6 @@ class ShellFrame(MiniFrame):
         self._mgr.Update()
         if wnd and win.IsShown():
             wnd.SetFocus()
-    
-    def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
-        nb = evt.EventObject
-        if nb.CurrentPage is self.rootshell:
-            nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-        else:
-            nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-        nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
-        evt.Skip()
-    
-    def OnConsolePageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
-        win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook.
-        if win is self.rootshell:
-            ## self.message("- Don't close the root shell.")
-            return
-        evt.Skip()
     
     ## --------------------------------
     ## Actions for handler
@@ -1317,15 +1319,6 @@ class ShellFrame(MiniFrame):
         self.on_title_window(shell.target)
         del shell.locals
         del shell.globals
-    
-    def trace(self, editor, active=True):
-        """Set the editor pointer traceable."""
-        if active:
-            editor.handler.bind('pointer_set', _F(self.start_trace, editor))
-            editor.handler.bind('pointer_unset', _F(self.stop_trace, editor))
-        else:
-            editor.handler.unbind('pointer_set')
-            editor.handler.unbind('pointer_unset')
     
     def start_trace(self, line, editor):
         if not self.debugger.busy:
@@ -1456,7 +1449,7 @@ class ShellFrame(MiniFrame):
             self.console.DeletePage(j) # Destroy the window
     
     ## --------------------------------
-    ## Attributes of the Console
+    ## Attributes for Nautilus/Editor
     ## --------------------------------
     
     def all_pages(self, type=None):
@@ -1478,6 +1471,20 @@ class ShellFrame(MiniFrame):
         if isinstance(page, type(self.rootshell)): #<Nautilus>
             return page
         return self.rootshell
+    
+    def set_property(self, editor, **kwargs):
+        """Set editor property
+        
+        Args:
+            traceable : Bind pointer to trace set/unset functions.
+        """
+        if 'traceable' in kwargs:
+            if kwargs['traceable']:
+                editor.handler.bind('pointer_set', _F(self.start_trace, editor))
+                editor.handler.bind('pointer_unset', _F(self.stop_trace, editor))
+            else:
+                editor.handler.unbind('pointer_set')
+                editor.handler.unbind('pointer_unset')
     
     ## --------------------------------
     ## Find text dialog

@@ -17,10 +17,10 @@ exclude_files
 c/
 docs/
 etc/
-icon*/
 test*/
-vclip/
-wx*/
+icons*/
+vclips*/
+wxpy*/
 !Lib/mwx/
 
 # Byte-compiled / optimized / DLL files

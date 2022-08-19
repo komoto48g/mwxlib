@@ -26,7 +26,7 @@ class Plugin(Layer):
                         icon=('w','v'), # must be the same size icon
                         size=(120,-1),
                         )
-        self.text = TextCtrl(self, label="ctrl label",
+        self.text = TextCtrl(self, label="control",
                         handler=lambda v: self.statusline(v.Value, "enter"),
                         updater=lambda v: self.statusline(v.Value, "update"),
                         tip="this is a textctrl",
@@ -35,7 +35,7 @@ class Plugin(Layer):
                         value="default value",
                         size=(200,22),
                         )
-        self.choice = Choice(self, label="ctrl label",
+        self.choice = Choice(self, label="control",
                         handler=lambda v: self.statusline(v.Value, "selected"),
                         updater=lambda v: self.statusline(v.Value, "update"),
                         choices=['1','2','3'],
@@ -48,13 +48,12 @@ class Plugin(Layer):
         self.layout((
                 self.btn,
                 self.btn2,
-                wx.StaticLine(self, size=(200,-1)),
-                (),
+                wx.StaticLine(self), None,
                 self.text, None,
                 self.choice, None,
             ),
             title="Custom controls",
-            row=2, expand=0,
+            row=2, expand=1,
         )
         
         def trace(v):
@@ -87,13 +86,15 @@ class Plugin(Layer):
                             | wx.TE_RICH
                             | wx.TE_AUTO_URL
                         )
-        self.statusline = mwx.StatusBar(self, style=wx.STB_DEFAULT_STYLE)
+        self.statusline = mwx.StatusBar(self)
         
+        ## self.layout((self.textctrl,), expand=2)
+        ## self.layout((self.statusline,), expand=1, border=0)
         self.layout((
                 self.textctrl,
-                self.statusline,
+                (self.statusline, 0, wx.EXPAND),
             ),
-            row=1, expand=2, border=0,
+            row=1, expand=2, border=0
         )
 
 
