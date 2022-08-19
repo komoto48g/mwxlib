@@ -987,8 +987,8 @@ class TextCtrl(wx.Panel):
                   e.g., value:str
     """
     Value = property(
-        lambda self: self.ctrl.GetValue(),
-        lambda self,v: self.ctrl.SetValue(v),
+        lambda self: self._ctrl.GetValue(),
+        lambda self,v: self._ctrl.SetValue(v),
         doc="textctrl value:str")
     
     value = Value # internal use only
@@ -996,11 +996,11 @@ class TextCtrl(wx.Panel):
     @property
     def icon(self):
         """key:str or bitmap"""
-        return self.btn.icon
+        return self._btn.icon
     
     @icon.setter
     def icon(self, v):
-        self.btn.icon = v
+        self._btn.icon = v
     
     def __init__(self, parent, label='',
                  handler=None, updater=None,
@@ -1011,13 +1011,13 @@ class TextCtrl(wx.Panel):
                             | wx.TE_PROCESS_ENTER
                             | (wx.TE_READONLY if readonly else 0))
         
-        self.ctrl = wx.TextCtrl(self, **kwargs)
-        self.btn = Button(self, label, _F(updater, self), icon, tip,
+        self._ctrl = wx.TextCtrl(self, **kwargs)
+        self._btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
-                (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
-                (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
+                (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
+                (self._ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             ))
         )
         if handler:
@@ -1025,7 +1025,10 @@ class TextCtrl(wx.Panel):
                 self.Value = v
                 handler(self)
             self.reset = _f
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+            self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+        
+        self.GetValue = self._ctrl.GetValue
+        self.SetValue = self._ctrl.SetValue
 
 
 class Choice(wx.Panel):
@@ -1047,13 +1050,13 @@ class Choice(wx.Panel):
         it will be added to the list (unless readonly)
     """
     Selection = property(
-        lambda self: self.ctrl.GetSelection(),
-        lambda self,v: self.ctrl.SetSelection(v),
+        lambda self: self._ctrl.GetSelection(),
+        lambda self,v: self._ctrl.SetSelection(v),
         doc="combobox selection:int")
     
     Value = property(
-        lambda self: self.ctrl.GetValue(),
-        lambda self,v: self.ctrl.SetValue(v),
+        lambda self: self._ctrl.GetValue(),
+        lambda self,v: self._ctrl.SetValue(v),
         doc="combobox value:str")
     
     value = Value # internal use only
@@ -1061,11 +1064,11 @@ class Choice(wx.Panel):
     @property
     def icon(self):
         """key:str or bitmap"""
-        return self.btn.icon
+        return self._btn.icon
     
     @icon.setter
     def icon(self, v):
-        self.btn.icon = v
+        self._btn.icon = v
     
     def __init__(self, parent, label='',
                  handler=None, updater=None,
@@ -1076,13 +1079,13 @@ class Choice(wx.Panel):
                             | wx.TE_PROCESS_ENTER
                             | (wx.CB_READONLY if readonly else 0))
         
-        self.ctrl = wx.ComboBox(self, **kwargs)
-        self.btn = Button(self, label, _F(updater, self), icon, tip,
+        self._ctrl = wx.ComboBox(self, **kwargs)
+        self._btn = Button(self, label, _F(updater, self), icon, tip,
                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
-                (self.btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
-                (self.ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
+                (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
+                (self._ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             ))
         )
         if handler:
@@ -1090,20 +1093,25 @@ class Choice(wx.Panel):
                 self.Value = v
                 handler(self)
             self.reset = _f
-            self.ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
-            self.ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
-        self.ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
+            self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+            self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
+        self._ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         
         if selection is not None:
-            self.ctrl.Selection = selection # no events?
+            self._ctrl.Selection = selection # no events?
+        
+        self.GetSelection = self._ctrl.GetSelection
+        self.SetSelection = self._ctrl.SetSelection
+        self.GetValue = self._ctrl.GetValue
+        self.SetValue = self._ctrl.SetValue
     
     def OnTextEnter(self, evt):
         s = evt.String.strip()
         if not s:
-            self.ctrl.SetSelection(-1)
-        elif s not in self.ctrl.Items:
-            self.ctrl.Append(s)
-            self.ctrl.SetStringSelection(s)
+            self._ctrl.SetSelection(-1)
+        elif s not in self._ctrl.Items:
+            self._ctrl.Append(s)
+            self._ctrl.SetStringSelection(s)
         evt.Skip()
 
 
