@@ -685,22 +685,22 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
         assert not isinstance(objs, str)
         
-        objs = [ (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
-            else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
-            else c if c is None
-            else c if isinstance(c, tuple)
-            else c if isinstance(c, wx.Object)
-            else Knob(self, c, **kwargs) for c in objs ]
+        objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
+                ## else (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
+                ## else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
+                else c for c in objs]
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 1:
-            objs = [pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
-                        style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
-                            for i in range(0, len(objs), row)]
+            oblist = [pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
+                           style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
+                           for i in range(0, len(objs), row)]
+        else:
+            oblist = objs
         
         p = wx.EXPAND if expand > 0 else align
-        sizer = pack(self, objs, label=title, orient=wx.VERTICAL,
-                    style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
+        sizer = pack(self, oblist, label=title, orient=wx.VERTICAL,
+                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
@@ -711,7 +711,6 @@ class ControlPanel(scrolled.ScrolledPanel):
                     yield from flatiter(c)
                 elif isinstance(c, wx.Object):
                     yield c
-        
         self.__groups.append(list(flatiter(objs)))
         
         def variter(a):
@@ -720,10 +719,9 @@ class ControlPanel(scrolled.ScrolledPanel):
                     yield c.param
                 elif hasattr(c, 'value'):
                     yield c
-        
         self.__params.append(list(variter(objs)))
         
-        ## Set the appearance
+        ## Set appearance of the layout group
         self.show(-1, visible)
         self.fold(-1, not show)
         if fix:
