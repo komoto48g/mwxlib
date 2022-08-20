@@ -2244,6 +2244,8 @@ class Nautilus(Shell, EditorInterface):
     
     def OnCallTipClick(self, evt):
         self.parent.handler('add_help', self.__calltip)
+        if self.CallTipActive():
+            self.CallTipCancel()
         evt.Skip()
     
     def OnSpace(self, evt):
@@ -2923,7 +2925,7 @@ class Nautilus(Shell, EditorInterface):
         """Call ToolTip of the selected word or line."""
         if self.CallTipActive():
             self.CallTipCancel()
-            
+        
         def _gen_text():
             text = self.SelectedText
             if text:
