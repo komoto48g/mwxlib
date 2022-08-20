@@ -1483,6 +1483,7 @@ class Editor(EditWindow, EditorInterface):
         self.define_key('C-x k', self.clear_all, alias="kill-all-buffer")
         self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
         
+        self.show_folder()
         self.set_style(self.STYLE)
     
     def trace_position(self):

@@ -992,8 +992,8 @@ class ShellFrame(MiniFrame):
         })
         
         ## py-mode
+        ## self.Scratch.show_folder()
         self.Scratch.set_style(Nautilus.STYLE)
-        self.Scratch.show_folder()
         
         self.set_traceable(self.Scratch)
         
@@ -1009,15 +1009,15 @@ class ShellFrame(MiniFrame):
                                         "<scratch>")
         
         ## text-mode
-        self.Log.show_folder()
+        ## self.Log.show_folder()
         self.Log.ReadOnly = True
         
         self.set_traceable(self.Log)
         
-        self.Help.show_folder()
+        ## self.Help.show_folder()
         self.Help.ReadOnly = True
         
-        self.History.show_folder()
+        ## self.History.show_folder()
         self.History.ReadOnly = True
         
         self.Init()
