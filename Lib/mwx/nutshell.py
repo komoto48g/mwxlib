@@ -367,11 +367,11 @@ class EditorInterface(CtrlInterface):
     def set_marker(self):
         self.mark = self.cpos
     
-    def goto_marker(self):
+    def goto_marker(self, offset=None):
         if self.mark != -1:
             self.EnsureVisible(self.markline)
             self.goto_char(self.mark)
-            self.recenter()
+            self.recenter(offset)
     
     def set_line_marker(self):
         if self.pointer == self.cline:
@@ -379,11 +379,11 @@ class EditorInterface(CtrlInterface):
         else:
             self.pointer = self.cline
     
-    def goto_line_marker(self):
+    def goto_line_marker(self, offset=None):
         if self.pointer != -1:
             self.EnsureVisible(self.pointer)
             self.goto_line(self.pointer)
-            self.recenter()
+            self.recenter(offset)
     
     def exchange_point_and_mark(self):
         p = self.cpos

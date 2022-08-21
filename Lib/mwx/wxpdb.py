@@ -274,9 +274,10 @@ class Debugger(Pdb):
                 editor.load_cache(filename)
         
         if filename == editor.target:
-            editor.markline = firstlineno - 1 # (o) entry:marker
+            if code != self.code:
+                editor.markline = firstlineno - 1 # (o) entry:marker
+                editor.goto_marker(offset=3)
             editor.pointer = lineno - 1 # (->) pointer:marker
-            ## editor.goto_line_marker()
             editor.EnsureLineMoreOnScreen(lineno - 1)
             editor.push_current()
         
