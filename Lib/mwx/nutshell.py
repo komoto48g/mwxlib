@@ -1523,7 +1523,6 @@ class Editor(EditWindow, EditorInterface):
         """Yields context menu."""
         def _swap_buffer(f):
             if f is not self.buffer and self.confirm_load():
-                self.push_current() # cache current
                 self.swap_buffer(f)
                 self.SetFocus()
         
@@ -1557,11 +1556,13 @@ class Editor(EditWindow, EditorInterface):
         j = self.buffer_list.index(self.buffer)
         del self.buffer_list[j]
         
-        ## switch to one of the remaining buffers.
+        ## Switch to one of the remaining buffers.
         rest = self.buffer_list
         if rest:
             if j > len(rest) - 1:
                 j -= 1
+            ## Delete self.buffer reference to avoid push_current.
+            self.buffer = None
             self.swap_buffer(rest[j])
         else:
             self.clear_all()
@@ -1600,7 +1601,10 @@ class Editor(EditWindow, EditorInterface):
         buffer = self.find_buffer(f)
         if buffer:
             if buffer is self.buffer: # Don't load the same buffer.
+                self.push_current() # cache current
                 return True
+            if self.buffer:
+                self.push_current() # cache current
             self.buffer = buffer
             self._reset(buffer.filetext or buffer.text)
             self.markline = buffer.lineno - 1
