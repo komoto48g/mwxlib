@@ -1483,6 +1483,7 @@ class Editor(EditWindow, EditorInterface):
         self.define_key('C-x k', self.clear_all, alias="kill-all-buffer")
         self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
         
+        self.show_folder()
         self.set_style(self.STYLE)
     
     def trace_position(self):
@@ -2243,6 +2244,8 @@ class Nautilus(Shell, EditorInterface):
     
     def OnCallTipClick(self, evt):
         self.parent.handler('add_help', self.__calltip)
+        if self.CallTipActive():
+            self.CallTipCancel()
         evt.Skip()
     
     def OnSpace(self, evt):
@@ -2668,7 +2671,7 @@ class Nautilus(Shell, EditorInterface):
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
-            self.parent.handler('add_history', command, noerr)
+            self.parent.handler('add_history', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
             ## shell.__init__ よりも先に実行される
@@ -2922,7 +2925,7 @@ class Nautilus(Shell, EditorInterface):
         """Call ToolTip of the selected word or line."""
         if self.CallTipActive():
             self.CallTipCancel()
-            
+        
         def _gen_text():
             text = self.SelectedText
             if text:

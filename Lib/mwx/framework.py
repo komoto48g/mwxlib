@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.70.0"
+__version__ = "0.70.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -992,8 +992,10 @@ class ShellFrame(MiniFrame):
         })
         
         ## py-mode
+        ## self.Scratch.show_folder()
         self.Scratch.set_style(Nautilus.STYLE)
-        self.Scratch.show_folder()
+        
+        self.set_traceable(self.Scratch)
         
         @self.Scratch.define_key('C-j')
         def eval_line(v):
@@ -1006,18 +1008,16 @@ class ShellFrame(MiniFrame):
                                         self.current_shell.locals,
                                         "<scratch>")
         
-        self.set_property(self.Scratch, traceable=True)
-        
         ## text-mode
-        self.Log.show_folder()
+        ## self.Log.show_folder()
         self.Log.ReadOnly = True
         
-        self.set_property(self.Log, traceable=True)
+        self.set_traceable(self.Log)
         
-        self.Help.show_folder()
+        ## self.Help.show_folder()
         self.Help.ReadOnly = True
         
-        self.History.show_folder()
+        ## self.History.show_folder()
         self.History.ReadOnly = True
         
         self.Init()
@@ -1320,6 +1320,15 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
     
+    def set_traceable(self, editor, traceable=True):
+        """Bind pointer to trace set/unset functions."""
+        if traceable:
+            editor.handler.bind('pointer_set', _F(self.start_trace, editor=editor))
+            editor.handler.bind('pointer_unset', _F(self.stop_trace, editor=editor))
+        else:
+            editor.handler.unbind('pointer_set')
+            editor.handler.unbind('pointer_unset')
+    
     def start_trace(self, line, editor):
         if not self.debugger.busy:
             if not editor.target:
@@ -1390,12 +1399,7 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.Help, focus=0)
     
     def add_history(self, text, noerr=None):
-        """Add text to the history buffer.
-        
-        noerr: Add marker, otherwise None if no marker is needed.
-        prefix: Add prefix:str at the beginning of each line.
-        suffix: Add linesep at the end of the text
-        """
+        """Add text to the history buffer."""
         if not text or text.isspace():
             return
         with self.History.off_readonly() as ed:
@@ -1471,20 +1475,6 @@ class ShellFrame(MiniFrame):
         if isinstance(page, type(self.rootshell)): #<Nautilus>
             return page
         return self.rootshell
-    
-    def set_property(self, editor, **kwargs):
-        """Set editor property
-        
-        Args:
-            traceable : Bind pointer to trace set/unset functions.
-        """
-        if 'traceable' in kwargs:
-            if kwargs['traceable']:
-                editor.handler.bind('pointer_set', _F(self.start_trace, editor))
-                editor.handler.bind('pointer_unset', _F(self.stop_trace, editor))
-            else:
-                editor.handler.unbind('pointer_set')
-                editor.handler.unbind('pointer_unset')
     
     ## --------------------------------
     ## Find text dialog
