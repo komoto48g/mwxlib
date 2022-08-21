@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.70.1"
+__version__ = "0.70.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1399,12 +1399,7 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.Help, focus=0)
     
     def add_history(self, text, noerr=None):
-        """Add text to the history buffer.
-        
-        noerr: Add marker, otherwise None if no marker is needed.
-        prefix: Add prefix:str at the beginning of each line.
-        suffix: Add linesep at the end of the text
-        """
+        """Add text to the history buffer."""
         if not text or text.isspace():
             return
         with self.History.off_readonly() as ed:

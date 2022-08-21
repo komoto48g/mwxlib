@@ -2671,7 +2671,7 @@ class Nautilus(Shell, EditorInterface):
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
-            self.parent.handler('add_history', command, noerr)
+            self.parent.handler('add_history', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
             ## shell.__init__ よりも先に実行される
