@@ -686,12 +686,10 @@ class EditorInterface(CtrlInterface):
     def is_folder_shown(self):
         return self.GetMarginSensitive(0)
     
-    def show_folder(self, show=True, colour=None):
+    def show_folder(self, show=True):
         """Show folder margin.
         
-        Call me before set_style.
-        Or else the margin color will be default light gray
-        
+        The margin colour refers to STC_STYLE_LINENUMBER if defined.
         If show is True, the colour is used for margin hi-colour (default :g).
         If show is False, the colour is used for margin line colour (default :b)
         """
@@ -700,15 +698,15 @@ class EditorInterface(CtrlInterface):
             self.SetMarginSensitive(0, True)
             self.SetMarginSensitive(1, True)
             self.SetMarginSensitive(2, True)
-            self.SetFoldMarginColour(True, self.CaretLineBackground)
-            self.SetFoldMarginHiColour(True, colour or 'light gray')
+            self.SetFoldMarginColour(True, self.BackgroundColour)
+            self.SetFoldMarginHiColour(True, 'light gray')
         else:
             self.SetMarginWidth(2, 1)
             self.SetMarginSensitive(0, False)
             self.SetMarginSensitive(1, False)
             self.SetMarginSensitive(2, False)
-            self.SetFoldMarginColour(True, colour or 'black')
-            self.SetFoldMarginHiColour(True, colour or 'black')
+            self.SetFoldMarginColour(True, 'black')
+            self.SetFoldMarginHiColour(True, 'black')
     
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
@@ -822,6 +820,8 @@ class EditorInterface(CtrlInterface):
             ## Set colors used as a chequeboard pattern,
             ## lo (back) one of the colors
             ## hi (fore) the other color
+            self.BackgroundColour = item.get('back')
+            self.ForegroundColour = item.get('fore')
             if self.GetMarginSensitive(2):
                 ## 12 pixel chequeboard, fore being default colour
                 self.SetFoldMarginColour(True, item.get('back'))
@@ -853,7 +853,7 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetForeground(1, item.get('back') or "red")
         
         ## Custom style for annotation
-        self.StyleSetSpec(stc.STC_STYLE_ANNOTATION, "fore:#7f0000,back:#ff7f7f")
+        ## self.StyleSetSpec(stc.STC_STYLE_ANNOTATION, "fore:#7f0000,back:#ff7f7f")
         
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
@@ -1410,6 +1410,7 @@ class Editor(EditWindow, EditorInterface):
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
         stc.STC_P_OPERATOR        : "fore:#000000",
         stc.STC_P_IDENTIFIER      : "fore:#000000",
@@ -1877,6 +1878,7 @@ class Nautilus(Shell, EditorInterface):
         stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#cccccc",
         stc.STC_P_OPERATOR        : "fore:#cccccc",
         stc.STC_P_IDENTIFIER      : "fore:#cccccc",
