@@ -1787,24 +1787,22 @@ class Interpreter(interpreter.Interpreter):
 
 
 class Nautilus(Shell, EditorInterface):
-    """Nautilus in the Shell with Editor interface.
+    """Nautilus in the Shell.
     
-    Features:
-        
-        All objects in the process can be accessed using,
-        
-        - self : the target of the shell
-        - this : the module which includes target
-        
-        This module is based on wx.py.shell.
-        Some of the original key bindings are overridden.
-        To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
-        
-        The original key bindings are mapped in esc-map,
-        e.g., if you want to do 'select-all', type [ESC C-a], not [C-a].
-        
+    Objects in the process can be accessed using,
+    
+    - self : the target of the shell
+    - this : the module which includes target
+    
+    This module is based on wx.py.shell.
+    Some of the original key bindings are overridden.
+    To read the original key bindings, see 'wx.py.shell.HELP_TEXT'.
+    
+    The original key bindings are mapped in esc-map, e.g.,
+    if you want to do 'select-all', type [ESC C-a], not [C-a].
+    
     Magic syntax::
-        
+    
         - quoteback : x`y --> y=x  | x`y`z --> z=y=x
         - pullback  : x@y --> y(x) | x@y@z --> z(y(x))
         - apropos   : x.y? [not] p --> shows apropos (not-)matched by predicates p
@@ -1820,22 +1818,6 @@ class Nautilus(Shell, EditorInterface):
         
         ``*`` denotes the original syntax defined in wx.py.shell,
         for which, at present version, enabled with USE_MAGIC switch being on.
-    
-    Shell built-in utility::
-    
-        @p          : synonym of print
-        @pp         : synonym of pprint
-        @info       : short info
-        @help       : full description
-        @dive       : clone the shell with new target
-        @timeit     : measure the duration cpu time
-        @profile    : profile a single function call
-        @filling    : inspection using wx.lib.filling.Filling
-        @watch      : inspection using wx.lib.inspection.InspectionTool
-        @edit       : open file with your editor (undefined)
-        @load       : load file in the buffer
-        @where      : filename and lineno or module
-        @debug      : open pdb or show event-watcher and widget-tree
     
     Autocomp-key bindings::
     
@@ -1859,10 +1841,10 @@ class Nautilus(Shell, EditorInterface):
         C-enter     : insert-line-break
         M-enter     : duplicate-command
     
-    The most convenient way to see the details of keymaps on the shell is as follows::
+    The most convenient way to see the details of keymaps on the shell is as follows:
     
         >>> self.shell.handler @p
-        ... # or
+        # or
         >>> self.shell.handler @filling
     
     A flaky nutshell:
@@ -2229,7 +2211,6 @@ class Nautilus(Shell, EditorInterface):
         del self.red_arrow
         
         self.__text = ''
-        self.__time = 0
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -2492,47 +2473,25 @@ class Nautilus(Shell, EditorInterface):
     
     def on_activated(self, shell):
         """Called when shell:self is activated.
-        Reset localvars and builtins assigned for the shell target.
+        Reset localvars assigned for the shell target.
         """
         ## self.target = shell.target # Don't set target (locals) here,
                                       # it could be referred from debugger.
-        
-        self.parent.handler('title_window', self.target)
         self.trace_position()
+        self.parent.handler('title_window', self.target)
         try:
             self.target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
-        except AttributeError:
-            pass
-        
-        ## To prevent the builtins from referring dead objects,
-        ## Add utility functions to builtins each time when activated.
-        builtins.help = self.help
-        builtins.info = self.info
-        builtins.dive = self.clone
-        builtins.timeit = self.timeit
-        try:
-            builtins.debug = self.parent.debug
-            builtins.load = self.parent.load
         except AttributeError:
             pass
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated.
-        Remove target localvars and builtins assigned for the shell target.
+        Remove target localvars assigned for the shell target.
         """
         if self.AutoCompActive():
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-        try:
-            del builtins.help
-            del builtins.info
-            del builtins.dive
-            del builtins.timeit
-            del builtins.debug
-            del builtins.load
-        except AttributeError:
-            pass
     
     def on_text_input(self, text):
         """Called when [Enter] text (before push).
@@ -2827,7 +2786,7 @@ class Nautilus(Shell, EditorInterface):
                 commands[j] = cmd
         
         self.Replace(self.bolc, self.eolc, '')
-        self.__time = self.clock()
+        Nautilus.__time = self.clock()
         for cmd in commands:
             self.write(cmd)
             self.processLine()
@@ -2854,7 +2813,7 @@ class Nautilus(Shell, EditorInterface):
         commands.append(cmd)
         
         self.Replace(self.bolc, self.eolc, '')
-        self.__time = self.clock()
+        Nautilus.__time = self.clock()
         for cmd in commands:
             self.write(cmd.replace('\n', os.linesep + sys.ps2))
             self.processLine()
@@ -2864,8 +2823,10 @@ class Nautilus(Shell, EditorInterface):
         
         (override) Check the clock time.
         """
-        self.__time = self.clock()
+        Nautilus.__time = self.clock()
         return Shell.run(self, command, prompt, verbose)
+    
+    __time = 0
     
     @staticmethod
     def clock():
@@ -2874,9 +2835,10 @@ class Nautilus(Shell, EditorInterface):
         except AttributeError:
             return time.clock()
     
-    def timeit(self, *args, **kwargs):
-        t = self.clock()
-        print("... duration time: {:g} s\n".format(t - self.__time), file=self)
+    @staticmethod
+    def timeit(*args, **kwargs):
+        dt = Nautilus.clock() - Nautilus.__time
+        print("... duration time: {:g} s".format(dt))
     
     def clone(self, target):
         if not hasattr(target, '__dict__'):
