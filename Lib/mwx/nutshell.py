@@ -790,6 +790,7 @@ class EditorInterface(CtrlInterface):
         else:
             self.cpos = p
             self.anchor = qo
+        self.EnsureCaretVisible()
         evt.Skip()
     
     def on_linesel_end(self, evt):

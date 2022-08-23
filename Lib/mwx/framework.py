@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.70.3"
+__version__ = "0.70.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1260,8 +1260,8 @@ class ShellFrame(MiniFrame):
             if obj:
                 self.linfo.watch(obj.__dict__)
                 self.ginfo.watch(eval("globals()", obj.__dict__))
+                self.popup_window(self.monitor, focus=0)
                 self.popup_window(self.linfo, focus=0)
-            self.popup_window(self.monitor, focus=0)
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
@@ -1283,6 +1283,7 @@ class ShellFrame(MiniFrame):
         shell.prompt()
         shell.SetFocus()
         self.Show()
+        self.popup_window(self.ghost, focus=0)
         self.popup_window(self.linfo, focus=0)
         self.add_log("<-- Beginning of debugger\r\n")
     
