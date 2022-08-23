@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.70.3"
+__version__ = "0.70.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -20,6 +20,7 @@ from wx import stc
 from wx.py import dispatcher
 from importlib import reload
 import builtins
+import textwrap
 try:
     import utilus as ut
     from utilus import funcall as _F
@@ -804,7 +805,7 @@ class AuiNotebook(aui.AuiNotebook):
 
 
 class ShellFrame(MiniFrame):
-    """MiniFrame of shell for inspection, debug, and break target
+    """MiniFrame of the Shell.
     
     Args:
          target : target object of the rootshell.
@@ -820,6 +821,22 @@ class ShellFrame(MiniFrame):
         History     : buffer for shell history
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
+    
+    Built-in utility::
+    
+        @p          : Synonym of print.
+        @pp         : Synonym of pprint.
+        @info       : Short info.
+        @help       : Full description.
+        @dive       : Clone the shell with new target.
+        @timeit     : Measure the duration cpu time (per one execution).
+        @profile    : Profile a single function call.
+        @filling    : Inspection using ``wx.lib.filling.Filling``.
+        @watch      : Inspection using ``wx.lib.inspection.InspectionTool``.
+        @load       : Load file in Log buffer.
+        @where      : Displays filename:lineno or the module name.
+        @mro        : Displays mro list and filename:lineno or the module name.
+        @debug      : Open pdb or event-monitor.
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
@@ -858,6 +875,12 @@ class ShellFrame(MiniFrame):
         builtins.watch = watchit
         builtins.filling = filling
         builtins.profile = profile
+        builtins.help = self.rootshell.help
+        builtins.info = self.rootshell.info
+        builtins.dive = self.rootshell.clone
+        builtins.timeit = self.rootshell.timeit
+        builtins.load = self.load
+        builtins.debug = self.debug
         
         try:
             from wxpdb import Debugger
@@ -1151,19 +1174,19 @@ class ShellFrame(MiniFrame):
                 "#<module 'mwx' from {!r}>".format(__file__),
                 "Author: {!r}".format(__author__),
                 "Version: {!s}".format(__version__),
+                self.__class__.__doc__,
                 self.rootshell.__class__.__doc__,
                 
-                "================================\n" # Thanks to wx.py.shell
-                "#{!r}".format(wx.py.shell),
+                # Thanks to wx.py.shell.
+                "#{!r}".format(wx.py),
                 "Author: {!r}".format(wx.py.version.__author__),
                 "Version: {!s}".format(wx.py.version.VERSION),
-                wx.py.__doc__,
-                wx.py.shell.__doc__,
-                "*original{}".format(wx.py.shell.HELP_TEXT.lower().replace('\n', '\n\t')),
+                wx.py.shell.Shell.__doc__,
+                textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
                 
-                "================================\n" # Thanks are also due to Phoenix/wxWidgets
+                # Thanks are also due to wxWidgets.
                 "#{!r}".format(wx),
-                "To show the credit, press C-M-Mbutton.",
+                "To show the credit, press C-M-Mbutton.\n",
                 ))
             )
         self.popup_window(self.Help, focus=0)
@@ -1260,8 +1283,8 @@ class ShellFrame(MiniFrame):
             if obj:
                 self.linfo.watch(obj.__dict__)
                 self.ginfo.watch(eval("globals()", obj.__dict__))
+                self.popup_window(self.monitor, focus=0)
                 self.popup_window(self.linfo, focus=0)
-            self.popup_window(self.monitor, focus=0)
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
@@ -1283,6 +1306,7 @@ class ShellFrame(MiniFrame):
         shell.prompt()
         shell.SetFocus()
         self.Show()
+        self.popup_window(self.ghost, focus=0)
         self.popup_window(self.linfo, focus=0)
         self.add_log("<-- Beginning of debugger\r\n")
     
