@@ -1390,6 +1390,7 @@ class Buffer:
     def filetext(self):
         f = self.filename
         if f and os.path.isfile(f):
+            linecache.checkcache(f)
             return ''.join(linecache.getlines(f))
 
 
