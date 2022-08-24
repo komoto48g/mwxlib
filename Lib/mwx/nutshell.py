@@ -158,18 +158,6 @@ class EditorInterface(CtrlInterface):
         ## This event occurs when lines that are hidden should be made visible.
         self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
         
-        def indic(evt):
-            ## i = self.IndicatorValue #? -> 1 常に１が返される▲ BUG of wx.stc ?
-            pos = evt.Position
-            if self.IndicatorValueAt(0, pos): # check indicator [0]
-                p = self.IndicatorStart(0, pos)
-                q = self.IndicatorEnd(0, pos)
-                self.goto_char(pos)
-                self.handler('select_itext', self.GetTextRange(p, q))
-            evt.Skip()
-        
-        self.Bind(stc.EVT_STC_INDICATOR_CLICK, indic)
-        
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
@@ -262,6 +250,7 @@ class EditorInterface(CtrlInterface):
         except AttributeError:
             self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+        
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
         try:
@@ -269,6 +258,8 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetHoverForeground(1, "blue")
         except AttributeError:
             pass
+        
+        self.Bind(stc.EVT_STC_INDICATOR_CLICK, self.OnIndicatorClick)
         
         ## Custom indicator [2] for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
@@ -850,7 +841,12 @@ class EditorInterface(CtrlInterface):
         item = _map(spec.pop(stc.STC_P_WORD3, ''))
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
-            self.IndicatorSetForeground(1, item.get('back') or "red")
+            self.IndicatorSetForeground(1, item.get('back') or "yellow")
+            try:
+                self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
+                self.IndicatorSetHoverForeground(1, "blue")
+            except AttributeError:
+                pass
         
         ## Custom style for annotation
         ## self.StyleSetSpec(stc.STC_STYLE_ANNOTATION, "fore:#7f0000,back:#ff7f7f")
@@ -1080,14 +1076,12 @@ class EditorInterface(CtrlInterface):
         self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
                   handler=self.on_filter_text_selection)
-        ## evt.Skip()
     
     def on_filter_text_exit(self, evt):
         if self.AutoCompActive():
             self.AutoCompCancel()
         self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
                     handler=self.on_filter_text_selection)
-        ## evt.Skip()
     
     def on_filter_text_selection(self, evt):
         line = self.__lines[self.AutoCompGetCurrent()]
@@ -1095,6 +1089,16 @@ class EditorInterface(CtrlInterface):
         self.goto_line(line)
         self.recenter()
         self.on_filter_text_exit(evt)
+    
+    def OnIndicatorClick(self, evt):
+        ## i = self.IndicatorValue #? -> 1 常に１が返される▲ BUG of wx.stc ?
+        pos = evt.Position
+        if self.IndicatorValueAt(0, pos): # check indicator [0]
+            p = self.IndicatorStart(0, pos)
+            q = self.IndicatorEnd(0, pos)
+            self.goto_char(pos)
+            self.handler('select_itext', self.GetTextRange(p, q))
+        ## evt.Skip(False) # DO NOT SKIP to system handler.
     
     ## --------------------------------
     ## goto, skip, selection, etc.
@@ -2306,7 +2310,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt) # don't enter autocomp
         
         self.ReplaceSelection('.') # just write down a dot.
-        evt.Skip(False)            # do not skip to default autocomp mode
+        evt.Skip(False)            # Do not skip to default autocomp mode.
     
     def OnExtraDot(self, evt):
         """Called when ex-dot [C-.] pressed."""
