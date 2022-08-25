@@ -583,10 +583,28 @@ class EditorInterface(CtrlInterface):
             indent -= 4
         return indent
     
+    def py_electric_indent(self):
+        """Calculate indent spaces for the following line."""
+        text, lp = self.CurLine
+        return self.py_calc_indentation(text[:lp])
+    
+    @classmethod
+    def py_calc_indentation(self, text):
+        """Returns indent spaces for the command text."""
+        text = self.py_strip_comments(text).rstrip()
+        lstr, indent = self.py_strip_indents(text)
+        if text.endswith('\\'):
+            return indent + 2
+        if text.endswith(':') and re.match(self.py_indent_re, lstr):
+            return indent + 4
+        if re.match(self.py_closing_re, lstr):
+            return indent - 4
+        return indent
+    
     @classmethod
     def py_strip_indents(self, text):
-        """Returns left-stripped text and the number of indents."""
-        text = self.py_strip_prompts(text)
+        """Returns left-stripped text and the number of indent spaces."""
+        text = self.py_strip_prompts(text) # cf. shell.lstripPrompt(text)
         lstr = text.lstrip(' \t')
         indent = len(text) - len(lstr)
         return lstr, indent
@@ -599,6 +617,16 @@ class EditorInterface(CtrlInterface):
                 text = text[len(ps):]
                 break
         return text
+    
+    @classmethod
+    def py_strip_comments(self, text):
+        """Returns text without a trailing comment."""
+        try:
+            lexer = shlex.shlex(text)
+            lexer.whitespace = '' # nothing is white
+            return ''.join(lexer)
+        except ValueError:
+            return text
     
     def py_eval_line(self, globals, locals):
         if self.CallTipActive():
