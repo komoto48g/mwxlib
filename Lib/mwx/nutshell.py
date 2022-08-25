@@ -2037,7 +2037,6 @@ class Nautilus(Shell, EditorInterface):
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
-              'S-enter pressed' : (0, _F(self.openLine)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
@@ -2321,11 +2320,6 @@ class Nautilus(Shell, EditorInterface):
         st = self.get_style(p-1)
         if st in (0, 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self.')
-    
-    def openLine(self):
-        p = self.cpos
-        self.insertLineBreak()
-        self.cpos = self.anchor = p # save_excursion
     
     def duplicate_command(self, clear=True):
         if self.CanEdit():
