@@ -2765,15 +2765,8 @@ class Nautilus(Shell, EditorInterface):
             else:
                 cmd += lines # multi-line command
             lines = ''
-        if lines.startswith(sys.ps2):
-            line = self.lstripPrompt(lines)
-            lstr = line.lstrip()
-            if lstr and lstr == line: # ps + no indent
-                commands += [cmd, line]
-            else:
-                commands.append(cmd + lines)
-        else:
-            commands.append(cmd + lines)
+        commands.append(cmd + lines)
+        
         if len(commands) > 1:
             suffix = sys.ps2
             for j, cmd in enumerate(commands):
