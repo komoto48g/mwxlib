@@ -545,7 +545,7 @@ class EditorInterface(CtrlInterface):
         lstr = text.lstrip()   # w/ no-indent
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = self.py_calc_indent(self.cline) # check current/previous line
+        indent = self.py_current_indent() # check current/previous line
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
@@ -560,24 +560,11 @@ class EditorInterface(CtrlInterface):
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
-    def py_calc_indent(self, line):
+    def py_current_indent(self):
         """Calculate indent spaces from previous line."""
-        text = self.GetLine(line - 1)
-        lstr, indent = self.py_strip_indents(text) # check previous line
-        try:
-            tokens = list(shlex.shlex(lstr)) # strip comment
-        except ValueError:
-            return indent # no closing quotation/paren
-        else:
-            if not tokens:
-                return indent
-            if tokens[-1] == '\\':
-                return indent + 2
-            if tokens[-1] == ':' and re.match(self.py_indent_re, tokens[0]):
-                return indent + 4
-            if re.match(self.py_closing_re, tokens[0]):
-                return indent - 4
-        text = self.GetLine(line)
+        text = self.GetLine(self.cline - 1)
+        indent = self.py_calc_indentation(text) # check previous line
+        text = self.GetLine(self.cline)
         lstr, _indent = self.py_strip_indents(text) # check current line
         if re.match(self.py_outdent_re, lstr):
             indent -= 4
