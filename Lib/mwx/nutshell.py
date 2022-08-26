@@ -545,7 +545,7 @@ class EditorInterface(CtrlInterface):
         lstr = text.lstrip()   # w/ no-indent
         p = self.bol + len(text) - len(lstr) # for multi-byte string
         offset = max(0, self.cpos - p)
-        indent = self.py_calc_indent(self.cline) # check current/previous line
+        indent = self.py_current_indent() # check current/previous line
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
@@ -560,33 +560,38 @@ class EditorInterface(CtrlInterface):
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
-    def py_calc_indent(self, line):
+    def py_current_indent(self):
         """Calculate indent spaces from previous line."""
-        text = self.GetLine(line - 1)
-        lstr, indent = self.py_strip_indents(text) # check previous line
-        try:
-            tokens = list(shlex.shlex(lstr)) # strip comment
-        except ValueError:
-            return indent # no closing quotation/paren
-        else:
-            if not tokens:
-                return indent
-            if tokens[-1] == '\\':
-                return indent + 2
-            if tokens[-1] == ':' and re.match(self.py_indent_re, tokens[0]):
-                return indent + 4
-            if re.match(self.py_closing_re, tokens[0]):
-                return indent - 4
-        text = self.GetLine(line)
+        text = self.GetLine(self.cline - 1)
+        indent = self.py_calc_indentation(text) # check previous line
+        text = self.GetLine(self.cline)
         lstr, _indent = self.py_strip_indents(text) # check current line
         if re.match(self.py_outdent_re, lstr):
             indent -= 4
         return indent
     
+    def py_electric_indent(self):
+        """Calculate indent spaces for the following line."""
+        text, lp = self.CurLine
+        return self.py_calc_indentation(text[:lp])
+    
+    @classmethod
+    def py_calc_indentation(self, text):
+        """Returns indent spaces for the command text."""
+        text = self.py_strip_comments(text).rstrip()
+        lstr, indent = self.py_strip_indents(text)
+        if text.endswith('\\'):
+            return indent + 2
+        if text.endswith(':') and re.match(self.py_indent_re, lstr):
+            return indent + 4
+        if re.match(self.py_closing_re, lstr):
+            return indent - 4
+        return indent
+    
     @classmethod
     def py_strip_indents(self, text):
-        """Returns left-stripped text and the number of indents."""
-        text = self.py_strip_prompts(text)
+        """Returns left-stripped text and the number of indent spaces."""
+        text = self.py_strip_prompts(text) # cf. shell.lstripPrompt(text)
         lstr = text.lstrip(' \t')
         indent = len(text) - len(lstr)
         return lstr, indent
@@ -599,6 +604,16 @@ class EditorInterface(CtrlInterface):
                 text = text[len(ps):]
                 break
         return text
+    
+    @classmethod
+    def py_strip_comments(self, text):
+        """Returns text without a trailing comment."""
+        try:
+            lexer = shlex.shlex(text)
+            lexer.whitespace = '' # nothing is white
+            return ''.join(lexer)
+        except ValueError:
+            return text
     
     def py_eval_line(self, globals, locals):
         if self.CallTipActive():
@@ -2037,7 +2052,6 @@ class Nautilus(Shell, EditorInterface):
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
-              'S-enter pressed' : (0, _F(self.openLine)),
               'M-enter pressed' : (0, _F(self.duplicate_command)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
@@ -2321,11 +2335,6 @@ class Nautilus(Shell, EditorInterface):
         st = self.get_style(p-1)
         if st in (0, 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self.')
-    
-    def openLine(self):
-        p = self.cpos
-        self.insertLineBreak()
-        self.cpos = self.anchor = p # save_excursion
     
     def duplicate_command(self, clear=True):
         if self.CanEdit():
