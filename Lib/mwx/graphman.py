@@ -21,19 +21,15 @@ from wx import aui
 try:
     import framework as mwx
     from utilus import funcall as _F
-    from controls import Icon
-    from controls import ControlPanel
-    from framework import CtrlInterface
-    from framework import AuiNotebook
+    from controls import ControlPanel, Icon
+    from framework import CtrlInterface, AuiNotebook
     from matplot2g import GraphPlot
     from matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
     from .utilus import funcall as _F
-    from .controls import Icon
-    from .controls import ControlPanel
-    from .framework import CtrlInterface
-    from .framework import AuiNotebook
+    from .controls import ControlPanel, Icon
+    from .framework import CtrlInterface, AuiNotebook
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
 from matplotlib import cm
