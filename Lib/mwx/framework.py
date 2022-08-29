@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.70.7"
+__version__ = "0.70.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -875,10 +875,10 @@ class ShellFrame(MiniFrame):
         builtins.watch = watchit
         builtins.filling = filling
         builtins.profile = profile
+        builtins.timeit = timeit
         builtins.help = self.rootshell.help
         builtins.info = self.rootshell.info
         builtins.dive = self.rootshell.clone
-        builtins.timeit = self.rootshell.timeit
         builtins.load = self.load
         builtins.debug = self.debug
         
@@ -1601,6 +1601,15 @@ except ImportError as e:
     print("Python {}".format(sys.version))
     print("wxPython {}".format(wx.version()))
     pass
+
+
+def timeit(f, *args, **kwargs):
+    from timeit import timeit
+    try:
+        dt = timeit(lambda: f(*args, **kwargs), number=1)
+        print("... duration time: {:g} s".format(dt))
+    except TypeError as e:
+        print(e)
 
 
 def profile(obj, *args, **kwargs):

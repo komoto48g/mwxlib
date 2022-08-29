@@ -2441,7 +2441,7 @@ class Nautilus(Shell, EditorInterface):
                 f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rest, sep2).strip()
-                if rhs in ("debug", "profile"):
+                if rhs in ("debug", "profile", "timeit"):
                     lhs = re.sub(r"([\w.]+)\((.*)\)", # func(a,b,c) @debug
                                  r"\1, \2", lhs)      # --> func,a,b,c @debug
                 else:
@@ -2793,7 +2793,6 @@ class Nautilus(Shell, EditorInterface):
                 commands[j] = cmd
         
         self.Replace(self.bolc, self.eolc, '')
-        Nautilus.__time = self.clock()
         for cmd in commands:
             self.write(cmd)
             self.processLine()
@@ -2801,8 +2800,7 @@ class Nautilus(Shell, EditorInterface):
     def Execute(self, text):
         """Replace selection with text and run commands.
         
-        (override) Check the clock time,
-                   Patch `finally` miss-indentation
+        (override) Patch `finally` miss-indentation
         """
         command = self.regulate_cmd(text)
         commands = []
@@ -2820,32 +2818,9 @@ class Nautilus(Shell, EditorInterface):
         commands.append(cmd)
         
         self.Replace(self.bolc, self.eolc, '')
-        Nautilus.__time = self.clock()
         for cmd in commands:
             self.write(cmd.replace('\n', os.linesep + sys.ps2))
             self.processLine()
-    
-    def run(self, command, prompt=True, verbose=True):
-        """Execute command as if it was typed in directly.
-        
-        (override) Check the clock time.
-        """
-        Nautilus.__time = self.clock()
-        return Shell.run(self, command, prompt, verbose)
-    
-    __time = 0
-    
-    @staticmethod
-    def clock():
-        try:
-            return time.perf_counter()
-        except AttributeError:
-            return time.clock()
-    
-    @staticmethod
-    def timeit(*args, **kwargs):
-        dt = Nautilus.clock() - Nautilus.__time
-        print("... duration time: {:g} s".format(dt))
     
     def clone(self, target):
         if not hasattr(target, '__dict__'):

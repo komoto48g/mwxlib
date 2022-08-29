@@ -21,19 +21,15 @@ from wx import aui
 try:
     import framework as mwx
     from utilus import funcall as _F
-    from controls import Icon
-    from controls import ControlPanel
-    from framework import CtrlInterface
-    from framework import AuiNotebook
+    from controls import ControlPanel, Icon
+    from framework import CtrlInterface, AuiNotebook
     from matplot2g import GraphPlot
     from matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
     from .utilus import funcall as _F
-    from .controls import Icon
-    from .controls import ControlPanel
-    from .framework import CtrlInterface
-    from .framework import AuiNotebook
+    from .controls import ControlPanel, Icon
+    from .framework import CtrlInterface, AuiNotebook
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
 from matplotlib import cm
@@ -1471,7 +1467,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     wildcards = [
         "TIF file (*.tif)|*.tif",
-        "BMP file (*.bmp)|*.bmp",
          "ALL files (*.*)|*.*",
     ]
     
@@ -1494,11 +1489,12 @@ class Frame(mwx.Frame):
         """Write buffer to file path (to be overridden)."""
         try:
             img = Image.fromarray(buf)
-            img.save(path) # PIL saves as L,I,F,RGB.
+            img.save(path) # PIL saves as L, I, F, and RGB.
         except PermissionError:
             raise
-        except OSError: # e.g., cannot write mode L; 16 as BMP
-            os.remove(path)
+        except OSError: # cannot write mode L, I, F as BMP, etc.
+            if os.path.exists(path):
+                os.remove(path)
             raise
     
     def load_buffer(self, paths=None, view=None):

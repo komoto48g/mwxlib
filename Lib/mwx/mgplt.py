@@ -15,7 +15,7 @@ import numpy as np
 try:
     import framework as mwx
     from controls import ControlPanel
-except:
+except ImportError:
     from . import framework as mwx
     from .controls import ControlPanel
 
@@ -75,7 +75,7 @@ class Gnuplot(object):
                     for v in zip(*data):
                         o.write('\t'.join(self.data_format(x) for x in v) + '\n')
                     o.write('\n\n')
-                    pcmd.append("temp index {}:{} {}".format(i, i, opt))
+                    pcmd.append("tempfile index {}:{} {}".format(i, i, opt))
             
         ## plot with args = (axis, y1[,opt], y2[,opt], ...)
         else:
@@ -92,13 +92,12 @@ class Gnuplot(object):
             while len(data) > len(opts): # opts 指定の数が足りない場合 (maybe+1)
                 opts.append("w l")
             
-            pcmd = ["temp using 1:{} {}".format(j+2,opt) for j,opt in enumerate(opts)]
+            pcmd = ["tempfile using 1:{} {}".format(j+2,opt) for j,opt in enumerate(opts)]
             data = np.vstack((axis, data))
             with open(self.tempfile, 'w') as o:
                 for v in data.T:
                     o.write('\t'.join(self.data_format(x) for x in v) + '\n')
-            
-        ## self("temp = '{}'".format(self.tempfile))
+        
         self("plot " + ', '.join(pcmd))
     
     def terminate(self):
@@ -120,7 +119,7 @@ class Gnuplot(object):
             self.startupfile = startup
         if self.startupfile:
             self("load '{}'".format(self.startupfile))
-        self("temp = '{}'".format(self.tempfile)) # set temp:parameter
+        self("tempfile = '{}'".format(self.tempfile))
     
     def wait(self, msg=""):
         input(msg + " (Press ENTER to continue)")
@@ -228,7 +227,7 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     from numpy import pi
-    from mwx.controls import LParam
+    from controls import LParam
     
     class TestFrame(GnuplotFrame):
         def __init__(self, *args, **kwargs):

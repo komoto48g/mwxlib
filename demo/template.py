@@ -5,8 +5,9 @@
 Version: 1.0
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-import cv2
 import wx
+import cv2
+import numpy as np
 from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 
@@ -39,6 +40,11 @@ class Plugin(Layer):
     def run(self):
         k = self.ksize.value
         src = self.graph.buffer
+        
+        ## CV2 normally accepts uint8/16 and float32/64.
+        if src.dtype in (np.uint32, np.int32): src = src.astype(np.float32)
+        if src.dtype in (np.uint64, np.int64): src = src.astype(np.float64)
+        
         dst = cv2.GaussianBlur(src, (k,k), 0.)
         self.output.load(dst, name="*gauss*")
 
