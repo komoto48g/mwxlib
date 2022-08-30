@@ -110,7 +110,7 @@ class AxesImagePhantom(object):
         buf         : buffer
         name        : buffer name
         show        : show immediately when loaded
-        aspect      : initial aspect ratio <float>
+        aspect      : initial aspect ratio
         localunit   : initial localunit
         attributes  : additional info:dict
     
@@ -202,6 +202,9 @@ class AxesImagePhantom(object):
         
         if 'localunit' in attr:
             self.unit = attr['localunit']
+        
+        if 'aspect' in attr:
+            self.aspect_ratio = attr['aspect']
         
         if 'pathname' in attr:
             self.parent.handler('frame_updated', self)
@@ -439,6 +442,7 @@ class GraphPlot(MatplotPanel):
                   'mark_picked' : (MARK, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnRegionSelected),
                     'c pressed' : (MARK, self.OnMarkAppend),
+            'c+Lbutton pressed' : (MARK, self.OnMarkAppend),
                     'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'r+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'M-Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
@@ -637,24 +641,44 @@ class GraphPlot(MatplotPanel):
     def get_uniqname(self, name):
         base = name = name or "*temp*"
         i = 1
-        while name in self:
+        names = [art.name for art in self.__Arts]
+        while name in names:
             i += 1
             name = "{}({:d})".format(base, i)
         return name
     
-    def load(self, buf, name=None, pos=None, show=True,
-             localunit=None, aspect=1.0, **attributes):
+    def load(self, buf, name=None, pos=None, show=True, **kwargs):
+        """Load a buffer with a name.
+        
+        Args:
+            buf     : buffer array.
+            name    : buffer name (default to *temp*).
+            pos     : Instertion position in the frame list.
+            show    : Show immediately when loaded.
+            
+            **kwargs: frame attributes.
+            
+                - localunit : localunit
+                - aspect    : aspect ratio
+                - pathname  : full path of the buffer file
+        """
         if buf is None:
             return
         
-        if name in self: # existing frame
-            j = self.index(name)
+        pathname = kwargs.get('pathname')
+        paths = [art.pathname for art in self.__Arts]
+        names = [art.name for art in self.__Arts]
+        j = -1
+        if pathname:
+            if pathname in paths:
+                j = paths.index(pathname) # identical path
+        elif name in names:
+            j = names.index(name) # existing frame
+        if j != -1:
             art = self.__Arts[j]
-            art.update_buffer(buf)      # => frame_modified
-            art.update_extent()         # => ?
-            art.unit = localunit        # => frame_updated
-            art.aspect_ratio = aspect   # => frame_updated
-            art.update_attributes(attributes) # => frame_updated?
+            art.update_buffer(buf) # => frame_modified
+            art.update_attributes(kwargs) # => frame_updated
+            art.update_extent()
             if show:
                 self.select(j)
             return art
@@ -662,7 +686,7 @@ class GraphPlot(MatplotPanel):
         name = self.get_uniqname(name)
         
         ## 最初のロード axes.imshow (=> self.axes.axis 表示を更新する)
-        art = AxesImagePhantom(self, buf, name, show, localunit, aspect, **attributes)
+        art = AxesImagePhantom(self, buf, name, show, **kwargs)
         
         j = len(self) if pos is None else pos
         self.__Arts.insert(j, art)
@@ -778,7 +802,6 @@ class GraphPlot(MatplotPanel):
     
     def index(self, j):
         if isinstance(j, str):
-            ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
             names = [art.name for art in self.__Arts]
             return names.index(j) # -> ValueError: `j` is not in list
         return self.__Arts.index(j)
@@ -1733,10 +1756,7 @@ if __name__ == "__main__":
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample_circ.bmp"), "sample data")
     
     frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
-    
-    frm.graph.frame.aspect_ratio = 1.1
-    frm.graph.frame.unit = 0.123
-    
+    frm.graph.frame.unit = 0.5
     frm.graph.create_colorbar()
     
     def _plot(graph, r=10):

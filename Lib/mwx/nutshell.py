@@ -2282,9 +2282,6 @@ class Nautilus(Shell, EditorInterface):
         """Called when enter pressed."""
         if not self.CanEdit(): # go back to the end of command line
             self.goto_char(self.eolc)
-            if self.eolc < self.bolc: # check if prompt is in valid state
-                self.prompt()
-                evt.Skip()
             return
         if self.AutoCompActive(): # skip to auto completion
             evt.Skip()
@@ -2292,7 +2289,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        ## skip to wx.py.magic if cmdline begins with !(sx), ?(info), and ??(help)
+        ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
         text = self.cmdline
         if not text or text[0] in '!?':
             evt.Skip()
@@ -2303,7 +2300,7 @@ class Nautilus(Shell, EditorInterface):
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
-                self.Execute(cmd) # for multi-line commands
+                self.Execute(cmd) # => multi-line commands
             else:
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
@@ -2354,6 +2351,10 @@ class Nautilus(Shell, EditorInterface):
     def on_exit_escmap(self, evt):
         self.CaretPeriod = self.__caret_mode
         self.message("ESC {}".format(evt.key))
+        if self.eolc < self.bolc: # check if prompt is in valid state
+            self.goto_char(self.eolc)
+            self.promptPosEnd = 0
+            self.prompt()
     
     def on_enter_notemode(self, evt):
         self.noteMode = True
@@ -2364,7 +2365,7 @@ class Nautilus(Shell, EditorInterface):
     def on_exit_notemode(self, evt):
         self.noteMode = False
         self.CaretForeground = self.__caret_mode
-        self.goto_char(self.bolc)
+        self.goto_char(self.eolc)
         self.promptPosEnd = 0
         self.prompt()
         self.message("")

@@ -745,7 +745,6 @@ if __name__ == "__main__":
     frm.graph.unit = 0.1
     frm.graph.load(_imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
     frm.graph.load(_imread("C:/usr/home/workspace/images/sample_diff.bmp"), "circ")
-    ## frm.graph.frame.aspect_ratio = 2
     frm.Show()
     if 1:
         lfrm = mwx.Frame(None, title='Line')
