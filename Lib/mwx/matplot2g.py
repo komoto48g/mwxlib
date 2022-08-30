@@ -641,7 +641,8 @@ class GraphPlot(MatplotPanel):
     def get_uniqname(self, name):
         base = name = name or "*temp*"
         i = 1
-        while name in self:
+        names = [art.name for art in self.__Arts]
+        while name in names:
             i += 1
             name = "{}({:d})".format(base, i)
         return name
@@ -667,7 +668,6 @@ class GraphPlot(MatplotPanel):
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
-        
         j = -1
         if pathname:
             if pathname in paths:
@@ -802,7 +802,6 @@ class GraphPlot(MatplotPanel):
     
     def index(self, j):
         if isinstance(j, str):
-            ## return next(i for i,art in enumerate(self.__Arts) if art.name == j)
             names = [art.name for art in self.__Arts]
             return names.index(j) # -> ValueError: `j` is not in list
         return self.__Arts.index(j)
