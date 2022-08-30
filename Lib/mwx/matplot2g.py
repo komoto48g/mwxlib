@@ -439,6 +439,7 @@ class GraphPlot(MatplotPanel):
                   'mark_picked' : (MARK, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnRegionSelected),
                     'c pressed' : (MARK, self.OnMarkAppend),
+            'c+Lbutton pressed' : (MARK, self.OnMarkAppend),
                     'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'r+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'M-Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
