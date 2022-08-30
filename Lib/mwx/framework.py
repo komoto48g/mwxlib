@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.70.9"
+__version__ = "0.71.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -148,9 +148,9 @@ def hotkey(evt):
         if key != k and wx.GetKeyState(k): # Note: lazy-eval state
             mod += v
     
-    if key != wx.WXK_CONTROL and (evt.controlDown or evt.cmdDown): mod += "C-"
-    if key != wx.WXK_ALT     and (evt.altDown or evt.metaDown): mod += "M-"
-    if key != wx.WXK_SHIFT   and evt.shiftDown: mod += "S-"
+    if key != wx.WXK_CONTROL and evt.controlDown: mod += "C-"
+    if key != wx.WXK_ALT     and evt.altDown:     mod += "M-"
+    if key != wx.WXK_SHIFT   and evt.shiftDown:   mod += "S-"
     
     key = speckeys.get(key) or chr(key).lower()
     evt.key = mod + key
