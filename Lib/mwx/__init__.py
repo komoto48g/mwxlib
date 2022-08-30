@@ -42,7 +42,7 @@ def deb(target=None, app=None, locals=None, **kwargs):
                   Otherwise, neither the app nor the mainloop will be created.
         locals  : Additional context of the shell
         
-        **kwargs : Nautilus arguments
+        **kwargs: Nautilus arguments
         
             - introText         : introductory of the shell
             - startupScript     : startup script file (default None)
