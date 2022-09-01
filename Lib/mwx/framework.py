@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.71.0"
+__version__ = "0.71.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -19,6 +19,7 @@ from wx import aui
 from wx import stc
 from wx.py import dispatcher
 from importlib import reload
+import inspect
 import builtins
 import textwrap
 try:
@@ -1281,10 +1282,7 @@ class ShellFrame(MiniFrame):
             self.monitor.watch(obj)
             self.console.SetFocus() # focus orginal-window
             if obj:
-                self.linfo.watch(obj.__dict__)
-                self.ginfo.watch(eval("globals()", obj.__dict__))
                 self.popup_window(self.monitor, focus=0)
-                self.popup_window(self.linfo, focus=0)
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
@@ -1293,6 +1291,10 @@ class ShellFrame(MiniFrame):
                 self.debugger.debug(obj, *args, **kwargs)
             finally:
                 self.debugger.interactive_shell = shell
+        elif hasattr(obj, '__dict__'):
+            self.linfo.watch(obj.__dict__)
+            self.ginfo.watch(inspect.getmodule(obj).__dict__) # this.__dict__
+            self.popup_window(self.linfo, focus=0)
         else:
             print("- cannot debug {!r}".format(obj))
             print("  The debug target must be callable or wx.Object.")
