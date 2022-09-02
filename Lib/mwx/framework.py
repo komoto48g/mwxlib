@@ -788,6 +788,9 @@ class AuiNotebook(aui.AuiNotebook):
                 page.handler('page_hidden', page)
         evt.Skip()
     
+    if wx.VERSION < (4,1,0):
+        ActiveTabCtrl = None
+    
     def get_page_caption(self, win):
         _p, tab, idx = self.FindTab(win)
         return tab.GetPage(idx).caption
@@ -1028,6 +1031,7 @@ class ShellFrame(MiniFrame):
         
         @self.Scratch.define_key('M-j')
         def exec_buffer(v):
+            self.save_session() # to save *scratch*
             self.Scratch.py_exec_region(self.current_shell.globals,
                                         self.current_shell.locals,
                                         "<scratch>")
