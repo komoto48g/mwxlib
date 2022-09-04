@@ -578,8 +578,9 @@ class EditorInterface(CtrlInterface):
     @classmethod
     def py_calc_indentation(self, text):
         """Returns indent spaces for the command text."""
-        text = self.py_strip_comments(text).rstrip()
+        text = self.py_strip_comments(text)
         lstr, indent = self.py_strip_indents(text)
+        text = text.rstrip()
         if text.endswith('\\'):
             return indent + 2
         if text.endswith(':') and re.match(self.py_indent_re, lstr):
