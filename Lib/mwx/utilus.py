@@ -361,13 +361,13 @@ def find_modules(force=False, verbose=True):
         def _callback(path, modname, desc):
             lm.append(modname)
             if verbose:
-                print('\b'*80 + "Scanning {:70s}".format(modname[:70]), end='',
-                    file=sys.__stdout__)
+                print("Scanning {:70s}".format(modname[:70]), end='\r',
+                      file=sys.__stdout__)
         
         def _error(modname):
             if verbose:
-                print('\b'*80 + "- failed: {}".format(modname),
-                    file=sys.__stdout__)
+                print("- failed: {}".format(modname),
+                      file=sys.__stdout__)
         
         with warnings.catch_warnings():
             warnings.simplefilter('ignore') # ignore problems during import
@@ -380,7 +380,7 @@ def find_modules(force=False, verbose=True):
         with open(f, 'w') as o:
             pprint(lm, stream=o) # write modules
         
-        print('\b'*80 + "The results were written in {!r}.".format(f))
+        print("The results were written in {!r}.".format(f))
         return lm
 
 
