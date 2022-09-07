@@ -9,6 +9,7 @@
 *.cmd
 *.l
 *.log
+*.out
 *.txt
 Makefile
 exclude_files
