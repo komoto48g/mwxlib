@@ -301,18 +301,18 @@ class LayerInterface(CtrlInterface):
                 'C-S-n pressed' : (0, _F(self.Draw, False), _F(reset_params, checked_only=1)),
             },
         })
-        
         self.menu = [
-            (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
-                lambda v: self.copy_to_clipboard(),
+            (wx.ID_COPY, "&Copy params\t(C-c, C-S-c)", "Copy params",
+                lambda v: self.copy_to_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
                 
-            (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
-                lambda v: self.paste_from_clipboard(),
+            (wx.ID_PASTE, "&Paste params\t(C-v, C-S-v)", "Read params",
+                lambda v: self.paste_from_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params", Icon('-'),
-                lambda v: (self.Draw(None), self.reset_params()),
+            (wx.ID_RESET, "&Reset params\t(C-n, C-S-n)", "Reset params", Icon('-'),
+                lambda v: (self.Draw(None),
+                           self.reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT))),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
