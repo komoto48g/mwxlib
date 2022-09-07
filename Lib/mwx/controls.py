@@ -435,10 +435,12 @@ class Knob(wx.Panel):
     
     def update_range(self):
         v = self.__par
-        if isinstance(self.ctrl, wx.Choice):
-            self.ctrl.Set([v.__str__(x) for x in v.range]) #<wx.Choice>
+        if isinstance(self.ctrl, wx.Choice): #<wx.Choice>
+            items = [v.__str__(x) for x in v.range]
+            if items != self.ctrl.Items:
+                self.ctrl.SetItems(items)
         else:
-            self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
+            self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> <wx.SpinButton>
     
     def update_label(self):
         v = self.__par
@@ -1259,9 +1261,9 @@ if __name__ == "__main__":
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22,
             )
             self.layout(
-                self.params, title="V2",
+                [self.Q], title="test",
                 row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
-                type='spin', style='button', lw=-1, tw=60, cw=-1,
+                type='choice', style='button', lw=-1, tw=60, cw=-1,
             )
             ## self.layout((
             ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
