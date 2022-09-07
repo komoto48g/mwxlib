@@ -1715,21 +1715,12 @@ class Frame(mwx.Frame):
             if paths:
                 o.write("self.load_frame(\n{}, self.graph)\n".format(
                         pformat(paths, width=160)))
-            
-            ## set-global-unit
-            o.write("self.graph.unit = {}\n".format(self.graph.unit))
-            o.write("self.output.unit = {}\n".format(self.output.unit))
-            
-            ## set-local-unit
-            for frame in self.graph.all_frames:
-                if frame.localunit and frame.pathname: # localunit:need-buffer-save-?
-                    o.write("self.graph.get_frame({!r}).unit = {}\n".format(
-                            frame.name, frame.localunit))
-            ## select-page
-            if self.graph.frame:
-                o.write("self.graph.select({!r})\n".format(self.graph.frame.name))
+            if len(paths) > 1:
+                frame = self.graph.frame # restore currently selected frame
+                if frame and frame.pathname:
+                    o.write("self.graph.select({!r})\n".format(frame.name))
             o.write('# end of session\n')
-            
+        
         np.set_printoptions(**options)
         self.statusbar("\b done.")
         return True
