@@ -268,15 +268,16 @@ class LayerInterface(CtrlInterface):
         
         self.parameters = None # => reset
         
-        def copy_params(evt, **kwargs):
+        def copy_params(**kwargs):
             if self.parameters:
                 return self.copy_to_clipboard(**kwargs)
         
-        def paste_params(evt, **kwargs):
+        def paste_params(**kwargs):
             if self.parameters:
                 return self.paste_from_clipboard(**kwargs)
         
-        def reset_params(evt, **kwargs):
+        def reset_params(**kwargs):
+            self.Draw(None)
             if self.parameters:
                 return self.reset_params(**kwargs)
         
@@ -297,22 +298,21 @@ class LayerInterface(CtrlInterface):
                 'C-S-c pressed' : (0, _F(copy_params, checked_only=1)),
                   'C-v pressed' : (0, _F(paste_params)),
                 'C-S-v pressed' : (0, _F(paste_params, checked_only=1)),
-                  'C-n pressed' : (0, _F(self.Draw, False), _F(reset_params)),
-                'C-S-n pressed' : (0, _F(self.Draw, False), _F(reset_params, checked_only=1)),
+                  'C-n pressed' : (0, _F(reset_params)),
+                'C-S-n pressed' : (0, _F(reset_params, checked_only=1)),
             },
         })
         self.menu = [
-            (wx.ID_COPY, "&Copy params\t(C-c, C-S-c)", "Copy params",
-                lambda v: self.copy_to_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
+            (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
+                lambda v: copy_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
                 
-            (wx.ID_PASTE, "&Paste params\t(C-v, C-S-v)", "Read params",
-                lambda v: self.paste_from_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
+            (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
+                lambda v: paste_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (wx.ID_RESET, "&Reset params\t(C-n, C-S-n)", "Reset params", Icon('-'),
-                lambda v: (self.Draw(None),
-                           self.reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT))),
+            (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params", Icon('-'),
+                lambda v: reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
@@ -395,7 +395,7 @@ class LayerInterface(CtrlInterface):
         if show is None:
             show = self.IsShown()
         try:
-            ## Arts may be belonging to either graph, output, and any other windows.
+            ## Arts may be belonging to graph, output, and any other windows.
             for art in self.Arts:
                 art.set_visible(show)
             art.axes.figure.canvas.draw_idle()

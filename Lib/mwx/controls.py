@@ -575,15 +575,15 @@ class ControlPanel(scrolled.ScrolledPanel):
         
         self.menu = [
             (wx.ID_COPY, "&Copy params", "Copy params",
-                lambda v: self.copy_to_clipboard(),
+                lambda v: self.copy_to_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self.__params != [])),
                 
             (wx.ID_PASTE, "&Paste params", "Read params",
-                lambda v: self.paste_from_clipboard(),
+                lambda v: self.paste_from_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self.__params != [])),
             (),
             (wx.ID_RESET, "&Reset params", "Reset params",
-                lambda v: self.reset_params(),
+                lambda v: self.reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self.__params != [])),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))

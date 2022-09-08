@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.71.2"
+__version__ = "0.71.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -128,9 +128,9 @@ speckeys = {
 }
 
 def speckey_state(key):
-    k = next((k for k, v in speckeys.items() if v == key), None)
-    if k:
-        return wx.GetKeyState(k) #cf. wx.GetMouseState
+    for k, v in speckeys.items():
+        if v == key:
+            return wx.GetKeyState(k) # cf. wx.GetMouseState
 
 
 def hotkey(evt):
