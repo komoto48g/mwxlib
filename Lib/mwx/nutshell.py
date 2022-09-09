@@ -507,7 +507,7 @@ class EditorInterface(CtrlInterface):
         topic = self.SelectedText
         if topic:
             return topic
-        else:
+        with self.save_excursion():
             delims = "({[<>]}),:; \t\r\n"
             p = q = self.cpos
             if self.get_char(p-1) not in delims:
@@ -516,7 +516,6 @@ class EditorInterface(CtrlInterface):
             if self.get_char(q) not in delims:
                 self.WordRightEnd()
                 q = self.cpos
-            self.cpos = self.anchor = p # save_excursion
             return self.GetTextRange(p, q)
     
     ## --------------------------------
