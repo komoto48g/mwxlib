@@ -1379,7 +1379,8 @@ class Buffer:
         lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
-        text        : string buffer
+        text        : buffer text
+        filetext    : file text
     """
     def __init__(self, filename=None, lineno=0):
         self.filename = filename
@@ -1387,6 +1388,7 @@ class Buffer:
         self.codename = None
         self.code = None
         self.text = ''
+        self.filetext = ''
     
     def __contains__(self, v):
         if inspect.iscode(v) and self.code:
@@ -1423,13 +1425,6 @@ class Buffer:
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
-    
-    @property
-    def filetext(self):
-        f = self.filename
-        if f and os.path.isfile(f):
-            linecache.checkcache(f)
-            return ''.join(linecache.getlines(f))
 
 
 class Editor(EditWindow, EditorInterface):
@@ -1562,14 +1557,9 @@ class Editor(EditWindow, EditorInterface):
     @property
     def menu(self):
         """Yields context menu."""
-        def _swap_buffer(f):
-            if f is not self.buffer and self.confirm_load():
-                self.swap_buffer(f)
-                self.SetFocus()
-        
         def _menu(j, data):
             return (j, str(data), '', wx.ITEM_CHECK,
-                lambda v: _swap_buffer(data),
+                lambda v: self.swap_buffer(data) and self.SetFocus(),
                 lambda v: v.Check(data is self.buffer))
         
         if len(self.buffer_list) > 1:
@@ -1640,19 +1630,19 @@ class Editor(EditWindow, EditorInterface):
             STC data such as `UndoBuffer` is not restored.
         """
         buffer = self.find_buffer(f)
-        if buffer:
-            if buffer is self.buffer: # Don't load the same buffer.
-                self.push_current() # cache current
-                return True
+        if not buffer:
+            return False
+        if buffer is not self.buffer:
             if self.buffer:
                 self.push_current() # cache current
             self.buffer = buffer
             self._reset(buffer.filetext or buffer.text)
+            if buffer.filetext != buffer.text: # retrieve modified buffer
+                self.Text = buffer.text
             self.markline = buffer.lineno - 1
             self.goto_marker()
             self.handler('buffer_updated', self)
-            return True
-        return False
+        return True
     
     def load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache.
@@ -1669,6 +1659,8 @@ class Editor(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
+            self.buffer.filename = f
+            self.buffer.filetext = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             return True
@@ -1686,6 +1678,8 @@ class Editor(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
+            self.buffer.filename = f
+            self.buffer.filetext = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -1701,6 +1695,7 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.buffer.filename = f
+            self.buffer.filetext = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             ## self.message("Saved {!r} successfully.".format(filename))
