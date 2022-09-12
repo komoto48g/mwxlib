@@ -390,8 +390,8 @@ class EditorInterface(CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 0,    # etc. space \r\n\\$\0 (non-identifier)
-        stc.STC_P_OPERATOR      : 'op', # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
+        stc.STC_P_DEFAULT       : 'nil', # etc. space \r\n\\$\0 (non-identifier)
+        stc.STC_P_OPERATOR      : 'op',  # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
         stc.STC_P_NUMBER        : 'suji',
@@ -412,7 +412,7 @@ class EditorInterface(CtrlInterface):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
         sty = self.py_styles[st]
-        if sty == 0:
+        if sty == 'nil':
             if c in ' \t': return 'space'
             if c in '\r\n': return 'linesep'
         if sty == 'op':
@@ -1557,10 +1557,10 @@ class Editor(EditWindow, EditorInterface):
     @property
     def menu(self):
         """Yields context menu."""
-        def _menu(j, data):
-            return (j, str(data), '', wx.ITEM_CHECK,
-                lambda v: self.swap_buffer(data) and self.SetFocus(),
-                lambda v: v.Check(data is self.buffer))
+        def _menu(j, buf):
+            return (j, str(buf), '', wx.ITEM_CHECK,
+                lambda v: self.swap_buffer(buf) and self.SetFocus(),
+                lambda v: v.Check(buf is self.buffer))
         
         if len(self.buffer_list) > 1:
             return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
@@ -1618,9 +1618,10 @@ class Editor(EditWindow, EditorInterface):
         self.handler('buffer_updated', self)
     
     def find_buffer(self, f):
-        for buffer in self.buffer_list:
-            if f in buffer or f is buffer:
-                return buffer
+        """Find buffer with specified f:filename or code."""
+        for buf in self.buffer_list:
+            if f in buf or f is buf:
+                return buf
     
     def swap_buffer(self, f):
         """Replace buffer with specified f:filename or code.
@@ -1629,17 +1630,17 @@ class Editor(EditWindow, EditorInterface):
             The buffer will be swapped without confirmation.
             STC data such as `UndoBuffer` is not restored.
         """
-        buffer = self.find_buffer(f)
-        if not buffer:
+        buf = self.find_buffer(f)
+        if not buf:
             return False
-        if buffer is not self.buffer:
+        if buf is not self.buffer:
             if self.buffer:
                 self.push_current() # cache current
-            self.buffer = buffer
-            self._reset(buffer.filetext or buffer.text)
-            if buffer.filetext != buffer.text: # retrieve modified buffer
-                self.Text = buffer.text
-            self.markline = buffer.lineno - 1
+            self.buffer = buf
+            self._reset(buf.filetext or buf.text)
+            if buf.filetext != buf.text: # retrieve modified buffer
+                self.Text = buf.text
+            self.markline = buf.lineno - 1
             self.goto_marker()
             self.handler('buffer_updated', self)
         return True
@@ -2315,7 +2316,7 @@ class Nautilus(Shell, EditorInterface):
             return
         p = self.cpos
         st = self.get_style(p-1)
-        if st in (0, 'space', 'op', 'sep', 'lparen'):
+        if st in ('nil', 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self.')
     
     def duplicate_command(self, clear=True):
