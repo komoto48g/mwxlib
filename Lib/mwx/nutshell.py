@@ -1729,35 +1729,6 @@ class Editor(EditWindow, EditorInterface):
             return True
         except Exception:
             return False
-    
-    def confirm_load(self):
-        """Confirm the loading with the dialog."""
-        if self.IsModified() and self.buffer.mtdelta is not None:
-            if wx.MessageBox(
-                    "You are leaving unsaved contents.\n\n"
-                    "The contents will be discarded.\n"
-                    "Continue loading?",
-                    "Load",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The load has been canceled.")
-                return None
-        return True
-    
-    def confirm_save(self):
-        """Confirm the saving with the dialog."""
-        if self.buffer.mtdelta:
-            if wx.MessageBox(
-                    "The file has been modified externally.\n\n"
-                    "The contents will be overwritten.\n"
-                    "Continue saving?",
-                    "Save",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The save has been canceled.")
-                return None
-        elif not self.IsModified():
-            self.post_message("No need to save.")
-            return False
-        return True
 
 
 class Interpreter(interpreter.Interpreter):
