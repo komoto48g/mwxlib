@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.71.3"
+__version__ = "0.71.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -46,7 +46,7 @@ def skip(v):
     v.Skip()
 
 
-speckeys = {
+_speckeys = {
     wx.WXK_ALT                  : 'alt',
     wx.WXK_BACK                 : 'backspace',
     wx.WXK_CANCEL               : 'break',
@@ -127,10 +127,10 @@ speckeys = {
     wx.WXK_WINDOWS_RIGHT        : 'Rwin',
 }
 
-def speckey_state(key):
-    for k, v in speckeys.items():
-        if v == key:
-            return wx.GetKeyState(k) # cf. wx.GetMouseState
+## def speckey_state(key):
+##     for k, v in _speckeys.items():
+##         if v == key:
+##             return wx.GetKeyState(k) # cf. wx.GetMouseState
 
 
 def hotkey(evt):
@@ -153,7 +153,7 @@ def hotkey(evt):
     if key != wx.WXK_ALT     and evt.altDown:     mod += "M-"
     if key != wx.WXK_SHIFT   and evt.shiftDown:   mod += "S-"
     
-    key = speckeys.get(key) or chr(key).lower()
+    key = _speckeys.get(key) or chr(key).lower()
     evt.key = mod + key
     return evt.key
 
