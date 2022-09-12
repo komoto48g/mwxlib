@@ -1126,10 +1126,29 @@ class EditorInterface(CtrlInterface):
         ## if pos < 0:
         ##     pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
         ##     return
+        org = self.cpos
+        if org == pos:
+            return
         if selection:
             self.cpos = pos
         else:
             self.GotoPos(pos)
+        
+        vk = wx.UIActionSimulator()
+        modkeys = [k for k in (wx.WXK_CONTROL, wx.WXK_ALT, wx.WXK_SHIFT)
+                           if wx.GetKeyState(k)]
+        try:
+            for k in modkeys: # save modifier key state
+                vk.KeyUp(k)
+            if pos < org:
+                vk.KeyDown(wx.WXK_RIGHT)
+                vk.KeyDown(wx.WXK_LEFT)
+            else:
+                vk.KeyDown(wx.WXK_LEFT)
+                vk.KeyDown(wx.WXK_RIGHT)
+        finally:
+            for k in modkeys: # restore modifier key state
+                vk.KeyDown(k)
         return True
     
     def goto_line(self, ln, selection=False):
