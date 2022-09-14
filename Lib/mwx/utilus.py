@@ -902,9 +902,9 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
                 argv.append(k)
                 if v.default != v.empty:
                     defaults.append(v.default)
-            if v.kind == 2: # VAR_POSITIONAL (*args)
+            elif v.kind == 2: # VAR_POSITIONAL (*args)
                 varargs = k
-            if v.kind == 4: # VAR_KEYWORD (**kwargs)
+            elif v.kind == 4: # VAR_KEYWORD (**kwargs)
                 varkwargs = k
         if varargs:
             action = _Act

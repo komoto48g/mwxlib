@@ -97,8 +97,7 @@ class EditorInterface(CtrlInterface):
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
-                                       _F(self.recenter),
-                                       _F(self.SetFocus)),
+                                       _F(self.recenter)),
                   'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
@@ -390,8 +389,8 @@ class EditorInterface(CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 0,    # etc. space \r\n\\$\0 (non-identifier)
-        stc.STC_P_OPERATOR      : 'op', # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
+        stc.STC_P_DEFAULT       : 'nil', # etc. space \r\n\\$\0 (non-identifier)
+        stc.STC_P_OPERATOR      : 'op',  # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
         stc.STC_P_NUMBER        : 'suji',
@@ -412,7 +411,7 @@ class EditorInterface(CtrlInterface):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
         sty = self.py_styles[st]
-        if sty == 0:
+        if sty == 'nil':
             if c in ' \t': return 'space'
             if c in '\r\n': return 'linesep'
         if sty == 'op':
@@ -507,7 +506,7 @@ class EditorInterface(CtrlInterface):
         topic = self.SelectedText
         if topic:
             return topic
-        else:
+        with self.save_excursion():
             delims = "({[<>]}),:; \t\r\n"
             p = q = self.cpos
             if self.get_char(p-1) not in delims:
@@ -516,7 +515,6 @@ class EditorInterface(CtrlInterface):
             if self.get_char(q) not in delims:
                 self.WordRightEnd()
                 q = self.cpos
-            self.cpos = self.anchor = p # save_excursion
             return self.GetTextRange(p, q)
     
     ## --------------------------------
@@ -1127,10 +1125,29 @@ class EditorInterface(CtrlInterface):
         ## if pos < 0:
         ##     pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
         ##     return
+        org = self.cpos
+        if org == pos:
+            return
         if selection:
             self.cpos = pos
         else:
             self.GotoPos(pos)
+        
+        vk = wx.UIActionSimulator()
+        modkeys = [k for k in (wx.WXK_CONTROL, wx.WXK_ALT, wx.WXK_SHIFT)
+                           if wx.GetKeyState(k)]
+        try:
+            for k in modkeys: # save modifier key state
+                vk.KeyUp(k)
+            if pos < org:
+                vk.KeyDown(wx.WXK_RIGHT)
+                vk.KeyDown(wx.WXK_LEFT)
+            else:
+                vk.KeyDown(wx.WXK_LEFT)
+                vk.KeyDown(wx.WXK_RIGHT)
+        finally:
+            for k in modkeys: # restore modifier key state
+                vk.KeyDown(k)
         return True
     
     def goto_line(self, ln, selection=False):
@@ -1361,7 +1378,8 @@ class Buffer:
         lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
-        text        : string buffer
+        text        : buffer text
+        filetext    : file text
     """
     def __init__(self, filename=None, lineno=0):
         self.filename = filename
@@ -1369,6 +1387,7 @@ class Buffer:
         self.codename = None
         self.code = None
         self.text = ''
+        self.filetext = ''
     
     def __contains__(self, v):
         if inspect.iscode(v) and self.code:
@@ -1405,13 +1424,6 @@ class Buffer:
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
-    
-    @property
-    def filetext(self):
-        f = self.filename
-        if f and os.path.isfile(f):
-            linecache.checkcache(f)
-            return ''.join(linecache.getlines(f))
 
 
 class Editor(EditWindow, EditorInterface):
@@ -1502,9 +1514,15 @@ class Editor(EditWindow, EditorInterface):
             '*button* released' : [ None, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
             },
+            0 : { # Normal mode
+                 'M-up pressed' : (0, _F(self.previous_buffer)),
+               'M-down pressed' : (0, _F(self.next_buffer)),
+            },
         })
-        self.define_key('C-x k', self.clear_all, alias="kill-all-buffer")
+        
+        self.define_key('C-x k', self.clear_all, alias="kill-all-buffers")
         self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
+        self.define_key('C-x C-n', self.new_buffer)
         
         self.show_folder()
         self.set_style(self.STYLE)
@@ -1544,15 +1562,10 @@ class Editor(EditWindow, EditorInterface):
     @property
     def menu(self):
         """Yields context menu."""
-        def _swap_buffer(f):
-            if f is not self.buffer and self.confirm_load():
-                self.swap_buffer(f)
-                self.SetFocus()
-        
-        def _menu(j, data):
-            return (j, str(data), '', wx.ITEM_CHECK,
-                lambda v: _swap_buffer(data),
-                lambda v: v.Check(data is self.buffer))
+        def _menu(j, buf):
+            return (j, str(buf), '', wx.ITEM_CHECK,
+                lambda v: self.swap_buffer(buf) and self.SetFocus(),
+                lambda v: v.Check(buf is self.buffer))
         
         if len(self.buffer_list) > 1:
             return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
@@ -1609,10 +1622,31 @@ class Editor(EditWindow, EditorInterface):
         self.push_current()
         self.handler('buffer_updated', self)
     
+    def new_buffer(self):
+        buf = self.default_buffer
+        if buf.mtdelta is not None: # is saved?
+            buf = Buffer(self.default_name)
+            self.default_buffer = buf
+        self.buffer = buf
+        self._reset()
+        self.push_current()
+        self.handler('buffer_updated', self)
+    
+    def next_buffer(self):
+        j = self.buffer_index
+        if j+1 < len(self.buffer_list):
+            self.swap_buffer(self.buffer_list[j+1])
+    
+    def previous_buffer(self):
+        j = self.buffer_index
+        if j > 0:
+            self.swap_buffer(self.buffer_list[j-1])
+    
     def find_buffer(self, f):
-        for buffer in self.buffer_list:
-            if f in buffer or f is buffer:
-                return buffer
+        """Find buffer with specified f:filename or code."""
+        for buf in self.buffer_list:
+            if f in buf or f is buf:
+                return buf
     
     def swap_buffer(self, f):
         """Replace buffer with specified f:filename or code.
@@ -1621,20 +1655,20 @@ class Editor(EditWindow, EditorInterface):
             The buffer will be swapped without confirmation.
             STC data such as `UndoBuffer` is not restored.
         """
-        buffer = self.find_buffer(f)
-        if buffer:
-            if buffer is self.buffer: # Don't load the same buffer.
-                self.push_current() # cache current
-                return True
+        buf = self.find_buffer(f)
+        if not buf:
+            return False
+        if buf is not self.buffer:
             if self.buffer:
                 self.push_current() # cache current
-            self.buffer = buffer
-            self._reset(buffer.filetext or buffer.text)
-            self.markline = buffer.lineno - 1
+            self.buffer = buf
+            self._reset(buf.filetext or buf.text)
+            if buf.filetext != buf.text: # retrieve modified buffer
+                self.Text = buf.text
+            self.markline = buf.lineno - 1
             self.goto_marker()
             self.handler('buffer_updated', self)
-            return True
-        return False
+        return True
     
     def load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache.
@@ -1651,6 +1685,8 @@ class Editor(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
+            self.buffer.filename = f
+            self.buffer.filetext = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             return True
@@ -1668,6 +1704,8 @@ class Editor(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_marker()
             self.buffer = self.find_buffer(f) or Buffer(f)
+            self.buffer.filename = f
+            self.buffer.filetext = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -1683,6 +1721,7 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.buffer.filename = f
+            self.buffer.filetext = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             ## self.message("Saved {!r} successfully.".format(filename))
@@ -1716,35 +1755,6 @@ class Editor(EditWindow, EditorInterface):
             return True
         except Exception:
             return False
-    
-    def confirm_load(self):
-        """Confirm the loading with the dialog."""
-        if self.IsModified() and self.buffer.mtdelta is not None:
-            if wx.MessageBox(
-                    "You are leaving unsaved contents.\n\n"
-                    "The contents will be discarded.\n"
-                    "Continue loading?",
-                    "Load",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The load has been canceled.")
-                return None
-        return True
-    
-    def confirm_save(self):
-        """Confirm the saving with the dialog."""
-        if self.buffer.mtdelta:
-            if wx.MessageBox(
-                    "The file has been modified externally.\n\n"
-                    "The contents will be overwritten.\n"
-                    "Continue saving?",
-                    "Save",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The save has been canceled.")
-                return None
-        elif not self.IsModified():
-            self.post_message("No need to save.")
-            return False
-        return True
 
 
 class Interpreter(interpreter.Interpreter):
@@ -2331,7 +2341,7 @@ class Nautilus(Shell, EditorInterface):
             return
         p = self.cpos
         st = self.get_style(p-1)
-        if st in (0, 'space', 'op', 'sep', 'lparen'):
+        if st in ('nil', 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self.')
     
     def duplicate_command(self, clear=True):
