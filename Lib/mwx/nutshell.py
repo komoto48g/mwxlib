@@ -97,8 +97,7 @@ class EditorInterface(CtrlInterface):
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
-                                       _F(self.recenter),
-                                       _F(self.SetFocus)),
+                                       _F(self.recenter)),
                   'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
@@ -1515,9 +1514,15 @@ class Editor(EditWindow, EditorInterface):
             '*button* released' : [ None, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
             },
+            0 : { # Normal mode
+                 'M-up pressed' : (0, _F(self.previous_buffer)),
+               'M-down pressed' : (0, _F(self.next_buffer)),
+            },
         })
-        self.define_key('C-x k', self.clear_all, alias="kill-all-buffer")
+        
+        self.define_key('C-x k', self.clear_all, alias="kill-all-buffers")
         self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
+        self.define_key('C-x C-n', self.new_buffer)
         
         self.show_folder()
         self.set_style(self.STYLE)
@@ -1616,6 +1621,26 @@ class Editor(EditWindow, EditorInterface):
         self._reset()
         self.push_current()
         self.handler('buffer_updated', self)
+    
+    def new_buffer(self):
+        buf = self.default_buffer
+        if buf.mtdelta is not None: # is saved?
+            buf = Buffer(self.default_name)
+            self.default_buffer = buf
+        self.buffer = buf
+        self._reset()
+        self.push_current()
+        self.handler('buffer_updated', self)
+    
+    def next_buffer(self):
+        j = self.buffer_index
+        if j+1 < len(self.buffer_list):
+            self.swap_buffer(self.buffer_list[j+1])
+    
+    def previous_buffer(self):
+        j = self.buffer_index
+        if j > 0:
+            self.swap_buffer(self.buffer_list[j-1])
     
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
