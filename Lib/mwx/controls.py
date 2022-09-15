@@ -693,7 +693,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                 else c for c in objs]
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
-        if row > 1:
+        if row > 0:
             oblist = [pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
                            style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
                            for i in range(0, len(objs), row)]
@@ -1232,50 +1232,41 @@ if __name__ == "__main__":
             self.handler.debug = 6
             
             a = Param('test')
-            b = LParam('test')
-            self.layout((a,b), title="test")
+            b = LParam('test', (0,100,1), 50)
             
-            self.A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
-            self.K = LParam('k', (0, 1, 1e-3))
-            self.P = LParam('φ', (-pi, pi, pi/100), 0)
-            self.Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
-            self.R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex)
-            self.params = (
-                self.A,
-                self.K,
-                self.P,
-                self.Q,
-                self.R,
-            )
+            self.layout((a, b), title="test")
+            self.layout((a, b), hspacing=4, expand=1)
+            self.layout((a, b), )
+            
+            A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
+            K = LParam('k', (0, 1, 1e-3))
+            P = LParam('φ', (-pi, pi, pi/100), 0)
+            Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
+            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex)
+            
+            self.params = (A, K, P, Q, R,)
+            
             for lp in self.params:
                 lp.callback.update({
                     'control' : [lambda p: print("control", p.name, p.value)],
+                     'update' : [lambda p: print("update", p.name, p.value)],
                       'check' : [lambda p: print("check", p.check)],
                    'overflow' : [lambda p: print("overflow", p)],
                   'underflow' : [lambda p: print("underflow", p)],
                 })
             
             self.layout(
-                self.params, title="V1",
-                row=1, expand=0, hspacing=1, vspacing=1, show=1, visible=1,
+                self.params,
+                title="test(1)",
+                row=1, expand=0, border=2, hspacing=1, vspacing=1, show=1, visible=1,
                 type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22,
             )
             self.layout(
-                [self.Q], title="test",
-                row=2, expand=1, hspacing=1, vspacing=2, show=1, visible=1,
+                [P, Q],
+                title="test(2)",
+                row=2, expand=1, border=2, hspacing=1, vspacing=2, show=1, visible=1,
                 type='choice', style='button', lw=-1, tw=60, cw=-1,
             )
-            ## self.layout((
-            ##     Knob(self, self.A, type, lw=32, tw=60, cw=-1, h=20)
-            ##         for type in (
-            ##             'vspin',
-            ##             'hspin',
-            ##             'choice',
-            ##             'slider',
-            ##             )
-            ##     ),
-            ##     row=2, expand=0, hspacing=1, vspacing=2, show=0, visible=1,
-            ## )
     
     app = wx.App()
     frm = Frame(None)
