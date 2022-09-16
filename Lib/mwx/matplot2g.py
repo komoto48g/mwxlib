@@ -653,7 +653,7 @@ class GraphPlot(MatplotPanel):
         Args:
             buf     : buffer array.
             name    : buffer name (default to *temp*).
-            pos     : Instertion position in the frame list.
+            pos     : Insertion position in the frame list.
             show    : Show immediately when loaded.
             
             **kwargs: frame attributes.
