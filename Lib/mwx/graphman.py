@@ -1649,6 +1649,7 @@ class Frame(mwx.Frame):
         self.session_file = os.path.abspath(f)
         self.statusbar("Loading session from {!r}...".format(f))
         
+        self.Freeze()
         with open(f) as i:
             ## evaluation of session in the shell
             self.shellframe.rootshell.locals.update(
@@ -1657,6 +1658,7 @@ class Frame(mwx.Frame):
             )
             self.shellframe.rootshell.Execute(i.read())
             self._mgr.Update()
+        self.Thaw()
         
         self.menubar.reset()
         dirname = os.path.dirname(f)
