@@ -1648,17 +1648,18 @@ class Frame(mwx.Frame):
         
         self.session_file = os.path.abspath(f)
         self.statusbar("Loading session from {!r}...".format(f))
-        
-        self.Freeze()
-        with open(f) as i:
-            ## evaluation of session in the shell
-            self.shellframe.rootshell.locals.update(
-                nan = np.nan,
-                inf = np.inf,
-            )
-            self.shellframe.rootshell.Execute(i.read())
-            self._mgr.Update()
-        self.Thaw()
+        try:
+            self.Freeze()
+            with open(f) as i:
+                ## evaluation of session in the shell
+                self.shellframe.rootshell.locals.update(
+                    nan = np.nan,
+                    inf = np.inf,
+                )
+                self.shellframe.rootshell.Execute(i.read())
+                self._mgr.Update()
+        finally:
+            self.Thaw()
         
         self.menubar.reset()
         dirname = os.path.dirname(f)
@@ -1712,6 +1713,10 @@ class Frame(mwx.Frame):
                         .format(path, current_session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
+            ## set-global-unit
+            o.write("self.graph.unit = {:g}\n".format(self.graph.unit))
+            o.write("self.output.unit = {:g}\n".format(self.output.unit))
+            
             ## stack-frame
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
             if paths:
@@ -1745,13 +1750,12 @@ if __name__ == "__main__":
     ## frm.load_plug("demo/template.py", show=1, force=1)
     
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
-    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template.py", show=1)
-    ## frm.load_plug("C:/usr/home/workspace/tem13/gdk/templates/template2.py", show=1)
     
-    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\viewfft.py")
-    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\viewframe.py")
-    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\lineprofile.py")
-    frm.require(r"C:\usr\home\lib\python\wxpyNautilus\plugins\ffmpeg_viewer.py")
+    sys.path.append(r"C:\usr\home\lib\python\Lib\wxpyNautilus\plugins")
+    frm.require("viewfft")
+    frm.require("viewframe")
+    frm.require("lineprofile")
+    frm.require("ffmpeg_viewer")
     
     frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
