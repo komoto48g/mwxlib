@@ -507,9 +507,12 @@ class MatplotPanel(wx.Panel):
             x = evt.mouseevent.xdata
             y = evt.mouseevent.ydata
             try:
+                #<matplotlib.lines.Line2D>
                 xs, ys = evt.artist.get_data()
             except AttributeError:
+                #<matplotlib.collections.PathCollection>
                 xs, ys = evt.artist.get_offsets().T
+            
             distances = np.hypot(x-xs[indices], y-ys[indices])
             evt.index = k = indices[distances.argmin()] # index of the nearest point
             evt.xdata = x = xs[k]
@@ -848,7 +851,7 @@ if __name__ == "__main__":
         
         ## set_array -> z color value
         ## set_offsets -> x & y locations
-        ## art.get_data = lambda: (x, y)
+        ## art.get_data = lambda: (x, y) --> get_offsets
         return art
     
     def _scatter2(axes):
@@ -862,7 +865,7 @@ if __name__ == "__main__":
         art = axes.scatter(x, y, c=c, s=r, marker='o',
                            alpha=0.5, cmap=cm.rainbow, edgecolors='blue',
                            picker=True, pickradius=4)
-        ## art.get_data = lambda: (x, y)
+        ## art.get_data = lambda: (x, y) --> get_offsets
         return art
     
     app = wx.App()
