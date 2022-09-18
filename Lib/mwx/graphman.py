@@ -408,7 +408,7 @@ class Layer(ControlPanel, LayerInterface):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
-        kwargs.setdefault('size', (130, 24)) # keep minimum size
+        ## kwargs.setdefault('size', (130, 24)) # keep minimum size
         ControlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
     
@@ -783,10 +783,9 @@ class Frame(mwx.Frame):
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
-        ssname,_ = os.path.splitext(ssn)
+        ssn,_ = os.path.splitext(ssn)
         name = (frame.pathname or frame.name) if frame else ''
-        self.SetTitle("{}@{} - [{}] {}".format(
-            self.__class__.__name__, platform.node(), ssname, name))
+        self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
     
     def OnActivate(self, evt): #<wx._core.ActivateEvent>
         if self and evt.Active:
@@ -796,7 +795,7 @@ class Frame(mwx.Frame):
         ssn = os.path.basename(self.session_file or '--')
         with wx.MessageDialog(None,
                 "Do you want to save session before closing program?",
-                "{}@{} - [{}]".format(self.__class__.__name__, platform.node(), ssn),
+                "{}@{} - [{}]".format(self.Name, platform.node(), ssn),
                 style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
             ret = dlg.ShowModal()
             if ret == wx.ID_YES:
@@ -971,7 +970,7 @@ class Frame(mwx.Frame):
         
         class _Plugin(cls, LayerInterface):
             def __init__(self, parent, session=None, **kwargs):
-                kwargs.setdefault('size', (130, 24)) # keep minimum size
+                ## kwargs.setdefault('size', (130, 24)) # keep minimum size
                 cls.__init__(self, parent, **kwargs)
                 LayerInterface.__init__(self, parent, session)
             ## (override)
@@ -1104,6 +1103,7 @@ class Frame(mwx.Frame):
                     floating_size = floating_size or pane.floating_size[:], # copy
                 )
         except (AttributeError, NameError) as e:
+            traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
                          "{}\n\n{}".format(e, traceback.format_exc()),
                          "Error in loading {!r}".format(module.__name__),
@@ -1120,6 +1120,7 @@ class Frame(mwx.Frame):
             plug = module.Plugin(self, session, **kwargs)
             
         except Exception as e:
+            traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
                          "{}\n\n{}".format(e, traceback.format_exc()),
                          "Error in loading {!r}".format(name),
@@ -1227,6 +1228,7 @@ class Frame(mwx.Frame):
                 nb.Destroy()
             
         except Exception as e:
+            traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
                          "{}\n\n{}".format(e, traceback.format_exc()),
                          "Error in unloading {!r}".format(name),
