@@ -413,10 +413,10 @@ class Knob(wx.Panel):
         else:
             raise Exception("unknown type: {!r}".format(type))
         
-        c = bool(cw)
-        self.ctrl.Enable(c)
+        self.ctrl.Enable(cw != 0)
         self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
+        c = (cw and type != 'vspin')
         self.SetSizer(
             pack(self, (
                 (self.label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
@@ -664,7 +664,7 @@ class ControlPanel(scrolled.ScrolledPanel):
             self.Parent.SendSizeEvent() # let parent redraw the child panel
     
     def layout(self, objs, title=None,
-               row=1, expand=0, border=2, hspacing=1, vspacing=1,
+               row=0, expand=0, border=2, hspacing=1, vspacing=1,
                show=True, visible=True, fix=True, align=wx.ALIGN_LEFT,
                **kwargs):
         """Do layout (cf. Layout).
@@ -1235,8 +1235,8 @@ if __name__ == "__main__":
             b = LParam('test', (0,100,1), 50)
             
             self.layout((a, b), title="test")
-            self.layout((a, b), hspacing=4, expand=1)
-            self.layout((a, b), )
+            self.layout((a, b), hspacing=4, row=1)
+            self.layout((a, b), hspacing=4, row=1, expand=1)
             
             A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             K = LParam('k', (0, 1, 1e-3))
