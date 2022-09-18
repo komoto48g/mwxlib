@@ -73,8 +73,8 @@ class Plugin(Layer):
                 self.LP,
                 self.P,
             ),
-            ## title="Custom param controls",
-            row=1, expand=1, show=1,
+            title="Custom param controls",
+            expand=1, show=1,
             type='slider', style='chkbox', lw=20, tw=40, cw=100, h=22,
         )
         
@@ -89,12 +89,12 @@ class Plugin(Layer):
         self.statusline = mwx.StatusBar(self)
         
         ## self.layout((self.textctrl,), expand=2)
-        ## self.layout((self.statusline,), row=-1, expand=1, border=0)
+        ## self.layout((self.statusline,), expand=1, border=0)
         self.layout((
                 self.textctrl,
                 (self.statusline, 0, wx.EXPAND),
             ),
-            row=-1, expand=2, border=0, vspacing=0,
+            expand=2, border=0, vspacing=0,
         )
 
 

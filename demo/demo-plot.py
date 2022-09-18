@@ -31,7 +31,7 @@ class Plugin(Layer):
                 self.B,
             ),
             title="Params",
-            row=1, expand=0, show=1,
+            expand=0, show=1,
             type='slider*', lw=20, tw=40, cw=100, h=22,
         )
         self.run(None)
