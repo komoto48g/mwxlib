@@ -413,10 +413,10 @@ class Knob(wx.Panel):
         else:
             raise Exception("unknown type: {!r}".format(type))
         
-        c = bool(cw)
-        self.ctrl.Enable(c)
+        self.ctrl.Enable(cw != 0)
         self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
+        c = (cw and type != 'vspin')
         self.SetSizer(
             pack(self, (
                 (self.label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
