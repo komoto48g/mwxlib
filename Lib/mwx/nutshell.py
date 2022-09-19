@@ -1118,7 +1118,7 @@ class EditorInterface(CtrlInterface):
     ## goto, skip, selection, etc.
     ## --------------------------------
     
-    def goto_char(self, pos, selection=False):
+    def goto_char(self, pos, selection=False, interactive=False):
         """Goto char position with selection."""
         if pos is None or pos < 0:
             return
@@ -1133,13 +1133,14 @@ class EditorInterface(CtrlInterface):
         else:
             self.GotoPos(pos)
             
-            ## To update caret status, shake L/R w/o modifier #TODO: any idea?
-            ## Don't do this if selection.
-            vk = wx.UIActionSimulator()
-            modkeys = [k for k in (wx.WXK_CONTROL, wx.WXK_ALT, wx.WXK_SHIFT)
-                               if wx.GetKeyState(k)]
-            try:
-                for k in modkeys: # save modifier key state
+            if interactive:
+                ## Update the caret position/status manually.
+                ## To update caret status, shake L/R w/o modifier #TODO: better idea?
+                ## Don't do this if selection is active.
+                vk = wx.UIActionSimulator()
+                modkeys = [k for k in (wx.WXK_CONTROL, wx.WXK_ALT, wx.WXK_SHIFT)
+                                   if wx.GetKeyState(k)]
+                for k in modkeys:
                     vk.KeyUp(k)
                 if pos < org:
                     vk.KeyDown(wx.WXK_RIGHT)
@@ -1147,9 +1148,8 @@ class EditorInterface(CtrlInterface):
                 else:
                     vk.KeyDown(wx.WXK_LEFT)
                     vk.KeyDown(wx.WXK_RIGHT)
-            finally:
-                for k in modkeys: # restore modifier key state
-                    vk.KeyDown(k)
+                for k in modkeys:
+                    vk.KeyDown(k) # restore modifier key state
         return True
     
     def goto_line(self, ln, selection=False):
@@ -1180,23 +1180,23 @@ class EditorInterface(CtrlInterface):
         text = self.caretline # w/ no-prompt
         lstr = text.lstrip()  # w/ no-indent
         p = self.bol + len(text) - len(lstr) # for multi-byte string
-        self.goto_char(p)
+        self.goto_char(p, interactive=True)
         self.ScrollToColumn(0)
     
     def beginning_of_line(self):
-        self.goto_char(self.bol)
+        self.goto_char(self.bol, interactive=True)
         self.ScrollToColumn(0)
     
     def end_of_line(self):
-        self.goto_char(self.eol)
+        self.goto_char(self.eol, interactive=True)
     
     def beginning_of_buffer(self):
         self.mark = self.cpos
-        self.goto_char(0)
+        self.goto_char(0, interactive=True)
     
     def end_of_buffer(self):
         self.mark = self.cpos
-        self.goto_char(self.TextLength)
+        self.goto_char(self.TextLength, interactive=True)
     
     def goto_matched_paren(self):
         p = self.cpos
@@ -1207,14 +1207,14 @@ class EditorInterface(CtrlInterface):
     
     def selection_forward_word_or_paren(self):
         p = self.cpos
-        return (self.goto_char(self.get_right_paren(p), True)
-             or self.goto_char(self.get_right_quotation(p), True)
+        return (self.goto_char(self.get_right_paren(p), selection=True)
+             or self.goto_char(self.get_right_quotation(p), selection=True)
              or self.WordRightEndExtend())
     
     def selection_backward_word_or_paren(self):
         p = self.cpos
-        return (self.goto_char(self.get_left_paren(p), True)
-             or self.goto_char(self.get_left_quotation(p), True)
+        return (self.goto_char(self.get_left_paren(p), selection=True)
+             or self.goto_char(self.get_left_quotation(p), selection=True)
              or self.WordLeftExtend())
     
     def selection_forward_atom(self):
