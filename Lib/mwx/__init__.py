@@ -30,15 +30,13 @@ from importlib import reload
 import wx
 
 
-def deb(target=None, app=None, locals=None, **kwargs):
+def deb(target=None, loop=True, locals=None, **kwargs):
     """Dive into the process.
     
     Args:
         target  : Object or module (default None).
                   If None, the target is set to `__main__`.
-        app     : An instance of wx.App (default None).
-                  If None, the app and the mainloop will be created.
-                  If specified, the app will enter the mainloop locally.
+        loop    : If True, the app and the mainloop will be created.
                   Otherwise, neither the app nor the mainloop will be created.
         locals  : Additional context of the shell
         
@@ -60,8 +58,7 @@ def deb(target=None, app=None, locals=None, **kwargs):
                       "mwx {}".format(__version__) + quote_unqoute)
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
-    
-    if app is None:
+    if loop:
         app = wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
     frame.Show()
@@ -69,6 +66,6 @@ def deb(target=None, app=None, locals=None, **kwargs):
     shell.SetFocus()
     if locals:
         shell.locals.update(locals)
-    if isinstance(app, wx.App) and not app.GetMainLoop():
+    if loop and not app.GetMainLoop():
         app.MainLoop()
     return frame
