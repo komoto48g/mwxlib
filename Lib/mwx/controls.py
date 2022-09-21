@@ -32,6 +32,7 @@ class Param(object):
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
+        check   : check flag
         tip     : tooltip:str shown on the associated knobs
     
     Attributes:
@@ -45,13 +46,13 @@ class Param(object):
             - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
-                 handler=None, updater=None, tip=None):
+                 handler=None, updater=None, check=False, tip=None):
         self.knobs = []
         self.name = name
         self.range = range
         self.__std_value = value
         self.__value = value if value is not None else self.min
-        self.__check = 0
+        self.__check = check
         if fmt is hex:
             self.__eval = lambda v: int(v, 16)
             self.__format = lambda v: '{:04X}'.format(int(v))
@@ -1242,7 +1243,7 @@ if __name__ == "__main__":
             K = LParam('k', (0, 1, 1e-3))
             P = LParam('φ', (-pi, pi, pi/100), 0)
             Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
-            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex)
+            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex, check=1)
             
             self.params = (A, K, P, Q, R,)
             
