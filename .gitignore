@@ -15,13 +15,11 @@ Makefile
 exclude_files
 
 # Resources
-c/
 docs/
 etc/
 test*/
 icons*/
 vclips*/
-wxpy*/
 !Lib/mwx/
 
 # Byte-compiled / optimized / DLL files
