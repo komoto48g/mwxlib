@@ -1143,7 +1143,7 @@ class Frame(mwx.Frame):
                 nb = pane.window
                 nb.AddPage(plug, caption)
             else:
-                size = plug.GetSize() + (2,30)
+                size = plug.GetSize() + (2,30) # padding for notebook
                 nb = AuiNotebook(self)
                 nb.Name = title
                 nb.AddPage(plug, caption)
@@ -1154,7 +1154,7 @@ class Frame(mwx.Frame):
             nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
         else:
             nb = None
-            size = plug.GetSize() + (2,2)
+            size = plug.GetSize()
             self._mgr.AddPane(plug, aui.AuiPaneInfo()
                                        .Name(name).Caption(caption)
                                        .FloatingSize(size).MinSize(size).Show(0))
