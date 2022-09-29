@@ -32,6 +32,7 @@ class Param(object):
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
+        check   : check flag
         tip     : tooltip:str shown on the associated knobs
     
     Attributes:
@@ -45,13 +46,13 @@ class Param(object):
             - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
-                 handler=None, updater=None, tip=None):
+                 handler=None, updater=None, check=False, tip=None):
         self.knobs = []
         self.name = name
         self.range = range
         self.__std_value = value
         self.__value = value if value is not None else self.min
-        self.__check = 0
+        self.__check = check
         if fmt is hex:
             self.__eval = lambda v: int(v, 16)
             self.__format = lambda v: '{:04X}'.format(int(v))
@@ -1026,9 +1027,6 @@ class TextCtrl(wx.Panel):
                 handler(self)
             self.reset = _f
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
-        
-        self.GetValue = self._ctrl.GetValue
-        self.SetValue = self._ctrl.SetValue
 
 
 class Choice(wx.Panel):
@@ -1042,24 +1040,29 @@ class Choice(wx.Panel):
         tip     : tip:str displayed on the button
         readonly: flag:bool for wx.TE_READONLY
         selection: initial selection:int for combobox
-        **kwargs: keywords for wx.TextCtrl
+        **kwargs: keywords for wx.ComboBox
                   e.g., choices:list
     
     Note:
         If the input item is not found in the choices,
         it will be added to the list (unless readonly)
     """
-    Selection = property(
-        lambda self: self._ctrl.GetSelection(),
-        lambda self,v: self._ctrl.SetSelection(v),
-        doc="combobox selection:int")
-    
     Value = property(
         lambda self: self._ctrl.GetValue(),
         lambda self,v: self._ctrl.SetValue(v),
         doc="combobox value:str")
     
     value = Value # internal use only
+    
+    Selection = property(
+        lambda self: self._ctrl.GetSelection(),
+        lambda self,v: self._ctrl.SetSelection(v),
+        doc="combobox selection:int")
+    
+    Items = property(
+        lambda self: self._ctrl.GetItems(),
+        lambda self,v: self._ctrl.SetItems(v),
+        doc="combobox items:list")
     
     @property
     def icon(self):
@@ -1099,11 +1102,6 @@ class Choice(wx.Panel):
         
         if selection is not None:
             self._ctrl.Selection = selection # no events?
-        
-        self.GetSelection = self._ctrl.GetSelection
-        self.SetSelection = self._ctrl.SetSelection
-        self.GetValue = self._ctrl.GetValue
-        self.SetValue = self._ctrl.SetValue
     
     def OnTextEnter(self, evt):
         s = evt.String.strip()
@@ -1242,7 +1240,7 @@ if __name__ == "__main__":
             K = LParam('k', (0, 1, 1e-3))
             P = LParam('φ', (-pi, pi, pi/100), 0)
             Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
-            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex)
+            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex, check=1)
             
             self.params = (A, K, P, Q, R,)
             

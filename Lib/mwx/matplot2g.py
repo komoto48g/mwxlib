@@ -1503,7 +1503,7 @@ class GraphPlot(MatplotPanel):
         self.handler('region_drawn', self.frame)
     
     def OnRegionDragEnd(self, evt):
-        self.__rectsel = [0,1,2,3,4] # リージョンの全選択
+        ## self.__rectsel = [0,1,2,3,4] # リージョンの全選択
         self.handler('region_drawn', self.frame)
     
     def OnRegionShift(self, evt):

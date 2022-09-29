@@ -71,19 +71,9 @@ class EditorInterface(CtrlInterface):
         _P = self.post_command_hook
         
         self.handler.update({ # DNA<EditorInterface>
-            None : {
-            },
-            -1 : { # original action of the Editor
-                    '* pressed' : (0, skip, lambda v: self.message("ESC {}".format(v.key))),
-                 '*alt pressed' : (-1, ),
-                '*ctrl pressed' : (-1, ),
-               '*shift pressed' : (-1, ),
-             '*[LR]win pressed' : (-1, ),
-            },
             0 : {
                     '* pressed' : (0, skip),
                    '* released' : (0, skip),
-               'escape pressed' : (-1, _F(lambda v: self.message("ESC-"), alias="escape")),
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
@@ -655,7 +645,7 @@ class EditorInterface(CtrlInterface):
                 self.EnsureVisible(lx) # expand if folded
                 self.EnsureCaretVisible()
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
-                self.AnnotationSetText(lx, str(e))
+                self.AnnotationSetText(lx, msg)
             self.message("- {!r}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
@@ -1516,7 +1506,15 @@ class Editor(EditWindow, EditorInterface):
             '*button* released' : [ None, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
             },
+            -1 : { # original action of the EditWindow
+                    '* pressed' : (0, skip, self.on_exit_escmap),
+                 '*alt pressed' : (-1, ),
+                '*ctrl pressed' : (-1, ),
+               '*shift pressed' : (-1, ),
+             '*[LR]win pressed' : (-1, ),
+            },
             0 : { # Normal mode
+               'escape pressed' : (-1, self.on_enter_escmap),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
@@ -1560,6 +1558,13 @@ class Editor(EditWindow, EditorInterface):
     def on_inactivated(self, editor):
         """Called when editor:self is inactivated."""
         pass
+    
+    def on_enter_escmap(self, evt):
+        self.message("ESC-")
+    
+    def on_exit_escmap(self, evt):
+        self.message("ESC {}".format(evt.key))
+        self.AnnotationClearAll()
     
     @property
     def menu(self):

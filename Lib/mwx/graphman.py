@@ -287,8 +287,6 @@ class LayerInterface(CtrlInterface):
                    'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                  'page_loaded' : [ None ], # Called after Init
-                'page_unloaded' : [ None ], # Called before Destroy
                    'page_shown' : [ None, _F(self.Draw, True)  ], # when active
                   'page_closed' : [ None, _F(self.Draw, False) ], # when inactive
                   'page_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
@@ -1133,8 +1131,6 @@ class Frame(mwx.Frame):
         ## set reference of a plug (one module, one plugin)
         module.__plug__ = plug
         
-        plug.handler('page_loaded', plug)
-        
         ## Create pane or notebook pane
         caption = plug.caption
         if not isinstance(caption, str):
@@ -1147,7 +1143,7 @@ class Frame(mwx.Frame):
                 nb = pane.window
                 nb.AddPage(plug, caption)
             else:
-                size = plug.GetSize() + (2,30)
+                size = plug.GetSize() + (2,30) # padding for notebook
                 nb = AuiNotebook(self)
                 nb.Name = title
                 nb.AddPage(plug, caption)
@@ -1158,7 +1154,7 @@ class Frame(mwx.Frame):
             nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
         else:
             nb = None
-            size = plug.GetSize() + (2,2)
+            size = plug.GetSize()
             self._mgr.AddPane(plug, aui.AuiPaneInfo()
                                        .Name(name).Caption(caption)
                                        .FloatingSize(size).MinSize(size).Show(0))
@@ -1219,7 +1215,6 @@ class Frame(mwx.Frame):
                 self._mgr.Update()
             
             plug.handler('page_closed', plug) # (even if not shown)
-            plug.handler('page_unloaded', plug)
             plug.Destroy()
             
             if nb and not nb.PageCount:
