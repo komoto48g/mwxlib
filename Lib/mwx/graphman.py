@@ -820,7 +820,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif _isLayer(name):
+        elif _isLayer(name) and name:
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -952,7 +952,7 @@ class Frame(mwx.Frame):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
-        elif _isLayer(name):
+        elif _isLayer(name) and name:
             return name
     
     @staticmethod
