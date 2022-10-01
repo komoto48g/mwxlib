@@ -573,8 +573,8 @@ class Frame(mwx.Frame):
         
         self.__plugins = OrderedDict() # modules in the order of load/save
         
-        self.__graph = Graph(self, log=self.statusbar, margin=None, size=(200,200))
-        self.__output = Graph(self, log=self.statusbar, margin=None, size=(200,200))
+        self.__graph = Graph(self, log=self.statusbar, margin=None, size=(600,600))
+        self.__output = Graph(self, log=self.statusbar, margin=None, size=(600,600))
         
         self.__histgrm = Histogram(self, log=self.statusbar, margin=None, size=(130,65))
         self.__histgrm.attach(self.graph)
@@ -594,7 +594,7 @@ class Frame(mwx.Frame):
                           aui.AuiPaneInfo().CenterPane().CloseButton(1)
                              .Name("graph").Caption("graph").CaptionVisible(1))
         
-        size = self.output.GetSize()
+        size = (200, 200)
         self._mgr.AddPane(self.output,
                           aui.AuiPaneInfo().Name("output").Caption("output")
                              .FloatingSize(size).MinSize(size).Right().Show(0))
@@ -820,7 +820,7 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif _isLayer(name):
+        elif _isLayer(name) and name:
             plug = name
             name = plug.category or name
         return self._mgr.GetPane(name)
@@ -828,23 +828,27 @@ class Frame(mwx.Frame):
     def show_pane(self, name, show=True):
         """Show named pane or notebook pane."""
         pane = self.get_pane(name)
-        
         if not pane.IsOk():
             return
         
-        if name == "output": # set graph and output size be as half & half
+        ## Set graph and output size be as half & half.
+        if name == "output" or name is self.output:
             w, h = self.graph.GetClientSize()
-            pane.best_size = (w//2, h) # サイズはドッキング時に再計算される
+            pane.best_size = (w//2, h) # ドッキング時に再計算される
         
-        if wx.GetKeyState(wx.WXK_SHIFT):
-            ## (alt + shift + menu) reload plugin
-            if wx.GetKeyState(wx.WXK_ALT):
-                if self.reload_plug(name):
-                    pane = self.get_pane(name)
-            ## (ctrl + shift + menu) reset floating position of a stray window
-            if wx.GetKeyState(wx.WXK_CONTROL):
-                pane.floating_pos = wx.GetMousePosition()
+        ## [M-menu] Reload plugin (ret: None if succeded).
+        if wx.GetKeyState(wx.WXK_ALT):
+            self.reload_plug(name)
+            pane = self.get_pane(name)
             show = True
+        
+        ## [S-menu] Reset floating position of a stray window.
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            pane.floating_pos = wx.GetMousePosition()
+            if self.get_plug(name):
+                pane.Float()
+            show = True
+        
         self._show_pane(name, show)
         self._mgr.Update()
     
@@ -949,7 +953,7 @@ class Frame(mwx.Frame):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
-        elif _isLayer(name):
+        elif _isLayer(name) and name:
             return name
     
     @staticmethod
@@ -1746,13 +1750,14 @@ if __name__ == "__main__":
     ## frm.load_plug("demo.template.py", show=1, force=1)
     ## frm.load_plug("demo/template.py", show=1, force=1)
     
-    frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
+    frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=0)
     
     sys.path.append(r"C:\usr\home\lib\python\Lib\wxpyNautilus\plugins")
     frm.require("viewfft")
     frm.require("viewframe")
     frm.require("lineprofile")
     frm.require("ffmpeg_viewer")
+    frm.load_plug("randn.py", show=1, dock=0)
     
     frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
