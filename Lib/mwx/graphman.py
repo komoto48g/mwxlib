@@ -573,8 +573,8 @@ class Frame(mwx.Frame):
         
         self.__plugins = OrderedDict() # modules in the order of load/save
         
-        self.__graph = Graph(self, log=self.statusbar, margin=None, size=(200,200))
-        self.__output = Graph(self, log=self.statusbar, margin=None, size=(200,200))
+        self.__graph = Graph(self, log=self.statusbar, margin=None, size=(600,600))
+        self.__output = Graph(self, log=self.statusbar, margin=None, size=(600,600))
         
         self.__histgrm = Histogram(self, log=self.statusbar, margin=None, size=(130,65))
         self.__histgrm.attach(self.graph)
@@ -594,7 +594,7 @@ class Frame(mwx.Frame):
                           aui.AuiPaneInfo().CenterPane().CloseButton(1)
                              .Name("graph").Caption("graph").CaptionVisible(1))
         
-        size = self.output.GetSize()
+        size = (200, 200)
         self._mgr.AddPane(self.output,
                           aui.AuiPaneInfo().Name("output").Caption("output")
                              .FloatingSize(size).MinSize(size).Right().Show(0))
@@ -831,9 +831,10 @@ class Frame(mwx.Frame):
         if not pane.IsOk():
             return
         
-        if name == "output": # set graph and output size be as half & half
+        ## Set graph and output size be as half & half.
+        if name == "output" or name is self.output:
             w, h = self.graph.GetClientSize()
-            pane.best_size = (w//2, h) # サイズはドッキング時に再計算される
+            pane.best_size = (w//2, h) # ドッキング時に再計算される
         
         ## [M-menu] Reload plugin (ret: None if succeded).
         if wx.GetKeyState(wx.WXK_ALT):
