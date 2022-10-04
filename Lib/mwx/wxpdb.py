@@ -164,6 +164,7 @@ class Debugger(Pdb):
     
     def send_input(self, c):
         """Send input:str @postcall."""
+        ## self.stdin.isreading -> True
         def _send():
             self.stdin.input = c
         if self.busy:
