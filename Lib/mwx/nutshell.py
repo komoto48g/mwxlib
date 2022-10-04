@@ -1747,7 +1747,8 @@ class Editor(EditWindow, EditorInterface):
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             return True
-        except Exception:
+        except Exception as e:
+            print("- Failed to load {!r}: {}".format(filename, e))
             return False
     
     def SaveFile(self, filename):
@@ -1760,7 +1761,8 @@ class Editor(EditWindow, EditorInterface):
                 o.write(self.Text)
             self.SetSavePoint()
             return True
-        except Exception:
+        except Exception as e:
+            print("- Failed to save {!r}: {}".format(filename, e))
             return False
 
 
