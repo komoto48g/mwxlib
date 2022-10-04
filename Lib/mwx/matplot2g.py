@@ -329,7 +329,7 @@ class AxesImagePhantom(object):
             return
         if nearest:
             return self.__buf[ny, nx] # nearest value
-        return ndi.map_coordinates(self.__buf, np.vstack([ny, nx])) # spline value
+        return ndi.map_coordinates(self.__buf, np.vstack((ny, nx))) # spline value
     
     def xytopixel(self, x, y=None, cast=True):
         """Convert xydata (x,y) -> [ny,nx] pixel (cast to integer)."""
@@ -338,27 +338,27 @@ class AxesImagePhantom(object):
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
             x, y = x
-        if not isinstance(x, np.ndarray): x = np.array(x)
-        if not isinstance(y, np.ndarray): y = np.array(y)
+        if not isinstance(x, np.ndarray): x = np.array([x])
+        if not isinstance(y, np.ndarray): y = np.array([y])
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
         ny = (t - y) / uy # Y ピクセルインデクスは座標と逆
         if cast:
-            return (pixel_cast(nx), pixel_cast(ny))
-        return (nx-0.5, ny-0.5)
+            return np.vstack((pixel_cast(nx), pixel_cast(ny)))
+        return np.vstack((nx-0.5, ny-0.5))
     
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
         if ny is None:
             nx, ny = nx
-        if not isinstance(nx, np.ndarray): nx = np.array(nx)
-        if not isinstance(ny, np.ndarray): ny = np.array(ny)
+        if not isinstance(nx, np.ndarray): nx = np.array([nx])
+        if not isinstance(ny, np.ndarray): ny = np.array([ny])
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
-        return (x, y)
+        return np.vstack((x, y))
 
 
 class Clipboard:
@@ -944,7 +944,7 @@ class GraphPlot(MatplotPanel):
                 z = self.frame.xytoc(x, y)
                 self.message(
                     "[{:-4d},{:-4d}] "
-                    "({:-8.3f},{:-8.3f}) value: {}".format(nx, ny, x, y, z))
+                    "({:-8.3f},{:-8.3f}) value: {}".format(nx[0], ny[0], x, y, z))
                 return
             
             if len(x) == 0: # no selection
@@ -1253,7 +1253,7 @@ class GraphPlot(MatplotPanel):
         xo, yo = self.__lastpoint
         if shift:
             x, y = self.calc_shiftpoint(xo, yo, x, y)
-        self.Selector = ([xo,x], [yo,y])
+        self.Selector = np.append(xo, x), np.append(yo, y)
         self.handler('line_draw', self.frame)
     
     def OnDragShiftMove(self, evt):
