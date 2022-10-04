@@ -440,6 +440,7 @@ class Knob(wx.Panel):
             items = [v.__str__(x) for x in v.range]
             if items != self.ctrl.Items:
                 self.ctrl.SetItems(items)
+                self.ctrl.SetStringSelection(str(v))
         else:
             self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> <wx.SpinButton>
     
@@ -1229,12 +1230,12 @@ if __name__ == "__main__":
             
             self.handler.debug = 6
             
-            a = Param('test')
-            b = LParam('test', (0,100,1), 50)
+            ## a = Param('test')
+            a = LParam('test', (0,100,1), nan)
             
-            self.layout((a, b), title="test")
-            self.layout((a, b), hspacing=4, row=1)
-            self.layout((a, b), hspacing=4, row=1, expand=1)
+            self.layout((a, ), title="test")
+            self.layout((a, ), hspacing=4, row=1)
+            self.layout((a, ), hspacing=4, row=1, expand=1)
             
             A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             K = LParam('k', (0, 1, 1e-3))
