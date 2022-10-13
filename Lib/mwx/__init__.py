@@ -27,7 +27,18 @@ from .framework import Frame, MiniFrame, ShellFrame
 ## from .mgplt import GnuplotFrame
 
 from importlib import reload
+import contextlib
 import wx
+
+
+@contextlib.contextmanager
+def App(loop=True):
+    try:
+        app = wx.GetApp() or wx.App()
+        yield app
+    finally:
+        if loop and not app.GetMainLoop():
+            app.MainLoop()
 
 
 def deb(target=None, loop=True, locals=None, **kwargs):
