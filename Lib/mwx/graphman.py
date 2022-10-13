@@ -17,7 +17,6 @@ import platform
 import re
 import wx
 from wx import aui
-## import wx.lib.agw.aui as aui
 try:
     import framework as mwx
     from utilus import funcall as _F
@@ -558,18 +557,6 @@ class Frame(mwx.Frame):
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
-        
-        ## self._mgr.SetAutoNotebookStyle(
-        ##     agwStyle=(aui.AUI_NB_SMART_TABS
-        ##             | aui.AUI_NB_TAB_MOVE
-        ##             | aui.AUI_NB_TAB_SPLIT
-        ##             | aui.AUI_NB_TAB_FLOAT
-        ##             | aui.AUI_NB_TAB_EXTERNAL_MOVE
-        ##             | aui.AUI_NB_SCROLL_BUTTONS)
-        ##             &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-        ##              | aui.AUI_NB_CLOSE_BUTTON
-        ##              | aui.AUI_NB_SUB_NOTEBOOK)
-        ## )
         
         self.__plugins = OrderedDict() # modules in the order of load/save
         

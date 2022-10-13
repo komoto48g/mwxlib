@@ -1682,7 +1682,7 @@ if 1:
     app = wx.App()
     frm = Frame(None,
         title=repr(Frame),
-        style=wx.DEFAULT_FRAME_STYLE, #&~(wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX),
+        style=wx.DEFAULT_FRAME_STYLE,
         size=(200,80),
     )
     frm.editor = Editor(frm)

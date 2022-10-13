@@ -1105,7 +1105,7 @@ class EditorInterface(CtrlInterface):
         ## evt.Skip(False) # DO NOT SKIP to system handler.
     
     ## --------------------------------
-    ## goto, skip, selection, etc.
+    ## goto / skip / selection / etc.
     ## --------------------------------
     
     def goto_char(self, pos, selection=False, interactive=False):
@@ -1253,7 +1253,7 @@ class EditorInterface(CtrlInterface):
             self.ReadOnly = r
     
     ## --------------------------------
-    ## Edit: insert, eat, kill, comment
+    ## Edit: comment / insert / kill
     ## --------------------------------
     comment_prefix = "## "
     
@@ -1566,6 +1566,17 @@ class Editor(EditWindow, EditorInterface):
         self.message("ESC {}".format(evt.key))
         self.AnnotationClearAll()
     
+    def _reset(self, text=''):
+        """Clear the current buffer."""
+        with self.off_readonly():
+            self.Text = text
+            self.EmptyUndoBuffer()
+            self.SetSavePoint()
+    
+    ## --------------------------------
+    ## Buffer list controls
+    ## --------------------------------
+    
     @property
     def menu(self):
         """Yields context menu."""
@@ -1610,12 +1621,6 @@ class Editor(EditWindow, EditorInterface):
         else:
             self.clear_all()
     
-    def _reset(self, text=''):
-        """Clear the current buffer."""
-        with self.off_readonly():
-            self.Text = text
-            self.EmptyUndoBuffer()
-            self.SetSavePoint()
     
     def clear_all(self):
         """Initialize list of buffers.
@@ -1676,6 +1681,10 @@ class Editor(EditWindow, EditorInterface):
             self.goto_marker()
             self.handler('buffer_updated', self)
         return True
+    
+    ## --------------------------------
+    ## File I/O
+    ## --------------------------------
     
     def load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache.
