@@ -1520,8 +1520,8 @@ class Editor(EditWindow, EditorInterface):
             },
         })
         
-        self.define_key('C-x k', self.clear_all, alias="kill-all-buffers")
-        self.define_key('C-x C-k', self.pop_current, alias="kill-buffer")
+        self.define_key('C-x k', self.remove_all_buffers, alias="kill-all-buffers")
+        self.define_key('C-x C-k', self.remove_buffer, alias="kill-buffer")
         self.define_key('C-x C-n', self.new_buffer)
         
         self.show_folder()
@@ -1593,11 +1593,6 @@ class Editor(EditWindow, EditorInterface):
         """A list of all buffers that emulate multi-page editor."""
         return self.__buffers
     
-    @property
-    def buffer_index(self):
-        """Index of the currently loaded data."""
-        return self.buffer_list.index(self.buffer)
-    
     def push_current(self):
         """Push the current buffer to the buffer list."""
         self.buffer.lineno = self.markline + 1
@@ -1605,29 +1600,23 @@ class Editor(EditWindow, EditorInterface):
         if self.buffer not in self.buffer_list:
             self.buffer_list.append(self.buffer)
     
-    def pop_current(self):
+    def remove_buffer(self):
         """Pop the current buffer from the buffer list."""
-        j = self.buffer_list.index(self.buffer)
-        del self.buffer_list[j]
+        rest = self.buffer_list
+        j = rest.index(self.buffer)
+        del rest[j]
         
         ## Switch to one of the remaining buffers.
-        rest = self.buffer_list
         if rest:
             if j > len(rest) - 1:
                 j -= 1
-            ## Delete self.buffer reference to avoid push_current.
-            self.buffer = None
+            self.buffer = None # Delete self.buffer to avoid push_current.
             self.swap_buffer(rest[j])
         else:
-            self.clear_all()
+            self.remove_all_buffers()
     
-    
-    def clear_all(self):
-        """Initialize list of buffers.
-        
-        Note:
-            All buffers will be cleared without confirmation.
-        """
+    def remove_all_buffers(self):
+        """Initialize the buffer list."""
         self.buffer = self.default_buffer
         self.__buffers = [self.buffer]
         self._reset()
@@ -1645,14 +1634,16 @@ class Editor(EditWindow, EditorInterface):
         self.handler('buffer_updated', self)
     
     def next_buffer(self):
-        j = self.buffer_index
-        if j+1 < len(self.buffer_list):
-            self.swap_buffer(self.buffer_list[j+1])
+        rest = self.buffer_list
+        j = rest.index(self.buffer)
+        if j+1 < len(rest):
+            self.swap_buffer(rest[j+1])
     
     def previous_buffer(self):
-        j = self.buffer_index
+        rest = self.buffer_list
+        j = rest.index(self.buffer)
         if j > 0:
-            self.swap_buffer(self.buffer_list[j-1])
+            self.swap_buffer(rest[j-1])
     
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
