@@ -1986,7 +1986,6 @@ class Nautilus(Shell, EditorInterface):
                                 # Parent:<AuiNotebook>
         self.target = target
         self.Name = name
-        self.buffer = Buffer()  # overwrite buffer <wx.py.buffer>
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
