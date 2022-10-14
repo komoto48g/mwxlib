@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.72.6"
+__version__ = "0.72.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -201,7 +201,7 @@ class KeyCtrlInterfaceMixin(object):
             },
             keymap : {
                          'quit' : [ state, ],
-                    '* pressed' : [ state, _Pass ],
+                    '* pressed' : [ state, self.post_command_hook ],
                  '*alt pressed' : [ keymap, _Pass ],
                 '*ctrl pressed' : [ keymap, _Pass ],
                '*shift pressed' : [ keymap, _Pass ],

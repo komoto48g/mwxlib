@@ -68,8 +68,6 @@ class EditorInterface(CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        _P = self.post_command_hook
-        
         self.handler.update({ # DNA<EditorInterface>
             0 : {
                     '* pressed' : (0, skip),
@@ -119,16 +117,11 @@ class EditorInterface(CtrlInterface):
                  'capture_lost' : (0, self.on_linesel_end),
              'Lbutton released' : (0, self.on_linesel_end),
             },
-            'C-x' : {
-                    '* pressed' : (0, _P), # skip to the parent.handler
-                    '@ pressed' : (0, _P, _F(self.goto_marker)),
-                  'S-@ pressed' : (0, _P, _F(self.goto_line_marker)),
-            },
-            'C-c' : {
-                    '* pressed' : (0, _P), # skip to the parent.handler
-                  'C-c pressed' : (0, _P, _F(self.goto_matched_paren)),
-            },
         })
+        
+        self.define_key('C-x @', self.goto_marker)
+        self.define_key('C-x S-@', self.goto_line_marker)
+        self.define_key('C-c C-c', self.goto_matched_paren)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
