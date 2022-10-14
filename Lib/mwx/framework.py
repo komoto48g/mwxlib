@@ -211,7 +211,7 @@ class KeyCtrlInterfaceMixin(object):
     
     def pre_command_hook(self, evt):
         """Enter extension mode.
-        Check selection for [C-c][C-x].
+        Check text selection for [C-c/C-x].
         """
         win = wx.Window.FindFocus()
         if isinstance(win, wx.TextEntry) and win.StringSelection\
@@ -256,7 +256,7 @@ class KeyCtrlInterfaceMixin(object):
         if action:
             f = self.interactive_call(action, *args, **kwargs)
             if map != state:
-                self.handler.update({map: {key: [state, f, self.post_command_hook]}})
+                self.handler.update({map: {key: [state, self.post_command_hook, f]}})
             else:
                 self.handler.update({map: {key: [state, f]}})
             return action
