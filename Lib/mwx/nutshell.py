@@ -1493,7 +1493,6 @@ class Editor(EditWindow, EditorInterface):
         def dispatch(v):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
-            v.Skip()
         
         self.handler.update({ # DNA<Editor>
             None : {
@@ -1501,9 +1500,9 @@ class Editor(EditWindow, EditorInterface):
                'buffer_updated' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
-              '*button* dclick' : [ None, dispatch ],
-             '*button* pressed' : [ None, dispatch ],
-            '*button* released' : [ None, dispatch ],
+              '*button* dclick' : [ None, dispatch, skip ],
+             '*button* pressed' : [ None, dispatch, skip ],
+            '*button* released' : [ None, dispatch, skip ],
            'py_region_executed' : [ None, self.on_activated ],
             },
             -1 : { # original action of the EditWindow
@@ -2037,7 +2036,6 @@ class Nautilus(Shell, EditorInterface):
         def dispatch(v):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
-            v.Skip()
         
         self.handler.update({ # DNA<Nautilus>
             None : {
@@ -2047,9 +2045,9 @@ class Nautilus(Shell, EditorInterface):
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
                  'interp_error' : [ None, self.on_interp_error ],
-              '*button* dclick' : [ None, dispatch ],
-             '*button* pressed' : [ None, dispatch ],
-            '*button* released' : [ None, dispatch ],
+              '*button* dclick' : [ None, dispatch, skip ],
+             '*button* pressed' : [ None, dispatch, skip ],
+            '*button* released' : [ None, dispatch, skip ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),

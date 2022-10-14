@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.72.4"
+__version__ = "0.72.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -229,7 +229,6 @@ class KeyCtrlInterfaceMixin(object):
         else:
             self.message(evt.key)
         evt.Skip()
-    post_command_hook.__name__ = str('skip')
     
     def _get_keymap_state(self, keymap, mode='pressed'):
         map, sep, key = regulate_key(keymap).rpartition(' ')
