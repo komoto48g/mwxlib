@@ -65,12 +65,16 @@ class EditorInterface(CtrlInterface):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        self.make_keymap('C-x')
-        self.make_keymap('C-c')
-        
-        _P = self.post_command_hook
+        def dispatch(v):
+            """Fork mouse events to the parent."""
+            self.parent.handler(self.handler.event, v)
         
         self.handler.update({ # DNA<EditorInterface>
+            None : {
+              '*button* dclick' : [ None, dispatch, skip ],
+             '*button* pressed' : [ None, dispatch, skip ],
+            '*button* released' : [ None, dispatch, skip ],
+            },
             0 : {
                     '* pressed' : (0, skip),
                    '* released' : (0, skip),
@@ -119,16 +123,13 @@ class EditorInterface(CtrlInterface):
                  'capture_lost' : (0, self.on_linesel_end),
              'Lbutton released' : (0, self.on_linesel_end),
             },
-            'C-x' : {
-                    '* pressed' : (0, _P), # skip to the parent.handler
-                    '@ pressed' : (0, _P, _F(self.goto_marker)),
-                  'S-@ pressed' : (0, _P, _F(self.goto_line_marker)),
-            },
-            'C-c' : {
-                    '* pressed' : (0, _P), # skip to the parent.handler
-                  'C-c pressed' : (0, _P, _F(self.goto_matched_paren)),
-            },
         })
+        self.make_keymap('C-x')
+        self.make_keymap('C-c')
+        
+        self.define_key('C-x @', self.goto_marker)
+        self.define_key('C-x S-@', self.goto_line_marker)
+        self.define_key('C-c C-c', self.goto_matched_paren)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -1490,19 +1491,12 @@ class Editor(EditWindow, EditorInterface):
             self.handler('editor_inactivated', self)
             v.Skip()
         
-        def dispatch(v):
-            """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
-        
         self.handler.update({ # DNA<Editor>
             None : {
                   'stc_updated' : [ None, ],
                'buffer_updated' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
-              '*button* dclick' : [ None, dispatch, skip ],
-             '*button* pressed' : [ None, dispatch, skip ],
-            '*button* released' : [ None, dispatch, skip ],
            'py_region_executed' : [ None, self.on_activated ],
             },
             -1 : { # original action of the EditWindow
@@ -1992,7 +1986,6 @@ class Nautilus(Shell, EditorInterface):
                                 # Parent:<AuiNotebook>
         self.target = target
         self.Name = name
-        self.buffer = Buffer()  # overwrite buffer <wx.py.buffer>
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
@@ -2033,10 +2026,6 @@ class Nautilus(Shell, EditorInterface):
         def fork(v):
             self.handler(self.handler.event, v)
         
-        def dispatch(v):
-            """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
-        
         self.handler.update({ # DNA<Nautilus>
             None : {
                   'stc_updated' : [ None, ],
@@ -2045,9 +2034,6 @@ class Nautilus(Shell, EditorInterface):
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
                  'interp_error' : [ None, self.on_interp_error ],
-              '*button* dclick' : [ None, dispatch, skip ],
-             '*button* pressed' : [ None, dispatch, skip ],
-            '*button* released' : [ None, dispatch, skip ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -2064,6 +2050,7 @@ class Nautilus(Shell, EditorInterface):
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
+                   '* released' : (0, skip),
                'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
