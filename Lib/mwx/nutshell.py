@@ -278,32 +278,57 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Marker attributes of the editor
     ## --------------------------------
+    marker_names = {
+        0: "mark,",
+        1: "arrow",
+        2: "red-arrow",
+        3: "pointer",
+        4: "red-pointer",
+    }
     
-    def _Marker(marker, n):
-        """Factory of marker property.
-        """
-        def fget(self):
-            return self.MarkerNext(0, 1<<n)
-        
-        def fset(self, line):
-            if line != -1:
-                self.MarkerDeleteAll(n)
-                self.MarkerAdd(line, n)
-                self.handler('{}_set'.format(marker), line)
-            else:
-                fdel(self)
-        
-        def fdel(self):
-            line = fget(self)
-            if line != -1:
-                self.MarkerDeleteAll(n)
-                self.handler('{}_unset'.format(marker), line)
-        
-        return property(fget, fset, fdel)
+    def get_marker(self, n):
+        return self.MarkerNext(0, 1<<n)
     
-    white_arrow = _Marker("white-arrow", 1) # white-arrow_set/white-arrow_unset
-    red_arrow = _Marker("red-arrow", 2) # red-arrow_set/red-arrow_unset
-    pointer = _Marker("pointer", 3) # pointer_set/pointer_unset
+    def set_marker(self, line, n):
+        if line != -1:
+            self.MarkerDeleteAll(n)
+            self.MarkerAdd(line, n)
+            self.handler('{}_set'.format(self.marker_names[n]), line)
+        else:
+            self.del_marker(n)
+    
+    def del_marker(self, n):
+        line = self.MarkerNext(0, 1<<n)
+        if line != -1:
+            self.MarkerDeleteAll(n)
+            self.handler('{}_unset'.format(self.marker_names[n]), line)
+    
+    def goto_previous_marker(self, markerMask, selection=False):
+        line = self.MarkerPrevious(self.cline-1, markerMask)
+        if line == -1:
+            line = 0
+        self.goto_line(line, selection)
+    
+    def goto_next_marker(self, markerMask, selection=False):
+        line = self.MarkerNext(self.cline+1, markerMask)
+        if line == -1:
+            line = self.LineCount
+        self.goto_line(line, selection)
+    
+    white_arrow = property(
+        lambda self: self.get_marker(1),
+        lambda self,v: self.set_marker(v, 1),
+        lambda self: self.del_marker(1))
+    
+    red_arrow = property(
+        lambda self: self.get_marker(2),
+        lambda self,v: self.set_marker(v, 2),
+        lambda self: self.del_marker(2))
+    
+    pointer = property(
+        lambda self: self.get_marker(3),
+        lambda self,v: self.set_marker(v, 3),
+        lambda self: self.del_marker(3))
     
     @property
     def markline(self):
@@ -319,8 +344,6 @@ class EditorInterface(CtrlInterface):
     @markline.deleter
     def markline(self):
         del self.mark
-    
-    ## markline = _Marker("mark", 3) # mark_set/mark_unset
     
     @property
     def mark(self):
@@ -2376,22 +2399,16 @@ class Nautilus(Shell, EditorInterface):
         self.message("")
     
     def goto_previous_white_arrow(self):
-        ln = self.MarkerPrevious(self.cline-1, 0b010) # previous white-arrow
-        p = self.PositionFromLine(ln) + len(sys.ps1)
-        self.goto_char(p if ln != -1 else 0)
+        self.goto_previous_marker(0b010) # previous white-arrow
     
     def goto_next_white_arrow(self):
-        ln = self.MarkerNext(self.cline+1, 0b010) # next white-arrow
-        p = self.PositionFromLine(ln) + len(sys.ps1)
-        self.goto_char(p if ln != -1 else self.eolc)
+        self.goto_next_marker(0b010) # next white-arrow
     
     def goto_previous_mark_arrow(self, selection=False):
-        ln = self.MarkerPrevious(self.cline-1, 0b110) # previous white/red-arrow
-        self.goto_line(ln if ln != -1 else 0, selection)
+        self.goto_previous_marker(0b110, selection) # previous white/red-arrow
     
     def goto_next_mark_arrow(self, selection=False):
-        ln = self.MarkerNext(self.cline+1, 0b110) # next white/red-arrow
-        self.goto_line(ln if ln != -1 else self.LineCount, selection)
+        self.goto_next_marker(0b110, selection) # next white/red-arrow
     
     ## --------------------------------
     ## Magic caster of the shell
