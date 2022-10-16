@@ -95,8 +95,8 @@ class EditorInterface(CtrlInterface):
                   'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
-                'C-S-l pressed' : (0, _F(self.recenter)),   # overrides delete-line
-                  'C-t pressed' : (0, ),                    # overrides transpose-line
+                'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
+                  'C-t pressed' : (0, ),                  # overrides transpose-line
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
             'C-S-space pressed' : (0, _F(self.set_line_mark)),
@@ -128,8 +128,8 @@ class EditorInterface(CtrlInterface):
         self.make_keymap('C-c')
         
         self.define_key('C-x @', self.goto_mark)
-        self.define_key('C-x S-@', self.goto_line_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
+        self.define_key('C-x C-x', self.exchange_point_and_mark)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -373,7 +373,7 @@ class EditorInterface(CtrlInterface):
     
     def goto_mark(self, offset=None):
         if self.mark != -1:
-            self.EnsureVisible(self.markline)
+            self.EnsureVisible(self.markline) # expand if folded
             self.goto_char(self.mark)
             self.recenter(offset)
     
@@ -385,7 +385,7 @@ class EditorInterface(CtrlInterface):
     
     def goto_line_mark(self, offset=None):
         if self.pointer != -1:
-            self.EnsureVisible(self.pointer)
+            self.EnsureVisible(self.pointer) # expand if folded
             self.goto_line(self.pointer)
             self.recenter(offset)
     
