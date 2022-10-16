@@ -303,16 +303,23 @@ class EditorInterface(CtrlInterface):
             self.MarkerDeleteAll(n)
             self.handler('{}_unset'.format(self.marker_names[n]), line)
     
-    def goto_previous_marker(self, markerMask, selection=False):
-        line = self.MarkerPrevious(self.cline-1, markerMask)
-        if line == -1:
-            line = 0
-        self.goto_line(line, selection)
+    def goto_marker(self, markerMask, selection=False):
+        line = self.MarkerNext(0, markerMask)
+        if line != -1:
+            self.EnsureVisible(line) # expand if folded
+            self.goto_line(line, selection)
+            self.recenter()
     
     def goto_next_marker(self, markerMask, selection=False):
         line = self.MarkerNext(self.cline+1, markerMask)
         if line == -1:
             line = self.LineCount
+        self.goto_line(line, selection)
+    
+    def goto_previous_marker(self, markerMask, selection=False):
+        line = self.MarkerPrevious(self.cline-1, markerMask)
+        if line == -1:
+            line = 0
         self.goto_line(line, selection)
     
     white_arrow = property(
@@ -371,23 +378,17 @@ class EditorInterface(CtrlInterface):
     def set_mark(self):
         self.mark = self.cpos
     
-    def goto_mark(self, offset=None):
-        if self.mark != -1:
-            self.EnsureVisible(self.markline) # expand if folded
-            self.goto_char(self.mark)
-            self.recenter(offset)
-    
     def set_line_mark(self):
         if self.pointer == self.cline:
             self.pointer = -1 # toggle marker
         else:
             self.pointer = self.cline
     
-    def goto_line_mark(self, offset=None):
-        if self.pointer != -1:
-            self.EnsureVisible(self.pointer) # expand if folded
-            self.goto_line(self.pointer)
-            self.recenter(offset)
+    def goto_mark(self):
+        self.goto_marker(0b001)
+    
+    def goto_line_mark(self):
+        self.goto_marker(0b11000)
     
     def exchange_point_and_mark(self):
         p = self.cpos
@@ -2398,17 +2399,17 @@ class Nautilus(Shell, EditorInterface):
         self.prompt()
         self.message("")
     
-    def goto_previous_white_arrow(self):
-        self.goto_previous_marker(0b010) # previous white-arrow
-    
     def goto_next_white_arrow(self):
         self.goto_next_marker(0b010) # next white-arrow
     
-    def goto_previous_mark_arrow(self, selection=False):
-        self.goto_previous_marker(0b110, selection) # previous white/red-arrow
+    def goto_previous_white_arrow(self):
+        self.goto_previous_marker(0b010) # previous white-arrow
     
     def goto_next_mark_arrow(self, selection=False):
         self.goto_next_marker(0b110, selection) # next white/red-arrow
+    
+    def goto_previous_mark_arrow(self, selection=False):
+        self.goto_previous_marker(0b110, selection) # previous white/red-arrow
     
     ## --------------------------------
     ## Magic caster of the shell
