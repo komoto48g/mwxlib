@@ -97,9 +97,9 @@ class EditorInterface(CtrlInterface):
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)),   # overrides delete-line
                   'C-t pressed' : (0, ),                    # overrides transpose-line
-                'C-S-f pressed' : (0, _F(self.set_marker)), # overrides mark
-              'C-space pressed' : (0, _F(self.set_marker)),
-            'C-S-space pressed' : (0, _F(self.set_line_marker)),
+                'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
+              'C-space pressed' : (0, _F(self.set_mark)),
+            'C-S-space pressed' : (0, _F(self.set_line_mark)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -127,8 +127,8 @@ class EditorInterface(CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.define_key('C-x @', self.goto_marker)
-        self.define_key('C-x S-@', self.goto_line_marker)
+        self.define_key('C-x @', self.goto_mark)
+        self.define_key('C-x S-@', self.goto_line_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
         
         self.Bind(wx.EVT_MOTION,
@@ -345,22 +345,22 @@ class EditorInterface(CtrlInterface):
             self.MarkerDeleteAll(0)
             self.handler('mark_unset', v)
     
-    def set_marker(self):
+    def set_mark(self):
         self.mark = self.cpos
     
-    def goto_marker(self, offset=None):
+    def goto_mark(self, offset=None):
         if self.mark != -1:
             self.EnsureVisible(self.markline)
             self.goto_char(self.mark)
             self.recenter(offset)
     
-    def set_line_marker(self):
+    def set_line_mark(self):
         if self.pointer == self.cline:
             self.pointer = -1 # toggle marker
         else:
             self.pointer = self.cline
     
-    def goto_line_marker(self, offset=None):
+    def goto_line_mark(self, offset=None):
         if self.pointer != -1:
             self.EnsureVisible(self.pointer)
             self.goto_line(self.pointer)
@@ -1662,7 +1662,7 @@ class Editor(EditWindow, EditorInterface):
             if buf.filetext != buf.text: # retrieve modified buffer
                 self.Text = buf.text
             self.markline = buf.lineno - 1
-            self.goto_marker()
+            self.goto_mark()
             self.handler('buffer_updated', self)
         return True
     
@@ -1683,7 +1683,7 @@ class Editor(EditWindow, EditorInterface):
             self.push_current() # cache current
             self._reset(''.join(lines))
             self.markline = lineno - 1
-            self.goto_marker()
+            self.goto_mark()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.buffer.filename = f
             self.buffer.filetext = self.Text
@@ -1702,7 +1702,7 @@ class Editor(EditWindow, EditorInterface):
         self.push_current() # cache current
         if self.LoadFile(f):
             self.markline = lineno - 1
-            self.goto_marker()
+            self.goto_mark()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.buffer.filename = f
             self.buffer.filetext = self.Text
