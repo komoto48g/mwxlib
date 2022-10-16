@@ -2369,7 +2369,7 @@ class Nautilus(Shell, EditorInterface):
             self.mark = self.cpos
             if clear:
                 self.clearCommand() # => move to the prompt end
-            self.write(cmd.rstrip(), -1)
+            self.write(cmd.rstrip('\r\n'), -1)
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
