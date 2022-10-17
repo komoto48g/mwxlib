@@ -239,7 +239,9 @@ class Debugger(Pdb):
         where `f` can be filename or code object.
         """
         for editor in self.parent.ghost.all_pages(stc.StyledTextCtrl):
-            if editor.swap_buffer(f):
+            buf = editor.find_buffer(f)
+            if buf:
+                editor.swap_buffer(buf)
                 return editor
     
     def on_debug_begin(self, frame):

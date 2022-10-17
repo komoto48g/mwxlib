@@ -1495,7 +1495,7 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.default_name = "*{}*".format(self.Name.lower())
+        self.default_name = "*{}*".format(name.lower())
         self.default_buffer = Buffer(self.default_name)
         self.buffer = self.default_buffer
         self.__buffers = [self.buffer]
@@ -1617,6 +1617,41 @@ class Editor(EditWindow, EditorInterface):
         if self.buffer not in self.buffer_list:
             self.buffer_list.append(self.buffer)
     
+    def find_buffer(self, f):
+        """Find buffer with specified f:filename or code."""
+        for buf in self.buffer_list:
+            if f in buf or f is buf:
+                return buf
+    
+    def swap_buffer(self, buf):
+        """Replace buffer with specified buffer.
+        
+        Note:
+            The buffer will be swapped without confirmation.
+            STC data such as `UndoBuffer` is not restored.
+        """
+        if buf and buf is not self.buffer:
+            if self.buffer:
+                self.push_current() # cache current
+            self.buffer = buf
+            self._reset(buf.filetext or buf.text)
+            if buf.filetext != buf.text: # retrieve modified buffer
+                self.Text = buf.text
+            self.markline = buf.lineno - 1
+            self.goto_mark()
+            self.handler('buffer_updated', self)
+            return True
+    
+    def new_buffer(self):
+        buf = self.default_buffer
+        if not buf or buf.mtdelta is not None: # is saved?
+            buf = Buffer(self.default_name)
+            self.default_buffer = buf
+        self.buffer = buf
+        self._reset()
+        self.push_current()
+        self.handler('buffer_updated', self)
+    
     def remove_buffer(self):
         """Pop the current buffer from the buffer list."""
         rest = self.buffer_list
@@ -1640,16 +1675,6 @@ class Editor(EditWindow, EditorInterface):
         self.push_current()
         self.handler('buffer_updated', self)
     
-    def new_buffer(self):
-        buf = self.default_buffer
-        if buf.mtdelta is not None: # is saved?
-            buf = Buffer(self.default_name)
-            self.default_buffer = buf
-        self.buffer = buf
-        self._reset()
-        self.push_current()
-        self.handler('buffer_updated', self)
-    
     def next_buffer(self):
         rest = self.buffer_list
         j = rest.index(self.buffer)
@@ -1661,34 +1686,6 @@ class Editor(EditWindow, EditorInterface):
         j = rest.index(self.buffer)
         if j > 0:
             self.swap_buffer(rest[j-1])
-    
-    def find_buffer(self, f):
-        """Find buffer with specified f:filename or code."""
-        for buf in self.buffer_list:
-            if f in buf or f is buf:
-                return buf
-    
-    def swap_buffer(self, f):
-        """Replace buffer with specified f:filename or code.
-        
-        Note:
-            The buffer will be swapped without confirmation.
-            STC data such as `UndoBuffer` is not restored.
-        """
-        buf = self.find_buffer(f)
-        if not buf:
-            return False
-        if buf is not self.buffer:
-            if self.buffer:
-                self.push_current() # cache current
-            self.buffer = buf
-            self._reset(buf.filetext or buf.text)
-            if buf.filetext != buf.text: # retrieve modified buffer
-                self.Text = buf.text
-            self.markline = buf.lineno - 1
-            self.goto_mark()
-            self.handler('buffer_updated', self)
-        return True
     
     ## --------------------------------
     ## File I/O
