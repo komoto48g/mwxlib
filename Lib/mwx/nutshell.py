@@ -95,11 +95,11 @@ class EditorInterface(CtrlInterface):
                   'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
-                'C-S-l pressed' : (0, _F(self.recenter)),   # overrides delete-line
-                  'C-t pressed' : (0, ),                    # overrides transpose-line
-                'C-S-f pressed' : (0, _F(self.set_marker)), # overrides mark
-              'C-space pressed' : (0, _F(self.set_marker)),
-            'C-S-space pressed' : (0, _F(self.set_line_marker)),
+                'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
+                  'C-t pressed' : (0, ),                  # overrides transpose-line
+                'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
+              'C-space pressed' : (0, _F(self.set_mark)),
+            'C-S-space pressed' : (0, _F(self.set_line_mark)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -127,9 +127,9 @@ class EditorInterface(CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.define_key('C-x @', self.goto_marker)
-        self.define_key('C-x S-@', self.goto_line_marker)
+        self.define_key('C-x @', self.goto_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
+        self.define_key('C-x C-x', self.exchange_point_and_mark)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -278,32 +278,64 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Marker attributes of the editor
     ## --------------------------------
+    marker_names = {
+        0: "mark,",
+        1: "arrow",
+        2: "red-arrow",
+        3: "pointer",
+        4: "red-pointer",
+    }
     
-    def _Marker(marker, n):
-        """Factory of marker property.
-        """
-        def fget(self):
-            return self.MarkerNext(0, 1<<n)
-        
-        def fset(self, line):
-            if line != -1:
-                self.MarkerDeleteAll(n)
-                self.MarkerAdd(line, n)
-                self.handler('{}_set'.format(marker), line)
-            else:
-                fdel(self)
-        
-        def fdel(self):
-            line = fget(self)
-            if line != -1:
-                self.MarkerDeleteAll(n)
-                self.handler('{}_unset'.format(marker), line)
-        
-        return property(fget, fset, fdel)
+    def get_marker(self, n):
+        return self.MarkerNext(0, 1<<n)
     
-    white_arrow = _Marker("white-arrow", 1) # white-arrow_set/white-arrow_unset
-    red_arrow = _Marker("red-arrow", 2) # red-arrow_set/red-arrow_unset
-    pointer = _Marker("pointer", 3) # pointer_set/pointer_unset
+    def set_marker(self, line, n):
+        if line != -1:
+            self.MarkerDeleteAll(n)
+            self.MarkerAdd(line, n)
+            self.handler('{}_set'.format(self.marker_names[n]), line)
+        else:
+            self.del_marker(n)
+    
+    def del_marker(self, n):
+        line = self.MarkerNext(0, 1<<n)
+        if line != -1:
+            self.MarkerDeleteAll(n)
+            self.handler('{}_unset'.format(self.marker_names[n]), line)
+    
+    def goto_marker(self, markerMask, selection=False):
+        line = self.MarkerNext(0, markerMask)
+        if line != -1:
+            self.EnsureVisible(line) # expand if folded
+            self.goto_line(line, selection)
+            self.recenter()
+    
+    def goto_next_marker(self, markerMask, selection=False):
+        line = self.MarkerNext(self.cline+1, markerMask)
+        if line == -1:
+            line = self.LineCount
+        self.goto_line(line, selection)
+    
+    def goto_previous_marker(self, markerMask, selection=False):
+        line = self.MarkerPrevious(self.cline-1, markerMask)
+        if line == -1:
+            line = 0
+        self.goto_line(line, selection)
+    
+    white_arrow = property(
+        lambda self: self.get_marker(1),
+        lambda self,v: self.set_marker(v, 1),
+        lambda self: self.del_marker(1))
+    
+    red_arrow = property(
+        lambda self: self.get_marker(2),
+        lambda self,v: self.set_marker(v, 2),
+        lambda self: self.del_marker(2))
+    
+    pointer = property(
+        lambda self: self.get_marker(3),
+        lambda self,v: self.set_marker(v, 3),
+        lambda self: self.del_marker(3))
     
     @property
     def markline(self):
@@ -319,8 +351,6 @@ class EditorInterface(CtrlInterface):
     @markline.deleter
     def markline(self):
         del self.mark
-    
-    ## markline = _Marker("mark", 3) # mark_set/mark_unset
     
     @property
     def mark(self):
@@ -345,26 +375,20 @@ class EditorInterface(CtrlInterface):
             self.MarkerDeleteAll(0)
             self.handler('mark_unset', v)
     
-    def set_marker(self):
+    def set_mark(self):
         self.mark = self.cpos
     
-    def goto_marker(self, offset=None):
-        if self.mark != -1:
-            self.EnsureVisible(self.markline)
-            self.goto_char(self.mark)
-            self.recenter(offset)
-    
-    def set_line_marker(self):
+    def set_line_mark(self):
         if self.pointer == self.cline:
             self.pointer = -1 # toggle marker
         else:
             self.pointer = self.cline
     
-    def goto_line_marker(self, offset=None):
-        if self.pointer != -1:
-            self.EnsureVisible(self.pointer)
-            self.goto_line(self.pointer)
-            self.recenter(offset)
+    def goto_mark(self):
+        self.goto_marker(0b001)
+    
+    def goto_line_mark(self):
+        self.goto_marker(0b11000)
     
     def exchange_point_and_mark(self):
         p = self.cpos
@@ -1471,7 +1495,7 @@ class Editor(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
-        self.default_name = "*{}*".format(self.Name.lower())
+        self.default_name = "*{}*".format(name.lower())
         self.default_buffer = Buffer(self.default_name)
         self.buffer = self.default_buffer
         self.__buffers = [self.buffer]
@@ -1593,6 +1617,41 @@ class Editor(EditWindow, EditorInterface):
         if self.buffer not in self.buffer_list:
             self.buffer_list.append(self.buffer)
     
+    def find_buffer(self, f):
+        """Find buffer with specified f:filename or code."""
+        for buf in self.buffer_list:
+            if f in buf or f is buf:
+                return buf
+    
+    def swap_buffer(self, buf):
+        """Replace buffer with specified buffer.
+        
+        Note:
+            The buffer will be swapped without confirmation.
+            STC data such as `UndoBuffer` is not restored.
+        """
+        if buf and buf is not self.buffer:
+            if self.buffer:
+                self.push_current() # cache current
+            self.buffer = buf
+            self._reset(buf.filetext or buf.text)
+            if buf.filetext != buf.text: # retrieve modified buffer
+                self.Text = buf.text
+            self.markline = buf.lineno - 1
+            self.goto_mark()
+            self.handler('buffer_updated', self)
+            return True
+    
+    def new_buffer(self):
+        buf = self.default_buffer
+        if not buf or buf.mtdelta is not None: # is saved?
+            buf = Buffer(self.default_name)
+            self.default_buffer = buf
+        self.buffer = buf
+        self._reset()
+        self.push_current()
+        self.handler('buffer_updated', self)
+    
     def remove_buffer(self):
         """Pop the current buffer from the buffer list."""
         rest = self.buffer_list
@@ -1616,16 +1675,6 @@ class Editor(EditWindow, EditorInterface):
         self.push_current()
         self.handler('buffer_updated', self)
     
-    def new_buffer(self):
-        buf = self.default_buffer
-        if buf.mtdelta is not None: # is saved?
-            buf = Buffer(self.default_name)
-            self.default_buffer = buf
-        self.buffer = buf
-        self._reset()
-        self.push_current()
-        self.handler('buffer_updated', self)
-    
     def next_buffer(self):
         rest = self.buffer_list
         j = rest.index(self.buffer)
@@ -1637,34 +1686,6 @@ class Editor(EditWindow, EditorInterface):
         j = rest.index(self.buffer)
         if j > 0:
             self.swap_buffer(rest[j-1])
-    
-    def find_buffer(self, f):
-        """Find buffer with specified f:filename or code."""
-        for buf in self.buffer_list:
-            if f in buf or f is buf:
-                return buf
-    
-    def swap_buffer(self, f):
-        """Replace buffer with specified f:filename or code.
-        
-        Note:
-            The buffer will be swapped without confirmation.
-            STC data such as `UndoBuffer` is not restored.
-        """
-        buf = self.find_buffer(f)
-        if not buf:
-            return False
-        if buf is not self.buffer:
-            if self.buffer:
-                self.push_current() # cache current
-            self.buffer = buf
-            self._reset(buf.filetext or buf.text)
-            if buf.filetext != buf.text: # retrieve modified buffer
-                self.Text = buf.text
-            self.markline = buf.lineno - 1
-            self.goto_marker()
-            self.handler('buffer_updated', self)
-        return True
     
     ## --------------------------------
     ## File I/O
@@ -1683,7 +1704,7 @@ class Editor(EditWindow, EditorInterface):
             self.push_current() # cache current
             self._reset(''.join(lines))
             self.markline = lineno - 1
-            self.goto_marker()
+            self.goto_mark()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.buffer.filename = f
             self.buffer.filetext = self.Text
@@ -1702,7 +1723,7 @@ class Editor(EditWindow, EditorInterface):
         self.push_current() # cache current
         if self.LoadFile(f):
             self.markline = lineno - 1
-            self.goto_marker()
+            self.goto_mark()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.buffer.filename = f
             self.buffer.filetext = self.Text
@@ -2346,7 +2367,7 @@ class Nautilus(Shell, EditorInterface):
             self.mark = self.cpos
             if clear:
                 self.clearCommand() # => move to the prompt end
-            self.write(cmd.rstrip(), -1)
+            self.write(cmd.rstrip('\r\n'), -1)
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
@@ -2375,23 +2396,17 @@ class Nautilus(Shell, EditorInterface):
         self.prompt()
         self.message("")
     
-    def goto_previous_white_arrow(self):
-        ln = self.MarkerPrevious(self.cline-1, 0b010) # previous white-arrow
-        p = self.PositionFromLine(ln) + len(sys.ps1)
-        self.goto_char(p if ln != -1 else 0)
-    
     def goto_next_white_arrow(self):
-        ln = self.MarkerNext(self.cline+1, 0b010) # next white-arrow
-        p = self.PositionFromLine(ln) + len(sys.ps1)
-        self.goto_char(p if ln != -1 else self.eolc)
+        self.goto_next_marker(0b010) # next white-arrow
     
-    def goto_previous_mark_arrow(self, selection=False):
-        ln = self.MarkerPrevious(self.cline-1, 0b110) # previous white/red-arrow
-        self.goto_line(ln if ln != -1 else 0, selection)
+    def goto_previous_white_arrow(self):
+        self.goto_previous_marker(0b010) # previous white-arrow
     
     def goto_next_mark_arrow(self, selection=False):
-        ln = self.MarkerNext(self.cline+1, 0b110) # next white/red-arrow
-        self.goto_line(ln if ln != -1 else self.LineCount, selection)
+        self.goto_next_marker(0b110, selection) # next white/red-arrow
+    
+    def goto_previous_mark_arrow(self, selection=False):
+        self.goto_previous_marker(0b110, selection) # previous white/red-arrow
     
     ## --------------------------------
     ## Magic caster of the shell

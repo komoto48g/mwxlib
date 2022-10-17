@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.72.7"
+__version__ = "0.72.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1037,15 +1037,15 @@ class ShellFrame(MiniFrame):
         
         ## text-mode
         ## self.Log.show_folder()
-        self.Log.ReadOnly = True
+        self.Log.SetReadOnly(True)
         
         self.set_traceable(self.Log)
         
         ## self.Help.show_folder()
-        self.Help.ReadOnly = True
+        self.Help.SetReadOnly(True)
         
         ## self.History.show_folder()
-        self.History.ReadOnly = True
+        self.History.SetReadOnly(True)
         
         self.Init()
     
@@ -1173,8 +1173,8 @@ class ShellFrame(MiniFrame):
         evt.Skip()
     
     def About(self, evt=None):
-        with self.Help.off_readonly():
-            self.Help.SetText('\n\n'.join((
+        with self.Help.off_readonly() as ed:
+            ed.SetText('\n\n'.join((
                 "#<module 'mwx' from {!r}>".format(__file__),
                 "Author: {!r}".format(__author__),
                 "Version: {!s}".format(__version__),
@@ -1415,16 +1415,16 @@ class ShellFrame(MiniFrame):
         buffer = self.Log.default_buffer
         buffer.text += text
         if self.Log.buffer is buffer:
-            with self.Log.off_readonly():
-                self.Log.Text = buffer.text
+            with self.Log.off_readonly() as ed:
+                ed.SetText(buffer.text)
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
             f.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
-        with self.Help.off_readonly():
-            self.Help.Text = text
+        with self.Help.off_readonly() as ed:
+            ed.SetText(text)
         self.popup_window(self.Help, focus=0)
     
     def add_history(self, text, noerr=None):
