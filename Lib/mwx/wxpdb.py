@@ -150,15 +150,15 @@ class Debugger(Pdb):
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
         if self.busy:
-            self.send_input('j {}'.format(self.editor.markline+1))
+            self.send_input('j {}'.format(self.editor.markline + 1))
     
-    def set_marker(self, lineno, style):
+    def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
         [1] white-arrow for breakpoints
         [2] red-arrow for exception
         """
         if lineno:
-            self.editor.MarkerAdd(lineno-1, style)
+            self.editor.MarkerAdd(lineno - 1, style)
         else:
             self.editor.MarkerDeleteAll(style)
     
@@ -279,12 +279,13 @@ class Debugger(Pdb):
                 editor.markline = firstlineno - 1 # (o) entry:marker
                 editor.goto_mark()
                 editor.recenter(3)
+            editor.goto_line(lineno - 1)
             editor.pointer = lineno - 1 # (->) pointer:marker
             editor.EnsureLineMoreOnScreen(lineno - 1)
             editor.push_current()
         
         for ln in self.get_file_breaks(filename):
-            self.set_marker(ln, 1) # (>>) bp:white-arrow
+            self.add_marker(ln, 1) # (>>) bp:white-arrow
         
         self.editor = editor
         self.code = code
@@ -404,7 +405,7 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.set_marker(lineno, 1)
+        self.add_marker(lineno, 1)
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
@@ -467,7 +468,7 @@ class Debugger(Pdb):
         (override) Update exception:markers.
         """
         t, v, tb = exc_info
-        self.set_marker(tb.tb_lineno, 2)
+        self.add_marker(tb.tb_lineno, 2)
         self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
     
@@ -479,9 +480,9 @@ class Debugger(Pdb):
         """
         filename = frame.f_code.co_filename
         breakpoints = self.get_file_breaks(filename)
-        self.set_marker(None, 1)
+        self.add_marker(None, 1)
         for lineno in breakpoints:
-            self.set_marker(lineno, 1)
+            self.add_marker(lineno, 1)
         return Pdb.bp_commands(self, frame)
     
     @echo
