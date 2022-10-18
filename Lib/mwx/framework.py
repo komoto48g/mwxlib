@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.72.9"
+__version__ = "0.73.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -802,9 +802,9 @@ class AuiNotebook(aui.AuiNotebook):
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks."""
         for j in range(self.PageCount):
-            win = self.GetPage(j)
-            if type is None or isinstance(win, type):
-                yield win
+            page = self.GetPage(j)
+            if type is None or isinstance(page, type):
+                yield page
 
 
 class ShellFrame(MiniFrame):
@@ -1084,7 +1084,7 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                for buffer in self.Log.buffer_list:
+                for buffer in self.Log.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
@@ -1092,7 +1092,7 @@ class ShellFrame(MiniFrame):
                 with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Log.default_buffer.text)
                 
-                for buffer in self.Scratch.buffer_list:
+                for buffer in self.Scratch.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
@@ -1450,7 +1450,7 @@ class ShellFrame(MiniFrame):
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
         win = wx.Window.FindFocus()
-        pages = [win for win in self.all_pages() if win.IsShownOnScreen()]
+        pages = [page for page in self.all_pages() if page.IsShownOnScreen()]
         if win in pages:
             j = pages.index(win) + p
             if mod:

@@ -1602,11 +1602,9 @@ class Editor(EditWindow, EditorInterface):
                 lambda v: self.swap_buffer(buf) and self.SetFocus(),
                 lambda v: v.Check(buf is self.buffer))
         
-        if len(self.buffer_list) > 1:
-            return (_menu(j+1, x) for j, x in enumerate(self.buffer_list))
+        return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
     
-    @property
-    def buffer_list(self):
+    def all_buffers(self):
         """A list of all buffers that emulate multi-page editor."""
         return self.__buffers
     
@@ -1614,12 +1612,12 @@ class Editor(EditWindow, EditorInterface):
         """Push the current buffer to the buffer list."""
         self.buffer.lineno = self.markline + 1
         self.buffer.text = self.Text
-        if self.buffer not in self.buffer_list:
-            self.buffer_list.append(self.buffer)
+        if self.buffer not in self.__buffers:
+            self.__buffers.append(self.buffer)
     
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
-        for buf in self.buffer_list:
+        for buf in self.__buffers:
             if f in buf or f is buf:
                 return buf
     
@@ -1654,7 +1652,7 @@ class Editor(EditWindow, EditorInterface):
     
     def remove_buffer(self):
         """Pop the current buffer from the buffer list."""
-        rest = self.buffer_list
+        rest = self.__buffers
         j = rest.index(self.buffer)
         del rest[j]
         
@@ -1676,13 +1674,13 @@ class Editor(EditWindow, EditorInterface):
         self.handler('buffer_updated', self)
     
     def next_buffer(self):
-        rest = self.buffer_list
+        rest = self.__buffers
         j = rest.index(self.buffer)
         if j+1 < len(rest):
             self.swap_buffer(rest[j+1])
     
     def previous_buffer(self):
-        rest = self.buffer_list
+        rest = self.__buffers
         j = rest.index(self.buffer)
         if j > 0:
             self.swap_buffer(rest[j-1])
