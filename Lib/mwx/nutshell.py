@@ -1683,8 +1683,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.default_name = "*{}*".format(name.lower())
         self.default_buffer = Buffer(self, self.default_name)
         
-        ## self.AddPage(self.default_buffer, self.default_name)
-        self.add_buffer(self.default_buffer)
+        self.AddPage(self.default_buffer, self.default_name)
         
         self.handler.update({ # DNA<Editor>
             0 : { # Normal mode
@@ -1706,7 +1705,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def set_style(self, style):
         for buf in self.all_buffers():
             buf.set_style(style)
-        self.STYLE = style # apply the style on add_page.
+        self.STYLE = style
     
     def all_buffers(self):
         for j in range(self.PageCount):
@@ -1742,23 +1741,28 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             j = self.GetPageIndex(buf)
             if j != self.Selection:
                 self.Selection = j # the focus is moved
-            return True
+        return buf
     
-    def add_buffer(self, buf, index=None):
-        name = os.path.basename(buf.filename)
+    def create_new_buffer(self, filename, index=None):
         if index is None:
             index = self.PageCount
-        self.InsertPage(index, buf, name, select=True)
-        buf.set_style(self.STYLE)
+        try:
+            self.Freeze()
+            buf = Buffer(self, filename)
+            name = os.path.basename(filename)
+            self.InsertPage(index, buf, name, select=True)
+            buf.set_style(self.STYLE)
+            return buf
+        finally:
+            self.Thaw()
     
     def new_buffer(self):
         buf = self.default_buffer
         if not buf or buf.mtdelta is not None: # is saved?
-            buf =  Buffer(self, self.default_name)
+            buf = self.create_new_buffer(self.default_name, 0)
             self.default_buffer = buf
-            self.add_buffer(buf, 0)
-        self.swap_buffer(buf)
         buf._reset()
+        return self.swap_buffer(buf)
     
     def remove_buffer(self):
         """Pop the current buffer from the buffer list."""
@@ -1785,18 +1789,12 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     ## --------------------------------
     
     def load_cache(self, filename, lineno=0, globals=None):
-        buf = self.find_buffer(filename)
-        if not buf:
-            buf = Buffer(self, filename) # create-new-buffer
-            self.add_buffer(buf)
+        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         buf.load_cache(filename, lineno, globals)
         self.swap_buffer(buf)
     
     def load_file(self, filename, lineno=0):
-        buf = self.find_buffer(filename)
-        if not buf:
-            buf = Buffer(self, filename) # create-new-buffer
-            self.add_buffer(buf)
+        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         buf.load_file(filename, lineno)
         self.swap_buffer(buf)
 
