@@ -1395,7 +1395,6 @@ class Buffer(EditWindow, EditorInterface):
         lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
-        text        : buffer text
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1434,10 +1433,7 @@ class Buffer(EditWindow, EditorInterface):
     
     @property
     def name(self):
-        if self.codename and self.filename:
-            return "{} {}".format(self.codename, self.filename)
-        else:
-            return self.codename or self.filename
+        return os.path.basename(self.target)
     
     @property
     def filename(self):
@@ -1458,7 +1454,7 @@ class Buffer(EditWindow, EditorInterface):
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
     
-    def __init__(self, parent, filename=None, lineno=0, **kwargs):
+    def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
@@ -1522,7 +1518,7 @@ class Buffer(EditWindow, EditorInterface):
             return v in (self.filename, self.codename)
     
     def __str__(self):
-        return "{}:{}".format(self.name, self.lineno)
+        return "{}:{}".format(self.filename, self.lineno)
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -1535,12 +1531,11 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        if self.mtdelta is not None:
-            self.parent.handler('caption_page', self, '* ' + self.Name)
+        self.parent.handler('caption_page', self, True)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self.parent.handler('caption_page', self, self.Name)
+        self.parent.handler('caption_page', self, False)
         evt.Skip()
     
     def on_activated(self, editor):
@@ -1548,7 +1543,7 @@ class Buffer(EditWindow, EditorInterface):
         if self.mtdelta:
             self.message("{!r} has been modified externally."
                          .format(self.filename))
-        title = "{} file: {}".format(self.Name, self.name)
+        title = "{} file: {}".format(self.parent.Name, self.filename)
         self.parent.handler('title_window', title)
         self.trace_position()
     
@@ -1686,6 +1681,10 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.AddPage(self.default_buffer, self.default_name)
         
         self.handler.update({ # DNA<Editor>
+            None : {
+                 'title_window' : [ None, self.on_title_window ],
+                 'caption_page' : [ None, self.on_caption_page ],
+            },
             0 : { # Normal mode
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
@@ -1702,18 +1701,29 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def __getattr__(self, attr):
         return getattr(self.buffer, attr)
     
+    def on_title_window(self, title):
+        self.parent.handler('title_window', title)
+    
+    def on_caption_page(self, buf, edited):
+        prefix = '* ' if edited else ''
+        if buf.mtdelta is not None:
+            _p, tab, idx = self.FindTab(buf)
+            tab.GetPage(idx).caption = prefix + buf.name
+            tab.Refresh()
+        ## self.parent.handler('caption_page', self, prefix + self.Name)
+    
     def set_style(self, style):
         for buf in self.all_buffers():
             buf.set_style(style)
         self.STYLE = style
     
-    def all_buffers(self):
-        for j in range(self.PageCount):
-            yield self.GetPage(j)
-    
     ## --------------------------------
     ## Buffer list controls
     ## --------------------------------
+    
+    def all_buffers(self):
+        for j in range(self.PageCount):
+            yield self.GetPage(j)
     
     @property
     def menu(self):
