@@ -238,11 +238,14 @@ class Debugger(Pdb):
         """Find parent editor which has the specified f:object,
         where `f` can be filename or code object.
         """
-        for editor in self.parent.ghost.all_pages(stc.StyledTextCtrl):
-            buf = editor.find_buffer(f)
-            if buf:
-                editor.swap_buffer(buf)
-                return editor
+        for editor in self.parent.ghost.all_pages():
+            try:
+                buf = editor.find_buffer(f)
+                if buf:
+                    editor.swap_buffer(buf)
+                    return editor
+            except AttributeError:
+                pass
     
     def on_debug_begin(self, frame):
         """Called before set_trace.
