@@ -1491,9 +1491,6 @@ class Buffer(EditWindow, EditorInterface):
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
            'py_region_executed' : [ None, self.on_activated ],
-                     '* dclick' : [ None, dispatch ],
-                    '* pressed' : [ None, dispatch ],
-                   '* released' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1503,6 +1500,8 @@ class Buffer(EditWindow, EditorInterface):
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
+                    '* pressed' : (0, dispatch), # => skip
+                   '* released' : (0, dispatch), # => skip
                'escape pressed' : (-1, self.on_enter_escmap),
             },
         })
@@ -1686,6 +1685,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                  'caption_page' : [ None, self.on_caption_page ],
             },
             0 : { # Normal mode
+                    '* pressed' : (0, skip),
+                   '* released' : (0, skip),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
