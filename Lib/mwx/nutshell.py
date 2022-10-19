@@ -1419,14 +1419,16 @@ class Buffer:
             return v in (self.filename, self.codename)
     
     def __str__(self):
-        return "{}:{}".format(self.name, self.lineno)
+        return "{}:{}".format(self.filename, self.lineno)
+    
+    @property
+    def target(self):
+        """Returns codename or filename (referred by debugger)."""
+        return self.codename or self.filename
     
     @property
     def name(self):
-        if self.codename and self.filename:
-            return "{} {}".format(self.codename, self.filename)
-        else:
-            return self.codename or self.filename
+        return os.path.basename(self.target)
     
     @property
     def filename(self):
@@ -1487,11 +1489,6 @@ class Editor(EditWindow, EditorInterface):
     
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
-    
-    @property
-    def target(self):
-        """Returns codename or filename (referred by debugger)."""
-        return self.buffer.codename or self.buffer.filename
     
     def __init__(self, parent, name="editor", **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
@@ -1573,7 +1570,7 @@ class Editor(EditWindow, EditorInterface):
         if self.buffer.mtdelta:
             self.message("{!r} has been modified externally."
                          .format(self.buffer.filename))
-        title = "{} file: {}".format(self.Name, self.buffer.name)
+        title = "{} file: {}".format(self.Name, self.buffer.filename)
         self.parent.handler('title_window', title)
         self.trace_position()
     
@@ -1596,7 +1593,7 @@ class Editor(EditWindow, EditorInterface):
             self.SetSavePoint()
     
     ## --------------------------------
-    ## Buffer list controls
+    ## Editor system control
     ## --------------------------------
     
     @property
@@ -1691,7 +1688,7 @@ class Editor(EditWindow, EditorInterface):
             self.swap_buffer(rest[j-1])
     
     ## --------------------------------
-    ## File I/O
+    ## Buffer file I/O
     ## --------------------------------
     
     def load_cache(self, filename, lineno=0, globals=None):

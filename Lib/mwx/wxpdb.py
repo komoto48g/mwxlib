@@ -279,7 +279,7 @@ class Debugger(Pdb):
             if filename != editor.buffer.filename:
                 editor.load_cache(filename)
         
-        if filename == editor.target:
+        if filename == editor.buffer.target:
             if code != self.code:
                 editor.markline = firstlineno - 1 # (o) entry:marker
                 editor.goto_mark()
