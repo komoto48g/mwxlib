@@ -169,6 +169,20 @@ def miniIcon(key, size=(16,16)):
     return art.GetImage().Scale(*size).ConvertToBitmap()
 
 
+def dump(self):
+    from pprint import pprint
+    def _dump(parent):
+        item, cookie = self.GetFirstChild(parent)
+        while item:
+            obj = self.GetItemData(item)
+            yield obj
+            data = list(_dump(item))
+            if data:
+                yield data
+            item, cookie = self.GetNextChild(parent, cookie)
+    pprint(list(_dump(self.RootItem)))
+
+
 if __name__ == "__main__":
     from framework import Frame
     
@@ -176,5 +190,6 @@ if __name__ == "__main__":
     frm = Frame(None)
     frm.plug = Inspector(frm)
     frm.plug.watch(frm)
+    dump(frm.plug)
     frm.Show()
     app.MainLoop()
