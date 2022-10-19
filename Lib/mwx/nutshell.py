@@ -1395,16 +1395,15 @@ class Buffer:
         lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
-        text        : buffer text
-        filetext    : file text
+        Text        : buffer text
     """
     def __init__(self, filename=None, lineno=0):
         self.filename = filename
         self.lineno = 0
         self.codename = None
         self.code = None
-        self.text = ''
-        self.filetext = ''
+        self.Text = ''
+        self._fileText = ''
     
     def __contains__(self, v):
         if inspect.iscode(v) and self.code:
@@ -1611,7 +1610,7 @@ class Editor(EditWindow, EditorInterface):
     def push_current(self):
         """Push the current buffer to the buffer list."""
         self.buffer.lineno = self.markline + 1
-        self.buffer.text = self.Text
+        self.buffer.Text = self.Text
         if self.buffer not in self.__buffers:
             self.__buffers.append(self.buffer)
     
@@ -1632,9 +1631,9 @@ class Editor(EditWindow, EditorInterface):
             if self.buffer:
                 self.push_current() # cache current
             self.buffer = buf
-            self._reset(buf.filetext or buf.text)
-            if buf.filetext != buf.text: # retrieve modified buffer
-                self.Text = buf.text
+            self._reset(buf._fileText or buf.Text)
+            if buf._fileText != buf.Text: # retrieve modified buffer
+                self.Text = buf.Text
             self.markline = buf.lineno - 1
             self.goto_mark()
             self.handler('buffer_updated', self)
@@ -1705,7 +1704,7 @@ class Editor(EditWindow, EditorInterface):
             self.goto_mark()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.buffer.filename = f
-            self.buffer.filetext = self.Text
+            self.buffer._fileText = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             return True
@@ -1724,7 +1723,7 @@ class Editor(EditWindow, EditorInterface):
             self.goto_mark()
             self.buffer = self.find_buffer(f) or Buffer(f)
             self.buffer.filename = f
-            self.buffer.filetext = self.Text
+            self.buffer._fileText = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
@@ -1740,7 +1739,7 @@ class Editor(EditWindow, EditorInterface):
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.buffer.filename = f
-            self.buffer.filetext = self.Text
+            self.buffer._fileText = self.Text
             self.push_current()
             self.handler('buffer_updated', self)
             ## self.message("Saved {!r} successfully.".format(filename))

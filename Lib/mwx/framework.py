@@ -1090,7 +1090,7 @@ class ShellFrame(MiniFrame):
                                 buffer.filename, buffer.lineno))
                 self.Log.push_current()
                 with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
-                    f.write(self.Log.default_buffer.text)
+                    f.write(self.Log.default_buffer.Text)
                 
                 for buffer in self.Scratch.all_buffers():
                     if buffer.mtdelta is not None:
@@ -1098,7 +1098,7 @@ class ShellFrame(MiniFrame):
                                 buffer.filename, buffer.lineno))
                 self.Scratch.push_current()
                 with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
-                    f.write(self.Scratch.default_buffer.text)
+                    f.write(self.Scratch.default_buffer.Text)
             return True
         except Exception:
             traceback.print_exc()
@@ -1413,10 +1413,10 @@ class ShellFrame(MiniFrame):
     def add_log(self, text):
         """Add text to the logging buffer."""
         buffer = self.Log.default_buffer
-        buffer.text += text
+        buffer.Text += text
         if self.Log.buffer is buffer:
             with self.Log.off_readonly() as ed:
-                ed.SetText(buffer.text)
+                ed.SetText(buffer.Text)
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
             f.write(text)
