@@ -1801,13 +1801,13 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     def load_cache(self, filename, lineno=0, globals=None):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        buf.load_cache(filename, lineno, globals)
         self.swap_buffer(buf)
+        return buf.load_cache(filename, lineno, globals)
     
     def load_file(self, filename, lineno=0):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        buf.load_file(filename, lineno)
         self.swap_buffer(buf)
+        return buf.load_file(filename, lineno)
 
 
 class Interpreter(interpreter.Interpreter):

@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.73.0"
+__version__ = "0.74rc"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1411,12 +1411,8 @@ class ShellFrame(MiniFrame):
     
     def add_log(self, text):
         """Add text to the logging buffer."""
-        buffer = self.Log.default_buffer
-        buffer.Text += text
-        ## if self.Log.buffer is buffer:
-        ##     with self.Log.off_readonly() as ed:
-        ##         ed.SetText(buffer.Text)
-        
+        with self.Log.default_buffer.off_readonly() as ed:
+            ed.write(text)
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
             f.write(text)
