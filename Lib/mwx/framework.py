@@ -1059,7 +1059,6 @@ class ShellFrame(MiniFrame):
         try:
             if self.Scratch.buffer.mtdelta is None:
                 self.Scratch.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
-                self.Scratch.push_current()
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1088,7 +1087,7 @@ class ShellFrame(MiniFrame):
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-                self.Log.push_current()
+                
                 with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Log.default_buffer.Text)
                 
@@ -1096,7 +1095,7 @@ class ShellFrame(MiniFrame):
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.lineno))
-                self.Scratch.push_current()
+                
                 with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Scratch.default_buffer.Text)
             return True
@@ -1414,16 +1413,17 @@ class ShellFrame(MiniFrame):
         """Add text to the logging buffer."""
         buffer = self.Log.default_buffer
         buffer.Text += text
-        if self.Log.buffer is buffer:
-            with self.Log.off_readonly() as ed:
-                ed.SetText(buffer.Text)
+        ## if self.Log.buffer is buffer:
+        ##     with self.Log.off_readonly() as ed:
+        ##         ed.SetText(buffer.Text)
+        
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
             f.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
-        with self.Help.off_readonly() as ed:
+        with self.Help.buffer.off_readonly() as ed:
             ed.SetText(text)
         self.popup_window(self.Help, focus=0)
     
@@ -1431,7 +1431,7 @@ class ShellFrame(MiniFrame):
         """Add text to the history buffer."""
         if not text or text.isspace():
             return
-        with self.History.off_readonly() as ed:
+        with self.History.buffer.off_readonly() as ed:
             ed.goto_char(ed.TextLength) # line to set an arrow marker
             ed.write(text)
             if noerr is not None:

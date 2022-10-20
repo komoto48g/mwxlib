@@ -14,7 +14,7 @@ import sys
 import os
 import re
 import wx
-from wx import stc
+from wx import stc, aui
 from wx.py import dispatcher
 from wx.py import introspect
 from wx.py import interpreter
@@ -108,10 +108,6 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
-                  'C-; pressed' : (0, _F(self.comment_out_line)),
-                'C-S-; pressed' : (0, _F(self.comment_out_line)),
-                  'C-: pressed' : (0, _F(self.uncomment_line)),
-                'C-S-: pressed' : (0, _F(self.uncomment_line)),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin),
             },
@@ -134,8 +130,6 @@ class EditorInterface(CtrlInterface):
         self.define_key('C-x @', self.goto_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
         self.define_key('C-x C-x', self.exchange_point_and_mark)
-        self.define_key('C-x [', self.beginning_of_buffer)
-        self.define_key('C-x ]', self.end_of_buffer)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -680,8 +674,8 @@ class EditorInterface(CtrlInterface):
             self.message("- {!r}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
-            self.buffer.codename = filename
-            self.buffer.code = code
+            self.codename = filename
+            self.code = code
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
@@ -694,10 +688,10 @@ class EditorInterface(CtrlInterface):
             It requires a code object compiled using `py_exec_region`.
             If the code doesn't exists, it returns the folding region.
         """
-        if not self.buffer.code:
+        if not self.code:
             return self.get_region(line)
         lc, le = 0, self.LineCount
-        linestarts = list(dis.findlinestarts(self.buffer.code))
+        linestarts = list(dis.findlinestarts(self.code))
         for i, ln in reversed(linestarts):
             if line >= ln-1:
                 lc = ln-1
@@ -1393,72 +1387,15 @@ class EditorInterface(CtrlInterface):
         self.ReplaceSelection('')
 
 
-class Buffer:
-    """Data class of buffer
+class Buffer(EditWindow, EditorInterface):
+    """Python code buffer.
     
     Attributes:
         filename    : buffer-file-name
         lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
-        Text        : buffer text
-    """
-    def __init__(self, filename=None, lineno=0):
-        self.filename = filename
-        self.lineno = 0
-        self.codename = None
-        self.code = None
-        self.Text = ''
-        self._fileText = ''
-    
-    def __contains__(self, v):
-        if inspect.iscode(v) and self.code:
-            return v is self.code\
-                or v in self.code.co_consts
-        else:
-            return v in (self.filename, self.codename)
-    
-    def __str__(self):
-        return "{}:{}".format(self.filename, self.lineno)
-    
-    @property
-    def target(self):
-        """Returns codename or filename (referred by debugger)."""
-        return self.codename or self.filename
-    
-    @property
-    def name(self):
-        return os.path.basename(self.target)
-    
-    @property
-    def filename(self):
-        return self.__filename
-    
-    @filename.setter
-    def filename(self, f):
-        if f and os.path.isfile(f):
-            self.__mtime = os.path.getmtime(f)
-        else:
-            self.__mtime = None
-        self.__filename = f
-    
-    @property
-    def mtdelta(self):
-        """Timestamp delta (for checking external mod)."""
-        f = self.filename
-        if f and os.path.isfile(f):
-            return os.path.getmtime(f) - self.__mtime
-
-
-class Editor(EditWindow, EditorInterface):
-    """Python code editor.
-    
-    Args:
-        name        : buffer-name (e.g. 'Scratch') => wx.Window.Name
-    
-    Attributes:
-        Name        : buffer-name
-        buffer      : current buffer
+        text        : buffer text
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1490,17 +1427,47 @@ class Editor(EditWindow, EditorInterface):
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
     
-    def __init__(self, parent, name="editor", **kwargs):
+    @property
+    def target(self):
+        """Returns codename or filename (referenced by the debugger)."""
+        return self.codename or self.filename
+    
+    @property
+    def name(self):
+        if self.codename and self.filename:
+            return "{} {}".format(self.codename, self.filename)
+        else:
+            return self.codename or self.filename
+    
+    @property
+    def filename(self):
+        return self.__filename
+    
+    @filename.setter
+    def filename(self, f):
+        if f and os.path.isfile(f):
+            self.__mtime = os.path.getmtime(f)
+        else:
+            self.__mtime = None
+        self.__filename = f
+    
+    @property
+    def mtdelta(self):
+        """Timestamp delta (for checking external mod)."""
+        f = self.filename
+        if f and os.path.isfile(f):
+            return os.path.getmtime(f) - self.__mtime
+    
+    def __init__(self, parent, filename=None, lineno=0, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
-        self.Name = name
-        self.default_name = "*{}*".format(name.lower())
-        self.default_buffer = Buffer(self.default_name)
-        self.buffer = self.default_buffer
-        self.__buffers = [self.buffer]
+        self.filename = filename
+        self.lineno = 0
+        self.codename = None
+        self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
@@ -1517,13 +1484,20 @@ class Editor(EditWindow, EditorInterface):
             self.handler('editor_inactivated', self)
             v.Skip()
         
-        self.handler.update({ # DNA<Editor>
+        def dispatch(v):
+            """Fork mouse events to the parent."""
+            self.parent.handler(self.handler.event, v)
+        
+        self.handler.update({ # DNA<Buffer>
             None : {
                   'stc_updated' : [ None, ],
                'buffer_updated' : [ None, self.on_activated ],
              'editor_activated' : [ None, self.on_activated ],
            'editor_inactivated' : [ None, self.on_inactivated ],
            'py_region_executed' : [ None, self.on_activated ],
+                     '* dclick' : [ None, dispatch ],
+                    '* pressed' : [ None, dispatch ],
+                   '* released' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1534,17 +1508,21 @@ class Editor(EditWindow, EditorInterface):
             },
             0 : { # Normal mode
                'escape pressed' : (-1, self.on_enter_escmap),
-                 'M-up pressed' : (0, _F(self.previous_buffer)),
-               'M-down pressed' : (0, _F(self.next_buffer)),
             },
         })
         
-        self.define_key('C-x k', self.remove_all_buffers, alias="kill-all-buffers")
-        self.define_key('C-x C-k', self.remove_buffer, alias="kill-buffer")
-        self.define_key('C-x C-n', self.new_buffer)
-        
         self.show_folder()
         self.set_style(self.STYLE)
+    
+    def __contains__(self, v):
+        if inspect.iscode(v) and self.code:
+            return v is self.code\
+                or v in self.code.co_consts
+        else:
+            return v in (self.filename, self.codename)
+    
+    def __str__(self):
+        return "{}:{}".format(self.name, self.lineno)
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -1557,7 +1535,7 @@ class Editor(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        if self.buffer.mtdelta is not None:
+        if self.mtdelta is not None:
             self.parent.handler('caption_page', self, '* ' + self.Name)
         evt.Skip()
     
@@ -1567,10 +1545,10 @@ class Editor(EditWindow, EditorInterface):
     
     def on_activated(self, editor):
         """Called when editor:self is activated."""
-        if self.buffer.mtdelta:
+        if self.mtdelta:
             self.message("{!r} has been modified externally."
-                         .format(self.buffer.filename))
-        title = "{} file: {}".format(self.Name, self.buffer.filename)
+                         .format(self.filename))
+        title = "{} file: {}".format(self.Name, self.name)
         self.parent.handler('title_window', title)
         self.trace_position()
     
@@ -1593,102 +1571,7 @@ class Editor(EditWindow, EditorInterface):
             self.SetSavePoint()
     
     ## --------------------------------
-    ## Editor system control
-    ## --------------------------------
-    
-    @property
-    def menu(self):
-        """Yields context menu."""
-        def _menu(j, buf):
-            return (j, str(buf), '', wx.ITEM_CHECK,
-                lambda v: self.swap_buffer(buf) and self.SetFocus(),
-                lambda v: v.Check(buf is self.buffer))
-        
-        return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
-    
-    def all_buffers(self):
-        """A list of all buffers that emulate multi-page editor."""
-        return self.__buffers
-    
-    def push_current(self):
-        """Push the current buffer to the buffer list."""
-        self.buffer.lineno = self.markline + 1
-        self.buffer.Text = self.Text
-        if self.buffer not in self.__buffers:
-            self.__buffers.append(self.buffer)
-    
-    def find_buffer(self, f):
-        """Find buffer with specified f:filename or code."""
-        for buf in self.__buffers:
-            if f in buf or f is buf:
-                return buf
-    
-    def swap_buffer(self, buf):
-        """Replace buffer with specified buffer.
-        
-        Note:
-            The buffer will be swapped without confirmation.
-            STC data such as `UndoBuffer` is not restored.
-        """
-        if buf and buf is not self.buffer:
-            if self.buffer:
-                self.push_current() # cache current
-            self.buffer = buf
-            self._reset(buf._fileText or buf.Text)
-            if buf._fileText != buf.Text: # retrieve modified buffer
-                self.Text = buf.Text
-            self.markline = buf.lineno - 1
-            self.goto_mark()
-            self.handler('buffer_updated', self)
-            return True
-    
-    def new_buffer(self):
-        buf = self.default_buffer
-        if not buf or buf.mtdelta is not None: # is saved?
-            buf = Buffer(self.default_name)
-            self.default_buffer = buf
-        self.buffer = buf
-        self._reset()
-        self.push_current()
-        self.handler('buffer_updated', self)
-    
-    def remove_buffer(self):
-        """Pop the current buffer from the buffer list."""
-        rest = self.__buffers
-        j = rest.index(self.buffer)
-        del rest[j]
-        
-        ## Switch to one of the remaining buffers.
-        if rest:
-            if j > len(rest) - 1:
-                j -= 1
-            self.buffer = None # Delete self.buffer to avoid push_current.
-            self.swap_buffer(rest[j])
-        else:
-            self.remove_all_buffers()
-    
-    def remove_all_buffers(self):
-        """Initialize the buffer list."""
-        self.buffer = self.default_buffer
-        self.__buffers = [self.buffer]
-        self._reset()
-        self.push_current()
-        self.handler('buffer_updated', self)
-    
-    def next_buffer(self):
-        rest = self.__buffers
-        j = rest.index(self.buffer)
-        if j+1 < len(rest):
-            self.swap_buffer(rest[j+1])
-    
-    def previous_buffer(self):
-        rest = self.__buffers
-        j = rest.index(self.buffer)
-        if j > 0:
-            self.swap_buffer(rest[j-1])
-    
-    ## --------------------------------
-    ## Buffer file I/O
+    ## File I/O
     ## --------------------------------
     
     def load_cache(self, filename, lineno=0, globals=None):
@@ -1701,14 +1584,10 @@ class Editor(EditWindow, EditorInterface):
         linecache.checkcache(f)
         lines = linecache.getlines(f, globals)
         if lines:
-            self.push_current() # cache current
             self._reset(''.join(lines))
             self.markline = lineno - 1
             self.goto_mark()
-            self.buffer = self.find_buffer(f) or Buffer(f)
-            self.buffer.filename = f
-            self.buffer._fileText = self.Text
-            self.push_current()
+            self.filename = f
             self.handler('buffer_updated', self)
             return True
         return False
@@ -1720,14 +1599,10 @@ class Editor(EditWindow, EditorInterface):
             The file will be reloaded without confirmation.
         """
         f = os.path.abspath(filename)
-        self.push_current() # cache current
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_mark()
-            self.buffer = self.find_buffer(f) or Buffer(f)
-            self.buffer.filename = f
-            self.buffer._fileText = self.Text
-            self.push_current()
+            self.filename = f
             self.handler('buffer_updated', self)
             ## self.message("Loaded {!r} successfully.".format(filename))
             return True
@@ -1741,9 +1616,7 @@ class Editor(EditWindow, EditorInterface):
         """
         f = os.path.abspath(filename)
         if self.SaveFile(f):
-            self.buffer.filename = f
-            self.buffer._fileText = self.Text
-            self.push_current()
+            self.filename = f
             self.handler('buffer_updated', self)
             ## self.message("Saved {!r} successfully.".format(filename))
             return True
@@ -1778,6 +1651,154 @@ class Editor(EditWindow, EditorInterface):
         except Exception as e:
             print("- Failed to save {!r}: {}".format(filename, e))
             return False
+
+
+class Editor(aui.AuiNotebook, CtrlInterface):
+    """Python code editor.
+    
+    Args:
+        name        : buffer-name (e.g. 'Scratch') => wx.Window.Name
+    
+    Attributes:
+        Name        : buffer-name
+        buffer      : current buffer
+    """
+    STYLE = Buffer.STYLE
+    
+    parent = property(lambda self: self.__parent)
+    message = property(lambda self: self.__parent.message)
+    
+    def __init__(self, parent, name="editor", **kwargs):
+        kwargs.setdefault('style',
+            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
+            ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
+            )
+        aui.AuiNotebook.__init__(self, parent, **kwargs)
+        CtrlInterface.__init__(self)
+        
+        self.__parent = parent  # parent:<ShellFrame>
+                                # Parent:<AuiNotebook>
+        self.Name = name
+        self.default_name = "*{}*".format(name.lower())
+        self.default_buffer = Buffer(self, self.default_name)
+        
+        ## self.AddPage(self.default_buffer, self.default_name)
+        self.add_buffer(self.default_buffer)
+        
+        self.handler.update({ # DNA<Editor>
+            0 : { # Normal mode
+                 'M-up pressed' : (0, _F(self.previous_buffer)),
+               'M-down pressed' : (0, _F(self.next_buffer)),
+            },
+        })
+        self.make_keymap('C-x')
+        
+        self.define_key('C-x k', postcall(self.remove_all_buffers))
+        self.define_key('C-x C-k', postcall(self.remove_buffer))
+        self.define_key('C-x C-n', self.new_buffer)
+        
+        ## self.TabCtrlHeight = 0
+    
+    def __getattr__(self, attr):
+        return getattr(self.buffer, attr)
+    
+    def set_style(self, style):
+        for buf in self.all_buffers():
+            buf.set_style(style)
+        self.STYLE = style # apply the style on add_page.
+    
+    def all_buffers(self):
+        for j in range(self.PageCount):
+            yield self.GetPage(j)
+    
+    ## --------------------------------
+    ## Buffer list controls
+    ## --------------------------------
+    
+    @property
+    def menu(self):
+        """Yields context menu."""
+        def _menu(j, buf):
+            return (j, str(buf), '', wx.ITEM_CHECK,
+                lambda v: self.swap_buffer(buf) and self.SetFocus(),
+                lambda v: v.Check(buf is self.buffer))
+        
+        return (_menu(j+1, x) for j, x in enumerate(self.all_buffers()))
+    
+    @property
+    def buffer(self):
+        return self.CurrentPage
+    
+    def find_buffer(self, f):
+        """Find buffer with specified f:filename or code."""
+        for buf in self.all_buffers():
+            if f in buf or f is buf:
+                return buf
+    
+    def swap_buffer(self, buf):
+        """Replace buffer with specified buffer."""
+        if buf:
+            j = self.GetPageIndex(buf)
+            if j != self.Selection:
+                self.Selection = j # the focus is moved
+            return True
+    
+    def add_buffer(self, buf, index=None):
+        name = os.path.basename(buf.filename)
+        if index is None:
+            index = self.PageCount
+        self.InsertPage(index, buf, name, select=True)
+        buf.set_style(self.STYLE)
+    
+    def new_buffer(self):
+        buf = self.default_buffer
+        if not buf or buf.mtdelta is not None: # is saved?
+            buf =  Buffer(self, self.default_name)
+            self.default_buffer = buf
+            self.add_buffer(buf, 0)
+        self.swap_buffer(buf)
+        buf._reset()
+    
+    def remove_buffer(self):
+        """Pop the current buffer from the buffer list."""
+        j = self.GetPageIndex(self.buffer)
+        self.DeletePage(j)
+        
+        ## Switch to one of the remaining buffers.
+        if not self.buffer:
+            self.new_buffer()
+    
+    def remove_all_buffers(self):
+        """Initialize list of buffers."""
+        self.DeleteAllPages()
+        self.new_buffer()
+    
+    def next_buffer(self):
+        self.Selection += 1
+    
+    def previous_buffer(self):
+        self.Selection -= 1
+    
+    ## --------------------------------
+    ## File I/O
+    ## --------------------------------
+    
+    def load_cache(self, filename, lineno=0, globals=None):
+        buf = self.find_buffer(filename)
+        if not buf:
+            buf = Buffer(self, filename) # create-new-buffer
+            self.add_buffer(buf)
+        buf.load_cache(filename, lineno, globals)
+        self.swap_buffer(buf)
+    
+    def load_file(self, filename, lineno=0):
+        buf = self.find_buffer(filename)
+        if not buf:
+            buf = Buffer(self, filename) # create-new-buffer
+            self.add_buffer(buf)
+        buf.load_file(filename, lineno)
+        self.swap_buffer(buf)
 
 
 class Interpreter(interpreter.Interpreter):
