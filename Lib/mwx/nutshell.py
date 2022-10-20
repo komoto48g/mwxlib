@@ -108,6 +108,10 @@ class EditorInterface(CtrlInterface):
                 'S-tab pressed' : (0, self.on_outdent_line),
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
+                  'C-; pressed' : (0, _F(self.comment_out_line)),
+                'C-S-; pressed' : (0, _F(self.comment_out_line)),
+                  'C-: pressed' : (0, _F(self.uncomment_line)),
+                'C-S-: pressed' : (0, _F(self.uncomment_line)),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin),
             },
@@ -130,6 +134,8 @@ class EditorInterface(CtrlInterface):
         self.define_key('C-x @', self.goto_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
         self.define_key('C-x C-x', self.exchange_point_and_mark)
+        self.define_key('C-x [', self.beginning_of_buffer)
+        self.define_key('C-x ]', self.end_of_buffer)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
