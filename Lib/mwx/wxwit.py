@@ -169,8 +169,7 @@ def miniIcon(key, size=(16,16)):
     return art.GetImage().Scale(*size).ConvertToBitmap()
 
 
-def dump(self):
-    from pprint import pprint
+def dumptree(self):
     def _dump(parent):
         item, cookie = self.GetFirstChild(parent)
         while item:
@@ -180,7 +179,7 @@ def dump(self):
             if data:
                 yield data
             item, cookie = self.GetNextChild(parent, cookie)
-    pprint(list(_dump(self.RootItem)))
+    return list(_dump(self.RootItem))
 
 
 if __name__ == "__main__":
@@ -190,6 +189,6 @@ if __name__ == "__main__":
     frm = Frame(None)
     frm.plug = Inspector(frm)
     frm.plug.watch(frm)
-    dump(frm.plug)
+    pp(dumptree(frm.plug))
     frm.Show()
     app.MainLoop()

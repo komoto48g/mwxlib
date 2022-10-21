@@ -1665,6 +1665,17 @@ def filling(obj=None, label=None, **kwargs):
     return frame
 
 
+def dump(widget=None):
+    def _dump(widget):
+        for obj in widget.Children:
+            yield obj
+            yield from _dump(obj) # dump as flatiter
+    if widget:
+        return list(_dump(widget))
+    else:
+        return [[w, list(_dump(w))] for w in wx.GetTopLevelWindows()]
+
+
 if __name__ == "__main__":
     from mwx.nutshell import Editor
     
