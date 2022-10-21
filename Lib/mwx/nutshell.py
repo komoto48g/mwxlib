@@ -1746,7 +1746,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         """Yields context menu."""
         def _menu(j, buf):
             return (j, str(buf), '', wx.ITEM_CHECK,
-                lambda v: self.swap_buffer(buf) and self.SetFocus(),
+                lambda v: self.swap_buffer(buf).SetFocus(),
                 lambda v: v.Check(buf is self.buffer))
         
         return (_menu(j+1, x) for j, x in enumerate(self.all_buffers()))
@@ -1788,7 +1788,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             buf = self.create_new_buffer(self.default_name, 0)
             self.default_buffer = buf
         buf._reset()
-        return self.swap_buffer(buf)
+        self.swap_buffer(buf)
     
     def remove_buffer(self):
         """Pop the current buffer from the buffer list."""
