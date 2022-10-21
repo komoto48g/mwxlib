@@ -1602,7 +1602,7 @@ class Editor(EditWindow, EditorInterface):
         """Yields context menu."""
         def _menu(j, buf):
             return (j, str(buf), '', wx.ITEM_CHECK,
-                lambda v: self.swap_buffer(buf) and self.SetFocus(),
+                lambda v: (self.swap_buffer(buf), self.SetFocus()),
                 lambda v: v.Check(buf is self.buffer))
         
         return (_menu(j+1, x) for j, x in enumerate(self.__buffers))
@@ -1641,7 +1641,6 @@ class Editor(EditWindow, EditorInterface):
             self.markline = buf.lineno - 1
             self.goto_mark()
             self.handler('buffer_updated', self)
-            return True
     
     def new_buffer(self):
         buf = self.default_buffer
