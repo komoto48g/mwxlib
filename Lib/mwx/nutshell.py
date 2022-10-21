@@ -1313,7 +1313,8 @@ class EditorInterface(CtrlInterface):
         if to_ is not None: self.cpos = to_
         with self.pre_selection():
             text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
-            self.ReplaceSelection(text)
+            if text != self.SelectedText:
+                self.ReplaceSelection(text)
     
     @editable
     def comment_out_line(self):
