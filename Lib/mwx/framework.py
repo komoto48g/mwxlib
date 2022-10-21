@@ -755,7 +755,9 @@ class AuiNotebook(aui.AuiNotebook):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-          &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+            ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
+            )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
         self.parent = self.Parent
@@ -818,10 +820,10 @@ class ShellFrame(MiniFrame):
         console     : Notebook of shells
         ghost       : Notebook of editors and inspectors
         watcher     : Notebook of global/locals info watcher
-        Scratch     : buffer for scratch (tooltip)
-        Help        : buffer for help
-        Log         : buffer for logging
-        History     : buffer for shell history
+        Scratch     : Editor of scratch (tooltip)
+        Help        : Editor of help
+        Log         : Editor of logging
+        History     : Editor of shell history
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
     
@@ -836,7 +838,7 @@ class ShellFrame(MiniFrame):
         @profile    : Profile a single function call.
         @filling    : Inspection using ``wx.lib.filling.Filling``.
         @watch      : Inspection using ``wx.lib.inspection.InspectionTool``.
-        @load       : Load file in Log buffer.
+        @load       : Load file in Log.
         @where      : Displays filename:lineno or the module name.
         @mro        : Displays mro list and filename:lineno or the module name.
         @debug      : Open pdb or event-monitor.
@@ -1012,8 +1014,8 @@ class ShellFrame(MiniFrame):
              '*f[0-9]* pressed' : (0, ),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
               'M-right pressed' : (0, _F(self.other_window, p=+1)),
-             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
-             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
+             ## 'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
+             ## 'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
         })
         
@@ -1451,11 +1453,14 @@ class ShellFrame(MiniFrame):
         "Move focus to other window"
         win = wx.Window.FindFocus()
         pages = [page for page in self.all_pages() if page.IsShownOnScreen()]
-        if win in pages:
-            j = pages.index(win) + p
-            if mod:
-                j %= len(pages)
-            pages[j].SetFocus()
+        while win:
+            if win in pages:
+                j = pages.index(win) + p
+                if mod:
+                    j %= len(pages)
+                pages[j].SetFocus()
+                break
+            win = win.Parent
     
     def add_shell(self, shell, caption=None):
         self.console.AddPage(shell, caption or typename(shell.target))
@@ -1494,7 +1499,7 @@ class ShellFrame(MiniFrame):
     def current_editor(self):
         """Currently focused editor or shell."""
         win = wx.Window.FindFocus()
-        if win in self.all_pages(stc.StyledTextCtrl):
+        if isinstance(win, stc.StyledTextCtrl): #<Editor>
             return win
     
     @property
