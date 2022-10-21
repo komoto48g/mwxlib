@@ -997,7 +997,6 @@ class ShellFrame(MiniFrame):
                      'add_help' : [ None, self.add_help ],
                   'add_history' : [ None, self.add_history ],
                  'title_window' : [ None, self.on_title_window ],
-                 'caption_page' : [ None, self.on_caption_page ]
             },
             0 : {
                     '* pressed' : (0, skip, fork), # => debugger
@@ -1401,11 +1400,11 @@ class ShellFrame(MiniFrame):
         self.SetTitle("Nautilus - {}".format(
                       obj if isinstance(obj, str) else repr(obj)))
     
-    def on_caption_page(self, page, caption):
+    def on_caption_page(self, page, prefix):
         """Set caption to the tab control."""
         try:
-            ## the page must have parent:AuiNotebook
-            page.Parent.set_page_caption(page, caption)
+            nb = page.Parent
+            nb.set_page_caption(page, "{} {}".format(prefix, page.Name))
         except AttributeError:
             pass
     

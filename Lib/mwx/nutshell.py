@@ -1536,11 +1536,11 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        self.parent.handler('caption_page', self, True)
+        self.parent.handler('caption_page', self, '*')
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self.parent.handler('caption_page', self, False)
+        self.parent.handler('caption_page', self, '')
         evt.Skip()
     
     def on_activated(self, editor):
@@ -1711,13 +1711,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def on_title_window(self, title):
         self.parent.handler('title_window', title)
     
-    def on_caption_page(self, buf, edited):
-        prefix = '* ' if edited else ''
+    def on_caption_page(self, buf, prefix=''):
         if buf.mtdelta is not None:
             _p, tab, idx = self.FindTab(buf)
-            tab.GetPage(idx).caption = prefix + buf.name
+            tab.GetPage(idx).caption = "{} {}".format(prefix, buf.name)
             tab.Refresh()
-        ## self.parent.handler('caption_page', self, prefix + self.Name)
     
     def set_style(self, style):
         for buf in self.all_buffers():
