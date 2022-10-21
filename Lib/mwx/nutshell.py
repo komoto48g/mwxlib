@@ -71,7 +71,6 @@ class EditorInterface(CtrlInterface):
         
         self.handler.update({ # DNA<EditorInterface>
             None : {
-              '*button* dclick' : [ None, dispatch, skip ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },

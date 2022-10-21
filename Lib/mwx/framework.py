@@ -1003,6 +1003,7 @@ class ShellFrame(MiniFrame):
             },
             0 : {
                     '* pressed' : (0, skip, fork), # => debugger
+                   '* released' : (0, skip, fork), # => debugger
                   'C-g pressed' : (0, self.Quit, fork), # => debugger
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
