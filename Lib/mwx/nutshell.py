@@ -1098,7 +1098,7 @@ class EditorInterface(CtrlInterface):
                 self.IndicatorFillRange(p, lw)
         self.__lines = sorted(set(lines)) # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
-        self.parent.findData.FindString = text
+        self.TopLevelParent.findData.FindString = text
     
     def on_filter_text_enter(self, evt):
         if not self.__lines:
