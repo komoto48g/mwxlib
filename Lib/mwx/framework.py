@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74rc"
+__version__ = "0.74rc1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1446,11 +1446,14 @@ class ShellFrame(MiniFrame):
         "Move focus to other window"
         win = wx.Window.FindFocus()
         pages = [page for page in self.all_pages() if page.IsShownOnScreen()]
-        if win in pages:
-            j = pages.index(win) + p
-            if mod:
-                j %= len(pages)
-            pages[j].SetFocus()
+        while win:
+            if win in pages:
+                j = pages.index(win) + p
+                if mod:
+                    j %= len(pages)
+                pages[j].SetFocus()
+                break
+            win = win.Parent
     
     def add_shell(self, shell, caption=None):
         self.console.AddPage(shell, caption or typename(shell.target))
@@ -1489,7 +1492,7 @@ class ShellFrame(MiniFrame):
     def current_editor(self):
         """Currently focused editor or shell."""
         win = wx.Window.FindFocus()
-        if win in self.all_pages(stc.StyledTextCtrl):
+        if isinstance(win, stc.StyledTextCtrl): #<Editor>
             return win
     
     @property

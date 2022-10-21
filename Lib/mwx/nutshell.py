@@ -1689,6 +1689,10 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         
         self.AddPage(self.default_buffer, self.default_name)
         
+        def dispatch(v):
+            """Fork mouse events to the parent."""
+            self.parent.handler(self.handler.event, v)
+        
         self.handler.update({ # DNA<Editor>
             None : {
                  'title_window' : [ None, self.on_title_window ],
@@ -1699,6 +1703,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                    '* released' : (0, skip),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
+               'M-left pressed' : (0, dispatch),
+              'M-right pressed' : (0, dispatch),
             },
         })
         self.make_keymap('C-x')
