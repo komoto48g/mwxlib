@@ -755,7 +755,9 @@ class AuiNotebook(aui.AuiNotebook):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-          &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE))
+            ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
+            )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
         self.parent = self.Parent
@@ -1011,8 +1013,8 @@ class ShellFrame(MiniFrame):
              '*f[0-9]* pressed' : (0, ),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
               'M-right pressed' : (0, _F(self.other_window, p=+1)),
-             'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
-             'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
+             ## 'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
+             ## 'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
         })
         
@@ -1156,9 +1158,9 @@ class ShellFrame(MiniFrame):
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         if nb.CurrentPage is self.rootshell:
-            nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
-            nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            nb.WindowStyle |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
     

@@ -1675,7 +1675,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def __init__(self, parent, name="editor", **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
-            ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            ## ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, parent, **kwargs)
