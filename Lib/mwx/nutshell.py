@@ -71,13 +71,12 @@ class EditorInterface(CtrlInterface):
         
         self.handler.update({ # DNA<EditorInterface>
             None : {
-              '*button* dclick' : [ None, dispatch, skip ],
-             '*button* pressed' : [ None, dispatch, skip ],
-            '*button* released' : [ None, dispatch, skip ],
                      'mark_set' : [ None, dispatch ],
                    'mark_unset' : [ None, dispatch ],
                   'pointer_set' : [ None, dispatch ],
                 'pointer_unset' : [ None, dispatch ],
+             '*button* pressed' : [ None, dispatch, skip ],
+            '*button* released' : [ None, dispatch, skip ],
             },
             0 : {
                     '* pressed' : (0, skip),
@@ -1516,6 +1515,20 @@ class Buffer(EditWindow, EditorInterface):
                'escape pressed' : (-1, self.on_enter_escmap),
             },
         })
+        self.handler.append({ # DNA<Buffer>
+            0 : {
+                  'C-x pressed' : ('C-x', dispatch),
+                  'C-c pressed' : ('C-c', dispatch),
+            },
+            'C-x' : {
+                    '* pressed' : (0, dispatch),
+                   '* released' : (0, dispatch),
+            },
+            'C-c' : {
+                    '* pressed' : (0, dispatch),
+                   '* released' : (0, dispatch),
+            },
+        })
         
         self.show_folder()
         self.set_style(self.STYLE)
@@ -1709,6 +1722,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             },
         })
         self.make_keymap('C-x')
+        self.make_keymap('C-c')
         
         self.define_key('C-x k', postcall(self.remove_all_buffers))
         self.define_key('C-x C-k', postcall(self.remove_buffer))
