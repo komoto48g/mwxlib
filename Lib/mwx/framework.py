@@ -818,10 +818,10 @@ class ShellFrame(MiniFrame):
         console     : Notebook of shells
         ghost       : Notebook of editors and inspectors
         watcher     : Notebook of global/locals info watcher
-        Scratch     : buffer for scratch (tooltip)
-        Help        : buffer for help
-        Log         : buffer for logging
-        History     : buffer for shell history
+        Scratch     : Editor of scratch (tooltip)
+        Help        : Editor of help
+        Log         : Editor of logging
+        History     : Editor of shell history
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
     
@@ -836,7 +836,7 @@ class ShellFrame(MiniFrame):
         @profile    : Profile a single function call.
         @filling    : Inspection using ``wx.lib.filling.Filling``.
         @watch      : Inspection using ``wx.lib.inspection.InspectionTool``.
-        @load       : Load file in Log buffer.
+        @load       : Load file in Log.
         @where      : Displays filename:lineno or the module name.
         @mro        : Displays mro list and filename:lineno or the module name.
         @debug      : Open pdb or event-monitor.
@@ -1057,7 +1057,7 @@ class ShellFrame(MiniFrame):
         """Load session from file."""
         try:
             if self.Scratch.buffer.mtdelta is None:
-                self.Scratch.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
+                self.Scratch.buffer.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1171,7 +1171,7 @@ class ShellFrame(MiniFrame):
         evt.Skip()
     
     def About(self, evt=None):
-        with self.Help.off_readonly() as ed:
+        with self.Help.buffer.off_readonly() as ed:
             ed.SetText('\n\n'.join((
                 "#<module 'mwx' from {!r}>".format(__file__),
                 "Author: {!r}".format(__author__),

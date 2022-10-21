@@ -74,6 +74,10 @@ class EditorInterface(CtrlInterface):
               '*button* dclick' : [ None, dispatch, skip ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
+                     'mark_set' : [ None, dispatch ],
+                   'mark_unset' : [ None, dispatch ],
+                  'pointer_set' : [ None, dispatch ],
+                'pointer_unset' : [ None, dispatch ],
             },
             0 : {
                     '* pressed' : (0, skip),
@@ -99,7 +103,7 @@ class EditorInterface(CtrlInterface):
                   'C-t pressed' : (0, ),                  # overrides transpose-line
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
-            'C-S-space pressed' : (0, _F(self.set_line_mark)),
+            'C-S-space pressed' : (0, _F(self.set_pointer)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -384,7 +388,7 @@ class EditorInterface(CtrlInterface):
     def set_mark(self):
         self.mark = self.cpos
     
-    def set_line_mark(self):
+    def set_pointer(self):
         if self.pointer == self.cline:
             self.pointer = -1 # toggle marker
         else:
@@ -393,7 +397,7 @@ class EditorInterface(CtrlInterface):
     def goto_mark(self):
         self.goto_marker(0b001)
     
-    def goto_line_mark(self):
+    def goto_pointer(self):
         self.goto_marker(0b11000)
     
     def exchange_point_and_mark(self):
