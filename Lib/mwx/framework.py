@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74rc1"
+__version__ = "0.74rc2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1013,8 +1013,6 @@ class ShellFrame(MiniFrame):
              '*f[0-9]* pressed' : (0, ),
                'M-left pressed' : (0, _F(self.other_window, p=-1)),
               'M-right pressed' : (0, _F(self.other_window, p=+1)),
-             ## 'Xbutton1 pressed' : (0, _F(self.other_editor, p=-1, mod=0)),
-             ## 'Xbutton2 pressed' : (0, _F(self.other_editor, p=+1, mod=0)),
             },
         })
         
@@ -1433,16 +1431,6 @@ class ShellFrame(MiniFrame):
             ed.write(text)
             if noerr is not None:
                 ed.MarkerAdd(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
-    
-    def other_editor(self, p=1, mod=True):
-        "Move focus to other page (no loop)"
-        win = wx.Window.FindFocus()
-        nb = win.Parent
-        if nb in (self.console, self.ghost):
-            j = nb.Selection + p
-            if mod:
-                j %= nb.PageCount
-            nb.Selection = j
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
