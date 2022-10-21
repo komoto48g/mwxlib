@@ -1558,11 +1558,11 @@ class Editor(EditWindow, EditorInterface):
     
     def OnSavePointLeft(self, evt):
         if self.buffer.mtdelta is not None:
-            self.parent.handler('caption_page', self, '* ' + self.Name)
+            self.parent.handler('caption_page', self, '*')
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self.parent.handler('caption_page', self, self.Name)
+        self.parent.handler('caption_page', self, '')
         evt.Skip()
     
     def on_activated(self, editor):

@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.73.0"
+__version__ = "0.73.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1402,11 +1402,11 @@ class ShellFrame(MiniFrame):
         self.SetTitle("Nautilus - {}".format(
                       obj if isinstance(obj, str) else repr(obj)))
     
-    def on_caption_page(self, page, caption):
+    def on_caption_page(self, page, prefix):
         """Set caption to the tab control."""
         try:
-            ## the page must have parent:AuiNotebook
-            page.Parent.set_page_caption(page, caption)
+            nb = page.Parent
+            nb.set_page_caption(page, "{} {}".format(prefix, page.Name))
         except AttributeError:
             pass
     
