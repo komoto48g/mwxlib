@@ -1442,10 +1442,6 @@ class Buffer(EditWindow, EditorInterface):
         return self.codename or self.filename
     
     @property
-    def name(self):
-        return os.path.basename(self.target)
-    
-    @property
     def filename(self):
         return self.__filename
     
@@ -1472,7 +1468,7 @@ class Buffer(EditWindow, EditorInterface):
                                 # Parent:<AuiNotebook>
         self.filename = filename
         self.lineno = 0
-        self.codename = None
+        self.codename = ''
         self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1564,7 +1560,11 @@ class Buffer(EditWindow, EditorInterface):
         if self.mtdelta:
             self.message("{!r} has been modified externally."
                          .format(self.filename))
-        title = "{} file: {}".format(self.parent.Name, self.filename)
+        if self.code:
+            name = self.codename + ' ' + self.filename
+        else:
+            name = self.filename
+        title = "{} file: {}".format(self.parent.Name, name)
         self.parent.handler('title_window', title)
         self.trace_position()
     
@@ -1673,11 +1673,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     """Python code editor.
     
     Args:
-        name        : buffer-name (e.g. 'Scratch') => wx.Window.Name
-    
-    Attributes:
-        Name        : buffer-name
-        buffer      : current buffer
+        name : Window.Name (e.g. 'Scratch')
     """
     STYLE = Buffer.STYLE
     
@@ -1707,7 +1703,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         
         self.handler.update({ # DNA<Editor>
             None : {
-                 'title_window' : [ None, self.on_title_window ],
+                 'title_window' : [ None, dispatch ],
                  'caption_page' : [ None, self.on_caption_page ],
             },
             0 : { # Normal mode
@@ -1731,13 +1727,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def __getattr__(self, attr):
         return getattr(self.buffer, attr)
     
-    def on_title_window(self, title):
-        self.parent.handler('title_window', title)
-    
     def on_caption_page(self, buf, prefix=''):
         if buf.mtdelta is not None:
             _p, tab, idx = self.FindTab(buf)
-            tab.GetPage(idx).caption = "{} {}".format(prefix, buf.name)
+            name = os.path.basename(buf.filename)
+            tab.GetPage(idx).caption = "{} {}".format(prefix, name)
             tab.Refresh()
     
     def set_style(self, style):
