@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.73.3"
+__version__ = "0.73.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -782,26 +782,32 @@ class AuiNotebook(aui.AuiNotebook):
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
         page = self.CurrentPage
-        obj = evt.EventObject #<wx._aui.AuiTabCtrl>, <wx._aui.AuiNotebook>
-        if obj is self.ActiveTabCtrl:
-            win = obj.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
-            if not win.IsShownOnScreen():
-                ## Check if the (selected) window is hidden now.
-                ## False means that the page will be hidden by the window.
-                page.handler('page_hidden', page)
+        obj = evt.EventObject #<wx._aui.AuiTabCtrl><wx._aui.AuiNotebook>
+        try:
+            if obj is self.ActiveTabCtrl:
+                win = obj.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
+                if not win.IsShownOnScreen():
+                    ## Check if the (selected) window is hidden now.
+                    ## False means that the page will be hidden by the window.
+                    page.handler('page_hidden', page)
+        except AttributeError:
+            pass
         evt.Skip()
     
-    if wx.VERSION < (4,1,0):
-        ActiveTabCtrl = None
-    
     def get_page_caption(self, win):
-        _p, tab, idx = self.FindTab(win)
-        return tab.GetPage(idx).caption
+        try:
+            _p, tab, idx = self.FindTab(win)
+            return tab.GetPage(idx).caption
+        except AttributeError:
+            pass
     
     def set_page_caption(self, win, caption):
-        _p, tab, idx = self.FindTab(win)
-        tab.GetPage(idx).caption = caption
-        tab.Refresh()
+        try:
+            _p, tab, idx = self.FindTab(win)
+            tab.GetPage(idx).caption = caption
+            tab.Refresh()
+        except AttributeError:
+            pass
     
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks."""
