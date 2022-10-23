@@ -1728,11 +1728,14 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         return getattr(self.buffer, attr)
     
     def on_caption_page(self, buf, prefix=''):
-        if buf.mtdelta is not None:
-            _p, tab, idx = self.FindTab(buf)
-            name = os.path.basename(buf.filename)
-            tab.GetPage(idx).caption = "{} {}".format(prefix, name)
-            tab.Refresh()
+        try:
+            if buf.mtdelta is not None:
+                _p, tab, idx = self.FindTab(buf)
+                name = os.path.basename(buf.filename)
+                tab.GetPage(idx).caption = "{} {}".format(prefix, name)
+                tab.Refresh()
+        except AttributeError:
+            pass
     
     def set_style(self, style):
         for buf in self.all_buffers():

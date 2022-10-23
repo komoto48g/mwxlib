@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74rc2"
+__version__ = "0.74rc3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -767,7 +767,9 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
+        tab = evt.EventObject
+        if not isinstance(tab, aui.AuiTabCtrl):
+            return
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
         if getattr(page, 'menu', None):
             Menu.Popup(self, page.menu)
@@ -1400,14 +1402,6 @@ class ShellFrame(MiniFrame):
         """Set title to the frame."""
         self.SetTitle("Nautilus - {}".format(
                       obj if isinstance(obj, str) else repr(obj)))
-    
-    def on_caption_page(self, page, prefix):
-        """Set caption to the tab control."""
-        try:
-            nb = page.Parent
-            nb.set_page_caption(page, "{} {}".format(prefix, page.Name))
-        except AttributeError:
-            pass
     
     def add_log(self, text):
         """Add text to the logging buffer."""
