@@ -1828,19 +1828,36 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     ## File I/O
     ## --------------------------------
     
+    @contextlib.contextmanager
+    def save_window_excursion(self):
+        try:
+            self.Freeze()
+            wnd = wx.Window.FindFocus() # original focus
+            yield
+        finally:
+            self.Thaw()
+            if wnd:
+                wnd.SetFocus()
+    
     def load_cache(self, filename, lineno=0, globals=None):
-        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        self.swap_buffer(buf)
-        return buf.load_cache(filename, lineno, globals)
+        with self.save_window_excursion():
+            buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+            if buf.load_cache(filename, lineno, globals):
+                self.swap_buffer(buf)
+                return True
+            else:
+                self.remove_buffer(buf)
+                return False
     
     def load_file(self, filename, lineno=0):
-        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        if buf.load_file(filename, lineno):
-            self.swap_buffer(buf)
-            return True
-        else:
-            self.remove_buffer(buf)
-            return False
+        with self.save_window_excursion():
+            buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+            if buf.load_file(filename, lineno):
+                self.swap_buffer(buf)
+                return True
+            else:
+                self.remove_buffer(buf)
+                return False
 
 
 class Interpreter(interpreter.Interpreter):
