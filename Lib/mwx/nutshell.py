@@ -1537,8 +1537,6 @@ class Buffer(EditWindow, EditorInterface):
         if inspect.iscode(v) and self.code:
             return v is self.code\
                 or v in self.code.co_consts
-        else:
-            return v in (self.filename, self.codename)
     
     def __str__(self):
         return "{}:{}".format(self.filename, self.lineno)
@@ -1767,12 +1765,16 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     @property
     def buffer(self):
+        """Returns the currently selected page or None."""
         return self.CurrentPage
     
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
         for buf in self.all_buffers():
-            if f in buf or f is buf:
+            if f is buf or f in buf: # check code
+                return buf
+            elif f == buf.filename\
+              or buf.code and f == buf.codename: # check filename
                 return buf
     
     def swap_buffer(self, buf):
