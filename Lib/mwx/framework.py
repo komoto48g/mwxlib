@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.73.2"
+__version__ = "0.73.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -767,7 +767,9 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
     
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject                  #<wx._aui.AuiTabCtrl>
+        tab = evt.EventObject
+        if not isinstance(tab, aui.AuiTabCtrl):
+            return
         page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
         if getattr(page, 'menu', None):
             Menu.Popup(self, page.menu)
@@ -1159,9 +1161,9 @@ class ShellFrame(MiniFrame):
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         if nb.CurrentPage is self.rootshell:
-            nb.WindowStyle &= ~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
-            nb.WindowStyle |= wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            nb.WindowStyle |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
     

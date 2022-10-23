@@ -1425,10 +1425,6 @@ class Buffer:
         return self.codename or self.filename
     
     @property
-    def name(self):
-        return os.path.basename(self.target)
-    
-    @property
     def filename(self):
         return self.__filename
     
@@ -1568,7 +1564,11 @@ class Editor(EditWindow, EditorInterface):
         if self.buffer.mtdelta:
             self.message("{!r} has been modified externally."
                          .format(self.buffer.filename))
-        title = "{} file: {}".format(self.Name, self.buffer.filename)
+        if self.buffer.code:
+            name = self.buffer.codename + ' ' + self.buffer.filename
+        else:
+            name = self.buffer.filename
+        title = "{} file: {}".format(self.Name, name)
         self.parent.handler('title_window', title)
         self.trace_position()
     
