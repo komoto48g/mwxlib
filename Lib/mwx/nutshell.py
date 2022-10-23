@@ -1406,7 +1406,7 @@ class Buffer:
     def __init__(self, filename=None, lineno=0):
         self.filename = filename
         self.lineno = 0
-        self.codename = None
+        self.codename = ''
         self.code = None
         self.Text = ''
         self._fileText = ''
@@ -1415,8 +1415,6 @@ class Buffer:
         if inspect.iscode(v) and self.code:
             return v is self.code\
                 or v in self.code.co_consts
-        else:
-            return v in (self.filename, self.codename)
     
     def __str__(self):
         return "{}:{}".format(self.filename, self.lineno)
@@ -1621,6 +1619,9 @@ class Editor(EditWindow, EditorInterface):
         """Find buffer with specified f:filename or code."""
         for buf in self.__buffers:
             if f in buf or f is buf:
+                return buf
+            elif f == buf.filename\
+              or buf.code and f == buf.codename: # check filename
                 return buf
     
     def swap_buffer(self, buf):
