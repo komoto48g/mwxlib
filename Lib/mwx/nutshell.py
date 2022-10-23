@@ -1518,11 +1518,9 @@ class Buffer(EditWindow, EditorInterface):
             },
             'C-x' : {
                     '* pressed' : (0, dispatch),
-                   '* released' : (0, dispatch),
             },
             'C-c' : {
                     '* pressed' : (0, dispatch),
-                   '* released' : (0, dispatch),
             },
         })
         
