@@ -1726,6 +1726,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         return getattr(self.buffer, attr)
     
     def on_caption_page(self, buf, prefix=''):
+        if buf not in self.all_buffers():
+            return
         try:
             if buf.mtdelta is not None:
                 _p, tab, idx = self.FindTab(buf)
@@ -1781,14 +1783,14 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         return buf
     
     def create_new_buffer(self, filename, index=None):
-        if index is None:
-            index = self.PageCount
         try:
             self.Freeze()
             buf = Buffer(self, filename)
-            name = os.path.basename(filename)
-            self.InsertPage(index, buf, name, select=True)
-            buf.set_style(self.STYLE)
+            buf.set_style(self.STYLE) # template style
+            if index is None:
+                index = self.PageCount
+            name = os.path.basename(buf.filename)
+            self.InsertPage(index, buf, name, select=True) # cf. AddPage
             return buf
         finally:
             self.Thaw()
@@ -1799,11 +1801,12 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             buf = self.create_new_buffer(self.default_name, 0)
             self.default_buffer = buf
         buf._reset()
-        self.swap_buffer(buf)
     
-    def remove_buffer(self):
+    def remove_buffer(self, buf=None):
         """Pop the current buffer from the buffer list."""
-        j = self.GetPageIndex(self.buffer)
+        if not buf:
+            buf = self.buffer
+        j = self.GetPageIndex(buf)
         self.DeletePage(j)
         
         ## Switch to one of the remaining buffers.
@@ -1832,8 +1835,12 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     def load_file(self, filename, lineno=0):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        self.swap_buffer(buf)
-        return buf.load_file(filename, lineno)
+        if buf.load_file(filename, lineno):
+            self.swap_buffer(buf)
+            return True
+        else:
+            self.remove_buffer(buf)
+            return False
 
 
 class Interpreter(interpreter.Interpreter):
