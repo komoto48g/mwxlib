@@ -40,7 +40,7 @@ class Plugin(Layer):
     def run(self):
         k = self.ksize.value
         src = self.graph.buffer
-        if not src:
+        if src is None:
             self.message("- No buffer")
             return
         ## CV2 normally accepts uint8/16 and float32/64.
