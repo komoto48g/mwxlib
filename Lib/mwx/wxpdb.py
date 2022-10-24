@@ -143,14 +143,14 @@ class Debugger(Pdb):
         """Set a breakpoint at the current line."""
         if self.busy:
             filename = self.curframe.f_code.co_filename
-            ln = self.editor.cline + 1
+            ln = self.editor.buffer.cline + 1
             if ln not in self.get_file_breaks(filename):
                 self.send_input('b {}'.format(ln))
     
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
         if self.busy:
-            self.send_input('j {}'.format(self.editor.markline + 1))
+            self.send_input('j {}'.format(self.editor.buffer.markline + 1))
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -158,9 +158,9 @@ class Debugger(Pdb):
         [2] red-arrow for exception
         """
         if lineno:
-            self.editor.MarkerAdd(lineno - 1, style)
+            self.editor.buffer.MarkerAdd(lineno - 1, style)
         else:
-            self.editor.MarkerDeleteAll(style)
+            self.editor.buffer.MarkerDeleteAll(style)
     
     def send_input(self, c):
         """Send input:str @postcall."""
