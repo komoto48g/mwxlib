@@ -1774,9 +1774,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         for buf in self.all_buffers():
             if f is buf or f in buf: # check code
                 return buf
-            elif f == buf.filename\
-              or buf.code and f == buf.codename: # check filename
-                return buf
+            elif isinstance(f, str):
+                if buf.code and f == buf.codename:
+                    return buf
+                if os.path.abspath(f) == buf.filename:
+                    return buf
     
     def swap_buffer(self, buf):
         """Replace buffer with specified buffer."""
