@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74rc4"
+__version__ = "0.74rc5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -759,55 +759,6 @@ class AuiNotebook(aui.AuiNotebook):
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
-        
-        self.parent = self.Parent
-        
-        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
-    
-    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject
-        if not isinstance(tab, aui.AuiTabCtrl):
-            return
-        page = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook
-        if getattr(page, 'menu', None):
-            Menu.Popup(self, page.menu)
-    
-    def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.CurrentPage
-        if page:
-            page.handler('page_shown', page)
-        evt.Skip()
-    
-    def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.CurrentPage
-        obj = evt.EventObject #<wx._aui.AuiTabCtrl><wx._aui.AuiNotebook>
-        try:
-            if obj is self.ActiveTabCtrl:
-                win = obj.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
-                if not win.IsShownOnScreen():
-                    ## Check if the (selected) window is hidden now.
-                    ## False means that the page will be hidden by the window.
-                    page.handler('page_hidden', page)
-        except AttributeError:
-            pass
-        evt.Skip()
-    
-    def get_page_caption(self, win):
-        try:
-            _p, tab, idx = self.FindTab(win)
-            return tab.GetPage(idx).caption
-        except AttributeError:
-            pass
-    
-    def set_page_caption(self, win, caption):
-        try:
-            _p, tab, idx = self.FindTab(win)
-            tab.GetPage(idx).caption = caption
-            tab.Refresh()
-        except AttributeError:
-            pass
     
     def all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks."""
@@ -941,6 +892,7 @@ class ShellFrame(MiniFrame):
         self.ghost.Name = "ghost"
         
         self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
+        self.ghost.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
@@ -1161,6 +1113,14 @@ class ShellFrame(MiniFrame):
             evt.Skip() # Close the window
         else:
             self.Show(0) # Don't destroy the window
+    
+    def OnGhostTabMenu(self, evt): #<wx._aui.AuiNotebookEvent>
+        obj = evt.EventObject
+        try:
+            page = obj.Pages[evt.Selection].window # Don't use GetPage for split notebook
+            Menu.Popup(self, page.menu)
+        except AttributeError:
+            pass
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
