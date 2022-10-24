@@ -1691,9 +1691,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                                 # Parent:<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower())
-        self.default_buffer = Buffer(self, self.default_name)
+        self.default_buffer = self.create_new_buffer(self.default_name)
         
-        self.AddPage(self.default_buffer, self.default_name)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
         
         def dispatch(v):
             """Fork mouse events to the parent."""
@@ -1702,7 +1702,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                  'title_window' : [ None, dispatch ],
-                 'caption_page' : [ None, self.on_caption_page ],
+                 'caption_page' : [ None, self.set_caption ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -1725,7 +1725,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def __getattr__(self, attr):
         return getattr(self.buffer, attr)
     
-    def on_caption_page(self, buf, prefix=''):
+    def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
+        if self.PageCount == 0:
+            self.new_buffer()
+    
+    def set_caption(self, buf, prefix=''):
         if buf not in self.all_buffers():
             return
         try:
@@ -1858,6 +1862,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             else:
                 self.remove_buffer(buf)
                 return False
+    
+    def save_file(self, filename):
+        return self.buffer.save_file(filename)
 
 
 class Interpreter(interpreter.Interpreter):
