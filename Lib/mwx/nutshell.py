@@ -1678,7 +1678,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
             ## ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-            ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
+            ## ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
@@ -1854,6 +1854,13 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     ## --------------------------------
     ## File I/O
     ## --------------------------------
+    wildcards = [
+        "PY files (*.py)|*.py",
+        "ALL files (*.*)|*.*",
+    ]
+    
+    def need_buffer_save_p(self, buf):
+        return buf.mtdelta is not None and buf.IsModified()
     
     def load_cache(self, filename, lineno=0, globals=None):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
@@ -1875,6 +1882,115 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     def save_file(self, filename):
         return self.buffer.save_file(filename)
+    
+    def load(self):
+        """Confirm the load with the dialog."""
+        buf = self.buffer
+        if buf.mtdelta is not None and buf.IsModified():
+            if wx.MessageBox(
+                    "You are leaving unsaved content.\n\n"
+                    "Changes to the content will be discarded.\n"
+                    "Continue loading?",
+                    "Load {!r}".format(os.path.basename(buf.filename)),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The load has been canceled.")
+                return None
+        ## p = buf.cpos
+        f = buf.filename
+        if not f:
+            self.post_message(f"No file to load.")
+            return None
+        if self.load_file(f, self.markline+1):
+            ## buf.goto_char(p) # restore position
+            ## buf.recenter()
+            self.post_message(f"Loaded {f!r} successfully.")
+            return True
+        return False
+    
+    def save(self):
+        """Confirm the save with the dialog."""
+        buf = self.buffer
+        if buf.mtdelta:
+            if wx.MessageBox(
+                    "The file has been modified externally.\n\n"
+                    "The contents of the file will be overwritten.\n"
+                    "Continue saving?",
+                    "Save {!r}".format(os.path.basename(buf.filename)),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The save has been canceled.")
+                return None
+        elif not self.IsModified():
+            self.post_message("No need to save.")
+            return None
+        f = buf.filename
+        if not f:
+            return self.saveas()
+        if self.save_file(f):
+            self.post_message(f"Saved {f!r} successfully.")
+            return True
+        return False
+    
+    def saveas(self):
+        """Confirm the saveas with the dialog."""
+        buf = self.buffer
+        name = re.sub("[\\/:*?\"<>|]", '',
+                      os.path.basename(buf.filename or ''))
+        with wx.FileDialog(self, "Save buffer as",
+                defaultFile=name,
+                wildcard='|'.join(self.wildcards),
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+            if dlg.ShowModal() != wx.ID_OK:
+                return None
+            f = dlg.Path
+        if self.save_file(f):
+            self.post_message(f"Saved {f!r} successfully.")
+            return True
+        return False
+    
+    def save_all_buffers(self):
+        for buf in filter(self.need_buffer_save_p, self.all_buffers()):
+            self.swap_buffer(buf)
+            self.save()
+    
+    def open(self):
+        """Confirm the open with the dialog."""
+        with wx.FileDialog(self, "Open buffer",
+                wildcard='|'.join(self.wildcards),
+                style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
+            if dlg.ShowModal() != wx.ID_OK:
+                return None
+            paths = dlg.Paths
+        for f in paths:
+            if self.load_file(f):
+                self.post_message(f"Loaded {f!r} successfully.")
+        return True
+    
+    def kill_buffer(self):
+        """Confirm the close with the dialog."""
+        buf = self.buffer
+        if self.need_buffer_save_p(buf):
+            if wx.MessageBox(
+                    "You are closing unsaved content.\n\n"
+                    "Changes to the content will be discarded.\n"
+                    "Continue closing?",
+                    "Close {!r}".format(os.path.basename(buf.filename)),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The close has been canceled.")
+                return None
+        wx.CallAfter(self.remove_buffer)
+    
+    def kill_all_buffers(self):
+        for buf in filter(self.need_buffer_save_p, self.all_buffers()):
+            self.swap_buffer(buf)
+            if wx.MessageBox(
+                    "You are closing unsaved content.\n\n"
+                    "Changes to the content will be discarded.\n"
+                    "Continue closing?",
+                    "Close {!r}".format(os.path.basename(buf.filename)),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The close has been canceled.")
+                return None
+        wx.CallAfter(self.remove_all_buffers)
 
 
 class Interpreter(interpreter.Interpreter):
