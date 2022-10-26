@@ -271,8 +271,8 @@ class EditorInterface(CtrlInterface):
         ## self.UseTabs = False
         ## self.ViewEOL = True
         ## self.ViewWhiteSpace = True
-        self.TabWidth = 4
-        ## self.EOLMode = stc.STC_EOL_LF
+        ## self.TabWidth = 4
+        ## self.EOLMode = stc.STC_EOL_CRLF
         self.WrapMode = stc.STC_WRAP_NONE
         self.WrapIndentMode = stc.STC_WRAPINDENT_SAME
         self.IndentationGuides = stc.STC_IV_LOOKFORWARD
@@ -835,7 +835,7 @@ class EditorInterface(CtrlInterface):
         spec.update(kwargs)
         
         def _map(sc):
-            return dict(kv.partition(':')[::2] for kv in sc.split(','))
+            return dict(kv.partition(':')[::2] for kv in sc.split(',') if kv)
         
         ## Apply the default style first
         default = spec.pop(stc.STC_STYLE_DEFAULT, '')
