@@ -1673,8 +1673,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     Args:
         name : Window.Name (e.g. 'Scratch')
     """
-    STYLE = Buffer.STYLE
-    
     parent = property(lambda self: self.__parent)
     message = property(lambda self: self.__parent.message)
     
@@ -1687,6 +1685,17 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         aui.AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
         
+        self.defaultBufferStyle = dict(
+            ReadOnly = False,
+            UseTabs = False,
+            ViewEOL = False,
+            ViewWhiteSpace = False,
+            TabWidth = 4,
+            EOLMode = stc.STC_EOL_CRLF,
+            WrapMode = stc.STC_WRAP_NONE,
+            WrapIndentMode = stc.STC_WRAPINDENT_SAME,
+            IndentationGuides = stc.STC_IV_LOOKFORWARD,
+        )
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.Name = name
@@ -1742,9 +1751,20 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             pass
     
     def set_style(self, style):
-        for buf in self.all_buffers():
-            buf.set_style(style)
-        self.STYLE = style
+        ## This method is to be deprecated. Use set_attributes(Style) instead.
+        self.set_attributes(Style=style)
+    
+    def set_attributes(self, buf=None, **kwargs):
+        def _setattribute(buf, attr):
+            for k, v in attr.items(): # set attr:property
+                setattr(buf, k, v)
+                buf.set_style(attr.get('Style'))
+        if buf:
+            _setattribute(buf, kwargs)
+        else:
+            self.defaultBufferStyle.update(kwargs)
+            for buf in self.all_buffers():
+                _setattribute(buf, self.defaultBufferStyle)
     
     ## --------------------------------
     ## Buffer list controls
@@ -1795,7 +1815,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         try:
             self.Freeze()
             buf = Buffer(self, filename)
-            buf.set_style(self.STYLE) # template style
+            self.set_attributes(buf, **self.defaultBufferStyle)
             if index is None:
                 index = self.PageCount
             name = os.path.basename(buf.filename)

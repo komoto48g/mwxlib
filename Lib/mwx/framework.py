@@ -978,8 +978,7 @@ class ShellFrame(MiniFrame):
         })
         
         ## py-mode
-        ## self.Scratch.show_folder()
-        self.Scratch.set_style(Nautilus.STYLE)
+        self.Scratch.set_attributes(Style=Nautilus.STYLE)
         
         self.set_traceable(self.Scratch)
         
@@ -996,16 +995,11 @@ class ShellFrame(MiniFrame):
                                                "<scratch>")
         
         ## text-mode
-        ## self.Log.show_folder()
-        self.Log.SetReadOnly(True)
-        
         self.set_traceable(self.Log)
         
-        ## self.Help.show_folder()
-        self.Help.SetReadOnly(True)
-        
-        ## self.History.show_folder()
-        self.History.SetReadOnly(True)
+        self.Log.set_attributes(ReadOnly=True)
+        self.Help.set_attributes(ReadOnly=True)
+        self.History.set_attributes(ReadOnly=True)
         
         self.Init()
     
