@@ -1587,11 +1587,7 @@ class Buffer(EditWindow, EditorInterface):
     ## --------------------------------
     
     def _load_cache(self, filename, lineno=0, globals=None):
-        """Load cached script file using linecache.
-        
-        Note:
-            The file will be reloaded without confirmation.
-        """
+        """Load cached script file using linecache."""
         f = os.path.abspath(filename)
         linecache.checkcache(f)
         lines = linecache.getlines(f, globals)
@@ -1605,32 +1601,22 @@ class Buffer(EditWindow, EditorInterface):
         return False
     
     def _load_file(self, filename, lineno=0):
-        """Wrapped method of LoadFile.
-        
-        Note:
-            The file will be reloaded without confirmation.
-        """
+        """Wrapped method of LoadFile."""
         f = os.path.abspath(filename)
         if self.LoadFile(f):
             self.markline = lineno - 1
             self.goto_mark()
             self.filename = f
             self.handler('buffer_updated', self)
-            ## self.message("Loaded {!r} successfully.".format(filename))
             return True
         return False
     
     def _save_file(self, filename):
-        """Wrapped method of SaveFile.
-        
-        Note:
-            The file will be overwritten without confirmation.
-        """
+        """Wrapped method of SaveFile."""
         f = os.path.abspath(filename)
         if self.SaveFile(f):
             self.filename = f
             self.handler('buffer_updated', self)
-            ## self.message("Saved {!r} successfully.".format(filename))
             return True
         return False
     
@@ -1899,14 +1885,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The load has been canceled.")
                 return None
-        ## p = buf.cpos
         f = buf.filename
         if not f:
-            self.post_message(f"No file to load.")
+            self.post_message("No file to load.")
             return None
         if self.load_file(f, self.markline+1):
-            ## buf.goto_char(p) # restore position
-            ## buf.recenter()
             self.post_message(f"Loaded {f!r} successfully.")
             return True
         return False
