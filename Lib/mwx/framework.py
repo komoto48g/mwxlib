@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74rc6"
+__version__ = "0.74rc7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1040,7 +1040,7 @@ class ShellFrame(MiniFrame):
                 for buffer in self.Log.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.lineno))
+                                buffer.filename, buffer.markline+1))
                 
                 with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Log.default_buffer.Text)
@@ -1048,7 +1048,7 @@ class ShellFrame(MiniFrame):
                 for buffer in self.Scratch.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.lineno))
+                                buffer.filename, buffer.markline+1))
                 
                 with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Scratch.default_buffer.Text)

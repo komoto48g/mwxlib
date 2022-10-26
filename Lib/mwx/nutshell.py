@@ -1402,7 +1402,6 @@ class Buffer(EditWindow, EditorInterface):
     
     Attributes:
         filename    : buffer-file-name
-        lineno      : marked lineno (>=1)
         codename    : code-file-name (e.g. '<scratch>')
         code        : code object compiled using `py_exec_region`.
     """
@@ -1467,7 +1466,6 @@ class Buffer(EditWindow, EditorInterface):
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
         self.filename = filename
-        self.lineno = 0
         self.codename = ''
         self.code = None
         
@@ -1533,7 +1531,7 @@ class Buffer(EditWindow, EditorInterface):
                 or v in self.code.co_consts
     
     def __str__(self):
-        return "{}:{}".format(self.filename, self.lineno)
+        return "{}:{}".format(self.filename, self.markline+1)
     
     def trace_position(self):
         text, lp = self.CurLine
