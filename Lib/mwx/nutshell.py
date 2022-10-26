@@ -1783,9 +1783,12 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def swap_buffer(self, buf):
         """Replace buffer with specified buffer."""
         if buf:
+            wnd = wx.Window.FindFocus() # original focus
             j = self.GetPageIndex(buf)
             if j != self.Selection:
                 self.Selection = j # the focus is moved
+            if wnd and wnd not in self.all_buffers(): # restore focus
+                wnd.SetFocus()
         return buf
     
     def create_new_buffer(self, filename, index=None):
@@ -1796,7 +1799,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             if index is None:
                 index = self.PageCount
             name = os.path.basename(buf.filename)
-            self.InsertPage(index, buf, name, select=True) # cf. AddPage
+            self.InsertPage(index, buf, name)
             return buf
         finally:
             self.Thaw()
@@ -1804,7 +1807,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def new_buffer(self):
         buf = self.default_buffer
         if not buf or buf.mtdelta is not None: # is saved?
-            buf = self.create_new_buffer(self.default_name, 0)
+            buf = self.create_new_buffer(self.default_name, index=0)
             self.default_buffer = buf
         buf._reset()
     
@@ -1834,36 +1837,23 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     ## File I/O
     ## --------------------------------
     
-    @contextlib.contextmanager
-    def save_window_excursion(self):
-        try:
-            self.Freeze()
-            wnd = wx.Window.FindFocus() # original focus
-            yield
-        finally:
-            self.Thaw()
-            if wnd:
-                wnd.SetFocus()
-    
     def load_cache(self, filename, lineno=0, globals=None):
-        with self.save_window_excursion():
-            buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-            if buf.load_cache(filename, lineno, globals):
-                self.swap_buffer(buf)
-                return True
-            else:
-                self.remove_buffer(buf)
-                return False
+        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+        if buf.load_cache(filename, lineno, globals):
+            self.swap_buffer(buf)
+            return True
+        else:
+            self.remove_buffer(buf)
+            return False
     
     def load_file(self, filename, lineno=0):
-        with self.save_window_excursion():
-            buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-            if buf.load_file(filename, lineno):
-                self.swap_buffer(buf)
-                return True
-            else:
-                self.remove_buffer(buf)
-                return False
+        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+        if buf.load_file(filename, lineno):
+            self.swap_buffer(buf)
+            return True
+        else:
+            self.remove_buffer(buf)
+            return False
     
     def save_file(self, filename):
         return self.buffer.save_file(filename)
