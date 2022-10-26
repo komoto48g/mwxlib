@@ -1586,7 +1586,7 @@ class Buffer(EditWindow, EditorInterface):
     ## File I/O
     ## --------------------------------
     
-    def load_cache(self, filename, lineno=0, globals=None):
+    def _load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache.
         
         Note:
@@ -1604,7 +1604,7 @@ class Buffer(EditWindow, EditorInterface):
             return True
         return False
     
-    def load_file(self, filename, lineno=0):
+    def _load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile.
         
         Note:
@@ -1620,7 +1620,7 @@ class Buffer(EditWindow, EditorInterface):
             return True
         return False
     
-    def save_file(self, filename):
+    def _save_file(self, filename):
         """Wrapped method of SaveFile.
         
         Note:
@@ -1862,26 +1862,30 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def need_buffer_save_p(self, buf):
         return buf.mtdelta is not None and buf.IsModified()
     
-    def load_cache(self, filename, lineno=0, globals=None):
+    def load_cache(self, filename, lineno=0, globals=None, focus=False):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        if buf.load_cache(filename, lineno, globals):
+        if buf._load_cache(filename, lineno, globals):
             self.swap_buffer(buf)
+            if focus:
+                buf.SetFocus()
             return True
         else:
             self.remove_buffer(buf)
             return False
     
-    def load_file(self, filename, lineno=0):
+    def load_file(self, filename, lineno=0, focus=False):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
-        if buf.load_file(filename, lineno):
+        if buf._load_file(filename, lineno):
             self.swap_buffer(buf)
+            if focus:
+                buf.SetFocus()
             return True
         else:
             self.remove_buffer(buf)
             return False
     
     def save_file(self, filename):
-        return self.buffer.save_file(filename)
+        return self.buffer._save_file(filename)
     
     def load(self):
         """Confirm the load with the dialog."""
