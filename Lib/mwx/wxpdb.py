@@ -143,14 +143,14 @@ class Debugger(Pdb):
         """Set a breakpoint at the current line."""
         if self.busy:
             filename = self.curframe.f_code.co_filename
-            ln = self.editor.cline + 1
+            ln = self.editor.buffer.cline + 1
             if ln not in self.get_file_breaks(filename):
                 self.send_input('b {}'.format(ln))
     
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
         if self.busy:
-            self.send_input('j {}'.format(self.editor.markline + 1))
+            self.send_input('j {}'.format(self.editor.buffer.markline + 1))
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -158,9 +158,9 @@ class Debugger(Pdb):
         [2] red-arrow for exception
         """
         if lineno:
-            self.editor.MarkerAdd(lineno - 1, style)
+            self.editor.buffer.MarkerAdd(lineno - 1, style)
         else:
-            self.editor.MarkerDeleteAll(style)
+            self.editor.buffer.MarkerDeleteAll(style)
     
     def send_input(self, c):
         """Send input:str @postcall."""
@@ -278,16 +278,15 @@ class Debugger(Pdb):
             editor = self.parent.Log
             if filename != editor.buffer.filename:
                 editor.load_cache(filename)
-        
-        if filename == editor.buffer.target:
+        buffer = editor.buffer
+        if filename == buffer.target:
             if code != self.code:
-                editor.markline = firstlineno - 1 # (o) entry:marker
-                editor.goto_mark()
-                editor.recenter(3)
-            editor.goto_line(lineno - 1)
-            editor.pointer = lineno - 1 # (->) pointer:marker
-            editor.EnsureLineMoreOnScreen(lineno - 1)
-            editor.push_current()
+                buffer.markline = firstlineno - 1 # (o) entry:marker
+                buffer.goto_mark()
+                buffer.recenter(3)
+            buffer.goto_line(lineno - 1)
+            buffer.pointer = lineno - 1 # (->) pointer:marker
+            buffer.EnsureLineMoreOnScreen(lineno - 1)
         
         for ln in self.get_file_breaks(filename):
             self.add_marker(ln, 1) # (>>) bp:white-arrow
@@ -315,7 +314,7 @@ class Debugger(Pdb):
         Note: self.busy -> True (until this stage)
         """
         self.__interactive = None
-        del self.editor.pointer
+        del self.editor.buffer.pointer
         self.editor = None
         self.code = None
         main = threading.main_thread()

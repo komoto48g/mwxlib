@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.73.5"
+__version__ = "0.74rc8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -959,7 +959,6 @@ class ShellFrame(MiniFrame):
                      'add_help' : [ None, self.add_help ],
                   'add_history' : [ None, self.add_history ],
                  'title_window' : [ None, self.on_title_window ],
-                 'caption_page' : [ None, self.on_caption_page ]
             },
             0 : {
                     '* pressed' : (0, skip, fork), # => debugger
@@ -979,34 +978,28 @@ class ShellFrame(MiniFrame):
         })
         
         ## py-mode
-        ## self.Scratch.show_folder()
-        self.Scratch.set_style(Nautilus.STYLE)
+        self.Scratch.set_attributes(Style=Nautilus.STYLE)
         
         self.set_traceable(self.Scratch)
         
         @self.Scratch.define_key('C-j')
         def eval_line(v):
-            self.Scratch.py_eval_line(self.current_shell.globals,
-                                      self.current_shell.locals)
+            self.Scratch.buffer.py_eval_line(self.current_shell.globals,
+                                             self.current_shell.locals)
         
         @self.Scratch.define_key('M-j')
         def exec_buffer(v):
             self.save_session() # to save *scratch*
-            self.Scratch.py_exec_region(self.current_shell.globals,
-                                        self.current_shell.locals,
-                                        "<scratch>")
+            self.Scratch.buffer.py_exec_region(self.current_shell.globals,
+                                               self.current_shell.locals,
+                                               "<scratch>")
         
         ## text-mode
-        ## self.Log.show_folder()
-        self.Log.SetReadOnly(True)
-        
         self.set_traceable(self.Log)
         
-        ## self.Help.show_folder()
-        self.Help.SetReadOnly(True)
-        
-        ## self.History.show_folder()
-        self.History.SetReadOnly(True)
+        self.Log.set_attributes(ReadOnly=True)
+        self.Help.set_attributes(ReadOnly=True)
+        self.History.set_attributes(ReadOnly=True)
         
         self.Init()
     
@@ -1019,8 +1012,7 @@ class ShellFrame(MiniFrame):
         """Load session from file."""
         try:
             if self.Scratch.buffer.mtdelta is None:
-                self.Scratch.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
-                self.Scratch.push_current()
+                self.Scratch.buffer.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1048,16 +1040,16 @@ class ShellFrame(MiniFrame):
                 for buffer in self.Log.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.lineno))
-                self.Log.push_current()
+                                buffer.filename, buffer.markline+1))
+                
                 with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Log.default_buffer.Text)
                 
                 for buffer in self.Scratch.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.lineno))
-                self.Scratch.push_current()
+                                buffer.filename, buffer.markline+1))
+                
                 with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
                     f.write(self.Scratch.default_buffer.Text)
             return True
@@ -1142,7 +1134,7 @@ class ShellFrame(MiniFrame):
         evt.Skip()
     
     def About(self, evt=None):
-        with self.Help.off_readonly() as ed:
+        with self.Help.buffer.off_readonly() as ed:
             ed.SetText('\n\n'.join((
                 "#<module 'mwx' from {!r}>".format(__file__),
                 "Author: {!r}".format(__author__),
@@ -1335,7 +1327,7 @@ class ShellFrame(MiniFrame):
                 self.debugger.unwatch()
                 self.debugger.editor = editor
                 self.debugger.watch((editor.buffer.target, line+1))
-        editor.MarkerDeleteAll(4)
+        editor.buffer.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):
         if self.debugger.busy:
@@ -1343,7 +1335,7 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-        editor.MarkerAdd(line, 4)
+        editor.buffer.MarkerAdd(line, 4)
     
     def on_trace_begin(self, frame):
         """Called when set-trace."""
@@ -1371,30 +1363,17 @@ class ShellFrame(MiniFrame):
         self.SetTitle("Nautilus - {}".format(
                       obj if isinstance(obj, str) else repr(obj)))
     
-    def on_caption_page(self, page, prefix):
-        """Set caption to the tab control."""
-        try:
-            nb = page.Parent
-            _p, tab, idx = nb.FindTab(page)
-            tab.GetPage(idx).caption = "{} {}".format(prefix, page.Name)
-            tab.Refresh()
-        except AttributeError:
-            pass
-    
     def add_log(self, text):
         """Add text to the logging buffer."""
-        buffer = self.Log.default_buffer
-        buffer.Text += text
-        if self.Log.buffer is buffer:
-            with self.Log.off_readonly() as ed:
-                ed.SetText(buffer.Text)
+        with self.Log.default_buffer.off_readonly() as ed:
+            ed.write(text)
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
             f.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
-        with self.Help.off_readonly() as ed:
+        with self.Help.buffer.off_readonly() as ed:
             ed.SetText(text)
         self.popup_window(self.Help, focus=0)
     
@@ -1402,7 +1381,7 @@ class ShellFrame(MiniFrame):
         """Add text to the history buffer."""
         if not text or text.isspace():
             return
-        with self.History.off_readonly() as ed:
+        with self.History.buffer.off_readonly() as ed:
             ed.goto_char(ed.TextLength) # line to set an arrow marker
             ed.write(text)
             if noerr is not None:
