@@ -538,7 +538,7 @@ class AuiNotebook(aui.AuiNotebook):
         obj = evt.EventObject
         try:
             page = obj.Pages[evt.Selection].window # Don't use GetPage for split notebook
-            Menu.Popup(self, page.menu)
+            mwx.Menu.Popup(self, page.menu)
         except AttributeError:
             pass
     
