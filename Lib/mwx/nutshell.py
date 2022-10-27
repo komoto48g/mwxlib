@@ -1873,7 +1873,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def save_file(self, filename):
         return self.buffer._save_file(filename)
     
-    def load(self):
+    def load_buffer(self):
         """Confirm the load with the dialog."""
         buf = self.buffer
         if buf.mtdelta is not None and buf.IsModified():
@@ -1894,7 +1894,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             return True
         return False
     
-    def save(self):
+    def save_buffer(self):
         """Confirm the save with the dialog."""
         buf = self.buffer
         if buf.mtdelta:
@@ -1911,13 +1911,13 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             return None
         f = buf.filename
         if not f:
-            return self.saveas()
+            return self.save_as_buffer()
         if self.save_file(f):
             self.post_message(f"Saved {f!r} successfully.")
             return True
         return False
     
-    def saveas(self):
+    def save_as_buffer(self):
         """Confirm the saveas with the dialog."""
         buf = self.buffer
         name = re.sub("[\\/:*?\"<>|]", '',
@@ -1937,9 +1937,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def save_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers()):
             self.swap_buffer(buf)
-            self.save()
+            self.save_buffer()
     
-    def open(self):
+    def open_buffer(self):
         """Confirm the open with the dialog."""
         with wx.FileDialog(self, "Open buffer",
                 wildcard='|'.join(self.wildcards),
