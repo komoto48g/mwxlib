@@ -137,8 +137,6 @@ class EditorInterface(CtrlInterface):
         self.define_key('C-x @', self.goto_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
         self.define_key('C-x C-x', self.exchange_point_and_mark)
-        self.define_key('C-x [', self.beginning_of_buffer)
-        self.define_key('C-x ]', self.end_of_buffer)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -1701,10 +1699,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         })
         self.make_keymap('C-x')
         self.make_keymap('C-c')
-        
-        self.define_key('C-x k', postcall(self.remove_all_buffers))
-        self.define_key('C-x C-k', postcall(self.remove_buffer))
-        self.define_key('C-x C-n', self.new_buffer)
         
         ## self.TabCtrlHeight = 0
     
