@@ -137,8 +137,6 @@ class EditorInterface(CtrlInterface):
         self.define_key('C-x @', self.goto_mark)
         self.define_key('C-c C-c', self.goto_matched_paren)
         self.define_key('C-x C-x', self.exchange_point_and_mark)
-        self.define_key('C-x [', self.beginning_of_buffer)
-        self.define_key('C-x ]', self.end_of_buffer)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -1476,12 +1474,12 @@ class Buffer(EditWindow, EditorInterface):
         
         @self.handler.bind('focus_set')
         def activate(v):
-            self.handler('editor_activated', self)
+            self.handler('buffer_activated', self)
             v.Skip()
         
         @self.handler.bind('focus_kill')
         def inactivate(v):
-            self.handler('editor_inactivated', self)
+            self.handler('buffer_inactivated', self)
             v.Skip()
         
         def dispatch(v):
@@ -1491,9 +1489,9 @@ class Buffer(EditWindow, EditorInterface):
         self.handler.update({ # DNA<Buffer>
             None : {
                   'stc_updated' : [ None, ],
-               'buffer_updated' : [ None, self.on_activated ],
-             'editor_activated' : [ None, self.on_activated ],
-           'editor_inactivated' : [ None, self.on_inactivated ],
+               'buffer_updated' : [ None, self.on_activated, dispatch ],
+             'buffer_activated' : [ None, self.on_activated, dispatch ],
+           'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
             },
             -1 : { # original action of the EditWindow
@@ -1525,10 +1523,10 @@ class Buffer(EditWindow, EditorInterface):
         self.show_folder()
         self.set_style(self.STYLE)
     
-    def __contains__(self, v):
-        if inspect.iscode(v) and self.code:
-            return v is self.code\
-                or v in self.code.co_consts
+    def __contains__(self, code):
+        if inspect.iscode(code) and self.code:
+            return code is self.code\
+                or code in self.code.co_consts
     
     def __str__(self):
         return "{}:{}".format(self.filename, self.markline+1)
@@ -1671,14 +1669,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         
         self.defaultBufferStyle = dict(
             ReadOnly = False,
-            UseTabs = False,
-            ViewEOL = False,
-            ViewWhiteSpace = False,
-            TabWidth = 4,
-            EOLMode = stc.STC_EOL_CRLF,
-            WrapMode = stc.STC_WRAP_NONE,
-            WrapIndentMode = stc.STC_WRAPINDENT_SAME,
-            IndentationGuides = stc.STC_IV_LOOKFORWARD,
         )
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
@@ -1694,6 +1684,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         
         self.handler.update({ # DNA<Editor>
             None : {
+                   'buffer_new' : [ None, ],
                  'title_window' : [ None, dispatch ],
                  'caption_page' : [ None, self.set_caption ],
             },
@@ -1709,10 +1700,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.define_key('C-x k', postcall(self.remove_all_buffers))
-        self.define_key('C-x C-k', postcall(self.remove_buffer))
-        self.define_key('C-x C-n', self.new_buffer)
-        
         ## self.TabCtrlHeight = 0
     
     def __getattr__(self, attr):
@@ -1721,6 +1708,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
+        evt.Skip()
     
     def set_caption(self, buf, prefix=''):
         if buf not in self.all_buffers():
@@ -1804,6 +1792,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 index = self.PageCount
             name = os.path.basename(buf.filename)
             self.InsertPage(index, buf, name)
+            self.handler('buffer_new', buf)
             return buf
         finally:
             self.Thaw()
@@ -1889,7 +1878,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if not f:
             self.post_message("No file to load.")
             return None
-        if self.load_file(f, self.markline+1):
+        if self.load_file(f, buf.markline+1):
             self.post_message(f"Loaded {f!r} successfully.")
             return True
         return False
@@ -1906,7 +1895,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The save has been canceled.")
                 return None
-        elif not self.IsModified():
+        elif not buf.IsModified():
             self.post_message("No need to save.")
             return None
         f = buf.filename
