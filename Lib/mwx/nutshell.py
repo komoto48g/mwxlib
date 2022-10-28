@@ -1671,14 +1671,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         
         self.defaultBufferStyle = dict(
             ReadOnly = False,
-            UseTabs = False,
-            ViewEOL = False,
-            ViewWhiteSpace = False,
-            TabWidth = 4,
-            EOLMode = stc.STC_EOL_CRLF,
-            WrapMode = stc.STC_WRAP_NONE,
-            WrapIndentMode = stc.STC_WRAPINDENT_SAME,
-            IndentationGuides = stc.STC_IV_LOOKFORWARD,
         )
         self.__parent = parent  # parent:<ShellFrame>
                                 # Parent:<AuiNotebook>
