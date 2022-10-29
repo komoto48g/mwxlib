@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74rc9"
+__version__ = "0.74.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -887,8 +887,8 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
-        ## self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
-        ## self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
+        self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
+        self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.ghost.Name = "ghost"
         
         self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
@@ -897,8 +897,6 @@ class ShellFrame(MiniFrame):
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
-        self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
-        self.watcher.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.watcher.Name = "watcher"
         
         self._mgr = aui.AuiManager()
@@ -914,7 +912,7 @@ class ShellFrame(MiniFrame):
         
         self._mgr.AddPane(self.watcher,
                           aui.AuiPaneInfo().Name("watcher")
-                             .Caption("watcher").Float().Show(0))
+                             .Caption("Watcher").Float().Show(0))
         
         self._mgr.Update()
         
