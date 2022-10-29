@@ -1895,6 +1895,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The save has been canceled.")
                 return None
+        elif buf.mtdelta is None:
+            self.post_message("No filename.")
+            return None
         elif not buf.IsModified():
             self.post_message("No need to save.")
             return None
