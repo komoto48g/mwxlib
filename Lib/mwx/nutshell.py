@@ -69,6 +69,9 @@ class EditorInterface(CtrlInterface):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
         
+        self.make_keymap('C-x')
+        self.make_keymap('C-c')
+        
         self.handler.update({ # DNA<EditorInterface>
             None : {
                      'mark_set' : [ None, dispatch ],
@@ -131,12 +134,6 @@ class EditorInterface(CtrlInterface):
              'Lbutton released' : (0, self.on_linesel_end),
             },
         })
-        self.make_keymap('C-x')
-        self.make_keymap('C-c')
-        
-        self.define_key('C-x @', self.goto_mark)
-        self.define_key('C-c C-c', self.goto_matched_paren)
-        self.define_key('C-x C-x', self.exchange_point_and_mark)
         
         self.Bind(wx.EVT_MOTION,
                   lambda v: self.handler('motion', v) or v.Skip())
@@ -1682,6 +1679,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
         
+        self.make_keymap('C-x')
+        self.make_keymap('C-c')
+        
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
@@ -1697,10 +1697,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
               'M-right pressed' : (0, dispatch),
             },
         })
-        self.make_keymap('C-x')
-        self.make_keymap('C-c')
-        
-        ## self.TabCtrlHeight = 0
     
     def __getattr__(self, attr):
         return getattr(self.buffer, attr)
