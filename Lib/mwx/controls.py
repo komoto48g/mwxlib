@@ -887,11 +887,6 @@ def _Icon(v):
     return v
 
 
-def _F(f, obj):
-    if callable(f):
-        return wraps(f)(lambda v: f(obj))
-
-
 class Button(pb.PlateButton):
     """Flat button
     
@@ -1006,7 +1001,7 @@ class TextCtrl(wx.Panel):
     
     def __init__(self, parent, label='',
                  handler=None, updater=None,
-                 icon=None, tip='', readonly=0, **kwargs):
+                 icon=None, tip='', readonly=False, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         kwargs['style'] = (kwargs.get('style', 0)
@@ -1014,8 +1009,8 @@ class TextCtrl(wx.Panel):
                             | (wx.TE_READONLY if readonly else 0))
         
         self._ctrl = wx.TextCtrl(self, **kwargs)
-        self._btn = Button(self, label, _F(updater, self), icon, tip,
-                                size=(-1,-1) if label or icon else (0,0))
+        self._btn = Button(self, label, None, icon, tip,
+                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1024,10 +1019,12 @@ class TextCtrl(wx.Panel):
         )
         if handler:
             def _f(v):
-                self.Value = v
+                self.value = v
                 handler(self)
             self.reset = _f
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+        if updater:
+            self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
 
 
 class Choice(wx.Panel):
@@ -1040,7 +1037,6 @@ class Choice(wx.Panel):
         icon    : key:str or bitmap for button icon
         tip     : tip:str displayed on the button
         readonly: flag:bool for wx.TE_READONLY
-        selection: initial selection:int for combobox
         **kwargs: keywords for wx.ComboBox
                   e.g., choices:list
     
@@ -1076,7 +1072,7 @@ class Choice(wx.Panel):
     
     def __init__(self, parent, label='',
                  handler=None, updater=None,
-                 icon=None, tip='', readonly=0, selection=None, **kwargs):
+                 icon=None, tip='', readonly=False, **kwargs):
         wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
         
         kwargs['style'] = (kwargs.get('style', 0)
@@ -1084,8 +1080,8 @@ class Choice(wx.Panel):
                             | (wx.CB_READONLY if readonly else 0))
         
         self._ctrl = wx.ComboBox(self, **kwargs)
-        self._btn = Button(self, label, _F(updater, self), icon, tip,
-                                size=(-1,-1) if label or icon else (0,0))
+        self._btn = Button(self, label, None, icon, tip,
+                                 size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1094,15 +1090,14 @@ class Choice(wx.Panel):
         )
         if handler:
             def _f(v):
-                self.Value = v
+                self.value = v
                 handler(self)
             self.reset = _f
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
             self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
         self._ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
-        
-        if selection is not None:
-            self._ctrl.Selection = selection # no events?
+        if updater:
+            self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
     
     def OnTextEnter(self, evt):
         s = evt.String.strip()
