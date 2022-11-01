@@ -2,12 +2,22 @@
 # -*- coding: utf-8 -*-
 from numpy import inf
 import wx
+import wx.svg
 import mwx
 import mwx.controls
 mwx.reload(mwx.controls)
 from mwx.controls import Param, LParam
 from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame
+
+
+def iconify(icon, w, h):
+    import requests
+    url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
+    content = requests.get(url).content
+    img = wx.svg.SVGimage.CreateFromBytes(content)
+    bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
+    return bmp
 
 
 class Plugin(Layer):
@@ -17,7 +27,8 @@ class Plugin(Layer):
         self.btn = Button(self, label="button",
                         handler=lambda v: self.statusline(v.Int, v.IsChecked()),
                         tip="this is a button",
-                        icon='v',
+                        ## icon='v',
+                        icon=iconify("openmoji:annoyed-face-with-tongue", 32, 32),
                         size=(80,-1),
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",

@@ -1551,11 +1551,7 @@ class Buffer(EditWindow, EditorInterface):
         if self.mtdelta:
             self.message("{!r} has been modified externally."
                          .format(self.filename))
-        if self.code:
-            name = self.codename + ' ' + self.filename
-        else:
-            name = self.filename
-        title = "{} file: {}".format(self.parent.Name, name)
+        title = "{} file: {}".format(self.parent.Name, self.target)
         self.parent.handler('title_window', title)
         self.trace_position()
     
