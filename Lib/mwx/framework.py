@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.0"
+__version__ = "0.74.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -984,15 +984,17 @@ class ShellFrame(MiniFrame):
         
         @self.Scratch.define_key('C-j')
         def eval_line(v):
-            self.Scratch.buffer.py_eval_line(self.current_shell.globals,
-                                             self.current_shell.locals)
+            self.Scratch.buffer.py_eval_line(
+                self.current_shell.globals,
+                self.current_shell.locals)
         
         @self.Scratch.define_key('M-j')
         def exec_buffer(v):
             self.save_session() # to save *scratch*
-            self.Scratch.buffer.py_exec_region(self.current_shell.globals,
-                                               self.current_shell.locals,
-                                               "<scratch>")
+            self.Scratch.buffer.py_exec_region(
+                self.current_shell.globals,
+                self.current_shell.locals,
+                "<{}>".format(self.Scratch.buffer.filename))
         
         ## text-mode
         self.set_traceable(self.Log)
@@ -1321,12 +1323,9 @@ class ShellFrame(MiniFrame):
     
     def start_trace(self, line, editor):
         if not self.debugger.busy:
-            if not editor.buffer.target:
-                self.message("- No compiled target")
-            else:
-                self.debugger.unwatch()
-                self.debugger.editor = editor
-                self.debugger.watch((editor.buffer.target, line+1))
+            self.debugger.unwatch()
+            self.debugger.editor = editor
+            self.debugger.watch((editor.buffer.target, line+1))
         editor.buffer.MarkerDeleteAll(4)
     
     def stop_trace(self, line, editor):

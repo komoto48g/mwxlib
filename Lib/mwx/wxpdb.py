@@ -278,6 +278,7 @@ class Debugger(Pdb):
             editor = self.parent.Log
             if filename != editor.buffer.filename:
                 editor.load_cache(filename)
+        
         buffer = editor.buffer
         if filename == buffer.target:
             if code != self.code:
