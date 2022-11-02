@@ -53,7 +53,6 @@ class Plugin(Layer):
                         tip="this is a choice",
                         icon=wx.ART_NEW,
                         readonly=0,
-                        selection=0,
                         size=(200,22),
                         )
         self.layout((
