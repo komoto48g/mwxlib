@@ -750,18 +750,18 @@ class ControlPanel(scrolled.ScrolledPanel):
             return params
         return filter(lambda c: getattr(c, 'check', None), params)
     
-    def reset_params(self, argv=None, checked_only=False, **kwargs):
+    def reset_params(self, argv=None, checked_only=False):
         params = self.get_params(checked_only)
         if argv is None:
             for p in params:
                 try:
-                    p.reset(**kwargs)
-                except AttributeError:
+                    p.reset()
+                except (AttributeError, TypeError):
                     pass
         else:
-            for p,v in zip(params, argv):
+            for p, v in zip(params, argv):
                 try:
-                    p.reset(v, **kwargs) # eval v:str -> value
+                    p.reset(v) # eval v:str -> value
                 except AttributeError:
                     p.value = v
                 except Exception as e: # failed to eval
@@ -774,10 +774,10 @@ class ControlPanel(scrolled.ScrolledPanel):
                          else str(p.value) for p in params)
         Clipboard.write(text)
     
-    def paste_from_clipboard(self, checked_only=False, **kwargs):
+    def paste_from_clipboard(self, checked_only=False):
         text = Clipboard.read()
         if text:
-            self.reset_params(text.split('\t'), checked_only, **kwargs)
+            self.reset_params(text.split('\t'), checked_only)
 
 
 class Clipboard:
