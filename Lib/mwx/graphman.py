@@ -637,7 +637,7 @@ class Frame(mwx.Frame):
         self._mgr.Update()
         
         self.menubar["File"][0:0] = [
-            (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book_open'),
+            (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book'),
                 lambda v: self.load_frame()),
                 
             (wx.ID_CLOSE, "&Close\t(C-k)", "Kill buffer", Icon('book_blue'),
@@ -741,7 +741,7 @@ class Frame(mwx.Frame):
         ]
         
         self.menubar[Layer.MENU] = [
-            (mwx.ID_(100), "&Load Plugs", "Load plugins", Icon('load'),
+            (mwx.ID_(100), "&Load Plugs", "Load plugins", Icon('plugin'),
                 self.OnLoadPlugins),
             
             (mwx.ID_(101), "&Quit Plugs\tCtrl-g", "Stop all plugin threads", Icon('exit'),
