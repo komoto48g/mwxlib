@@ -1745,8 +1745,11 @@ class Frame(mwx.Frame):
                 except Exception:
                     traceback.print_exc()
                     print("- Failed to save session: {}".format(plug))
-                o.write("self.load_plug({!r}, session={!r})\n"
-                        .format(path, current_session or None))
+                o.write("self.load_plug({name!r}, show={show}, session={jssn!r})\n".format(
+                        name = path,
+                        show = plug.IsShown(),
+                        jssn = current_session or None,
+                ))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             ## set-global-unit
@@ -1787,12 +1790,12 @@ if __name__ == "__main__":
     
     frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=0)
     
-    sys.path.append(r"C:\usr\home\lib\python\Lib\wxpyNautilus\plugins")
-    frm.require("viewfft")
-    frm.require("viewframe")
-    frm.require("lineprofile")
-    frm.require("ffmpeg_viewer")
-    frm.load_plug("randn.py", show=1, dock=0)
+    ## sys.path.append(r"C:\usr\home\lib\python\Lib\wxpyNautilus\plugins")
+    ## frm.require("viewfft")
+    ## frm.require("viewframe")
+    ## frm.require("lineprofile")
+    ## frm.require("ffmpeg_viewer")
+    ## frm.load_plug("randn.py", show=1, dock=0)
     
     frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
