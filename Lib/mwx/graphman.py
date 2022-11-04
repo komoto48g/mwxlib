@@ -828,8 +828,10 @@ class Frame(mwx.Frame):
             ret = dlg.ShowModal()
             if ret == wx.ID_YES:
                 if not self.save_session():
+                    evt.Veto()
                     return
             elif ret == wx.ID_CANCEL:
+                evt.Veto()
                 return
             evt.Skip()
     

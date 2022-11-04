@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.1"
+__version__ = "0.74.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1091,6 +1091,7 @@ class ShellFrame(MiniFrame):
         if self.debugger.busy:
             wx.MessageBox("The debugger is running.\n\n"
                           "Enter [q]uit to exit before closing.")
+            evt.Veto()
             return
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
@@ -1619,7 +1620,7 @@ def dump(widget=None):
 
 
 if __name__ == "__main__":
-    from mwx.nutshell import Editor
+    from mwx.nutshell import Buffer
     
     SHELLSTARTUP = """
 if 1:
@@ -1637,12 +1638,10 @@ if 1:
         style=wx.DEFAULT_FRAME_STYLE,
         size=(200,80),
     )
-    frm.editor = Editor(frm)
+    frm.editor = Buffer(frm)
     
     frm.handler.debug = 4
     frm.editor.handler.debug = 4
-    frm.shellframe.handler.debug = 4
-    frm.shellframe.rootshell.handler.debug = 4
     
     frm.shellframe.Show()
     frm.shellframe.rootshell.SetFocus()
