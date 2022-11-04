@@ -32,7 +32,7 @@ import wx
 
 
 @contextlib.contextmanager
-def App(loop=True):
+def app(loop=True):
     try:
         app = wx.GetApp() or wx.App()
         yield app
