@@ -688,9 +688,8 @@ class EditorInterface(CtrlInterface):
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
         
-        Note:
-            It requires a code object compiled using `py_exec_region`.
-            If the code doesn't exists, it returns the folding region.
+        Requires a code object compiled using `py_exec_region`.
+        If the code doesn't exist, return the folding region.
         """
         if not self.code:
             return self.get_region(line)
@@ -1582,34 +1581,31 @@ class Buffer(EditWindow, EditorInterface):
     
     def _load_cache(self, filename, lineno=0, globals=None):
         """Load cached script file using linecache."""
-        f = os.path.abspath(filename)
-        linecache.checkcache(f)
-        lines = linecache.getlines(f, globals)
+        linecache.checkcache(filename)
+        lines = linecache.getlines(filename, globals)
         if lines:
             self._reset(''.join(lines))
             self.markline = lineno - 1
             self.goto_mark()
-            self.filename = f
+            self.filename = filename
             self.handler('buffer_updated', self)
             return True
         return False
     
     def _load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile."""
-        f = os.path.abspath(filename)
-        if self.LoadFile(f):
+        if self.LoadFile(filename):
             self.markline = lineno - 1
             self.goto_mark()
-            self.filename = f
+            self.filename = filename
             self.handler('buffer_updated', self)
             return True
         return False
     
     def _save_file(self, filename):
         """Wrapped method of SaveFile."""
-        f = os.path.abspath(filename)
-        if self.SaveFile(f):
-            self.filename = f
+        if self.SaveFile(filename):
+            self.filename = filename
             self.handler('buffer_updated', self)
             return True
         return False
@@ -1764,7 +1760,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             elif isinstance(f, str):
                 if buf.code and f == buf.codename:
                     return buf
-                if os.path.abspath(f) == buf.filename:
+                if f == buf.filename:
                     return buf
     
     def swap_buffer(self, buf):
@@ -1806,7 +1802,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         j = self.GetPageIndex(buf)
         self.DeletePage(j)
         
-        ## Switch to one of the remaining buffers.
         if not self.buffer:
             self.new_buffer()
     
@@ -1833,6 +1828,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         return buf.mtdelta is not None and buf.IsModified()
     
     def load_cache(self, filename, lineno=0, globals=None, focus=False):
+        """Load a file from cache.
+        Note:
+            The filename should be an absolute path.
+            The buffer will be reloaded without confirmation.
+        """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         if buf._load_cache(filename, lineno, globals):
             self.swap_buffer(buf)
@@ -1844,6 +1844,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             return False
     
     def load_file(self, filename, lineno=0, focus=False):
+        """Load a file.
+        Note:
+            The filename should be an absolute path.
+            The buffer will be reloaded without confirmation.
+        """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         if buf._load_file(filename, lineno):
             self.swap_buffer(buf)
@@ -1855,6 +1860,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             return False
     
     def save_file(self, filename):
+        """Save the current buffer to a file.
+        Note:
+            The filename should be an absolute path.
+            The file will be overwritten without confirmation.
+        """
         return self.buffer._save_file(filename)
     
     def load_buffer(self):
