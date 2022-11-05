@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from numpy import inf
 import wx
-import wx.svg
 import mwx
 import mwx.controls
 mwx.reload(mwx.controls)
@@ -12,12 +11,17 @@ from mwx.graphman import Layer, Frame
 
 
 def iconify(icon, w, h):
-    import requests
-    url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
-    content = requests.get(url).content
-    img = wx.svg.SVGimage.CreateFromBytes(content)
-    bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
-    return bmp
+    ## if wx.VERSION >= (4,2,0):
+    try:
+        import wx.svg
+        import requests
+        url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
+        content = requests.get(url).content
+        img = wx.svg.SVGimage.CreateFromBytes(content)
+        bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
+        return bmp
+    except Exception:
+        pass
 
 
 class Plugin(Layer):
