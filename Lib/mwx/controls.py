@@ -817,19 +817,21 @@ if 1:
             'cut' : wx.ART_CUT,
            'copy' : wx.ART_COPY,
           'paste' : wx.ART_PASTE,
+         'delete' : wx.ART_DELETE,
            'book' : wx.ART_HELP_BOOK,
            'page' : wx.ART_HELP_PAGE,
             'exe' : wx.ART_EXECUTABLE_FILE,
            'file' : wx.ART_NORMAL_FILE,
        'file_new' : wx.ART_NEW,
-    'file_delete' : wx.ART_DELETE,
    'file_missing' : wx.ART_MISSING_IMAGE,
            'find' : wx.ART_FIND,
            'open' : wx.ART_FILE_OPEN,
            'save' : wx.ART_FILE_SAVE,
          'saveas' : wx.ART_FILE_SAVE_AS,
          'folder' : wx.ART_FOLDER,
-    'folder_open' : wx.ART_FOLDER_OPEN,
+   #'folder_open' : wx.ART_FOLDER_OPEN,
+          #'undo' : wx.ART_FOLDER_UNDO,
+          #'redo' : wx.ART_FOLDER_REDO,
              #'x' : wx.ART_CLOSE,
              #'v' : wx.ART_TICK_MARK,
               '?' : wx.ART_QUESTION,
@@ -952,9 +954,9 @@ class ToggleButton(wx.ToggleButton):
     def icon(self, v):
         self.__icon = v
         if isinstance(v, tuple):
-            v, w = v
-            self.SetBitmapPressed(_Icon(w))
-        if v:
+            self.SetBitmap(_Icon(v[0]))
+            self.SetBitmapPressed(_Icon(v[1]))
+        elif v:
             self.SetBitmap(_Icon(v))
         self.Refresh()
     
