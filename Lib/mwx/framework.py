@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.4"
+__version__ = "0.74.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -955,7 +955,6 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                    'add_shell' : [ None, self.add_shell ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
                   'add_history' : [ None, self.add_history ],
@@ -1413,19 +1412,8 @@ class ShellFrame(MiniFrame):
         self.console.AddPage(shell, caption or typename(shell.target))
         shell.SetFocus()
     
-    def clear_shell(self):
-        """Clear the current shell."""
-        shell = self.current_shell
-        shell.clear()
-    
-    def clone_shell(self, target=None):
-        """Clone the current shell."""
-        shell = self.current_shell
-        return shell.clone(target or shell.target)
-    
-    def close_shell(self):
+    def delete_shell(self, shell):
         """Close the current shell."""
-        shell = self.current_shell
         if shell is self.rootshell:
             ## self.message("- Don't close the root shell.")
             return

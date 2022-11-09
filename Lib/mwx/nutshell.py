@@ -3047,10 +3047,13 @@ class Nautilus(Shell, EditorInterface):
         ## Make shell:clone in the console
         shell = Nautilus(self.parent, target, name="clone",
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
-        self.parent.handler('add_shell', shell)
+        self.parent.add_shell(shell)
         self.handler('shell_cloned', shell)
         shell.SetFocus()
         return shell
+    
+    def kill(self):
+        self.parent.delete_shell(self) # => window_destroy
     
     ## --------------------------------
     ## Autocomp actions of the shell
