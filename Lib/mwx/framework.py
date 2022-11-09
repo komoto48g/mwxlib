@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.3"
+__version__ = "0.74.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -845,6 +845,7 @@ class ShellFrame(MiniFrame):
         builtins.dive = self.rootshell.clone
         builtins.load = self.load
         builtins.debug = self.debug
+        builtins.highlight = self.highlight
         
         try:
             from wxpdb import Debugger
@@ -1239,6 +1240,14 @@ class ShellFrame(MiniFrame):
                 self.popup_window(self.Log, show, focus)
             return True
         return False
+    
+    def highlight(self, obj):
+        if isinstance(obj, wx.Window):
+            self.inspector.highlighter.HighlightWindow(obj)
+        elif isinstance(obj, wx.Sizer):
+            self.inspector.highlighter.HighlightSizer(obj)
+        elif isinstance(obj, wx.SizerItem):
+            self.inspector.highlighter.HighlightSizer(obj.Sizer)
     
     @postcall
     def debug(self, obj, *args, **kwargs):
