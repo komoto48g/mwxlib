@@ -82,8 +82,8 @@ class EditorInterface(CtrlInterface):
             '*button* released' : [ None, dispatch, skip ],
             },
             0 : {
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
+                    ## '* pressed' : (0, skip),
+                   ## '* released' : (0, skip),
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
@@ -1501,8 +1501,10 @@ class Buffer(EditWindow, EditorInterface):
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-                    '* pressed' : (0, dispatch), # => skip
-                   '* released' : (0, dispatch), # => skip
+               '[CM]-* pressed' : (0, dispatch),
+              '[CM]-* released' : (0, dispatch),
+            '[LR]win-* pressed' : (0, dispatch),
+           '[LR]win-* released' : (0, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
             },
         })
@@ -2267,8 +2269,8 @@ class Nautilus(Shell, EditorInterface):
                'escape pressed' : (0, self.on_exit_notemode),
             },
             0 : { # Normal mode
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
+                    ## '* pressed' : (0, skip),
+                   ## '* released' : (0, skip),
                'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
