@@ -1,10 +1,8 @@
 #! python3
 # -*- coding: utf-8 -*-
-from numpy import inf
 import wx
 import mwx
-import mwx.controls
-mwx.reload(mwx.controls)
+from numpy import inf
 from mwx.controls import Param, LParam
 from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame

@@ -1,9 +1,6 @@
 #! python3
 # -*- coding: utf-8 -*-
 import wx
-import mwx
-import mwx.controls
-mwx.reload(mwx.controls)
 from mwx.controls import LParam, Button, Gauge, Indicator
 from mwx.graphman import Layer, Frame
 
@@ -16,7 +13,7 @@ class Plugin(Layer):
         self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE)
         self.sig = Indicator(self, size=(-1,24))
         
-        self.btn = Button(self, label="", icon="v")
+        self.btn = Button(self, label="", icon='v')
         self.param = LParam("value", (0,self.g1.Range,1), 0)
         
         self.layout((
