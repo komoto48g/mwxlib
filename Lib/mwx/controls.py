@@ -813,7 +813,7 @@ class Clipboard:
 ## Wx custom controls and bitmaps 
 ## --------------------------------
 if 1:
-    provided_arts = {
+    _provided_arts = {
             'cut' : wx.ART_CUT,
            'copy' : wx.ART_COPY,
           'paste' : wx.ART_PASTE,
@@ -847,6 +847,10 @@ if 1:
             '|<-' : wx.ART_GOTO_FIRST,
             '->|' : wx.ART_GOTO_LAST,
     }
+    _custom_images = {
+        k:v for k, v in vars(images).items()
+            if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
+    }
 
 def Icon(key, size=None):
     if key:
@@ -859,12 +863,11 @@ def Icon(key, size=None):
                           .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
                           .ConvertToBitmap())
         except Exception:
-            bmp = wx.ArtProvider.GetBitmap(
-                    provided_arts.get(key) or key,
-                    size=size or (16,16))
+            art = _provided_arts.get(key) or key
+            bmp = wx.ArtProvider.GetBitmap(art, wx.ART_OTHER, size or (16,16))
         return bmp
     
-    ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.0
+    ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.1
     if key == '':
         bmp = wx.Bitmap(size or (16,16))
         if 1:
@@ -874,16 +877,15 @@ def Icon(key, size=None):
             del dc
         bmp.SetMaskColour('black') # return dummy-sized blank bitmap
         return bmp
+    
     return wx.NullBitmap # The standard wx controls accept this,
 
-Icon.provided_arts = provided_arts
-
-Icon.custom_images = dict((k, v) for k, v in images.__dict__.items()
-                          if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage))
+Icon.provided_arts = _provided_arts
+Icon.custom_images = _custom_images
 
 
 def _Icon(v):
-    if isinstance(v, str):
+    if isinstance(v, (str, bytes)):
         return Icon(v)
     return v
 
