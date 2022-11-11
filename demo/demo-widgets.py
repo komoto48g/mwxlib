@@ -72,18 +72,18 @@ class Plugin(Layer):
             """Trace events"""
             print("$(v) = {!r}".format(v))
         
-        self.LP =  LParam('L', (-1,1,0.01), 0,
+        self.L =  LParam('L', (-1,1,0.01), 0,
                         handler=print,
                         tip="Linear param\n\n"
                             "In addition to direct key input to the textctrl,\n"
                             "[up][down][wheelup][wheeldown] keys can be used,\n"
                             "with modifiers S- 2x, C- 16x, and M- 256x steps.\n"
                             "[Mbutton] resets to the std. value if it exists.\n")
-        self.P = Param('U', (1,2,3,inf))
+        self.U = Param('U', (1,2,3,inf))
         
         self.layout((
-                self.LP,
-                self.P,
+                self.L,
+                self.U,
             ),
             title="Custom param controls",
             expand=1, show=1,

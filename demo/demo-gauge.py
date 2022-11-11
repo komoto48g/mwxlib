@@ -1,7 +1,7 @@
 #! python3
 # -*- coding: utf-8 -*-
 import wx
-from mwx.controls import LParam, Button, Gauge, Indicator
+from mwx.controls import LParam, Gauge, Indicator
 from mwx.graphman import Layer, Frame
 
 
@@ -10,15 +10,15 @@ class Plugin(Layer):
     
     def Init(self):
         self.g1 = wx.Gauge(self, range=24, size=(100,24))
-        self.g2 = Gauge(self, range=24, size=(100,24), style=wx.BORDER_DOUBLE)
-        self.sig = Indicator(self, size=(-1,24))
+        self.g2 = Gauge(self, range=24, size=(100,24))
         
-        self.btn = Button(self, label="", icon='v')
+        self.sig = Indicator(self, size=(-1,24))
         self.param = LParam("value", (0,self.g1.Range,1), 0)
         
         self.layout((
-                (self.btn, 0), self.g1,
-                (self.sig, 0), self.g2,
+                self.g1, None,
+                self.g2, None,
+                (self.sig, 0),
                 self.param,
             ),
             row=2, expand=1,

@@ -857,7 +857,7 @@ if 1:
 def Icon(key, size=None):
     if key:
         try:
-            art = getattr(images, key)
+            art = _custom_images.get(key) # None => AttributeError
             if not size:
                 bmp = art.GetBitmap()
             else:
@@ -889,6 +889,8 @@ Icon.custom_images = _custom_images
 def _Icon(v):
     if isinstance(v, (str, bytes)):
         return Icon(v)
+    if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage):
+        return v.GetBitmap()
     return v
 
 
