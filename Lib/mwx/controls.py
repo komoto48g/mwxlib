@@ -126,7 +126,7 @@ class Param(object):
         if v in (nan, inf):
             self.__value = v
             for knob in self.knobs:
-                knob.update_ctrl(None)
+                knob.update_ctrl(None, notify=False)
             return
         elif v == self.__value:
             return
@@ -471,6 +471,8 @@ class Knob(wx.Panel):
                     wx.CallAfter(wx.CallLater, 1000,
                         self.set_textcolour, '#ffffff')
                     self.set_textcolour('#ffff80') # light-yellow
+                else:
+                    self.set_textcolour('#ffffff') # True: white
             else:
                 self.set_textcolour('#ffffff') # True: white
         elif valid is None:
