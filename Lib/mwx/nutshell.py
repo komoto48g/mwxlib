@@ -1795,6 +1795,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.default_buffer = buf
         buf._reset()
     
+    @postcall
     def remove_buffer(self, buf=None):
         """Pop the current buffer from the buffer list."""
         if not buf:
@@ -1805,6 +1806,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if not self.buffer:
             self.new_buffer()
     
+    @postcall
     def remove_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
@@ -1840,7 +1842,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 buf.SetFocus()
             return True
         else:
-            self.remove_buffer(buf)
+            ## self.remove_buffer(buf)
             return False
     
     def load_file(self, filename, lineno=0, focus=False):
@@ -1856,7 +1858,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 buf.SetFocus()
             return True
         else:
-            self.remove_buffer(buf)
+            ## self.remove_buffer(buf)
             return False
     
     def save_file(self, filename):
@@ -1961,7 +1963,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.remove_buffer)
+        self.remove_buffer()
     
     def kill_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers()):
@@ -1974,7 +1976,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.remove_all_buffers)
+        self.remove_all_buffers()
 
 
 class Interpreter(interpreter.Interpreter):

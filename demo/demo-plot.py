@@ -1,11 +1,8 @@
 #! python3
 # -*- coding: shift-jis -*-
+import wx
 import numpy as np
 from numpy import pi,exp,sin,cos
-import wx
-import mwx
-import mwx.controls
-mwx.reload(mwx.controls)
 from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 

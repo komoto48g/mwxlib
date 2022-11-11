@@ -1,6 +1,10 @@
 #! python3
 # -*- coding: utf-8 -*-
 import wx
+## if 1:
+##     from importlib import reload
+##     import mwx.controls
+##     reload(mwx.controls)
 from mwx.controls import Button, Icon
 from mwx.graphman import Layer, Frame
 
@@ -10,13 +14,13 @@ class Plugin(Layer):
     
     def Init(self):
         self.layout(
-            (Button(self, k, icon=k, size=(80,-1), tip=str(v))
+            (Button(self, k, icon=v, size=(80,-1), tip=str(v))
                     for k, v in Icon.provided_arts.items()),
             title="Provided art images",
             row=6, show=0
         )
         self.layout(
-            (Button(self, k, icon=k, size=(80,-1))
+            (Button(self, k, icon=v, size=(80,-1))
                     for k, v in Icon.custom_images.items()),
             title="Custom art images",
             row=6, show=0

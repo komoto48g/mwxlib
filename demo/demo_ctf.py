@@ -4,7 +4,6 @@ import wx
 import cv2
 import numpy as np
 from numpy import pi,sin
-import mwx
 from mwx.controls import LParam, Button
 from mwx.graphman import Layer, Frame
 
@@ -12,13 +11,15 @@ N = 1024
 el = 1.968758541778089e-3 # elambda [nm] at 300kV 
 
 class Plugin(Layer):
+    menukey = "Plugins/&Demo/"
+    
     def Init(self):
         self.Df = LParam('df[nm]', (-500, 500, 0.1), 100.0, handler=self.run)
         self.Cs = LParam('cs[mm]', (-5, 5, 0.01), 0.0, handler=self.run)
         self.layout((
                 self.Df,
                 self.Cs,
-                Button(self, "Run", self.run),
+                Button(self, "Run", self.run, icon='->'),
             ),
             type=None, style='button', lw=40, tw=40
         )
