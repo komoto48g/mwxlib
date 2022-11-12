@@ -122,6 +122,14 @@ class Inspector(it.InspectionTree, CtrlInterface):
         shell.SetFocus()
         return shell
     
+    def highlight(self, obj):
+        if isinstance(obj, wx.Window):
+            self.highlighter.HighlightWindow(obj)
+        elif isinstance(obj, wx.Sizer):
+            self.highlighter.HighlightSizer(obj)
+        elif isinstance(obj, wx.SizerItem):
+            self.highlighter.HighlightSizer(obj.Sizer)
+    
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()

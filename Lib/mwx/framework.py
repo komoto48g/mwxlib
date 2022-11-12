@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.8"
+__version__ = "0.74.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1243,12 +1243,7 @@ class ShellFrame(MiniFrame):
         return False
     
     def highlight(self, obj):
-        if isinstance(obj, wx.Window):
-            self.inspector.highlighter.HighlightWindow(obj)
-        elif isinstance(obj, wx.Sizer):
-            self.inspector.highlighter.HighlightSizer(obj)
-        elif isinstance(obj, wx.SizerItem):
-            self.inspector.highlighter.HighlightSizer(obj.Sizer)
+        self.inspector.highlight(obj)
     
     @postcall
     def debug(self, obj, *args, **kwargs):
