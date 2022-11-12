@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.7"
+__version__ = "0.74.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -818,7 +818,7 @@ class ShellFrame(MiniFrame):
             from .nutshell import Editor, Nautilus
         
         self.__shell = Nautilus(self,
-            target=target or parent or __import__("__main__"),
+            target or parent or __import__("__main__"),
             style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
             **kwargs)
         
@@ -842,7 +842,7 @@ class ShellFrame(MiniFrame):
         builtins.timeit = timeit
         builtins.help = self.rootshell.help
         builtins.info = self.rootshell.info
-        builtins.dive = self.rootshell.clone
+        builtins.dive = self.clone_shell
         builtins.load = self.load
         builtins.debug = self.debug
         builtins.highlight = self.highlight
@@ -955,6 +955,8 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
+                    'add_shell' : [ None, self.add_shell ],
+                    'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
                   'add_history' : [ None, self.add_history ],
@@ -1408,8 +1410,19 @@ class ShellFrame(MiniFrame):
                 break
             win = win.Parent
     
-    def add_shell(self, shell, caption=None):
-        self.console.AddPage(shell, caption or typename(shell.target))
+    def add_shell(self, shell):
+        self.console.AddPage(shell, typename(shell.target))
+        shell.SetFocus()
+    
+    def clone_shell(self, target):
+        if not hasattr(target, '__dict__'):
+            raise TypeError("Unable to target primitive object: {!r}".format(target))
+        
+        shell = self.rootshell.__class__(self, target, name="clone",
+                    style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
+                    )
+        self.handler('shell_new', shell)
+        self.console.AddPage(shell, typename(shell.target))
         shell.SetFocus()
     
     def delete_shell(self, shell):
