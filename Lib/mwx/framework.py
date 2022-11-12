@@ -888,8 +888,6 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
-        self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
-        self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.ghost.Name = "ghost"
         
         self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
@@ -898,6 +896,8 @@ class ShellFrame(MiniFrame):
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
+        self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
+        self.watcher.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.watcher.Name = "watcher"
         
         self._mgr = aui.AuiManager()
