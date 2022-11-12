@@ -3041,20 +3041,6 @@ class Nautilus(Shell, EditorInterface):
             self.write(cmd.replace('\n', os.linesep + sys.ps2))
             self.processLine()
     
-    def clone(self, target):
-        if not hasattr(target, '__dict__'):
-            raise TypeError("Unable to target primitive object: {!r}".format(target))
-        
-        shell = Nautilus(self.parent, target, name="clone",
-                         style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
-        self.parent.handler('add_shell', shell)
-        self.parent.handler('shell_new', shell)
-        shell.SetFocus()
-        return shell
-    
-    def kill(self):
-        self.parent.delete_shell(self) # => window_destroy
-    
     ## --------------------------------
     ## Autocomp actions of the shell
     ## --------------------------------

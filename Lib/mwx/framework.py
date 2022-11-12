@@ -955,7 +955,6 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                    'add_shell' : [ None, self.add_shell ],
                     'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
@@ -1409,10 +1408,6 @@ class ShellFrame(MiniFrame):
                 pages[j].SetFocus()
                 break
             win = win.Parent
-    
-    def add_shell(self, shell):
-        self.console.AddPage(shell, typename(shell.target))
-        shell.SetFocus()
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
