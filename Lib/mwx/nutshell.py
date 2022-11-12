@@ -3046,10 +3046,9 @@ class Nautilus(Shell, EditorInterface):
         if not hasattr(target, '__dict__'):
             raise TypeError("Unable to target primitive object: {!r}".format(target))
         
-        ## Make shell:clone in the console
         shell = Nautilus(self.parent, target, name="clone",
                          style=(wx.CLIP_CHILDREN | wx.BORDER_NONE))
-        self.parent.add_shell(shell)
+        self.parent.handler('add_shell', shell)
         self.handler('shell_cloned', shell)
         shell.SetFocus()
         return shell

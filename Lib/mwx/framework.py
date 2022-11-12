@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.7"
+__version__ = "0.74.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -955,6 +955,7 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
+                    'add_shell' : [ None, self.add_shell ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
                   'add_history' : [ None, self.add_history ],
@@ -1408,8 +1409,8 @@ class ShellFrame(MiniFrame):
                 break
             win = win.Parent
     
-    def add_shell(self, shell, caption=None):
-        self.console.AddPage(shell, caption or typename(shell.target))
+    def add_shell(self, shell):
+        self.console.AddPage(shell, typename(shell.target))
         shell.SetFocus()
     
     def delete_shell(self, shell):
