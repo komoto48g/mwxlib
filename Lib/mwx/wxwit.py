@@ -32,7 +32,13 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
         
+        try:
+            from nutshell import Nautilus
+        except ImportError:
+            from .nutshell import Nautilus
+        
         self._noWatchList = [self, self.GetTopLevelParent()]
+        self._noWatchClsList = (Nautilus,)
         
         self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
@@ -56,7 +62,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
             v.Skip()
         
         @self.handler.bind('f4 pressed')
-        def hillilght(v):
+        def highlight(v):
             if self.target:
                 self.highlighter.HighlightCurrentItem(self)
         
@@ -107,18 +113,21 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.target = None
         self.timer.Stop()
     
-    def dive(self, obj):
-        shell = self.parent.clone_shell(obj)
-        self.SetObj(obj)
+    def addref(self, obj, ref='obj'):
+        shell = self.parent.current_shell
+        if shell is not obj:
+            shell.locals[ref] = obj
+            ## shell.write(ref)
+            self.parent.message("self.shell.{} -> {!r}".format(ref, obj))
+        shell.SetFocus()
         return shell
-    
-    def monitor(self, obj):
-        self.parent.debug(obj)
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
-        if wnd and wnd is not self.target and wnd not in self._noWatchList:
+        if (wnd and wnd is not self.target\
+                and wnd not in self._noWatchList\
+                and not isinstance(wnd, self._noWatchClsList)):
             self.SetObj(wnd)
         evt.Skip()
     
@@ -141,21 +150,27 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.SelectItem(item)
         obj = self.target
+        valid = (obj is not None)
         menu = [
             (1, "&Dive into the shell", Icon('core'),
-                lambda v: self.dive(obj),
-                lambda v: v.Enable(obj is not None)),
-            (),
+                lambda v: self.parent.clone_shell(obj),
+                lambda v: v.Enable(valid)),
+                
             (2, "&Watch the event", Icon('ghost'),
-                lambda v: self.monitor(obj),
-                lambda v: v.Enable(obj is not None)),
+                lambda v: self.parent.debug(obj),
+                lambda v: v.Enable(valid)),
+                
+            (3, "&Add reference", Icon('tag'),
+                lambda v: self.addref(obj),
+                lambda v: v.Enable(valid)),
             (),
             (10, "&Inspection Tool", Icon('inspect'),
-                lambda v: watchit(obj)),
+                lambda v: watchit(obj),
+                lambda v: v.Enable(valid)),
             (),
             (11, "Highlight\tf4", miniIcon('HighlightItem'),
                 lambda v: self.highlighter.HighlightCurrentItem(self),
-                lambda v: v.Enable(obj is not None)),
+                lambda v: v.Enable(valid)),
                 
             (12, "Refresh\tf5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
