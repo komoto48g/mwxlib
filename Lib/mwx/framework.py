@@ -889,8 +889,6 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.AddPage(self.History, "History")
-        self.ghost.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
-        self.ghost.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.ghost.Name = "ghost"
         
         self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
@@ -899,6 +897,8 @@ class ShellFrame(MiniFrame):
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
+        self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
+        self.watcher.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.watcher.Name = "watcher"
         
         self._mgr = aui.AuiManager()
@@ -956,7 +956,6 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                    'add_shell' : [ None, self.add_shell ],
                     'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
@@ -1411,10 +1410,6 @@ class ShellFrame(MiniFrame):
                 pages[j].SetFocus()
                 break
             win = win.Parent
-    
-    def add_shell(self, shell):
-        self.console.AddPage(shell, typename(shell.target))
-        shell.SetFocus()
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
