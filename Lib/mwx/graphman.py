@@ -1296,13 +1296,13 @@ class Frame(mwx.Frame):
         if not plug:
             return
         
-        shell = self.shellframe.inspector.dive(plug)
-        shell.SetFocus()
+        shell = self.shellframe.clone_shell(plug)
         
         @shell.handler.bind("shell_activated")
         def init(shell):
             plug = self.get_plug(name)
             shell.target = plug or self # reset for unloaded plug
+        
         init(shell)
         self.shellframe.Show()
         self.shellframe.load(plug)

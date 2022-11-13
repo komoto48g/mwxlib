@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.74.9"
+__version__ = "0.75.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1419,6 +1419,7 @@ class ShellFrame(MiniFrame):
         self.handler('shell_new', shell)
         self.console.AddPage(shell, typename(shell.target))
         shell.SetFocus()
+        return shell
     
     def delete_shell(self, shell):
         """Close the current shell."""
