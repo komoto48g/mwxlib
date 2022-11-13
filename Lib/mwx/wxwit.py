@@ -118,7 +118,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if shell is not obj:
             shell.locals[ref] = obj
             ## shell.write(ref)
-            self.parent.message("self.shell.{} -> {!r}".format(ref, obj))
+            self.parent.message("self.{} -> {!r}".format(ref, obj))
         shell.SetFocus()
         return shell
     
