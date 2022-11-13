@@ -801,6 +801,7 @@ class ShellFrame(MiniFrame):
         @where      : Displays filename:lineno or the module name.
         @mro        : Displays mro list and filename:lineno or the module name.
         @debug      : Open pdb or event-monitor.
+        @highlight  : Highlight the widget.
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
@@ -811,21 +812,6 @@ class ShellFrame(MiniFrame):
         
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
-        
-        try:
-            from nutshell import Editor, Nautilus
-        except ImportError:
-            from .nutshell import Editor, Nautilus
-        
-        self.__shell = Nautilus(self,
-            target or parent or __import__("__main__"),
-            style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
-            **kwargs)
-        
-        self.Scratch = Editor(self, name="Scratch")
-        self.Log = Editor(self, name="Log")
-        self.Help = Editor(self, name="Help")
-        self.History = Editor(self, name="History")
         
         ## Add useful global abbreviations to builtins
         builtins.apropos = apropos
@@ -840,12 +826,27 @@ class ShellFrame(MiniFrame):
         builtins.filling = filling
         builtins.profile = profile
         builtins.timeit = timeit
-        builtins.help = self.rootshell.help
-        builtins.info = self.rootshell.info
+        builtins.info = self.info
+        builtins.help = self.help
         builtins.dive = self.clone_shell
         builtins.load = self.load
         builtins.debug = self.debug
         builtins.highlight = self.highlight
+        
+        try:
+            from nutshell import Editor, Nautilus
+        except ImportError:
+            from .nutshell import Editor, Nautilus
+        
+        self.__shell = Nautilus(self,
+                                target or __import__("__main__"),
+                                style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
+                                **kwargs)
+        
+        self.Scratch = Editor(self, name="Scratch")
+        self.Log = Editor(self, name="Log")
+        self.Help = Editor(self, name="Help")
+        self.History = Editor(self, name="History")
         
         try:
             from wxpdb import Debugger
@@ -1241,6 +1242,12 @@ class ShellFrame(MiniFrame):
                 self.popup_window(self.Log, show, focus)
             return True
         return False
+    
+    def info(self, obj):
+        self.rootshell.info(obj)
+    
+    def help(self, obj):
+        self.rootshell.help(obj)
     
     def highlight(self, obj):
         self.inspector.highlight(obj)
