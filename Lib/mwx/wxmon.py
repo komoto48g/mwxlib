@@ -10,9 +10,9 @@ import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
-    from utilus import where
-    from framework import CtrlInterface, Menu
-    from controls import Icon, Clipboard
+    from mwx.utilus import where
+    from mwx.framework import CtrlInterface, Menu
+    from mwx.controls import Icon, Clipboard
 except ImportError:
     from .utilus import where
     from .framework import CtrlInterface, Menu
@@ -339,7 +339,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
 
 
 if __name__ == "__main__":
-    from framework import Frame
+    from mwx.framework import Frame
     
     app = wx.App()
     frm = Frame(None)

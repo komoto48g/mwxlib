@@ -8,10 +8,10 @@ from itertools import chain
 import sys
 import wx
 try:
-    import framework as mwx
-    from utilus import funcall as _F
-    from matplot2 import MatplotPanel
-    from matplot2 import NORMAL, MARK, LINE, REGION
+    from mwx import framework as mwx
+    from mwx.utilus import funcall as _F
+    from mwx.matplot2 import MatplotPanel
+    from mwx.matplot2 import NORMAL, MARK, LINE, REGION
 except ImportError:
     from . import framework as mwx
     from .utilus import funcall as _F

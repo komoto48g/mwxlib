@@ -8,8 +8,8 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import wx
 import wx.lib.inspection as it
 try:
-    from framework import CtrlInterface, Menu, watchit
-    from controls import Icon
+    from mwx.framework import CtrlInterface, Menu, watchit
+    from mwx.controls import Icon
 except ImportError:
     from .framework import CtrlInterface, Menu, watchit
     from .controls import Icon
@@ -33,7 +33,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.timer = wx.Timer(self)
         
         try:
-            from nutshell import Nautilus
+            from mwx.nutshell import Nautilus
         except ImportError:
             from .nutshell import Nautilus
         
@@ -207,7 +207,7 @@ def dumptree(self):
 
 
 if __name__ == "__main__":
-    from framework import Frame
+    from mwx.framework import Frame
     
     app = wx.App()
     frm = Frame(None)

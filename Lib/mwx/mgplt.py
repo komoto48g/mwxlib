@@ -13,8 +13,8 @@ import os
 import wx
 import numpy as np
 try:
-    import framework as mwx
-    from controls import ControlPanel
+    from mwx import framework as mwx
+    from mwx.controls import ControlPanel
 except ImportError:
     from . import framework as mwx
     from .controls import ControlPanel
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     from numpy import pi
-    from controls import LParam
+    from mwx.controls import LParam
     
     class TestFrame(GnuplotFrame):
         def __init__(self, *args, **kwargs):

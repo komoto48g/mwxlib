@@ -7,7 +7,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import sys
 import wx
 try:
-    import framework as mwx
+    from mwx import framework as mwx
 except ImportError:
     from . import framework as mwx
 import matplotlib; matplotlib.use('wxagg') # noqa

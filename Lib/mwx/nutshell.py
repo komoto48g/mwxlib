@@ -29,9 +29,9 @@ from importlib import import_module
 import contextlib
 import dis
 try:
-    import utilus as ut
-    from utilus import funcall as _F
-    from framework import postcall, skip, Menu, CtrlInterface
+    from mwx import utilus as ut
+    from mwx.utilus import funcall as _F
+    from mwx.framework import postcall, skip, Menu, CtrlInterface
 except ImportError:
     from . import utilus as ut
     from .utilus import funcall as _F

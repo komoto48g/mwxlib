@@ -10,13 +10,13 @@ import wx
 import numpy as np
 from numpy import nan, inf
 try:
-    from utilus import SSM
-    from framework import pack, Menu
-    import images
+    from mwx import images
+    from mwx.utilus import SSM
+    from mwx.framework import pack, Menu
 except ImportError:
+    from . import images
     from .utilus import SSM
     from .framework import pack, Menu
-    from . import images
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
@@ -1221,7 +1221,7 @@ class Gauge(wx.Panel):
 
 if __name__ == "__main__":
     from numpy import pi
-    from framework import CtrlInterface, Frame
+    from mwx.framework import CtrlInterface, Frame
     
     class TestPanel(ControlPanel, CtrlInterface):
         def __init__(self, *args, **kwargs):

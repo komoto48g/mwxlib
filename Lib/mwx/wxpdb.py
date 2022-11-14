@@ -17,7 +17,7 @@ from importlib import import_module
 import wx
 from wx import stc
 try:
-    from utilus import FSM, where
+    from mwx.utilus import FSM, where
 except ImportError:
     from .utilus import FSM, where
 
@@ -503,7 +503,7 @@ class Debugger(Pdb):
 
 
 if __name__ == "__main__":
-    from framework import Frame
+    from mwx.framework import Frame
     
     app = wx.App()
     frm = Frame(None)

@@ -8,8 +8,8 @@ import wx
 from wx.py import dispatcher
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 try:
-    from framework import CtrlInterface, Menu
-    from controls import Icon, Clipboard
+    from mwx.framework import CtrlInterface, Menu
+    from mwx.controls import Icon, Clipboard
 except ImportError:
     from .framework import CtrlInterface, Menu
     from .controls import Icon, Clipboard
@@ -143,7 +143,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
 
 if __name__ == "__main__":
-    from framework import Frame
+    from mwx.framework import Frame
     
     app = wx.App()
     frm = Frame(None)

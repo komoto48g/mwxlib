@@ -18,12 +18,12 @@ import re
 import wx
 from wx import aui
 try:
-    import framework as mwx
-    from utilus import funcall as _F
-    from controls import ControlPanel, Icon
-    from framework import CtrlInterface
-    from matplot2g import GraphPlot
-    from matplot2lg import Histogram
+    from mwx import framework as mwx
+    from mwx.utilus import funcall as _F
+    from mwx.controls import ControlPanel, Icon
+    from mwx.framework import CtrlInterface, postcall
+    from mwx.matplot2g import GraphPlot
+    from mwx.matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
     from .utilus import funcall as _F
@@ -164,7 +164,7 @@ class Thread(object):
         self.worker.start()
         self.event.set()
     
-    @mwx.postcall
+    @postcall
     def Stop(self):
         self.active = 0
         if self.running:

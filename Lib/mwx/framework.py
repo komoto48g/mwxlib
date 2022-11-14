@@ -23,9 +23,9 @@ import inspect
 import builtins
 import textwrap
 try:
-    import utilus as ut
-    from utilus import funcall as _F
-    from utilus import FSM, TreeList, apropos, typename, where, mro, pp
+    from mwx import utilus as ut
+    from mwx.utilus import funcall as _F
+    from mwx.utilus import FSM, TreeList, apropos, typename, where, mro, pp
 except ImportError:
     from . import utilus as ut
     from .utilus import funcall as _F
@@ -834,7 +834,7 @@ class ShellFrame(MiniFrame):
         builtins.highlight = self.highlight
         
         try:
-            from nutshell import Editor, Nautilus
+            from mwx.nutshell import Editor, Nautilus
         except ImportError:
             from .nutshell import Editor, Nautilus
         
@@ -849,11 +849,11 @@ class ShellFrame(MiniFrame):
         self.History = Editor(self, name="History")
         
         try:
-            from wxpdb import Debugger
-            from wxwit import Inspector
-            from wxmon import EventMonitor
-            from wxwil import LocalsWatcher
-            from controls import Icon
+            from mwx.wxpdb import Debugger
+            from mwx.wxwit import Inspector
+            from mwx.wxmon import EventMonitor
+            from mwx.wxwil import LocalsWatcher
+            from mwx.controls import Icon
         except ImportError:
             from .wxpdb import Debugger
             from .wxwit import Inspector
