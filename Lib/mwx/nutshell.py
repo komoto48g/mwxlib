@@ -1933,6 +1933,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             f = dlg.Path
         if self.save_file(f):
             self.post_message(f"Saved {f!r} successfully.")
+            self.set_caption(buf)
             return True
         return False
     
