@@ -733,10 +733,10 @@ class Frame(mwx.Frame):
             ##     lambda v: self.__view.set_cmap('gray'),
             ##     lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
             ##     
-            ("Standard Color",
+            ("Standard Colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
                 
-            ("Another Color",
+            ("Other Colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if not c.islower()]),
         ]
         

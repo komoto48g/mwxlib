@@ -692,8 +692,6 @@ class ControlPanel(scrolled.ScrolledPanel):
         assert not isinstance(objs, str)
         
         objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
-                ## else (c, 0, wx.EXPAND) if isinstance(c, wx.StatusBar)
-                ## else (c, 1, wx.EXPAND | wx.ALL, 1) if isinstance(c, wx.StaticLine)
                 else c for c in objs]
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
