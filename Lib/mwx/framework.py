@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.75.1"
+__version__ = "0.75.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -891,7 +891,7 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.History, "History")
         self.ghost.Name = "ghost"
         
-        self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
+        ## self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
         self.ghost.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self.watcher = AuiNotebook(self, size=(300,200))
@@ -900,6 +900,9 @@ class ShellFrame(MiniFrame):
         self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
         self.watcher.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.watcher.Name = "watcher"
+        
+        self.watcher.Bind(wx.EVT_SHOW, self.OnGhostShow)
+        self.watcher.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
@@ -922,8 +925,6 @@ class ShellFrame(MiniFrame):
         
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-        
-        self.Bind(wx.EVT_SHOW, self.OnShow)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -1075,20 +1076,6 @@ class ShellFrame(MiniFrame):
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
     
-    def OnShow(self, evt):
-        if evt.IsShown():
-            self.inspector.watch(self)
-    
-    def OnGhostShow(self, evt):
-        if evt.IsShown():
-            self.inspector.watch(self.ghost)
-        else:
-            self.inspector.unwatch()
-            self.monitor.unwatch()
-            self.ginfo.unwatch()
-            self.linfo.unwatch()
-        evt.Skip()
-    
     def OnClose(self, evt):
         if self.debugger.busy:
             wx.MessageBox("The debugger is running.\n\n"
@@ -1101,7 +1088,7 @@ class ShellFrame(MiniFrame):
             del self.Log.pointer # [pointer_unset] => debugger.unwatch
             del self.Scratch.pointer
         
-        pane = self._mgr.GetPane(self.ghost)
+        pane = self._mgr.GetPane(self.watcher)
         if pane.IsDocked():
             self.inspector.unwatch()
             self.monitor.unwatch()
@@ -1112,6 +1099,16 @@ class ShellFrame(MiniFrame):
             evt.Skip() # Close the window
         else:
             self.Show(0) # Don't destroy the window
+    
+    def OnGhostShow(self, evt):
+        if evt.IsShown():
+            self.inspector.watch(self.ghost)
+        else:
+            self.inspector.unwatch()
+            self.monitor.unwatch()
+            self.ginfo.unwatch()
+            self.linfo.unwatch()
+        evt.Skip()
     
     def OnGhostTabMenu(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject
@@ -1261,6 +1258,8 @@ class ShellFrame(MiniFrame):
             self.console.SetFocus() # focus orginal-window
             if obj:
                 self.popup_window(self.monitor, focus=0)
+                self.linfo.watch(obj.__dict__)
+                self.ginfo.watch(inspect.getmodule(obj).__dict__) # this.__dict__
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
