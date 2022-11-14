@@ -1488,9 +1488,9 @@ class Buffer(EditWindow, EditorInterface):
         self.handler.update({ # DNA<Buffer>
             None : {
                   'stc_updated' : [ None, ],
-               'buffer_updated' : [ None, self.on_activated, dispatch ],
-             'buffer_activated' : [ None, self.on_activated, dispatch ],
-           'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
+               'buffer_updated' : [ None, self.on_activated ],
+             'buffer_activated' : [ None, self.on_activated ],
+           'buffer_inactivated' : [ None, self.on_inactivated ],
            'py_region_executed' : [ None, self.on_activated ],
             },
             -1 : { # original action of the EditWindow
@@ -1551,8 +1551,8 @@ class Buffer(EditWindow, EditorInterface):
     def on_activated(self, editor):
         """Called when editor:self is activated."""
         if self.mtdelta:
-            self.message("{!r} has been modified externally."
-                         .format(self.filename))
+            name = os.path.basename(self.filename)
+            self.message("{!r} has been modified externally.".format(name))
         title = "{} file: {}".format(self.parent.Name, self.target)
         self.parent.handler('title_window', title)
         self.trace_position()
@@ -1933,6 +1933,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             f = dlg.Path
         if self.save_file(f):
             self.post_message(f"Saved {f!r} successfully.")
+            self.set_caption(buf)
             return True
         return False
     

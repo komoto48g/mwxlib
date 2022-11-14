@@ -105,17 +105,6 @@ camera = PyEmbeddedImage(
     b'VZFEDKoAAAAASUVORK5CYII=')
 
 #----------------------------------------------------------------------
-clip = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAABl0'
-    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAEZSURBVCjPY/jPgB9iEVoqPefl'
-    b'lFPdNk2GWBUsVpz9ctL1rkcNW/v+59VhKFgkPfP+xI0dF+uC/jPkWCR/Q1MwX2TGvf7Nretr'
-    b'/UG8BO2I5ygK5olP/dCzpWV+dVAhd+bB+JawrT7ICubIT3nbvaFpVkVqgVDa0diO4CneN91E'
-    b'4Qpmq0560jW/YXp5XB5nyq2YrqCFno9cJeG+mKk48UHHjLruMu8czuSbkfUBizxeucrDw2GG'
-    b'ev/71uW1jMVrsq4nPIto8F/g8caFDymgetxbHlVLgDjxnWExPjPdb7sIoYRkk17FywJRECdY'
-    b'1Xux201nMbSgLufO25qyJUY1yNrzsus9JxkscZHMG+kVcN7jqWueowARkUWiAgBEUvolGfpI'
-    b'TwAAAABJRU5ErkJggg==')
-
-#----------------------------------------------------------------------
 clock = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
     b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAMESURBVDjLXZNrSFNxGMYPgQQR'
@@ -554,49 +543,6 @@ tag = PyEmbeddedImage(
     b'nrXqxX+Pvgf35OMuSSPJSXtPfXQPJBc089F3oFwE1jBQTLkiZNtw51jq4qf/XVvuwsPAa9Kj'
     b'exkrnv8HyclFXxTCGwsyERf4LctvHvPuvAePBf8pDz/Y1N45BpIbKUmZFAwAR3nW32nUrY0A'
     b'AAAASUVORK5CYII=')
-
-#----------------------------------------------------------------------
-tag_blue = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
-    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAHcSURBVDjLhZPZihpBFIbrJeY2'
-    b'wbcQmjxdIGSSTC4zQxLyAK4o7igoKm7TPW49LoiYjqLG3DWpZmx7/tQpsR1xycW5qTr/9/+n'
-    b'+jTTdR3dbhftdhutVgvNZhOapkFVVTQajSsA7FKxTqcDx3GOajqdSki1Wr0IYeRMAsMwpPNk'
-    b'MnEhdCZSoFQqnYUwikzN5EYH9XpdNU0Ttm3LcwJWKhXk8/mTEEauu0YhfhKRDcuysDBt5H5t'
-    b'k4zHYxSLReRyuSMII+dd5M1mAxL//uvgw8Mz3t4DWWN7NxqNKAXS6fQBhIkZ+Wq1kk3r9Rpz'
-    b'4XytPeNLF/iqAx8f9pDhcEgpEI/HXQir1WpvxIx8uVzKps7Kls53AvCjB3x7PIQMBgNKgUgk'
-    b'IiGSUi6XFTEjXywWsunxj433qoM7fQ+51oDMzy2k1+tRCoRCoSt3lkKhoIgZ+Xw+P4J8F4DP'
-    b'TeDm3oK92aZIJpMIBAKvD15UzKdks1k+m81cyDsB+SRGuG2tYVpPL8Ued4SXlclklFQqxWkT'
-    b'CaILyG3bgWXvnf1+v8d9xFPLkUgklFgsxmkTd5+YxOL8QHwWQBWNRr3ipTktWL/fPym+CKAK'
-    b'h8PeYDDISezz+TwnV/l/v6tw9Qrxq3P3/wBazDrstPR7KQAAAABJRU5ErkJggg==')
-
-#----------------------------------------------------------------------
-tag_green = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
-    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAH3SURBVDjLhZNJjxJhEIb7T8xV'
-    b'w78g6fh75mJGY/SqTjRGTXTcbu7xxtItPew2YxMgbGkCNMgSQkgDAiHRKNpkWPL61ZfQGcLi'
-    b'oS5V9T711tfVQrVaRaVSQblcRqlUQrFYRKFQgK7ryOfzBwCEfSEYhoHlcrkRvV6PQzKZzF6I'
-    b'QJNJYJomn9zpdGwI5ZgLJJPJnRCBLFMzTaNELpfTJ5MJ5vM5zxMwnU5D07StEIGmrhqZ+JxZ'
-    b'NqfTKUY/u4gbMq+1220kEgnEYrENiECTV5YXiwVIPP71Hc9Or+ORdAjNkHit1WqRC0QikTWI'
-    b'wHa0xuMxb5rNZhj+6OLk9Bpef7mN92f38JyBVpBms0kuEAgEbIiQzWavsB2t0WjEm76ZOTyW'
-    b'D/FWvYtP2kN8OLu/Bmk0GuQCPp+PQzgllUqJbEdrOBzypnq3gKe+I7xTj23IiXKEWMnF67Va'
-    b'jVxAkqQDe5d4PC6yHa3BYLAB+fj1AV4Fb+KlcgvzxYy7CIVC8Hg8l9delO0nqqpq9ft9G/Lk'
-    b'81W88N/Am+gx/vz9fVHssFe4GNFoVAyHwxZdIrdr6kx8B9Nzyxa73W6H/YjbjiMYDIp+v9+i'
-    b'S1x9YhKz/Jp4J4BCURQne2mLDqxer28V7wVQyLLs9Hq9FoldLpdj6yn/73dlU51MfGlX/R/5'
-    b'GCirExPTUwAAAABJRU5ErkJggg==')
-
-#----------------------------------------------------------------------
-tag_red = PyEmbeddedImage(
-    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
-    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAHiSURBVDjLhZPJbhpBEIbnJXxN'
-    b'xFsgjfJ8VixjYscXx7EdKzdWgdgFDggQm0CsZhFCCIEAcRx7EN2Mfnd1xATEkkNdqvr/6q/u'
-    b'aqXVaqHZbKJer6NWq6FaraJSqaBcLqNUKp0BUE6F0mg0YBjGXozHYwnJ5/MnIQp1JsFoNJKd'
-    b'h8OhCaGccIFMJnMUopBlOkzdKFEsFsuapoFzLvMEzOVySCaTByEKdd0cFOKVsDxaLpfg8xlY'
-    b'6o+sDQYDpNNpJBKJPYhCnTeW1+s1SLxeLMC+2cC+noMlX2St3++TC0Sj0R2IImbUF0JAhxhj'
-    b'4DPR2W4Dv78Df3oAu74yIb1ej1wgGAyaEKVQKHwRM+rz+fwv5LUFdnEO/nAP/vsZ/NfjDqTb'
-    b'7ZIL+Hw+CZGUbDarihn1meguIZ0OVleX4I9bEPslWCIu6+12m1zA4/GcmbOkUilVzKhPp9N9'
-    b'yPMT2O0NtO/XMMTrkItwOAyXy/V550bFfGo8Htcnk8k/iO0C7MaO958/sHrTtsUWc4TtiMVi'
-    b'aiQS0WkTJaT9ipUQG+J1NmKn02kxL/HQcoRCITUQCOi0iZsnJrHI74iPAij8fr9V3LROC9YR'
-    b'oxwSnwRQeL1eq9vt1knscDgsB1f5f99VdLUK8adj9Q9ogTPkuLLcmwAAAABJRU5ErkJggg==')
 
 #----------------------------------------------------------------------
 tv = PyEmbeddedImage(

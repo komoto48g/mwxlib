@@ -175,6 +175,21 @@ which is a notebook-style window consists of four editors:
 See also the list of who participated in this project.
 
 
+## Attribution
+
+Default icons are provided by `wx.ArtProvider`.
+Optional icons are provided by:
+
+- [famfamfam: Silk icons](http://www.famfamfam.com/lab/icons/silk/) designed by Mark James.
+- [Tango desktop project](http://tango.freedesktop.org/Tango_Desktop_Project).
+- [Iconify - Freedom to choose icons](https://iconify.design/).
+
+Note:
+    Other icons could be attributed to other open sources.
+    This is a mish-mash of stuff from all over the internet.
+    If I missed an author credit or attribution, please let me know.
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details
