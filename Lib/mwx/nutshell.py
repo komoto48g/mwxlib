@@ -29,12 +29,12 @@ from importlib import import_module
 import contextlib
 import dis
 try:
-    from mwx import utilus as ut
     from mwx.utilus import funcall as _F
+    from mwx.utilus import split_words, find_modules, wdir
     from mwx.framework import postcall, skip, Menu, CtrlInterface
 except ImportError:
-    from . import utilus as ut
     from .utilus import funcall as _F
+    from .utilus import split_words, find_modules, wdir
     from .framework import postcall, skip, Menu, CtrlInterface
 
 
@@ -2218,7 +2218,7 @@ class Nautilus(Shell, EditorInterface):
         if not self.modules:
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
-            Nautilus.modules = ut.find_modules(force)
+            Nautilus.modules = find_modules(force)
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
@@ -2524,7 +2524,7 @@ class Nautilus(Shell, EditorInterface):
             return
         
         ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
-        tokens = list(ut.split_words(text))
+        tokens = list(split_words(text))
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
@@ -3099,7 +3099,7 @@ class Nautilus(Shell, EditorInterface):
         
         status = "No words"
         for text in filter(None, _gen_text()):
-            tokens = ut.split_words(text)
+            tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
@@ -3120,7 +3120,7 @@ class Nautilus(Shell, EditorInterface):
         filename = "<input>"
         text = self.MultilineCommand
         if text:
-            tokens = ut.split_words(text)
+            tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
@@ -3357,7 +3357,7 @@ class Nautilus(Shell, EditorInterface):
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in ut.wdir(obj) if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in wdir(obj) if p.match(x)], key=lambda s:s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -3388,7 +3388,7 @@ class Nautilus(Shell, EditorInterface):
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in ut.wdir(obj) if p.search(x)], key=lambda s:s.upper())
+            words = sorted([x for x in wdir(obj) if p.search(x)], key=lambda s:s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -3414,7 +3414,7 @@ class Nautilus(Shell, EditorInterface):
     
     @staticmethod
     def get_words_hint(cmdl):
-        text = next(ut.split_words(cmdl, reverse=1), '')
+        text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
 
 

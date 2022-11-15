@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.75.2"
+__version__ = "0.75.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -23,13 +23,13 @@ import inspect
 import builtins
 import textwrap
 try:
-    from mwx import utilus as ut
     from mwx.utilus import funcall as _F
     from mwx.utilus import FSM, TreeList, apropos, typename, where, mro, pp
+    from mwx.utilus import get_rootpath
 except ImportError:
-    from . import utilus as ut
     from .utilus import funcall as _F
     from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
+    from .utilus import get_rootpath
 
 
 def postcall(f):
@@ -274,7 +274,7 @@ class KeyCtrlInterfaceMixin(object):
             return False
     
     def interactive_call(self, action, *args, **kwargs):
-        f = ut.funcall(action, *args, **kwargs)
+        f = _F(action, *args, **kwargs)
         @wraps(f)
         def _echo(*v, **kw):
             self.message(f.__name__)
@@ -1008,10 +1008,10 @@ class ShellFrame(MiniFrame):
         
         self.Init()
     
-    SESSION_FILE = ut.get_rootpath("debrc")
-    SCRATCH_FILE = ut.get_rootpath("deb-scratch.py")
-    LOGGING_FILE = ut.get_rootpath("deb-logging.log")
-    HISTORY_FILE = ut.get_rootpath("deb-history.log")
+    SESSION_FILE = get_rootpath("debrc")
+    SCRATCH_FILE = get_rootpath("deb-scratch.py")
+    LOGGING_FILE = get_rootpath("deb-logging.log")
+    HISTORY_FILE = get_rootpath("deb-history.log")
     
     def load_session(self):
         """Load session from file."""
