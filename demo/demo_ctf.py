@@ -1,5 +1,7 @@
 #! python3
 # -*- coding: shift-jis -*-
+import sys
+sys.path.append("../Lib")
 import wx
 import cv2
 import numpy as np

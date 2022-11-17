@@ -1,5 +1,7 @@
 #! python3
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append("../Lib")
 import wx
 ## if 1:
 ##     from importlib import reload
