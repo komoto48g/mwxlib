@@ -1672,8 +1672,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
-                 'title_window' : [ None, dispatch ],
                  'caption_page' : [ None, self.set_caption ],
+                 'title_window' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -1707,13 +1707,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         except AttributeError:
             pass
     
-    def set_style(self, style):
-        ## This method is to be deprecated. Use set_attributes(Style) instead.
-        self.set_attributes(Style=style)
-    
     def set_attributes(self, buf=None, **kwargs):
         def _setattribute(buf, attr):
-            for k, v in attr.items(): # set attr:property
+            for k, v in attr.items():
                 setattr(buf, k, v)
                 buf.set_style(attr.get('Style'))
         if buf:
