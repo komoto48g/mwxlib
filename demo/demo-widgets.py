@@ -1,5 +1,7 @@
 #! python3
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append("../Lib")
 import wx
 import mwx
 from numpy import inf

@@ -1,5 +1,7 @@
 #! python3
 # -*- coding: shift-jis -*-
+import sys
+sys.path.append("../Lib")
 import wx
 import mwx
 from mwx.controls import Icon
@@ -7,7 +9,7 @@ from mwx.controls import Icon
 
 class Frame(mwx.Frame):
     def __init__(self, *args, **kwargs):
-        mwx.Frame.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         
         ## Do not use menu IDs in [ID_LOWEST(4999):ID_HIGHEST(5999)]
         
@@ -52,6 +54,5 @@ class Frame(mwx.Frame):
 if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
-    frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
     app.MainLoop()
