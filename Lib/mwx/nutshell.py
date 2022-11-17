@@ -78,8 +78,6 @@ class EditorInterface(CtrlInterface):
                    'mark_unset' : [ None, dispatch ],
                   'pointer_set' : [ None, dispatch ],
                 'pointer_unset' : [ None, dispatch ],
-             '*button* pressed' : [ None, dispatch, skip ],
-            '*button* released' : [ None, dispatch, skip ],
             },
             0 : {
                     '* pressed' : (0, skip),
@@ -1551,8 +1549,10 @@ class Buffer(EditWindow, EditorInterface):
     def on_activated(self, editor):
         """Called when editor:self is activated."""
         if self.mtdelta:
-            name = os.path.basename(self.filename)
-            self.message("{!r} has been modified externally.".format(name))
+            self.parent.handler('caption_page', self, '!')
+            self.message("File: {!r} has been modified externally. "
+                         "Please load_buffer before editing."
+                         .format(self.filename))
         title = "{} file: {}".format(self.parent.Name, self.target)
         self.parent.handler('title_window', title)
         self.trace_position()
@@ -1674,6 +1674,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                    'buffer_new' : [ None, ],
                  'title_window' : [ None, dispatch ],
                  'caption_page' : [ None, self.set_caption ],
+             '*button* pressed' : [ None, dispatch, skip ],
+            '*button* released' : [ None, dispatch, skip ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -2250,6 +2252,10 @@ class Nautilus(Shell, EditorInterface):
         def fork(v):
             self.handler(self.handler.event, v)
         
+        def dispatch(v):
+            """Fork mouse events to the parent."""
+            self.parent.handler(self.handler.event, v)
+        
         self.handler.update({ # DNA<Nautilus>
             None : {
                   'stc_updated' : [ None, ],
@@ -2257,6 +2263,8 @@ class Nautilus(Shell, EditorInterface):
               'shell_activated' : [ None, self.on_activated ],
             'shell_inactivated' : [ None, self.on_inactivated ],
                  'interp_error' : [ None, self.on_interp_error ],
+             '*button* pressed' : [ None, dispatch, skip ],
+            '*button* released' : [ None, dispatch, skip ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
