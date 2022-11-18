@@ -998,9 +998,9 @@ class Frame(mwx.Frame):
         if not module:
             module = inspect.getmodule(cls) # rebase module or __main__
         
-        if _isLayer(cls):
+        if issubclass(cls, LayerInterface):
             warnings.warn("Use class name 'Plugin' instead of {!r}."
-                          .format(cls.__name__), UserWarning)
+                          .format(cls.__name__), stacklevel=2)
             cls.__module__ = module.__name__ # __main__ to module
             module.Plugin = cls
             return cls
@@ -1068,7 +1068,7 @@ class Frame(mwx.Frame):
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                warnings.warn("Use dummy plug mode for debugging.", UserWarning)
+                warnings.warn("Use dummy plug mode for debugging.", stacklevel=3)
                 module.__dummy_plug__ = root
                 self.register(root, module)
         else:
