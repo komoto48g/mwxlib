@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.75.6"
+__version__ = "0.75.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -254,7 +254,11 @@ class KeyCtrlInterfaceMixin(object):
         if map not in self.handler:
             self.make_keymap(map) # make new keymap
         if action:
-            f = self.interactive_call(action, *args, **kwargs)
+            _f = _F(action, *args, **kwargs)
+            @wraps(_f)
+            def f(*v, **kw):
+                self.message(f.__name__)
+                return _f(*v, **kw)
             if map != state:
                 self.handler.update({map: {key: [state, self.post_command_hook, f]}})
             else:
@@ -272,14 +276,6 @@ class KeyCtrlInterfaceMixin(object):
             return True
         except KeyError:
             return False
-    
-    def interactive_call(self, action, *args, **kwargs):
-        f = _F(action, *args, **kwargs)
-        @wraps(f)
-        def _echo(*v, **kw):
-            self.message(f.__name__)
-            return f(*v, **kw)
-        return _echo
 
 
 class CtrlInterface(KeyCtrlInterfaceMixin):

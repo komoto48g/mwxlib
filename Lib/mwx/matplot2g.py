@@ -1497,7 +1497,7 @@ class GraphPlot(MatplotPanel):
     
     def OnRegionDragMetaMove(self, evt):
         self.OnRegionDragMove(evt, meta=True)
-        
+    
     def OnRegionDragEscape(self, evt):
         self.set_current_rect(*self.__orgpoints)
         self.handler('region_drawn', self.frame)
