@@ -397,7 +397,7 @@ class LayerInterface(CtrlInterface):
                 art.set_visible(show)
             art.axes.figure.canvas.draw_idle()
         except RuntimeError as e:
-            print("- {}: Artists failed to draw: {}".format(self.__module__, e))
+            print("- {}: Failed to draw Arts of {}".format(e, self.__module__))
             del self.Arts
 
 
@@ -1060,9 +1060,9 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
-        except Exception:
-            traceback.print_exc()
-            print("- Unable to load {!r}".format(root))
+        except Exception as e:
+            ## traceback.print_exc()
+            print("- {}: Unable to load {!r}".format(e, root))
             return False
         
         ## the module must have a class `Plugin`.
