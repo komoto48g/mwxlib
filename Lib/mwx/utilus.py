@@ -409,12 +409,13 @@ class SSM(OrderedDict):
         return "<{} object at 0x{:X}>".format(self.__class__.__name__, id(self))
     
     def __str__(self):
-        def _name(a):
-            if callable(a):
-                return typename(a, docp=1, qualp=0)
-            return repr(a)
-        return '\n'.join("{:>32} : {}".format(k, ', '.join(_name(a) for a in v))
-                         for k, v in self.items())
+        def lstr(v):
+            def _name(a):
+                if callable(a):
+                    return typename(a, docp=1, qualp=0)
+                return repr(a)
+            return ', '.join(_name(a) for a in v)
+        return '\n'.join("{:>32} : {}".format(str(k), lstr(v)) for k, v in self.items())
     
     def bind(self, event, action=None):
         """Append a transaction to the context."""
@@ -590,6 +591,9 @@ class FSM(dict):
                               "    args : {}".format(args),
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
+                    if self("error", act, *args, **kwargs): # call debugger
+                        self.clear(self.default_state)
+                        return None
             return retvals
         elif isinstance(event, str): # matching test using fnmatch
             for pat in context:
@@ -711,6 +715,7 @@ class FSM(dict):
         The transaction is exepcted to be a list (not a tuple).
         If no action, it creates only the transition and returns @decor(binder).
         """
+        assert isinstance(event, str)
         warn = self.log
         
         if state not in self:
