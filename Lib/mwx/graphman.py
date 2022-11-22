@@ -223,6 +223,9 @@ class LayerInterface(CtrlInterface):
     ## thread_type = Thread
     thread = None
     
+    ## funcall = CtrlInterface.interactive_call
+    funcall = staticmethod(_F)
+    
     @property
     def Arts(self):
         """List of arts <matplotlib.artist.Artist>"""
