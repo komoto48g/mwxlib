@@ -155,7 +155,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.unwatch()
         self.clear()
         self.target = widget
-        ssmap = self.dump(widget, verbose=1)
+        ssmap = self.dump(widget, verbose=0)
         for binder in self.get_watchlist():
             event = binder.typeId
             try:

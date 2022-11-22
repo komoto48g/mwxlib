@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.75.5"
+__version__ = "0.75.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -778,7 +778,7 @@ class ShellFrame(MiniFrame):
     Attributes:
         console     : Notebook of shells
         ghost       : Notebook of editors and inspectors
-        watcher     : Notebook of global/locals info watcher
+        watcher     : Notebook of global/locals watcher
         Scratch     : Editor of scratch (tooltip)
         Help        : Editor of help
         Log         : Editor of logging
@@ -917,7 +917,7 @@ class ShellFrame(MiniFrame):
         
         self._mgr.AddPane(self.watcher,
                           aui.AuiPaneInfo().Name("watcher")
-                             .Caption("Watcher").Float().Show(0))
+                             .Caption("Watchdog in the Shell").Float().Show(0))
         
         self._mgr.Update()
         
@@ -1017,7 +1017,7 @@ class ShellFrame(MiniFrame):
         """Load session from file."""
         try:
             if self.Scratch.buffer.mtdelta is None:
-                self.Scratch.buffer.LoadFile(self.SCRATCH_FILE) # dummy-load *scratch*
+                self.Scratch.buffer.LoadFile(self.SCRATCH_FILE)
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1362,7 +1362,7 @@ class ShellFrame(MiniFrame):
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
         self.inspector.set_colour(widget, 'blue')
-        self.load(widget)
+        ## self.load(widget)
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch."""
