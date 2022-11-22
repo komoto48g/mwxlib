@@ -1213,8 +1213,8 @@ class GraphPlot(MatplotPanel):
             y = b if y < b else t if y > t else y,
         )
         ux, uy = self.frame.xy_unit
-        x = l + nx * ux
-        y = t - ny * uy
+        x = l + nx[0] * ux
+        y = t - ny[0] * uy
         if centred:
             x = x + ux/2 if x < r else x - ux/2
             y = y - uy/2 if y > b else y + uy/2
