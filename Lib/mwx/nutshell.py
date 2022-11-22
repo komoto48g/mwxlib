@@ -2351,8 +2351,10 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
-                  'C-. pressed' : (2, skip),
+                  'C-. pressed' : (2, ),
                  'C-. released' : (2, self.call_word_autocomp),
+                  'M-. pressed' : (2, ),
+                 'M-. released' : (2, self.call_word_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
             'S-[a-z\\] pressed' : (2, skip),
@@ -2382,6 +2384,8 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
+                  'M-/ pressed' : (3, ),
+                 'M-/ released' : (3, self.call_apropos_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
           '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
             'S-[a-z\\] pressed' : (3, skip),
@@ -2410,6 +2414,8 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
+                  'M-, pressed' : (4, ),
+                 'M-, released' : (4, self.call_text_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
           '[a-z0-9_.] released' : (4, self.call_text_autocomp),
             'S-[a-z\\] pressed' : (4, skip),
@@ -2438,6 +2444,8 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, self.clear_autocomp),
+                  'M-m pressed' : (5, ),
+                 'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
           '[a-z0-9_.,] pressed' : (5, skip),
          '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
@@ -2551,9 +2559,7 @@ class Nautilus(Shell, EditorInterface):
             self.ReplaceSelection('self') # replace [.] --> [self.]
         elif st not in ('moji', 'word', 'rparen'):
             self.handler('quit', evt) # don't enter autocomp
-        
         self.ReplaceSelection('.') # just write down a dot.
-        evt.Skip(False)            # Do not skip to default autocomp mode.
     
     def OnExtraDot(self, evt):
         """Called when ex-dot [C-.] pressed."""
@@ -3285,20 +3291,31 @@ class Nautilus(Shell, EditorInterface):
         except Exception:
             raise
     
-    def call_module_autocomp(self, evt):
+    def call_module_autocomp(self, evt, force=False):
         """Called when module-comp mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
         try:
+            def _continue():
+                h = hints.strip()
+                if (not h or h.endswith(',')) and not force:
+                    self.message("[module]>>> waiting for key input...")
+                    return
+                if hints.endswith(' ') and not force: # `x, y |`
+                    return
+                lh = h.split(',')[-1]   # `x, y, z|` the last hint after `,`
+                if len(lh.split()) > 1: # `x, y as|` and contains a space, e.g., `as`?
+                    return
+                return True
+            
             cmdl = self.cmdlc
             hint = self.get_last_hint(cmdl)
             
             m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
                 text, hints = m.groups()
-                if not hints or hints.strip().endswith(','):
-                    self.message("[module]>>> waiting for key input...")
+                if not _continue():
                     return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
@@ -3311,17 +3328,13 @@ class Nautilus(Shell, EditorInterface):
                 m = re.match(r"(import|from)\s+(.*)", cmdl)
                 if m:
                     text, hints = m.groups()
-                    if not hints or hints.strip().endswith(','):
-                        self.message("[module]>>> waiting for key input...")
-                        return
-                    if hints.endswith(' '):  # Don't show comp-list
-                        return
-                    tail = hints.split(',')[-1] # the last one following `,`
-                    if len(tail.split()) > 1:   # includes a separator, e.g., `as`
+                    if not _continue():
                         return
                     modules = self.modules
                 else:
                     text, sep, hint = self.get_words_hint(cmdl)
+                    if not text:
+                        return
                     obj = self.eval(text)
                     if not hasattr(obj, '__dict__'):
                         self.message("[module] primitive object: {}".format(obj))
