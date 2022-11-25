@@ -400,7 +400,7 @@ class LayerInterface(CtrlInterface):
                 art.set_visible(show)
             art.axes.figure.canvas.draw_idle()
         except RuntimeError as e:
-            print("- {}: Failed to draw Arts of {}".format(e, self.__module__))
+            print("- Failed to draw Arts of {!r}: {}".format(self.__module__, e))
             del self.Arts
 
 
@@ -1065,7 +1065,7 @@ class Frame(mwx.Frame):
                 module = import_module(name)
         except Exception as e:
             ## traceback.print_exc()
-            print("- {}: Unable to load {!r}".format(e, root))
+            print("- Unable to load {!r}: {}".format(root, e))
             return False
         
         ## the module must have a class `Plugin`.
@@ -1425,9 +1425,9 @@ class Frame(mwx.Frame):
             savedir = os.path.dirname(f)
             
             with open(f) as i:
-                ## evaluation of attributes:tuple in locals
                 from numpy import nan, inf # noqa: necessary to eval
                 import datetime # noqa: necessary to eval
+                
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
