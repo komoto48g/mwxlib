@@ -4,7 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from collections import OrderedDict
 from functools import wraps
 import subprocess
 import threading
@@ -604,7 +603,7 @@ class Frame(mwx.Frame):
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
         
-        self.__plugins = OrderedDict() # modules in the order of load/save
+        self.__plugins = {} # modules in the order of load/save
         
         self.__graph = Graph(self, log=self.statusbar, margin=None, size=(600,600))
         self.__output = Graph(self, log=self.statusbar, margin=None, size=(600,600))
@@ -965,7 +964,7 @@ class Frame(mwx.Frame):
     
     @property
     def plugs(self):
-        return OrderedDict((k, v.__plug__) for k, v in self.plugins.items())
+        return dict((k, v.__plug__) for k, v in self.plugins.items())
     
     __new_ID_ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
     
@@ -1420,8 +1419,8 @@ class Frame(mwx.Frame):
     def read_attributes(self, f):
         """Read attributes file."""
         try:
-            res = OrderedDict()
-            mis = OrderedDict()
+            res = {}
+            mis = {}
             savedir = os.path.dirname(f)
             
             with open(f) as i:
@@ -1452,17 +1451,17 @@ class Frame(mwx.Frame):
         """Write attributes file."""
         try:
             res, mis = self.read_attributes(f)
-            new = OrderedDict((x.name, x.attributes) for x in frames)
+            new = dict((x.name, x.attributes) for x in frames)
             
-            ## res order may differ from that of given new frames.
-            ## OrderedDict does not change the order even when updated,
-            ## so we take a few steps to update results to be exported.
+            ## `res` order may differ from that of given frames,
+            ## so we take a few steps to merge `new` to be exported.
             
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
             with open(f, 'w') as o:
                 pprint(tuple(new.items()), stream=o) # save all attributes
+                ## pprint(new, stream=o, sort_dicts=False) # PY38
             
         except Exception as e:
             print("- Failed to write attributes: {}".format(e))
