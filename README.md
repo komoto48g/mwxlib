@@ -140,18 +140,20 @@ See [key bindings](key-bindings.md) for more information.
 
 ## built-in utility:
 
-    @p          synonym of print
-    @pp         synonym of pprint
-    @info       short info
-    @help       full description
-    @dive       clone the shell with new target
-    @timeit     measure the duration cpu time
-    @profile    profile the func(*args, **kwargs)
-    @filling    inspection using wx.lib.filling.Filling
-    @watch      inspection using wx.lib.inspection.InspectionTool
-    @edit       open file with your editor (undefined)
-    @where      filename and lineno or module
-    @debug      open pdb or show event-watcher and widget-tree
+    @p          : Synonym of print.
+    @pp         : Synonym of pprint.
+    @info       : Short info.
+    @help       : Full description.
+    @dive       : Clone the shell with new target.
+    @timeit     : Measure the duration cpu time (per one execution).
+    @profile    : Profile a single function call.
+    @filling    : Inspection using ``wx.lib.filling.Filling``.
+    @watch      : Inspection using ``wx.lib.inspection.InspectionTool``.
+    @load       : Load file in Log.
+    @where      : Displays filename:lineno or the module name.
+    @mro        : Displays mro list and filename:lineno or the module name.
+    @debug      : Open pdb or event-monitor.
+    @highlight  : Highlight the widget.
 
 
 ## Ghost in the shell

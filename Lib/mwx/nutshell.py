@@ -262,8 +262,8 @@ class EditorInterface(CtrlInterface):
         
         ## Custom style of control-char, wrap-mode
         ## self.UseTabs = False
-        ## self.ViewEOL = True
-        ## self.ViewWhiteSpace = True
+        ## self.ViewEOL = False
+        ## self.ViewWhiteSpace = False
         ## self.TabWidth = 4
         ## self.EOLMode = stc.STC_EOL_CRLF
         self.WrapMode = stc.STC_WRAP_NONE
@@ -878,9 +878,7 @@ class EditorInterface(CtrlInterface):
             except AttributeError:
                 pass
         
-        ## Custom style for annotation
-        ## self.StyleSetSpec(stc.STC_STYLE_ANNOTATION, "fore:#7f0000,back:#ff7f7f")
-        
+        ## Apply the rest of the style
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
     
@@ -1708,6 +1706,24 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             pass
     
     def set_attributes(self, buf=None, **kwargs):
+        """Sets attributes and defaultBufferStyle
+        that apply to all buffers contained in the Editor.
+        
+        Args:
+            buf      : a buffer to apply (if None, appies to all buffers).
+            **kwargs : default style.
+            
+                Style = Buffer.STYLE => set_style
+                ReadOnly = False
+                UseTabs = False
+                ViewEOL = False
+                ViewWhiteSpace = False
+                TabWidth = 4
+                EOLMode = stc.STC_EOL_CRLF
+                WrapMode = stc.STC_WRAP_NONE
+                WrapIndentMode = stc.STC_WRAPINDENT_SAME
+                IndentationGuides = stc.STC_IV_LOOKFORWARD
+        """
         def _setattribute(buf, attr):
             for k, v in attr.items():
                 setattr(buf, k, v)
