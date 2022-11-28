@@ -33,12 +33,10 @@ import wx
 
 @contextlib.contextmanager
 def app(loop=True):
-    try:
-        app = wx.GetApp() or wx.App()
-        yield app
-    finally:
-        if loop and not app.GetMainLoop():
-            app.MainLoop()
+    app = wx.GetApp() or wx.App()
+    yield app
+    if loop and not app.GetMainLoop():
+        app.MainLoop()
 
 
 def deb(target=None, loop=True, locals=None, **kwargs):
