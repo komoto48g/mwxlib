@@ -277,28 +277,29 @@ class Debugger(Pdb):
         if not editor:
             editor = self.parent.Log
             if filename != editor.buffer.filename:
-                editor.load_cache(filename)
-        
-        buffer = editor.buffer
-        if filename == buffer.target:
-            if code != self.code:
-                buffer.markline = firstlineno - 1 # (o) entry:marker
-                buffer.goto_mark()
-                buffer.recenter(3)
-            buffer.goto_line(lineno - 1)
-            buffer.pointer = lineno - 1 # (->) pointer:marker
-            buffer.EnsureLineMoreOnScreen(lineno - 1)
-        
+                ## editor.load_cache(filename)
+                wx.CallAfter(editor.load_cache, filename)
+        self.editor = editor
         for ln in self.get_file_breaks(filename):
             self.add_marker(ln, 1) # (>>) bp:white-arrow
         
-        self.editor = editor
-        self.code = code
+        def _mark():
+            buffer = editor.buffer
+            if filename == buffer.target:
+                if code != self.code:
+                    buffer.markline = firstlineno - 1 # (o) entry:marker
+                    buffer.goto_mark()
+                    buffer.recenter(3)
+                buffer.goto_line(lineno - 1)
+                buffer.pointer = lineno - 1 # (->) pointer:marker
+                buffer.EnsureLineMoreOnScreen(lineno - 1)
+            self.code = code
+        wx.CallAfter(_mark)
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)."""
         pos = self.__interactive
-        def _post():
+        def _next():
             shell = self.interactive_shell
             shell.goto_char(shell.eolc)
             out = shell.GetTextRange(pos, shell.cpos)
@@ -308,7 +309,7 @@ class Debugger(Pdb):
                 shell.prompt()
             shell.EnsureCaretVisible()
             self.__interactive = shell.cpos
-        wx.CallAfter(_post)
+        wx.CallAfter(_next)
     
     def on_debug_end(self, frame):
         """Called after set_quit.
