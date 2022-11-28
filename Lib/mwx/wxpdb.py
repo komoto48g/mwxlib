@@ -131,6 +131,7 @@ class Debugger(Pdb):
                   'C-r pressed' : (1, lambda v: self.send_input('r')),
                   'C-b pressed' : (1, lambda v: self.set_breakpoint()),
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
+                'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -145,12 +146,21 @@ class Debugger(Pdb):
             filename = self.curframe.f_code.co_filename
             ln = self.editor.buffer.cline + 1
             if ln not in self.get_file_breaks(filename):
-                self.send_input('b {}'.format(ln))
+                self.send_input('b {}'.format(ln), echo=True)
     
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
         if self.busy:
-            self.send_input('j {}'.format(self.editor.buffer.markline + 1))
+            ln = self.editor.buffer.markline + 1
+            if ln:
+                self.send_input('j {}'.format(ln), echo=True)
+    
+    def jump_to_lineno(self):
+        """Jump to the first lineno of the code."""
+        if self.busy:
+            ln = self.editor.buffer.cline + 1
+            if ln:
+                self.send_input('j {}'.format(ln), echo=True)
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -162,13 +172,15 @@ class Debugger(Pdb):
         else:
             self.editor.buffer.MarkerDeleteAll(style)
     
-    def send_input(self, c):
+    def send_input(self, c, echo=False):
         """Send input:str @postcall."""
         ## self.stdin.isreading -> True
         def _send():
             self.stdin.input = c
         if self.busy:
             wx.CallAfter(_send)
+            if echo:
+                self.message(c, indent=0)
     
     def message(self, msg, indent=-1):
         """(override) Add prefix and insert msg at the end of command-line."""
