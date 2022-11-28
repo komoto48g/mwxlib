@@ -26,18 +26,18 @@ The simplest frame, which consists of
 - The button is based on <wx.lib.platebtn>
 - The panel is based on <wx.lib.scrolledpanel>, and extended to be foldable. (try it!)
 
-[demo-icons](./demo-icons.py)
-![screenshot (folded)](./images/demo-buttons(folded).png)
-![screenshot (expanded)](./images/demo-buttons(expanded).png)
+[demo_icons](./demo_icons.py)
+![screenshot (folded)](./images/demo_buttons(folded).png)
+![screenshot (expanded)](./images/demo_buttons(expanded).png)
 
 
 ## mwx.menubar
 
 The mwx.menubar is described as structured list.
-Designed as WYSiWYG (see demo-code).
+Designed as WYSiWYG (see demo).
 
-[test_menubar](./test_menubar.py)
-![screenshot](./images/test_menubar.png)
+[demo_menubar](./demo_menubar.py)
+![screenshot](./images/demo_menubar.png)
 
 
 ## mwx.controls
@@ -51,16 +51,16 @@ The mwx.controls including,
 - TextCtrl (text and button complex)
 - Choice (text and combobox complex)
 
-Those wx controls (not only shown above) are laid out by only one method `layout` of mwx.ControlPanel<wx.lib.scrolled.ScrolledPanel> as WYSiWYG (see demo-code).
+Those wx controls (not only shown above) are laid out by only one method `layout` of mwx.ControlPanel<wx.lib.scrolled.ScrolledPanel> as WYSiWYG (see demo).
 
-[demo-widgets](./demo-widgets.py)
-![screenshot](./images/demo-widgets.png)
+[demo_widgets](./demo_widgets.py)
+![screenshot](./images/demo_widgets.png)
 
-[demo-gauge](./demo-gauge.py)
-![screenshot](./images/demo-gauge.png)
+[demo_gauge](./demo_gauge.py)
+![screenshot](./images/demo_gauge.png)
 
-[demo-plot](./demo-plot.py)
-![screenshot](./images/demo-plot.png)
+[demo_plot](./demo_plot.py)
+![screenshot](./images/demo_plot.png)
 
 
 ## mwx.graphman.Layer
