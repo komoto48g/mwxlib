@@ -1767,7 +1767,7 @@ class Frame(mwx.Frame):
                 frame = self.graph.frame # restore currently selected frame
                 if frame and frame.pathname:
                     o.write("self.graph.select({!r})\n".format(frame.name))
-            o.write('# end of session\n')
+            ## o.write('# end of session\n')
         
         np.set_printoptions(**options)
         self.statusbar("\b done.")
