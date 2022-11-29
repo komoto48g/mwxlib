@@ -1425,8 +1425,8 @@ class Buffer(EditWindow, EditorInterface):
         stc.STC_P_DECORATOR       : "fore:#e08040",
     }
     
-    parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.message)
+    def message(self, *args, **kwargs):
+        return self.parent.message(*args, **kwargs)
     
     @property
     def target(self):
@@ -1456,8 +1456,7 @@ class Buffer(EditWindow, EditorInterface):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
-        self.__parent = parent  # parent:<ShellFrame>
-                                # Parent:<AuiNotebook>
+        self.parent = parent
         self.filename = filename
         self.codename = ''
         self.code = None
@@ -1637,8 +1636,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     Args:
         name : Window.Name (e.g. 'Scratch')
     """
-    parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.message)
+    def message(self, *args, **kwargs):
+        return self.parent.message(*args, **kwargs)
     
     def __init__(self, parent, name="editor", **kwargs):
         kwargs.setdefault('style',
@@ -1652,8 +1651,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.defaultBufferStyle = dict(
             ReadOnly = False,
         )
-        self.__parent = parent  # parent:<ShellFrame>
-                                # Parent:<AuiNotebook>
+        self.parent = parent  # parent:<ShellFrame>
+                              # Parent:<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower())
         self.default_buffer = self.create_new_buffer(self.default_name)
@@ -2000,6 +1999,7 @@ class Interpreter(interpreter.Interpreter):
     def __init__(self, *args, **kwargs):
         parent = kwargs.pop('interpShell')
         interpreter.Interpreter.__init__(self, *args, **kwargs)
+        
         self.parent = parent
         self.globals = self.locals
     
@@ -2148,8 +2148,8 @@ class Nautilus(Shell, EditorInterface):
         stc.STC_P_DECORATOR       : "fore:#ff8040",
     }
     
-    parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.message)
+    def message(self, *args, **kwargs):
+        return self.parent.message(*args, **kwargs)
     
     @property
     def target(self):
@@ -2217,8 +2217,8 @@ class Nautilus(Shell, EditorInterface):
                  **kwargs)
         EditorInterface.__init__(self)
         
-        self.__parent = parent  # parent:<ShellFrame>
-                                # Parent:<AuiNotebook>
+        self.parent = parent  # parent:<ShellFrame>
+                              # Parent:<AuiNotebook>
         self.target = target
         self.Name = name
         

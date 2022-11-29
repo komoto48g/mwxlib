@@ -214,13 +214,10 @@ class LayerInterface(CtrlInterface):
     reloadable = True
     unloadable = True
     
-    parent = property(lambda self: self.__parent)
-    message = property(lambda self: self.__parent.statusbar)
-    
-    graph = property(lambda self: self.__parent.graph)
-    output = property(lambda self: self.__parent.output)
-    histogram = property(lambda self: self.__parent.histogram)
-    selected_view = property(lambda self: self.__parent.selected_view)
+    graph = property(lambda self: self.parent.graph)
+    output = property(lambda self: self.parent.output)
+    histogram = property(lambda self: self.parent.histogram)
+    selected_view = property(lambda self: self.parent.selected_view)
     
     ## thread_type = Thread
     thread = None
@@ -264,12 +261,14 @@ class LayerInterface(CtrlInterface):
                     art.remove()
                 self.Arts.remove(art)
     
+    def message(self, *args, **kwargs):
+        return self.parent.message(*args, **kwargs)
+    
     def __init__(self, parent, session=None):
         CtrlInterface.__init__(self)
         
-        self.__parent = parent
+        self.parent = parent
         self.__artists = []
-        
         self.parameters = None # => reset
         
         def copy_params(**kwargs):
@@ -421,15 +420,16 @@ class Layer(ControlPanel, LayerInterface):
 
 class Graph(GraphPlot):
     """GraphPlot (override) to better make use for graph manager
-    """
-    parent = property(lambda self: self.__parent)
-    loader = property(lambda self: self.__loader)
     
+    Attributes:
+        parent : Parent window (usually mainframe)
+        loader : mainframe
+    """
     def __init__(self, parent, loader=None, **kwargs):
         GraphPlot.__init__(self, parent, **kwargs)
         
-        self.__parent = parent
-        self.__loader = loader or parent
+        self.parent = parent
+        self.loader = loader or parent
         
         self.handler.append({ # DNA<Graph>
             None : {
@@ -440,7 +440,7 @@ class Graph(GraphPlot):
             },
         })
         ## ドロップターゲットを許可する
-        self.SetDropTarget(MyFileDropLoader(self, loader=self.loader))
+        self.SetDropTarget(MyFileDropLoader(self.loader, target=self))
     
     def refresh(self):
         if self.frame:
@@ -498,11 +498,13 @@ class Graph(GraphPlot):
 class MyFileDropLoader(wx.FileDropTarget):
     """File Drop interface
     
-    window : target window to drop in, e.g. frame, graph, pane, etc.
-    loader : the main frame
+    Args:
+        loader : mainframe
+        target : target window to drop in, e.g. frame, graph, pane, etc.
     """
-    def __init__(self, target, loader):
+    def __init__(self, loader, target):
         wx.FileDropTarget.__init__(self)
+        
         self.target = target
         self.loader = loader
     
@@ -787,7 +789,7 @@ class Frame(mwx.Frame):
         self.define_key('C-g', self.Quit)
         
         ## Accepts DnD
-        self.SetDropTarget(MyFileDropLoader(self, loader=self))
+        self.SetDropTarget(MyFileDropLoader(self, target=self))
     
     sync_switch = True
     
