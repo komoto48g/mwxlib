@@ -1772,12 +1772,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def swap_buffer(self, buf):
         """Replace buffer with specified buffer."""
         if buf:
-            wnd = wx.Window.FindFocus() # original focus
             j = self.GetPageIndex(buf)
             if j != self.Selection:
                 self.Selection = j # the focus is moved
-            if wnd and wnd not in self.all_buffers(): # restore focus
-                wnd.SetFocus()
         return buf
     
     def create_new_buffer(self, filename, index=None):
