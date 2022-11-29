@@ -5,6 +5,7 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
+from bdb import BdbQuit
 import subprocess
 import threading
 import traceback
@@ -138,6 +139,8 @@ class Thread(object):
             try:
                 self.handler('thread_begin', self)
                 self.result = f(*args, **kwargs)
+            except BdbQuit:
+                pass
             except KeyboardInterrupt as e:
                 print("- Thread:execution stopped: {}".format(e))
             except AssertionError as e:
@@ -1767,7 +1770,7 @@ class Frame(mwx.Frame):
                 frame = self.graph.frame # restore currently selected frame
                 if frame and frame.pathname:
                     o.write("self.graph.select({!r})\n".format(frame.name))
-            o.write('# end of session\n')
+            ## o.write('# end of session\n')
         
         np.set_printoptions(**options)
         self.statusbar("\b done.")

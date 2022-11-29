@@ -131,6 +131,7 @@ class Debugger(Pdb):
                   'C-r pressed' : (1, lambda v: self.send_input('r')),
                   'C-b pressed' : (1, lambda v: self.set_breakpoint()),
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
+                'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -145,12 +146,21 @@ class Debugger(Pdb):
             filename = self.curframe.f_code.co_filename
             ln = self.editor.buffer.cline + 1
             if ln not in self.get_file_breaks(filename):
-                self.send_input('b {}'.format(ln))
+                self.send_input('b {}'.format(ln), echo=True)
     
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
         if self.busy:
-            self.send_input('j {}'.format(self.editor.buffer.markline + 1))
+            ln = self.editor.buffer.markline + 1
+            if ln:
+                self.send_input('j {}'.format(ln), echo=True)
+    
+    def jump_to_lineno(self):
+        """Jump to the first lineno of the code."""
+        if self.busy:
+            ln = self.editor.buffer.cline + 1
+            if ln:
+                self.send_input('j {}'.format(ln), echo=True)
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -162,13 +172,15 @@ class Debugger(Pdb):
         else:
             self.editor.buffer.MarkerDeleteAll(style)
     
-    def send_input(self, c):
+    def send_input(self, c, echo=False):
         """Send input:str @postcall."""
         ## self.stdin.isreading -> True
         def _send():
             self.stdin.input = c
         if self.busy:
             wx.CallAfter(_send)
+            if echo:
+                self.message(c, indent=0)
     
     def message(self, msg, indent=-1):
         """(override) Add prefix and insert msg at the end of command-line."""
@@ -238,11 +250,15 @@ class Debugger(Pdb):
         """Find parent editor which has the specified f:object,
         where `f` can be filename or code object.
         """
+        wnd = wx.Window.FindFocus() # original focus
         for editor in self.parent.ghost.all_pages():
             try:
                 buf = editor.find_buffer(f)
                 if buf:
                     editor.swap_buffer(buf)
+                    buf.SetFocus()
+                    if wnd is self.interactive_shell: # restore focus
+                        wnd.SetFocus()
                     return editor
             except AttributeError:
                 pass
@@ -277,28 +293,29 @@ class Debugger(Pdb):
         if not editor:
             editor = self.parent.Log
             if filename != editor.buffer.filename:
-                editor.load_cache(filename)
-        
-        buffer = editor.buffer
-        if filename == buffer.target:
-            if code != self.code:
-                buffer.markline = firstlineno - 1 # (o) entry:marker
-                buffer.goto_mark()
-                buffer.recenter(3)
-            buffer.goto_line(lineno - 1)
-            buffer.pointer = lineno - 1 # (->) pointer:marker
-            buffer.EnsureLineMoreOnScreen(lineno - 1)
-        
+                ## editor.load_cache(filename)
+                wx.CallAfter(editor.load_cache, filename)
+        self.editor = editor
         for ln in self.get_file_breaks(filename):
             self.add_marker(ln, 1) # (>>) bp:white-arrow
         
-        self.editor = editor
-        self.code = code
+        def _mark():
+            buffer = editor.buffer
+            if filename == buffer.target:
+                if code != self.code:
+                    buffer.markline = firstlineno - 1 # (o) entry:marker
+                    buffer.goto_mark()
+                    buffer.recenter(3)
+                buffer.goto_line(lineno - 1)
+                buffer.pointer = lineno - 1 # (->) pointer:marker
+                buffer.EnsureLineMoreOnScreen(lineno - 1)
+            self.code = code
+        wx.CallAfter(_mark)
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)."""
         pos = self.__interactive
-        def _post():
+        def _next():
             shell = self.interactive_shell
             shell.goto_char(shell.eolc)
             out = shell.GetTextRange(pos, shell.cpos)
@@ -308,7 +325,7 @@ class Debugger(Pdb):
                 shell.prompt()
             shell.EnsureCaretVisible()
             self.__interactive = shell.cpos
-        wx.CallAfter(_post)
+        wx.CallAfter(_next)
     
     def on_debug_end(self, frame):
         """Called after set_quit.

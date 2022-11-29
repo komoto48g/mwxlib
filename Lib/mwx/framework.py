@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.75.7"
+__version__ = "0.75.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1229,7 +1229,9 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
+        wnd = wx.Window.FindFocus() # original focus
         if self.Log.load_file(filename, lineno):
+            wnd.SetFocus()
             if show:
                 self.popup_window(self.Log, show, focus)
             return True
