@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.75.9"
+__version__ = "0.76.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1502,19 +1502,21 @@ try:
         (override) to recode and return handler
         """
         assert isinstance(event, wx.PyEventBinder)
+        assert callable(handler) or handler is None
         assert source is None or hasattr(source, 'GetId')
         if handler is None:
             return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
         if source is not None:
             id  = source.GetId()
         event.Bind(self, id, id2, handler)
-        ## record all handlers: single state machine
-        if not hasattr(self, '__event_handler__'):
+        ## Record all handlers as a single state machine
+        try:
+            if event.typeId not in self.__event_handler__:
+                self.__event_handler__[event.typeId] = [handler]
+            else:
+                self.__event_handler__[event.typeId].insert(0, handler)
+        except AttributeError:
             self.__event_handler__ = {}
-        if event.typeId not in self.__event_handler__:
-            self.__event_handler__[event.typeId] = [handler]
-        else:
-            self.__event_handler__[event.typeId].insert(0, handler)
         return handler
     
     core.EvtHandler.Bind = _EvtHandler_Bind
@@ -1529,7 +1531,7 @@ try:
         if source is not None:
             id  = source.GetId()
         retval = event.Unbind(self, id, id2, handler)
-        ## remove the specified handler or all handlers
+        ## Remove the specified handler or all handlers
         if retval:
             try:
                 actions = self.__event_handler__[event.typeId]
