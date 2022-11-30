@@ -1301,8 +1301,7 @@ class ShellFrame(MiniFrame):
         self.on_title_window(frame)
         self.popup_window(self.debugger.editor, focus=0)
         dispatcher.send(signal='Interpreter.push',
-                        sender=self, command=None, more=False)
-        
+                        sender=shell, command=None, more=False)
         command = shell.cmdline
         if command and not command.isspace():
             command = re.sub(r"^(.*)", r"    \1", command, flags=re.M)
@@ -1599,13 +1598,13 @@ def monit(widget=None, **kwargs):
     return ew
 
 
-def filling(obj=None, label=None, **kwargs):
+def filling(obj=None, **kwargs):
     """Wx.py tool for watching ingredients of the widget.
     """
     from wx.py.filling import FillingFrame
     frame = FillingFrame(rootObject=obj,
-                         rootLabel=label or typename(obj),
-                         static=False, # update each time pushed
+                         rootLabel=typename(obj),
+                         ## static=False, # update each time pushed :default
                          **kwargs)
     frame.filling.text.WrapMode = 0 # no wrap
     frame.filling.text.Zoom = -1 # zoom level of size of fonts
