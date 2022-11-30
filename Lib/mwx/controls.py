@@ -1230,6 +1230,17 @@ if __name__ == "__main__":
             
             self.handler.debug = 6
             
+            self.layout((
+                TextCtrl(self, label="control",
+                         handler=lambda v: print(v.Value, "enter"),
+                         updater=lambda v: print(v.Value, "update"),
+                         tip="this is a textctrl",
+                         icon=Icon('edit'),
+                         ## icon=wx.ART_NEW,
+                         ),
+                ),
+                title="Custom controls",
+            )
             ## a = Param('test')
             a = LParam('test', (0,100,1), nan)
             
