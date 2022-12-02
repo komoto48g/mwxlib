@@ -917,10 +917,11 @@ class ShellFrame(MiniFrame):
         
         self._mgr.Update()
         
-        self.__standalone = ensureClose
+        self.__standalone = bool(ensureClose)
         
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_SHOW, self.OnShow)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
@@ -1084,21 +1085,29 @@ class ShellFrame(MiniFrame):
             del self.Log.pointer # [pointer_unset] => debugger.unwatch
             del self.Scratch.pointer
         
-        pane = self._mgr.GetPane(self.watcher)
-        if pane.IsDocked():
-            self.inspector.unwatch()
-            self.monitor.unwatch()
-            self.ginfo.unwatch()
-            self.linfo.unwatch()
-        
         if self.__standalone:
             evt.Skip() # Close the window
         else:
             self.Show(0) # Don't destroy the window
     
+    def OnShow(self, evt):
+        pane = self._mgr.GetPane(self.watcher)
+        if evt.IsShown():
+            if pane.IsShown():
+                self.inspector.watch() # restart
+                self.monitor.watch()
+        else:
+            if pane.IsDocked():
+                self.inspector.unwatch()
+                self.monitor.unwatch()
+                self.ginfo.unwatch()
+                self.linfo.unwatch()
+        evt.Skip()
+    
     def OnGhostShow(self, evt):
         if evt.IsShown():
-            self.inspector.watch(self.ghost)
+            self.inspector.watch() # restart
+            self.monitor.watch()
         else:
             self.inspector.unwatch()
             self.monitor.unwatch()
@@ -1346,24 +1355,25 @@ class ShellFrame(MiniFrame):
     
     def on_trace_begin(self, frame):
         """Called when set-trace."""
-        self.message("Debugger has started tracing {}.".format(frame))
+        self.message("Debugger has started tracing {!r}.".format(frame))
     
     def on_trace_hook(self, frame):
         """Called when a breakpoint is reached."""
-        self.message("Debugger hooked {}".format(frame))
+        self.message("Debugger hooked {!r}".format(frame))
     
     def on_trace_end(self, frame):
         """Called when unset-trace."""
-        self.message("Debugger has stopped tracing {}.".format(frame))
+        self.message("Debugger has stopped tracing {!r}.".format(frame))
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
         self.inspector.set_colour(widget, 'blue')
-        ## self.load(widget)
+        self.message("Started monitoring {!r}.".format(widget))
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch."""
         self.inspector.set_colour(widget, 'black')
+        self.message("Stopped monitoring {!r}.".format(widget))
     
     def on_title_window(self, obj):
         """Set title to the frame."""
