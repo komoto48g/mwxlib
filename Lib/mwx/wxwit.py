@@ -102,9 +102,17 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if item:
             self.SetItemTextColour(item, col)
     
-    def watch(self, obj):
+    def watch(self, obj=None):
+        if obj is None:
+            item = self.Selection
+            if item:
+                obj = self.GetItemData(item) # Restart
         if not obj:
             self.unwatch()
+            return
+        if not isinstance(obj, wx.Window):
+            wx.MessageBox("Cannot watch the widget.\n\n"
+                          "- {!r} is not a wx.Object.".format(obj))
             return
         self.SetObj(obj)
         self.timer.Start(500)

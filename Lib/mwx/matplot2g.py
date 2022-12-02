@@ -735,7 +735,7 @@ class GraphPlot(MatplotPanel):
             return self.__getitem__(self.index(j))
         
         buffers = [art.buffer for art in self.__Arts]
-        if isinstance(j, list):
+        if hasattr(j, '__iter__'):
             return [buffers[i] for i in j]
         
         return buffers[j] # j can also be slicing

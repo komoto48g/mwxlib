@@ -48,6 +48,12 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         parent : shellframe
         target : widget to monitor
     """
+    _alist = (
+        ("typeId",    62),
+        ("typeName", 200),
+        ("stamp",     40),
+        ("source",     0),
+    )
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
@@ -62,13 +68,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.__dir = True # sort direction
         self.__items = []
         
-        self.alist = (
-            ("typeId",    62),
-            ("typeName", 200),
-            ("stamp",     40),
-            ("source",     0),
-        )
-        for k, (header, w) in enumerate(self.alist):
+        for k, (header, w) in enumerate(self._alist):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
@@ -143,8 +143,10 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             except KeyError:
                 print("- No such event: {}".format(event))
     
-    def watch(self, widget):
+    def watch(self, widget=None):
         """Begin watching the widget."""
+        if widget is None:
+            widget = self.__prev # Restart
         if not widget:
             self.unwatch()
             return
