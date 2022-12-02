@@ -22,6 +22,10 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         parent : shellframe
         target : locals:dict to watch
     """
+    _alist = (
+        ("key", 140),
+        ("value", 0),
+    )
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
@@ -34,11 +38,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.__dir = True # sort direction
         self.__items = [] # list of data:str
         
-        self.alist = (
-            ("key", 140),
-            ("value", 0),
-        )
-        for k, (header, w) in enumerate(self.alist):
+        for k, (header, w) in enumerate(self._alist):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
