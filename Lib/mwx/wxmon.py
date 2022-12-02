@@ -143,8 +143,10 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             except KeyError:
                 print("- No such event: {}".format(event))
     
-    def watch(self, widget):
+    def watch(self, widget=None):
         """Begin watching the widget."""
+        if widget is None:
+            widget = self.__prev # Restart
         if not widget:
             self.unwatch()
             return
