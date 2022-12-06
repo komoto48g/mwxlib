@@ -281,7 +281,7 @@ class EditorInterface(CtrlInterface):
     ## Marker attributes of the editor
     ## --------------------------------
     marker_names = {
-        0: "mark,",
+        0: "mark",
         1: "arrow",
         2: "red-arrow",
         3: "pointer",
@@ -294,10 +294,13 @@ class EditorInterface(CtrlInterface):
     def set_marker(self, line, n):
         if line != -1:
             self.MarkerDeleteAll(n)
-            self.MarkerAdd(line, n)
-            self.handler('{}_set'.format(self.marker_names[n]), line)
+            self.add_marker(line, n)
         else:
             self.del_marker(n)
+    
+    def add_marker(self, line, n):
+        if self.MarkerAdd(line, n):
+            self.handler('{}_set'.format(self.marker_names[n]), line)
     
     def del_marker(self, n):
         line = self.MarkerNext(0, 1<<n)
@@ -363,9 +366,7 @@ class EditorInterface(CtrlInterface):
         if v != -1:
             self.__mark = v
             ln = self.LineFromPosition(v)
-            self.MarkerDeleteAll(0)
-            self.MarkerAdd(ln, 0)
-            self.handler('mark_set', v)
+            self.set_marker(ln, 0)
         else:
             del self.mark
     
@@ -374,8 +375,7 @@ class EditorInterface(CtrlInterface):
         v = self.__mark
         if v != -1:
             self.__mark = -1
-            self.MarkerDeleteAll(0)
-            self.handler('mark_unset', v)
+            self.del_marker(0)
     
     def set_mark(self):
         self.mark = self.cpos
@@ -2773,7 +2773,7 @@ class Nautilus(Shell, EditorInterface):
         """
         ln = self.cmdline_region[0]
         err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
-        self.MarkerAdd(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
+        self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
     def on_interp_error(self, e):

@@ -1406,7 +1406,7 @@ class ShellFrame(MiniFrame):
             ed.goto_char(ed.TextLength) # line to set an arrow marker
             ed.write(text)
             if noerr is not None:
-                ed.MarkerAdd(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
+                ed.add_marker(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
