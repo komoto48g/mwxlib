@@ -120,7 +120,7 @@ class Debugger(Pdb):
                   'trace_begin' : (2, dispatch),
             },
             1 : {
-                        'abort' : (0, ), # [C-g] unwatch
+                        'abort' : (0, ),
                     'debug_end' : (0, self.on_debug_end, dispatch),
                    'debug_mark' : (1, self.on_debug_mark, dispatch),
                    'debug_next' : (1, self.on_debug_next, dispatch),
@@ -184,10 +184,9 @@ class Debugger(Pdb):
         ## self.stdin.isreading -> True
         def _send():
             self.stdin.input = c
-        if self.busy:
-            wx.CallAfter(_send)
-            if echo:
-                self.message(c, indent=0)
+        wx.CallAfter(_send)
+        if echo:
+            self.message(c, indent=0)
     
     def message(self, msg, indent=-1):
         """(override) Add prefix and insert msg at the end of command-line."""
@@ -345,8 +344,7 @@ class Debugger(Pdb):
         main = threading.main_thread()
         thread = threading.current_thread()
         if thread is not main:
-            ## terminates the reader (main-thread)
-            self.send_input('\n')
+            self.send_input('\n') # terminates the reader
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
