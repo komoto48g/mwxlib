@@ -132,6 +132,7 @@ class Debugger(Pdb):
                   'C-b pressed' : (1, lambda v: self.set_breakpoint()),
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
                 'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
+                'C-S-b pressed' : (1, lambda v: self.exec_jump_to_lineno()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -156,11 +157,17 @@ class Debugger(Pdb):
                 self.send_input('j {}'.format(ln), echo=True)
     
     def jump_to_lineno(self):
-        """Jump to the first lineno of the code."""
+        """Jump to the lineno of the code."""
         if self.busy:
             ln = self.editor.buffer.cline + 1
             if ln:
                 self.send_input('j {}'.format(ln), echo=True)
+    
+    def exec_jump_to_lineno(self):
+        """Set a breakpoint and continue to the lineno of the code."""
+        if self.busy:
+            self.set_breakpoint()
+            wx.CallLater(5, self.send_input, 'c')
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
