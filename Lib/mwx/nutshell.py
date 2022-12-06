@@ -1684,9 +1684,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             },
         })
     
-    def __getattr__(self, attr):
-        return getattr(self.buffer, attr)
-    
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
