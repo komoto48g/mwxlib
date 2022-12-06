@@ -1394,9 +1394,9 @@ class Buffer(EditWindow, EditorInterface):
     """Python code buffer.
     
     Attributes:
-        filename    : buffer-file-name
-        codename    : code-file-name (e.g. '<scratch>')
-        code        : code object compiled using `py_exec_region`.
+        filename : buffer-file-name
+        codename : code-file-name (e.g. '<scratch>')
+        code     : code object compiled using `py_exec_region`.
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1709,7 +1709,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         that apply to all buffers contained in the Editor.
         
         Args:
-            buf      : a buffer to apply (if None, appies to all buffers).
+            buf : a buffer to apply (if None, applies to all buffers).
             **kwargs : default style.
             
                 Style = Buffer.STYLE => set_style

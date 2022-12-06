@@ -877,7 +877,7 @@ class Frame(mwx.Frame):
             w, h = self.graph.GetClientSize()
             pane.best_size = (w//2, h) # ドッキング時に再計算される
         
-        ## [M-menu] Reload plugin (ret: None if succeded).
+        ## [M-menu] Reload plugin (ret: None if succeeded).
         if wx.GetKeyState(wx.WXK_ALT):
             self.reload_plug(name)
             pane = self.get_pane(name)
