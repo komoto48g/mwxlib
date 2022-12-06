@@ -120,7 +120,7 @@ class Debugger(Pdb):
                   'trace_begin' : (2, dispatch),
             },
             1 : {
-                        'abort' : (0, ), # [C-g] unwatch
+                        'abort' : (0, ),
                     'debug_end' : (0, self.on_debug_end, dispatch),
                    'debug_mark' : (1, self.on_debug_mark, dispatch),
                    'debug_next' : (1, self.on_debug_next, dispatch),
@@ -132,6 +132,7 @@ class Debugger(Pdb):
                   'C-b pressed' : (1, lambda v: self.set_breakpoint()),
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
                 'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
+                'C-S-b pressed' : (1, lambda v: self.exec_jump_to_lineno()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -156,11 +157,17 @@ class Debugger(Pdb):
                 self.send_input('j {}'.format(ln), echo=True)
     
     def jump_to_lineno(self):
-        """Jump to the first lineno of the code."""
+        """Jump to the lineno of the code."""
         if self.busy:
             ln = self.editor.buffer.cline + 1
             if ln:
                 self.send_input('j {}'.format(ln), echo=True)
+    
+    def exec_jump_to_lineno(self):
+        """Set a breakpoint and continue to the lineno of the code."""
+        if self.busy:
+            self.set_breakpoint()
+            wx.CallLater(5, self.send_input, 'c')
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -177,10 +184,9 @@ class Debugger(Pdb):
         ## self.stdin.isreading -> True
         def _send():
             self.stdin.input = c
-        if self.busy:
-            wx.CallAfter(_send)
-            if echo:
-                self.message(c, indent=0)
+        wx.CallAfter(_send)
+        if echo:
+            self.message(c, indent=0)
     
     def message(self, msg, indent=-1):
         """(override) Add prefix and insert msg at the end of command-line."""
@@ -338,8 +344,7 @@ class Debugger(Pdb):
         main = threading.main_thread()
         thread = threading.current_thread()
         if thread is not main:
-            ## terminates the reader (main-thread)
-            self.send_input('\n')
+            self.send_input('\n') # terminates the reader
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
@@ -479,9 +484,14 @@ class Debugger(Pdb):
                    Remove indent spaces.
         """
         self.message("$(retval) = {!r}".format(return_value), indent=0)
-        Pdb.user_return(self, frame, return_value)
+        ## Pdb.user_return(self, frame, return_value)
+        if self._wait_for_mainpyfile:
+            return
+        frame.f_locals['__return__'] = return_value
+        self.message('--Return--')
         if self.__indents > 2:
             self.__indents -= 2
+        self.interaction(frame, None)
     
     @echo
     def user_exception(self, frame, exc_info):

@@ -1215,6 +1215,7 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         self.linfo.unwatch()
         self.debugger.unwatch()
+        self.debugger.send_input('\n') # terminates the reader
         shell = self.debugger.interactive_shell # reset interp locals
         del shell.locals
         del shell.globals
