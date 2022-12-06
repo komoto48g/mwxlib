@@ -326,18 +326,18 @@ class EditorInterface(CtrlInterface):
     
     white_arrow = property(
         lambda self: self.get_marker(1),
-        lambda self,v: self.set_marker(v, 1),
-        lambda self: self.del_marker(1))
+        lambda self,v: self.set_marker(v, 1), # [arrow_set]
+        lambda self: self.del_marker(1))      # [arrow_unset]
     
     red_arrow = property(
         lambda self: self.get_marker(2),
-        lambda self,v: self.set_marker(v, 2),
-        lambda self: self.del_marker(2))
+        lambda self,v: self.set_marker(v, 2), # [red-arrow_set]
+        lambda self: self.del_marker(2))      # [red-arrow_unset]
     
     pointer = property(
         lambda self: self.get_marker(3),
-        lambda self,v: self.set_marker(v, 3),
-        lambda self: self.del_marker(3))
+        lambda self,v: self.set_marker(v, 3), # [pointer_set]
+        lambda self: self.del_marker(3))      # [pointer_unset]
     
     @property
     def markline(self):
@@ -346,9 +346,9 @@ class EditorInterface(CtrlInterface):
     @markline.setter
     def markline(self, v):
         if v != -1:
-            self.mark = self.PositionFromLine(v)
+            self.mark = self.PositionFromLine(v) # [mark_set]
         else:
-            del self.mark
+            del self.mark # [mark_unset]
     
     @markline.deleter
     def markline(self):
