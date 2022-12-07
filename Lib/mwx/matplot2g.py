@@ -697,9 +697,7 @@ class GraphPlot(MatplotPanel):
     
     def select(self, j):
         if isinstance(j, (str, AxesImagePhantom)):
-           j = self.index(j)
-           if j is None:
-               return
+            j = self.index(j)
         
         for art in self.__Arts: # Hide all frames
             art.set_visible(0)
@@ -708,19 +706,17 @@ class GraphPlot(MatplotPanel):
             self.handler('frame_hidden', self.frame)
         
         if j is not None:
-            u = self.frame and self.frame.unit
-            try:
-                self.__Arts[j].set_visible(1)
-                self.__index = j % len(self)
-                self.handler('frame_shown', self.frame)
-            except Exception as e:
-                self.message("- Failure in select: {}".format(e))
-                return
+            u = self.frame and self.frame.unit # current frame unit
+            
+            art = self.__Arts[j]
+            art.set_visible(1)
+            self.__index = j % len(self)
+            self.handler('frame_shown', art)
             
             ## Update view if the unit length is different than before
-            if u != self.frame.unit:
+            if u != art.unit:
                 ## self.update_axis()
-                self.axes.axis(self.frame.get_extent())
+                self.axes.axis(art.get_extent())
         else:
             self.__index = None
         
@@ -732,7 +728,7 @@ class GraphPlot(MatplotPanel):
     
     def __getitem__(self, j):
         if isinstance(j, str):
-            return self.__getitem__(self.index(j))
+            j = self.index(j)
         
         buffers = [art.buffer for art in self.__Arts]
         if hasattr(j, '__iter__'):
@@ -743,7 +739,7 @@ class GraphPlot(MatplotPanel):
     def __setitem__(self, j, v):
         if isinstance(j, str):
             try:
-                return self.__setitem__(self.index(j), v) # overwrite buffer
+                j = self.index(j) # overwrite buffer
             except ValueError:
                 return self.load(v, name=j) # new buffer
         
@@ -760,7 +756,7 @@ class GraphPlot(MatplotPanel):
     
     def __delitem__(self, j):
         if isinstance(j, str):
-            return self.__delitem__(self.index(j))
+            j = self.index(j)
         
         if hasattr(j, '__iter__'):
             arts = [self.__Arts[i] for i in j]
