@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.2"
+__version__ = "0.76.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1243,6 +1243,7 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
+        filename = re.sub(r"<(.*?)>", r"\1", filename) # codename -> filename
         wnd = wx.Window.FindFocus() # original focus
         if self.Log.load_file(filename, lineno):
             wnd.SetFocus()
