@@ -685,7 +685,7 @@ class GraphPlot(MatplotPanel):
         
         name = self.get_uniqname(name)
         
-        ## 最初のロード axes.imshow (=> self.axes.axis 表示を更新する)
+        ## The first load of axes.imshow (=> self.axes.axis 表示を更新する)
         art = AxesImagePhantom(self, buf, name, show, **kwargs)
         
         j = len(self) if pos is None else pos
@@ -696,12 +696,12 @@ class GraphPlot(MatplotPanel):
         return art
     
     def select(self, j):
-        if isinstance(j, (str, AxesImagePhantom)): # given name:str or frame:art
+        if isinstance(j, (str, AxesImagePhantom)):
            j = self.index(j)
            if j is None:
                return
         
-        for art in self.__Arts: # すべてのフレームをいったん隠す
+        for art in self.__Arts: # Hide all frames
             art.set_visible(0)
         
         if j != self.__index and self.__index is not None:
@@ -714,10 +714,10 @@ class GraphPlot(MatplotPanel):
                 self.__index = j % len(self)
                 self.handler('frame_shown', self.frame)
             except Exception as e:
-                self.message("- error in select: {}".format(e))
+                self.message("- Failure in select: {}".format(e))
                 return
             
-            ## 前と異なるユニット長であれば表示を更新する
+            ## Update view if the unit length is different than before
             if u != self.frame.unit:
                 ## self.update_axis()
                 self.axes.axis(self.frame.get_extent())
@@ -744,10 +744,10 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, str):
             try:
                 return self.__setitem__(self.index(j), v) # overwrite buffer
-            except Exception:
+            except ValueError:
                 return self.load(v, name=j) # new buffer
         
-        if isinstance(j, (slice, list)):
+        if hasattr(j, '__iter__') or isinstance(j, slice):
             raise ValueError("attempt to assign buffers into slice")
         
         if v is None:
@@ -762,7 +762,7 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, str):
             return self.__delitem__(self.index(j))
         
-        if isinstance(j, list):
+        if hasattr(j, '__iter__'):
             arts = [self.__Arts[i] for i in j]
         elif isinstance(j, slice):
             arts = self.__Arts[j]
