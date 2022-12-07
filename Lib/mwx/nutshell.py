@@ -1850,20 +1850,18 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         try:
-            buf._load_file(filename, lineno)
             self.swap_buffer(buf)
             if focus:
                 buf.SetFocus()
-            return True
-        except FileNotFoundError as e:
+            return buf._load_file(filename, lineno)
+        except (FileNotFoundError, OSError) as e:
             self.post_message("Failed to load {!r}: {}".format(
                               os.path.basename(filename), e))
-            return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(
                               os.path.basename(filename), e))
             self.remove_buffer(buf)
-            return False
+        return False
     
     def save_file(self, filename):
         """Save the current buffer to a file.
@@ -1872,12 +1870,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             The file will be overwritten without confirmation.
         """
         try:
-            self.buffer._save_file(filename)
-            return True
+            return self.buffer._save_file(filename)
         except Exception as e:
             self.post_message("Failed to save {!r}: {}".format(
                               os.path.basename(filename), e))
-            return False
+        return False
     
     def load_buffer(self):
         """Confirm the load with the dialog."""
