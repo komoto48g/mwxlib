@@ -143,25 +143,22 @@ class Debugger(Pdb):
     
     def set_breakpoint(self):
         """Set a breakpoint at the current line."""
-        if self.busy:
-            filename = self.curframe.f_code.co_filename
-            ln = self.editor.buffer.cline + 1
-            if ln not in self.get_file_breaks(filename):
-                self.send_input('b {}'.format(ln), echo=True)
+        filename = self.curframe.f_code.co_filename
+        ln = self.editor.buffer.cline + 1
+        if ln not in self.get_file_breaks(filename):
+            self.send_input('b {}'.format(ln), echo=True)
     
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
-        if self.busy:
-            ln = self.editor.buffer.markline + 1
-            if ln:
-                self.send_input('j {}'.format(ln), echo=True)
+        ln = self.editor.buffer.markline + 1
+        if ln:
+            self.send_input('j {}'.format(ln), echo=True)
     
     def jump_to_lineno(self):
         """Jump to the lineno of the code."""
-        if self.busy:
-            ln = self.editor.buffer.cline + 1
-            if ln:
-                self.send_input('j {}'.format(ln), echo=True)
+        ln = self.editor.buffer.cline + 1
+        if ln:
+            self.send_input('j {}'.format(ln), echo=True)
     
     def exec_jump_to_lineno(self):
         """Set a breakpoint and continue to the lineno of the code."""
