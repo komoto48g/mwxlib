@@ -133,6 +133,7 @@ class Debugger(Pdb):
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
                 'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
                 'C-S-b pressed' : (1, lambda v: self.exec_until_lineno()),
+                  'C-w pressed' : (1, lambda v: self.stamp_where()),
             },
             2 : {
                     'trace_end' : (0, dispatch),
@@ -170,6 +171,13 @@ class Debugger(Pdb):
         if ln > lineno:
             self.send_input('until {}'.format(ln))
             self.message("-> {}:{}:{}".format(filename, ln, name), indent=0)
+    
+    def stamp_where(self):
+        """Stamp current where(frame) message."""
+        ## cf. (print_stack_entry for frame in self.stack)
+        self.send_input('w')
+        if not self.verbose:
+            self.message("{}{}".format(self.prefix1, where(self.curframe)), indent=0)
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
