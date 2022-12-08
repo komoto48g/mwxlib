@@ -168,7 +168,7 @@ class Debugger(Pdb):
         ln = self.editor.buffer.cline + 1
         if ln > lineno:
             self.send_input('until {}'.format(ln))
-            self.message("-> {}:{}:{}".format(filename, ln, name), indent=0)
+            self.message("--> {}:{}:{}".format(filename, ln, name), indent=0)
         else:
             self.stamp_where()
     
@@ -177,7 +177,7 @@ class Debugger(Pdb):
         ## cf. (print_stack_entry for frame in self.stack)
         self.send_input('w')
         if not self.verbose:
-            self.message("-> {}".format(where(self.curframe)), indent=0)
+            self.message("--> {}".format(where(self.curframe)), indent=0)
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:

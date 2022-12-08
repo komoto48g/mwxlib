@@ -218,11 +218,11 @@ class EditorInterface(CtrlInterface):
             pass
         
         ## Custom markers (cf. MarkerAdd)
-        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o blue-mark
-        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff') # > white-arrow
+        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o mark
+        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff') # > arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000') # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')   # >> blue-pointer
-        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', 'yellow')  # >> red-pointer
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')   # -> pointer
+        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', 'yellow')  # -> red-pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
