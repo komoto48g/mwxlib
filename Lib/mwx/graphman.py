@@ -154,7 +154,7 @@ class Thread(object):
                 self.handler('thread_end', self)
         
         if self.running:
-            wx.MessageBox("The thread is running (Press C-g to quit).",
+            wx.MessageBox("The thread is running (Press [C-g] to quit).",
                           style=wx.ICON_WARNING)
             return
         

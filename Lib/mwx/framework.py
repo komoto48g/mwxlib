@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.3"
+__version__ = "0.76.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -936,10 +936,12 @@ class ShellFrame(MiniFrame):
             if self.debugger.handler.current_state:
                 if self.debugger.tracing:
                     self.message("- The current status is tracing. "
-                                 "- Press C-g to quit.")
+                                 "- Press [C-g] to quit.")
                 elif not self.debugger.busy:
                     self.message("- The current status of debugger is not valid. "
-                                 "- Press C-g to quit.")
+                                 "- Press [C-g] to quit.")
+                    self.message.SetBackgroundColour('yellow')
+                    self.message.Refresh()
             v.Skip()
         
         def fork(v):
@@ -1142,6 +1144,10 @@ class ShellFrame(MiniFrame):
         if win is self.rootshell:
             ## self.message("- Don't close the root shell.")
             return
+        elif self.debugger.busy and win is self.debugger.interactive_shell:
+            wx.MessageBox("The debugger is running.\n\n"
+                          "Enter [q]uit to exit before closing.")
+            return
         evt.Skip()
     
     def About(self, evt=None):
@@ -1220,6 +1226,8 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
         self.on_title_window(self.current_shell.target) # reset title
+        self.message.SetBackgroundColour(None)
+        self.message.Refresh()
         self.message("Quit")
         evt.Skip()
     
@@ -1321,7 +1329,7 @@ class ShellFrame(MiniFrame):
         if command and not command.isspace():
             command = re.sub(r"^(.*)", r"    \1", command, flags=re.M)
             self.add_log(command)
-        self.message("Debugger is busy now (Press C-g to quit).")
+        self.message("Debugger is busy now (Press [C-g] to quit).")
     
     def on_debug_end(self, frame):
         """Called after set_quit."""
