@@ -52,8 +52,6 @@ class Debugger(Pdb):
         C-b     : set a breakpoint at the current line.
         C-@     : jump to the first-lineno of the code.
     """
-    prefix1 = "> "
-    prefix2 = "-> "
     verbose = False
     use_rawinput = False
     indent = property(lambda self: ' ' * self.__indents)
@@ -162,7 +160,7 @@ class Debugger(Pdb):
             self.send_input('j {}'.format(ln), echo=True)
     
     def exec_until_lineno(self):
-        """Set a breakpoint and continue to the lineno of the code."""
+        """Continue execution until the lineno of the code."""
         frame = self.curframe
         filename = frame.f_code.co_filename
         lineno = frame.f_lineno
@@ -171,13 +169,15 @@ class Debugger(Pdb):
         if ln > lineno:
             self.send_input('until {}'.format(ln))
             self.message("-> {}:{}:{}".format(filename, ln, name), indent=0)
+        else:
+            self.stamp_where()
     
     def stamp_where(self):
         """Stamp current where(frame) message."""
         ## cf. (print_stack_entry for frame in self.stack)
         self.send_input('w')
         if not self.verbose:
-            self.message("{}{}".format(self.prefix1, where(self.curframe)), indent=0)
+            self.message("-> {}".format(where(self.curframe)), indent=0)
     
     def add_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
@@ -195,7 +195,7 @@ class Debugger(Pdb):
         def _send():
             self.stdin.input = c
         wx.CallAfter(_send)
-        if echo:
+        if echo or self.verbose:
             self.message(c, indent=0)
     
     def message(self, msg, indent=-1):
@@ -467,7 +467,7 @@ class Debugger(Pdb):
         self.handler('debug_mark', frame)
         if self.verbose:
             Pdb.print_stack_entry(self, frame_lineno,
-                prompt_prefix or '\n' + self.indent + self.prefix2)
+                prompt_prefix or "\n{}-> ".format(self.indent))
     
     @echo
     def user_call(self, frame, argument_list):
@@ -477,7 +477,7 @@ class Debugger(Pdb):
                    Add indent spaces.
         """
         if not self.verbose:
-            self.message("{}{}".format(self.prefix1, where(frame)), indent=0)
+            self.message("> {}".format(where(frame)), indent=0)
         self.__indents += 2
         Pdb.user_call(self, frame, argument_list)
     
