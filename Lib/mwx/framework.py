@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.4"
+__version__ = "0.76.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1252,12 +1252,18 @@ class ShellFrame(MiniFrame):
             filename = obj
             lineno = 0
         filename = re.sub(r"<(.*?)>", r"\1", filename) # codename -> filename
+        for editor in self.ghost.all_pages(type(self.Log)): #<Editor>
+            if editor.find_buffer(filename):
+                break
+        else:
+            editor = self.Log
         wnd = wx.Window.FindFocus() # original focus
-        if self.Log.load_file(filename, lineno):
+        if editor.load_file(filename, lineno):
             wnd.SetFocus()
             if show:
-                self.popup_window(self.Log, show, focus)
+                self.popup_window(editor, show, focus)
             return True
+        wnd.SetFocus()
         return False
     
     def info(self, obj):
