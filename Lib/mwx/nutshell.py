@@ -1793,6 +1793,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             buf = self.create_new_buffer(self.default_name, index=0)
             self.default_buffer = buf
         buf._reset()
+        return buf
     
     @postcall
     def remove_buffer(self, buf=None):

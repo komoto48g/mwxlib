@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.5"
+__version__ = "0.76.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1017,8 +1017,11 @@ class ShellFrame(MiniFrame):
     def load_session(self):
         """Load session from file."""
         try:
-            if self.Scratch.buffer.mtdelta is None:
-                self.Scratch.buffer.LoadFile(self.SCRATCH_FILE)
+            scratch = self.Scratch.default_buffer
+            if not scratch or scratch.mtdelta is not None:
+                scratch = self.Scratch.new_buffer()
+            scratch.LoadFile(self.SCRATCH_FILE)
+            
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
             return True
@@ -1031,6 +1034,10 @@ class ShellFrame(MiniFrame):
     def save_session(self):
         """Save session to file."""
         try:
+            scratch = self.Scratch.default_buffer
+            if scratch and scratch.mtdelta is None:
+                scratch.SaveFile(self.SCRATCH_FILE)
+            
             with open(self.SESSION_FILE, 'w') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
@@ -1048,16 +1055,10 @@ class ShellFrame(MiniFrame):
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.markline+1))
                 
-                with open(self.LOGGING_FILE, 'w', encoding='utf-8', newline='') as f:
-                    f.write(self.Log.default_buffer.Text)
-                
                 for buffer in self.Scratch.all_buffers():
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.markline+1))
-                
-                with open(self.SCRATCH_FILE, 'w', encoding='utf-8', newline='') as f:
-                    f.write(self.Scratch.default_buffer.Text)
             return True
         except Exception:
             traceback.print_exc()
@@ -1071,8 +1072,11 @@ class ShellFrame(MiniFrame):
     
     def Destroy(self):
         try:
-            self.History.SaveFile(self.HISTORY_FILE)
+            self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
+            self.History.default_buffer.SaveFile(self.HISTORY_FILE)
             self.save_session()
+        except Exception:
+            traceback.print_exc()
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
@@ -1087,9 +1091,7 @@ class ShellFrame(MiniFrame):
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer will be cleared.")
             ## cf. [pointer_unset] stop_trace
-            if self.debugger.tracing:
-                self.debugger.editor = None
-                self.debugger.unwatch()
+            self.debugger.unwatch()
         
         if self.__standalone:
             evt.Skip() # Close the window
