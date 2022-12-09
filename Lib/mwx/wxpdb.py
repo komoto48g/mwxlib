@@ -266,18 +266,11 @@ class Debugger(Pdb):
         """Find parent editor which has the specified f:object,
         where `f` can be filename or code object.
         """
-        wnd = wx.Window.FindFocus() # original focus
-        for editor in self.parent.ghost.all_pages():
-            try:
-                buf = editor.find_buffer(f)
-                if buf:
-                    editor.swap_buffer(buf)
-                    buf.SetFocus()
-                    if wnd is self.interactive_shell: # restore focus
-                        wnd.SetFocus()
-                    return editor
-            except AttributeError:
-                pass
+        for editor in self.parent.ghost.all_pages(type(self.editor)):
+            buf = editor.find_buffer(f)
+            if buf:
+                editor.swap_buffer(buf)
+                return editor
     
     def on_debug_begin(self, frame):
         """Called before set_trace.

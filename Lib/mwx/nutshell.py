@@ -1768,9 +1768,12 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def swap_buffer(self, buf):
         """Replace buffer with specified buffer."""
         if buf:
+            wnd = wx.Window.FindFocus() # original focus
             j = self.GetPageIndex(buf)
             if j != self.Selection:
                 self.Selection = j # the focus is moved
+            if wnd and wnd not in self.all_buffers(): # restore focus other window
+                wnd.SetFocus()
         return buf
     
     def create_new_buffer(self, filename, index=None):
@@ -1862,7 +1865,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.post_message("Failed to load {!r}: {}".format(
                               os.path.basename(filename), e))
             self.remove_buffer(buf)
-        return False
     
     def save_file(self, filename):
         """Save the current buffer to a file.
@@ -1875,7 +1877,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         except Exception as e:
             self.post_message("Failed to save {!r}: {}".format(
                               os.path.basename(filename), e))
-        return False
     
     def load_buffer(self):
         """Confirm the load with the dialog."""

@@ -1260,7 +1260,7 @@ class ShellFrame(MiniFrame):
         else:
             editor = self.Log
         wnd = wx.Window.FindFocus() # original focus
-        if editor.load_file(filename, lineno):
+        if editor.load_file(filename, lineno, show):
             wnd.SetFocus()
             if show:
                 self.popup_window(editor, show, focus)
@@ -1428,8 +1428,8 @@ class ShellFrame(MiniFrame):
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
-        win = wx.Window.FindFocus()
         pages = [page for page in self.all_pages() if page.IsShownOnScreen()]
+        win = wx.Window.FindFocus()
         while win:
             if win in pages:
                 j = pages.index(win) + p
