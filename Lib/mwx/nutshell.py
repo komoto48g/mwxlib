@@ -2676,19 +2676,19 @@ class Nautilus(Shell, EditorInterface):
         for i, c in enumerate(tokens):
             rest = tokens[i+1:]
             
-            if c == '@' and not lhs.strip('\r\n')\
-              and any(x[0] in '\r\n' for x in rest): # @dcor
+            if c == '@' and not lhs.strip() and '\n' in rest: # @dcor
                 pass
+            
             elif c == '@':
                 f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rest, sep2).strip()
                 if rhs in ("debug", "profile", "timeit"):
-                    lhs = re.sub(r"([\w.]+)\((.*)\)", # func(a,b,c) @debug
-                                 r"\1, \2", lhs)      # --> func,a,b,c @debug
+                    ## func(a,b,c) @debug --> func,a,b,c @debug
+                    lhs = re.sub(r"([\w.]+)\((.*)\)", r"\1, \2", lhs, flags=re.S)
                 else:
-                    rhs = re.sub(r"^\((.*)\)",        # @(y1,,,yn)
-                                 r"partial(\1)", rhs) # --> partial(y1,,,yn)
+                    ## @(y1,,,yn) --> partial(y1,,,yn)
+                    rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
             
             if c == '`':
