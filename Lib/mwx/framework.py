@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.6"
+__version__ = "0.76.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1288,7 +1288,7 @@ class ShellFrame(MiniFrame):
             if obj:
                 self.popup_window(self.monitor, focus=0)
                 self.linfo.watch(obj.__dict__)
-                self.ginfo.watch(inspect.getmodule(obj).__dict__) # this.__dict__
+                self.ginfo.watch({})
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
@@ -1299,7 +1299,7 @@ class ShellFrame(MiniFrame):
                 self.debugger.interactive_shell = shell
         elif hasattr(obj, '__dict__'):
             self.linfo.watch(obj.__dict__)
-            self.ginfo.watch(inspect.getmodule(obj).__dict__) # this.__dict__
+            self.ginfo.watch({})
             self.popup_window(self.linfo, focus=0)
         else:
             print("- cannot debug {!r}".format(obj))
@@ -1321,10 +1321,8 @@ class ShellFrame(MiniFrame):
     def on_debug_next(self, frame):
         """Called from cmdloop."""
         shell = self.debugger.interactive_shell
-        gs = frame.f_globals
-        ls = frame.f_locals
-        shell.globals = gs
-        shell.locals = ls
+        shell.globals = gs = frame.f_globals
+        shell.locals = ls = frame.f_locals
         if self.ginfo.target is not gs:
             self.ginfo.watch(gs)
         if self.linfo.target is not ls:
