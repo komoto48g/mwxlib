@@ -49,8 +49,11 @@ class Debugger(Pdb):
         C-n     : next   (step-over)
         C-s     : step   (setep-in)
         C-r     : return (step-out)
-        C-b     : set a breakpoint at the current line.
-        C-@     : jump to the first-lineno of the code.
+        C-b     : Set a breakpoint at the current line.
+        C-@     : Jump to the first lineno of the code.
+        C-S-j   : Jump to the lineno of the code.
+        C-S-b   : Continue execution until the lineno of the code.
+        C-w     : Stamp current where(frame) message.
     """
     verbose = False
     use_rawinput = False

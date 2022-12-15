@@ -28,9 +28,9 @@ class Inspector(it.InspectionTree, CtrlInterface):
         
         self.parent = parent
         self.target = None
-        self.toolFrame = self
-        self.Font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL, wx.NORMAL)
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
+        self.toolFrame = self
         
         try:
             from mwx.nutshell import Nautilus

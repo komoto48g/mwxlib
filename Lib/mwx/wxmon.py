@@ -276,14 +276,11 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         if n < 2:
             return
         
-        def _getitem(key):
-            return [data[i] for i in range(n) if key(i)]
-        
         data = self.__items
-        ls = _getitem(self.IsSelected)
-        lc = _getitem(self.IsItemChecked)
-        lb = _getitem(lambda i: self.GetItemTextColour(i) == 'blue')
         f = data[self.FocusedItem]
+        ls = [data[i] for i in range(n) if self.IsSelected(i)]
+        lc = [data[i] for i in range(n) if self.IsItemChecked(i)]
+        lb = [data[i] for i in range(n) if self.GetItemTextColour(i) == 'blue']
         
         col = evt.Column
         self.__dir = not self.__dir

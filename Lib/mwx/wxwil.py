@@ -33,7 +33,8 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         CtrlInterface.__init__(self)
         
         self.parent = parent
-        self.target = {}
+        self.target = None
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.__dir = True # sort direction
         self.__items = [] # list of data:str
@@ -57,16 +58,23 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         if not self:
             dispatcher.disconnect(receiver=self._update, signal='Interpreter.push')
             return
-        self.update(self.target)
+        self.update()
     
     def watch(self, locals):
         self.clear()
         if not isinstance(locals, dict):
             ## wx.MessageBox("Cannot watch the locals.\n\n"
             ##               "- {!r} is not a dict object.".format(locals))
+            self.unwatch()
             return
         self.target = locals
-        self.update(self.target)
+        try:
+            busy = wx.BusyCursor()
+            self.Freeze()
+            self.update()
+        finally:
+            self.Thaw()
+            del busy
     
     def unwatch(self):
         self.target = None
@@ -75,18 +83,18 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.DeleteAllItems()
         del self.__items[:]
     
-    def update(self, attr):
-        if not attr:
+    def update(self):
+        if not self.target:
             return
         data = self.__items
         n = len(data)
         for i, (k, v) in enumerate(data[::-1]):
-            if k not in attr:
+            if k not in self.target:
                 j = n-i-1
                 self.DeleteItem(j)
                 del data[j]
         
-        for key, value in attr.items():
+        for key, value in self.target.items():
             vstr = repr(value)
             i = next((i for i, item in enumerate(data)
                                     if item[0] == key), None)
@@ -116,12 +124,9 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         if n < 2:
             return
         
-        def _getitem(key):
-            return [data[i] for i in range(n) if key(i)]
-        
         data = self.__items
-        ls = _getitem(self.IsSelected)
         f = data[self.FocusedItem]
+        ls = [data[i] for i in range(n) if self.IsSelected(i)]
         
         col = evt.Column
         self.__dir = not self.__dir
