@@ -2232,7 +2232,8 @@ class Nautilus(Shell, EditorInterface):
         
         @self.handler.bind('window_destroy')
         def destroy(v):
-            self.handler('shell_deleted', self)
+            if v.EventObject is self:
+                self.handler('shell_deleted', self)
             v.Skip()
         
         @self.handler.bind('focus_set')
@@ -2727,6 +2728,7 @@ class Nautilus(Shell, EditorInterface):
         except AttributeError:
             pass
     
+    @postcall
     def on_activated(self, shell):
         """Called when shell:self is activated.
         Reset localvars assigned for the shell target.

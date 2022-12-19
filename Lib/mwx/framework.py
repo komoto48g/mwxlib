@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.8"
+__version__ = "0.76.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1591,7 +1591,7 @@ def timeit(f, *args, **kwargs):
     from timeit import timeit
     try:
         dt = timeit(lambda: f(*args, **kwargs), number=1)
-        print("... duration time: {:g} s".format(dt))
+        print("duration time: {:g} s".format(dt))
     except TypeError as e:
         print(e)
 
