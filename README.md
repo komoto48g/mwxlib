@@ -14,15 +14,24 @@ These instructions will get you a copy of the project up and running on your loc
 - ~~Python 2.7~~ (PY2 support has ended since 0.50)
 - ~~Python 3.5~~ (PY35 support has ended since 0.70)
     - wxpython <= 4.0.7
-- Python 3.6 -- 3.9
+- ~~Python 3.7~~ (PY37 support will be ended in 0.80)
+- Python 3.8 -- 3.9
     - wxpython >= 4.1.1
     - numpy
     - pillow
     - matplotlib
     - opencv-python
 - Python 3.10  
-    A version of wxpython for PY310 has not yet released on PyPi.
-    Please download the latest  snapshot from https://wxpython.org/Phoenix/snapshot-builds/
+    - wxpython >= 4.2.0
+    - numpy
+    - pillow
+    - matplotlib
+    - opencv-python
+
+A version of wxpython for PY311 has not yet released on PyPi.
+<!--
+Please download the latest snapshot from https://wxpython.org/Phoenix/snapshot-builds/
+-->
 
 ### Installing
 
