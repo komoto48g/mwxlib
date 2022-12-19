@@ -343,14 +343,40 @@ def _extract_words_from_tokens(tokens, reverse=False):
 def find_modules(force=False, verbose=True):
     """Find all modules available and write to log file.
     
-    Similar to pydoc.help, it scans packages, but also the submodules.
+    Similar to pydoc.help, it scans packages, but also submodules.
     This creates a log file in ~/.mwxlib and save the list.
     """
     f = get_rootpath("deb-modules-{}.log".format(sys.winver))
     
+    def _callback(path, modname, desc=''):
+        if verbose:
+            print("Scanning {:70s}".format(modname[:70]), end='\r',
+                  file=sys.__stdout__)
+        lm.append(modname)
+    
+    def _error(modname):
+        if verbose:
+            print("- failed: {}".format(modname),
+                  file=sys.__stderr__)
+    
     if not force and os.path.exists(f):
         with open(f, 'r') as o:
-            return eval(o.read()) # read and evaluate a list of modules
+            lm = eval(o.read()) # read and evaluate module list
+        
+        ## Check additional packages/modules
+        verbose = False
+        for root in pkgutil.iter_modules():
+            if root.name not in lm:
+                _callback(None, root.name)
+                if root.ispkg:
+                    try:
+                        #<FileFinder object>
+                        path = [os.path.join(root.module_finder.path, root.name)]
+                    except AttributeError:
+                        #<zipimporter object> e.g. egg
+                        path = [os.path.join(root.module_finder.archive, root.name)]
+                    for info in pkgutil.walk_packages(path, root.name+'.', onerror=_error):
+                        _callback(None, info.name)
     else:
         print("Please wait a moment "
               "while Py{} gathers a list of all available modules... "
@@ -358,30 +384,15 @@ def find_modules(force=False, verbose=True):
         
         lm = list(sys.builtin_module_names)
         
-        def _callback(path, modname, desc):
-            lm.append(modname)
-            if verbose:
-                print("Scanning {:70s}".format(modname[:70]), end='\r',
-                      file=sys.__stdout__)
-        
-        def _error(modname):
-            if verbose:
-                print("- failed: {}".format(modname),
-                      file=sys.__stdout__)
-        
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore') # ignore problems during import
-            
-            ## pydoc.ModuleScanner().run(_callback, key='', onerror=_error)
-            for _importer, modname, _ispkg in pkgutil.walk_packages(onerror=_error):
-                _callback(None, modname, '')
+        ## pydoc.ModuleScanner().run(_callback, key='', onerror=_error)
+        for info in pkgutil.walk_packages(onerror=_error):
+            _callback(None, info.name)
         
         lm.sort(key=str.upper)
         with open(f, 'w') as o:
-            pprint(lm, stream=o) # write modules
-        
+            pprint(lm, stream=o) # write module list
         print("The results were written in {!r}.".format(f))
-        return lm
+    return lm
 
 
 def get_rootpath(f):
