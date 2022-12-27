@@ -545,7 +545,7 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject
         try:
-            page = obj.Pages[evt.Selection].window # Don't use GetPage for split notebook
+            page = obj.Pages[evt.Selection].window # GetPage for split notebook
             mwx.Menu.Popup(self, page.menu)
         except AttributeError:
             pass

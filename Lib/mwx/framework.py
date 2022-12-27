@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.76.9"
+__version__ = "0.77.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -880,7 +880,7 @@ class ShellFrame(MiniFrame):
         self.console.Name = "console"
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
-        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClosing)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClose)
         
         self.ghost = AuiNotebook(self, size=(600,400))
         self.ghost.AddPage(self.Scratch, "Scratch")
@@ -1126,7 +1126,7 @@ class ShellFrame(MiniFrame):
     def OnGhostTabMenu(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject
         try:
-            page = obj.Pages[evt.Selection].window # Don't use GetPage for split notebook
+            page = obj.Pages[evt.Selection].window # GetPage for split notebook.
             Menu.Popup(self, page.menu)
         except AttributeError:
             pass
@@ -1140,13 +1140,13 @@ class ShellFrame(MiniFrame):
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
     
-    def OnConsolePageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
-        tab = evt.EventObject                 #<wx._aui.AuiTabCtrl>
-        win = tab.Pages[evt.Selection].window # Don't use GetPage for split notebook.
-        if win is self.rootshell:
+    def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
+        obj = evt.EventObject #<wx._aui.AuiTabCtrl>
+        page = obj.Pages[evt.Selection].window # GetPage for split notebook.
+        if page is self.rootshell:
             ## self.message("- Don't close the root shell.")
             return
-        elif self.debugger.busy and win is self.debugger.interactive_shell:
+        elif self.debugger.busy and page is self.debugger.interactive_shell:
             wx.MessageBox("The debugger is running.\n\n"
                           "Enter [q]uit to exit before closing.")
             return
