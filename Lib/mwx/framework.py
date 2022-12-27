@@ -1541,14 +1541,19 @@ try:
         event.Bind(self, id, id2, handler)
         ## Record all handlers as a single state machine
         try:
+            if not hasattr(self, '__event_handler__'):
+                self.__event_handler__ = {}
             if event.typeId not in self.__event_handler__:
                 self.__event_handler__[event.typeId] = [handler]
             else:
                 self.__event_handler__[event.typeId].insert(0, handler)
-        except AttributeError:
-            self.__event_handler__ = {}
+        except Exception as e:
+            print("An error occurred in Bind: {}".format(e))
+            t, v, tb = sys.exc_info()
+            traceback.print_stack(tb.tb_frame.f_back)
+            traceback.print_exc()
         return handler
-    
+
     core.EvtHandler.Bind = _EvtHandler_Bind
     ## del _EvtHandler_Bind
 
@@ -1574,7 +1579,7 @@ try:
             except Exception:
                 pass
         return retval
-    
+
     core.EvtHandler.Unbind = _EvtHandler_Unbind
     ## del _EvtHandler_Unbind
 
