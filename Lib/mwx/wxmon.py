@@ -134,14 +134,15 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     @staticmethod
     def get_actions(event, widget):
         """Wx.PyEventBinder and the handlers."""
-        if widget and hasattr(widget, '__event_handler__'):
-            try:
-                handlers = widget.__event_handler__[event]
-                ## Exclude ew:onWatchedEvent by comparing names instead of objects
-                ## cf. [a for a in handlers if a != self.onWatchedEvent]
-                return [a for a in handlers if a.__name__ != 'onWatchedEvent']
-            except KeyError:
-                print("- No such event: {}".format(event))
+        try:
+            handlers = widget.__event_handler__[event]
+            ## Exclude ew:onWatchedEvent by comparing names instead of objects
+            ## cf. [a for a in handlers if a != self.onWatchedEvent]
+            return [a for a in handlers if a.__name__ != 'onWatchedEvent']
+        except AttributeError:
+            pass
+        except KeyError:
+            print("- No such event: {}".format(event))
     
     def watch(self, widget=None):
         """Begin watching the widget."""
@@ -191,16 +192,17 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         """Dump all event handlers bound to the widget."""
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
-        if not hasattr(widget, '__event_handler__'):
-            return ssmap
-        for event in sorted(widget.__event_handler__):
-            actions = self.get_actions(event, widget)
-            if actions and event not in exclusions:
-                ssmap[event] = actions
-                if verbose:
-                    name = self.get_name(event)
-                    values = ('\n'+' '*41).join(str(where(a)) for a in actions)
-                    print("{:8d}:{:32s}{!s}".format(event, name, values))
+        try:
+            for event in sorted(widget.__event_handler__):
+                actions = self.get_actions(event, widget)
+                if actions and event not in exclusions:
+                    ssmap[event] = actions
+                    if verbose:
+                        name = self.get_name(event)
+                        values = ('\n'+' '*41).join(str(where(a)) for a in actions)
+                        print("{:8d}:{:32s}{!s}".format(event, name, values))
+        except AttributeError:
+            pass
         return ssmap
     
     ## --------------------------------
