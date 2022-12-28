@@ -9,7 +9,6 @@ import traceback
 import warnings
 import keyword
 import shlex
-import time
 import sys
 import os
 import re
@@ -1881,7 +1880,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def load_buffer(self):
         """Confirm the load with the dialog."""
         buf = self.buffer
-        if buf.mtdelta is not None and buf.IsModified():
+        if self.need_buffer_save_p(buf):
             if wx.MessageBox(
                     "You are leaving unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
@@ -1947,6 +1946,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         for buf in filter(self.need_buffer_save_p, self.all_buffers()):
             self.swap_buffer(buf)
             self.save_buffer()
+        return True
     
     def open_buffer(self):
         """Confirm the open with the dialog."""
@@ -1974,6 +1974,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 self.post_message("The close has been canceled.")
                 return None
         self.remove_buffer()
+        return True
     
     def kill_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers()):
@@ -1987,6 +1988,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 self.post_message("The close has been canceled.")
                 return None
         self.remove_all_buffers()
+        return True
 
 
 class Interpreter(interpreter.Interpreter):

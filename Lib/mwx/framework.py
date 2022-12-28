@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.77.0"
+__version__ = "0.77.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -19,7 +19,6 @@ from wx import aui
 from wx import stc
 from wx.py import dispatcher
 from importlib import reload
-import inspect
 import builtins
 import textwrap
 try:
@@ -1090,8 +1089,23 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer will be cleared.")
-            ## cf. [pointer_unset] stop_trace
-            self.debugger.unwatch()
+            self.debugger.unwatch() # cf. [pointer_unset] stop_trace
+        
+        ## Confirm close
+        for page in self.ghost.all_pages():
+            for buf in page.all_buffers():
+                if page.need_buffer_save_p(buf):
+                    self.popup_window(page)
+                    page.swap_buffer(buf)
+                    if wx.MessageBox(
+                            "You are closing unsaved content.\n\n"
+                            "Changes to the content will be discarded.\n"
+                            "Continue closing?",
+                            "Close {!r}".format(os.path.basename(buf.filename)),
+                            style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                        self.message("The close has been canceled.")
+                        evt.Veto()
+                        return
         
         if self.__standalone:
             evt.Skip() # Close the window
