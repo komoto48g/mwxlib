@@ -1691,6 +1691,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def set_caption(self, buf, prefix=''):
         if buf not in self.all_buffers():
             return
+        ## if wx.VERSION >= (4,1,0):
         try:
             if buf.mtdelta is not None:
                 _p, tab, idx = self.FindTab(buf)

@@ -559,6 +559,7 @@ class AuiNotebook(aui.AuiNotebook):
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
         page = self.CurrentPage
         obj = evt.EventObject #<wx._aui.AuiTabCtrl><wx._aui.AuiNotebook>
+        ## if wx.VERSION >= (4,1,0):
         try:
             if obj is self.ActiveTabCtrl:
                 win = obj.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
