@@ -327,10 +327,14 @@ class Knob(wx.Panel):
         self.update_range()
         self.update_ctrl()
     
-    def __init__(self, parent, param, type='slider',
+    def __init__(self, parent, param, type=None,
                  style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22,
                  **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
+        
+        assert isinstance(param, Param),\
+          "Argument `param` must be an instance of the Param class."
+        
         self.__bit = 1
         self.__par = param
         self.__par.knobs.append(self) # パラメータの関連付けを行う
@@ -1245,8 +1249,8 @@ if __name__ == "__main__":
             a = LParam('test', (0,100,1), nan)
             
             self.layout((a, ), title="test")
-            self.layout((a, ), hspacing=4, row=1)
-            self.layout((a, ), hspacing=4, row=1, expand=1)
+            self.layout((a, ), hspacing=4, row=1, type='slider')
+            self.layout((a, ), hspacing=4, row=1, expand=1, type='slider')
             
             A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
             K = LParam('k', (0, 1, 1e-3))
