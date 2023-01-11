@@ -57,18 +57,18 @@ class Thread(object):
     
     There are two flags to check the thread status:
     
-     - active   : A flag of being kept going
-                  Check this to see the worker is running and intended being kept going
-     - running  : A flag of being running now
-                  Watch this to verify the worker is alive after it has been inactivated
+     - active   : A flag of being kept going.
+                  Check this to see the worker is running and intended being kept going.
+     - running  : A flag of being running now.
+                  Watch this to verify the worker is alive after it has been inactivated.
     
     The event object can be used to suspend/resume the thread:
     
-        1. event.clear -> clear flag:False so that the thread suspends when wait is called
-        2. event.wait -> wait until the chequer flag to be set True
-        3. event.set -> set flag:True to resume the thread
+        1. event.clear -> clear flag:False so that the thread suspends when wait is called.
+        2. event.wait -> wait until the chequer flag to be set True.
+        3. event.set -> set flag:True to resume the thread.
         
-        The event.wait blocks until the internal flag is True when it is False
+        The event.wait blocks until the internal flag is True when it is False,
         and returns immediately when it is True.
     """
     @property
