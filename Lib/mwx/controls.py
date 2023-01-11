@@ -333,7 +333,7 @@ class Knob(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         
         assert isinstance(param, Param),\
-          "Argument `param` must be an instance of the Param class."
+          "Argument `param` must be an instance of Param class."
         
         self.__bit = 1
         self.__par = param
@@ -671,32 +671,32 @@ class ControlPanel(scrolled.ScrolledPanel):
             self.Layout()
             self.Parent.SendSizeEvent() # let parent redraw the child panel
     
-    def layout(self, objs, title=None,
+    def layout(self, items, title=None,
                row=0, expand=0, border=2, hspacing=1, vspacing=1,
-               show=True, visible=True, fix=True, align=wx.ALIGN_LEFT,
-               **kwargs):
+               show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):
         """Do layout (cf. Layout).
         
         Args:
+            items   : list of Params, wx.Objects, tuple of sizing, or None
             title   : box header string (default is None - no box)
-            objs    : list of Params, wx.Objects, tuple of sizing, or None
             row     : number of row to arange widgets
-            show    : fold or unfold the boxed group
             expand  : (0) fixed size
                       (1) to expand horizontally
                       (2) to exapnd horizontally and vertically
             border  : size of outline border
             hspacing: horizontal spacing among packed objs inside the group
             vspacing: vertical spacing among packed objs inside the group
-            fix     : tell sizer to fix the minimum layout
+            show    : fold or unfold the boxed group
+            visible : Hide the boxed group if False
             align   : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
             **kwargs: extra keyword arguments given for Knob
         """
-        ## assert all((key in inspect.getargspec(Knob)[0]) for key in kwargs)
-        assert not isinstance(objs, str)
-        
-        objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
-                else c for c in objs]
+        def _obj(c):
+            try:
+                return Knob(self, c, **kwargs)
+            except AssertionError:
+                return c
+        objs = [_obj(c) for c in items]
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 0:
@@ -732,7 +732,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## Set appearance of the layout group
         self.show(-1, visible)
         self.fold(-1, not show)
-        if fix:
+        if 1:
             self.Sizer.Fit(self)
     
     pack = pack
