@@ -309,9 +309,9 @@ class Knob(wx.Panel):
                   chkbox -> label with check box
                   button -> label with flat button
         editable: textctrl is editable or readonly
+        cw      : width of ctrl
         lw      : width of label
         tw      : width of textbox
-        cw      : width of ctrl
         h       : height of widget (defaults to 22)
     """
     @property
@@ -328,7 +328,7 @@ class Knob(wx.Panel):
         self.update_ctrl()
     
     def __init__(self, parent, param, type=None,
-                 style=None, editable=1, lw=-1, tw=-1, cw=-1, h=22,
+                 style=None, editable=1, cw=-1, lw=-1, tw=-1, h=22,
                  **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
@@ -1273,13 +1273,13 @@ if __name__ == "__main__":
                 self.params,
                 title="test(1)",
                 row=1, expand=0, border=2, hspacing=1, vspacing=1, show=1, visible=1,
-                type='slider', style='chkbox', lw=-1, tw=-1, cw=-1, h=22,
+                type='slider', style='chkbox', cw=-1, lw=-1, tw=-1,
             )
             self.layout(
                 [P, Q],
                 title="test(2)",
                 row=2, expand=1, border=2, hspacing=1, vspacing=2, show=1, visible=1,
-                type='choice', style='button', lw=-1, tw=60, cw=-1,
+                type='choice', style='button', cw=-1, lw=-1, tw=60,
             )
     
     app = wx.App()
