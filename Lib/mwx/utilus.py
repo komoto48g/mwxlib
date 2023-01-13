@@ -599,7 +599,7 @@ class FSM(dict):
                               "   event : {}".format(event),
                               "    from : {}".format(self.__prev_state),
                               "      to : {}".format(self.__state),
-                              "  action : {}".format(act.__name__),
+                              "  action : {}".format(typename(act)),
                               "    args : {}".format(args),
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
@@ -620,7 +620,7 @@ class FSM(dict):
         v = self.debug
         if v and self.__state is not None:
             transaction = self[self.__prev_state].get(pattern) or []
-            actions = ', '.join(a.__name__ for a in transaction[1:])
+            actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if (v > 0 and self.__prev_state != self.__state
              or v > 1 and self.__prev_event != self.__event
              or v > 2 and actions
@@ -632,7 +632,7 @@ class FSM(dict):
         
         elif v > 3: # state is None
             transaction = self[None].get(pattern) or []
-            actions = ', '.join(a.__name__ for a in transaction[1:])
+            actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
                 self.log("\t| {0!r} {a}".format(
                     self.__event,
