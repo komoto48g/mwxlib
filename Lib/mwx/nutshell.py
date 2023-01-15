@@ -1795,6 +1795,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if not buf or buf.mtdelta is not None: # is saved?
             buf = self.create_new_buffer(self.default_name, index=0)
             self.default_buffer = buf
+        buf.SetFocus()
         buf._reset()
         return buf
     
