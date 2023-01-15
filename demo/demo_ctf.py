@@ -1,5 +1,5 @@
 #! python3
-# -*- coding: shift-jis -*-
+# -*- coding: utf-8 -*-
 import sys
 sys.path.append("../Lib")
 import wx
