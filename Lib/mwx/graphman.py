@@ -77,9 +77,8 @@ class Thread(object):
             return self.worker.is_alive()
         return False
     
-    def __init__(self, owner=None, **kwargs):
+    def __init__(self, owner=None):
         self.owner = owner
-        self.props = kwargs
         self.worker = None
         self.target = None
         self.result = None
@@ -162,7 +161,7 @@ class Thread(object):
         self.result = None
         self.active = 1
         self.worker = threading.Thread(target=_f,
-                                args=args, kwargs=kwargs, **self.props)
+                                args=args, kwargs=kwargs, daemon=True)
         self.worker.start()
         self.event.set()
     
@@ -340,6 +339,7 @@ class LayerInterface(CtrlInterface):
         def destroy(v):
             if v.EventObject is self:
                 if self.thread and self.thread.active:
+                    self.thread.active = 0
                     self.thread.Stop()
                 del self.Arts
             v.Skip()
