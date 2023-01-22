@@ -4,21 +4,16 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from functools import wraps
 from itertools import chain
-import wx
 import numpy as np
 from numpy import nan, inf
-try:
-    from mwx import images
-    from mwx.utilus import SSM
-    from mwx.framework import pack, Menu
-except ImportError:
-    from . import images
-    from .utilus import SSM
-    from .framework import pack, Menu
+import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
+
+from . import images
+from .utilus import SSM
+from .framework import pack, Menu
 
 
 class Param(object):
@@ -691,12 +686,8 @@ class ControlPanel(scrolled.ScrolledPanel):
             align   : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
             **kwargs: extra keyword arguments given for Knob
         """
-        def _obj(c):
-            try:
-                return Knob(self, c, **kwargs)
-            except AssertionError:
-                return c
-        objs = [_obj(c) for c in items]
+        objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
+                else c for c in items]
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 0:
@@ -979,7 +970,7 @@ class ToggleButton(wx.ToggleButton):
         self.icon = icon
 
 
-class TextCtrl(wx.Panel):
+class TextCtrl(wx.Control):
     """Text panel
     
     Args:
@@ -1009,9 +1000,9 @@ class TextCtrl(wx.Panel):
         self._btn.icon = v
     
     def __init__(self, parent, label='',
-                 handler=None, updater=None,
+                 handler=None, updater=None, size=(-1,-1),
                  icon=None, tip='', readonly=False, **kwargs):
-        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
+        wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
@@ -1036,7 +1027,7 @@ class TextCtrl(wx.Panel):
             self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
 
 
-class Choice(wx.Panel):
+class Choice(wx.Control):
     """Editable Choice (ComboBox) panel
     
     Args:
@@ -1080,9 +1071,9 @@ class Choice(wx.Panel):
         self._btn.icon = v
     
     def __init__(self, parent, label='',
-                 handler=None, updater=None,
+                 handler=None, updater=None, size=(-1,-1),
                  icon=None, tip='', readonly=False, **kwargs):
-        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
+        wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
@@ -1118,7 +1109,7 @@ class Choice(wx.Panel):
         evt.Skip()
 
 
-class Indicator(wx.Panel):
+class Indicator(wx.Control):
     """Traffic light indicator tricolor mode
     """
     @property
@@ -1130,14 +1121,15 @@ class Indicator(wx.Panel):
         self.__value = int(v)
         self.Refresh()
     
-    tricolor = ('red','yellow','green')
+    tricolor = ('red', 'yellow', 'green')
     spacing = 7
     radius = 5
     
     def __init__(self, parent, value=0, tip='', size=(-1,-1), **kwargs):
         s = self.spacing
-        size = np.maximum((s*6, s*2+1), size) # set minimum size:(6s,2s)
-        wx.Panel.__init__(self, parent, size=size, **kwargs)
+        size = np.maximum((s*6, s*2+1), size) # minimum size:(6s,2s)
+        wx.Control.__init__(self, parent, size=size,
+                            style=wx.BORDER_NONE, **kwargs)
         
         self.__value = value
         self.ToolTip = tip.strip()
@@ -1160,7 +1152,7 @@ class Indicator(wx.Panel):
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
 
 
-class Gauge(wx.Panel):
+class Gauge(wx.Control):
     """Rainbow gauge panel
     """
     @property
@@ -1182,7 +1174,7 @@ class Gauge(wx.Panel):
         self.Draw()
     
     def __init__(self, parent, range=24, value=0, tip='', **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
+        wx.Control.__init__(self, parent, style=wx.BORDER_NONE, **kwargs)
         
         self.__range = range
         self.__value = value
@@ -1221,71 +1213,3 @@ class Gauge(wx.Panel):
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
-
-
-if __name__ == "__main__":
-    from numpy import pi
-    from mwx.framework import CtrlInterface, Frame
-    
-    class TestPanel(ControlPanel, CtrlInterface):
-        def __init__(self, *args, **kwargs):
-            ControlPanel.__init__(self, *args, **kwargs)
-            CtrlInterface.__init__(self)
-            
-            self.handler.debug = 6
-            
-            self.layout((
-                TextCtrl(self, label="control",
-                         handler=lambda v: print(v.Value, "enter"),
-                         updater=lambda v: print(v.Value, "update"),
-                         tip="this is a textctrl",
-                         icon=Icon('edit'),
-                         ## icon=wx.ART_NEW,
-                         ),
-                ),
-                title="Custom controls",
-            )
-            ## a = Param('test')
-            a = LParam('test', (0,100,1), nan)
-            
-            self.layout((a, ), title="test")
-            self.layout((a, ), hspacing=4, row=1, type='slider')
-            self.layout((a, ), hspacing=4, row=1, expand=1, type='slider')
-            
-            A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
-            K = LParam('k', (0, 1, 1e-3))
-            P = LParam('φ', (-pi, pi, pi/100), 0)
-            Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
-            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex, check=1)
-            
-            self.params = (A, K, P, Q, R,)
-            
-            for lp in self.params:
-                lp.callback.update({
-                    'control' : [lambda p: print("control", p.name, p.value)],
-                     'update' : [lambda p: print("update", p.name, p.value)],
-                      'check' : [lambda p: print("check", p.check)],
-                   'overflow' : [lambda p: print("overflow", p)],
-                  'underflow' : [lambda p: print("underflow", p)],
-                })
-            
-            self.layout(
-                self.params,
-                title="test(1)",
-                row=1, expand=0, border=2, hspacing=1, vspacing=1, show=1, visible=1,
-                type='slider', style='chkbox', cw=-1, lw=-1, tw=-1,
-            )
-            self.layout(
-                [P, Q],
-                title="test(2)",
-                row=2, expand=1, border=2, hspacing=1, vspacing=2, show=1, visible=1,
-                type='choice', style='button', cw=-1, lw=-1, tw=60,
-            )
-    
-    app = wx.App()
-    frm = Frame(None)
-    frm.panel = TestPanel(frm)
-    frm.Fit()
-    frm.Show()
-    frm.SetFocus()
-    app.MainLoop()
