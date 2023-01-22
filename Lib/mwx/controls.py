@@ -4,7 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from functools import wraps
 from itertools import chain
 import wx
 import numpy as np
@@ -979,7 +978,7 @@ class ToggleButton(wx.ToggleButton):
         self.icon = icon
 
 
-class TextCtrl(wx.Panel):
+class TextCtrl(wx.Control):
     """Text panel
     
     Args:
@@ -1009,9 +1008,9 @@ class TextCtrl(wx.Panel):
         self._btn.icon = v
     
     def __init__(self, parent, label='',
-                 handler=None, updater=None,
+                 handler=None, updater=None, size=(-1,-1),
                  icon=None, tip='', readonly=False, **kwargs):
-        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
+        wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
@@ -1036,7 +1035,7 @@ class TextCtrl(wx.Panel):
             self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
 
 
-class Choice(wx.Panel):
+class Choice(wx.Control):
     """Editable Choice (ComboBox) panel
     
     Args:
@@ -1080,9 +1079,9 @@ class Choice(wx.Panel):
         self._btn.icon = v
     
     def __init__(self, parent, label='',
-                 handler=None, updater=None,
+                 handler=None, updater=None, size=(-1,-1),
                  icon=None, tip='', readonly=False, **kwargs):
-        wx.Panel.__init__(self, parent, size=kwargs.get('size') or (-1,22))
+        wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
@@ -1118,7 +1117,7 @@ class Choice(wx.Panel):
         evt.Skip()
 
 
-class Indicator(wx.Panel):
+class Indicator(wx.Control):
     """Traffic light indicator tricolor mode
     """
     @property
@@ -1130,14 +1129,15 @@ class Indicator(wx.Panel):
         self.__value = int(v)
         self.Refresh()
     
-    tricolor = ('red','yellow','green')
+    tricolor = ('red', 'yellow', 'green')
     spacing = 7
     radius = 5
     
     def __init__(self, parent, value=0, tip='', size=(-1,-1), **kwargs):
         s = self.spacing
-        size = np.maximum((s*6, s*2+1), size) # set minimum size:(6s,2s)
-        wx.Panel.__init__(self, parent, size=size, **kwargs)
+        size = np.maximum((s*6, s*2+1), size) # minimum size:(6s,2s)
+        wx.Control.__init__(self, parent, size=size,
+                            style=wx.BORDER_NONE, **kwargs)
         
         self.__value = value
         self.ToolTip = tip.strip()
@@ -1160,7 +1160,7 @@ class Indicator(wx.Panel):
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
 
 
-class Gauge(wx.Panel):
+class Gauge(wx.Control):
     """Rainbow gauge panel
     """
     @property
@@ -1182,7 +1182,7 @@ class Gauge(wx.Panel):
         self.Draw()
     
     def __init__(self, parent, range=24, value=0, tip='', **kwargs):
-        wx.Panel.__init__(self, parent, **kwargs)
+        wx.Control.__init__(self, parent, style=wx.BORDER_NONE, **kwargs)
         
         self.__range = range
         self.__value = value
