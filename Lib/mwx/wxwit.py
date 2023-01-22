@@ -7,12 +7,9 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import wx
 import wx.lib.inspection as it
-try:
-    from mwx.framework import CtrlInterface, Menu, watchit
-    from mwx.controls import Icon
-except ImportError:
-    from .framework import CtrlInterface, Menu, watchit
-    from .controls import Icon
+
+from .controls import Icon
+from .framework import CtrlInterface, Menu, watchit
 
 
 class Inspector(it.InspectionTree, CtrlInterface):
@@ -141,8 +138,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
-        if (wnd and wnd is not self.target\
-                and wnd not in self._noWatchList\
+        if (wnd and wnd is not self.target
+                and wnd not in self._noWatchList
                 and not isinstance(wnd, self._noWatchClsList)):
             self.SetObj(wnd)
         evt.Skip()
@@ -212,15 +209,3 @@ def dumptree(self):
                 yield data
             item, cookie = self.GetNextChild(parent, cookie)
     return list(_dump(self.RootItem))
-
-
-if __name__ == "__main__":
-    from mwx.framework import Frame
-    
-    app = wx.App()
-    frm = Frame(None)
-    frm.plug = Inspector(frm)
-    frm.plug.watch(frm)
-    pp(dumptree(frm.plug))
-    frm.Show()
-    app.MainLoop()

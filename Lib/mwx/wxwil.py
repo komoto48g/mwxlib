@@ -7,12 +7,9 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import wx
 from wx.py import dispatcher
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-try:
-    from mwx.framework import CtrlInterface, Menu
-    from mwx.controls import Icon, Clipboard
-except ImportError:
-    from .framework import CtrlInterface, Menu
-    from .controls import Icon, Clipboard
+
+from .controls import Icon, Clipboard
+from .framework import CtrlInterface, Menu
 
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
@@ -152,14 +149,3 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 lambda v: v.Enable(selected_items != [])),
         ]
         Menu.Popup(self, menu)
-
-
-if __name__ == "__main__":
-    from mwx.framework import Frame
-    
-    app = wx.App()
-    frm = Frame(None)
-    frm.plug = LocalsWatcher(frm)
-    frm.plug.watch(vars(frm))
-    frm.Show()
-    app.MainLoop()

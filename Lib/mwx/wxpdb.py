@@ -16,10 +16,8 @@ import threading
 from importlib import import_module
 import wx
 from wx import stc
-try:
-    from mwx.utilus import FSM, where
-except ImportError:
-    from .utilus import FSM, where
+
+from .utilus import FSM, where
 
 
 def echo(f):
@@ -533,21 +531,3 @@ class Debugger(Pdb):
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""
         Pdb.postloop(self)
-
-
-if __name__ == "__main__":
-    from mwx.framework import Frame
-    
-    app = wx.App()
-    frm = Frame(None)
-    if 1:
-        self = frm.shellframe
-        shell = frm.shellframe.rootshell
-        dbg = Debugger(self)
-        self.debugger = dbg
-        dbg.handler.debug = 4
-        dbg.verbose = 0
-        echo.debug = 1
-        self.Show()
-    frm.Show()
-    app.MainLoop()

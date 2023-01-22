@@ -9,25 +9,22 @@ import warnings
 import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-try:
-    from mwx.utilus import where
-    from mwx.framework import CtrlInterface, Menu
-    from mwx.controls import Icon, Clipboard
-except ImportError:
-    from .utilus import where
-    from .framework import CtrlInterface, Menu
-    from .controls import Icon, Clipboard
+
+from .utilus import where
+from .controls import Icon, Clipboard
+from .framework import CtrlInterface, Menu
+
 
 if wx.VERSION < (4,1,0):
     from wx.lib.mixins.listctrl import CheckListCtrlMixin
-    
+
     class CheckList(wx.ListCtrl, CheckListCtrlMixin):
         def __init__(self, *args, **kwargs):
             wx.ListCtrl.__init__(self, *args, **kwargs)
             CheckListCtrlMixin.__init__(self)
             
             ## self.ToolTip = ''
-            self.IsItemChecked = self.IsChecked # for wx 4.1 compatibility
+            self.IsItemChecked = self.IsChecked # for wx 4.1.0 compatibility
 
 else:
     class CheckList(wx.ListCtrl):
@@ -338,14 +335,3 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                  lambda v: v.Enable(obj is not None)),
         ]
         Menu.Popup(self, menu)
-
-
-if __name__ == "__main__":
-    from mwx.framework import Frame
-    
-    app = wx.App()
-    frm = Frame(None)
-    frm.plug = EventMonitor(frm)
-    frm.plug.watch(frm)
-    frm.Show()
-    app.MainLoop()
