@@ -686,12 +686,8 @@ class ControlPanel(scrolled.ScrolledPanel):
             align   : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
             **kwargs: extra keyword arguments given for Knob
         """
-        def _obj(c):
-            try:
-                return Knob(self, c, **kwargs)
-            except AssertionError:
-                return c
-        objs = [_obj(c) for c in items]
+        objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
+                else c for c in items]
         
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 0:
