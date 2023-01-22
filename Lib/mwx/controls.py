@@ -5,19 +5,15 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from itertools import chain
-import wx
 import numpy as np
 from numpy import nan, inf
-try:
-    from mwx import images
-    from mwx.utilus import SSM
-    from mwx.framework import pack, Menu
-except ImportError:
-    from . import images
-    from .utilus import SSM
-    from .framework import pack, Menu
+import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
+
+from . import images
+from .utilus import SSM
+from .framework import pack, Menu
 
 
 class Param(object):
@@ -1221,71 +1217,3 @@ class Gauge(wx.Control):
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
-
-
-if __name__ == "__main__":
-    from numpy import pi
-    from mwx.framework import CtrlInterface, Frame
-    
-    class TestPanel(ControlPanel, CtrlInterface):
-        def __init__(self, *args, **kwargs):
-            ControlPanel.__init__(self, *args, **kwargs)
-            CtrlInterface.__init__(self)
-            
-            self.handler.debug = 6
-            
-            self.layout((
-                TextCtrl(self, label="control",
-                         handler=lambda v: print(v.Value, "enter"),
-                         updater=lambda v: print(v.Value, "update"),
-                         tip="this is a textctrl",
-                         icon=Icon('edit'),
-                         ## icon=wx.ART_NEW,
-                         ),
-                ),
-                title="Custom controls",
-            )
-            ## a = Param('test')
-            a = LParam('test', (0,100,1), nan)
-            
-            self.layout((a, ), title="test")
-            self.layout((a, ), hspacing=4, row=1, type='slider')
-            self.layout((a, ), hspacing=4, row=1, expand=1, type='slider')
-            
-            A =  Param('HHH', np.arange(-1, 1, 1e-3), 0.5, tip='amplitude')
-            K = LParam('k', (0, 1, 1e-3))
-            P = LParam('φ', (-pi, pi, pi/100), 0)
-            Q = LParam('universe', (1, 20, 1), inf, handler=print, updater=print)
-            R = LParam('lens', (0, 0xffff), 0x8000, handler=print, updater=print, fmt=hex, check=1)
-            
-            self.params = (A, K, P, Q, R,)
-            
-            for lp in self.params:
-                lp.callback.update({
-                    'control' : [lambda p: print("control", p.name, p.value)],
-                     'update' : [lambda p: print("update", p.name, p.value)],
-                      'check' : [lambda p: print("check", p.check)],
-                   'overflow' : [lambda p: print("overflow", p)],
-                  'underflow' : [lambda p: print("underflow", p)],
-                })
-            
-            self.layout(
-                self.params,
-                title="test(1)",
-                row=1, expand=0, border=2, hspacing=1, vspacing=1, show=1, visible=1,
-                type='slider', style='chkbox', cw=-1, lw=-1, tw=-1,
-            )
-            self.layout(
-                [P, Q],
-                title="test(2)",
-                row=2, expand=1, border=2, hspacing=1, vspacing=2, show=1, visible=1,
-                type='choice', style='button', cw=-1, lw=-1, tw=60,
-            )
-    
-    app = wx.App()
-    frm = Frame(None)
-    frm.panel = TestPanel(frm)
-    frm.Fit()
-    frm.Show()
-    frm.SetFocus()
-    app.MainLoop()
