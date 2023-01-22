@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.77.3"
+__version__ = "0.77.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -850,13 +850,13 @@ class ShellFrame(MiniFrame):
             from mwx.wxwit import Inspector
             from mwx.wxmon import EventMonitor
             from mwx.wxwil import LocalsWatcher
-            from mwx.controls import Icon
+            from mwx.controls import Icon, Indicator
         except ImportError:
             from .wxpdb import Debugger
             from .wxwit import Inspector
             from .wxmon import EventMonitor
             from .wxwil import LocalsWatcher
-            from .controls import Icon
+            from .controls import Icon, Indicator
         
         self.debugger = Debugger(self,
                                  stdin=self.__shell.interp.stdin,
@@ -931,16 +931,26 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
+        self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
+        
+        def on_size(evt):
+            rect = self.statusbar.GetFieldRect(1)
+            self.indicator.Position = (-44+rect.x, 2+rect.y)
+            evt.Skip()
+        self.Bind(wx.EVT_SIZE, on_size)
+        
         def skip(v):
             if self.debugger.handler.current_state:
                 if self.debugger.tracing:
                     self.message("- The current status is tracing. "
                                  "- Press [C-g] to quit.")
                 elif not self.debugger.busy:
-                    self.message("- The current status of debugger is not valid. "
+                    self.message("- The current status is inconsistent. "
                                  "- Press [C-g] to quit.")
-                    self.message.SetBackgroundColour('yellow')
-                    self.message.Refresh()
+                    self.indicator.Value = 4
+                    self.indicator.ToolTip = 'Invalid'
+                    ## self.message.SetBackgroundColour('yellow')
+                    ## self.message.Refresh()
             v.Skip()
         
         def fork(v):
@@ -1241,6 +1251,8 @@ class ShellFrame(MiniFrame):
         shell = self.debugger.interactive_shell # reset interp locals
         del shell.locals
         del shell.globals
+        self.indicator.Value = 1
+        self.indicator.ToolTip = 'Normal'
         self.on_title_window(self.current_shell.target) # reset title
         self.message.SetBackgroundColour(None)
         self.message.Refresh()
@@ -1331,6 +1343,8 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.ghost, focus=0)
         self.popup_window(self.linfo, focus=0)
         self.add_log("<-- Beginning of debugger\r\n")
+        self.indicator.Value = 2
+        self.indicator.ToolTip = 'Debugging'
     
     def on_debug_next(self, frame):
         """Called from cmdloop."""
@@ -1362,6 +1376,8 @@ class ShellFrame(MiniFrame):
         self.on_title_window(shell.target)
         del shell.locals
         del shell.globals
+        self.indicator.Value = 1
+        self.indicator.ToolTip = 'Normal'
     
     def set_traceable(self, editor, traceable=True):
         """Bind pointer to trace set/unset functions."""
@@ -1390,6 +1406,8 @@ class ShellFrame(MiniFrame):
     def on_trace_begin(self, frame):
         """Called when set-trace."""
         self.message("Debugger has started tracing {!r}.".format(frame))
+        self.indicator.Value = 3
+        self.indicator.ToolTip = 'Tracing'
     
     def on_trace_hook(self, frame):
         """Called when a breakpoint is reached."""
@@ -1398,6 +1416,8 @@ class ShellFrame(MiniFrame):
     def on_trace_end(self, frame):
         """Called when unset-trace."""
         self.message("Debugger has stopped tracing {!r}.".format(frame))
+        self.indicator.Value = 1
+        self.indicator.ToolTip = 'Normal'
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
