@@ -9,6 +9,7 @@ import wx
 import wx.lib.inspection as it
 
 from .controls import Icon
+from .nutshell import Nautilus
 from .framework import CtrlInterface, Menu, watchit
 
 
@@ -28,11 +29,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
         self.toolFrame = self
-        
-        try:
-            from mwx.nutshell import Nautilus
-        except ImportError:
-            from .nutshell import Nautilus
         
         self._noWatchList = [self, self.GetTopLevelParent()]
         self._noWatchClsList = (Nautilus,)
@@ -105,8 +101,9 @@ class Inspector(it.InspectionTree, CtrlInterface):
             if item:
                 obj = self.GetItemData(item) # Restart
         if not obj:
-            self.unwatch()
-            return
+            self.BuildTree(None)
+            ## self.unwatch()
+            ## return
         if not isinstance(obj, wx.Window):
             wx.MessageBox("Cannot watch the widget.\n\n"
                           "- {!r} is not a wx.Object.".format(obj))
