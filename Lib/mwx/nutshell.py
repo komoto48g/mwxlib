@@ -27,14 +27,10 @@ from pprint import pformat
 from importlib import import_module
 import contextlib
 import dis
-try:
-    from mwx.utilus import funcall as _F
-    from mwx.utilus import split_words, find_modules, wdir
-    from mwx.framework import postcall, skip, Menu, CtrlInterface
-except ImportError:
-    from .utilus import funcall as _F
-    from .utilus import split_words, find_modules, wdir
-    from .framework import postcall, skip, Menu, CtrlInterface
+
+from .utilus import funcall as _F
+from .utilus import split_words, find_modules, wdir
+from .framework import postcall, skip, Menu, CtrlInterface
 
 
 def editable(f):
@@ -3448,7 +3444,3 @@ class Nautilus(Shell, EditorInterface):
     def get_words_hint(cmdl):
         text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
-
-
-if __name__ == "__main__":
-    import mwx; mwx.deb() # noqa

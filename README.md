@@ -35,11 +35,6 @@ Please download the latest snapshot from https://wxpython.org/Phoenix/snapshot-b
 
 ### Installing
 
-If you want to check how mwxlib works before installation,
-enter the directory ~/Lib/mwx/ and type:
-```
-py -3 -m framework
-```
 To install, type:
 ```
 py -3 -m pip install mwxlib
