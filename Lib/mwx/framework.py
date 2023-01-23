@@ -1658,10 +1658,9 @@ def monit(widget=None, **kwargs):
 def filling(obj=None, **kwargs):
     """Wx.py tool for watching ingredients of the widget.
     """
-    from wx.py.filling import FillingFrame
+    from .py.filling import FillingFrame
     frame = FillingFrame(rootObject=obj,
                          rootLabel=typename(obj),
-                         ## static=False, # update each time pushed :default
                          **kwargs)
     frame.filling.text.WrapMode = 0 # no wrap
     frame.filling.text.Zoom = -1 # zoom level of size of fonts

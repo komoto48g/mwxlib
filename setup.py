@@ -1,4 +1,4 @@
-#! python
+#! python3
 # -*- coding: utf-8 -*-
 from setuptools import setup 
 from Lib.mwx import __version__, __author__
@@ -27,6 +27,7 @@ setup(
     ## Packing all modules in mwx package
     packages = [
         'mwx',
+        'mwx.py',
     ],
     
     ## install_requires = open("requirements.txt").read().splitlines(),
