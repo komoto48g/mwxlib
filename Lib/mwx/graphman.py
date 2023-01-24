@@ -678,10 +678,10 @@ class Frame(mwx.Frame):
                 (mwx.ID_(15), "&Open session", "Open session file",
                     lambda v: self.load_session()),
                     
-                (mwx.ID_(16), "&Ssave session", "Save session file",
+                (mwx.ID_(16), "&Save session", "Save session file",
                     lambda v: self.save_session()),
                     
-                (mwx.ID_(17), "&Ssave session as", "Save session file as",
+                (mwx.ID_(17), "&Save session as", "Save session file as",
                     lambda v: self.save_session_as()),
                 )),
             ## (),
