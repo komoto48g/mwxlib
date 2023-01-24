@@ -5,9 +5,17 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
+from importlib import import_module
+from pprint import pformat
 import traceback
 import warnings
+import inspect
+import builtins
+import contextlib
+import dis
+import pydoc
 import keyword
+import linecache
 import shlex
 import sys
 import os
@@ -19,14 +27,6 @@ from wx.py import introspect
 from wx.py import interpreter
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
-import pydoc
-import inspect
-import builtins
-import linecache
-from pprint import pformat
-from importlib import import_module
-import contextlib
-import dis
 
 from .utilus import funcall as _F
 from .utilus import split_words, find_modules, wdir
