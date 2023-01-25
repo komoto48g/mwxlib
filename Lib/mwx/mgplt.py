@@ -7,17 +7,12 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from subprocess import Popen, PIPE
 import warnings
 import tempfile
-import shutil
-import sys
 import os
 import wx
 import numpy as np
-try:
-    from mwx import framework as mwx
-    from mwx.controls import ControlPanel
-except ImportError:
-    from . import framework as mwx
-    from .controls import ControlPanel
+
+from . import framework as mwx
+from .controls import ControlPanel
 
 
 class Gnuplot(object):
@@ -153,38 +148,21 @@ class GnuplotFrame(mwx.Frame):
         ]
         self.menubar["Gnuplot"] = [
             (mwx.ID_(80), "&Gnuplot setting\tCtrl-g", "Edit settings",
-                lambda v: self.edit_gnuplot()),
+                lambda v: self.gnuplot.edit()),
                 
             (mwx.ID_(81), "&Reset gnuplot\tCtrl-r", "Reset setting",
-                lambda v: self.reset_gnuplot()),
+                lambda v: self.gnuplot.reset()),
             (),
             (mwx.ID_(82), "Restart gnuplot", "Restart process",
-                lambda v: self.restart_gnuplot()),
+                lambda v: self.gnuplot.restart()),
         ]
         self.menubar.reset()
     
-    def edit_gnuplot(self):
-        self.gnuplot.edit()
-    
-    def reset_gnuplot(self):
-        self.gnuplot.reset()
-    
-    def restart_gnuplot(self):
-        self.gnuplot.restart()
-    
     def Destroy(self):
-        del self.__gplot
-        return mwx.Frame.Destroy(self)
-
-
-## for backward compatibility
-## Gplot = Gnuplot
-## GplotFrame = GnuplotFrame
-
-
-if __name__ == "__main__":
-    Gnuplot.PGNUPLOT = "pgnuplot"
-    Gnuplot.init_path("C:/usr/home/bin/gnuplot-4.4/binary")
+        try:
+            del self.__gplot
+        finally:
+            return mwx.Frame.Destroy(self)
 
 
 if __name__ == "__main__":
@@ -223,60 +201,3 @@ if __name__ == "__main__":
         "f using 1:3 w lp",
     )
     gp.wait()
-    ## del gp
-
-if __name__ == "__main__":
-    from numpy import pi
-    from mwx.controls import LParam
-    
-    class TestFrame(GnuplotFrame):
-        def __init__(self, *args, **kwargs):
-            GnuplotFrame.__init__(self, *args, **kwargs)
-            
-            self.params = (
-                LParam('Amp', (-1, 1, 1e-3), 0, "%8.3e"),
-                LParam('k',   (0, 2, 1./100), 1, "%g"),
-                LParam('φ',  (-pi, pi, pi/100), 0, "%G"),
-            )
-            for lp in self.params:
-                lp.bind(self.plot)
-            
-            self.panel.layout(self.params,
-                row=1, expand=1, type='slider', cw=-1, lw=32)
-            
-            self.reset_gnuplot()
-        
-        def reset_gnuplot(self):
-            self.gnuplot.reset()
-            self.gnuplot("set yrange [-1:1]")
-        
-        def plot(self, par):
-            a, k, p = [x.value for x in self.params]
-            x = np.arange(0, 10, 0.01)
-            y = a * np.sin(k * (x- p))
-            data = np.vstack((x, y))
-            try:
-                ## self.gnuplot("plot [:] [-1:1] "
-                ##              "{:f} * sin({:f} * (x - {:f}))".format(a,k,p))
-                
-                ## self.gnuplot.plot(x, y, "title 'y' w l lt 1")
-                
-                temp = self.gnuplot.tempfile
-                np.savetxt(temp, data.T)
-                if 1: # 連続書き込み時の読み取りをできるだけ同期する
-                    dst = r"C:\temp\mgplt-temp.out"
-                    shutil.copyfile(temp, dst)
-                else:
-                    dst = temp
-                self.gnuplot.plot("'{}' using 1:2 title 'y' w l lt 1".format(dst))
-            except Exception as e:
-                print(e)
-                self.statusbar.write("gnuplot fail, try to restart.")
-                self.gnuplot.restart()
-    
-    app = wx.App()
-    frm = TestFrame(None)
-    frm.Fit()
-    frm.Show()
-    frm.SetFocus()
-    app.MainLoop()
