@@ -2010,6 +2010,10 @@ class Interpreter(interpreter.Interpreter):
             raise
         except Exception:
             self.showtraceback()
+        finally:
+            ## ex. KeyboardInterrupt:
+            if wx.IsBusy():
+                wx.EndBusyCursor()
     
     def showtraceback(self):
         """Display the exception that just occurred.
@@ -2723,18 +2727,18 @@ class Nautilus(Shell, EditorInterface):
         """Called before shell:self is killed.
         Delete target shell to prevent referencing the dead shell.
         """
-        try:
-            del self.target.shell # delete the facade <wx.py.shell.ShellFacade>
-        except AttributeError:
-            pass
+        def _del():
+            try:
+                if not self.target.shell:
+                    del self.target.shell # delete the facade <wx.py.shell.ShellFacade>
+            except AttributeError:
+                pass
+        wx.CallAfter(_del)
     
-    @postcall
     def on_activated(self, shell):
         """Called when shell:self is activated.
         Reset localvars assigned for the shell target.
         """
-        ## self.target = shell.target # Don't set target (locals) here,
-                                      # it could be referred from debugger.
         self.trace_position()
         self.parent.handler('title_window', self.target)
         try:

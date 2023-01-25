@@ -244,8 +244,10 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         if self.IsItemChecked(i):
             self.CheckItem(i, False)
-            if self.get_actions(event, obj):
-                self.parent.debugger.set_trace()
+            ## if self.get_actions(event, obj):
+            ##     self.parent.debugger.set_trace()
+            wx.CallAfter(self.parent.debugger.set_trace)
+            return
         self.blink(i)
     
     def append(self, event):
