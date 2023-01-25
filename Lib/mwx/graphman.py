@@ -71,6 +71,9 @@ class Thread(object):
         The event.wait blocks until the internal flag is True when it is False,
         and returns immediately when it is True.
     """
+    class ThreadInterrupt(Exception):
+        pass
+    
     @property
     def running(self):
         if self.worker:
@@ -140,7 +143,7 @@ class Thread(object):
                 self.result = f(*args, **kwargs)
             except BdbQuit:
                 pass
-            except KeyboardInterrupt as e:
+            except (KeyboardInterrupt, Thread.ThreadInterrupt) as e:
                 print("- Thread:execution stopped: {}".format(e))
             except AssertionError as e:
                 print("- Thread:execution failed: {}".format(e))
