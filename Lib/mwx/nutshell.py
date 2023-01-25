@@ -2010,6 +2010,10 @@ class Interpreter(interpreter.Interpreter):
             raise
         except Exception:
             self.showtraceback()
+        finally:
+            ## ex. KeyboardInterrupt:
+            if wx.IsBusy():
+                wx.EndBusyCursor()
     
     def showtraceback(self):
         """Display the exception that just occurred.
