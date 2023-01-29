@@ -487,8 +487,8 @@ class Debugger(Pdb):
         (override) Show message to record the history.
                    Remove indent spaces.
         """
-        self.message("$(retval) = {!r}".format(return_value), indent=0)
-        ## Pdb.user_return(self, frame, return_value)
+        if not self.verbose:
+            self.message("$(retval) = {!r}".format(return_value), indent=0)
         if self._wait_for_mainpyfile:
             return
         frame.f_locals['__return__'] = return_value
@@ -496,6 +496,7 @@ class Debugger(Pdb):
         if self.__indents > 2:
             self.__indents -= 2
         self.interaction(frame, None)
+        ## Pdb.user_return(self, frame, return_value)
     
     @echo
     def user_exception(self, frame, exc_info):
