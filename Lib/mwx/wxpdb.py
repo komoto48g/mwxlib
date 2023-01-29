@@ -15,7 +15,6 @@ import inspect
 import threading
 from importlib import import_module
 import wx
-from wx import stc
 
 from .utilus import FSM, where
 
@@ -55,8 +54,7 @@ class Debugger(Pdb):
     """
     verbose = False
     use_rawinput = False
-    indent = property(lambda self: ' ' * self.__indents)
-    prompt = property(lambda self: ' ' * self.__indents + '(Pdb) ',
+    prompt = property(lambda self: self.indents + '(Pdb) ',
                       lambda self,v: None) # fake setter
     parent = property(lambda self: self.__shellframe)
     handler = property(lambda self: self.__handler)
@@ -95,13 +93,13 @@ class Debugger(Pdb):
         
         self.__shellframe = parent
         self.__hookpoint = None
-        self.__indents = 2
+        self.indents = ' ' * 2
         self.interactive_shell = parent.rootshell
         self.editor = None
         self.code = None
         
         def _input(msg):
-            ## redirects prompt input such as cl(ear)
+            ## redirects input such as cl(ear)
             self.message(msg, indent=0)
             return self.stdin.readline()
         pdb.input = _input
@@ -199,11 +197,11 @@ class Debugger(Pdb):
         if echo or self.verbose:
             self.message(c, indent=0)
     
-    def message(self, msg, indent=-1):
+    def message(self, msg, indent=True):
         """(override) Add prefix and insert msg at the end of command-line."""
         shell = self.interactive_shell
         shell.goto_char(shell.eolc)
-        prefix = self.indent if indent < 0 else ' ' * indent
+        prefix = self.indents if indent else ''
         print("{}{}".format(prefix, msg), file=self.stdout)
     
     def watch(self, bp):
@@ -281,7 +279,7 @@ class Debugger(Pdb):
         shell.goto_char(shell.eolc)
         self.__interactive = shell.cpos
         self.__hookpoint = None
-        self.__indents = 2
+        self.indents = ' ' * 2
         self.stdin.input = '' # clear stdin buffer
         def _continue():
             if wx.IsBusy():
@@ -457,11 +455,10 @@ class Debugger(Pdb):
         (override) Change prompt_prefix.
                    Add pointer:marker when step next or jump.
         """
-        frame, lineno = frame_lineno
-        self.handler('debug_mark', frame)
         if self.verbose:
             Pdb.print_stack_entry(self, frame_lineno,
-                prompt_prefix or "\n{}-> ".format(self.indent))
+                prompt_prefix or "\n{}-> ".format(self.indents))
+        self.handler('debug_mark', frame_lineno[0])
     
     @echo
     def user_call(self, frame, argument_list):
@@ -472,7 +469,7 @@ class Debugger(Pdb):
         """
         if not self.verbose:
             self.message("> {}".format(where(frame)), indent=0)
-        self.__indents += 2
+        self.indents += ' ' * 2
         Pdb.user_call(self, frame, argument_list)
     
     @echo
@@ -493,8 +490,8 @@ class Debugger(Pdb):
             return
         frame.f_locals['__return__'] = return_value
         self.message('--Return--')
-        if self.__indents > 2:
-            self.__indents -= 2
+        if len(self.indents) > 2:
+            self.indents = self.indents[:-2] # remove '  '
         self.interaction(frame, None)
         ## Pdb.user_return(self, frame, return_value)
     
@@ -525,8 +522,8 @@ class Debugger(Pdb):
     @echo
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called."""
-        self.handler('debug_next', self.curframe)
         Pdb.preloop(self)
+        self.handler('debug_next', self.curframe)
     
     @echo
     def postloop(self):
