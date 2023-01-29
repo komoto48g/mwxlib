@@ -319,16 +319,17 @@ class Debugger(Pdb):
                 buffer.EnsureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
+        self.__interactive = self.interactive_shell.cpos
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)."""
-        pos = self.__interactive
         def _next():
             shell = self.interactive_shell
             shell.goto_char(shell.eolc)
+            pos = self.__interactive
             out = shell.GetTextRange(pos, shell.cpos)
-            if out == self.prompt or out.endswith(self.prompt*2):
-                shell.cpos -= len(self.prompt) # backward selection
+            if out.strip(' ') == self.prompt.strip(' ') and pos > shell.bol:
+                shell.cpos = pos # backward selection
                 shell.ReplaceSelection('')
                 shell.prompt()
             shell.EnsureCaretVisible()
