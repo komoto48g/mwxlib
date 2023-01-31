@@ -1312,9 +1312,11 @@ class Frame(mwx.Frame):
         
         @shell.handler.bind("shell_activated")
         def init(shell):
-            plug = self.get_plug(name)
-            shell.target = plug or self # reset for unloaded plug
-        
+            nonlocal plug
+            _plug = self.get_plug(name)
+            if _plug is not plug:
+                shell.target = _plug or self # reset for loaded/unloaded plug
+            plug = _plug
         init(shell)
         self.shellframe.Show()
         self.shellframe.load(plug)
