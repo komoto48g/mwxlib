@@ -223,6 +223,7 @@ def where(obj):
     ##     return None
     
     def _where(obj):
+        obj = inspect.unwrap(obj)
         filename = inspect.getsourcefile(obj)
         src, lineno = inspect.getsourcelines(obj)
         name = src[0].rstrip()
