@@ -549,7 +549,7 @@ class LineProfile(LinePlot):
             for k in np.arange(-(lw-1)/2, (lw+1)/2):
                 x = xs + k * nv[0]
                 y = ys + k * nv[1]
-                mask = (0 < x) & (x < w) & (0 < y) & (y < h)
+                mask = (0 <= x) & (x < w) & (0 <= y) & (y < h)
                 if any(mask):
                     x = x[mask]
                     y = y[mask]
@@ -567,7 +567,7 @@ class LineProfile(LinePlot):
             self.__plot.set_data(ls, zs)
             self.__plot.set_visible(1)
             
-            if fit: # drawing area
+            if fit and len(ls) > 1: # drawing area
                 ly = self.ylim
                 self.xlim = ls[0], ls[-1]
                 self.ylim = ly[0], max(ly[1], max(zs))
