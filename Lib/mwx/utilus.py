@@ -721,6 +721,10 @@ class FSM(dict):
                     if not any(callable(x) for x in transaction):
                         self[k].pop(event) # remove null event:transaction
     
+    def define(self, event, action=None, state=None, state2=None):
+        self.unbind(event, None, state)
+        return self.bind(event, action, state, state2)
+    
     def bind(self, event, action=None, state=None, state2=None):
         """Append a transaction to the context.
         
