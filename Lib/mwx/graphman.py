@@ -246,19 +246,21 @@ class LayerInterface(CtrlInterface):
             art.remove()
         self.__artists = []
     
-    def attach_artists(self, axes, *args):
+    def attach_artists(self, axes, *artists):
         """Attach unbound artists (e.g., patches) to the given axes.
         If axes is None, the arts will be removed from their axes.
         """
+        if not artists:
+            artists = self.Arts[:]
         if axes:
-            for art in args:
+            for art in artists:
                 if art.axes:
                     art.remove()
                 axes.add_artist(art)
                 if art not in self.Arts:
                     self.Arts.append(art)
         else:
-            for art in args or self.Arts[:]:
+            for art in artists:
                 if art.axes:
                     art.remove()
                 self.Arts.remove(art)
