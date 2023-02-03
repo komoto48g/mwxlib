@@ -439,7 +439,7 @@ class Graph(GraphPlot):
         
         self.handler.append({ # DNA<Graph>
             None : {
-               'frame_selected' : [ None, _F(self.loader.select_view, view=self) ],
+                    'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
                   'S-a pressed' : [ None, _F(self.toggle_infobar) ],
                    'f5 pressed' : [ None, _F(self.refresh) ],
