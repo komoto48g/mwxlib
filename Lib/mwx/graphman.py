@@ -254,8 +254,9 @@ class LayerInterface(CtrlInterface):
             artists = self.Arts[:]
         if axes:
             for art in artists:
-                if art.axes:
+                if art.axes and art.axes is not axes:
                     art.remove()
+                    art._transformSet = False
                 axes.add_artist(art)
                 if art not in self.Arts:
                     self.Arts.append(art)
@@ -263,6 +264,7 @@ class LayerInterface(CtrlInterface):
             for art in artists:
                 if art.axes:
                     art.remove()
+                    art._transformSet = False
                 self.Arts.remove(art)
     
     def message(self, *args, **kwargs):
