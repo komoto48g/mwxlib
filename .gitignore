@@ -17,11 +17,13 @@ exclude_files
 
 # Resources
 docs/
+docfiles*/
 etc/
 test*/
 icons*/
 vclips*/
 !Lib/mwx/
+!requirements.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
