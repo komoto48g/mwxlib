@@ -139,7 +139,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnContextMenu(self, evt):
         def copy():
             def _T(i):
-                return '\t'.join(self.__items[i])
+                return "{} = {}".format(*self.__items[i])
             Clipboard.write('\n'.join(_T(i) for i in selected_items))
         
         selected_items = list(filter(self.IsSelected, range(self.ItemCount)))

@@ -1848,6 +1848,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         Note:
             The filename should be an absolute path.
             The buffer will be reloaded without confirmation.
+            If you want to confirm overwrite before loading, use load_buffer.
         """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         try:
@@ -1868,6 +1869,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         Note:
             The filename should be an absolute path.
             The file will be overwritten without confirmation.
+            If you want to confirm overwrite before loading, use save_buffer.
         """
         try:
             return self.buffer._save_file(filename)
