@@ -1122,6 +1122,8 @@ class Indicator(wx.Control):
         self.Refresh()
     
     tricolor = ('red', 'yellow', 'green')
+    background = 'black'
+    foreground = 'gray'
     spacing = 7
     radius = 5
     
@@ -1143,11 +1145,15 @@ class Indicator(wx.Control):
         s = self.spacing
         r = self.radius
         w, h = self.ClientSize
-        dc.SetBrush(wx.Brush("black"))
+        dc.SetPen(wx.Pen(self.background, style=wx.PENSTYLE_TRANSPARENT))
+        dc.SetBrush(wx.Brush(self.background,
+                    style=wx.BRUSHSTYLE_SOLID if self.background else
+                          wx.BRUSHSTYLE_TRANSPARENT))
         dc.DrawRoundedRectangle(0, h//2-s, s*2*N-1, s*2+1, s)
+        dc.SetPen(wx.Pen(self.background))
         for j, name in enumerate(self.tricolor):
             if not self.__value & (1 << N-1-j):
-                name = 'gray'
+                name = self.foreground
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
 

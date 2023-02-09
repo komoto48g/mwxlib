@@ -918,6 +918,7 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
         self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
+        self.indicator.background = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
         
         def on_size(evt):
             rect = self.statusbar.GetFieldRect(1)
