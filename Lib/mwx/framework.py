@@ -497,10 +497,9 @@ class Menu(wx.Menu):
 
 
 class MenuBar(wx.MenuBar, TreeList):
-    """Construct menubar as is ordered menu:list
-    リストの順番どおりに GUI 上にマップしたメニューバーを構築する
+    """Construct menubar in the order of ordered menu:list
     
-    >>> root
+    -> root
         ├ [key, [item,
         │        item,...]],
         │
