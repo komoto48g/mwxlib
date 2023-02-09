@@ -1324,6 +1324,7 @@ class ShellFrame(MiniFrame):
             finally:
                 self.debugger.interactive_shell = shell
         elif hasattr(obj, '__dict__'):
+            self.message("Building locals info list...")
             self.linfo.watch(obj.__dict__)
             self.ginfo.watch({})
             self.popup_window(self.linfo, focus=0)
@@ -1421,12 +1422,14 @@ class ShellFrame(MiniFrame):
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
-        self.inspector.set_colour(widget, 'blue')
+        if widget and isinstance(widget, wx.Window):
+            self.inspector.set_colour(widget, 'blue')
         self.message("Started monitoring {!r}.".format(widget))
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch."""
-        self.inspector.set_colour(widget, 'black')
+        if widget and isinstance(widget, wx.Window):
+            self.inspector.set_colour(widget, 'black')
         self.message("Stopped monitoring {!r}.".format(widget))
     
     def on_title_window(self, obj):
