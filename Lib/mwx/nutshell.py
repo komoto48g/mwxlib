@@ -1652,6 +1652,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.default_name = "*{}*".format(name.lower())
         self.default_buffer = self.create_new_buffer(self.default_name)
         
+        self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
         
         def dispatch(v):
@@ -1678,6 +1679,20 @@ class Editor(aui.AuiNotebook, CtrlInterface):
               'M-right pressed' : (0, dispatch),
             },
         })
+    
+    def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
+        obj = evt.EventObject #<wx._aui.AuiTabCtrl>
+        buf = obj.Pages[evt.Selection].window # GetPage for split notebook.
+        if self.need_buffer_save_p(buf):
+            if wx.MessageBox(
+                    "You are closing unsaved content.\n\n"
+                    "Changes to the content will be discarded.\n"
+                    "Continue closing?",
+                    "Close {!r}".format(os.path.basename(buf.filename)),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The close has been canceled.")
+                return None
+        evt.Skip()
     
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
@@ -1827,6 +1842,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     ]
     
     def need_buffer_save_p(self, buf):
+        """Returns whether the buffer should be saved."""
         return buf.mtdelta is not None and buf.IsModified()
     
     def load_cache(self, filename, lineno=0, globals=None, focus=False):
