@@ -1852,6 +1852,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         try:
+            self.Freeze()
             self.swap_buffer(buf)
             if focus:
                 buf.SetFocus()
@@ -1863,6 +1864,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.post_message("Failed to load {!r}: {}".format(
                               os.path.basename(filename), e))
             self.remove_buffer(buf)
+        finally:
+            self.Thaw()
     
     def save_file(self, filename):
         """Save the current buffer to a file.

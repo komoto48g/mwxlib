@@ -1217,11 +1217,15 @@ class ShellFrame(MiniFrame):
             x, y = pane.floating_pos
             if x > 2*w or y > h:
                 pane.floating_pos = wx.GetMousePosition()
-        nb.Show(show)
-        pane.Show(show)
-        self._mgr.Update()
-        if wnd and win.IsShown():
-            wnd.SetFocus()
+        try:
+            self.Freeze()
+            nb.Show(show)
+            pane.Show(show)
+            self._mgr.Update()
+            if wnd and win.IsShown():
+                wnd.SetFocus()
+        finally:
+            self.Thaw()
     
     ## --------------------------------
     ## Actions for handler
@@ -1258,6 +1262,7 @@ class ShellFrame(MiniFrame):
             obj = where(obj)
         if obj is None:
             return False
+        
         m = re.match("(.*?):([0-9]+)", obj)
         if m:
             filename, ln = m.groups()
@@ -1266,19 +1271,28 @@ class ShellFrame(MiniFrame):
             filename = obj
             lineno = 0
         filename = re.sub(r"<(.*?)>", r"\1", filename) # codename -> filename
+        
         for editor in self.ghost.all_pages(type(self.Log)): #<Editor>
-            if editor.find_buffer(filename):
+            buf = editor.find_buffer(filename)
+            if buf:
                 break
         else:
             editor = self.Log
+            buf = None
         wnd = wx.Window.FindFocus() # original focus
-        if editor.load_file(filename, lineno, show):
-            wnd.SetFocus()
+        try:
             if show:
                 self.popup_window(editor, show, focus)
+            if buf and editor.need_buffer_save_p(buf): # exists and need save?
+                editor.swap_buffer(buf)
+                if not editor.load_buffer(): # confirm
+                    return None
+            if not editor.load_file(filename, lineno, show):
+                editor.remove_buffer()
+                return False
             return True
-        wnd.SetFocus()
-        return False
+        finally:
+            wx.CallAfter(wnd.SetFocus) # restore focus with delay
     
     def info(self, obj):
         self.rootshell.info(obj)
