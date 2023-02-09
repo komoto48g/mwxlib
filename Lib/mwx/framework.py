@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.0"
+__version__ = "0.78.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1422,14 +1422,12 @@ class ShellFrame(MiniFrame):
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
-        if widget and isinstance(widget, wx.Window):
-            self.inspector.set_colour(widget, 'blue')
+        self.inspector.set_colour(widget, 'blue')
         self.message("Started monitoring {!r}.".format(widget))
     
     def on_monitor_end(self, widget):
         """Called when monitor unwatch."""
-        if widget and isinstance(widget, wx.Window):
-            self.inspector.set_colour(widget, 'black')
+        self.inspector.set_colour(widget, 'black')
         self.message("Stopped monitoring {!r}.".format(widget))
     
     def on_title_window(self, obj):
