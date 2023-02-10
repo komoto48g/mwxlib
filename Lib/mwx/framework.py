@@ -863,8 +863,8 @@ class ShellFrame(MiniFrame):
         self.console.TabCtrlHeight = 0
         self.console.Name = "console"
         
-        self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClose)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
         self.ghost = AuiNotebook(self, size=(600,400))
         self.ghost.AddPage(self.Scratch, "Scratch")
@@ -1150,7 +1150,7 @@ class ShellFrame(MiniFrame):
         evt.Skip()
     
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject #<wx._aui.AuiTabCtrl>
+        obj = evt.EventObject          #<wx._aui.AuiTabCtrl>
         page = obj.Pages[evt.Selection].window # GetPage for split notebook.
         if page is self.rootshell:
             ## self.message("- Don't close the root shell.")

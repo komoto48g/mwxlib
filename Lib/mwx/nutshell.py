@@ -1479,7 +1479,8 @@ class Buffer(EditWindow, EditorInterface):
         self.handler.update({ # DNA<Buffer>
             None : {
                   'stc_updated' : [ None, ],
-               'buffer_updated' : [ None, self.on_activated ],
+                 'buffer_saved' : [ None, self.on_activated, dispatch ],
+                'buffer_loaded' : [ None, self.on_activated, dispatch ],
              'buffer_activated' : [ None, self.on_activated ],
            'buffer_inactivated' : [ None, self.on_inactivated ],
            'py_region_executed' : [ None, self.on_activated ],
@@ -1581,7 +1582,7 @@ class Buffer(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_mark()
             self.filename = filename
-            self.handler('buffer_updated', self)
+            self.handler('buffer_loaded', self)
             return True
         return False
     
@@ -1591,7 +1592,7 @@ class Buffer(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_mark()
             self.filename = filename
-            self.handler('buffer_updated', self)
+            self.handler('buffer_loaded', self)
             return True
         return False
     
@@ -1599,7 +1600,7 @@ class Buffer(EditWindow, EditorInterface):
         """Wrapped method of SaveFile."""
         if self.SaveFile(filename):
             self.filename = filename
-            self.handler('buffer_updated', self)
+            self.handler('buffer_saved', self)
             return True
         return False
     
@@ -1654,7 +1655,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.default_buffer = self.create_new_buffer(self.default_name)
         
         self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageClose)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClosing)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
         def dispatch(v):
             """Fork mouse events to the parent."""
@@ -1666,7 +1669,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
-               'buffer_caption' : [ None, ],
+                 'buffer_saved' : [ None, ],
+                'buffer_loaded' : [ None, ],
+               'buffer_removed' : [ None, ],
+              'buffer_selected' : [ None, ],
+          'buffer_page_caption' : [ None, ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
                  'title_window' : [ None, dispatch ],
@@ -1682,22 +1689,33 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         })
     
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject #<wx._aui.AuiTabCtrl>
-        buf = obj.Pages[evt.Selection].window # GetPage for split notebook.
-        if self.need_buffer_save_p(buf):
-            if wx.MessageBox(
-                    "You are closing unsaved content.\n\n"
-                    "Changes to the content will be discarded.\n"
-                    "Continue closing?",
-                    "Close {!r}".format(os.path.basename(buf.filename)),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The close has been canceled.")
-                return None
+        obj = evt.EventObject   #<wx._aui.AuiTabCtrl>
+        try:
+            buf = obj.Pages[evt.Selection].window # GetPage for split notebook.
+            if self.need_buffer_save_p(buf):
+                if wx.MessageBox(
+                        "You are closing unsaved content.\n\n"
+                        "Changes to the content will be discarded.\n"
+                        "Continue closing?",
+                        "Close {!r}".format(os.path.basename(buf.filename)),
+                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    self.post_message("The close has been canceled.")
+                    return None
+        except AttributeError:
+            pass
+        evt.Skip()
+    
+    def OnPageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
+        self.handler('buffer_removed', self.CurrentPage) # to be removed
         evt.Skip()
     
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
+        evt.Skip()
+    
+    def OnPageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
+        self.handler('buffer_selected', self.CurrentPage)
         evt.Skip()
     
     def set_caption(self, buf, prefix=''):
@@ -1713,7 +1731,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             tab.Refresh()
         except AttributeError:
             pass
-        self.handler('buffer_caption', buf, caption)
+        self.handler('buffer_page_caption', buf, caption)
     
     def set_attributes(self, buf=None, **kwargs):
         """Sets attributes and defaultBufferStyle
