@@ -1532,7 +1532,7 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        self.parent.set_caption(self, '*')
+        self.parent.set_caption(self, '* ')
         evt.Skip()
     
     def OnSavePointReached(self, evt):
@@ -1542,7 +1542,7 @@ class Buffer(EditWindow, EditorInterface):
     def on_activated(self, buf):
         """Called when the buffer is activated."""
         if self.mtdelta:
-            self.parent.set_caption(self, '!')
+            self.parent.set_caption(self, '! ')
             self.message("File: {!r} has been modified externally. "
                          "Please load_buffer before editing."
                          .format(self.filename))
@@ -1666,9 +1666,10 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
-                 'title_window' : [ None, dispatch ],
+               'buffer_caption' : [ None, ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
+                 'title_window' : [ None, dispatch ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -1703,7 +1704,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if buf not in self.all_buffers() or buf.mtdelta is None:
             return
         name = os.path.basename(buf.filename)
-        caption = "{} {}".format(prefix, name)
+        caption = "{}{}".format(prefix, name)
+        
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
@@ -1711,6 +1713,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             tab.Refresh()
         except AttributeError:
             pass
+        self.handler('buffer_caption', buf, caption)
     
     def set_attributes(self, buf=None, **kwargs):
         """Sets attributes and defaultBufferStyle
