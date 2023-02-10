@@ -178,7 +178,7 @@ class Debugger(Pdb):
         if not self.verbose:
             self.message("--> {}".format(where(self.curframe)), indent=0)
     
-    def add_marker(self, lineno, style):
+    def stamp_marker(self, lineno, style):
         """Set a marker to lineno, with the following style markers:
         [1] white-arrow for breakpoints
         [2] red-arrow for exception
@@ -304,7 +304,7 @@ class Debugger(Pdb):
                 wx.CallAfter(editor.load_cache, filename)
         self.editor = editor
         for ln in self.get_file_breaks(filename):
-            self.add_marker(ln, 1) # (>>) bp:white-arrow
+            self.stamp_marker(ln, 1) # (>>) bp:white-arrow
         
         def _mark():
             buffer = editor.buffer
@@ -434,7 +434,7 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.add_marker(lineno, 1)
+        self.stamp_marker(lineno, 1)
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
@@ -502,7 +502,7 @@ class Debugger(Pdb):
         (override) Update exception:markers.
         """
         t, v, tb = exc_info
-        self.add_marker(tb.tb_lineno, 2)
+        self.stamp_marker(tb.tb_lineno, 2)
         self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
     
@@ -514,9 +514,9 @@ class Debugger(Pdb):
         """
         filename = frame.f_code.co_filename
         breakpoints = self.get_file_breaks(filename)
-        self.add_marker(None, 1)
+        self.stamp_marker(None, 1)
         for lineno in breakpoints:
-            self.add_marker(lineno, 1)
+            self.stamp_marker(lineno, 1)
         return Pdb.bp_commands(self, frame)
     
     @echo

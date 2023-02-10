@@ -212,7 +212,7 @@ class EditorInterface(CtrlInterface):
         except AttributeError:
             pass
         
-        ## Custom markers (cf. MarkerAdd)
+        ## Custom markers
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff') # > arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000') # > red-arrow
