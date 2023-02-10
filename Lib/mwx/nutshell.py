@@ -673,6 +673,7 @@ class EditorInterface(CtrlInterface):
         else:
             self.codename = filename
             self.code = code
+            del self.pointer # Reset pointer (debugger hook point).
             del self.red_arrow
             self.handler('py_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
