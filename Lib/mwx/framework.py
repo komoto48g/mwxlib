@@ -497,10 +497,9 @@ class Menu(wx.Menu):
 
 
 class MenuBar(wx.MenuBar, TreeList):
-    """Construct menubar as is ordered menu:list
-    リストの順番どおりに GUI 上にマップしたメニューバーを構築する
+    """Construct menubar in the order of ordered menu:list
     
-    >>> root
+    -> root
         ├ [key, [item,
         │        item,...]],
         │
@@ -918,6 +917,7 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
         self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
+        self.indicator.background = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
         
         def on_size(evt):
             rect = self.statusbar.GetFieldRect(1)

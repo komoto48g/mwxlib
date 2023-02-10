@@ -12,7 +12,7 @@ import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
 from . import images
-from .utilus import SSM
+from .utilus import SSM, TreeList
 from .framework import pack, Menu
 
 
@@ -1122,6 +1122,8 @@ class Indicator(wx.Control):
         self.Refresh()
     
     tricolor = ('red', 'yellow', 'green')
+    background = 'black'
+    foreground = 'gray'
     spacing = 7
     radius = 5
     
@@ -1143,11 +1145,15 @@ class Indicator(wx.Control):
         s = self.spacing
         r = self.radius
         w, h = self.ClientSize
-        dc.SetBrush(wx.Brush("black"))
+        dc.SetPen(wx.Pen(self.background, style=wx.PENSTYLE_TRANSPARENT))
+        dc.SetBrush(wx.Brush(self.background,
+                    style=wx.BRUSHSTYLE_SOLID if self.background else
+                          wx.BRUSHSTYLE_TRANSPARENT))
         dc.DrawRoundedRectangle(0, h//2-s, s*2*N-1, s*2+1, s)
+        dc.SetPen(wx.Pen(self.background))
         for j, name in enumerate(self.tricolor):
             if not self.__value & (1 << N-1-j):
-                name = 'gray'
+                name = self.foreground
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
 
@@ -1213,3 +1219,50 @@ class Gauge(wx.Control):
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
+
+
+class TreeCtrl(wx.TreeCtrl, TreeList):
+    """Construct treectrl in the order of tree:list.
+    """
+    def __init__(self, *args, **kwargs):
+        wx.TreeCtrl.__init__(self, *args, **kwargs)
+        TreeList.__init__(self)
+        
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
+        self.__root = self.AddRoot("Root")
+    
+    def reset(self):
+        for branch in self:
+            self._set_item(self.__root, *branch)
+    
+    def add_branch(self, key, *branches):
+        if '/' in key:
+            a, b = key.rsplit('/', 1)
+            if a not in self:
+                self[a] = []
+            self[a].append([b, *branches])
+        else:
+            self.append([key, *branches])
+        self.reset()
+    
+    def remove_branch(self, key):
+        del self[key]
+        self.reset()
+    
+    def _get_item(self, root, key):
+        item, cookie = self.GetFirstChild(root)
+        while item:
+            if key == self.GetItemText(item):
+                return item
+            item, cookie = self.GetNextChild(root, cookie)
+    
+    def _set_item(self, root, key, *values):
+        item = self._get_item(root, key) or self.AppendItem(root, key)
+        branches = next((x for x in values if isinstance(x, (tuple, list))), [])
+        rest = [x for x in values if x not in branches]
+        if rest:
+            ## Take the first element assuming it's client data.
+            ## (override) Set the item client data.
+            self.SetItemData(item, rest[0])
+        for branch in branches:
+            self._set_item(item, *branch)
