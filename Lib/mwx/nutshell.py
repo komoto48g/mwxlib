@@ -1532,17 +1532,17 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        self.parent.handler('caption_page', self, '*')
+        self.parent.set_caption(self, '*')
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self.parent.handler('caption_page', self, '')
+        self.parent.set_caption(self, '')
         evt.Skip()
     
-    def on_activated(self, editor):
-        """Called when editor:self is activated."""
+    def on_activated(self, buf):
+        """Called when the buffer is activated."""
         if self.mtdelta:
-            self.parent.handler('caption_page', self, '!')
+            self.parent.set_caption(self, '!')
             self.message("File: {!r} has been modified externally. "
                          "Please load_buffer before editing."
                          .format(self.filename))
@@ -1550,8 +1550,8 @@ class Buffer(EditWindow, EditorInterface):
         self.parent.handler('title_window', title)
         self.trace_position()
     
-    def on_inactivated(self, editor):
-        """Called when editor:self is inactivated."""
+    def on_inactivated(self, buf):
+        """Called when the buffer is inactivated."""
         pass
     
     def on_enter_escmap(self, evt):
@@ -1666,7 +1666,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
-                 'caption_page' : [ None, self.set_caption ],
                  'title_window' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
@@ -1701,15 +1700,15 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         evt.Skip()
     
     def set_caption(self, buf, prefix=''):
-        if buf not in self.all_buffers():
+        if buf not in self.all_buffers() or buf.mtdelta is None:
             return
+        name = os.path.basename(buf.filename)
+        caption = "{} {}".format(prefix, name)
         ## if wx.VERSION >= (4,1,0):
         try:
-            if buf.mtdelta is not None:
-                _p, tab, idx = self.FindTab(buf)
-                name = os.path.basename(buf.filename)
-                tab.GetPage(idx).caption = "{} {}".format(prefix, name)
-                tab.Refresh()
+            _p, tab, idx = self.FindTab(buf)
+            tab.GetPage(idx).caption = caption
+            tab.Refresh()
         except AttributeError:
             pass
     

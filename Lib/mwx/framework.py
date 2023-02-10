@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.1"
+__version__ = "0.78.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -989,7 +989,6 @@ class ShellFrame(MiniFrame):
         
         @self.Scratch.define_key('M-j')
         def exec_buffer(v):
-            self.save_session() # to save *scratch*
             self.Scratch.buffer.py_exec_region(
                 self.current_shell.globals,
                 self.current_shell.locals,
@@ -1088,11 +1087,11 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
         ## Confirm close
-        for page in self.ghost.all_pages():
-            for buf in page.all_buffers():
-                if page.need_buffer_save_p(buf):
-                    self.popup_window(page)
-                    page.swap_buffer(buf)
+        for editor in self.ghost.all_pages():
+            for buf in editor.all_buffers():
+                if editor.need_buffer_save_p(buf):
+                    self.popup_window(editor)
+                    editor.swap_buffer(buf)
                     if wx.MessageBox(
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
