@@ -1562,13 +1562,6 @@ class Buffer(EditWindow, EditorInterface):
         self.message("ESC {}".format(evt.key))
         self.AnnotationClearAll()
     
-    def _reset(self, text=''):
-        """Clear the current buffer."""
-        with self.off_readonly():
-            self.Text = text
-            self.EmptyUndoBuffer()
-            self.SetSavePoint()
-    
     ## --------------------------------
     ## File I/O
     ## --------------------------------
@@ -1578,7 +1571,10 @@ class Buffer(EditWindow, EditorInterface):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename, globals)
         if lines:
-            self._reset(''.join(lines))
+            with self.off_readonly():
+                self.Text = ''.join(lines)
+                self.EmptyUndoBuffer()
+                self.SetSavePoint()
             self.markline = lineno - 1
             self.goto_mark()
             self.filename = filename
@@ -1827,8 +1823,10 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if not buf or buf.mtdelta is not None: # is saved?
             buf = self.create_new_buffer(self.default_name, index=0)
             self.default_buffer = buf
+        else:
+            buf.ClearAll()
+            ## buf.EmptyUndoBuffer()
         buf.SetFocus()
-        buf._reset()
         return buf
     
     @postcall
