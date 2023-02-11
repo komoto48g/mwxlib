@@ -30,7 +30,11 @@ from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
 from .utilus import split_words, find_modules, wdir
-from .framework import postcall, skip, Menu, CtrlInterface
+from .framework import Menu, CtrlInterface
+
+
+def skip(v):
+    v.Skip()
 
 
 def editable(f):
@@ -1829,7 +1833,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         buf.SetFocus()
         return buf
     
-    @postcall
     def remove_buffer(self, buf=None):
         """Pop the current buffer from the buffer list."""
         if not buf:
@@ -1837,10 +1840,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         j = self.GetPageIndex(buf)
         self.DeletePage(j)
         
-        if not self.buffer:
+        if not self.buffer: # no buffers:
             self.new_buffer()
     
-    @postcall
     def remove_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
@@ -2011,7 +2013,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        self.remove_buffer()
+        wx.CallAfter(self.remove_buffer)
         return True
     
     def kill_all_buffers(self):
@@ -2025,7 +2027,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        self.remove_all_buffers()
+        wx.CallAfter(self.remove_all_buffers)
         return True
 
 
@@ -3279,7 +3281,6 @@ class Nautilus(Shell, EditorInterface):
     def on_completion_backward_history(self, evt):
         self.on_completion(evt, -1) # 新しいヒストリへ戻る
     
-    @postcall
     def on_completion(self, evt, step=0):
         """Show completion with selection."""
         try:

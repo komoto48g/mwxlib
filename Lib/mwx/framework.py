@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.2"
+__version__ = "0.78.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1302,6 +1302,7 @@ class ShellFrame(MiniFrame):
     def highlight(self, obj):
         self.inspector.highlight(obj)
     
+    ## Note: history 変数に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, wx.Object) or obj is None:

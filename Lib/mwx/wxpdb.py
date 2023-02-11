@@ -189,8 +189,7 @@ class Debugger(Pdb):
             self.editor.buffer.MarkerDeleteAll(style)
     
     def send_input(self, c, echo=False):
-        """Send input:str @postcall."""
-        ## self.stdin.isreading -> True
+        """Send input:str"""
         def _send():
             self.stdin.input = c
         wx.CallAfter(_send)

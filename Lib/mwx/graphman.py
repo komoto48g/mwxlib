@@ -1340,7 +1340,7 @@ class Frame(mwx.Frame):
             try:
                 if plug.thread and plug.thread.active:
                     plug.thread.active = 0 # worker-thread から直接切り替える
-                    plug.thread.Stop()     # main-thread @postcall で終了させる
+                    plug.thread.Stop()     # main-thread で終了させる
             except AttributeError:
                 pass
     
