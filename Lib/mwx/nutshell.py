@@ -1882,13 +1882,18 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         return False
     
     def load_file(self, filename, lineno=0, focus=False):
-        """Load a file.
-        Note:
-            The filename should be an absolute path.
-            The buffer will be reloaded without confirmation.
-            If you want to confirm overwrite before loading, use load_buffer.
+        """Load a file into an existing or new buffer.
         """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+        if self.need_buffer_save_p(buf):
+            if wx.MessageBox(
+                    "You are leaving unsaved content.\n\n"
+                    "Changes to the content will be discarded.\n"
+                    "Continue loading?",
+                    "Load {!r}".format(os.path.basename(buf.filename)),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The load has been canceled.")
+                return None
         try:
             self.Freeze()
             self.swap_buffer(buf)
@@ -1907,40 +1912,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     def save_file(self, filename):
         """Save the current buffer to a file.
-        Note:
-            The filename should be an absolute path.
-            The file will be overwritten without confirmation.
-            If you want to confirm overwrite before loading, use save_buffer.
         """
-        try:
-            return self.buffer._save_file(filename)
-        except Exception as e:
-            self.post_message("Failed to save {!r}: {}".format(
-                              os.path.basename(filename), e))
-    
-    def load_buffer(self):
-        """Confirm the load with the dialog."""
-        buf = self.buffer
-        if self.need_buffer_save_p(buf):
-            if wx.MessageBox(
-                    "You are leaving unsaved content.\n\n"
-                    "Changes to the content will be discarded.\n"
-                    "Continue loading?",
-                    "Load {!r}".format(os.path.basename(buf.filename)),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The load has been canceled.")
-                return None
-        f = buf.filename
-        if not f:
-            self.post_message("No file to load.")
-            return None
-        if self.load_file(f, buf.markline+1):
-            self.post_message(f"Loaded {f!r} successfully.")
-            return True
-        return False
-    
-    def save_buffer(self):
-        """Confirm the save with the dialog."""
         buf = self.buffer
         if buf.mtdelta:
             if wx.MessageBox(
@@ -1957,6 +1929,27 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         elif not buf.IsModified():
             self.post_message("No need to save.")
             return None
+        try:
+            return self.buffer._save_file(filename)
+        except Exception as e:
+            self.post_message("Failed to save {!r}: {}".format(
+                              os.path.basename(filename), e))
+    
+    def load_buffer(self):
+        """Confirm the load with the dialog."""
+        buf = self.buffer
+        f = buf.filename
+        if not f:
+            self.post_message("No file to load.")
+            return None
+        if self.load_file(f, buf.markline+1):
+            self.post_message(f"Loaded {f!r} successfully.")
+            return True
+        return False
+    
+    def save_buffer(self):
+        """Confirm the save with the dialog."""
+        buf = self.buffer
         f = buf.filename
         if not f:
             return self.save_as_buffer()
