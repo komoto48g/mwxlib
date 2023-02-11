@@ -308,9 +308,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dclick', v))
         
-        self.Bind(wx.EVT_SET_FOCUS, lambda v: _W('focus_set', v))
-        self.Bind(wx.EVT_KILL_FOCUS, lambda v: _W('focus_kill', v))
-        
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _W('capture_lost', v))
         self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _W('capture_changed', v))
     

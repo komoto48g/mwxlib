@@ -37,6 +37,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.highlighter = it._InspectionHighlighter()
@@ -47,11 +48,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
         def dispatch(v):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
-            v.Skip()
-        
-        @self.handler.bind('focus_set')
-        def activate(v):
-            self.parent.handler('title_window', self.__class__.__name__)
             v.Skip()
         
         @self.handler.bind('f4 pressed')
@@ -66,6 +62,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.timer.Stop()
+        evt.Skip()
+    
+    def OnSetFocus(self, evt):
+        self.parent.handler('title_window', self.__class__.__name__)
         evt.Skip()
     
     def SetObj(self, obj):

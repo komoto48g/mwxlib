@@ -1466,15 +1466,15 @@ class Buffer(EditWindow, EditorInterface):
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         
-        @self.handler.bind('focus_set')
         def activate(v):
             self.handler('buffer_activated', self)
             v.Skip()
+        self.Bind(wx.EVT_SET_FOCUS, activate)
         
-        @self.handler.bind('focus_kill')
         def inactivate(v):
             self.handler('buffer_inactivated', self)
             v.Skip()
+        self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         def dispatch(v):
             """Fork mouse events to the parent."""
@@ -2276,15 +2276,15 @@ class Nautilus(Shell, EditorInterface):
             v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
-        @self.handler.bind('focus_set')
         def activate(v):
             self.handler('shell_activated', self)
             v.Skip()
+        self.Bind(wx.EVT_SET_FOCUS, activate)
         
-        @self.handler.bind('focus_kill')
         def inactivate(v):
             self.handler('shell_inactivated', self)
             v.Skip()
+        self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         def clear(v):
             ## Clear selection and statusline, no skip.

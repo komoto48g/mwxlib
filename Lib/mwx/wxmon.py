@@ -71,6 +71,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         self.add_module = ew.addModuleEvents
@@ -85,15 +86,14 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.event, v)
             v.Skip()
-        
-        @self.handler.bind('focus_set')
-        def activate(v):
-            self.parent.handler('title_window', self.__class__.__name__)
-            v.Skip()
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.unwatch()
+        evt.Skip()
+    
+    def OnSetFocus(self, evt):
+        self.parent.handler('title_window', self.__class__.__name__)
         evt.Skip()
     
     ## --------------------------------
@@ -305,10 +305,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             item = self.__items[i]
             wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
         evt.Skip()
-    
-    ## @property
-    ## def SelectedItems(self):
-    ##     return filter(self.IsSelected, range(self.ItemCount))
     
     def OnContextMenu(self, evt):
         i = self.FocusedItem
