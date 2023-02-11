@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.3"
+__version__ = "0.78.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -283,7 +283,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__handler = FSM({None:{}, 0:{}}, default=0)
         
         _M = self._mouse_handler
-        _W = self._window_handler
         
         ## self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
@@ -307,9 +306,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: _M('Xbutton2 pressed', v))
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dclick', v))
-        
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _W('capture_lost', v))
-        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _W('capture_changed', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down."""
@@ -355,10 +351,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
-    
-    def _window_handler(self, event, evt):
-        if self.handler(event, evt) is None:
-            evt.Skip()
 
 
 ## --------------------------------

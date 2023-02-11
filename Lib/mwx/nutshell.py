@@ -132,8 +132,15 @@ class EditorInterface(CtrlInterface):
             },
         })
         
+        def _window_handler(event, v):
+            if self.handler(event, v) is None:
+                v.Skip()
+        
         self.Bind(wx.EVT_MOTION,
-                  lambda v: self.handler('motion', v) or v.Skip())
+                  lambda v: _window_handler('motion', v))
+        
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                  lambda v: _window_handler('capture_lost', v))
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
