@@ -1679,10 +1679,10 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 'buffer_loaded' : [ None, ],
                'buffer_removed' : [ None, ],
               'buffer_selected' : [ None, ],
-          'buffer_page_caption' : [ None, ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
                  'title_window' : [ None, dispatch ],
+                 'caption_page' : [ None, ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -1725,7 +1725,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             return
         name = os.path.basename(buf.filename)
         caption = "{}{}".format(prefix, name)
-        
+        self.handler('caption_page', buf, caption)
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
@@ -1733,7 +1733,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             tab.Refresh()
         except AttributeError:
             pass
-        self.handler('buffer_page_caption', buf, caption)
     
     def set_attributes(self, buf=None, **kwargs):
         """Sets attributes and defaultBufferStyle
@@ -1743,15 +1742,15 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             buf : a buffer to apply (if None, applies to all buffers).
             **kwargs : default style.
             
-                Style = Buffer.STYLE => set_style
-                ReadOnly = False
-                UseTabs = False
-                ViewEOL = False
-                ViewWhiteSpace = False
-                TabWidth = 4
-                EOLMode = stc.STC_EOL_CRLF
-                WrapMode = stc.STC_WRAP_NONE
-                WrapIndentMode = stc.STC_WRAPINDENT_SAME
+                Style           = Buffer.STYLE => set_style
+                ReadOnly        = False
+                UseTabs         = False
+                ViewEOL         = False
+                ViewWhiteSpace  = False
+                TabWidth        = 4
+                EOLMode         = stc.STC_EOL_CRLF
+                WrapMode        = stc.STC_WRAP_NONE
+                WrapIndentMode  = stc.STC_WRAPINDENT_SAME
                 IndentationGuides = stc.STC_IV_LOOKFORWARD
         """
         def _setattribute(buf, attr):
