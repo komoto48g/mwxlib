@@ -2276,11 +2276,11 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         
-        @self.handler.bind('window_destroy')
         def destroy(v):
             if v.EventObject is self:
                 self.handler('shell_deleted', self)
             v.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         @self.handler.bind('focus_set')
         def activate(v):

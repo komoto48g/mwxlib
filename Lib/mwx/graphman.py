@@ -342,7 +342,6 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: mwx.Menu.Popup(self, self.menu))
         
-        @self.handler.bind('window_destroy')
         def destroy(v):
             if v.EventObject is self:
                 if self.thread and self.thread.active:
@@ -350,6 +349,7 @@ class LayerInterface(CtrlInterface):
                     self.thread.Stop()
                 del self.Arts
             v.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         try:
             self.Init()
