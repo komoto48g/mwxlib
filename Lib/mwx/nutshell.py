@@ -1655,9 +1655,15 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.default_buffer = self.create_new_buffer(self.default_name)
         
         self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageClose)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClosing)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
+        
+        def destroy(v):
+            obj = v.EventObject
+            if isinstance(obj, Buffer):
+                self.handler('buffer_removed', obj)
+            v.Skip()
+        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def dispatch(v):
             """Fork mouse events to the parent."""
@@ -1703,10 +1709,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     return None
         except AttributeError:
             pass
-        evt.Skip()
-    
-    def OnPageClosing(self, evt): #<wx._aui.AuiNotebookEvent>
-        self.handler('buffer_removed', self.CurrentPage) # to be removed
         evt.Skip()
     
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -1813,11 +1815,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.Freeze()
             buf = Buffer(self, filename)
             self.set_attributes(buf, **self.defaultBufferStyle)
+            self.handler('buffer_new', buf)
             if index is None:
                 index = self.PageCount
             name = os.path.basename(buf.filename)
             self.InsertPage(index, buf, name)
-            self.handler('buffer_new', buf)
             return buf
         finally:
             self.Thaw()
