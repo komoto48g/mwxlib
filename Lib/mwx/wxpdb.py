@@ -307,7 +307,7 @@ class Debugger(Pdb):
         
         def _mark():
             buffer = editor.buffer
-            if filename == buffer.target:
+            if filename == buffer.targetname:
                 if code != self.code:
                     buffer.markline = firstlineno - 1 # (o) entry:marker
                     buffer.goto_mark()

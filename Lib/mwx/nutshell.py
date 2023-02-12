@@ -693,7 +693,7 @@ class EditorInterface(CtrlInterface):
     def py_get_region(self, line):
         """Line numbers of code head and tail containing the line.
         
-        Requires a code object compiled using `py_exec_region`.
+        Requires a code object.
         If the code doesn't exist, return the folding region.
         """
         if not self.code:
@@ -1403,7 +1403,7 @@ class Buffer(EditWindow, EditorInterface):
     Attributes:
         filename : buffer-file-name
         codename : code-file-name (e.g. '<scratch>')
-        code     : code object compiled using `py_exec_region`.
+        code     : code object
     """
     STYLE = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
@@ -1436,7 +1436,7 @@ class Buffer(EditWindow, EditorInterface):
         return self.parent.message(*args, **kwargs)
     
     @property
-    def target(self):
+    def targetname(self):
         """Returns codename or filename (referenced by the debugger)."""
         return self.codename or self.filename
     
@@ -1558,7 +1558,7 @@ class Buffer(EditWindow, EditorInterface):
             self.message("File: {!r} has been modified externally. "
                          "Please load_buffer before editing."
                          .format(self.filename))
-        title = "{} file: {}".format(self.parent.Name, self.target)
+        title = "{} file: {}".format(self.parent.Name, self.targetname)
         self.parent.handler('title_window', title)
         self.trace_position()
     

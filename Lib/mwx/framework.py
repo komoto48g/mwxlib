@@ -976,7 +976,7 @@ class ShellFrame(MiniFrame):
             self.Scratch.buffer.py_exec_region(
                 self.current_shell.globals,
                 self.current_shell.locals,
-                "<{}>".format(self.Scratch.buffer.filename))
+                self.Scratch.buffer.filename)
         
         ## text-mode
         self.set_traceable(self.Log)
@@ -1365,7 +1365,7 @@ class ShellFrame(MiniFrame):
         self.indicator.ToolTip = 'Normal'
     
     def set_traceable(self, editor, traceable=True):
-        """Bind pointer to trace set/unset functions."""
+        """Bind pointer to set/unset trace."""
         if traceable:
             editor.handler.bind('pointer_set', _F(self.start_trace, editor=editor))
             editor.handler.bind('pointer_unset', _F(self.stop_trace, editor=editor))
@@ -1377,7 +1377,7 @@ class ShellFrame(MiniFrame):
         if not self.debugger.busy:
             self.debugger.unwatch()
             self.debugger.editor = editor
-            self.debugger.watch((editor.buffer.target, line+1))
+            self.debugger.watch((editor.buffer.targetname, line+1))
         editor.buffer.del_marker(4)
     
     def stop_trace(self, line, editor):
