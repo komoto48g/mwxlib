@@ -1299,6 +1299,9 @@ class ShellFrame(MiniFrame):
                 self.popup_window(self.monitor, focus=0)
                 self.linfo.watch(obj.__dict__)
                 self.ginfo.watch({})
+        elif isinstance(obj, type(print)):
+            wx.MessageBox("Builtin method or function.\n\n"
+                          "Unable to debug {!r}".format(obj))
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
