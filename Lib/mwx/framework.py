@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.4"
+__version__ = "0.78.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -351,6 +351,10 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
+    
+    def _window_handler(self, event, evt):
+        if self.handler(event, evt) is None:
+            evt.Skip()
 
 
 ## --------------------------------
