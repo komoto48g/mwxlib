@@ -1939,12 +1939,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The save has been canceled.")
                 return None
-        elif buf.mtdelta is None:
-            self.post_message("No filename.")
-            return None
-        elif not buf.IsModified():
-            self.post_message("No need to save.")
-            return None
         try:
             return buf._save_file(filename)
         except Exception as e:
@@ -1954,8 +1948,11 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         """Confirm the load with the dialog."""
         buf = self.buffer
         f = buf.filename
-        if not f:
-            self.post_message("No file to load.")
+        if buf.mtdelta is None:
+            self.post_message("No filename.")
+            return None
+        if buf.mtdelta == 0 and not buf.IsModified():
+            self.post_message("No need to load.")
             return None
         return self.load_file(f, buf.markline+1)
     
@@ -1963,8 +1960,12 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         """Confirm the save with the dialog."""
         buf = self.buffer
         f = buf.filename
-        if not f:
-            return self.save_as_buffer()
+        if buf.mtdelta is None:
+            self.post_message("No filename.")
+            return None
+        if buf.mtdelta == 0 and not buf.IsModified():
+            self.post_message("No need to save.")
+            return None
         return self.save_file(f)
     
     def save_as_buffer(self):
