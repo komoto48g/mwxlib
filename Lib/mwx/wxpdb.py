@@ -250,7 +250,9 @@ class Debugger(Pdb):
         except BdbQuit:
             pass
         except Exception as e:
-            wx.MessageBox("Debugger is closed.\n\n{}".format(e))
+            ## Note: CallAfter to avoid crashing by a kill-focus event.
+            wx.CallAfter(wx.MessageBox,
+                         "Debugger is closed.\n\n{}".format(e))
         finally:
             self.set_quit()
             return
