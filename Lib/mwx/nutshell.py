@@ -1919,6 +1919,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             return buf._load_file(filename, lineno)
         except (FileNotFoundError, OSError) as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
+            pass
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.remove_buffer(buf)
@@ -1945,7 +1946,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.post_message("No need to save.")
             return None
         try:
-            return self.buffer._save_file(filename)
+            return buf._save_file(filename)
         except Exception as e:
             self.post_message("Failed to save {!r}: {}".format(buf.name, e))
     
@@ -1956,10 +1957,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if not f:
             self.post_message("No file to load.")
             return None
-        if self.load_file(f, buf.markline+1):
-            self.post_message(f"Loaded {f!r} successfully.")
-            return True
-        return False
+        return self.load_file(f, buf.markline+1)
     
     def save_buffer(self):
         """Confirm the save with the dialog."""
@@ -1967,10 +1965,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         f = buf.filename
         if not f:
             return self.save_as_buffer()
-        if self.save_file(f):
-            self.post_message(f"Saved {f!r} successfully.")
-            return True
-        return False
+        return self.save_file(f)
     
     def save_as_buffer(self):
         """Confirm the saveas with the dialog."""
@@ -1983,8 +1978,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             if dlg.ShowModal() != wx.ID_OK:
                 return None
             f = dlg.Path
-        if self.save_file(f):
-            self.post_message(f"Saved {f!r} successfully.")
+        if buf._save_file(f):
             self.set_caption(buf)
             return True
         return False
@@ -2004,8 +1998,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 return None
             paths = dlg.Paths
         for f in paths:
-            if self.load_file(f):
-                self.post_message(f"Loaded {f!r} successfully.")
+            self.load_file(f)
         return True
     
     def kill_buffer(self):
