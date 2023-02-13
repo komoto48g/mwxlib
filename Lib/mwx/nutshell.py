@@ -1327,6 +1327,7 @@ class Buffer(EditWindow, EditorInterface):
     """Python code buffer.
     
     Attributes:
+        name     : buffer-name (basename)
         filename : buffer-file-name
         codename : code-file-name (e.g. '<scratch>')
         code     : code object
@@ -1360,6 +1361,10 @@ class Buffer(EditWindow, EditorInterface):
     
     def message(self, *args, **kwargs):
         return self.parent.message(*args, **kwargs)
+    
+    @property
+    def name(self):
+        return os.path.basename(self.__filename or '')
     
     @property
     def targetname(self):
@@ -1641,6 +1646,10 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     Args:
         name : Window.Name (e.g. 'Scratch')
+    
+    Attributes:
+        default_name   : default buffer name (e.g. '*scratch*')
+        default_buffer : default buffer
     """
     def message(self, *args, **kwargs):
         return self.parent.message(*args, **kwargs)
@@ -1648,8 +1657,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def __init__(self, parent, name="editor", **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
-            ## ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-            ## ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
@@ -1714,7 +1721,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                         "You are closing unsaved content.\n\n"
                         "Changes to the content will be discarded.\n"
                         "Continue closing?",
-                        "Close {!r}".format(os.path.basename(buf.filename)),
+                        "Close {!r}".format(buf.name),
                         style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                     self.post_message("The close has been canceled.")
                     return None
@@ -1734,8 +1741,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def set_caption(self, buf, prefix=''):
         if buf not in self.all_buffers() or buf.mtdelta is None:
             return
-        name = os.path.basename(buf.filename)
-        caption = "{}{}".format(prefix, name)
+        caption = "{}{}".format(prefix, buf.name)
         self.handler('caption_page', buf, caption)
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -1828,8 +1834,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.handler('buffer_new', buf)
             if index is None:
                 index = self.PageCount
-            name = os.path.basename(buf.filename)
-            self.InsertPage(index, buf, name)
+            self.InsertPage(index, buf, buf.name)
             return buf
         finally:
             self.Thaw()
@@ -1901,7 +1906,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     "You are leaving unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
                     "Continue loading?",
-                    "Load {!r}".format(os.path.basename(buf.filename)),
+                    "Load {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The load has been canceled.")
                 return None
@@ -1912,11 +1917,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                 buf.SetFocus()
             return buf._load_file(filename, lineno)
         except (FileNotFoundError, OSError) as e:
-            self.post_message("Failed to load {!r}: {}".format(
-                              os.path.basename(filename), e))
+            self.post_message("Failed to load {!r}: {}".format(buf.name, e))
         except Exception as e:
-            self.post_message("Failed to load {!r}: {}".format(
-                              os.path.basename(filename), e))
+            self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.remove_buffer(buf)
         finally:
             self.Thaw()
@@ -1930,7 +1933,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
                     "Continue saving?",
-                    "Save {!r}".format(os.path.basename(buf.filename)),
+                    "Save {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The save has been canceled.")
                 return None
@@ -1943,8 +1946,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         try:
             return self.buffer._save_file(filename)
         except Exception as e:
-            self.post_message("Failed to save {!r}: {}".format(
-                              os.path.basename(filename), e))
+            self.post_message("Failed to save {!r}: {}".format(buf.name, e))
     
     def load_buffer(self):
         """Confirm the load with the dialog."""
@@ -1972,8 +1974,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     def save_as_buffer(self):
         """Confirm the saveas with the dialog."""
         buf = self.buffer
-        name = re.sub("[\\/:*?\"<>|]", '',
-                      os.path.basename(buf.filename or ''))
+        name = re.sub("[\\/:*?\"<>|]", '', buf.name)
         with wx.FileDialog(self, "Save buffer as",
                 defaultFile=name,
                 wildcard='|'.join(self.wildcards),
@@ -2014,7 +2015,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
                     "Continue closing?",
-                    "Close {!r}".format(os.path.basename(buf.filename)),
+                    "Close {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
@@ -2028,7 +2029,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
                     "Continue closing?",
-                    "Close {!r}".format(os.path.basename(buf.filename)),
+                    "Close {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None

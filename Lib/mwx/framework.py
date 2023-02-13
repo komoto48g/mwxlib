@@ -1083,7 +1083,7 @@ class ShellFrame(MiniFrame):
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",
-                            "Close {!r}".format(os.path.basename(buf.filename)),
+                            "Close {!r}".format(buf.name),
                             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                         self.message("The close has been canceled.")
                         evt.Veto()
