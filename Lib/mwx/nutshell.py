@@ -633,76 +633,6 @@ class EditorInterface(CtrlInterface):
         except ValueError:
             return text
     
-    def py_eval_line(self, globals, locals):
-        if self.CallTipActive():
-            self.CallTipCancel()
-        
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.caretline
-                yield self.expr_at_caret
-        
-        status = "No words"
-        for text in filter(None, _gen_text()):
-            try:
-                obj = eval(text, globals, locals)
-            except Exception as e:
-                status = "- {}: {!r}".format(e, text)
-            else:
-                self.CallTipShow(self.cpos, pformat(obj))
-                self.message(text)
-                return
-        self.message(status)
-    
-    def py_exec_region(self, globals, locals, filename):
-        try:
-            code = compile(self.Text, filename, "exec")
-            exec(code, globals, locals)
-            dispatcher.send(signal='Interpreter.push',
-                            sender=self, command=None, more=False)
-        except Exception as e:
-            msg = traceback.format_exc()
-            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
-            lines = [int(l) for f,l in err if f == filename]
-            if lines:
-                lx = lines[-1] - 1
-                self.red_arrow = lx
-                self.goto_line(lx)
-                self.EnsureVisible(lx) # expand if folded
-                self.EnsureCaretVisible()
-                self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
-                self.AnnotationSetText(lx, msg)
-            self.message("- {!r}".format(e))
-            ## print(msg, file=sys.__stderr__)
-        else:
-            self.codename = filename
-            self.code = code
-            del self.pointer # Reset pointer (debugger hook point).
-            del self.red_arrow
-            self.handler('py_region_executed', self)
-            self.message("Evaluated {!r} successfully".format(filename))
-            self.AnnotationClearAll()
-    
-    def py_get_region(self, line):
-        """Line numbers of code head and tail containing the line.
-        
-        Requires a code object.
-        If the code doesn't exist, return the folding region.
-        """
-        if not self.code:
-            return self.get_region(line)
-        lc, le = 0, self.LineCount
-        linestarts = list(dis.findlinestarts(self.code))
-        for i, ln in reversed(linestarts):
-            if line >= ln-1:
-                lc = ln-1
-                break
-            le = ln-1
-        return lc, le
-    
     ## --------------------------------
     ## Fold / Unfold functions
     ## --------------------------------
@@ -1628,6 +1558,82 @@ class Buffer(EditWindow, EditorInterface):
             o.write(self.Text)
         self.SetSavePoint()
         return True
+    
+    ## --------------------------------
+    ## Python eval / exec
+    ## --------------------------------
+    
+    def py_eval_line(self, globals, locals):
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.caretline
+                yield self.expr_at_caret
+        
+        status = "No words"
+        for text in filter(None, _gen_text()):
+            try:
+                obj = eval(text, globals, locals)
+            except Exception as e:
+                status = "- {}: {!r}".format(e, text)
+            else:
+                self.CallTipShow(self.cpos, pformat(obj))
+                self.message(text)
+                return
+        self.message(status)
+    
+    def py_exec_region(self, globals, locals, filename=None):
+        if not filename:
+            filename = self.filename
+        try:
+            code = compile(self.Text, filename, "exec")
+            exec(code, globals, locals)
+            dispatcher.send(signal='Interpreter.push',
+                            sender=self, command=None, more=False)
+        except Exception as e:
+            msg = traceback.format_exc()
+            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
+            lines = [int(l) for f,l in err if f == filename]
+            if lines:
+                lx = lines[-1] - 1
+                self.red_arrow = lx
+                self.goto_line(lx)
+                self.EnsureVisible(lx) # expand if folded
+                self.EnsureCaretVisible()
+                self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
+                self.AnnotationSetText(lx, msg)
+            self.message("- {!r}".format(e))
+            ## print(msg, file=sys.__stderr__)
+        else:
+            self.codename = filename
+            self.code = code
+            del self.pointer # Reset pointer (debugger hook point).
+            del self.red_arrow
+            self.handler('py_region_executed', self)
+            self.message("Evaluated {!r} successfully".format(filename))
+            self.AnnotationClearAll()
+    
+    def py_get_region(self, line):
+        """Line numbers of code head and tail containing the line.
+        
+        Requires a code object.
+        If the code doesn't exist, return the folding region.
+        """
+        if not self.code:
+            return self.get_region(line)
+        lc, le = 0, self.LineCount
+        linestarts = list(dis.findlinestarts(self.code))
+        for i, ln in reversed(linestarts):
+            if line >= ln-1:
+                lc = ln-1
+                break
+            le = ln-1
+        return lc, le
 
 
 class Editor(aui.AuiNotebook, CtrlInterface):

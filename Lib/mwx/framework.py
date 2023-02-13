@@ -979,8 +979,7 @@ class ShellFrame(MiniFrame):
         def exec_buffer(v):
             self.Scratch.buffer.py_exec_region(
                 self.current_shell.globals,
-                self.current_shell.locals,
-                self.Scratch.buffer.filename)
+                self.current_shell.locals)
         
         ## text-mode
         self.set_traceable(self.Log)
