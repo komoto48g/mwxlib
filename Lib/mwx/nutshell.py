@@ -64,9 +64,9 @@ class EditorInterface(CtrlInterface):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        def dispatch(v):
+        def dispatch(*v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.event, *v)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -1414,9 +1414,9 @@ class Buffer(EditWindow, EditorInterface):
             v.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
-        def dispatch(v):
+        def dispatch(*v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.event, *v)
         
         self.handler.update({ # DNA<Buffer>
             None : {
@@ -1426,6 +1426,7 @@ class Buffer(EditWindow, EditorInterface):
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
+                 'caption_page' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1681,9 +1682,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
-        def dispatch(v):
+        def dispatch(*v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.event, *v)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
