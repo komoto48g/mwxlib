@@ -233,10 +233,10 @@ class Debugger(Pdb):
                 ## e.g., (self.handler.current_state > 0 and not self.busy)
                 self.handler('abort')
     
-    def debug(self, target, *args, **kwargs):
-        if not callable(target):
+    def debug(self, obj, *args, **kwargs):
+        if not callable(obj):
             wx.MessageBox("Not a callable object.\n\n"
-                          "Unable to debug {!r}.".format(target))
+                          "Unable to debug {!r}.".format(obj))
             return
         if self.busy:
             wx.MessageBox("Debugger is running.\n\n"
@@ -246,11 +246,13 @@ class Debugger(Pdb):
         try:
             frame = inspect.currentframe().f_back
             self.set_trace(frame)
-            target(*args, **kwargs)
+            obj(*args, **kwargs)
         except BdbQuit:
             pass
         except Exception as e:
-            wx.MessageBox("Debugger is closed.\n\n{}".format(e))
+            ## Note: CallAfter to avoid crashing by a kill-focus event.
+            wx.CallAfter(wx.MessageBox,
+                         "Debugger is closed.\n\n{}".format(e))
         finally:
             self.set_quit()
             return
@@ -307,7 +309,7 @@ class Debugger(Pdb):
         
         def _mark():
             buffer = editor.buffer
-            if filename == buffer.target:
+            if filename == buffer.targetname:
                 if code != self.code:
                     buffer.markline = firstlineno - 1 # (o) entry:marker
                     buffer.goto_mark()
