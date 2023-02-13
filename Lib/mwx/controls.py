@@ -1231,23 +1231,18 @@ class TreeCtrl(wx.TreeCtrl, TreeList):
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         self.__root = self.AddRoot("Root")
     
-    def reset(self):
-        for branch in self:
-            self._set_item(self.__root, *branch)
-    
-    def add_branch(self, key, *branches):
-        if '/' in key:
-            a, b = key.rsplit('/', 1)
-            if a not in self:
-                self[a] = []
-            self[a].append([b, *branches])
-        else:
-            self.append([key, *branches])
-        self.reset()
-    
-    def remove_branch(self, key):
-        del self[key]
-        self.reset()
+    def reset(self, clear=True):
+        """Build tree control.
+        All items will be rebuilt after clear if specified.
+        """
+        try:
+            self.Freeze()
+            if clear:
+                self.DeleteAllItems()
+            for branch in self:
+                self._set_item(self.__root, *branch)
+        finally:
+            self.Thaw()
     
     def _get_item(self, root, key):
         item, cookie = self.GetFirstChild(root)
