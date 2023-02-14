@@ -512,9 +512,7 @@ class FSM(dict):
             contexts = {}
         if default is None: # if no default given, reset the first state as the default
             if self.default_state is None:
-                keys = list(contexts)
-                if keys:
-                    default = keys[0]
+                default = next((k for k in contexts if k is not None), None)
         self.default_state = default
         self.clear(default) # the first clear creates object localvars
         self.update(contexts)
