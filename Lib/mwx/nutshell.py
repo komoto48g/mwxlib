@@ -1426,7 +1426,6 @@ class Buffer(EditWindow, EditorInterface):
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
-                 'caption_page' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1475,18 +1474,23 @@ class Buffer(EditWindow, EditorInterface):
             self.handler('stc_updated', evt)
         evt.Skip()
     
+    def _set_caption_prefix(self, prefix):
+        if self.mtdelta is not None:
+            caption = '{}{}'.format(prefix, self.name)
+            self.parent.handler('caption_page', self, caption)
+    
     def OnSavePointLeft(self, evt):
-        self.parent.set_caption(self, '* ')
+        self._set_caption_prefix('* ')
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self.parent.set_caption(self, '')
+        self._set_caption_prefix('')
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
         if self.mtdelta:
-            self.parent.set_caption(self, '! ')
+            self._set_caption_prefix('! ')
             self.message("File: {!r} has been modified externally. "
                          "Please load_buffer before editing."
                          .format(self.filename))
@@ -1701,7 +1705,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
                  'title_window' : [ None, dispatch ],
-                 'caption_page' : [ None, ],
+                 'caption_page' : [ None, self.set_caption ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -1739,11 +1743,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler('buffer_selected', self.CurrentPage)
         evt.Skip()
     
-    def set_caption(self, buf, prefix=''):
-        if buf not in self.all_buffers() or buf.mtdelta is None:
-            return
-        caption = "{}{}".format(prefix, buf.name)
-        self.handler('caption_page', buf, caption)
+    def set_caption(self, buf, caption):
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)

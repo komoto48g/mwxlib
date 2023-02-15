@@ -487,10 +487,14 @@ class FSM(dict):
     """
     debug = 0
     debugger = None
+    
     default_state = None
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
+    
     event = property(lambda self: self.__event)
+    current_event = property(lambda self: self.__event)
+    previous_event = property(lambda self: self.__prev_event)
     
     @current_state.setter
     def current_state(self, state):
@@ -589,7 +593,7 @@ class FSM(dict):
             retvals = []
             for act in transaction[1:]:
                 try:
-                    ret = act(*args, **kwargs) # try actions after transition
+                    ret = act(*args, **kwargs) # call actions after transition
                     retvals.append(ret)
                 except BdbQuit:
                     pass
@@ -633,12 +637,12 @@ class FSM(dict):
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
-                self.log("\t| {0!r} {a}".format(
+                self.log("  -- None {0!r} {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         
         if v > 7: # max verbose level puts all args
-            self.log("\t:", *args)
+            self.log("\t:", args)
             self.log("\t:", kwargs)
     
     @staticmethod
