@@ -1477,7 +1477,7 @@ class Buffer(EditWindow, EditorInterface):
     def _set_caption_prefix(self, prefix):
         if self.mtdelta is not None:
             caption = '{}{}'.format(prefix, self.name)
-            self.parent.handler('caption_page', self, caption)
+            self.parent.handler('buffer_caps', self, caption)
     
     def OnSavePointLeft(self, evt):
         self._set_caption_prefix('* ')
@@ -1696,6 +1696,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
+                  'buffer_caps' : [ None, self.set_caption ],
                  'buffer_saved' : [ None, self.set_caption ],
                 'buffer_loaded' : [ None, self.set_caption ],
                'buffer_removed' : [ None, ],
@@ -1705,7 +1706,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
                  'title_window' : [ None, dispatch ],
-                 'caption_page' : [ None, self.set_caption ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
