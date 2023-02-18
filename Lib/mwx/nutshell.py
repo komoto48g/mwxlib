@@ -1492,7 +1492,7 @@ class Buffer(EditWindow, EditorInterface):
         if self.mtdelta:
             self._set_caption_prefix('! ')
             self.message("File: {!r} has been modified externally. "
-                         "Please load_buffer before editing."
+                         ## "Please load the file before editing."
                          .format(self.filename))
         title = "{} file: {}".format(self.parent.Name, self.targetname)
         self.parent.handler('title_window', title)
@@ -1917,7 +1917,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.swap_buffer(buf)
             if focus:
                 buf.SetFocus()
-            return buf._load_file(filename, lineno)
+            return buf._load_file(buf.filename, lineno)
         except (FileNotFoundError, OSError) as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             pass
@@ -1955,7 +1955,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if buf.mtdelta == 0 and not buf.IsModified():
             self.post_message("No need to load.")
             return None
-        return self.load_file(f, buf.markline+1)
+        return self.load_file(buf, buf.markline+1)
     
     def save_buffer(self):
         """Confirm the save with the dialog."""
