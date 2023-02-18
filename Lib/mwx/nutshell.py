@@ -1696,8 +1696,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
-                 'buffer_saved' : [ None, ],
-                'buffer_loaded' : [ None, ],
+                 'buffer_saved' : [ None, self.set_caption ],
+                'buffer_loaded' : [ None, self.set_caption ],
                'buffer_removed' : [ None, ],
               'buffer_selected' : [ None, ],
              'buffer_activated' : [ None, ],
@@ -1743,7 +1743,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler('buffer_selected', self.CurrentPage)
         evt.Skip()
     
-    def set_caption(self, buf, caption):
+    def set_caption(self, buf, caption=None):
+        caption = caption or buf.name
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
@@ -1979,10 +1980,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             if dlg.ShowModal() != wx.ID_OK:
                 return None
             f = dlg.Path
-        if buf._save_file(f):
-            self.set_caption(buf)
-            return True
-        return False
+        return self.save_file(f)
     
     def save_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers()):
