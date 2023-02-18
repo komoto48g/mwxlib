@@ -107,20 +107,6 @@ def predicate(text, locals):
     return eval(' '.join(tokens) or 'None', None, locals)
 
 
-def wdir(obj):
-    """As the standard dir, but also listup fields of COM object
-    
-    Create COM object with [win32com.client.gencache.EnsureDispatch]
-    for early-binding to get what methods and params are available.
-    """
-    keys = dir(obj)
-    try:
-        if hasattr(obj, '_dispobj_'):
-            keys += dir(obj._dispobj_)
-    finally:
-        return keys
-
-
 def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
     """Prints a list of objects having expression rexpr in obj.
     """
@@ -153,7 +139,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
         except re.error as e:
             print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
         else:
-            keys = sorted(filter(p.search, wdir(obj)), key=lambda s:s.upper())
+            keys = sorted(filter(p.search, dir(obj)), key=lambda s:s.upper())
             n = 0
             for key in keys:
                 try:
@@ -487,10 +473,14 @@ class FSM(dict):
     """
     debug = 0
     debugger = None
+    
     default_state = None
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
+    
     event = property(lambda self: self.__event)
+    current_event = property(lambda self: self.__event)
+    previous_event = property(lambda self: self.__prev_event)
     
     @current_state.setter
     def current_state(self, state):
@@ -512,9 +502,7 @@ class FSM(dict):
             contexts = {}
         if default is None: # if no default given, reset the first state as the default
             if self.default_state is None:
-                keys = list(contexts)
-                if keys:
-                    default = keys[0]
+                default = next((k for k in contexts if k is not None), None)
         self.default_state = default
         self.clear(default) # the first clear creates object localvars
         self.update(contexts)
@@ -591,7 +579,7 @@ class FSM(dict):
             retvals = []
             for act in transaction[1:]:
                 try:
-                    ret = act(*args, **kwargs) # try actions after transition
+                    ret = act(*args, **kwargs) # call actions after transition
                     retvals.append(ret)
                 except BdbQuit:
                     pass
@@ -635,12 +623,12 @@ class FSM(dict):
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
-                self.log("\t| {0!r} {a}".format(
+                self.log("  -- None {0!r} {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         
         if v > 7: # max verbose level puts all args
-            self.log("\t:", *args)
+            self.log("\t:", args)
             self.log("\t:", kwargs)
     
     @staticmethod
@@ -653,7 +641,7 @@ class FSM(dict):
         f = get_rootpath("deb-dump.log")
         with open(f, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
-            print(*args, sep='\n', end='\n\n', file=o)
+            print(*args, sep='\n', end='\n', file=o)
             print(traceback.format_exc(), file=o)
     
     @staticmethod

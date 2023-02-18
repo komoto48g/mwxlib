@@ -29,7 +29,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import split_words, find_modules, wdir
+from .utilus import split_words, find_modules
 from .framework import Menu, CtrlInterface
 
 
@@ -1426,7 +1426,6 @@ class Buffer(EditWindow, EditorInterface):
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
            'py_region_executed' : [ None, self.on_activated ],
-                 'caption_page' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1475,20 +1474,25 @@ class Buffer(EditWindow, EditorInterface):
             self.handler('stc_updated', evt)
         evt.Skip()
     
+    def _set_caption_prefix(self, prefix):
+        if self.mtdelta is not None:
+            caption = '{}{}'.format(prefix, self.name)
+            self.parent.handler('buffer_caps', self, caption)
+    
     def OnSavePointLeft(self, evt):
-        self.parent.set_caption(self, '* ')
+        self._set_caption_prefix('* ')
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self.parent.set_caption(self, '')
+        self._set_caption_prefix('')
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
         if self.mtdelta:
-            self.parent.set_caption(self, '! ')
+            self._set_caption_prefix('! ')
             self.message("File: {!r} has been modified externally. "
-                         "Please load_buffer before editing."
+                         ## "Please load the file before editing."
                          .format(self.filename))
         title = "{} file: {}".format(self.parent.Name, self.targetname)
         self.parent.handler('title_window', title)
@@ -1692,8 +1696,9 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<Editor>
             None : {
                    'buffer_new' : [ None, ],
-                 'buffer_saved' : [ None, ],
-                'buffer_loaded' : [ None, ],
+                  'buffer_caps' : [ None, self.set_caption ],
+                 'buffer_saved' : [ None, self.set_caption ],
+                'buffer_loaded' : [ None, self.set_caption ],
                'buffer_removed' : [ None, ],
               'buffer_selected' : [ None, ],
              'buffer_activated' : [ None, ],
@@ -1701,7 +1706,6 @@ class Editor(aui.AuiNotebook, CtrlInterface):
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
                  'title_window' : [ None, dispatch ],
-                 'caption_page' : [ None, ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
@@ -1739,11 +1743,8 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.handler('buffer_selected', self.CurrentPage)
         evt.Skip()
     
-    def set_caption(self, buf, prefix=''):
-        if buf not in self.all_buffers() or buf.mtdelta is None:
-            return
-        caption = "{}{}".format(prefix, buf.name)
-        self.handler('caption_page', buf, caption)
+    def set_caption(self, buf, caption=None):
+        caption = caption or buf.name
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
@@ -1916,7 +1917,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             self.swap_buffer(buf)
             if focus:
                 buf.SetFocus()
-            return buf._load_file(filename, lineno)
+            return buf._load_file(buf.filename, lineno)
         except (FileNotFoundError, OSError) as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             pass
@@ -1954,7 +1955,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         if buf.mtdelta == 0 and not buf.IsModified():
             self.post_message("No need to load.")
             return None
-        return self.load_file(f, buf.markline+1)
+        return self.load_file(buf, buf.markline+1)
     
     def save_buffer(self):
         """Confirm the save with the dialog."""
@@ -1979,10 +1980,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
             if dlg.ShowModal() != wx.ID_OK:
                 return None
             f = dlg.Path
-        if buf._save_file(f):
-            self.set_caption(buf)
-            return True
-        return False
+        return self.save_file(f)
     
     def save_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers()):
@@ -3431,7 +3429,7 @@ class Nautilus(Shell, EditorInterface):
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in wdir(obj) if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -3462,7 +3460,7 @@ class Nautilus(Shell, EditorInterface):
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in wdir(obj) if p.search(x)], key=lambda s:s.upper())
+            words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))

@@ -74,7 +74,6 @@ class FillingTree(wx.TreeCtrl):
 
     def OnItemExpanding(self, event):
         """Add children to the item."""
-        busy = wx.BusyCursor()
         item = event.GetItem()
         if self.IsExpanded(item):
             return
@@ -83,7 +82,6 @@ class FillingTree(wx.TreeCtrl):
 
     def OnItemCollapsed(self, event):
         """Remove all children from the item."""
-        busy = wx.BusyCursor()
         item = event.GetItem()
 #        self.CollapseAndReset(item)
 #        self.DeleteChildren(item)
@@ -91,7 +89,6 @@ class FillingTree(wx.TreeCtrl):
 
     def OnSelChanged(self, event):
         """Display information about the item."""
-        busy = wx.BusyCursor()
         self.item = event.GetItem()
         self.display(rooting=False)
 
@@ -125,36 +122,26 @@ class FillingTree(wx.TreeCtrl):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
                 for key in introspect.getAttributeNames(obj):
-                    if wx.Platform == '__WXMSW__':
-                        if key == 'DropTarget': # Windows bug fix.
-                            continue
+                    if not self.filter(obj, key):
+                        continue
                     # Believe it or not, some attributes can disappear,
                     # such as the exc_traceback attribute of the sys
                     # module. So this is nested in a try block.
                     try:
-                        v = getattr(obj, key)
-                        if self.filter(v):
-                            d[key] = v
+                        d[key] = getattr(obj, key)
                     except Exception:
                         pass
         return d
 
-    @staticmethod
-    def filter(obj):
-        """Filter function that determines whether the item is displayed.
-        
-        You can overwrite this like:
-        >>> FillingTree.filter = staticmethod(inspect.ismethod)
-        """
+    def filter(self, obj, key):
+        """Filter function that determines whether the item is displayed."""
+        if wx.Platform == '__WXMSW__':
+            if key == 'DropTarget': # Windows bug fix.
+                return False
         return True
 
-    @staticmethod
-    def format(obj):
-        """Format function that determines how the item is displayed.
-        
-        You can overwrite this like:
-        >>> FillingTree.format = staticmethod(pprint.pformat)
-        """
+    def format(self, obj):
+        """Format function that determines how the item is displayed."""
         if isinstance(obj, six.string_types):
             value = repr(obj)
         else:
@@ -227,22 +214,6 @@ class FillingTree(wx.TreeCtrl):
         item = self.item
         if not item:
             return
-        ## if rooting:
-        ##     parent = self.GetItemParent(item) # Check a parent one above.
-        ##     while parent:
-        ##         obj = self.GetItemData(parent)
-        ##         key = self.GetItemText(item)
-        ##         try:
-        ##             data = getattr(obj, key) # easier way to access here.
-        ##             if self.GetItemData(item) != data:
-        ##                 self.SetItemData(item, data)
-        ##                 break
-        ##         except AttributeError:
-        ##             break
-        ##         item = parent
-        ##         parent = self.GetItemParent(item)
-        ##     if parent:
-        ##         self.updateChildren(parent) # Update parent items.
         parent = self.GetItemParent(item) # Check a parent one above.
         if parent:
             def _roots(item):
