@@ -29,7 +29,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import split_words, find_modules, wdir
+from .utilus import split_words, find_modules
 from .framework import Menu, CtrlInterface
 
 
@@ -3431,7 +3431,7 @@ class Nautilus(Shell, EditorInterface):
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in wdir(obj) if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -3462,7 +3462,7 @@ class Nautilus(Shell, EditorInterface):
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in wdir(obj) if p.search(x)], key=lambda s:s.upper())
+            words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
