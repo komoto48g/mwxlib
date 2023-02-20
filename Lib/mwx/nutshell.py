@@ -30,7 +30,7 @@ from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
 from .utilus import split_words, find_modules
-from .framework import Menu, CtrlInterface
+from .framework import CtrlInterface, Menu
 
 
 def skip(v):

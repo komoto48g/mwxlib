@@ -650,9 +650,6 @@ class FSM(dict):
         
         This method is used for the contexts given to :append and :update
         so that the original transaction (if they are lists) is not removed.
-        
-        このメソッドはオリジナルのコンテキストテンプレートに含まれる
-        トランザクションリストを消さないようにするために使用される
         """
         return {event:transaction[:] for event, transaction in context.items()}
     
@@ -797,6 +794,8 @@ class FSM(dict):
 
 
 class TreeList(object):
+    """Tree list control wrapper
+    """
     def __init__(self, ls=None):
         self.__items = ls or []
     

@@ -1198,20 +1198,19 @@ class ShellFrame(MiniFrame):
             show = not pane.IsShown() # toggle show
         if show:
             ## Modify aui pane floating position when it is shown,
-            ## to address a known BUG with wxWidgets 3.17 -- 3.20.
+            ## Note: This is a known bug in wxWidgets 3.17--3.20,
+            ##       and will be fixed in wxPython 4.2.1.
             w, h = wx.DisplaySize()
             x, y = pane.floating_pos
             if x > 2*w or y > h:
                 pane.floating_pos = wx.GetMousePosition()
-        try:
-            self.Freeze()
-            nb.Show(show)
-            pane.Show(show)
-            self._mgr.Update()
-            if wnd and win.IsShown():
-                wnd.SetFocus()
-        finally:
-            self.Thaw()
+        
+        nb.Show(show)
+        pane.Show(show)
+        self._mgr.Update()
+        
+        if wnd and win.IsShown(): # restore focus
+            wnd.SetFocus()
     
     ## --------------------------------
     ## Actions for handler
@@ -1278,7 +1277,8 @@ class ShellFrame(MiniFrame):
                 return False
             return True
         finally:
-            wx.CallAfter(wnd.SetFocus) # restore focus with delay
+            if not focus:
+                wx.CallAfter(wnd.SetFocus) # restore focus with delay
     
     def info(self, obj):
         self.rootshell.info(obj)
