@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.7"
+__version__ = "0.78.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1256,7 +1256,6 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        filename = re.sub(r"<(.*?)>", r"\1", filename) # codename -> filename
         
         for editor in self.ghost.all_pages(type(self.Log)): #<Editor>
             buf = editor.find_buffer(filename)
@@ -1265,6 +1264,7 @@ class ShellFrame(MiniFrame):
         else:
             editor = self.Log
             buf = None
+        
         wnd = wx.Window.FindFocus() # original focus
         try:
             if show:
@@ -1383,7 +1383,7 @@ class ShellFrame(MiniFrame):
         if not self.debugger.busy:
             self.debugger.unwatch()
             self.debugger.editor = editor
-            self.debugger.watch((editor.buffer.targetname, line+1))
+            self.debugger.watch((editor.buffer.filename, line+1))
         editor.buffer.del_marker(4)
     
     def stop_trace(self, line, editor):

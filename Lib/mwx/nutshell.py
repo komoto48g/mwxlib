@@ -1367,11 +1367,6 @@ class Buffer(EditWindow, EditorInterface):
         return os.path.basename(self.__filename or '')
     
     @property
-    def targetname(self):
-        """Returns codename or filename (referenced by the debugger)."""
-        return self.codename or self.filename
-    
-    @property
     def filename(self):
         return self.__filename
     
@@ -1494,7 +1489,7 @@ class Buffer(EditWindow, EditorInterface):
             self.message("File: {!r} has been modified externally. "
                          ## "Please load the file before editing."
                          .format(self.filename))
-        title = "{} file: {}".format(self.parent.Name, self.targetname)
+        title = "{} file: {}".format(self.parent.Name, self.filename)
         self.parent.handler('title_window', title)
         self.trace_position()
     
