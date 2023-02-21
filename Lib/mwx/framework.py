@@ -1513,8 +1513,8 @@ class ShellFrame(MiniFrame):
             self.findDlg.SetFocus()
             return
         
-        win = self.current_editor
-        if not win:
+        win = wx.Window.FindFocus()
+        if not isinstance(win, stc.StyledTextCtrl):
             return
         self.__find_target = win
         self.findData.FindString = win.topic_at_caret
@@ -1528,9 +1528,11 @@ class ShellFrame(MiniFrame):
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = self.current_editor or self.__find_target
-        if not win:
-            return
+        win = wx.Window.FindFocus()
+        if not isinstance(win, stc.StyledTextCtrl):
+            win = self.__find_target
+            if not win:
+                return
         win.DoFindNext(data, self.findDlg or win)
         if self.findDlg:
             self.OnFindClose(None)
