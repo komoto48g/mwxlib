@@ -1484,7 +1484,7 @@ class ShellFrame(MiniFrame):
             self.console.DeletePage(j) # Destroy the window
     
     ## --------------------------------
-    ## Attributes for Nautilus/Editor
+    ## Attributes for Nautilus / Editor
     ## --------------------------------
     
     def all_pages(self, type=None):
@@ -1496,16 +1496,13 @@ class ShellFrame(MiniFrame):
     def current_editor(self):
         """Currently focused editor or shell."""
         win = wx.Window.FindFocus()
-        if isinstance(win, stc.StyledTextCtrl): #<Editor>
+        if isinstance(win, stc.StyledTextCtrl):
             return win
     
     @property
     def current_shell(self):
         """Currently selected shell or rootshell."""
-        page = self.console.CurrentPage
-        if isinstance(page, type(self.rootshell)): #<Nautilus>
-            return page
-        return self.rootshell
+        return self.console.CurrentPage
     
     ## --------------------------------
     ## Find text dialog
