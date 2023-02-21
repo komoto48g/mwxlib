@@ -22,11 +22,11 @@ from .utilus import FSM, where
 def echo(f):
     @wraps(f)
     def _f(*args, **kwargs):
-        if echo.debug > 0:
+        if echo.verbose > 0:
             print("<{!r}>".format(f.__name__))
         return f(*args, **kwargs)
     return _f
-echo.debug = 0
+echo.verbose = 0
 
 
 class Debugger(Pdb):

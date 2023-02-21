@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.78.8"
+__version__ = "0.78.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -757,12 +757,12 @@ class ShellFrame(MiniFrame):
     
     Attributes:
         console     : Notebook of shells
-        ghost       : Notebook of editors and inspectors
+        ghost       : Notebook of editors/buffers
         watcher     : Notebook of global/locals watcher
-        Scratch     : Editor of scratch (tooltip)
-        Help        : Editor of help
-        Log         : Editor of logging
-        History     : Editor of shell history
+        Scratch     : Book of scratch (tooltip)
+        Help        : Book of help
+        Log         : Book of logging
+        History     : Book of shell history
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
     
@@ -1074,11 +1074,11 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
         ## Confirm close
-        for editor in self.ghost.all_pages():
-            for buf in editor.all_buffers():
-                if editor.need_buffer_save_p(buf):
-                    self.popup_window(editor)
-                    editor.swap_buffer(buf)
+        for page in self.ghost.all_pages(type(self.Log)):
+            for buf in page.all_buffers():
+                if page.need_buffer_save_p(buf):
+                    self.popup_window(page)
+                    page.swap_buffer(buf)
                     if wx.MessageBox(
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
@@ -1239,8 +1239,8 @@ class ShellFrame(MiniFrame):
         
         Args:
             obj     : target object.
-            show    : Popup editor window when success.
-                      The pane window will not be hidden even if no show.
+            show    : Popup window when success.
+                      The window will not be hidden even if no show.
             focus   : Set the focus if the window is displayed.
         """
         if not isinstance(obj, str):
@@ -1256,24 +1256,24 @@ class ShellFrame(MiniFrame):
             filename = obj
             lineno = 0
         
-        for editor in self.ghost.all_pages(type(self.Log)): #<Editor>
-            buf = editor.find_buffer(filename)
+        for page in self.ghost.all_pages(type(self.Log)):
+            buf = page.find_buffer(filename)
             if buf:
                 break
         else:
-            editor = self.Log
+            page = self.Log
             buf = None
         
         wnd = wx.Window.FindFocus() # original focus
         try:
             if show:
-                self.popup_window(editor, show, focus)
-            if buf and editor.need_buffer_save_p(buf): # exists and need save?
-                editor.swap_buffer(buf)
-                if not editor.load_buffer(): # confirm
+                self.popup_window(page, show, focus)
+            if buf and page.need_buffer_save_p(buf): # exists and need save?
+                page.swap_buffer(buf)
+                if not page.load_buffer(): # confirm
                     return None
-            if not editor.load_file(filename, lineno, show):
-                editor.remove_buffer()
+            if not page.load_file(filename, lineno, show):
+                page.remove_buffer()
                 return False
             return True
         finally:
