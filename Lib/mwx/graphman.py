@@ -980,7 +980,7 @@ class Frame(mwx.Frame):
     def plugs(self):
         return dict((k, v.__plug__) for k, v in self.plugins.items())
     
-    __new_ID_ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
+    __plug_ID__ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
     
     def require(self, name):
         """Get named plug window.
@@ -1222,8 +1222,8 @@ class Frame(mwx.Frame):
         
         ## Create a menu
         if not hasattr(module, 'ID_'): # give a unique index to the module
-            module.ID_ = Frame.__new_ID_
-            Frame.__new_ID_ += 1
+            module.ID_ = Frame.__plug_ID__
+            Frame.__plug_ID__ += 1
         
         if plug.menukey:
             menu, sep, tail = plug.menukey.rpartition('/')
