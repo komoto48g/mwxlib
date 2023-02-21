@@ -247,8 +247,8 @@ class LayerInterface(CtrlInterface):
         self.__artists = []
     
     def attach_artists(self, axes, *artists):
-        """Attach unbound artists (e.g., patches) to the given axes.
-        If axes is None, the arts will be removed from their axes.
+        """Attach artists (e.g., patches) to the given axes.
+        If axes is None, they will be removed from the axes.
         """
         if not artists:
             artists = self.Arts[:]
@@ -466,11 +466,6 @@ class Graph(GraphPlot):
         """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
             self.infobar.ShowMessage(str(frame.annotation))
-    
-    def get_frame(self, j):
-        if isinstance(j, str):
-            return next((art for art in self.all_frames if art.name == j), None)
-        return self.all_frames[j]
     
     def get_frame_visible(self):
         if self.frame:
@@ -976,12 +971,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
     
-    @property
-    def plugs(self):
-        return dict((k, v.__plug__) for k, v in self.plugins.items())
-    
-    __plug_ID__ = 10001 # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
-    
     def require(self, name):
         """Get named plug window.
         If not found, try to load it once.
@@ -1222,8 +1211,13 @@ class Frame(mwx.Frame):
         
         ## Create a menu
         if not hasattr(module, 'ID_'): # give a unique index to the module
-            module.ID_ = Frame.__plug_ID__
-            Frame.__plug_ID__ += 1
+            global __plug_ID__
+            try:
+                __plug_ID__ # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
+            except:
+                __plug_ID__ = 10001
+            module.ID_ = __plug_ID__
+            __plug_ID__ += 1
         
         if plug.menukey:
             menu, sep, tail = plug.menukey.rpartition('/')
