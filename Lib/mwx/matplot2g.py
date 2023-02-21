@@ -261,7 +261,7 @@ class AxesImagePhantom(object):
     
     @property
     def aspect_ratio(self):
-        """aspect ratio of logical unit"""
+        """Aspect ratio of logical unit."""
         return self.__aspect_ratio
     
     @aspect_ratio.setter
@@ -274,7 +274,7 @@ class AxesImagePhantom(object):
     
     @property
     def index(self):
-        """self page number in the parent book"""
+        """Page number in the parent book."""
         return self.parent.index(self)
     
     def update_buffer(self, buf=None):
@@ -301,7 +301,7 @@ class AxesImagePhantom(object):
     
     @property
     def roi(self):
-        """Current buffer ROI (region of interest)"""
+        """Current buffer ROI (region of interest)."""
         if self.parent.Region.size:
             nx, ny = self.xytopixel(self.parent.Region)
             sx = slice(max(0,nx[0]), nx[1]) # nx slice
@@ -819,12 +819,12 @@ class GraphPlot(MatplotPanel):
     
     @property
     def all_frames(self):
-        """List of arts <matplotlib.image.AxesImage>"""
+        """List of arts <matplotlib.image.AxesImage>."""
         return self.__Arts
     
     @property
     def frame(self):
-        """Current art <matplotlib.image.AxesImage>"""
+        """Current art <matplotlib.image.AxesImage>."""
         if self.__Arts and self.__index is not None:
             return self.__Arts[self.__index]
     

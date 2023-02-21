@@ -162,7 +162,7 @@ class Param(object):
     
     @property
     def value(self):
-        """Current value := std_value + offset"""
+        """Current value := std_value + offset."""
         return self.__value
     
     @value.setter
@@ -201,7 +201,7 @@ class Param(object):
     
     @property
     def range(self):
-        """Index range"""
+        """Index range."""
         return self.__range
     
     @range.setter
@@ -215,7 +215,7 @@ class Param(object):
     
     @property
     def index(self):
-        """A knob index -> value"""
+        """A knob index -> value."""
         return int(np.searchsorted(self.range, self.value))
     
     @index.setter
@@ -257,7 +257,7 @@ class LParam(Param):
     
     @property
     def range(self):
-        """Index range"""
+        """Index range."""
         return np.arange(self.min, self.max + self.step, self.step)
     
     @range.setter
@@ -899,7 +899,7 @@ class Button(pb.PlateButton):
     """
     @property
     def icon(self):
-        """key:str or bitmap"""
+        """Icon key:str or bitmap."""
         return self.__icon
     
     @icon.setter
@@ -945,7 +945,7 @@ class ToggleButton(wx.ToggleButton):
     """
     @property
     def icon(self):
-        """key:str or bitmap"""
+        """Icon key:str or bitmap."""
         return self.__icon
     
     @icon.setter
@@ -992,7 +992,7 @@ class TextCtrl(wx.Control):
     
     @property
     def icon(self):
-        """key:str or bitmap"""
+        """Icon key:str or bitmap."""
         return self._btn.icon
     
     @icon.setter
@@ -1063,7 +1063,7 @@ class Choice(wx.Control):
     
     @property
     def icon(self):
-        """key:str or bitmap"""
+        """Icon key:str or bitmap."""
         return self._btn.icon
     
     @icon.setter

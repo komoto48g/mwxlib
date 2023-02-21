@@ -190,7 +190,7 @@ class Debugger(Pdb):
             self.editor.buffer.MarkerDeleteAll(style)
     
     def send_input(self, c, echo=False):
-        """Send input:str"""
+        """Send input:str (echo message if needed)."""
         def _send():
             self.stdin.input = c
         wx.CallAfter(_send)
@@ -198,7 +198,7 @@ class Debugger(Pdb):
             self.message(c, indent=0)
     
     def message(self, msg, indent=True):
-        """(override) Add prefix and insert msg at the end of command-line."""
+        """Add prefix and insert msg at the end of command-line."""
         shell = self.interactive_shell
         shell.goto_char(shell.eolc)
         prefix = self.indents if indent else ''
@@ -365,7 +365,7 @@ class Debugger(Pdb):
     ## --------------------------------
     
     def break_anywhere(self, frame):
-        """(override) Return False,
+        """Return False (override)
         even if there is any breakpoint for frame's filename.
         """
         return False
@@ -476,7 +476,8 @@ class Debugger(Pdb):
     
     @echo
     def user_line(self, frame):
-        """--Next--"""
+        """--Next--
+        """
         Pdb.user_line(self, frame)
     
     @echo

@@ -341,18 +341,18 @@ class MatplotPanel(wx.Panel):
     
     @property
     def ddpu(self):
-        """x, y display-dot resolution [dots per arb.unit]"""
+        """Display-dot resolution (x, y) [dots per arb.unit]."""
         ## return self.mapxy2disp(1,1) - self.mapxy2disp(0,0)
         a, b = self.mapxy2disp([0,1],[0,1])
         return b - a
     
     def mapxy2disp(self, x, y):
-        """xydata --> display dot pixel-coordinates"""
+        """Map xydata --> display dot pixel-coordinates."""
         v = np.array((x, y)).T
         return self.axes.transData.transform(v)
     
     def mapdisp2xy(self, px, py):
-        """display dot pixel-coordinates --> xydata"""
+        """Map display dot pixel-coordinates --> xydata."""
         v = np.array((px, py)).T
         return self.axes.transData.inverted().transform(v)
     
@@ -399,7 +399,7 @@ class MatplotPanel(wx.Panel):
     ## --------------------------------
     
     ## def save_to_file(self, path=None):
-    ##     """Save canvas image to file"""
+    ##     """Save canvas image to file."""
     ##     if not path:
     ##         with wx.FileDialog(self, 'Save Figure as',
     ##             style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -475,7 +475,7 @@ class MatplotPanel(wx.Panel):
     
     @property
     def p_event(self):
-        """the last `pressed` event <matplotlib.backend_bases.MouseEvent>"""
+        """Last `pressed` event <matplotlib.backend_bases.MouseEvent>."""
         return self.__isPressed
     
     @p_event.setter
@@ -715,7 +715,7 @@ class MatplotPanel(wx.Panel):
         del self.__prev
     
     ## def OnZoomMove(self, evt):
-    ##     """Zoom"""
+    ##     """Zoom."""
     ##     ## http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744
     ##     ## matplotlib.backends.backend_wx - NavigationToolbar2Wx.draw_rubberband
     ##     dc = wx.ClientDC(self.canvas)

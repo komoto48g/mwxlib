@@ -229,7 +229,7 @@ class LayerInterface(CtrlInterface):
     
     @property
     def Arts(self):
-        """List of arts <matplotlib.artist.Artist>"""
+        """List of arts <matplotlib.artist.Artist>."""
         return self.__artists
     
     @Arts.setter
