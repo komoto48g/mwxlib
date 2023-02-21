@@ -608,7 +608,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.menubar["File"] = [
             (ID_(1), "&Shell\tF12", "Shell for inspection", wx.ITEM_CHECK,
                 lambda v: (self.shellframe.Show(),
-                           self.shellframe.console.CurrentPage.SetFocus()),
+                           self.shellframe.current_shell.SetFocus()),
                 lambda v: v.Check(self.shellframe.IsShown())),
             (),
             (wx.ID_EXIT, "E&xit\tCtrl-w", "Exit the program",
@@ -971,15 +971,13 @@ class ShellFrame(MiniFrame):
         
         @self.Scratch.define_key('C-j')
         def eval_line(v):
-            self.Scratch.buffer.py_eval_line(
-                self.current_shell.globals,
-                self.current_shell.locals)
+            shell = self.current_shell
+            self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
         
         @self.Scratch.define_key('M-j')
         def exec_buffer(v):
-            self.Scratch.buffer.py_exec_region(
-                self.current_shell.globals,
-                self.current_shell.locals)
+            shell = self.current_shell
+            self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
         
         ## text-mode
         self.set_traceable(self.Log)
@@ -1228,7 +1226,6 @@ class ShellFrame(MiniFrame):
         del shell.globals
         self.indicator.Value = 1
         self.indicator.ToolTip = 'Normal'
-        self.on_title_window(self.current_shell.target) # reset title
         self.message.SetBackgroundColour(None)
         self.message.Refresh()
         self.message("Quit")
