@@ -247,8 +247,8 @@ class LayerInterface(CtrlInterface):
         self.__artists = []
     
     def attach_artists(self, axes, *artists):
-        """Attach unbound artists (e.g., patches) to the given axes.
-        If axes is None, the arts will be removed from their axes.
+        """Attach artists (e.g., patches) to the given axes.
+        If axes is None, they will be removed from the axes.
         """
         if not artists:
             artists = self.Arts[:]
@@ -466,11 +466,6 @@ class Graph(GraphPlot):
         """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
             self.infobar.ShowMessage(str(frame.annotation))
-    
-    def get_frame(self, j):
-        if isinstance(j, str):
-            return next((art for art in self.all_frames if art.name == j), None)
-        return self.all_frames[j]
     
     def get_frame_visible(self):
         if self.frame:
@@ -975,10 +970,6 @@ class Frame(mwx.Frame):
     ## Plugin (Layer) interface
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
-    
-    @property
-    def plugs(self):
-        return dict((k, v.__plug__) for k, v in self.plugins.items())
     
     def require(self, name):
         """Get named plug window.
