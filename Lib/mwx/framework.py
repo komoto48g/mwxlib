@@ -813,17 +813,17 @@ class ShellFrame(MiniFrame):
         builtins.debug = self.debug
         builtins.highlight = self.highlight
         
-        from .nutshell import Editor, Nautilus
+        from .nutshell import Nautilus, EditorBook
         
         self.__shell = Nautilus(self,
                                 target or __import__("__main__"),
                                 style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
                                 **kwargs)
         
-        self.Scratch = Editor(self, name="Scratch")
-        self.Log = Editor(self, name="Log")
-        self.Help = Editor(self, name="Help")
-        self.History = Editor(self, name="History")
+        self.Scratch = EditorBook(self, name="Scratch")
+        self.Log = EditorBook(self, name="Log")
+        self.Help = EditorBook(self, name="Help")
+        self.History = EditorBook(self, name="History")
         
         from .wxpdb import Debugger
         from .wxwit import Inspector
@@ -1481,7 +1481,7 @@ class ShellFrame(MiniFrame):
             self.console.DeletePage(j) # Destroy the window
     
     ## --------------------------------
-    ## Attributes for Nautilus / Editor
+    ## Attributes for notebook pages
     ## --------------------------------
     
     def all_pages(self, type=None):

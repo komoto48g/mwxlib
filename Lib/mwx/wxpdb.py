@@ -38,7 +38,7 @@ class Debugger(Pdb):
         stdout  : shell.interp.stdout
     
     Attributes:
-        editor  : Editor to show the stack frame
+        editor  : Notebook to show the stack frames
     
     Key bindings:
         C-g     : quit

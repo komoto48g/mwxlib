@@ -1641,7 +1641,7 @@ class Buffer(EditWindow, EditorInterface):
         return lc, le
 
 
-class Editor(aui.AuiNotebook, CtrlInterface):
+class EditorBook(aui.AuiNotebook, CtrlInterface):
     """Python code editor.
     
     Args:
@@ -1688,7 +1688,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.handler.update({ # DNA<Editor>
+        self.handler.update({ # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, ],
                   'buffer_caps' : [ None, self.set_caption ],
@@ -1750,7 +1750,7 @@ class Editor(aui.AuiNotebook, CtrlInterface):
     
     def set_attributes(self, buf=None, **kwargs):
         """Sets attributes and defaultBufferStyle
-        that apply to all buffers contained in the Editor.
+        that apply to all buffers contained in the EditorBook.
         
         Args:
             buf : a buffer to apply (if None, applies to all buffers).
