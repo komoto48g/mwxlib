@@ -66,7 +66,20 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         busy = wx.BusyCursor()
         self.target = locals
-        self.update()
+        try:
+            self.Freeze()
+            self.DeleteAllItems()
+            data = self.__items
+            for key, value in self.target.items():
+                vstr = repr(value)
+                i = len(data)
+                item = [key, vstr]
+                data.append(item)
+                self.InsertItem(i, key)
+                self.SetItem(i, 1, vstr)
+                self.blink(i)
+        finally:
+            self.Thaw()
     
     def unwatch(self):
         self.target = None
