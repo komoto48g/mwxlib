@@ -64,14 +64,9 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             ##               "- {!r} is not a dict object.".format(locals))
             self.unwatch()
             return
+        busy = wx.BusyCursor()
         self.target = locals
-        try:
-            busy = wx.BusyCursor()
-            self.Freeze()
-            self.update()
-        finally:
-            self.Thaw()
-            del busy
+        self.update()
     
     def unwatch(self):
         self.target = None

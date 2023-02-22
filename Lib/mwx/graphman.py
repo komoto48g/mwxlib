@@ -1694,20 +1694,16 @@ class Frame(mwx.Frame):
             for name in list(self.plugins): # OrderedDict mutated during iteration
                 self.unload_plug(name)
         
-        self.session_file = os.path.abspath(f)
         self.statusbar("Loading session from {!r}...".format(f))
-        try:
-            self.Freeze()
-            with open(f) as i:
-                ## evaluation of session in the shell
-                self.shellframe.rootshell.locals.update(
-                    nan = np.nan,
-                    inf = np.inf,
-                )
-                self.shellframe.rootshell.Execute(i.read())
-                self._mgr.Update()
-        finally:
-            self.Thaw()
+        self.session_file = os.path.abspath(f)
+        with open(f) as i:
+            ## Load the session in the shell.
+            self.shellframe.rootshell.locals.update(
+                nan = np.nan,
+                inf = np.inf,
+            )
+            self.shellframe.rootshell.Execute(i.read())
+            self._mgr.Update()
         
         self.menubar.reset()
         dirname = os.path.dirname(f)
