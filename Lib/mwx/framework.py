@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.0"
+__version__ = "0.79.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1488,13 +1488,6 @@ class ShellFrame(MiniFrame):
         """Yields all pages of the specified type in the notebooks."""
         yield from self.console.all_pages(type)
         yield from self.ghost.all_pages(type)
-    
-    @property
-    def current_editor(self):
-        """Currently focused editor or shell."""
-        win = wx.Window.FindFocus()
-        if isinstance(win, stc.StyledTextCtrl):
-            return win
     
     @property
     def current_shell(self):
