@@ -1367,29 +1367,29 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.indicator.ToolTip = 'Normal'
     
-    def set_traceable(self, editor, traceable=True):
+    def set_traceable(self, book, traceable=True):
         """Bind pointer to set/unset trace."""
         if traceable:
-            editor.handler.bind('pointer_set', _F(self.start_trace, editor=editor))
-            editor.handler.bind('pointer_unset', _F(self.stop_trace, editor=editor))
+            book.handler.bind('pointer_set', _F(self.start_trace, book=book))
+            book.handler.bind('pointer_unset', _F(self.stop_trace, book=book))
         else:
-            editor.handler.unbind('pointer_set')
-            editor.handler.unbind('pointer_unset')
+            book.handler.unbind('pointer_set')
+            book.handler.unbind('pointer_unset')
     
-    def start_trace(self, line, editor):
+    def start_trace(self, line, book):
         if not self.debugger.busy:
             self.debugger.unwatch()
-            self.debugger.editor = editor
-            self.debugger.watch((editor.buffer.filename, line+1))
-        editor.buffer.del_marker(4)
+            self.debugger.editor = book
+            self.debugger.watch((book.buffer.filename, line+1))
+        book.buffer.del_marker(4)
     
-    def stop_trace(self, line, editor):
+    def stop_trace(self, line, book):
         if self.debugger.busy:
             return
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-        editor.buffer.set_marker(line, 4)
+        book.buffer.set_marker(line, 4)
     
     def on_trace_begin(self, frame):
         """Called when set-trace."""

@@ -1654,10 +1654,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     def message(self, *args, **kwargs):
         return self.parent.message(*args, **kwargs)
     
-    def __init__(self, parent, name="editor", **kwargs):
-        kwargs.setdefault('style',
-            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
-            )
+    def __init__(self, parent, name="book", **kwargs):
         aui.AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
         
