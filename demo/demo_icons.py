@@ -3,10 +3,6 @@
 import sys
 sys.path.append("../Lib")
 import wx
-## if 1:
-##     from importlib import reload
-##     import mwx.controls
-##     reload(mwx.controls)
 from mwx.controls import Button, Icon
 from mwx.graphman import Layer, Frame
 

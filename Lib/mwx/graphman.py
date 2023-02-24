@@ -4,6 +4,8 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
+from importlib import reload, import_module
+from pprint import pprint, pformat
 from functools import wraps
 from bdb import BdbQuit
 import subprocess
@@ -38,8 +40,6 @@ import numpy as np
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
-from pprint import pprint, pformat
-from importlib import reload, import_module
 
 
 class Thread(object):
@@ -1211,13 +1211,13 @@ class Frame(mwx.Frame):
         
         ## Create a menu
         if not hasattr(module, 'ID_'): # give a unique index to the module
-            global __plug_ID__
+            global __plug_ID__ # cache ID *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
             try:
-                __plug_ID__ # use ID_ *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
-            except:
-                __plug_ID__ = 10001
-            module.ID_ = __plug_ID__
+                __plug_ID__
+            except NameError:
+                __plug_ID__ = 10000
             __plug_ID__ += 1
+            module.ID_ = __plug_ID__
         
         if plug.menukey:
             menu, sep, tail = plug.menukey.rpartition('/')

@@ -599,7 +599,7 @@ class FSM(dict):
                     if self.debugger:
                         self.debugger(act, *args, **kwargs)
                         self.clear(self.default_state)
-                        return # quit
+                        break
             self.__matched_pattern = None
             return retvals
         elif isinstance(event, str): # matching test using fnmatch
