@@ -999,8 +999,8 @@ class ShellFrame(MiniFrame):
         
         self.Init()
     
-    SESSION_FILE = get_rootpath("debrc")
-    SCRATCH_FILE = get_rootpath("deb-scratch.py")
+    SESSION_FILE = get_rootpath(".debrc")
+    SCRATCH_FILE = get_rootpath("scratch.py")
     LOGGING_FILE = get_rootpath("deb-logging.log")
     HISTORY_FILE = get_rootpath("deb-history.log")
     
