@@ -67,14 +67,11 @@ def deb(target=None, loop=True, locals=None, **kwargs):
                       "mwx {}".format(__version__) + quote_unqoute)
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
-    if loop:
-        app = wx.GetApp() or wx.App()
-    frame = ShellFrame(None, target, **kwargs)
-    frame.Show()
-    shell = frame.rootshell
-    shell.SetFocus()
-    if locals:
-        shell.locals.update(locals)
-    if loop and not app.GetMainLoop():
-        app.MainLoop()
-    return frame
+    with app(loop):
+        frame = ShellFrame(None, target, **kwargs)
+        frame.Show()
+        shell = frame.rootshell
+        shell.SetFocus()
+        if locals:
+            shell.locals.update(locals)
+        return frame
