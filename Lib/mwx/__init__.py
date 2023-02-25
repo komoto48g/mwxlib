@@ -53,8 +53,9 @@ def deb(target=None, loop=True, locals=None, **kwargs):
         
             - introText         : introductory of the shell
             - startupScript     : startup script file (default None)
-            - execStartupScript : True => execute the startup script
-            - ensureClose       : True => EVT_CLOSE surely close the window
+            - execStartupScript : True => Execute the startup script.
+            - ensureClose       : True => EVT_CLOSE will close the window.
+                                  False => EVT_CLOSE will hide the window.
     
     Note:
         This will execute the startup script $(PYTHONSTARTUP).

@@ -752,8 +752,14 @@ class ShellFrame(MiniFrame):
     """MiniFrame of the Shell.
     
     Args:
-         target : target object of the rootshell.
+        target  : target object of the rootshell.
                   If None, it will be `__main__`.
+        debrc   : session file for deb run command.
+                  SESSION_FILE will be overwritten.
+        ensureClose : A flag for the shell standalone.
+                      If True, EVT_CLOSE will close the window.
+                      Otherwise it will be only hidden.
+        **kwargs    : Nautilus arguments
     
     Attributes:
         console     : Notebook of shells
@@ -765,6 +771,8 @@ class ShellFrame(MiniFrame):
         History     : Book of shell history
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
+        debugger    : wxpdb.Debugger object
+        ginfo/linfo : globals/locals list
     
     Built-in utility::
     
@@ -785,9 +793,9 @@ class ShellFrame(MiniFrame):
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
-    def __init__(self, parent, target=None, title=None, size=(1280,720),
-                 style=wx.DEFAULT_FRAME_STYLE,
-                 ensureClose=False, **kwargs):
+    def __init__(self, parent, target=None, debrc=None, ensureClose=False,
+                 title=None, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE,
+                 **kwargs):
         MiniFrame.__init__(self, parent, size=size, style=style)
         
         self.statusbar.resize((-1,120))
@@ -890,6 +898,9 @@ class ShellFrame(MiniFrame):
                              .Caption("Watchdog in the Shell").Float().Show(0))
         
         self._mgr.Update()
+        
+        if debrc:
+            self.SESSION_FILE = os.path.abspath(debrc)
         
         self.__standalone = bool(ensureClose)
         
