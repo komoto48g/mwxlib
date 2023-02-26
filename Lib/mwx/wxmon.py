@@ -59,6 +59,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.parent = parent
         self.target = None
+        
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.__prev = None
@@ -95,7 +96,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         evt.Skip()
     
     ## --------------------------------
-    ## EventWatcher wrapper interfaces 
+    ## EventWatcher wrapper interface
     ## --------------------------------
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
     
