@@ -59,6 +59,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.parent = parent
         self.target = None
+        
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.__prev = None
@@ -74,11 +75,9 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        self.add_module = ew.addModuleEvents
-        
         from wx import adv, aui, stc, media
         for module in (adv, aui, stc, media):
-            self.add_module(module)
+            ew.addModuleEvents(module)
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
@@ -97,23 +96,9 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         evt.Skip()
     
     ## --------------------------------
-    ## EventWatcher wrapper interfaces 
+    ## EventWatcher wrapper interface
     ## --------------------------------
-    
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
-    
-    ## Events that should not be watched by default
-    ew._noWatchList = [
-        wx.EVT_PAINT,
-        wx.EVT_NC_PAINT,
-        wx.EVT_ERASE_BACKGROUND,
-        wx.EVT_IDLE,
-        wx.EVT_UPDATE_UI,
-        wx.EVT_UPDATE_UI_RANGE,
-        wx.EVT_TOOL,
-        wx.EVT_TOOL_RANGE, # menu items (typeId=10018)
-        wx.EVT_MENU,
-    ]
     
     @staticmethod
     def get_name(event):

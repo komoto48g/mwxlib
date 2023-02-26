@@ -26,6 +26,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         
         self.parent = parent
         self.target = None
+        
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
         self.toolFrame = self
@@ -68,6 +69,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.parent.handler('title_window', self.__class__.__name__)
         evt.Skip()
     
+    ## --------------------------------
+    ## InspectionTree wrapper interface
+    ## --------------------------------
+    
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj."""
         if self.target is obj:
@@ -88,6 +93,14 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if hasattr(obj, 'Name'):
             return "{} ({!r} {})".format(clsname, obj.Name, obj.Id)
         return clsname
+    
+    def highlight(self, obj):
+        if isinstance(obj, wx.Window):
+            self.highlighter.HighlightWindow(obj)
+        elif isinstance(obj, wx.Sizer):
+            self.highlighter.HighlightSizer(obj)
+        elif isinstance(obj, wx.SizerItem):
+            self.highlighter.HighlightSizer(obj.Sizer)
     
     def set_colour(self, obj, col):
         self.SetObj(obj)
@@ -119,18 +132,9 @@ class Inspector(it.InspectionTree, CtrlInterface):
         shell = self.parent.current_shell
         if shell is not obj:
             shell.locals[ref] = obj
-            ## shell.write(ref)
             self.parent.message("self.{} -> {!r}".format(ref, obj))
         shell.SetFocus()
         return shell
-    
-    def highlight(self, obj):
-        if isinstance(obj, wx.Window):
-            self.highlighter.HighlightWindow(obj)
-        elif isinstance(obj, wx.Sizer):
-            self.highlighter.HighlightSizer(obj)
-        elif isinstance(obj, wx.SizerItem):
-            self.highlighter.HighlightSizer(obj.Sizer)
     
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
