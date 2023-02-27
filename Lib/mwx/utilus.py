@@ -801,9 +801,23 @@ class FSM(dict):
 
 class TreeList(object):
     """Tree list control wrapper
+    
+    TreeList <item : (key, data)>
+    [
+        [key, [item,
+               item, ...]],
+        [key, [item,
+               [branch], => [key, [item,
+                                   item, ...]],
+               ...]],
+    ]
     """
-    def __init__(self, ls=None):
-        self.__items = ls or []
+    ## A dummy list to avoid RecursionError occurs when
+    ## __getattr__ may be called before __init__.
+    __items = None
+    
+    def __init__(self):
+        self.__items = []
     
     def __getattr__(self, attr):
         return getattr(self.__items, attr)

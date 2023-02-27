@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.2"
+__version__ = "0.79.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -163,7 +163,7 @@ def regulate_key(key):
                .replace("S-C-", "C-S-"))
 
 
-class KeyCtrlInterfaceMixin(object):
+class KeyCtrlInterfaceMixin:
     """Keymap interface mixin
     
     keymap::
