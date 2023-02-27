@@ -414,17 +414,12 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(ControlPanel, LayerInterface):
+class Layer(LayerInterface, ControlPanel):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
-        ## kwargs.setdefault('size', (130, 24)) # keep minimum size
         ControlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
-    
-    ## (override)
-    Show = LayerInterface.Show
-    IsShown = LayerInterface.IsShown
 
 
 class Graph(GraphPlot):
@@ -1011,14 +1006,10 @@ class Frame(mwx.Frame):
             module.Plugin = cls
             return cls
         
-        class _Plugin(cls, LayerInterface):
+        class _Plugin(LayerInterface, cls):
             def __init__(self, parent, session=None, **kwargs):
-                ## kwargs.setdefault('size', (130, 24)) # keep minimum size
                 cls.__init__(self, parent, **kwargs)
                 LayerInterface.__init__(self, parent, session)
-            ## (override)
-            Show = LayerInterface.Show
-            IsShown = LayerInterface.IsShown
         
         _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
