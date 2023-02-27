@@ -1234,11 +1234,15 @@ class TreeListCtrl(wx.TreeCtrl, TreeList):
         """Build tree control.
         All items will be rebuilt after clear if specified.
         """
-        if clear:
-            self.DeleteAllItems()
-            self.AddRoot(self.Name)
-        for branch in self:
-            self._set_item(self.RootItem, *branch)
+        try:
+            self.Freeze()
+            if clear:
+                self.DeleteAllItems()
+                self.AddRoot(self.Name)
+            for branch in self:
+                self._set_item(self.RootItem, *branch)
+        finally:
+            self.Thaw()
     
     def _get_item(self, root, key):
         """Returns the first item [root/key] found.
