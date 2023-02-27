@@ -23,7 +23,7 @@ try:
     from mwx import framework as mwx
     from mwx.utilus import funcall as _F
     from mwx.controls import ControlPanel, Icon
-    from mwx.framework import CtrlInterface, postcall
+    from mwx.framework import CtrlInterface
     from mwx.matplot2g import GraphPlot
     from mwx.matplot2lg import Histogram
 except ImportError:
@@ -168,17 +168,18 @@ class Thread(object):
         self.worker.start()
         self.event.set()
     
-    @postcall
     def Stop(self):
-        self.active = 0
-        if self.running:
-            try:
-                busy = wx.BusyInfo("One moment please, "
-                                   "waiting for threads to die...")
-                self.handler('thread_quit', self)
-                self.worker.join(1)
-            finally:
-                del busy
+        def _Stop():
+            self.active = 0
+            if self.running:
+                try:
+                    busy = wx.BusyInfo("One moment please, "
+                                       "waiting for threads to die...")
+                    self.handler('thread_quit', self)
+                    self.worker.join(1)
+                finally:
+                    del busy
+        wx.CallAfter(_Stop)
 
 
 def _isLayer(obj):
