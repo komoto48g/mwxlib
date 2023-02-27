@@ -23,14 +23,12 @@ try:
     from mwx import framework as mwx
     from mwx.utilus import funcall as _F
     from mwx.controls import ControlPanel, Icon
-    from mwx.framework import CtrlInterface, postcall
     from mwx.matplot2g import GraphPlot
     from mwx.matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
     from .utilus import funcall as _F
     from .controls import ControlPanel, Icon
-    from .framework import CtrlInterface
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
 from matplotlib import cm
@@ -168,17 +166,18 @@ class Thread(object):
         self.worker.start()
         self.event.set()
     
-    @postcall
     def Stop(self):
-        self.active = 0
-        if self.running:
-            try:
-                busy = wx.BusyInfo("One moment please, "
-                                   "waiting for threads to die...")
-                self.handler('thread_quit', self)
-                self.worker.join(1)
-            finally:
-                del busy
+        def _Stop():
+            self.active = 0
+            if self.running:
+                try:
+                    busy = wx.BusyInfo("One moment please, "
+                                       "waiting for threads to die...")
+                    self.handler('thread_quit', self)
+                    self.worker.join(1)
+                finally:
+                    del busy
+        wx.CallAfter(_Stop)
 
 
 def _isLayer(obj):
@@ -187,10 +186,10 @@ def _isLayer(obj):
     ## this.Layer <class '__main__.Layer'> is not <mwx.graphman.Layer>.
     ## So, we check it in two ways:
     return isinstance(obj, LayerInterface)\
-        or isinstance(obj, CtrlInterface) and hasattr(obj, 'category')
+        or isinstance(obj, ControlPanel) and hasattr(obj, 'category')
 
 
-class LayerInterface(CtrlInterface):
+class LayerInterface:
     """Graphman.Layer interface mixin
     
     The layer properties can be switched by the following classvars::
@@ -271,8 +270,6 @@ class LayerInterface(CtrlInterface):
         return self.parent.message(*args, **kwargs)
     
     def __init__(self, parent, session=None):
-        CtrlInterface.__init__(self)
-        
         self.parent = parent
         self.__artists = []
         self.parameters = None # => reset
@@ -413,17 +410,12 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(ControlPanel, LayerInterface):
+class Layer(LayerInterface, ControlPanel):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
-        ## kwargs.setdefault('size', (130, 24)) # keep minimum size
         ControlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
-    
-    ## (override)
-    Show = LayerInterface.Show
-    IsShown = LayerInterface.IsShown
 
 
 class Graph(GraphPlot):
@@ -1010,14 +1002,10 @@ class Frame(mwx.Frame):
             module.Plugin = cls
             return cls
         
-        class _Plugin(cls, LayerInterface):
+        class _Plugin(LayerInterface, cls):
             def __init__(self, parent, session=None, **kwargs):
-                ## kwargs.setdefault('size', (130, 24)) # keep minimum size
                 cls.__init__(self, parent, **kwargs)
                 LayerInterface.__init__(self, parent, session)
-            ## (override)
-            Show = LayerInterface.Show
-            IsShown = LayerInterface.IsShown
         
         _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
