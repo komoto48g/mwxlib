@@ -73,6 +73,14 @@ class Inspector(it.InspectionTree, CtrlInterface):
     ## InspectionTree wrapper interface
     ## --------------------------------
     
+    def BuildTree(self, *args, **kwargs):
+        """(override)"""
+        try:
+            self.Freeze()
+            it.InspectionTree.BuildTree(self, *args, **kwargs)
+        finally:
+            self.Thaw()
+    
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj."""
         if self.target is obj:
