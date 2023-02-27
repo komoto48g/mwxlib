@@ -564,11 +564,12 @@ class Knob(wx.Panel):
         self.text.Enable(p)
 
 
-class ControlPanel(scrolled.ScrolledPanel):
+class ControlPanel(scrolled.ScrolledPanel, CtrlInterface):
     """Scrollable Control Panel
     """
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
+        CtrlInterface.__init__(self)
         
         self.SetSizer(pack(self, [], orient=wx.VERTICAL))
         self.SetupScrolling()
