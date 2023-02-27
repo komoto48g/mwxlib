@@ -13,7 +13,7 @@ import wx.lib.scrolledpanel as scrolled
 
 from . import images
 from .utilus import SSM, TreeList
-from .framework import pack, Menu
+from .framework import pack, Menu, CtrlInterface
 
 
 class Param(object):
@@ -1221,11 +1221,12 @@ class Gauge(wx.Control):
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
 
 
-class TreeListCtrl(wx.TreeCtrl, TreeList):
+class TreeListCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
     """Construct treectrl in the order of tree:list.
     """
     def __init__(self, *args, **kwargs):
         wx.TreeCtrl.__init__(self, *args, **kwargs)
+        CtrlInterface.__init__(self)
         TreeList.__init__(self)
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
