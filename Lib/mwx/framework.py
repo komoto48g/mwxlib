@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.4"
+__version__ = "0.79.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -485,8 +485,9 @@ class Menu(wx.Menu):
 
 
 class MenuBar(wx.MenuBar, TreeList):
-    """Construct menubar in the order of ordered menu:list
+    """MenuBar control
     
+    Construct menubar in the order of menu:list
     -> root
         ├ [key, [item,
         │        item,...]],
@@ -895,7 +896,7 @@ class ShellFrame(MiniFrame):
         
         self._mgr.AddPane(self.watcher,
                           aui.AuiPaneInfo().Name("watcher")
-                             .Caption("Watchdog in the Shell").Float().Show(0))
+                             .Caption("Watchdog in the Shell").Right().Position(1).Show(0))
         
         self._mgr.Update()
         

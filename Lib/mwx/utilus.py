@@ -800,9 +800,7 @@ class FSM(dict):
 
 
 class TreeList(object):
-    """Tree list control wrapper
-    
-    TreeList <item : (key, data)>
+    """TreeList of <item : (key, data)>
     [
         [key, [item,
                item, ...]],

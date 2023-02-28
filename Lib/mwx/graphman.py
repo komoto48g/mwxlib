@@ -223,7 +223,7 @@ class LayerInterface:
     ## thread_type = Thread
     thread = None
     
-    ## funcall = CtrlInterface.interactive_call
+    ## funcall = interactive_call
     funcall = staticmethod(_F)
     
     @property

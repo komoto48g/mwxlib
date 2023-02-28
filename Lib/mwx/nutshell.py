@@ -1940,7 +1940,6 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     def load_buffer(self):
         """Confirm the load with the dialog."""
         buf = self.buffer
-        f = buf.filename
         if buf.mtdelta is None:
             self.post_message("No filename.")
             return None
