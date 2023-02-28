@@ -12,7 +12,7 @@ import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
 from . import images
-from .utilus import SSM, TreeList
+from .utilus import SSM
 from .framework import pack, Menu, CtrlInterface
 
 
@@ -1220,51 +1220,3 @@ class Gauge(wx.Control):
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(i*w//N, 0, w//N-1, h)
-
-
-class TreeListCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
-    """Construct treectrl in the order of tree:list.
-    """
-    def __init__(self, *args, **kwargs):
-        wx.TreeCtrl.__init__(self, *args, **kwargs)
-        CtrlInterface.__init__(self)
-        TreeList.__init__(self)
-        
-        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-    
-    def reset(self, clear=True):
-        """Build tree control.
-        All items will be rebuilt after clear if specified.
-        """
-        try:
-            self.Freeze()
-            if clear:
-                self.DeleteAllItems()
-                self.AddRoot(self.Name)
-            for branch in self:
-                self._set_item(self.RootItem, *branch)
-        finally:
-            self.Thaw()
-    
-    def _get_item(self, root, key):
-        """Returns the first item [root/key] found.
-        Note: Items with the same name are not supported.
-        """
-        item, cookie = self.GetFirstChild(root)
-        while item:
-            if key == self.GetItemText(item):
-                return item
-            item, cookie = self.GetNextChild(root, cookie)
-    
-    def _set_item(self, root, key, *values):
-        """Set the item [root/key] with values recursively.
-        """
-        item = self._get_item(root, key) or self.AppendItem(root, key)
-        branches = next((x for x in values if isinstance(x, (tuple, list))), [])
-        rest = [x for x in values if x not in branches]
-        if rest:
-            ## Take the first element assuming it's client data.
-            ## Set the item client data. (override as needed)
-            self.SetItemData(item, *rest)
-        for branch in branches:
-            self._set_item(item, *branch)
