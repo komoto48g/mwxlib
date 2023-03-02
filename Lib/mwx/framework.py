@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.5"
+__version__ = "0.79.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -850,8 +850,8 @@ class ShellFrame(MiniFrame):
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
                                  )
-        self.inspector = Inspector(self)
-        self.monitor = EventMonitor(self)
+        self.inspector = Inspector(self, name = "Inspector")
+        self.monitor = EventMonitor(self, name = "Monitor")
         self.ginfo = LocalsWatcher(self, name="globals")
         self.linfo = LocalsWatcher(self, name="locals")
         
