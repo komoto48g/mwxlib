@@ -741,12 +741,34 @@ class AuiNotebook(aui.AuiNotebook):
             )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
     
-    def all_pages(self, type=None):
-        """Yields all pages of the specified type in the notebooks."""
-        for j in range(self.PageCount):
-            page = self.GetPage(j)
-            if type is None or isinstance(page, type):
-                yield page
+    @property
+    def all_pages(self):
+        return [self.GetPage(i) for i in range(self.PageCount)]
+    
+    @property
+    def all_tabs(self):
+        return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
+    
+    def get_pages(self, type=None):
+        """Yields pages of the specified type in the notebook."""
+        for win in self.all_pages:
+            if type is None or isinstance(win, type):
+                yield win
+    
+    def find_tab(self, win):
+        """cf. aui.AuiNotebook.FindTab -> _p, tab, idx
+        
+        Returns:
+            Indices and those for win, x:tabs, and y:pages such that:
+            i = self.all_pages.index(win)
+            j = self.all_tabs.index(x)
+            k = x.Pages.index(y)
+        """
+        i = self.all_pages.index(win)
+        for j, x in enumerate(self.all_tabs): #<aui.AuiTabCtrl>
+            for k, y in enumerate(x.Pages): #<sui.AuiNotebookPage>
+                if y.window is win:
+                    return i, j, k, x, y
 
 
 class ShellFrame(MiniFrame):
@@ -1041,12 +1063,12 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                for buffer in self.Log.all_buffers():
+                for buffer in self.Log.all_buffers:
                     if buffer.mtdelta is not None:
                         o.write("self.Log.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.markline+1))
                 
-                for buffer in self.Scratch.all_buffers():
+                for buffer in self.Scratch.all_buffers:
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.markline+1))
@@ -1084,8 +1106,8 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
         ## Confirm close
-        for page in self.ghost.all_pages(type(self.Log)):
-            for buf in page.all_buffers():
+        for page in self.get_pages(type(self.Log)):
+            for buf in page.all_buffers:
                 if page.need_buffer_save_p(buf):
                     self.popup_window(page)
                     page.swap_buffer(buf)
@@ -1265,7 +1287,7 @@ class ShellFrame(MiniFrame):
             filename = obj
             lineno = 0
         
-        for page in self.ghost.all_pages(type(self.Log)):
+        for page in self.get_pages(type(self.Log)):
             buf = page.find_buffer(filename)
             if buf:
                 break
@@ -1460,7 +1482,7 @@ class ShellFrame(MiniFrame):
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
-        pages = [page for page in self.all_pages() if page.IsShownOnScreen()]
+        pages = [page for page in self.get_pages() if page.IsShownOnScreen()]
         win = wx.Window.FindFocus()
         while win:
             if win in pages:
@@ -1496,10 +1518,10 @@ class ShellFrame(MiniFrame):
     ## Attributes for notebook pages
     ## --------------------------------
     
-    def all_pages(self, type=None):
+    def get_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks."""
-        yield from self.console.all_pages(type)
-        yield from self.ghost.all_pages(type)
+        yield from self.console.get_pages(type)
+        yield from self.ghost.get_pages(type)
     
     @property
     def current_shell(self):

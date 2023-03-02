@@ -1772,16 +1772,16 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
             _setattribute(buf, kwargs)
         else:
             self.defaultBufferStyle.update(kwargs)
-            for buf in self.all_buffers():
+            for buf in self.all_buffers:
                 _setattribute(buf, self.defaultBufferStyle)
     
     ## --------------------------------
     ## Buffer list controls
     ## --------------------------------
     
+    @property
     def all_buffers(self):
-        for j in range(self.PageCount):
-            yield self.GetPage(j)
+        return [self.GetPage(j) for j in range(self.PageCount)]
     
     @property
     def menu(self):
@@ -1791,7 +1791,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
                 lambda v: self.swap_buffer(buf).SetFocus(),
                 lambda v: v.Check(buf is self.buffer))
         
-        return (_menu(j+1, x) for j, x in enumerate(self.all_buffers()))
+        return (_menu(j+1, x) for j, x in enumerate(self.all_buffers))
     
     @property
     def buffer(self):
@@ -1800,7 +1800,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
-        for buf in self.all_buffers():
+        for buf in self.all_buffers:
             if f is buf or f in buf: # check code
                 return buf
             elif isinstance(f, str):
@@ -1816,7 +1816,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
             j = self.GetPageIndex(buf)
             if j != self.Selection:
                 self.Selection = j # the focus is moved
-            if wnd and wnd not in self.all_buffers(): # restore focus other window
+            if wnd and wnd not in self.all_buffers: # restore focus other window
                 wnd.SetFocus()
         return buf
     
@@ -1974,7 +1974,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         return self.save_file(f)
     
     def save_all_buffers(self):
-        for buf in filter(self.need_buffer_save_p, self.all_buffers()):
+        for buf in filter(self.need_buffer_save_p, self.all_buffers):
             self.swap_buffer(buf)
             self.save_buffer()
         return True
@@ -2007,7 +2007,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         return True
     
     def kill_all_buffers(self):
-        for buf in filter(self.need_buffer_save_p, self.all_buffers()):
+        for buf in filter(self.need_buffer_save_p, self.all_buffers):
             self.swap_buffer(buf)
             if wx.MessageBox(
                     "You are closing unsaved content.\n\n"

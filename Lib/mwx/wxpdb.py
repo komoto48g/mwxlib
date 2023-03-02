@@ -266,7 +266,7 @@ class Debugger(Pdb):
         """Find parent editor which has the specified f:object,
         where `f` can be filename or code object.
         """
-        for editor in self.parent.ghost.all_pages(type(self.editor)):
+        for editor in self.parent.get_pages(type(self.editor)):
             buf = editor.find_buffer(f)
             if buf:
                 editor.swap_buffer(buf)
