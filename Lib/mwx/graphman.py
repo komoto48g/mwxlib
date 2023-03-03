@@ -539,8 +539,8 @@ class AuiNotebook(aui.AuiNotebook):
     def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject
         try:
-            page = obj.Pages[evt.Selection].window # GetPage for split notebook
-            mwx.Menu.Popup(self, page.menu)
+            win = obj.Pages[evt.Selection].window # GetPage for split notebook
+            mwx.Menu.Popup(self, win.menu)
         except AttributeError:
             pass
     
@@ -1039,14 +1039,14 @@ class Frame(mwx.Frame):
                     plug.load_session(session)
                 return None
         
-        ## Update the include path to load the module correctly.
-        dirname = os.path.dirname(rootpath)
-        if os.path.isdir(dirname):
-            if dirname in sys.path:
-                sys.path.remove(dirname)
-            sys.path.insert(0, dirname)
-        elif dirname:
-            print("- No such directory {!r}".format(dirname))
+        ## Update the include-path to load the module correctly.
+        dirname_ = os.path.dirname(rootpath)
+        if os.path.isdir(dirname_):
+            if dirname_ in sys.path:
+                sys.path.remove(dirname_)
+            sys.path.insert(0, dirname_)
+        elif dirname_:
+            print("- No such directory {!r}".format(dirname_))
             return False
         try:
             if name in sys.modules:
@@ -1338,7 +1338,7 @@ class Frame(mwx.Frame):
             view = self.selected_view
         
         if not f:
-            with wx.FileDialog(self, "Select path to import",
+            with wx.FileDialog(self, "Select index file to import",
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
                              "ALL files (*.*)|*.*",
@@ -1372,7 +1372,7 @@ class Frame(mwx.Frame):
         
         if not f:
             path = next((x.pathname for x in frames if x.pathname), '')
-            with wx.FileDialog(self, "Select path to export",
+            with wx.FileDialog(self, "Select index file to export",
                     defaultDir=os.path.dirname(path),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index",
@@ -1428,8 +1428,8 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read()))
             
             for name, attr in tuple(res.items()):
-                path = os.path.join(savedir, name)  # search by rel-path (dir + name)
-                if not os.path.exists(path):        # search by abs-path (pathname)
+                path = os.path.join(savedir, name)  # search by relpath (dir+name)
+                if not os.path.exists(path):        # search by abspath (pathname)
                     path = attr.get('pathname')
                 if not os.path.exists(path):        # check & pop missing files
                     res.pop(name)
@@ -1468,7 +1468,7 @@ class Frame(mwx.Frame):
             return new, mis # finally raises no exception
     
     def load_frame(self, paths=None, view=None):
-        """Load frame(s) from paths to the view window.
+        """Load frames from files to the view window.
         
         Load buffer and the attributes of the frame.
         If the file names duplicate, the latter takes priority.
@@ -1487,7 +1487,7 @@ class Frame(mwx.Frame):
         return frames
     
     def save_frame(self, path=None, frame=None):
-        """Save frame to the path.
+        """Save frame to a file.
         
         Save buffer and the attributes of the frame.
         """
@@ -1508,7 +1508,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def read_buffer(path):
-        """Read buffer from file path (to be overridden)."""
+        """Read buffer from a file (to be overridden)."""
         buf = Image.open(path)
         info = {}
         if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
@@ -1522,7 +1522,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def write_buffer(path, buf):
-        """Write buffer to file path (to be overridden)."""
+        """Write buffer to a file (to be overridden)."""
         try:
             img = Image.fromarray(buf)
             img.save(path) # PIL saves as L, I, F, and RGB.
@@ -1594,7 +1594,7 @@ class Frame(mwx.Frame):
         return frames
     
     def save_buffer(self, path=None, frame=None):
-        """Save a buffer of the frame to the path.
+        """Save buffer of the frame to a file.
         
         If no view given, the currently selected view is chosen.
         """
@@ -1628,7 +1628,7 @@ class Frame(mwx.Frame):
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
-        """Export buffers to the path as multi-page tiff."""
+        """Export buffers to a file as a multi-page tiff."""
         if not frames:
             frames = self.selected_view.all_frames
             if not frames:
@@ -1694,9 +1694,9 @@ class Frame(mwx.Frame):
             self._mgr.Update()
         
         self.menubar.reset()
-        dirname = os.path.dirname(f)
-        if dirname:
-            os.chdir(dirname)
+        dirname_ = os.path.dirname(f)
+        if dirname_:
+            os.chdir(dirname_)
         self.statusbar("\b done.")
         return True
     
