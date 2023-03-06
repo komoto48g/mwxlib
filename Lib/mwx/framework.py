@@ -740,35 +740,38 @@ class AuiNotebook(aui.AuiNotebook):
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
+        self._mgr = self.EventHandler
     
     @property
     def all_pages(self):
+        """Returns all window pages."""
         return [self.GetPage(i) for i in range(self.PageCount)]
     
     @property
     def all_tabs(self):
+        """Returns all AuiTabCtrl objects."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
     
+    @property
+    def all_panes(self):
+        """Returns all AuiPaneInfo excluding `dummy` one."""
+        return list(self._mgr.AllPanes)[1:]
+    
     def get_pages(self, type=None):
-        """Yields pages of the specified type in the notebook."""
+        """Yields pages of the specified window type."""
         for win in self.all_pages:
             if type is None or isinstance(win, type):
                 yield win
     
     def find_tab(self, win):
-        """cf. aui.AuiNotebook.FindTab -> _p, tab, idx
+        """Returns AuiTabCtrl and AuiNotebookPage for win <obj|str>.
         
-        Returns:
-            Indices and those for win, x:tabs, and y:pages such that:
-            i = self.all_pages.index(win)
-            j = self.all_tabs.index(x)
-            k = x.Pages.index(y)
+        cf. aui.AuiNotebook.FindTab -> bool, tab, idx
         """
-        i = self.all_pages.index(win)
-        for j, x in enumerate(self.all_tabs): #<aui.AuiTabCtrl>
-            for k, y in enumerate(x.Pages): #<sui.AuiNotebookPage>
-                if y.window is win:
-                    return i, j, k, x, y
+        for tc in self.all_tabs: #<aui.AuiTabCtrl>
+            for page in tc.Pages: #<aui.AuiNotebookPage>
+                if page.window is win or page.caption == win:
+                    return tc, page
 
 
 class ShellFrame(MiniFrame):
@@ -872,8 +875,8 @@ class ShellFrame(MiniFrame):
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
                                  )
-        self.inspector = Inspector(self, name = "Inspector")
-        self.monitor = EventMonitor(self, name = "Monitor")
+        self.inspector = Inspector(self, name="Inspector")
+        self.monitor = EventMonitor(self, name="Monitor")
         self.ginfo = LocalsWatcher(self, name="globals")
         self.linfo = LocalsWatcher(self, name="locals")
         
