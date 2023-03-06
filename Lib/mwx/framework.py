@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.6"
+__version__ = "0.79.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1106,11 +1106,11 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
         ## Confirm close
-        for page in self.get_pages(type(self.Log)):
-            for buf in page.all_buffers:
-                if page.need_buffer_save_p(buf):
-                    self.popup_window(page)
-                    page.swap_buffer(buf)
+        for book in self.get_pages(type(self.Log)):
+            for buf in book.all_buffers:
+                if book.need_buffer_save_p(buf):
+                    self.popup_window(book)
+                    book.swap_buffer(buf)
                     if wx.MessageBox(
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
@@ -1154,8 +1154,8 @@ class ShellFrame(MiniFrame):
     def OnGhostTabMenu(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject
         try:
-            page = obj.Pages[evt.Selection].window # GetPage for split notebook.
-            Menu.Popup(self, page.menu)
+            win = obj.Pages[evt.Selection].window # GetPage for split notebook.
+            Menu.Popup(self, win.menu)
         except AttributeError:
             pass
     
@@ -1170,11 +1170,11 @@ class ShellFrame(MiniFrame):
     
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject          #<wx._aui.AuiTabCtrl>
-        page = obj.Pages[evt.Selection].window # GetPage for split notebook.
-        if page is self.rootshell:
+        win = obj.Pages[evt.Selection].window # GetPage for split notebook.
+        if win is self.rootshell:
             ## self.message("- Don't close the root shell.")
             return
-        elif self.debugger.busy and page is self.debugger.interactive_shell:
+        elif self.debugger.busy and win is self.debugger.interactive_shell:
             wx.MessageBox("The debugger is running.\n\n"
                           "Enter [q]uit to exit before closing.")
             return
@@ -1210,7 +1210,7 @@ class ShellFrame(MiniFrame):
         """Show the notebook page and move the focus.
         
         Args:
-            win  : page or window to popup
+            win  : window to popup
             show : True, False, otherwise None:toggle
                    The pane window will be hidden if no show.
         """
@@ -1228,10 +1228,11 @@ class ShellFrame(MiniFrame):
             return
         if show is None:
             show = not pane.IsShown() # toggle show
+        
+        ## Modify aui pane floating position when it is shown,
+        ## Note: This is a known bug in wxWidgets 3.17--3.20,
+        ##       and will be fixed in wxPython 4.2.1.
         if show:
-            ## Modify aui pane floating position when it is shown,
-            ## Note: This is a known bug in wxWidgets 3.17--3.20,
-            ##       and will be fixed in wxPython 4.2.1.
             w, h = wx.DisplaySize()
             x, y = pane.floating_pos
             if x > 2*w or y > h:
@@ -1287,24 +1288,24 @@ class ShellFrame(MiniFrame):
             filename = obj
             lineno = 0
         
-        for page in self.get_pages(type(self.Log)):
-            buf = page.find_buffer(filename)
+        for book in self.get_pages(type(self.Log)):
+            buf = book.find_buffer(filename)
             if buf:
                 break
         else:
-            page = self.Log
+            book = self.Log
             buf = None
         
         wnd = wx.Window.FindFocus() # original focus
         try:
             if show:
-                self.popup_window(page, show, focus)
-            if buf and page.need_buffer_save_p(buf): # exists and need save?
-                page.swap_buffer(buf)
-                if not page.load_buffer(): # confirm
+                self.popup_window(book, show, focus)
+            if buf and book.need_buffer_save_p(buf): # exists and need save?
+                book.swap_buffer(buf)
+                if not book.load_buffer(): # confirm
                     return None
-            if not page.load_file(filename, lineno, show):
-                page.remove_buffer()
+            if not book.load_file(filename, lineno, show):
+                book.remove_buffer()
                 return False
             return True
         finally:
