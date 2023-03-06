@@ -740,35 +740,120 @@ class AuiNotebook(aui.AuiNotebook):
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
+        
+        self._mgr = self.EventHandler
+        
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
+    
+    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
+        obj = evt.EventObject
+        try:
+            win = obj.Pages[evt.Selection].window # GetPage for split notebook
+            Menu.Popup(self, win.menu)
+        except AttributeError:
+            pass
     
     @property
     def all_pages(self):
+        """Returns all window pages."""
         return [self.GetPage(i) for i in range(self.PageCount)]
     
     @property
     def all_tabs(self):
+        """Returns all AuiTabCtrl objects."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
     
+    @property
+    def all_panes(self):
+        """Returns all AuiPaneInfo excluding `dummy` one."""
+        return list(self._mgr.AllPanes)[1:]
+    
     def get_pages(self, type=None):
-        """Yields pages of the specified type in the notebook."""
+        """Yields pages of the specified window type."""
         for win in self.all_pages:
             if type is None or isinstance(win, type):
                 yield win
     
     def find_tab(self, win):
-        """cf. aui.AuiNotebook.FindTab -> _p, tab, idx
+        """Returns AuiTabCtrl and AuiNotebookPage for win,
+        cf. aui.AuiNotebook.FindTab -> bool, tab, idx
         
-        Returns:
-            Indices and those for win, x:tabs, and y:pages such that:
-            i = self.all_pages.index(win)
-            j = self.all_tabs.index(x)
-            k = x.Pages.index(y)
+        Note:
+            Argument `win` can also be Window.Name:str (not page.caption).
         """
-        i = self.all_pages.index(win)
-        for j, x in enumerate(self.all_tabs): #<aui.AuiTabCtrl>
-            for k, y in enumerate(x.Pages): #<sui.AuiNotebookPage>
-                if y.window is win:
-                    return i, j, k, x, y
+        for tc in self.all_tabs: #<aui.AuiTabCtrl>
+            for page in tc.Pages: #<aui.AuiNotebookPage>
+                ## if page.window is win or page.caption == win:
+                if page.window is win or page.window.Name == win:
+                    return tc, page
+    
+    def move_tab(self, win, tabs):
+        """Move page of win to specified tabs."""
+        try:
+            tc1, nb1 = self.find_tab(win)
+            win = nb1.window
+        except Exception: # object not found
+            return
+        page = wx.aui.AuiNotebookPage(nb1) # copy-ctor
+        tc1.RemovePage(win)     # Accessing nb1 will crash at this point.
+        tabs.AddPage(win, page) # Add a page with the copied info.
+        if tc1.PageCount == 0:
+            ## Delete an empty tab and the corresponding pane.
+            j = self.all_tabs.index(tc1)
+            pane = self.all_panes[j]
+            tc1.Destroy()
+            self._mgr.DetachPane(pane.window)
+        self._mgr.Update()
+    
+    def savePerspective(self):
+        """Saves the entire user interface layout into an encoded string,
+        which can then be stored by the application.
+        """
+        for j, pane in enumerate(self.all_panes):
+            pane.name = f"pane{j+1}"
+        spec = ""
+        for j, tc in enumerate(self.all_tabs):
+            names = [page.window.Name for page in tc.Pages]
+            spec += f"pane{j+1}={names}|"
+        return spec + '@' + self._mgr.SavePerspective()
+    
+    @postcall
+    def loadPerspective(self, spec):
+        """Loads a saved perspective.
+        
+        Note:
+            This function will be called after the session is loaded.
+            At that point, some pages may be missing.
+        """
+        tabs, frames = spec.split('@')
+        tabinfo = re.findall(r"(.*?)=(.*?)\|", tabs)
+        try:
+            self.Freeze()
+            ## Collapse all tabs to main tabctrl
+            maintab = self.all_tabs[0]
+            for win in self.all_pages:
+                self.move_tab(win, maintab)
+            ## Create new tabs
+            all_names = [win.Name for win in self.all_pages]
+            for pane, pages in tabinfo[1:]:
+                names = eval(pages)
+                names = sorted(set(names) & set(all_names), key=names.index)
+                if not names:
+                    continue
+                ## Create a new tab using Split method.
+                ## Note: The normal method of creating panes
+                ##       using the internal _mgr will crash.
+                i = all_names.index(names[0])
+                self.Split(i, wx.LEFT)
+                newtab = self.all_tabs[-1]
+                for name in names[1:]:
+                    self.move_tab(name, newtab)
+            for j, pane in enumerate(self.all_panes):
+                pane.name = f"pane{j+1}"
+            self._mgr.LoadPerspective(frames)
+            self._mgr.Update()
+        finally:
+            self.Thaw()
 
 
 class ShellFrame(MiniFrame):
@@ -872,8 +957,8 @@ class ShellFrame(MiniFrame):
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
                                  )
-        self.inspector = Inspector(self, name = "Inspector")
-        self.monitor = EventMonitor(self, name = "Monitor")
+        self.inspector = Inspector(self, name="Inspector")
+        self.monitor = EventMonitor(self, name="Monitor")
         self.ginfo = LocalsWatcher(self, name="globals")
         self.linfo = LocalsWatcher(self, name="locals")
         
@@ -893,7 +978,6 @@ class ShellFrame(MiniFrame):
         self.ghost.Name = "ghost"
         
         ## self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
-        self.ghost.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
@@ -903,7 +987,6 @@ class ShellFrame(MiniFrame):
         self.watcher.Name = "watcher"
         
         self.watcher.Bind(wx.EVT_SHOW, self.OnGhostShow)
-        self.watcher.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
@@ -1058,6 +1141,8 @@ class ShellFrame(MiniFrame):
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
+                    "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
+                    "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
                     "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
                     "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
                     "self._mgr.Update()",
@@ -1150,14 +1235,6 @@ class ShellFrame(MiniFrame):
             self.ginfo.unwatch()
             self.linfo.unwatch()
         evt.Skip()
-    
-    def OnGhostTabMenu(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject
-        try:
-            win = obj.Pages[evt.Selection].window # GetPage for split notebook.
-            Menu.Popup(self, win.menu)
-        except AttributeError:
-            pass
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
