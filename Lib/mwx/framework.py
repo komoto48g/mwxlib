@@ -775,14 +775,85 @@ class AuiNotebook(aui.AuiNotebook):
                 yield win
     
     def find_tab(self, win):
-        """Returns AuiTabCtrl and AuiNotebookPage for win <obj|str>.
-        
+        """Returns AuiTabCtrl and AuiNotebookPage for win,
         cf. aui.AuiNotebook.FindTab -> bool, tab, idx
+        
+        Note:
+            Argument `win` can also be Window.Name:str (not page.caption).
         """
         for tc in self.all_tabs: #<aui.AuiTabCtrl>
             for page in tc.Pages: #<aui.AuiNotebookPage>
-                if page.window is win or page.caption == win:
+                ## if page.window is win or page.caption == win:
+                if page.window is win or page.window.Name == win:
                     return tc, page
+    
+    def move_tab(self, win, tabs):
+        """Move page of win to specified tabs."""
+        try:
+            tc1, nb1 = self.find_tab(win)
+            win = nb1.window
+        except Exception: # object not found
+            return
+        page = wx.aui.AuiNotebookPage(nb1) # copy-ctor
+        tc1.RemovePage(win)     # Accessing nb1 will crash at this point.
+        tabs.AddPage(win, page) # Add a page with the copied info.
+        if tc1.PageCount == 0:
+            ## Delete an empty tab and the corresponding pane.
+            j = self.all_tabs.index(tc1)
+            pane = self.all_panes[j]
+            tc1.Destroy()
+            self._mgr.DetachPane(pane.window)
+        self._mgr.Update()
+    
+    def savePerspective(self):
+        """Saves the entire user interface layout into an encoded string,
+        which can then be stored by the application.
+        """
+        for j, pane in enumerate(self.all_panes):
+            pane.name = f"pane{j+1}"
+        spec = ""
+        for j, tc in enumerate(self.all_tabs):
+            names = [page.window.Name for page in tc.Pages]
+            spec += f"pane{j+1}={names}|"
+        return spec + '@' + self._mgr.SavePerspective()
+    
+    @postcall
+    def loadPerspective(self, spec):
+        """Loads a saved perspective.
+        
+        Note:
+            This function will be called after the session is loaded.
+            At that point, some pages may be missing.
+        """
+        tabs, frames = spec.split('@')
+        tabinfo = re.findall(r"(.*?)=(.*?)\|", tabs)
+        try:
+            self.Freeze()
+            ## Collapse all tabs to main tabctrl
+            maintab = self.all_tabs[0]
+            for win in self.all_pages:
+                self.move_tab(win, maintab)
+            ## Create new tabs
+            all_names = [win.Name for win in self.all_pages]
+            for pane, pages in tabinfo[1:]:
+                names = eval(pages)
+                names = sorted(set(names) & set(all_names), key=names.index)
+                if not names:
+                    continue
+                ## Create a new tab using Split method.
+                ## Note: The normal method of creating panes
+                ##       using the internal _mgr will crash.
+                i = all_names.index(names[0])
+                self.Split(i, wx.LEFT)
+                newtab = self.all_tabs[-1]
+                for name in names[1:]:
+                    self.move_tab(name, newtab)
+            for j, pane in enumerate(self.all_panes):
+                pane.name = f"pane{j+1}"
+            self._mgr.LoadPerspective(frames)
+            self._mgr.Update()
+        finally:
+            self.Thaw()
 
 
 class ShellFrame(MiniFrame):
@@ -1070,6 +1141,8 @@ class ShellFrame(MiniFrame):
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
+                    "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
+                    "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
                     "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
                     "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
                     "self._mgr.Update()",
