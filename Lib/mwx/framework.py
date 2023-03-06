@@ -740,7 +740,18 @@ class AuiNotebook(aui.AuiNotebook):
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
             )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
+        
         self._mgr = self.EventHandler
+        
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
+    
+    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
+        obj = evt.EventObject
+        try:
+            win = obj.Pages[evt.Selection].window # GetPage for split notebook
+            Menu.Popup(self, win.menu)
+        except AttributeError:
+            pass
     
     @property
     def all_pages(self):
@@ -896,7 +907,6 @@ class ShellFrame(MiniFrame):
         self.ghost.Name = "ghost"
         
         ## self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
-        self.ghost.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
@@ -906,7 +916,6 @@ class ShellFrame(MiniFrame):
         self.watcher.Name = "watcher"
         
         self.watcher.Bind(wx.EVT_SHOW, self.OnGhostShow)
-        self.watcher.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnGhostTabMenu)
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
@@ -1153,14 +1162,6 @@ class ShellFrame(MiniFrame):
             self.ginfo.unwatch()
             self.linfo.unwatch()
         evt.Skip()
-    
-    def OnGhostTabMenu(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject
-        try:
-            win = obj.Pages[evt.Selection].window # GetPage for split notebook.
-            Menu.Popup(self, win.menu)
-        except AttributeError:
-            pass
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
