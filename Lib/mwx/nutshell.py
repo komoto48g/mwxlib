@@ -2588,6 +2588,7 @@ class Nautilus(Shell, EditorInterface):
             if '\n' in cmd:
                 self.Execute(cmd) # => multi-line commands
             else:
+                self.interp.more = False
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
