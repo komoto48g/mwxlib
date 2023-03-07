@@ -1135,7 +1135,7 @@ class ShellFrame(MiniFrame):
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 self.SESSION_FILE = dlg.Path
-                return self.save_session()
+                self.save_session()
     
     def save_session(self):
         """Save session to file."""

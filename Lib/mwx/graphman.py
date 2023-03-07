@@ -830,9 +830,7 @@ class Frame(mwx.Frame):
                 style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
             ret = dlg.ShowModal()
             if ret == wx.ID_YES:
-                if not self.save_session():
-                    evt.Veto()
-                    return
+                self.save_session()
             elif ret == wx.ID_CANCEL:
                 evt.Veto()
                 return
@@ -1671,9 +1669,9 @@ class Frame(mwx.Frame):
         if not f:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.jssn)|*.jssn",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return None
+                    return
                 f = dlg.Path
         
         if flush:
@@ -1699,17 +1697,16 @@ class Frame(mwx.Frame):
         if dirname_:
             os.chdir(dirname_)
         self.statusbar("\b done.")
-        return True
     
     def save_session_as(self):
         """Save session as a new file."""
         with wx.FileDialog(self, "Save session as",
                 defaultFile=self.session_file or '',
                 wildcard="Session file (*.jssn)|*.jssn",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 self.session_file = dlg.Path
-                return self.save_session()
+                self.save_session()
     
     def save_session(self):
         """Save session to file."""
@@ -1760,7 +1757,6 @@ class Frame(mwx.Frame):
                     o.write("self.graph.select({!r})\n".format(frame.name))
         
         self.statusbar("\b done.")
-        return True
 
 
 if __name__ == "__main__":
