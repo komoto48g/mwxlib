@@ -1685,11 +1685,16 @@ class Frame(mwx.Frame):
         
         with open(f) as i:
             ## Load the session in the shell.
-            self.shellframe.rootshell.locals.update(
+            shell = self.shellframe.rootshell
+            shell.locals.update(
                 nan = np.nan,
                 inf = np.inf,
             )
-            self.shellframe.rootshell.Execute(i.read())
+            try:
+                shell.Freeze()
+                shell.Execute(i.read())
+            finally:
+                shell.Thaw()
             self._mgr.Update()
         
         self.menubar.reset()
