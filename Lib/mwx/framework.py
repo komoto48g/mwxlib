@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.7"
+__version__ = "0.79.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -751,7 +751,7 @@ class AuiNotebook(aui.AuiNotebook):
             win = obj.Pages[evt.Selection].window # GetPage for split notebook
             Menu.Popup(self, win.menu)
         except AttributeError:
-            pass
+            evt.Skip()
     
     @property
     def all_pages(self):
@@ -1126,6 +1126,16 @@ class ShellFrame(MiniFrame):
         except Exception:
             traceback.print_exc()
             print("- Failed to load session")
+    
+    def save_session_as(self):
+        """Save session as a new file."""
+        with wx.FileDialog(self, "Save session as",
+                defaultFile=self.SESSION_FILE or '',
+                wildcard="Session file (*.debrc)|*.debrc",
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.SESSION_FILE = dlg.Path
+                return self.save_session()
     
     def save_session(self):
         """Save session to file."""
