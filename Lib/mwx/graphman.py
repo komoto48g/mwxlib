@@ -1673,7 +1673,7 @@ class Frame(mwx.Frame):
                     wildcard="Session file (*.jssn)|*.jssn",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return False
+                    return None
                 f = dlg.Path
         
         if flush:
@@ -1684,6 +1684,7 @@ class Frame(mwx.Frame):
         
         self.statusbar("Loading session from {!r}...".format(f))
         self.session_file = os.path.abspath(f)
+        
         with open(f) as i:
             ## Load the session in the shell.
             self.shellframe.rootshell.locals.update(
@@ -1701,34 +1702,30 @@ class Frame(mwx.Frame):
         return True
     
     def save_session_as(self):
-        """Save session as (new file)."""
+        """Save session as a new file."""
         with wx.FileDialog(self, "Save session as",
                 defaultFile=self.session_file or '',
                 wildcard="Session file (*.jssn)|*.jssn",
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
-                return self.save_session(dlg.Path)
-            return False
+                self.session_file = dlg.Path
+                return self.save_session()
     
-    def save_session(self, f=None):
+    def save_session(self):
         """Save session to file."""
-        f = f or self.session_file
+        f = self.session_file
         if not f:
             return self.save_session_as()
         
-        self.session_file = os.path.abspath(f)
         self.statusbar("Saving session to {!r}...".format(f))
         
-        options = np.get_printoptions()
-        np.set_printoptions(linewidth=256, threshold=np.inf) # inf:all elements
-        
-        with open(f, 'w') as o:
+        with open(f, 'w') as o,\
+          np.printoptions(threshold=np.inf): # printing all(inf) elements
             o.write('\n'.join((
                 "#! Session file (This file is generated automatically)",
                 "self.SetSize({})".format(self.Size),
                 ""
             )))
-            ## save layout
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
                 path = os.path.abspath(module.__file__)
@@ -1761,9 +1758,7 @@ class Frame(mwx.Frame):
                 frame = self.graph.frame # restore currently selected frame
                 if frame and frame.pathname:
                     o.write("self.graph.select({!r})\n".format(frame.name))
-            ## o.write('# end of session\n')
         
-        np.set_printoptions(**options)
         self.statusbar("\b done.")
         return True
 
