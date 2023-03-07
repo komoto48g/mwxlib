@@ -23,12 +23,14 @@ try:
     from mwx import framework as mwx
     from mwx.utilus import funcall as _F
     from mwx.controls import ControlPanel, Icon
+    from mwx.framework import CtrlInterface
     from mwx.matplot2g import GraphPlot
     from mwx.matplot2lg import Histogram
 except ImportError:
     from . import framework as mwx
     from .utilus import funcall as _F
     from .controls import ControlPanel, Icon
+    from .framework import CtrlInterface
     from .matplot2g import GraphPlot
     from .matplot2lg import Histogram
 from matplotlib import cm
@@ -186,10 +188,10 @@ def _isLayer(obj):
     ## this.Layer <class '__main__.Layer'> is not <mwx.graphman.Layer>.
     ## So, we check it in two ways:
     return isinstance(obj, LayerInterface)\
-        or isinstance(obj, ControlPanel) and hasattr(obj, 'category')
+        or isinstance(obj, CtrlInterface) and hasattr(obj, 'category')
 
 
-class LayerInterface:
+class LayerInterface(CtrlInterface):
     """Graphman.Layer interface mixin
     
     The layer properties can be switched by the following classvars::
@@ -270,6 +272,8 @@ class LayerInterface:
         return self.parent.message(*args, **kwargs)
     
     def __init__(self, parent, session=None):
+        CtrlInterface.__init__(self)
+        
         self.parent = parent
         self.__artists = []
         self.parameters = None # => reset
