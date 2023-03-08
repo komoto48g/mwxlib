@@ -1376,7 +1376,13 @@ class Buffer(EditWindow, EditorInterface):
             self.__mtime = os.path.getmtime(f)
         else:
             self.__mtime = None
+        try:
+            renamed = (self.filename != f)
+        except AttributeError:
+            renamed = False
         self.__filename = f
+        if renamed:
+            self.parent.handler('buffer_filename_set', self)
     
     @property
     def mtdelta(self):
@@ -1695,9 +1701,10 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
               'buffer_selected' : [ None, ],
              'buffer_activated' : [ None, ],
            'buffer_inactivated' : [ None, ],
+          'buffer_filename_set' : [ None, ],
+                 'title_window' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
-                 'title_window' : [ None, dispatch ],
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
