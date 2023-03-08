@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.79.8"
+__version__ = "0.79.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1110,8 +1110,10 @@ class ShellFrame(MiniFrame):
     LOGGING_FILE = get_rootpath("deb-logging.log")
     HISTORY_FILE = get_rootpath("deb-history.log")
     
-    def load_session(self):
+    def load_session(self, rc=None):
         """Load session from file."""
+        if rc:
+            self.SESSION_FILE = os.path.abspath(rc)
         try:
             scratch = self.Scratch.default_buffer
             if not scratch or scratch.mtdelta is not None:
@@ -1120,9 +1122,7 @@ class ShellFrame(MiniFrame):
             
             with open(self.SESSION_FILE) as i:
                 exec(i.read())
-            return True
-        except FileNotFoundError:
-            pass
+            
         except Exception:
             traceback.print_exc()
             print("- Failed to load session")
@@ -1167,7 +1167,6 @@ class ShellFrame(MiniFrame):
                     if buffer.mtdelta is not None:
                         o.write("self.Scratch.load_file({!r}, {})\n".format(
                                 buffer.filename, buffer.markline+1))
-            return True
         except Exception:
             traceback.print_exc()
             print("- Failed to save session")
