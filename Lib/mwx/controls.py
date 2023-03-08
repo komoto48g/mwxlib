@@ -786,22 +786,27 @@ class Clipboard:
     @staticmethod
     def read():
         do = wx.TextDataObject()
-        wx.TheClipboard.Open() or print("- Unable to open the clipboard")
-        wx.TheClipboard.GetData(do)
-        wx.TheClipboard.Close()
-        text = do.GetText()
-        if Clipboard.verbose:
-            print("From clipboard: {}".format(text))
-        return text
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.GetData(do)
+            wx.TheClipboard.Close()
+            text = do.GetText()
+            if Clipboard.verbose:
+                print("From clipboard: {}".format(text))
+            return text
+        else:
+            print("- Unable to open clipboard.")
     
     @staticmethod
     def write(text):
         do = wx.TextDataObject(str(text))
-        wx.TheClipboard.Open() or print("- Unable to open the clipboard")
-        wx.TheClipboard.SetData(do)
-        wx.TheClipboard.Close()
-        if Clipboard.verbose:
-            print("To clipboard: {}".format(text))
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(do)
+            wx.TheClipboard.Flush()
+            wx.TheClipboard.Close()
+            if Clipboard.verbose:
+                print("To clipboard: {}".format(text))
+        else:
+            print("- Unable to open clipboard.")
 
 
 ## --------------------------------

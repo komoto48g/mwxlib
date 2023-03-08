@@ -371,36 +371,47 @@ class Clipboard:
     
     @staticmethod
     def imread():
-        try:
-            do = wx.BitmapDataObject()
-            wx.TheClipboard.Open() or print("- Unable to open the clipboard")
+        do = wx.BitmapDataObject()
+        if wx.TheClipboard.Open():
             wx.TheClipboard.GetData(do)
+            wx.TheClipboard.Close()
             bmp = do.GetBitmap()
+        else:
+            print("- Unable to open clipboard.")
+            return
+        try:
+            ## Convert bmp --> buf
             img = bmp.ConvertToImage()
             buf = np.array(img.GetDataBuffer()) # do copy, don't ref
             if Clipboard.verbose:
                 print("From clipboard {:.1f} Mb data".format(buf.nbytes/1e6))
             w, h = img.GetSize()
             return buf.reshape(h, w, 3)
-        finally:
-            wx.TheClipboard.Close()
+        except Exception:
+            print("- The contents of the clipboard are not images.")
     
     @staticmethod
     def imwrite(buf):
         try:
+            ## Convert buf --> bmp
             h, w = buf.shape[:2]
             if buf.ndim < 3:
                 ## buf = np.array([buf] * 3).transpose((1,2,0)) # convert to gray bitmap
-                buf = buf.repeat(3, axis=1)
+                buf = buf.repeat(3, axis=1) # convert to gray bitmap
             img = wx.Image(w, h, buf.tobytes())
             bmp = img.ConvertToBitmap()
-            do = wx.BitmapDataObject(bmp)
-            wx.TheClipboard.Open() or print("- Unable to open the clipboard")
+        except Exception:
+            print("- The contents of the clipboard are not images.")
+            return
+        do = wx.BitmapDataObject(bmp)
+        if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(do)
+            wx.TheClipboard.Flush()
+            wx.TheClipboard.Close()
             if Clipboard.verbose:
                 print("To clipboard: {:.1f} Mb data".format(buf.nbytes/1e6))
-        finally:
-            wx.TheClipboard.Close()
+        else:
+            print("- Unable to open clipboard.")
 
 
 class GraphPlot(MatplotPanel):
