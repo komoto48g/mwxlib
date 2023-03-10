@@ -800,7 +800,7 @@ class FSM(dict):
 
 
 class TreeList(object):
-    """TreeList of <item : (key, data)>
+    """Tree access wrapper of list<item : (key, value)>
     [
         [key, [item,
                item, ...]],
@@ -816,6 +816,9 @@ class TreeList(object):
     
     def __init__(self, ls=None):
         self.__items = ls or []
+    
+    def __call__(self, k):
+        return TreeList(self[k])
     
     def __getattr__(self, attr):
         return getattr(self.__items, attr)
@@ -841,7 +844,13 @@ class TreeList(object):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     
-    @classmethod
+    def _find_item(self, ls, key):
+        for x in ls:
+            if isinstance(x, (tuple, list)) and x and x[0] == key:
+                if len(x) < 2:
+                    raise ValueError("No value for key={!r}".format(key))
+                return x
+    
     def getf(self, ls, key):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -849,9 +858,10 @@ class TreeList(object):
             if la is not None:
                 return self.getf(la, b)
             return None
-        return next((x[-1] for x in ls if x and x[0] == key), None)
+        li = self._find_item(ls, key)
+        if li is not None:
+            return li[-1]
     
-    @classmethod
     def setf(self, ls, key, value):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -861,7 +871,7 @@ class TreeList(object):
             p, key = key.rsplit('/', 1)
             return self.setf(ls, p, [[key, value]]) # >>> ls[p].append([key, value])
         try:
-            li = next((x for x in ls if x and x[0] == key), None)
+            li = self._find_item(ls, key)
             if li is not None:
                 if isinstance(value, list):
                     li[-1][:] = value # assign value:list to items:list
@@ -869,10 +879,9 @@ class TreeList(object):
                     li[-1] = value # assign value to item (li must be a list)
             else:
                 ls.append([key, value]) # append to items:list
-        except (TypeError, AttributeError) as e:
+        except (ValueError, TypeError, AttributeError) as e:
             print("- TreeList:warning {!r}: key={!r}".format(e, key))
     
-    @classmethod
     def delf(self, ls, key):
         if '/' in key:
             p, key = key.rsplit('/', 1)
