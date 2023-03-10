@@ -800,7 +800,7 @@ class FSM(dict):
 
 
 class TreeList(object):
-    """TreeList of <item : (key, data)>
+    """Tree access wrapper of list<item : (key, value)>
     [
         [key, [item,
                item, ...]],
@@ -814,8 +814,11 @@ class TreeList(object):
     ## __getattr__ may be called before __init__.
     __items = None
     
-    def __init__(self):
-        self.__items = []
+    def __init__(self, ls=None):
+        self.__items = ls or []
+    
+    def __call__(self, k):
+        return TreeList(self[k])
     
     def __getattr__(self, attr):
         return getattr(self.__items, attr)
@@ -841,7 +844,28 @@ class TreeList(object):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     
-    @classmethod
+    def items(self):
+        def _items(ls, key=None):
+            for item in ls:
+                try:
+                    k, v = item
+                    rootkey = f"{key}/{k}" if key else k
+                except Exception:
+                    yield key, item
+                else:
+                    if v and isinstance(v, (list, tuple)):
+                        yield from _items(v, rootkey)
+                    else:
+                        yield rootkey, v
+        yield from _items(self)
+    
+    def _find_item(self, ls, key):
+        for x in ls:
+            if isinstance(x, (tuple, list)) and x and x[0] == key:
+                if len(x) < 2:
+                    raise ValueError("No value for key={!r}".format(key))
+                return x
+    
     def getf(self, ls, key):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -849,9 +873,10 @@ class TreeList(object):
             if la is not None:
                 return self.getf(la, b)
             return None
-        return next((x[-1] for x in ls if x and x[0] == key), None)
+        li = self._find_item(ls, key)
+        if li is not None:
+            return li[-1]
     
-    @classmethod
     def setf(self, ls, key, value):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -861,18 +886,17 @@ class TreeList(object):
             p, key = key.rsplit('/', 1)
             return self.setf(ls, p, [[key, value]]) # >>> ls[p].append([key, value])
         try:
-            li = next((x for x in ls if x and x[0] == key), None)
+            li = self._find_item(ls, key)
             if li is not None:
-                if isinstance(value, list):
-                    li[-1][:] = value # assign value:list to items:list
-                else:
-                    li[-1] = value # assign value to item (li must be a list)
+                try:
+                    li[-1] = value # assign value to item (ls must be a list)
+                except TypeError:
+                    li[-1][:] = value # assign value to items:list
             else:
                 ls.append([key, value]) # append to items:list
-        except (TypeError, AttributeError) as e:
+        except (ValueError, TypeError, AttributeError) as e:
             print("- TreeList:warning {!r}: key={!r}".format(e, key))
     
-    @classmethod
     def delf(self, ls, key):
         if '/' in key:
             p, key = key.rsplit('/', 1)
