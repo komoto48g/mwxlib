@@ -873,10 +873,10 @@ class TreeList(object):
         try:
             li = self._find_item(ls, key)
             if li is not None:
-                if isinstance(value, list):
-                    li[-1][:] = value # assign value:list to items:list
-                else:
-                    li[-1] = value # assign value to item (li must be a list)
+                try:
+                    li[-1] = value # assign value to item (ls must be a list)
+                except TypeError:
+                    li[-1][:] = value # assign value to items:list
             else:
                 ls.append([key, value]) # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
