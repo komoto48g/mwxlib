@@ -844,6 +844,21 @@ class TreeList(object):
             return self.delf(self.__items, k)
         return self.__items.__delitem__(k)
     
+    def items(self):
+        def _items(ls, key=None):
+            for item in ls:
+                try:
+                    k, v = item
+                    rootkey = f"{key}/{k}" if key else k
+                except Exception:
+                    yield key, item
+                else:
+                    if v and isinstance(v, (list, tuple)):
+                        yield from _items(v, rootkey)
+                    else:
+                        yield rootkey, v
+        yield from _items(self)
+    
     def _find_item(self, ls, key):
         for x in ls:
             if isinstance(x, (tuple, list)) and x and x[0] == key:
