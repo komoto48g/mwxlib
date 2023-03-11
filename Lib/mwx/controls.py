@@ -5,8 +5,6 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from itertools import chain
-import numpy as np
-from numpy import nan, inf
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -14,6 +12,9 @@ import wx.lib.scrolledpanel as scrolled
 from . import images
 from .utilus import SSM
 from .framework import pack, Menu, CtrlInterface
+
+import numpy as np
+from numpy import nan, inf
 
 
 class Param(object):

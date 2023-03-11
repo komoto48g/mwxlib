@@ -5,18 +5,13 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 import traceback
-import sys
 import wx
-try:
-    from mwx import framework as mwx
-    from mwx.utilus import funcall as _F
-    from mwx.matplot2 import MatplotPanel
-    from mwx.matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
-except ImportError:
-    from . import framework as mwx
-    from .utilus import funcall as _F
-    from .matplot2 import MatplotPanel
-    from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
+
+from . import framework as mwx
+from .utilus import funcall as _F
+from .matplot2 import MatplotPanel
+from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
+
 from matplotlib import cm
 from matplotlib import patches
 from PIL import Image
