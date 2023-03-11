@@ -1204,7 +1204,7 @@ class ShellFrame(MiniFrame):
             for buf in book.all_buffers:
                 if book.need_buffer_save_p(buf):
                     self.popup_window(book)
-                    book.swap_buffer(buf)
+                    buf.SetFocus()
                     if wx.MessageBox(
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
@@ -1324,12 +1324,12 @@ class ShellFrame(MiniFrame):
             if x > 2*w or y > h:
                 pane.floating_pos = wx.GetMousePosition()
         
+        if wnd and win.IsShown(): # restore focus
+            wnd.SetFocus()
+        
         nb.Show(show)
         pane.Show(show)
         self._mgr.Update()
-        
-        if wnd and win.IsShown(): # restore focus
-            wnd.SetFocus()
     
     ## --------------------------------
     ## Actions for handler
@@ -1384,7 +1384,7 @@ class ShellFrame(MiniFrame):
         try:
             self.popup_window(book, focus=focus)
             if buf and book.need_buffer_save_p(buf): # exists and need save?
-                book.swap_buffer(buf)
+                buf.SetFocus()
                 return book.load_buffer()
             return book.load_file(filename, lineno)
         finally:
