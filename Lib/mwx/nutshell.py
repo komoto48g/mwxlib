@@ -1795,7 +1795,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         """Yields context menu."""
         def _menu(j, buf):
             return (j, str(buf), '', wx.ITEM_CHECK,
-                lambda v: self.swap_buffer(buf).SetFocus(),
+                lambda v: buf.SetFocus(),
                 lambda v: v.Check(buf is self.buffer))
         
         return (_menu(j+1, x) for j, x in enumerate(self.all_buffers))
@@ -1818,14 +1818,14 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     
     def swap_buffer(self, buf):
         """Replace buffer with specified buffer."""
-        if buf:
+        j = self.GetPageIndex(buf)
+        if j != -1:
             wnd = wx.Window.FindFocus() # original focus
-            j = self.GetPageIndex(buf)
             if j != self.Selection:
                 self.Selection = j # the focus is moved
             if wnd and wnd not in self.all_buffers: # restore focus other window
                 wnd.SetFocus()
-        return buf
+            return buf
     
     def create_new_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
@@ -1894,7 +1894,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         if buf._load_cache(filename, lineno, globals):
-            self.swap_buffer(buf)
+            buf.SetFocus()
             return True
         return False
     
@@ -1914,8 +1914,10 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         try:
             self.Freeze()
             org = self.buffer
-            self.swap_buffer(buf)
-            return buf._load_file(buf.filename, lineno)
+            if buf._load_file(buf.filename, lineno):
+                buf.SetFocus()
+                return True
+            return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.remove_buffer(buf)
@@ -1982,6 +1984,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     def save_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers):
             self.swap_buffer(buf)
+            assert buf is self.buffer
             self.save_buffer()
         return True
     
@@ -2014,7 +2017,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     
     def kill_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers):
-            self.swap_buffer(buf)
+            buf.SetFocus()
             if wx.MessageBox(
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"

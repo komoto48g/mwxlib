@@ -269,7 +269,10 @@ class Debugger(Pdb):
         for editor in self.parent.get_pages(type(self.editor)):
             buf = editor.find_buffer(f)
             if buf:
-                editor.swap_buffer(buf)
+                wnd = wx.Window.FindFocus()
+                buf.SetFocus()
+                if wnd is self.interactive_shell:
+                    wnd.SetFocus()
                 return editor
     
     def on_debug_begin(self, frame):
