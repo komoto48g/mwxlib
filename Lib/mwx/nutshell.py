@@ -1884,7 +1884,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         """Returns whether the buffer should be saved."""
         return buf.mtdelta is not None and buf.IsModified()
     
-    def load_cache(self, filename, lineno=0, globals=None, focus=False):
+    def load_cache(self, filename, lineno=0, globals=None):
         """Load a file from cache.
         Note:
             The filename should be an absolute path.
@@ -1893,12 +1893,10 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
         if buf._load_cache(filename, lineno, globals):
             self.swap_buffer(buf)
-            if focus:
-                buf.SetFocus()
             return True
         return False
     
-    def load_file(self, filename, lineno=0, focus=False):
+    def load_file(self, filename, lineno=0):
         """Load a file into an existing or new buffer.
         """
         buf = self.find_buffer(filename) or self.create_new_buffer(filename)
@@ -1914,12 +1912,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         try:
             self.Freeze()
             self.swap_buffer(buf)
-            if focus:
-                buf.SetFocus()
             return buf._load_file(buf.filename, lineno)
-        except (FileNotFoundError, OSError) as e:
-            self.post_message("Failed to load {!r}: {}".format(buf.name, e))
-            pass
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.remove_buffer(buf)
