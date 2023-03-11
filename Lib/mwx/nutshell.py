@@ -1828,6 +1828,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         return buf
     
     def create_new_buffer(self, filename, index=None):
+        """Create a new buffer (internal use only)."""
         try:
             self.Freeze()
             buf = Buffer(self, filename)
@@ -1841,6 +1842,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
             self.Thaw()
     
     def new_buffer(self):
+        """Create a new default buffer."""
         buf = self.default_buffer
         if not buf or buf.mtdelta is not None: # is saved?
             buf = self.create_new_buffer(self.default_name, index=0)
@@ -1856,7 +1858,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         if not buf:
             buf = self.buffer
         j = self.GetPageIndex(buf)
-        self.DeletePage(j)
+        self.DeletePage(j) # the focus is moved
         
         if not self.buffer: # no buffers:
             self.new_buffer()
@@ -1911,11 +1913,14 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
                 return None
         try:
             self.Freeze()
+            org = self.buffer
             self.swap_buffer(buf)
             return buf._load_file(buf.filename, lineno)
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.remove_buffer(buf)
+            self.swap_buffer(org)
+            return False
         finally:
             self.Thaw()
     
@@ -1936,6 +1941,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
             return buf._save_file(filename)
         except Exception as e:
             self.post_message("Failed to save {!r}: {}".format(buf.name, e))
+            return False
     
     def load_buffer(self):
         """Confirm the load with the dialog."""
