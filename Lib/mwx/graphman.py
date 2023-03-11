@@ -1681,7 +1681,7 @@ class Frame(mwx.Frame):
         if flush:
             del self.graph[:]
             del self.output[:]
-            for name in list(self.plugins): # OrderedDict mutated during iteration
+            for name in list(self.plugins): # plugins:dict mutates during iteration
                 self.unload_plug(name)
         
         self.statusbar("Loading session from {!r}...".format(f))

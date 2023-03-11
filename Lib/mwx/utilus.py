@@ -4,7 +4,6 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from collections import OrderedDict
 from functools import wraps
 from bdb import BdbQuit
 import traceback
@@ -396,7 +395,7 @@ def get_rootpath(f):
 ## Finite State Machine
 ## --------------------------------
 
-class SSM(OrderedDict):
+class SSM(dict):
     """Single State Machine/Context of FSM
     """
     def __call__(self, event, *args, **kwargs):
@@ -664,7 +663,7 @@ class FSM(dict):
         context = self[state]
         ast = []
         bra = []
-        for event in list(context): #? OrderedDict mutated during iteration
+        for event in list(context): # context mutates during iteration
             if re.search(r"\[.+\]", event):
                 bra.append((event, context.pop(event))) # event key has '[]'
             elif '*' in event or '?' in event:
