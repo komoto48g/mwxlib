@@ -1778,15 +1778,7 @@ if __name__ == "__main__":
     ## frm.load_plug("demo.template.py", show=1, force=1)
     ## frm.load_plug("demo/template.py", show=1, force=1)
     
-    frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=0)
+    frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
     
-    ## sys.path.append(r"C:\usr\home\lib\python\Lib\wxpyNautilus\plugins")
-    ## frm.require("viewfft")
-    ## frm.require("viewframe")
-    ## frm.require("lineprofile")
-    ## frm.require("ffmpeg_viewer")
-    ## frm.load_plug("randn.py", show=1, dock=0)
-    
-    frm.shellframe.debugger.skip.remove(mwx.FSM.__module__)
     frm.Show()
     app.MainLoop()
