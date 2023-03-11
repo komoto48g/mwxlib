@@ -709,6 +709,10 @@ class FSM(dict):
                         continue
                     for act in transaction[1:]:
                         self.unbind(event, act, k)
+        ## cleanup
+        for k, v in list(self.items()): # self mutates during iteration
+            if not v:
+                del self[k]
     
     def define(self, event, action=None, state=None, state2=None):
         self.unbind(event, None, state)
