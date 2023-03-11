@@ -19,20 +19,14 @@ import platform
 import re
 import wx
 from wx import aui
-try:
-    from mwx import framework as mwx
-    from mwx.utilus import funcall as _F
-    from mwx.controls import ControlPanel, Icon
-    from mwx.framework import CtrlInterface
-    from mwx.matplot2g import GraphPlot
-    from mwx.matplot2lg import Histogram
-except ImportError:
-    from . import framework as mwx
-    from .utilus import funcall as _F
-    from .controls import ControlPanel, Icon
-    from .framework import CtrlInterface
-    from .matplot2g import GraphPlot
-    from .matplot2lg import Histogram
+
+from . import framework as mwx
+from .utilus import funcall as _F
+from .controls import ControlPanel, Icon
+from .framework import CtrlInterface
+from .matplot2g import GraphPlot
+from .matplot2lg import Histogram
+
 from matplotlib import cm
 from matplotlib import colors
 ## from matplotlib import pyplot as plt

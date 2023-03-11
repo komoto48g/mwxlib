@@ -4,12 +4,10 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-import sys
 import wx
-try:
-    from mwx import framework as mwx
-except ImportError:
-    from . import framework as mwx
+
+from . import framework as mwx
+
 import matplotlib; matplotlib.use('wxagg') # noqa
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
@@ -20,6 +18,7 @@ from matplotlib.widgets import Cursor
 from matplotlib.figure import Figure
 from matplotlib import cm
 import numpy as np
+
 
 ## state constants
 NORMAL = 'Normal'
