@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.0"
+__version__ = "0.80.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1352,13 +1352,11 @@ class ShellFrame(MiniFrame):
         self.message("Quit")
         evt.Skip()
     
-    def load(self, obj, show=True, focus=False):
+    def load(self, obj, focus=False):
         """Load file @where the object is defined.
         
         Args:
             obj     : target object.
-            show    : Popup window when success.
-                      The window will not be hidden even if no show.
             focus   : Set the focus if the window is displayed.
         """
         if not isinstance(obj, str):
@@ -1384,16 +1382,11 @@ class ShellFrame(MiniFrame):
         
         wnd = wx.Window.FindFocus() # original focus
         try:
-            if show:
-                self.popup_window(book, show, focus)
+            self.popup_window(book, focus=focus)
             if buf and book.need_buffer_save_p(buf): # exists and need save?
                 book.swap_buffer(buf)
-                if not book.load_buffer(): # confirm
-                    return None
-            if not book.load_file(filename, lineno, show):
-                book.remove_buffer()
-                return False
-            return True
+                return book.load_buffer()
+            return book.load_file(filename, lineno)
         finally:
             if not focus:
                 wx.CallAfter(wnd.SetFocus) # restore focus with delay
