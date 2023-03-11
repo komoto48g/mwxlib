@@ -13,8 +13,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 - ~~Python 2.7~~ (PY2 support has ended since 0.50)
 - ~~Python 3.5~~ (PY35 support has ended since 0.70)
-    - wxpython <= 4.0.7
-- ~~Python 3.7~~ (PY37 support will be ended in 0.80)
+- ~~Python 3.7~~ (PY37 support has ended since 0.80)
 - Python 3.8 -- 3.9
     - wxpython >= 4.1.1
     - numpy

@@ -1088,7 +1088,8 @@ class Frame(mwx.Frame):
             floating_pos : posision of floating window
             floating_size : size of floating window
         
-        retval -> None if succeeded else False
+        Returns:
+            None if succeeded else False
         
         Note:
             The root module must have a class `Plugin` <mwx.graphman.Layer>
