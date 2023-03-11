@@ -709,8 +709,6 @@ class FSM(dict):
                         continue
                     for act in transaction[1:]:
                         self.unbind(event, act, k)
-                    if not any(callable(x) for x in transaction):
-                        self[k].pop(event) # remove null event:transaction
     
     def define(self, event, action=None, state=None, state2=None):
         self.unbind(event, None, state)
