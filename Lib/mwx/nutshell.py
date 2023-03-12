@@ -2727,7 +2727,6 @@ class Nautilus(Shell, EditorInterface):
                 pass
             
             elif c == '@':
-                f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rest, sep2).strip()
                 
@@ -2741,13 +2740,13 @@ class Nautilus(Shell, EditorInterface):
                 elif rhs.startswith('('):
                     ## @(y1,,,yn) --> partial(y1,,,yn)
                     rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
+                
+                return self.magic_interpret([f"{rhs}({lhs})"] + rest)
             
             if c == '`':
-                f = "{rhs} = {lhs}"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rest, sep1).strip()
-                return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
+                return self.magic_interpret([f"{rhs} = {lhs}"] + rest)
             
             if c == '?':
                 head, sep, hint = lhs.rpartition('.')
