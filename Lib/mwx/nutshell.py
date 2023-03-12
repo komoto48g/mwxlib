@@ -2700,8 +2700,8 @@ class Nautilus(Shell, EditorInterface):
         
             - quoteback : x`y --> y=x
             - pullback  : x@y --> y(x)
-            - partial   : x@(y1,...,yn) --> partial(y1,...,yn)(x)
-            - apropos   : x.y?p --> apropos(x,y,...,p)
+            - partial   : x@(y1,,,yn) --> partial(y1,,,yn)(x)
+            - apropos   : x.y?p --> apropos(x,y,,,p)
         
         Note:
             This is called before run, execute, and original magic.
@@ -2730,10 +2730,15 @@ class Nautilus(Shell, EditorInterface):
                 f = "{rhs}({lhs})"
                 lhs = lhs.strip() or '_'
                 rhs = _eats(rest, sep2).strip()
+                
                 if rhs in ("debug", "profile", "timeit"):
                     ## func(a,b,c) @debug --> func,a,b,c @debug
-                    lhs = re.sub(r"([\w.]+)\((.*)\)", r"\1, \2", lhs, flags=re.S)
-                else:
+                    lhs = re.sub(r"(.*[\w\)\]])\s*\((.*)\)$",
+                                 r"\1, \2", lhs, flags=re.S)
+                    ## obj[...] @debug --> obj.__getitem__, (...) @debug
+                    lhs = re.sub(r"(.*[\w\)\]])\s*\[(.*)\]$",
+                                 r"\1.__getitem__, (\2)", lhs, flags=re.S)
+                elif rhs.startswith('('):
                     ## @(y1,,,yn) --> partial(y1,,,yn)
                     rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
                 return self.magic_interpret([f.format(lhs=lhs, rhs=rhs)] + rest)
