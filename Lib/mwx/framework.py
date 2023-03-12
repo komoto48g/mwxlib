@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.1"
+__version__ = "0.80.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1422,6 +1422,19 @@ class ShellFrame(MiniFrame):
                 self.debugger.interactive_shell = self.current_shell
                 self.debugger.editor = self.Log # set default logger
                 self.debugger.debug(obj, *args, **kwargs)
+            finally:
+                self.debugger.interactive_shell = shell
+        elif isinstance(obj, str):
+            try:
+                shell = self.debugger.interactive_shell
+                self.debugger.interactive_shell = self.current_shell
+                self.debugger.editor = self.Log # set default logger
+                filename = "<string>"
+                buf = self.Log.find_buffer(filename)\
+                  or self.Log.create_new_buffer(filename)
+                with buf.off_readonly():
+                    buf.Text = obj
+                self.debugger.run(obj)
             finally:
                 self.debugger.interactive_shell = shell
         elif hasattr(obj, '__dict__'):
