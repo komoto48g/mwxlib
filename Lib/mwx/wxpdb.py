@@ -235,6 +235,8 @@ class Debugger(Pdb):
                 self.handler('abort')
     
     def debug(self, obj, *args, **kwargs):
+        """Debug a callable object.
+        """
         if not callable(obj):
             wx.MessageBox("Not a callable object.\n\n"
                           "Unable to debug {!r}.".format(obj))
@@ -257,6 +259,31 @@ class Debugger(Pdb):
         finally:
             self.set_quit()
             return
+    
+    def run(self, cmd):
+        """Debug a statement executed via the exec() function.
+        """
+        if self.busy:
+            wx.MessageBox("Debugger is running.\n\n"
+                          "Enter [q]uit to exit debug mode.")
+            return
+        self.unwatch()
+        globals = self.interactive_shell.globals
+        locals = self.interactive_shell.locals
+        if isinstance(cmd, str):
+            cmd = compile(cmd, "<string>", "exec")
+        try:
+            frame = inspect.currentframe().f_back
+            self.set_trace(frame)
+            exec(cmd, globals, locals)
+        except BdbQuit:
+            pass
+        except Exception as e:
+            ## Note: CallAfter to avoid crashing by a kill-focus event.
+            wx.CallAfter(wx.MessageBox,
+                         "Debugger is closed.\n\n{}".format(e))
+        finally:
+            self.set_quit()
     
     ## --------------------------------
     ## Actions for handler
