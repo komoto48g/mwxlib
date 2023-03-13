@@ -1674,27 +1674,27 @@ class Frame(mwx.Frame):
                 f = dlg.Path
         
         if flush:
-            del self.graph[:]
-            del self.output[:]
             for name in list(self.plugins): # plugins:dict mutates during iteration
                 self.unload_plug(name)
+            del self.graph[:]
+            del self.output[:]
         
         self.statusbar("Loading session from {!r}...".format(f))
         self.session_file = os.path.abspath(f)
         
-        with open(f) as i:
-            ## Load the session in the shell.
-            shell = self.shellframe.rootshell
-            shell.locals.update(
-                nan = np.nan,
-                inf = np.inf,
-            )
-            try:
-                shell.Freeze()
+        ## Load the session in the shell.
+        shell = self.shellframe.rootshell
+        shell.locals.update(
+            nan = np.nan,
+            inf = np.inf,
+        )
+        try:
+            shell.Freeze()
+            with open(f) as i:
                 shell.Execute(i.read())
-            finally:
-                shell.Thaw()
             self._mgr.Update()
+        finally:
+            shell.Thaw()
         
         self.menubar.reset()
         dirname_ = os.path.dirname(f)
