@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.2"
+__version__ = "0.80.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -909,6 +909,11 @@ class ShellFrame(MiniFrame):
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
+        if debrc:
+            self.SESSION_FILE = os.path.abspath(debrc)
+        
+        self.__standalone = bool(ensureClose)
+        
         ## Add useful global abbreviations to builtins
         builtins.apropos = apropos
         builtins.typename = typename
@@ -1004,11 +1009,6 @@ class ShellFrame(MiniFrame):
                              .Caption("Watchdog in the Shell").Right().Position(1).Show(0))
         
         self._mgr.Update()
-        
-        if debrc:
-            self.SESSION_FILE = os.path.abspath(debrc)
-        
-        self.__standalone = bool(ensureClose)
         
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -1112,8 +1112,18 @@ class ShellFrame(MiniFrame):
     
     def load_session(self, rc=None):
         """Load session from file."""
-        if rc:
-            self.SESSION_FILE = os.path.abspath(rc)
+        if not rc:
+            with wx.FileDialog(self, 'Load session',
+                    wildcard="Session file (*.debrc)|*.debrc",
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return
+                rc = dlg.Path
+        ## flush
+        for book in self.get_pages(type(self.Log)):
+            book.remove_all_buffers()
+        
+        self.SESSION_FILE = os.path.abspath(rc)
         try:
             scratch = self.Scratch.default_buffer
             if not scratch or scratch.mtdelta is not None:
@@ -1175,7 +1185,7 @@ class ShellFrame(MiniFrame):
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
         self.add_history(msg)
         self.add_log(msg)
-        self.load_session()
+        self.load_session(self.SESSION_FILE)
     
     def Destroy(self):
         try:
@@ -1554,8 +1564,8 @@ class ShellFrame(MiniFrame):
         with self.Log.default_buffer.off_readonly() as ed:
             ed.write(text)
         ## Logging text every step in case of crash.
-        with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as f:
-            f.write(text)
+        with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
+            o.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
