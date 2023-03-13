@@ -851,13 +851,14 @@ class TreeList(object):
                 try:
                     k, v = item
                     rootkey = f"{key}/{k}" if key else k
-                except Exception:
-                    yield key, item
-                else:
-                    if v and isinstance(v, (list, tuple)):
+                    if not isinstance(k, str):
+                        yield key, item
+                    elif v and isinstance(v, list):
                         yield from _items(v, rootkey)
                     else:
                         yield rootkey, v
+                except Exception:
+                    yield key, item
         yield from _items(self)
     
     def _find_item(self, ls, key):
