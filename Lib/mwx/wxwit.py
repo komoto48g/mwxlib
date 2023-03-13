@@ -121,10 +121,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
             item = self.Selection
             if item:
                 obj = self.GetItemData(item) # Restart
-        if not obj:
-            self.BuildTree(None)
-            ## self.unwatch()
-            ## return
+        self.BuildTree(obj)
         if not isinstance(obj, wx.Window):
             wx.MessageBox("Cannot watch the widget.\n\n"
                           "- {!r} is not a wx.Object.".format(obj))
