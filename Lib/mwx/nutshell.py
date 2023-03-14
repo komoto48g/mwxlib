@@ -2733,11 +2733,8 @@ class Nautilus(Shell, EditorInterface):
                 
                 if rhs in ("debug", "profile", "timeit"):
                     ## func(a,b,c) @debug --> func,a,b,c @debug
-                    lhs = re.sub(r"(.*[\w\)\]])\s*\((.*)\)$",
-                                 r"\1, \2", lhs, flags=re.S)
-                    ## obj[...] @debug --> obj.__getitem__, (...) @debug
-                    lhs = re.sub(r"(.*[\w\)\]])\s*\[(.*)\]$",
-                                 r"\1.__getitem__, (\2)", lhs, flags=re.S)
+                    lhs = re.sub(r"([\w.]+)\s*\((.*)\)$", r"\1, \2", lhs, flags=re.S)
+                
                 elif rhs.startswith('('):
                     ## @(y1,,,yn) --> partial(y1,,,yn)
                     rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
