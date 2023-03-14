@@ -1442,7 +1442,7 @@ class ShellFrame(MiniFrame):
                 self.debugger.editor = self.Log # set default logger
                 filename = "<string>"
                 buf = self.Log.find_buffer(filename)\
-                  or self.Log.create_new_buffer(filename)
+                  or self.Log.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj)
