@@ -1514,21 +1514,15 @@ class Buffer(EditWindow, EditorInterface):
     ## File I/O
     ## --------------------------------
     
-    def _load_cache(self, filename, lineno=0, globals=None):
-        """Load cached script file using linecache."""
-        linecache.checkcache(filename)
-        lines = linecache.getlines(filename, globals)
-        if lines:
-            with self.off_readonly():
-                self.Text = ''.join(lines)
-                self.EmptyUndoBuffer()
-                self.SetSavePoint()
-            self.markline = lineno - 1
-            self.goto_mark()
-            self.filename = filename
-            self.handler('buffer_loaded', self)
-            return True
-        return False
+    def _load_textfile(self, text, filename, lineno=0):
+        with self.off_readonly():
+            self.Text = text
+            self.EmptyUndoBuffer()
+            self.SetSavePoint()
+        self.markline = lineno - 1
+        self.goto_mark()
+        self.filename = filename
+        self.handler('buffer_loaded', self)
     
     def _load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile."""
@@ -1888,13 +1882,16 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         return buf.mtdelta is not None and buf.IsModified()
     
     def load_cache(self, filename, lineno=0, globals=None):
-        """Load a file from cache.
+        """Load a file from cache using linecache.
         Note:
             The filename should be an absolute path.
             The buffer will be reloaded without confirmation.
         """
-        buf = self.find_buffer(filename) or self.create_buffer(filename)
-        if buf._load_cache(filename, lineno, globals):
+        linecache.checkcache(filename)
+        lines = linecache.getlines(filename, globals)
+        if lines:
+            buf = self.find_buffer(filename) or self.create_buffer(filename)
+            buf._load_textfile(''.join(lines), filename, lineno)
             buf.SetFocus()
             return True
         return False
