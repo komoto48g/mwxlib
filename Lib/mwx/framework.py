@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.3"
+__version__ = "0.80.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1398,8 +1398,9 @@ class ShellFrame(MiniFrame):
                 return book.load_buffer()
             return book.load_file(filename, lineno)
         finally:
-            if not focus:
-                wx.CallAfter(wnd.SetFocus) # restore focus with delay
+            if wnd and not focus:
+                ## wx.CallAfter(wnd.SetFocus) # restore focus with delay
+                wnd.SetFocus()
     
     def info(self, obj):
         self.rootshell.info(obj)

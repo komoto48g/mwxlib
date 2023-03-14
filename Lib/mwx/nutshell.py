@@ -1821,9 +1821,10 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         j = self.GetPageIndex(buf)
         if j != -1:
             wnd = wx.Window.FindFocus() # original focus
+            org = self.buffer
             if j != self.Selection:
                 self.Selection = j # the focus is moved
-            if wnd and wnd not in self.all_buffers: # restore focus other window
+            if wnd and wnd is not org: # restore focus other window
                 wnd.SetFocus()
             return buf
     
