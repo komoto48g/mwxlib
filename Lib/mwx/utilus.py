@@ -265,6 +265,18 @@ if pp:
         pp.sort_dicts = True
 
 
+def split_paren(text, reverse=False):
+    tokens = _split_tokens(text)
+    if reverse:
+        tokens = tokens[::-1]
+    paren = _extract_paren_from_tokens(tokens, reverse)
+    rest = ''.join(tokens[::-1] if reverse else tokens)
+    if reverse:
+        return rest, paren
+    else:
+        return paren, rest
+
+
 def split_words(text, reverse=False):
     tokens = _split_tokens(text)
     if reverse:

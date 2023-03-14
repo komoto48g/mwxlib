@@ -28,9 +28,8 @@ from wx.py import interpreter
 from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
-from . import utilus
 from .utilus import funcall as _F
-from .utilus import split_words, find_modules
+from .utilus import split_words, split_paren, find_modules
 from .framework import CtrlInterface, Menu
 
 
@@ -2736,14 +2735,11 @@ class Nautilus(Shell, EditorInterface):
                     ## func(a,b,c) @debug --> func,a,b,c @debug
                     ## lhs = re.sub(r"([\w.]+)\s*\((.*)\)$", r"\1, \2", lhs, flags=re.S)
                     if lhs[-1] in ')]':
-                        ls = utilus._split_tokens(lhs)[::-1]
-                        L2 = utilus._extract_paren_from_tokens(ls, reverse=1)
-                        L1 = ''.join(ls[::-1])
-                        if L2:
-                            if lhs[-1] == ')':
-                                lhs = "{}, {}".format(L1, L2[1:-1])
-                            else:
-                                lhs = "{}.__getitem__, ({})".format(L1, L2[1:-1])
+                        L, R = split_paren(lhs, reverse=1)
+                        if R.startswith('('):
+                            lhs = "{}, {}".format(L, R[1:-1])
+                        elif R.startswith('['):
+                            lhs = "{}.__getitem__, ({})".format(L, R[1:-1])
                 elif rhs.startswith('('):
                     ## @(y1,,,yn) --> partial(y1,,,yn)
                     rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
