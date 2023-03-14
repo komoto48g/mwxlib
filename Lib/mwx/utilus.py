@@ -269,8 +269,9 @@ def split_paren(text, reverse=False):
     tokens = _split_tokens(text)
     if reverse:
         tokens = tokens[::-1]
-    paren = _extract_paren_from_tokens(tokens, reverse)
-    rest = ''.join(tokens[::-1] if reverse else tokens)
+    words = _extract_paren_from_tokens(tokens, reverse)
+    paren = ''.join(reversed(words) if reverse else words)
+    rest = ''.join(reversed(tokens) if reverse else tokens)
     if reverse:
         return rest, paren
     else:
@@ -283,9 +284,10 @@ def split_words(text, reverse=False):
         tokens = tokens[::-1]
     while tokens:
         words = _extract_words_from_tokens(tokens, reverse)
-        if not words:
-            words = tokens.pop(0)
-        yield words
+        if words:
+            yield ''.join(reversed(words) if reverse else words)
+        else:
+            yield tokens.pop(0)
 
 
 def _split_tokens(text):
@@ -337,12 +339,13 @@ def _extract_words_from_tokens(tokens, reverse=False):
         if stack: # error("unclosed-paren", ''.join(stack))
             pass
     del tokens[:j] # remove extracted tokens
-    return ''.join(reversed(words) if reverse else words)
+    return words #''.join(reversed(words) if reverse else words)
 
 
 def _extract_paren_from_tokens(tokens, reverse=False):
     """Extracts parenthesis from tokens.
     
+    The first token must be a parenthesis.
     If the parenthesis is not closed, returns None.
     """
     p, q = "({[", ")}]"
@@ -363,7 +366,7 @@ def _extract_paren_from_tokens(tokens, reverse=False):
         words.append(c)
         if not stack: # ok
             del tokens[:j+1] # remove extracted tokens
-            return ''.join(reversed(words) if reverse else words)
+            return words #''.join(reversed(words) if reverse else words)
 
 
 def find_modules(force=False, verbose=True):
