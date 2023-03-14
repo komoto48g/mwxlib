@@ -29,7 +29,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import split_words, find_modules
+from .utilus import split_words, split_paren, find_modules
 from .framework import CtrlInterface, Menu
 
 
@@ -1671,7 +1671,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
                               # Parent:<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower())
-        self.default_buffer = self.create_new_buffer(self.default_name)
+        self.default_buffer = self.create_buffer(self.default_name)
         
         self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
@@ -1821,13 +1821,14 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         j = self.GetPageIndex(buf)
         if j != -1:
             wnd = wx.Window.FindFocus() # original focus
+            org = self.buffer
             if j != self.Selection:
                 self.Selection = j # the focus is moved
-            if wnd and wnd not in self.all_buffers: # restore focus other window
+            if wnd and wnd is not org: # restore focus other window
                 wnd.SetFocus()
             return buf
     
-    def create_new_buffer(self, filename, index=None):
+    def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         try:
             self.Freeze()
@@ -1845,7 +1846,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         """Create a new default buffer."""
         buf = self.default_buffer
         if not buf or buf.mtdelta is not None: # is saved?
-            buf = self.create_new_buffer(self.default_name, index=0)
+            buf = self.create_buffer(self.default_name, index=0)
             self.default_buffer = buf
         else:
             buf.ClearAll()
@@ -1892,7 +1893,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
             The filename should be an absolute path.
             The buffer will be reloaded without confirmation.
         """
-        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+        buf = self.find_buffer(filename) or self.create_buffer(filename)
         if buf._load_cache(filename, lineno, globals):
             buf.SetFocus()
             return True
@@ -1901,7 +1902,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
     def load_file(self, filename, lineno=0):
         """Load a file into an existing or new buffer.
         """
-        buf = self.find_buffer(filename) or self.create_new_buffer(filename)
+        buf = self.find_buffer(filename) or self.create_buffer(filename)
         if self.need_buffer_save_p(buf):
             if wx.MessageBox(
                     "You are leaving unsaved content.\n\n"
@@ -2733,11 +2734,13 @@ class Nautilus(Shell, EditorInterface):
                 
                 if rhs in ("debug", "profile", "timeit"):
                     ## func(a,b,c) @debug --> func,a,b,c @debug
-                    lhs = re.sub(r"(.*[\w\)\]])\s*\((.*)\)$",
-                                 r"\1, \2", lhs, flags=re.S)
-                    ## obj[...] @debug --> obj.__getitem__, (...) @debug
-                    lhs = re.sub(r"(.*[\w\)\]])\s*\[(.*)\]$",
-                                 r"\1.__getitem__, (\2)", lhs, flags=re.S)
+                    ## lhs = re.sub(r"([\w.]+)\s*\((.*)\)$", r"\1, \2", lhs, flags=re.S)
+                    if lhs[-1] in ')]':
+                        L, R = split_paren(lhs, reverse=1)
+                        if R.startswith('('):
+                            lhs = "{}, {}".format(L, R[1:-1])
+                        elif R.startswith('['):
+                            lhs = "{}.__getitem__, ({})".format(L, R[1:-1])
                 elif rhs.startswith('('):
                     ## @(y1,,,yn) --> partial(y1,,,yn)
                     rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
