@@ -298,8 +298,10 @@ def _split_tokens(text):
 
 
 def _extract_words_from_tokens(tokens, reverse=False):
-    """Extract pythonic expressions from tokens.
-    default sep includes `@, binary-ops, and whitespaces, etc.
+    """Extracts pythonic expressions from tokens
+    until sep is found after the parenthesis is closed.
+    
+    The default sep includes `@, ops, delims, and whitespaces, etc.
     """
     sep = "`@=+-/*%<>&|^~!?,:; \t\r\n#"
     p, q = "({[", ")}]"
@@ -324,6 +326,32 @@ def _extract_words_from_tokens(tokens, reverse=False):
             pass
     del tokens[:j] # remove extracted tokens
     return ''.join(reversed(words) if reverse else words)
+
+
+def _extract_paren_from_tokens(tokens, reverse=False):
+    """Extracts parenthesis from tokens.
+    
+    If the parenthesis is not closed, returns None.
+    """
+    p, q = "({[", ")}]"
+    if reverse:
+        p, q = q, p
+    stack = []
+    words = []
+    for j, c in enumerate(tokens):
+        if c in p:
+            stack.append(c)
+        elif c in q:
+            if not stack: # error("open-paren", c)
+                return None
+            if c != q[p.index(stack.pop())]: # error("mismatch-paren", c)
+                return None
+        elif j == 0:
+            return None # not found
+        words.append(c)
+        if not stack: # ok
+            del tokens[:j+1] # remove extracted tokens
+            return ''.join(reversed(words) if reverse else words)
 
 
 def find_modules(force=False, verbose=True):
