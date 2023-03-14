@@ -1881,6 +1881,16 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         """Returns whether the buffer should be saved."""
         return buf.mtdelta is not None and buf.IsModified()
     
+    def load_url(self, url, *args, **kwargs):
+        import requests
+        res = requests.get(url)
+        if res.status_code == 200: # success
+            buf = self.find_buffer(url) or self.create_buffer(url)
+            buf._load_textfile(res.text, url)
+            buf.SetFocus()
+            return True
+        return False
+    
     def load_cache(self, filename, lineno=0, globals=None):
         """Load a file from cache using linecache.
         Note:
