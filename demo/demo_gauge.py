@@ -31,6 +31,16 @@ class Plugin(Layer):
             self.g1.Value = p.value
             self.g2.Value = p.value
             self.sig.Value = p.value
+        
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000)
+        self.Bind(wx.EVT_TIMER, lambda v: self.sig.blink(900))
+    
+    def Destroy(self):
+        try:
+            self.timer.Stop()
+        finally:
+            return Layer.Destroy(self)
 
 
 if __name__ == "__main__":
