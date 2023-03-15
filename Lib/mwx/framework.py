@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.5"
+__version__ = "0.80.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1067,7 +1067,7 @@ class ShellFrame(MiniFrame):
             0 : {
                     '* pressed' : (0, skip, fork), # => debugger
                    '* released' : (0, skip, fork), # => debugger
-                  'C-g pressed' : (0, self.Quit, fork), # => debugger
+                  'C-g pressed' : (0, self.Quit, skip, fork), # => debugger
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1200,10 +1200,16 @@ class ShellFrame(MiniFrame):
     
     def OnClose(self, evt):
         if self.debugger.busy:
-            wx.MessageBox("The debugger is running.\n\n"
-                          "Enter [q]uit to exit before closing.")
-            evt.Veto()
-            return
+            if wx.MessageBox(
+                    "The debugger is running.\n\n"
+                    "Enter [q]uit to exit before closing.\n"
+                    "Continue closing?",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.message("The close has been canceled.")
+                evt.Veto()
+                return
+            self.Quit()
+        
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer will be cleared.")
@@ -1345,7 +1351,7 @@ class ShellFrame(MiniFrame):
     ## Actions for handler
     ## --------------------------------
     
-    def Quit(self, evt):
+    def Quit(self, evt=None):
         ## self.inspector.unwatch()
         self.monitor.unwatch()
         self.ginfo.unwatch()
@@ -1360,7 +1366,6 @@ class ShellFrame(MiniFrame):
         self.message.SetBackgroundColour(None)
         self.message.Refresh()
         self.message("Quit")
-        evt.Skip()
     
     def load(self, obj, focus=False):
         """Load file @where the object is defined.

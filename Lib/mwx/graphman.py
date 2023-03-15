@@ -1312,7 +1312,7 @@ class Frame(mwx.Frame):
                 for path in dlg.Paths:
                     self.load_plug(path)
     
-    def Quit(self, evt):
+    def Quit(self, evt=None):
         """Stop all Layer.thread."""
         for name in self.plugins:
             plug = self.get_plug(name)
