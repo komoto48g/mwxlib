@@ -972,7 +972,8 @@ class ShellFrame(MiniFrame):
         self.console.TabCtrlHeight = 0
         self.console.Name = "console"
         
-        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClose)
+        ## self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleCloseBtn)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnConsolePageClose)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
         self.ghost = AuiNotebook(self, size=(600,400))
@@ -1263,24 +1264,40 @@ class ShellFrame(MiniFrame):
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
-        if nb.CurrentPage is self.rootshell:
+        win = nb.CurrentPage
+        if win is self.rootshell:
             nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
     
+    ## def OnConsoleCloseBtn(self, evt): #<wx._aui.AuiNotebookEvent>
+    ##     tabs = evt.EventObject
+    ##     win = tabs.Pages[evt.Selection].window # GetPage for split notebook.
+    ##     if win is self.rootshell:
+    ##         ## self.message("- Don't close the root shell.")
+    ##         return
+    ##     elif self.debugger.busy and win is self.debugger.interactive_shell:
+    ##         wx.MessageBox("The debugger is running.\n\n"
+    ##                       "Enter [q]uit to exit before closing.")
+    ##         return
+    ##     evt.Skip()
+    
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject          #<wx._aui.AuiTabCtrl>
-        win = obj.Pages[evt.Selection].window # GetPage for split notebook.
+        nb = evt.EventObject
+        ## win = nb.CurrentPage # NG
+        win = nb.all_pages[evt.Selection]
         if win is self.rootshell:
             ## self.message("- Don't close the root shell.")
-            return
+            nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            evt.Veto()
         elif self.debugger.busy and win is self.debugger.interactive_shell:
             wx.MessageBox("The debugger is running.\n\n"
                           "Enter [q]uit to exit before closing.")
-            return
-        evt.Skip()
+            evt.Veto()
+        else:
+            evt.Skip()
     
     def About(self, evt=None):
         with self.Help.buffer.off_readonly() as ed:
