@@ -1668,7 +1668,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.default_name = "*{}*".format(name.lower())
         self.default_buffer = self.create_buffer(self.default_name)
         
-        self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageCloseBtn)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
@@ -1711,21 +1711,19 @@ class EditorBook(AuiNotebook, CtrlInterface):
             },
         })
     
-    def OnPageCloseBtn(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject   #<wx._aui.AuiTabCtrl>
-        try:
-            buf = obj.Pages[evt.Selection].window # GetPage for split notebook.
-            if self.need_buffer_save_p(buf):
-                if wx.MessageBox(
-                        "You are closing unsaved content.\n\n"
-                        "Changes to the content will be discarded.\n"
-                        "Continue closing?",
-                        "Close {!r}".format(buf.name),
-                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                    self.post_message("The close has been canceled.")
-                    return None
-        except AttributeError:
-            pass
+    def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
+        nb = evt.EventObject
+        buf = nb.all_buffers[evt.Selection]
+        if self.need_buffer_save_p(buf):
+            if wx.MessageBox(
+                    "You are closing unsaved content.\n\n"
+                    "Changes to the content will be discarded.\n"
+                    "Continue closing?",
+                    "Close {!r}".format(buf.name),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The close has been canceled.")
+                evt.Veto()
+                return
         evt.Skip()
     
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
