@@ -30,7 +30,7 @@ from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
 from .utilus import split_words, split_paren, find_modules
-from .framework import CtrlInterface, Menu
+from .framework import CtrlInterface, AuiNotebook, Menu
 
 
 def skip(v):
@@ -1639,7 +1639,7 @@ class Buffer(EditWindow, EditorInterface):
         return lc, le
 
 
-class EditorBook(aui.AuiNotebook, CtrlInterface):
+class EditorBook(AuiNotebook, CtrlInterface):
     """Python code editor.
     
     Args:
@@ -1656,7 +1656,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
         )
-        aui.AuiNotebook.__init__(self, parent, **kwargs)
+        AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
         
         self.defaultBufferStyle = dict(
