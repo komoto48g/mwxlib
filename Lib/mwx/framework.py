@@ -738,7 +738,7 @@ class AuiNotebook(aui.AuiNotebook):
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
             ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
-            )
+        )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
         self._mgr = self.EventHandler
@@ -781,11 +781,11 @@ class AuiNotebook(aui.AuiNotebook):
         Note:
             Argument `win` can also be Window.Name:str (not page.caption).
         """
-        for tc in self.all_tabs: #<aui.AuiTabCtrl>
-            for page in tc.Pages: #<aui.AuiNotebookPage>
+        for tabs in self.all_tabs: #<aui.AuiTabCtrl>
+            for page in tabs.Pages: #<aui.AuiNotebookPage>
                 ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
-                    return tc, page
+                    return tabs, page
     
     def move_tab(self, win, tabs):
         """Move page of win to specified tabs."""
@@ -812,8 +812,8 @@ class AuiNotebook(aui.AuiNotebook):
         for j, pane in enumerate(self.all_panes):
             pane.name = f"pane{j+1}"
         spec = ""
-        for j, tc in enumerate(self.all_tabs):
-            names = [page.window.Name for page in tc.Pages]
+        for j, tabs in enumerate(self.all_tabs):
+            names = [page.window.Name for page in tabs.Pages]
             spec += f"pane{j+1}={names}|"
         return spec + '@' + self._mgr.SavePerspective()
     
