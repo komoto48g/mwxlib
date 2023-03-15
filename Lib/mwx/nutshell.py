@@ -1391,6 +1391,16 @@ class Buffer(EditWindow, EditorInterface):
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
     
+    def pre_command_hook(self, evt):
+        self.parent.handler(self.handler.event, evt)
+        return EditorInterface.pre_command_hook(self, evt)
+    pre_command_hook.__name__ = str('pre_command_dispatch') # alias
+    
+    def post_command_hook(self, evt):
+        self.parent.handler(self.handler.event, evt)
+        return EditorInterface.post_command_hook(self, evt)
+    post_command_hook.__name__ = str('post_command_dispatch') # alias
+    
     def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -1439,18 +1449,6 @@ class Buffer(EditWindow, EditorInterface):
                     '* pressed' : (0, dispatch), # => skip
                    '* released' : (0, dispatch), # => skip
                'escape pressed' : (-1, self.on_enter_escmap),
-            },
-        })
-        self.handler.append({ # DNA<Buffer>
-            0 : {
-                  'C-x pressed' : ('C-x', dispatch),
-                  'C-c pressed' : ('C-c', dispatch),
-            },
-            'C-x' : {
-                    '* pressed' : (0, dispatch),
-            },
-            'C-c' : {
-                    '* pressed' : (0, dispatch),
             },
         })
         
