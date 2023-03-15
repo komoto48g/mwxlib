@@ -1391,6 +1391,16 @@ class Buffer(EditWindow, EditorInterface):
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
     
+    def pre_command_hook(self, evt):
+        self.parent.handler(self.handler.event, evt)
+        return EditorInterface.pre_command_hook(self, evt)
+    pre_command_hook.__name__ = str('pre_command_dispatch') # alias
+    
+    def post_command_hook(self, evt):
+        self.parent.handler(self.handler.event, evt)
+        return EditorInterface.post_command_hook(self, evt)
+    post_command_hook.__name__ = str('post_command_dispatch') # alias
+    
     def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -1439,18 +1449,6 @@ class Buffer(EditWindow, EditorInterface):
                     '* pressed' : (0, dispatch), # => skip
                    '* released' : (0, dispatch), # => skip
                'escape pressed' : (-1, self.on_enter_escmap),
-            },
-        })
-        self.handler.append({ # DNA<Buffer>
-            0 : {
-                  'C-x pressed' : ('C-x', dispatch),
-                  'C-c pressed' : ('C-c', dispatch),
-            },
-            'C-x' : {
-                    '* pressed' : (0, dispatch),
-            },
-            'C-c' : {
-                    '* pressed' : (0, dispatch),
             },
         })
         
@@ -1514,21 +1512,15 @@ class Buffer(EditWindow, EditorInterface):
     ## File I/O
     ## --------------------------------
     
-    def _load_cache(self, filename, lineno=0, globals=None):
-        """Load cached script file using linecache."""
-        linecache.checkcache(filename)
-        lines = linecache.getlines(filename, globals)
-        if lines:
-            with self.off_readonly():
-                self.Text = ''.join(lines)
-                self.EmptyUndoBuffer()
-                self.SetSavePoint()
-            self.markline = lineno - 1
-            self.goto_mark()
-            self.filename = filename
-            self.handler('buffer_loaded', self)
-            return True
-        return False
+    def _load_textfile(self, text, filename, lineno=0):
+        with self.off_readonly():
+            self.Text = text
+            self.EmptyUndoBuffer()
+            self.SetSavePoint()
+        self.markline = lineno - 1
+        self.goto_mark()
+        self.filename = filename
+        self.handler('buffer_loaded', self)
     
     def _load_file(self, filename, lineno=0):
         """Wrapped method of LoadFile."""
@@ -1887,14 +1879,27 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         """Returns whether the buffer should be saved."""
         return buf.mtdelta is not None and buf.IsModified()
     
+    def load_url(self, url, *args, **kwargs):
+        import requests
+        res = requests.get(url)
+        if res.status_code == 200: # success
+            buf = self.find_buffer(url) or self.create_buffer(url)
+            buf._load_textfile(res.text, url)
+            buf.SetFocus()
+            return True
+        return False
+    
     def load_cache(self, filename, lineno=0, globals=None):
-        """Load a file from cache.
+        """Load a file from cache using linecache.
         Note:
             The filename should be an absolute path.
             The buffer will be reloaded without confirmation.
         """
-        buf = self.find_buffer(filename) or self.create_buffer(filename)
-        if buf._load_cache(filename, lineno, globals):
+        linecache.checkcache(filename)
+        lines = linecache.getlines(filename, globals)
+        if lines:
+            buf = self.find_buffer(filename) or self.create_buffer(filename)
+            buf._load_textfile(''.join(lines), filename, lineno)
             buf.SetFocus()
             return True
         return False
