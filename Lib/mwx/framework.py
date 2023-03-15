@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.6"
+__version__ = "0.80.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1209,7 +1209,9 @@ class ShellFrame(MiniFrame):
                 self.message("The close has been canceled.")
                 evt.Veto()
                 return
-            self.Quit()
+            #? RuntimeError('wrapped C/C++ object ... has been deleted')
+            ## self.Quit()
+            return
         
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
