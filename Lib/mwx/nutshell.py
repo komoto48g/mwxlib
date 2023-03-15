@@ -30,7 +30,7 @@ from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
 from .utilus import split_words, split_paren, find_modules
-from .framework import CtrlInterface, Menu
+from .framework import CtrlInterface, AuiNotebook, Menu
 
 
 def skip(v):
@@ -1639,7 +1639,7 @@ class Buffer(EditWindow, EditorInterface):
         return lc, le
 
 
-class EditorBook(aui.AuiNotebook, CtrlInterface):
+class EditorBook(AuiNotebook, CtrlInterface):
     """Python code editor.
     
     Args:
@@ -1653,7 +1653,10 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         return self.parent.message(*args, **kwargs)
     
     def __init__(self, parent, name="book", **kwargs):
-        aui.AuiNotebook.__init__(self, parent, **kwargs)
+        kwargs.setdefault('style',
+            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
+        )
+        AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
         
         self.defaultBufferStyle = dict(
@@ -1665,7 +1668,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
         self.default_name = "*{}*".format(name.lower())
         self.default_buffer = self.create_buffer(self.default_name)
         
-        self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageClose)
+        self.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnPageCloseBtn)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
@@ -1708,7 +1711,7 @@ class EditorBook(aui.AuiNotebook, CtrlInterface):
             },
         })
     
-    def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
+    def OnPageCloseBtn(self, evt): #<wx._aui.AuiNotebookEvent>
         obj = evt.EventObject   #<wx._aui.AuiTabCtrl>
         try:
             buf = obj.Pages[evt.Selection].window # GetPage for split notebook.

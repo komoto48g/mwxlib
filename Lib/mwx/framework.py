@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.5"
+__version__ = "0.80.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -738,7 +738,7 @@ class AuiNotebook(aui.AuiNotebook):
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
             ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
-            )
+        )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
         self._mgr = self.EventHandler
@@ -781,11 +781,11 @@ class AuiNotebook(aui.AuiNotebook):
         Note:
             Argument `win` can also be Window.Name:str (not page.caption).
         """
-        for tc in self.all_tabs: #<aui.AuiTabCtrl>
-            for page in tc.Pages: #<aui.AuiNotebookPage>
+        for tabs in self.all_tabs: #<aui.AuiTabCtrl>
+            for page in tabs.Pages: #<aui.AuiNotebookPage>
                 ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
-                    return tc, page
+                    return tabs, page
     
     def move_tab(self, win, tabs):
         """Move page of win to specified tabs."""
@@ -812,8 +812,8 @@ class AuiNotebook(aui.AuiNotebook):
         for j, pane in enumerate(self.all_panes):
             pane.name = f"pane{j+1}"
         spec = ""
-        for j, tc in enumerate(self.all_tabs):
-            names = [page.window.Name for page in tc.Pages]
+        for j, tabs in enumerate(self.all_tabs):
+            names = [page.window.Name for page in tabs.Pages]
             spec += f"pane{j+1}={names}|"
         return spec + '@' + self._mgr.SavePerspective()
     
@@ -972,7 +972,8 @@ class ShellFrame(MiniFrame):
         self.console.TabCtrlHeight = 0
         self.console.Name = "console"
         
-        self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsolePageClose)
+        ## self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleCloseBtn)
+        self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnConsolePageClose)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
         self.ghost = AuiNotebook(self, size=(600,400))
@@ -1067,7 +1068,7 @@ class ShellFrame(MiniFrame):
             0 : {
                     '* pressed' : (0, skip, fork), # => debugger
                    '* released' : (0, skip, fork), # => debugger
-                  'C-g pressed' : (0, self.Quit, fork), # => debugger
+                  'C-g pressed' : (0, self.Quit, skip, fork), # => debugger
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1200,10 +1201,16 @@ class ShellFrame(MiniFrame):
     
     def OnClose(self, evt):
         if self.debugger.busy:
-            wx.MessageBox("The debugger is running.\n\n"
-                          "Enter [q]uit to exit before closing.")
-            evt.Veto()
-            return
+            if wx.MessageBox(
+                    "The debugger is running.\n\n"
+                    "Enter [q]uit to exit before closing.\n"
+                    "Continue closing?",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.message("The close has been canceled.")
+                evt.Veto()
+                return
+            self.Quit()
+        
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer will be cleared.")
@@ -1257,24 +1264,40 @@ class ShellFrame(MiniFrame):
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
-        if nb.CurrentPage is self.rootshell:
+        win = nb.CurrentPage
+        if win is self.rootshell:
             nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         else:
             nb.WindowStyle |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
     
+    ## def OnConsoleCloseBtn(self, evt): #<wx._aui.AuiNotebookEvent>
+    ##     tabs = evt.EventObject
+    ##     win = tabs.Pages[evt.Selection].window # GetPage for split notebook.
+    ##     if win is self.rootshell:
+    ##         ## self.message("- Don't close the root shell.")
+    ##         return
+    ##     elif self.debugger.busy and win is self.debugger.interactive_shell:
+    ##         wx.MessageBox("The debugger is running.\n\n"
+    ##                       "Enter [q]uit to exit before closing.")
+    ##         return
+    ##     evt.Skip()
+    
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject          #<wx._aui.AuiTabCtrl>
-        win = obj.Pages[evt.Selection].window # GetPage for split notebook.
+        nb = evt.EventObject
+        ## win = nb.CurrentPage # NG
+        win = nb.all_pages[evt.Selection]
         if win is self.rootshell:
             ## self.message("- Don't close the root shell.")
-            return
+            nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+            evt.Veto()
         elif self.debugger.busy and win is self.debugger.interactive_shell:
             wx.MessageBox("The debugger is running.\n\n"
                           "Enter [q]uit to exit before closing.")
-            return
-        evt.Skip()
+            evt.Veto()
+        else:
+            evt.Skip()
     
     def About(self, evt=None):
         with self.Help.buffer.off_readonly() as ed:
@@ -1345,7 +1368,7 @@ class ShellFrame(MiniFrame):
     ## Actions for handler
     ## --------------------------------
     
-    def Quit(self, evt):
+    def Quit(self, evt=None):
         ## self.inspector.unwatch()
         self.monitor.unwatch()
         self.ginfo.unwatch()
@@ -1360,7 +1383,6 @@ class ShellFrame(MiniFrame):
         self.message.SetBackgroundColour(None)
         self.message.Refresh()
         self.message("Quit")
-        evt.Skip()
     
     def load(self, obj, focus=False):
         """Load file @where the object is defined.
