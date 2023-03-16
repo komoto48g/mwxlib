@@ -739,7 +739,7 @@ class AuiNotebook(aui.AuiNotebook):
         )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
-        self._mgr = self.EventHandler
+        self._mgr = self.EventHandler # internal use only
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
     
@@ -777,7 +777,7 @@ class AuiNotebook(aui.AuiNotebook):
         cf. aui.AuiNotebook.FindTab -> bool, tab, idx
         
         Note:
-            Argument `win` can also be Window.Name:str (not page.caption).
+            Argument `win` can also be page.window.Name (not page.caption).
         """
         for tabs in self.all_tabs: #<aui.AuiTabCtrl>
             for page in tabs.Pages: #<aui.AuiNotebookPage>
@@ -813,10 +813,12 @@ class AuiNotebook(aui.AuiNotebook):
         for j, tabs in enumerate(self.all_tabs):
             k = next(k for k, page in enumerate(tabs.Pages)
                                    if page.window.Shown) # get active window
+            ## names = [page.caption for page in tabs.Pages]
             names = [page.window.Name for page in tabs.Pages]
             spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
     
+    ## Note: Should be called after all pages have been added.
     @postcall
     def loadPerspective(self, spec):
         """Loads a saved perspective.
@@ -828,7 +830,7 @@ class AuiNotebook(aui.AuiNotebook):
         tabs, frames = spec.split('@')
         tabinfo = re.findall(r"pane\w+?=(.*?);(.*?)\|", tabs)
         try:
-            self.Freeze()
+            self.Parent.Freeze()
             ## Collapse all tabs to main tabctrl
             maintab = self.all_tabs[0]
             for win in self.all_pages:
@@ -837,10 +839,11 @@ class AuiNotebook(aui.AuiNotebook):
             ## Create a new tab using Split method.
             ## Note: The normal way of creating panes with `_mgr` crashes.
             
+            ## all_names = [self.find_tab(win)[1].caption for win in self.all_pages]
             all_names = [win.Name for win in self.all_pages]
             for names, k in tabinfo[1:]:
                 names, k = eval(names), int(k)
-                i = all_names.index(names[0])
+                i = all_names.index(names[0]) # Assuming 0:tab is included.
                 self.Split(i, wx.LEFT)
                 newtab = self.all_tabs[-1]
                 for name in names[1:]:
@@ -855,10 +858,11 @@ class AuiNotebook(aui.AuiNotebook):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
-        except Exception:
+        except Exception as e:
+            print("- Failed to load perspective: {}".format(e))
             pass
         finally:
-            self.Thaw()
+            self.Parent.Thaw()
 
 
 class ShellFrame(MiniFrame):
