@@ -1162,6 +1162,22 @@ class Indicator(wx.Control):
                 name = self.foreground
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(s*(2*j+1)-j, h//2, r)
+    
+    def blink(self, msec, mask=0):
+        """Blinks once for given milliseconds.
+        
+        >>> self.timer = wx.Timer(self)
+        >>> self.timer.Start(1000)
+        >>> self.Bind(wx.EVT_TIMER,
+                      lambda v: self.indicater.blink(500))
+        """
+        def _blink():
+            if self and self.Value == v & mask:
+                self.Value = v
+        v = self.Value
+        if v and msec:
+            self.Value = v & mask
+            wx.CallAfter(wx.CallLater, msec, _blink)
 
 
 class Gauge(wx.Control):
