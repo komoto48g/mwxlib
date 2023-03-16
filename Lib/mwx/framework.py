@@ -813,8 +813,10 @@ class AuiNotebook(aui.AuiNotebook):
             pane.name = f"pane{j+1}"
         spec = ""
         for j, tabs in enumerate(self.all_tabs):
+            k = next(k for k, page in enumerate(tabs.Pages)
+                                   if page.window.Shown) # get active window
             names = [page.window.Name for page in tabs.Pages]
-            spec += f"pane{j+1}={names}|"
+            spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
     
     @postcall
@@ -826,32 +828,37 @@ class AuiNotebook(aui.AuiNotebook):
             At that point, some pages may be missing.
         """
         tabs, frames = spec.split('@')
-        tabinfo = re.findall(r"(.*?)=(.*?)\|", tabs)
+        tabinfo = re.findall(r"pane\w+?=(.*?);(.*?)\|", tabs)
         try:
             self.Freeze()
             ## Collapse all tabs to main tabctrl
             maintab = self.all_tabs[0]
             for win in self.all_pages:
                 self.move_tab(win, maintab)
-            ## Create new tabs
+            
+            ## Create a new tab using Split method.
+            ## Note: The normal way of creating panes with `_mgr` crashes.
+            
             all_names = [win.Name for win in self.all_pages]
-            for pane, pages in tabinfo[1:]:
-                names = eval(pages)
-                names = sorted(set(names) & set(all_names), key=names.index)
-                if not names:
-                    continue
-                ## Create a new tab using Split method.
-                ## Note: The normal method of creating panes
-                ##       using the internal _mgr will crash.
+            for names, k in tabinfo[1:]:
+                names, k = eval(names), int(k)
                 i = all_names.index(names[0])
                 self.Split(i, wx.LEFT)
                 newtab = self.all_tabs[-1]
                 for name in names[1:]:
                     self.move_tab(name, newtab)
+                self.Selection = all_names.index(names[k]) # new tabs active window
+            else:
+                names, k = tabinfo[0]
+                names, k = eval(names), int(k)
+                self.Selection = all_names.index(names[k]) # main tabs active window
+            
             for j, pane in enumerate(self.all_panes):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
+        except Exception:
+            pass
         finally:
             self.Thaw()
 
