@@ -1366,6 +1366,8 @@ class Buffer(EditWindow, EditorInterface):
     def name(self):
         return os.path.basename(self.__filename or '')
     
+    Name = name # page.window.Name for save/loadPerspective
+    
     @property
     def filename(self):
         return self.__filename
