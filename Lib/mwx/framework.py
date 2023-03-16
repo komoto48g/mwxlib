@@ -625,8 +625,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.statusbar.resize((-1,78))
         self.SetStatusBar(self.statusbar)
         
-        ## self.timer = wx.PyTimer(
-        ##     lambda: self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1))
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         
@@ -1025,6 +1023,14 @@ class ShellFrame(MiniFrame):
         self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
         self.indicator.background = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
         
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000)
+        
+        def on_timer(evt):
+            if self.indicator.Value not in (1, 3):
+                self.indicator.blink(500)
+        self.Bind(wx.EVT_TIMER, on_timer)
+        
         def on_size(evt):
             rect = self.statusbar.GetFieldRect(1)
             self.indicator.Position = (-44+rect.x, 2+rect.y)
@@ -1039,10 +1045,8 @@ class ShellFrame(MiniFrame):
                 elif not self.debugger.busy:
                     self.message("- The current status is inconsistent. "
                                  "- Press [C-g] to quit.")
-                    self.indicator.Value = 4
+                    self.indicator.Value = 7
                     self.indicator.ToolTip = 'Invalid'
-                    ## self.message.SetBackgroundColour('yellow')
-                    ## self.message.Refresh()
             v.Skip()
         
         def fork(v):
