@@ -813,8 +813,10 @@ class AuiNotebook(aui.AuiNotebook):
             pane.name = f"pane{j+1}"
         spec = ""
         for j, tabs in enumerate(self.all_tabs):
+            k = next(k for k, page in enumerate(tabs.Pages)
+                                   if page.window.Shown) # get active window
             names = [page.window.Name for page in tabs.Pages]
-            spec += f"pane{j+1}={names}|"
+            spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
     
     @postcall
@@ -826,7 +828,7 @@ class AuiNotebook(aui.AuiNotebook):
             At that point, some pages may be missing.
         """
         tabs, frames = spec.split('@')
-        tabinfo = re.findall(r"(.*?)=(.*?)\|", tabs)
+        tabinfo = re.findall(r"(.*?)=(.*?);(.*?)\|", tabs)
         try:
             self.Freeze()
             ## Collapse all tabs to main tabctrl
@@ -835,23 +837,27 @@ class AuiNotebook(aui.AuiNotebook):
                 self.move_tab(win, maintab)
             ## Create new tabs
             all_names = [win.Name for win in self.all_pages]
-            for pane, pages in tabinfo[1:]:
+            for _pane, pages, k in tabinfo[1:]:
                 names = eval(pages)
                 names = sorted(set(names) & set(all_names), key=names.index)
-                if not names:
-                    continue
+                k = int(k)
                 ## Create a new tab using Split method.
-                ## Note: The normal method of creating panes
-                ##       using the internal _mgr will crash.
+                ## Note: The normal way of creating panes with `_mgr` crashes.
                 i = all_names.index(names[0])
                 self.Split(i, wx.LEFT)
                 newtab = self.all_tabs[-1]
                 for name in names[1:]:
                     self.move_tab(name, newtab)
+                newtab.Pages[k].window.SetFocus() # Set new tabs active window.
+            else:
+                k = int(tabinfo[0][2])
+                maintab.Pages[k].window.SetFocus() # Set main tabs active window.
             for j, pane in enumerate(self.all_panes):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
+        except Exception:
+            pass
         finally:
             self.Thaw()
 
