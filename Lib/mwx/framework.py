@@ -828,30 +828,31 @@ class AuiNotebook(aui.AuiNotebook):
             At that point, some pages may be missing.
         """
         tabs, frames = spec.split('@')
-        tabinfo = re.findall(r"(.*?)=(.*?);(.*?)\|", tabs)
+        tabinfo = re.findall(r"pane\w+?=(.*?);(.*?)\|", tabs)
         try:
             self.Freeze()
             ## Collapse all tabs to main tabctrl
             maintab = self.all_tabs[0]
             for win in self.all_pages:
                 self.move_tab(win, maintab)
-            ## Create new tabs
+            
+            ## Create a new tab using Split method.
+            ## Note: The normal way of creating panes with `_mgr` crashes.
+            
             all_names = [win.Name for win in self.all_pages]
-            for _pane, pages, k in tabinfo[1:]:
-                names = eval(pages)
-                names = sorted(set(names) & set(all_names), key=names.index)
-                k = int(k)
-                ## Create a new tab using Split method.
-                ## Note: The normal way of creating panes with `_mgr` crashes.
+            for names, k in tabinfo[1:]:
+                names, k = eval(names), int(k)
                 i = all_names.index(names[0])
                 self.Split(i, wx.LEFT)
                 newtab = self.all_tabs[-1]
                 for name in names[1:]:
                     self.move_tab(name, newtab)
-                newtab.Pages[k].window.SetFocus() # Set new tabs active window.
+                self.Selection = all_names.index(names[k]) # new tabs active window
             else:
-                k = int(tabinfo[0][2])
-                maintab.Pages[k].window.SetFocus() # Set main tabs active window.
+                names, k = tabinfo[0]
+                names, k = eval(names), int(k)
+                self.Selection = all_names.index(names[k]) # main tabs active window
+            
             for j, pane in enumerate(self.all_panes):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
