@@ -64,9 +64,9 @@ class EditorInterface(CtrlInterface):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        def dispatch(*v):
+        def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, *v)
+            self.parent.handler(self.handler.event, v)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -637,8 +637,8 @@ class EditorInterface(CtrlInterface):
     ## Fold / Unfold functions
     ## --------------------------------
     
-    def is_folder_shown(self):
-        return self.GetMarginSensitive(0)
+    ## def is_folder_shown(self):
+    ##     return self.GetMarginSensitive(0)
     
     def show_folder(self, show=True):
         """Show folder margin.
@@ -1039,13 +1039,13 @@ class EditorInterface(CtrlInterface):
         self.AutoCompShow(0, '\n'.join(map(_format, self.__lines))) # cf. gen_autocomp
         self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                  handler=self.on_filter_text_selection)
+                  self.on_filter_text_selection)
     
     def on_filter_text_exit(self, evt):
         if self.AutoCompActive():
             self.AutoCompCancel()
         self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                    handler=self.on_filter_text_selection)
+                    self.on_filter_text_selection)
     
     def on_filter_text_selection(self, evt):
         line = self.__lines[self.AutoCompGetCurrent()]
