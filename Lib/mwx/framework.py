@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.9"
+__version__ = "0.81.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1033,6 +1033,7 @@ class ShellFrame(MiniFrame):
         
         self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
         self.indicator.background = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
+        self.indicator.ToolTip = "[R] Invalid [Y] Debug/Trace [G] Normal"
         
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
@@ -1057,7 +1058,6 @@ class ShellFrame(MiniFrame):
                     self.message("- The current status is inconsistent. "
                                  "- Press [C-g] to quit.")
                     self.indicator.Value = 7
-                    self.indicator.ToolTip = 'Invalid'
             v.Skip()
         
         def fork(v):
@@ -1396,7 +1396,6 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
         self.indicator.Value = 1
-        self.indicator.ToolTip = 'Normal'
         self.message.SetBackgroundColour(None)
         self.message.Refresh()
         self.message("Quit")
@@ -1509,7 +1508,6 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.linfo, focus=0)
         self.add_log("<-- Beginning of debugger\r\n")
         self.indicator.Value = 2
-        self.indicator.ToolTip = 'Debugging'
     
     def on_debug_next(self, frame):
         """Called from cmdloop."""
@@ -1542,7 +1540,6 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
         self.indicator.Value = 1
-        self.indicator.ToolTip = 'Normal'
     
     def set_traceable(self, book, traceable=True):
         """Bind pointer to set/unset trace."""
@@ -1572,7 +1569,6 @@ class ShellFrame(MiniFrame):
         """Called when set-trace."""
         self.message("Debugger has started tracing {!r}.".format(frame))
         self.indicator.Value = 3
-        self.indicator.ToolTip = 'Tracing'
     
     def on_trace_hook(self, frame):
         """Called when a breakpoint is reached."""
@@ -1582,7 +1578,6 @@ class ShellFrame(MiniFrame):
         """Called when unset-trace."""
         self.message("Debugger has stopped tracing {!r}.".format(frame))
         self.indicator.Value = 1
-        self.indicator.ToolTip = 'Normal'
     
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
