@@ -207,7 +207,7 @@ class MatplotPanel(wx.Panel):
                  '*Rdrag begin' : (XAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  'yaxis motion' : (YAXIS, ),
                 'y2axis motion' : (YAXIS, ),
-              '*Lbutton dclick' : (XAXIS, self.OnHomeXPosition),
+            '*Lbutton dblclick' : (XAXIS, self.OnHomeXPosition),
                 },
                 XAXIS+DRAGGING : {
                    'Ldrag move' : (XAXIS+DRAGGING, self.OnXAxisPanMove),
@@ -234,7 +234,7 @@ class MatplotPanel(wx.Panel):
                  '*Ldrag begin' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  '*Rdrag begin' : (YAXIS+ZOOM+DRAGGING, self.OnAxisDragBegin),
                  'xaxis motion' : (XAXIS, ),
-              '*Lbutton dclick' : (YAXIS, self.OnHomeYPosition),
+            '*Lbutton dblclick' : (YAXIS, self.OnHomeYPosition),
                 },
                 YAXIS+DRAGGING : {
                    'Ldrag move' : (YAXIS+DRAGGING, self.OnYAxisPanMove),
@@ -560,7 +560,7 @@ class MatplotPanel(wx.Panel):
         key = self._on_mouse_event(evt)
         if evt.dblclick:
             self.__isDragging = None
-            self.handler('{}button dclick'.format(key), evt)
+            self.handler('{}button dblclick'.format(key), evt)
         else:
             self.__isDragging = False
             self.handler('{}button pressed'.format(key), evt)
@@ -573,7 +573,7 @@ class MatplotPanel(wx.Panel):
             self.handler('{}drag end'.format(key), evt)
             self.handler('{}button released'.format(key), evt)
         else:
-            if self.__isDragging is None: # dclick end
+            if self.__isDragging is None: # dblclick end
                 return
             self.handler('{}button released'.format(key), evt)
         self.p_event = None

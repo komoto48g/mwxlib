@@ -30,7 +30,7 @@ class LinePlot(MatplotPanel):
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
-               'Lbutton dclick' : (NORMAL, self.OnEscapeSelection),
+             'Lbutton dblclick' : (NORMAL, self.OnEscapeSelection),
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },

@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.80.8"
+__version__ = "0.80.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -296,16 +296,16 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_LEFT_DOWN, lambda v: _M('Lbutton pressed', v))
         self.Bind(wx.EVT_RIGHT_DOWN, lambda v: _M('Rbutton pressed', v))
         self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: _M('Mbutton pressed', v))
-        self.Bind(wx.EVT_LEFT_DCLICK, lambda v: _M('Lbutton dclick', v))
-        self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: _M('Rbutton dclick', v))
-        self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: _M('Mbutton dclick', v))
+        self.Bind(wx.EVT_LEFT_DCLICK, lambda v: _M('Lbutton dblclick', v))
+        self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: _M('Rbutton dblclick', v))
+        self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: _M('Mbutton dblclick', v))
         
         self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: _M('Xbutton1 released', v))
         self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: _M('Xbutton2 released', v))
         self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: _M('Xbutton1 pressed', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: _M('Xbutton2 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dclick', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dclick', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dblclick', v))
+        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dblclick', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down."""
@@ -339,10 +339,10 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     
     def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called when mouse event.
-        Trigger event: 'key+[LMRX]button pressed/released/dclick'
+        Trigger event: 'key+[LMRX]button pressed/released/dblclick'
         """
-        event = self.__key + event # 'C-M-S-K+[LMRX]button pressed/released/dclick'
-        key, sep, st = event.rpartition(' ') # removes st:'pressed/released/dclick'
+        event = self.__key + event # 'C-M-S-K+[LMRX]button pressed/released/dblclick'
+        key, sep, st = event.rpartition(' ') # removes st:'pressed/released/dblclick'
         evt.key = key or st
         if self.handler(event, evt) is None:
             evt.Skip()
