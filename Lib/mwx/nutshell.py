@@ -119,6 +119,7 @@ class EditorInterface(CtrlInterface):
               'Rbutton pressed' : (0, lambda v: margin_fork(v, 'Rclick'), skip),
               'Mbutton pressed' : (0, lambda v: margin_fork(v, 'Mclick'), skip),
              'Lbutton dblclick' : (0, lambda v: margin_fork(v, 'dblclick'), skip),
+              'margin_dblclick' : (0, self.on_margin_dblclick),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin),
             },
@@ -703,6 +704,10 @@ class EditorInterface(CtrlInterface):
                 lambda v: self.FoldAll(1)),
         ])
     
+    def on_margin_dblclick(self, evt):
+        if evt.Margin < 2:
+            self.FoldAll(0)
+    
     def toggle_fold(self, lc):
         """Similar to ToggleFold, but the top header containing
         the specified line switches between expanded and contracted.
@@ -714,6 +719,7 @@ class EditorInterface(CtrlInterface):
             lc = la
         self.ToggleFold(lc)
         self.EnsureLineOnScreen(lc)
+        return lc
     
     def get_region(self, line):
         """Line numbers of folding head and tail containing the line."""
