@@ -121,7 +121,7 @@ class EditorInterface(CtrlInterface):
              'Lbutton dblclick' : (0, lambda v: margin_fork(v, 'dblclick'), skip),
               'margin_dblclick' : (0, self.on_margin_dblclick),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
-                  'select_line' : (100, self.on_linesel_begin),
+                  'select_line' : (100, self.on_linesel_begin, skip),
             },
             10 : {
                          'quit' : (0, self.on_filter_text_exit),
@@ -131,9 +131,9 @@ class EditorInterface(CtrlInterface):
                 'enter pressed' : (0, self.on_filter_text_selection),
             },
             100 : {
-                       'motion' : (100, self.on_linesel_motion),
-                 'capture_lost' : (0, self.on_linesel_end),
-             'Lbutton released' : (0, self.on_linesel_end),
+                       'motion' : (100, self.on_linesel_motion, skip),
+                 'capture_lost' : (0, self.on_linesel_end, skip),
+             'Lbutton released' : (0, self.on_linesel_end, skip),
             },
         })
         
@@ -750,7 +750,6 @@ class EditorInterface(CtrlInterface):
                 if q == self.TextLength:
                     q -= 1
         self._anchors = [p, q]
-        evt.Skip()
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
@@ -767,13 +766,11 @@ class EditorInterface(CtrlInterface):
             self.cpos = p
             self.anchor = qo
         self.EnsureCaretVisible()
-        evt.Skip()
     
     def on_linesel_end(self, evt):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
-        evt.Skip()
     
     ## --------------------------------
     ## Preferences / Appearance
