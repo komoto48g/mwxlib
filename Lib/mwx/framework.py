@@ -307,6 +307,11 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dblclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dblclick', v))
     
+    ## Note: Return value of handler.call and skip processing.
+    ##     None => Call v.Skip() if there is no handler.
+    ##     [..] => Don't call v.Skip() if there is a context w or w/o action.
+    ##             Call v.Skip() yourself if needed.
+    
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down."""
         if evt.EventObject is not self:
