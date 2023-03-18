@@ -3274,13 +3274,6 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
         evt.Skip()
     
-    def process_autocomp(self, evt):
-        """Feel like pressing {tab}."""
-        if self.AutoCompActive():
-            wx.UIActionSimulator().KeyDown(wx.WXK_TAB)
-        else:
-            evt.Skip()
-    
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, 1)
