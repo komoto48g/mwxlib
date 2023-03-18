@@ -1884,7 +1884,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def load_url(self, url, *args, **kwargs):
         import requests
-        res = requests.get(url)
+        try:
+            res = requests.get(url)
+        except Exception as e:
+            self.post_message("Failed to load URL: {}".format(e))
+            return None
         if res.status_code == 200: # success
             buf = self.find_buffer(url) or self.create_buffer(url)
             buf._load_textfile(res.text, url)
