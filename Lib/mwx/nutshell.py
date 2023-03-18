@@ -115,8 +115,13 @@ class EditorInterface(CtrlInterface):
                 'C-S-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                 'C-S-: pressed' : (0, _F(self.uncomment_line)),
+              'Lbutton pressed' : (0, lambda v: margin_fork(v, 'Lclick'), skip),
+              'Rbutton pressed' : (0, lambda v: margin_fork(v, 'Rclick'), skip),
+              'Mbutton pressed' : (0, lambda v: margin_fork(v, 'Mclick'), skip),
+             'Lbutton dblclick' : (0, lambda v: margin_fork(v, 'dblclick'), skip),
+              'margin_dblclick' : (0, self.on_margin_dblclick),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
-                  'select_line' : (100, self.on_linesel_begin),
+                  'select_line' : (100, self.on_linesel_begin, skip),
             },
             10 : {
                          'quit' : (0, self.on_filter_text_exit),
@@ -126,14 +131,28 @@ class EditorInterface(CtrlInterface):
                 'enter pressed' : (0, self.on_filter_text_selection),
             },
             100 : {
-                       'motion' : (100, self.on_linesel_motion),
-                 'capture_lost' : (0, self.on_linesel_end),
-             'Lbutton released' : (0, self.on_linesel_end),
+                       'motion' : (100, self.on_linesel_motion, skip),
+                 'capture_lost' : (0, self.on_linesel_end, skip),
+             'Lbutton released' : (0, self.on_linesel_end, skip),
             },
         })
         
-        self.Bind(wx.EVT_MOTION,
-                  lambda v: self._window_handler('motion', v))
+        def margin_fork(v, click):
+            if self._margin is not None:
+                v.Margin = self._margin # Add info to event object. OK ??
+                self.handler(f"margin_{click}", v)
+        
+        def on_motion(v):
+            self._window_handler('motion', v)
+            x, y = v.Position
+            w = 0
+            for m in range(4):
+                w += self.GetMarginWidth(m)
+                if x < w:
+                    self._margin = m # current margin under mouse
+                    return
+            self._margin = None
+        self.Bind(wx.EVT_MOTION, on_motion)
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
                   lambda v: self._window_handler('capture_lost', v))
@@ -685,6 +704,10 @@ class EditorInterface(CtrlInterface):
                 lambda v: self.FoldAll(1)),
         ])
     
+    def on_margin_dblclick(self, evt):
+        if evt.Margin < 2:
+            self.FoldAll(0)
+    
     def toggle_fold(self, lc):
         """Similar to ToggleFold, but the top header containing
         the specified line switches between expanded and contracted.
@@ -696,6 +719,7 @@ class EditorInterface(CtrlInterface):
             lc = la
         self.ToggleFold(lc)
         self.EnsureLineOnScreen(lc)
+        return lc
     
     def get_region(self, line):
         """Line numbers of folding head and tail containing the line."""
@@ -726,7 +750,6 @@ class EditorInterface(CtrlInterface):
                 if q == self.TextLength:
                     q -= 1
         self._anchors = [p, q]
-        evt.Skip()
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
@@ -743,13 +766,11 @@ class EditorInterface(CtrlInterface):
             self.cpos = p
             self.anchor = qo
         self.EnsureCaretVisible()
-        evt.Skip()
     
     def on_linesel_end(self, evt):
         del self._anchors
         if self.HasCapture():
             self.ReleaseMouse()
-        evt.Skip()
     
     ## --------------------------------
     ## Preferences / Appearance
