@@ -2413,8 +2413,8 @@ class Nautilus(Shell, EditorInterface):
             2 : { # word auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (2, self.on_completion_backward),
-                 'down pressed' : (2, self.on_completion_forward),
+                   'up pressed' : (2, self.on_completion_backward, skip),
+                 'down pressed' : (2, self.on_completion_forward, skip),
                 '*left pressed' : (2, skip),
                '*right pressed' : (2, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2430,7 +2430,7 @@ class Nautilus(Shell, EditorInterface):
            'S-[a-z\\] released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
              '*delete released' : (2, self.call_word_autocomp),
-           '*backspace pressed' : (2, self.skipback_autocomp),
+           '*backspace pressed' : (2, self.skipback_autocomp, skip),
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
@@ -2446,8 +2446,8 @@ class Nautilus(Shell, EditorInterface):
             3 : { # apropos auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (3, self.on_completion_backward),
-                 'down pressed' : (3, self.on_completion_forward),
+                   'up pressed' : (3, self.on_completion_backward, skip),
+                 'down pressed' : (3, self.on_completion_forward, skip),
                 '*left pressed' : (3, skip),
                '*right pressed' : (3, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2460,7 +2460,7 @@ class Nautilus(Shell, EditorInterface):
             'S-[a-z\\] pressed' : (3, skip),
            'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
-           '*backspace pressed' : (3, self.skipback_autocomp),
+           '*backspace pressed' : (3, self.skipback_autocomp, skip),
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
@@ -2476,8 +2476,8 @@ class Nautilus(Shell, EditorInterface):
             4 : { # text auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (4, self.on_completion_backward),
-                 'down pressed' : (4, self.on_completion_forward),
+                   'up pressed' : (4, self.on_completion_backward, skip),
+                 'down pressed' : (4, self.on_completion_forward, skip),
                 '*left pressed' : (4, skip),
                '*right pressed' : (4, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2490,7 +2490,7 @@ class Nautilus(Shell, EditorInterface):
             'S-[a-z\\] pressed' : (4, skip),
            'S-[a-z\\] released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
-           '*backspace pressed' : (4, self.skipback_autocomp),
+           '*backspace pressed' : (4, self.skipback_autocomp, skip),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
@@ -2506,8 +2506,8 @@ class Nautilus(Shell, EditorInterface):
             5 : { # module auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
-                   'up pressed' : (5, self.on_completion_backward),
-                 'down pressed' : (5, self.on_completion_forward),
+                   'up pressed' : (5, self.on_completion_backward, skip),
+                 'down pressed' : (5, self.on_completion_forward, skip),
                 '*left pressed' : (5, skip),
                '*right pressed' : (5, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2519,7 +2519,7 @@ class Nautilus(Shell, EditorInterface):
          '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
-           '*backspace pressed' : (5, self.skipback_autocomp),
+           '*backspace pressed' : (5, self.skipback_autocomp, skip),
           '*backspace released' : (5, self.call_module_autocomp),
         'C-S-backspace pressed' : (5, ),
                  '*alt pressed' : (5, ),
@@ -3272,21 +3272,18 @@ class Nautilus(Shell, EditorInterface):
             ## Do not skip to prevent autocomp eats prompt
             ## so not to backspace over the latest non-continuation prompt
             self.handler('quit', evt)
-        evt.Skip()
     
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, 1)
         else:
             self.handler('quit', evt)
-        evt.Skip()
     
     def on_completion_backward(self, evt):
         if self.AutoCompActive():
             self.on_completion(evt, -1)
         else:
             self.handler('quit', evt)
-        evt.Skip()
     
     def on_completion_forward_history(self, evt):
         self.on_completion(evt, 1) # 古いヒストリへ進む
