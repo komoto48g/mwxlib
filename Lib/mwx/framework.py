@@ -1151,7 +1151,7 @@ class ShellFrame(MiniFrame):
                 scratch = self.Scratch.new_buffer()
             scratch.LoadFile(self.SCRATCH_FILE)
             
-            with open(self.SESSION_FILE) as i:
+            with open(self.SESSION_FILE, encoding='utf-8', newline='') as i:
                 exec(i.read())
             
         except Exception:
@@ -1175,7 +1175,7 @@ class ShellFrame(MiniFrame):
             if scratch and scratch.mtdelta is None:
                 scratch.SaveFile(self.SCRATCH_FILE)
             
-            with open(self.SESSION_FILE, 'w') as o:
+            with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
