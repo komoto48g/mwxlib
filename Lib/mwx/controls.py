@@ -1133,11 +1133,12 @@ class Indicator(wx.Control):
     spacing = 7
     radius = 5
     
-    def __init__(self, parent, value=0, tip='', size=(-1,-1), **kwargs):
-        s = self.spacing
-        size = np.maximum((s*6, s*2+1), size) # minimum size:(6s,2s)
-        wx.Control.__init__(self, parent, size=size,
-                            style=wx.BORDER_NONE, **kwargs)
+    def __init__(self, parent, value=0, tip='',
+                 size=(-1,-1), style=wx.BORDER_NONE, **kwargs):
+        s = self.spacing # minimum size:(6s,2s)
+        w = max(size[0], s*6)
+        h = max(size[1], s*2+1)
+        wx.Control.__init__(self, parent, size=(w,h), style=style, **kwargs)
         
         self.__value = value
         self.ToolTip = tip.strip()
@@ -1201,8 +1202,9 @@ class Gauge(wx.Control):
         self.__range = int(v)
         self.Draw()
     
-    def __init__(self, parent, range=24, value=0, tip='', **kwargs):
-        wx.Control.__init__(self, parent, style=wx.BORDER_NONE, **kwargs)
+    def __init__(self, parent, range=24, value=0, tip='',
+                 style=wx.BORDER_NONE, **kwargs):
+        wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__range = range
         self.__value = value
