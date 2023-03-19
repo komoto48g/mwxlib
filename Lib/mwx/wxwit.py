@@ -102,7 +102,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
             return "{} ({!r} {})".format(clsname, obj.Name, obj.Id)
         return clsname
     
-    def highlight(self, obj):
+    def highlight(self, obj, msec=2000):
+        self.highlighter.highlightTime = msec
         if isinstance(obj, wx.Window):
             self.highlighter.HighlightWindow(obj)
         elif isinstance(obj, wx.Sizer):

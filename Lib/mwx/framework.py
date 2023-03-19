@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.0"
+__version__ = "0.81.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1451,8 +1451,8 @@ class ShellFrame(MiniFrame):
     def help(self, obj):
         self.rootshell.help(obj)
     
-    def highlight(self, obj):
-        self.inspector.highlight(obj)
+    def highlight(self, obj, *args, **kwargs):
+        self.inspector.highlight(obj, *args, **kwargs)
     
     ## Note: history 変数に余計な文字列が入らないようにする
     @postcall
