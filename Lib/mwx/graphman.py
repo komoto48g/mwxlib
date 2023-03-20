@@ -408,12 +408,17 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(LayerInterface, ControlPanel):
+class Layer(ControlPanel, LayerInterface):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
         ControlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
+    
+    ## Explicit (override) precedence
+    message = LayerInterface.message
+    IsShown = LayerInterface.IsShown
+    Show = LayerInterface.Show
 
 
 class Graph(GraphPlot):
@@ -992,16 +997,24 @@ class Frame(mwx.Frame):
             module = inspect.getmodule(cls) # rebase module or __main__
         
         if issubclass(cls, LayerInterface):
-            warnings.warn("Use class name 'Plugin' instead of {!r}."
+            warnings.warn("Duplicate iniheritance of LayerInterface by {!r}."
                           .format(cls.__name__), stacklevel=2)
             cls.__module__ = module.__name__ # __main__ to module
             module.Plugin = cls
             return cls
         
-        class _Plugin(LayerInterface, cls):
+        class _Plugin(cls, LayerInterface):
             def __init__(self, parent, session=None, **kwargs):
                 cls.__init__(self, parent, **kwargs)
                 LayerInterface.__init__(self, parent, session)
+            
+            ## Explicit (override) precedence
+            message = LayerInterface.message
+            IsShown = LayerInterface.IsShown
+            Show = LayerInterface.Show
+            
+            ## Implicit (override) precidence
+            ## cls.Init / cls.save_session / cls.load_session
         
         _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
