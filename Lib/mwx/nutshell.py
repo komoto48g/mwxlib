@@ -115,10 +115,10 @@ class EditorInterface(CtrlInterface):
                 'C-S-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                 'C-S-: pressed' : (0, _F(self.uncomment_line)),
-              'Lbutton pressed' : (0, lambda v: margin_fork(v, 'Lclick'), skip),
-              'Rbutton pressed' : (0, lambda v: margin_fork(v, 'Rclick'), skip),
-              'Mbutton pressed' : (0, lambda v: margin_fork(v, 'Mclick'), skip),
-             'Lbutton dblclick' : (0, lambda v: margin_fork(v, 'dblclick'), skip),
+              'Lbutton pressed' : (0, lambda v: click_fork(v, 'Lclick')),
+              'Rbutton pressed' : (0, lambda v: click_fork(v, 'Rclick')),
+              'Mbutton pressed' : (0, lambda v: click_fork(v, 'Mclick')),
+             'Lbutton dblclick' : (0, lambda v: click_fork(v, 'dblclick')),
               'margin_dblclick' : (0, self.on_margin_dblclick),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin, skip),
@@ -137,10 +137,12 @@ class EditorInterface(CtrlInterface):
             },
         })
         
-        def margin_fork(v, click):
+        def click_fork(v, click):
             if self._margin is not None:
                 v.Margin = self._margin # Add info to event object. OK ??
                 self.handler(f"margin_{click}", v)
+            v.Skip()
+        self._margin = None
         
         def on_motion(v):
             self._window_handler('motion', v)
@@ -152,6 +154,7 @@ class EditorInterface(CtrlInterface):
                     self._margin = m # current margin under mouse
                     return
             self._margin = None
+            v.Skip()
         self.Bind(wx.EVT_MOTION, on_motion)
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,

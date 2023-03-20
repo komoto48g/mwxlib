@@ -466,9 +466,9 @@ class Menu(wx.Menu):
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
                 try:
-                    self.owner.Bind(wx.EVT_MENU, handlers[0], id=id)
-                    self.owner.Bind(wx.EVT_UPDATE_UI, handlers[1], id=id)
-                    self.owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], id=id)
+                    owner.Bind(wx.EVT_MENU, handlers[0], id=id)
+                    owner.Bind(wx.EVT_UPDATE_UI, handlers[1], id=id)
+                    owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], id=id)
                 except IndexError:
                     pass
             else:
