@@ -1,10 +1,11 @@
 #! python3
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append("../Lib")
 import wx
-import mwx
 from numpy import inf
+
+sys.path.append("../Lib")
+import mwx
 from mwx.controls import Param, LParam
 from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
 from mwx.graphman import Layer, Frame

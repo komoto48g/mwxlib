@@ -1,8 +1,9 @@
 #! python3
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append("../Lib")
 import wx
+
+sys.path.append("../Lib")
 from mwx.controls import Button, Icon
 from mwx.graphman import Layer, Frame
 

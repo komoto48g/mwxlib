@@ -1,10 +1,11 @@
 #! python3
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append("../Lib")
 import wx
 import numpy as np
 from numpy import pi,exp,sin,cos
+
+sys.path.append("../Lib")
 from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 

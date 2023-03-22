@@ -1,13 +1,15 @@
 #! python3
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append("../Lib")
 import wx
 import cv2
 import numpy as np
 from numpy import pi,sin
+
+sys.path.append("../Lib")
 from mwx.controls import LParam, Button
 from mwx.graphman import Layer, Frame
+
 
 N = 1024
 el = 1.968758541778089e-3 # elambda [nm] at 300kV 
