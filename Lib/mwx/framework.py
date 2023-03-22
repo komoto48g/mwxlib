@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.2"
+__version__ = "0.81.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1178,6 +1178,14 @@ class ShellFrame(MiniFrame):
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
+                    "",
+                )))
+                for book in self.get_pages(type(self.Log)):
+                    for buffer in book.all_buffers:
+                        if buffer.mtdelta is not None:
+                            o.write("self._load_file({!r}, {!r}, {})\n".format(
+                                     book.Name, buffer.filename, buffer.markline+1))
+                o.write('\n'.join((
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
@@ -1188,18 +1196,16 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                for buffer in self.Log.all_buffers:
-                    if buffer.mtdelta is not None:
-                        o.write("self.Log.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.markline+1))
-                
-                for buffer in self.Scratch.all_buffers:
-                    if buffer.mtdelta is not None:
-                        o.write("self.Scratch.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.markline+1))
         except Exception:
             traceback.print_exc()
             print("- Failed to save session")
+    
+    def _load_file(self, bookname, filename, lineno):
+        try:
+            book = getattr(self, bookname)
+            book.load_file(filename, lineno)
+        except Exception:
+            pass
     
     def Init(self):
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
