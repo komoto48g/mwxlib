@@ -1013,7 +1013,7 @@ class Frame(mwx.Frame):
             IsShown = LayerInterface.IsShown
             Show = LayerInterface.Show
             
-            ## Implicit (override) precidence
+            ## Implicit (override) precedence
             ## cls.Init / cls.save_session / cls.load_session
         
         _Plugin.__module__ = cls.__module__ = module.__name__
@@ -1035,6 +1035,8 @@ class Frame(mwx.Frame):
             rootpath = inspect.getsourcefile(root)
         else:
             rootpath = root
+        
+        assert isinstance(rootpath, str)
         
         name = os.path.basename(rootpath)
         if name.endswith(".py"):
