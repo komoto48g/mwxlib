@@ -1486,8 +1486,8 @@ class Buffer(EditWindow, EditorInterface):
             return code is self.code\
                 or code in self.code.co_consts
     
-    def __str__(self):
-        return "{}:{}".format(self.filename, self.markline+1)
+    ## def __str__(self):
+    ##     return "{}:{}".format(self.filename, self.markline+1)
     
     def trace_position(self):
         text, lp = self.CurLine
@@ -1813,7 +1813,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def menu(self):
         """Yields context menu."""
         def _menu(j, buf):
-            return (j, str(buf), '', wx.ITEM_CHECK,
+            caption = "{}:{}".format(buf.filename, buf.markline+1)
+            return (j, caption, '', wx.ITEM_CHECK,
                 lambda v: buf.SetFocus(),
                 lambda v: v.Check(buf is self.buffer))
         
