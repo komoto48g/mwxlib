@@ -26,18 +26,6 @@ from .framework import Frame, MiniFrame, ShellFrame
 ## from .mgplt import Gnuplot
 ## from .mgplt import GnuplotFrame
 
-from importlib import reload
-import contextlib
-import wx
-
-
-@contextlib.contextmanager
-def app(loop=True):
-    app = wx.GetApp() or wx.App()
-    yield app
-    if loop and not app.GetMainLoop():
-        app.MainLoop()
-
 
 def deb(target=None, loop=True, locals=None, **kwargs):
     """Dive into the process.
@@ -60,6 +48,8 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     Note:
         This will execute the startup script $(PYTHONSTARTUP).
     """
+    import wx
+    
     quote_unqoute = """
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
@@ -68,11 +58,17 @@ def deb(target=None, loop=True, locals=None, **kwargs):
                       "mwx {}".format(__version__) + quote_unqoute)
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
-    with app(loop):
-        frame = ShellFrame(None, target, **kwargs)
-        frame.Show()
-        shell = frame.rootshell
-        shell.SetFocus()
-        if locals:
-            shell.locals.update(locals)
-        return frame
+    
+    app = wx.GetApp() or wx.App()
+    frame = ShellFrame(None, target, **kwargs)
+    frame.Show()
+    shell = frame.rootshell
+    shell.SetFocus()
+    if locals:
+        shell.locals.update(locals)
+    if loop:
+        if not app.GetMainLoop():
+            app.MainLoop()
+        else:
+            pass # The mainloop is already running.
+    return frame
