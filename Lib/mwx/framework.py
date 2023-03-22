@@ -1215,10 +1215,12 @@ class ShellFrame(MiniFrame):
     
     def Destroy(self):
         try:
-            self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
-            self.History.default_buffer.SaveFile(self.HISTORY_FILE)
-            self.save_session()
             self.timer.Stop()
+            self.save_session()
+            if self.Log.default_buffer:
+                self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
+            if self.History.default_buffer:
+                self.History.default_buffer.SaveFile(self.HISTORY_FILE)
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
