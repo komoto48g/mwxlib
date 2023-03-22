@@ -1212,8 +1212,7 @@ class ShellFrame(MiniFrame):
             self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
             self.History.default_buffer.SaveFile(self.HISTORY_FILE)
             self.save_session()
-        except Exception:
-            traceback.print_exc()
+            self.timer.Stop()
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
