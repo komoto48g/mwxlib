@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.1"
+__version__ = "0.81.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -388,9 +388,8 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     Args:
         items   : wx objects (with some packing parameters)
         
-                - (obj, 1) -> sized with ratio 1 (orient と同方向)
-                  他に 0 以外を指定しているオブジェクトとエリアを分け合う
-                - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (orient と垂直方向)
+                - (obj, 1) -> sized with ratio 1 (parallel to `orient`)
+                - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (perpendicular to `orient`)
                 - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
                 - ((-1,-1), 1, wx.EXPAND) -> stretched space
                 - (-1,-1) -> padding space
@@ -466,9 +465,9 @@ class Menu(wx.Menu):
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
                 try:
-                    owner.Bind(wx.EVT_MENU, handlers[0], id=id)
-                    owner.Bind(wx.EVT_UPDATE_UI, handlers[1], id=id)
-                    owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], id=id)
+                    owner.Bind(wx.EVT_MENU, handlers[0], menu_item)
+                    owner.Bind(wx.EVT_UPDATE_UI, handlers[1], menu_item)
+                    owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], menu_item)
                 except IndexError:
                     pass
             else:
@@ -479,8 +478,8 @@ class Menu(wx.Menu):
                 if icons:
                     submenu_item.SetBitmaps(*icons)
                 self.Append(submenu_item)
-                self.Enable(submenu_item.Id, len(subitems)) # Disable an empty menu
-                submenu.Id = submenu_item.Id # <- ID_ANY
+                self.Enable(submenu_item.Id, len(subitems)) # Disable an empty menu.
+                submenu.Id = submenu_item.Id # <- ID_ANY (dummy to check empty sbumenu)
     
     @staticmethod
     def Popup(parent, menu, *args, **kwargs):
@@ -521,14 +520,14 @@ class MenuBar(wx.MenuBar, TreeList):
         """
         if self.Parent:
             menu = self.getmenu(key)
-            if not menu:     # 新規のメニューアイテムを挿入する
-                self.reset() # リセットして終了
+            if not menu:
+                self.reset()
                 return
             
             for item in menu.MenuItems: # delete all items
-                self.Parent.Unbind(wx.EVT_MENU, id=item.Id)
-                self.Parent.Unbind(wx.EVT_UPDATE_UI, id=item.Id)
-                self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, id=item.Id)
+                self.Parent.Unbind(wx.EVT_MENU, item)
+                self.Parent.Unbind(wx.EVT_UPDATE_UI, item)
+                self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, item)
                 menu.Delete(item)
             
             menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
@@ -536,7 +535,7 @@ class MenuBar(wx.MenuBar, TreeList):
                 menu.Append(menu2.Remove(item)) # 重複しないようにいったん切り離して追加する
             
             if hasattr(menu, 'Id'):
-                self.Enable(menu.Id, menu.MenuItemCount > 0) # 空のサブメニューは無効にする
+                self.Enable(menu.Id, menu.MenuItemCount > 0) # Disable empty submenu.
     
     def reset(self):
         """Recreates menubar if the Parent were attached by SetMenuBar.
@@ -546,16 +545,16 @@ class MenuBar(wx.MenuBar, TreeList):
             for j in range(self.GetMenuCount()): # remove and del all top-level menu
                 menu = self.Remove(0)
                 for item in menu.MenuItems: # delete all items
-                    self.Parent.Unbind(wx.EVT_MENU, id=item.Id)
-                    self.Parent.Unbind(wx.EVT_UPDATE_UI, id=item.Id)
-                    self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, id=item.Id)
+                    self.Parent.Unbind(wx.EVT_MENU, item)
+                    self.Parent.Unbind(wx.EVT_UPDATE_UI, item)
+                    self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, item)
                 menu.Destroy()
             
             for j, (key, values) in enumerate(self):
-                menu = Menu(self.Parent, values) # 空のメインメニューでも表示に追加する
+                menu = Menu(self.Parent, values)
                 self.Append(menu, key)
                 if not values:
-                    self.EnableTop(j, False) # 空のメインメニューは無効にする
+                    self.EnableTop(j, False) # Disable empty main menu.
 
 
 class StatusBar(wx.StatusBar):
