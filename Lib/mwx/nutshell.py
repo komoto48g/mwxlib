@@ -1978,7 +1978,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.post_message("The save has been canceled.")
                 return None
         try:
-            return buf._save_file(filename)
+            if buf._save_file(filename):
+                if buf is self.default_buffer:
+                    self.default_buffer = None
+                return True
+            return False
         except Exception as e:
             self.post_message("Failed to save {!r}: {}".format(buf.name, e))
             return False
