@@ -1607,27 +1607,32 @@ class ShellFrame(MiniFrame):
     
     def add_log(self, text):
         """Add text to the logging buffer."""
-        with self.Log.default_buffer.off_readonly() as ed:
-            ed.write(text)
+        buf = self.Log.default_buffer or self.Log.new_buffer()
+        with buf.off_readonly():
+            buf.write(text)
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
-        with self.Help.buffer.off_readonly() as ed:
-            ed.SetText(text)
+        buf = self.Help.default_buffer or self.Help.new_buffer()
+        with buf.off_readonly():
+            buf.SetText(text)
+        ## Overwrite text and popup the window.
         self.popup_window(self.Help, focus=0)
     
     def add_history(self, text, noerr=None):
         """Add text to the history buffer."""
         if not text or text.isspace():
             return
-        with self.History.buffer.off_readonly() as ed:
-            ed.goto_char(ed.TextLength) # line to set an arrow marker
-            ed.write(text)
-            if noerr is not None:
-                ed.add_marker(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
+        buf = self.History.default_buffer or self.History.new_buffer()
+        with buf.off_readonly():
+            buf.goto_char(buf.TextLength) # line to set an arrow marker
+            buf.write(text)
+        ## Set a marker on the current line.
+        if noerr is not None:
+            buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
