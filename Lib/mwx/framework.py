@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.2"
+__version__ = "0.81.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1178,6 +1178,14 @@ class ShellFrame(MiniFrame):
                 o.write('\n'.join((
                     "#! Session file (This file is generated automatically)",
                     "self.SetSize({})".format(self.Size),
+                    "",
+                )))
+                for book in self.get_pages(type(self.Log)):
+                    for buffer in book.all_buffers:
+                        if buffer.mtdelta is not None:
+                            o.write("self._load_file({!r}, {!r}, {})\n".format(
+                                     book.Name, buffer.filename, buffer.markline+1))
+                o.write('\n'.join((
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
@@ -1188,18 +1196,16 @@ class ShellFrame(MiniFrame):
                     "self._mgr.Update()",
                     ""
                 )))
-                for buffer in self.Log.all_buffers:
-                    if buffer.mtdelta is not None:
-                        o.write("self.Log.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.markline+1))
-                
-                for buffer in self.Scratch.all_buffers:
-                    if buffer.mtdelta is not None:
-                        o.write("self.Scratch.load_file({!r}, {})\n".format(
-                                buffer.filename, buffer.markline+1))
         except Exception:
             traceback.print_exc()
             print("- Failed to save session")
+    
+    def _load_file(self, bookname, filename, lineno):
+        try:
+            book = getattr(self, bookname)
+            book.load_file(filename, lineno)
+        except Exception:
+            pass
     
     def Init(self):
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
@@ -1209,10 +1215,12 @@ class ShellFrame(MiniFrame):
     
     def Destroy(self):
         try:
-            self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
-            self.History.default_buffer.SaveFile(self.HISTORY_FILE)
-            self.save_session()
             self.timer.Stop()
+            self.save_session()
+            if self.Log.default_buffer:
+                self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
+            if self.History.default_buffer:
+                self.History.default_buffer.SaveFile(self.HISTORY_FILE)
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
@@ -1599,27 +1607,32 @@ class ShellFrame(MiniFrame):
     
     def add_log(self, text):
         """Add text to the logging buffer."""
-        with self.Log.default_buffer.off_readonly() as ed:
-            ed.write(text)
+        buf = self.Log.default_buffer or self.Log.new_buffer()
+        with buf.off_readonly():
+            buf.write(text)
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
-        with self.Help.buffer.off_readonly() as ed:
-            ed.SetText(text)
+        buf = self.Help.default_buffer or self.Help.new_buffer()
+        with buf.off_readonly():
+            buf.SetText(text)
+        ## Overwrite text and popup the window.
         self.popup_window(self.Help, focus=0)
     
     def add_history(self, text, noerr=None):
         """Add text to the history buffer."""
         if not text or text.isspace():
             return
-        with self.History.buffer.off_readonly() as ed:
-            ed.goto_char(ed.TextLength) # line to set an arrow marker
-            ed.write(text)
-            if noerr is not None:
-                ed.add_marker(ed.cline, 1 if noerr else 2) # 1:white 2:red-arrow
+        buf = self.History.default_buffer or self.History.new_buffer()
+        with buf.off_readonly():
+            buf.goto_char(buf.TextLength) # line to set an arrow marker
+            buf.write(text)
+        ## Set a marker on the current line.
+        if noerr is not None:
+            buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
