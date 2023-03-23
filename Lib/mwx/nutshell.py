@@ -1836,17 +1836,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 if f == buf.filename:
                     return buf
     
-    def swap_buffer(self, buf):
-        """Replace buffer with specified buffer w/o focusing."""
-        j = self.GetPageIndex(buf)
-        if j != -1:
-            wnd = wx.Window.FindFocus() # original focus
-            org = self.buffer
-            if j != self.Selection:
-                self.Selection = j # the focus is moved
-            if wnd and wnd is not org: # restore focus other window
-                wnd.SetFocus()
-            return buf
+    swap_buffer = AuiNotebook.swap_page
     
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
@@ -1879,10 +1869,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if not buf:
             buf = self.buffer
         j = self.GetPageIndex(buf)
-        self.DeletePage(j) # the focus is moved
-        
-        if not self.buffer: # no buffers:
-            self.new_buffer()
+        if j != -1:
+            self.DeletePage(j)  # the focus is moved
+            if not self.buffer: # no buffers
+                self.new_buffer()
     
     def remove_all_buffers(self):
         """Initialize list of buffers."""
@@ -1978,7 +1968,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.post_message("The save has been canceled.")
                 return None
         try:
-            return buf._save_file(filename)
+            if buf._save_file(filename):
+                if buf is self.default_buffer:
+                    self.default_buffer = None
+                return True
+            return False
         except Exception as e:
             self.post_message("Failed to save {!r}: {}".format(buf.name, e))
             return False
@@ -2025,7 +2019,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.swap_buffer(buf)
             self.save_buffer()
         self.swap_buffer(org)
-        return True
     
     def open_buffer(self):
         """Confirm the open with the dialog."""
@@ -2037,7 +2030,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             paths = dlg.Paths
         for f in paths:
             self.load_file(f)
-        return True
     
     def kill_buffer(self):
         """Confirm the close with the dialog."""
@@ -2052,7 +2044,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.post_message("The close has been canceled.")
                 return None
         wx.CallAfter(self.remove_buffer)
-        return True
     
     def kill_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers):
@@ -2066,7 +2057,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.post_message("The close has been canceled.")
                 return None
         wx.CallAfter(self.remove_all_buffers)
-        return True
 
 
 class Interpreter(interpreter.Interpreter):
