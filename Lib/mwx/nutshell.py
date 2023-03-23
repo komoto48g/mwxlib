@@ -2000,7 +2000,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return None
         return self.save_file(f)
     
-    def save_as_buffer(self):
+    def save_buffer_as(self):
         """Confirm the saveas with the dialog."""
         buf = self.buffer
         name = re.sub("[\\/:*?\"<>|]", '', buf.name)
@@ -2008,10 +2008,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 defaultFile=name,
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-            if dlg.ShowModal() != wx.ID_OK:
-                return None
-            f = dlg.Path
-        return self.save_file(f)
+            if dlg.ShowModal() == wx.ID_OK:
+                return self.save_file(dlg.Path)
+    
+    save_as_buffer = save_buffer_as # backward compatibility
     
     def save_all_buffers(self):
         org = self.buffer
@@ -2025,15 +2025,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
         with wx.FileDialog(self, "Open buffer",
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
-            if dlg.ShowModal() != wx.ID_OK:
-                return None
-            paths = dlg.Paths
-        for f in paths:
-            self.load_file(f)
+            if dlg.ShowModal() == wx.ID_OK:
+                for f in dlg.Paths:
+                    self.load_file(f)
     
-    def kill_buffer(self):
+    def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
-        buf = self.buffer
+        buf = buf or self.buffer
         if self.need_buffer_save_p(buf):
             if wx.MessageBox(
                     "You are closing unsaved content.\n\n"
@@ -2043,7 +2041,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.remove_buffer)
+        wx.CallAfter(self.remove_buffer, buf)
     
     def kill_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers):
