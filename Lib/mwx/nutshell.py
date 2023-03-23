@@ -2636,7 +2636,6 @@ class Nautilus(Shell, EditorInterface):
             if '\n' in cmd:
                 self.Execute(cmd) # => multi-line commands
             else:
-                self.interp.more = False
                 self.run(cmd, verbose=0, prompt=0) # => push(cmd)
             return
         
@@ -3156,6 +3155,16 @@ class Nautilus(Shell, EditorInterface):
         for cmd in commands:
             self.write(cmd.replace('\n', os.linesep + sys.ps2))
             self.processLine()
+    
+    def run(self, command, prompt=True, verbose=True):
+        """Execute command as if it was typed in directly.
+        
+        (override) Set interp.more False to clear `commandBuffer`.
+                   Deselect and move to the end of the command line.
+        """
+        self.interp.more = False
+        self.goto_char(self.eolc)
+        return Shell.run(self, command, prompt, verbose)
     
     ## --------------------------------
     ## Autocomp actions of the shell
