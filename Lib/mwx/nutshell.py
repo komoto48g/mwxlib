@@ -1836,8 +1836,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 if f == buf.filename:
                     return buf
     
-    swap_buffer = AuiNotebook.swap_page
-    
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         try:
@@ -1949,16 +1947,18 @@ class EditorBook(AuiNotebook, CtrlInterface):
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.remove_buffer(buf)
-            self.swap_buffer(org)
+            if org:
+                self.swap_page(org)
             return False
         finally:
             self.Thaw()
     
-    def save_file(self, filename):
+    def save_file(self, filename, buf=None):
         """Save the current buffer to a file.
         """
-        buf = self.buffer
+        buf = buf or self.buffer
         if buf.mtdelta:
+            self.swap_page(buf)
             if wx.MessageBox(
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
@@ -1977,9 +1977,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.post_message("Failed to save {!r}: {}".format(buf.name, e))
             return False
     
-    def load_buffer(self):
+    def load_buffer(self, buf=None):
         """Confirm the load with the dialog."""
-        buf = self.buffer
+        buf = buf or self.buffer
         if buf.mtdelta is None:
             self.post_message("No filename.")
             return None
@@ -1988,52 +1988,46 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return None
         return self.load_file(buf, buf.markline+1)
     
-    def save_buffer(self):
+    def save_buffer(self, buf=None):
         """Confirm the save with the dialog."""
-        buf = self.buffer
-        f = buf.filename
+        buf = buf or self.buffer
         if buf.mtdelta is None:
             self.post_message("No filename.")
             return None
         if buf.mtdelta == 0 and not buf.IsModified():
             self.post_message("No need to save.")
             return None
-        return self.save_file(f)
+        return self.save_file(buf.filename, buf)
     
-    def save_as_buffer(self):
+    def save_buffer_as(self, buf=None):
         """Confirm the saveas with the dialog."""
-        buf = self.buffer
+        buf = buf or self.buffer
         name = re.sub("[\\/:*?\"<>|]", '', buf.name)
         with wx.FileDialog(self, "Save buffer as",
                 defaultFile=name,
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-            if dlg.ShowModal() != wx.ID_OK:
-                return None
-            f = dlg.Path
-        return self.save_file(f)
+            if dlg.ShowModal() == wx.ID_OK:
+                return self.save_file(dlg.Path, buf)
+    
+    save_as_buffer = save_buffer_as # backward compatibility
     
     def save_all_buffers(self):
-        org = self.buffer
         for buf in filter(self.need_buffer_save_p, self.all_buffers):
-            self.swap_buffer(buf)
-            self.save_buffer()
-        self.swap_buffer(org)
+            self.save_buffer(buf)
     
     def open_buffer(self):
         """Confirm the open with the dialog."""
         with wx.FileDialog(self, "Open buffer",
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
-            if dlg.ShowModal() != wx.ID_OK:
-                return None
-            paths = dlg.Paths
-        for f in paths:
-            self.load_file(f)
+            if dlg.ShowModal() == wx.ID_OK:
+                for f in dlg.Paths:
+                    self.load_file(f)
     
-    def kill_buffer(self):
+    def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
-        buf = self.buffer
+        buf = buf or self.buffer
         if self.need_buffer_save_p(buf):
             if wx.MessageBox(
                     "You are closing unsaved content.\n\n"
@@ -2043,7 +2037,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.remove_buffer)
+        wx.CallAfter(self.remove_buffer, buf)
     
     def kill_all_buffers(self):
         for buf in filter(self.need_buffer_save_p, self.all_buffers):
