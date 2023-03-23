@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.4"
+__version__ = "0.81.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -789,9 +789,9 @@ class AuiNotebook(aui.AuiNotebook):
             return win
     
     def find_tab(self, win):
-        """Returns AuiTabCtrl and AuiNotebookPage for win,
-        cf. aui.AuiNotebook.FindTab -> bool, tab, idx
+        """Returns AuiTabCtrl and AuiNotebookPage for the window.
         
+        cf. aui.AuiNotebook.FindTab -> bool, tab, idx
         Note:
             Argument `win` can also be page.window.Name (not page.caption).
         """
@@ -802,7 +802,7 @@ class AuiNotebook(aui.AuiNotebook):
                     return tabs, page
     
     def move_tab(self, win, tabs):
-        """Move page of win to specified tabs."""
+        """Move the window page to the specified tabs."""
         try:
             tc1, nb1 = self.find_tab(win)
             win = nb1.window
@@ -819,7 +819,7 @@ class AuiNotebook(aui.AuiNotebook):
             self._mgr.DetachPane(pane.window)
         self._mgr.Update()
     
-    ## Save / Load perspective functions
+    ## Methods to save / load the perspectives.
     ## *** Inspired by wx.lib.agw.aui.AuiNotebook ***
     
     def savePerspective(self):
@@ -1343,8 +1343,9 @@ class ShellFrame(MiniFrame):
             evt.Skip()
     
     def About(self, evt=None):
-        with self.Help.buffer.off_readonly() as ed:
-            ed.SetText('\n\n'.join((
+        buf = self.Help.buffer
+        with buf.off_readonly():
+            buf.SetText('\n\n'.join((
                 "#<module 'mwx' from {!r}>".format(__file__),
                 "Author: {!r}".format(__author__),
                 "Version: {!s}".format(__version__),
@@ -1445,25 +1446,14 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        
-        for book in self.get_pages(type(self.Log)):
-            buf = book.find_buffer(filename)
-            if buf:
-                break
-        else:
-            book = self.Log
-            buf = None
-        
-        wnd = wx.Window.FindFocus() # original focus
+        book = next((x for x in self.get_pages(type(self.Log))
+                             if x.find_buffer(filename)), self.Log)
         try:
+            wnd = wx.Window.FindFocus() # original focus
             self.popup_window(book, focus=focus)
-            if buf and book.need_buffer_save_p(buf): # exists and need save?
-                buf.SetFocus()
-                return book.load_buffer()
             return book.load_file(filename, lineno)
         finally:
-            if wnd and not focus:
-                ## wx.CallAfter(wnd.SetFocus) # restore focus with delay
+            if wnd and not focus: # restore focus if needed
                 wnd.SetFocus()
     
     def info(self, obj):
@@ -1652,7 +1642,7 @@ class ShellFrame(MiniFrame):
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
-        pages = [page for page in self.get_pages() if page.IsShownOnScreen()]
+        pages = [x for x in self.get_pages() if x.IsShownOnScreen()]
         win = wx.Window.FindFocus()
         while win:
             if win in pages:
