@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.3"
+__version__ = "0.81.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -776,6 +776,18 @@ class AuiNotebook(aui.AuiNotebook):
             if type is None or isinstance(win, type):
                 yield win
     
+    def swap_page(self, win):
+        """Replace the page with the specified page w/o focusing."""
+        j = self.GetPageIndex(win)
+        if j != -1:
+            wnd = wx.Window.FindFocus() # original focus
+            org = self.CurrentPage
+            if j != self.Selection:
+                self.Selection = j # the focus is moved
+            if wnd and wnd is not org: # restore focus other window
+                wnd.SetFocus()
+            return win
+    
     def find_tab(self, win):
         """Returns AuiTabCtrl and AuiNotebookPage for win,
         cf. aui.AuiNotebook.FindTab -> bool, tab, idx
@@ -806,6 +818,9 @@ class AuiNotebook(aui.AuiNotebook):
             tc1.Destroy()
             self._mgr.DetachPane(pane.window)
         self._mgr.Update()
+    
+    ## Save / Load perspective functions
+    ## *** Inspired by wx.lib.agw.aui.AuiNotebook ***
     
     def savePerspective(self):
         """Saves the entire user interface layout into an encoded string,
@@ -1621,6 +1636,7 @@ class ShellFrame(MiniFrame):
             buf.SetText(text)
         ## Overwrite text and popup the window.
         self.popup_window(self.Help, focus=0)
+        self.Help.swap_page(buf)
     
     def add_history(self, text, noerr=None):
         """Add text to the history buffer."""
