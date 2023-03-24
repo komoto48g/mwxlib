@@ -119,6 +119,7 @@ class EditorInterface(CtrlInterface):
               'Rbutton pressed' : (0, lambda v: click_fork(v, 'Rclick')),
               'Mbutton pressed' : (0, lambda v: click_fork(v, 'Mclick')),
              'Lbutton dblclick' : (0, lambda v: click_fork(v, 'dblclick')),
+                'margin_Lclick' : (0, self.on_margin_click),
               'margin_dblclick' : (0, self.on_margin_dblclick),
                  'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
                   'select_line' : (100, self.on_linesel_begin, skip),
@@ -226,7 +227,7 @@ class EditorInterface(CtrlInterface):
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
-        self.SetMarginSensitive(2, False) # cf. show_folder
+        self.SetMarginSensitive(2, False)
         
         self.SetMarginLeft(2) # +1 margin at the left
         
@@ -659,9 +660,6 @@ class EditorInterface(CtrlInterface):
     ## Fold / Unfold functions
     ## --------------------------------
     
-    ## def is_folder_shown(self):
-    ##     return self.GetMarginSensitive(0)
-    
     def show_folder(self, show=True):
         """Show folder margin.
         
@@ -687,12 +685,9 @@ class EditorInterface(CtrlInterface):
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        
         ## `level` indicates indent-header flag or indent-level number
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
-        else:
-            self.handler('select_line', evt)
     
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
         """Popup context menu."""
@@ -707,7 +702,11 @@ class EditorInterface(CtrlInterface):
                 lambda v: self.FoldAll(1)),
         ])
     
-    def on_margin_dblclick(self, evt):
+    def on_margin_click(self, evt): #<wx._core.MouseEvent>
+        if evt.Margin < 2:
+            self.handler('select_line', evt)
+    
+    def on_margin_dblclick(self, evt): #<wx._core.MouseEvent>
         if evt.Margin < 2:
             self.FoldAll(0)
     
@@ -740,8 +739,9 @@ class EditorInterface(CtrlInterface):
             le += 1
         return lc, le
     
-    def on_linesel_begin(self, evt):
-        p = evt.Position
+    def on_linesel_begin(self, evt): #<wx._core.MouseEvent>
+        ## p = evt.Position
+        p = self.PositionFromPoint(evt.Position)
         self.goto_char(p)
         self.cpos = q = self.eol
         self.CaptureMouse()
@@ -800,7 +800,7 @@ class EditorInterface(CtrlInterface):
             ## hi (fore) the other color
             self.BackgroundColour = item.get('back')
             self.ForegroundColour = item.get('fore')
-            if self.GetMarginSensitive(2):
+            if self.GetMarginWidth(2) > 1:
                 ## 12 pixel chequeboard, fore being default colour
                 self.SetFoldMarginColour(True, item.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
