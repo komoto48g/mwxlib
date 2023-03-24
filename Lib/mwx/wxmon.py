@@ -128,17 +128,16 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     
     def watch(self, widget=None):
         """Begin watching the widget."""
+        self.clear()
+        self.unwatch()
         if widget is None:
             widget = self.__prev # Restart
         if not widget:
-            self.unwatch()
             return
         if not isinstance(widget, wx.Object):
             wx.MessageBox("Cannot watch the widget.\n\n"
                           "- {!r} is not a wx.Object.".format(widget))
             return
-        self.unwatch()
-        self.clear()
         self.target = widget
         ssmap = self.dump(widget, verbose=0)
         for binder in self.get_watchlist():
@@ -160,7 +159,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         for binder in self.get_watchlist():
             if not widget.Unbind(binder, handler=self.onWatchedEvent):
-                print("- Failed to unbind {}:{}".format(binder.typeId, binder))
+                print("- Failed to unbind {}: {}".format(binder.typeId, widget))
         self.parent.handler('monitor_end', widget)
         self.__prev = widget
         self.target = None
