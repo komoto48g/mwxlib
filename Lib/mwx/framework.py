@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.5"
+__version__ = "0.81.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -598,7 +598,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         shellframe  : mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
-    message = property(lambda self: self.statusbar)
+    
+    def message(self, *args, **kwargs):
+        if self.statusbar:
+            return self.statusbar(*args, **kwargs)
     
     def post_command_hook(self, evt):
         pass
@@ -683,7 +686,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         statusbar   : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
-    message = property(lambda self: self.statusbar)
+    
+    def message(self, *args, **kwargs):
+        if self.statusbar:
+            return self.statusbar(*args, **kwargs)
     
     def post_command_hook(self, evt):
         pass
@@ -1423,8 +1429,6 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
         self.indicator.Value = 1
-        self.message.SetBackgroundColour(None)
-        self.message.Refresh()
         self.message("Quit")
     
     def load(self, obj, focus=False):
@@ -1662,7 +1666,8 @@ class ShellFrame(MiniFrame):
                     )
         self.handler('shell_new', shell)
         self.console.AddPage(shell, typename(shell.target))
-        shell.SetFocus()
+        self.Show()
+        self.popup_window(shell, focus=1)
         return shell
     
     def delete_shell(self, shell):
@@ -1898,6 +1903,5 @@ if 1:
     frm.shellframe.Show()
     frm.shellframe.rootshell.SetFocus()
     frm.shellframe.rootshell.Execute(SHELLSTARTUP)
-    frm.shellframe.debugger.skip.remove(FSM.__module__)
     frm.Show()
     app.MainLoop()
