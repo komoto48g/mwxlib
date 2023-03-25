@@ -95,7 +95,7 @@ class EditorInterface(CtrlInterface):
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
                                        _F(self.recenter)),
-                  'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
+                  'M-f pressed' : (10, _F(self.filter_text), self.on_itext_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
@@ -121,15 +121,15 @@ class EditorInterface(CtrlInterface):
              'Lbutton dblclick' : (0, lambda v: click_fork(v, 'dblclick')),
                 'margin_Lclick' : (0, self.on_margin_click),
               'margin_dblclick' : (0, self.on_margin_dblclick),
-                 'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
+                 'select_itext' : (10, self.filter_text, self.on_itext_enter),
                   'select_line' : (100, self.on_linesel_begin, skip),
             },
             10 : {
-                         'quit' : (0, self.on_filter_text_exit),
-                    '* pressed' : (0, self.on_filter_text_exit),
+                         'quit' : (0, self.on_itext_exit),
+                    '* pressed' : (0, self.on_itext_exit),
                    'up pressed' : (10, skip),
                  'down pressed' : (10, skip),
-                'enter pressed' : (0, self.on_filter_text_selection),
+                'enter pressed' : (0, self.on_itext_selection),
             },
             100 : {
                        'motion' : (100, self.on_linesel_motion, skip),
@@ -1028,7 +1028,7 @@ class EditorInterface(CtrlInterface):
             yield pos
     
     def filter_text(self, text=None):
-        self.__lines = []
+        self.__itextlines = []
         for i in range(2):
             self.SetIndicatorCurrent(i)
             self.IndicatorClearRange(0, self.TextLength)
@@ -1044,37 +1044,39 @@ class EditorInterface(CtrlInterface):
             for i in range(2):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
-        self.__lines = sorted(set(lines)) # keep order, no duplication
+        self.__itextlines = sorted(set(lines)) # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
         try:
             self.TopLevelParent.findData.FindString = text
         except AttributeError:
             pass
     
-    def on_filter_text_enter(self, evt):
-        if not self.__lines:
+    def on_itext_enter(self, evt):
+        if not self.__itextlines:
             self.handler('quit', evt)
             return
         def _format(ln):
             return "{:4d} {}".format(ln+1, self.GetLine(ln).rstrip())
         self.AutoCompSetSeparator(ord('\n'))
-        self.AutoCompShow(0, '\n'.join(map(_format, self.__lines))) # cf. gen_autocomp
+        self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines))) # cf. gen_autocomp
         self.AutoCompSelect("{:4d}".format(self.cline+1))
-        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                  self.on_filter_text_selection)
+        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
     
-    def on_filter_text_exit(self, evt):
+    def on_itext_exit(self, evt):
         if self.AutoCompActive():
             self.AutoCompCancel()
-        self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                    handler=self.on_filter_text_selection)
+        self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION, handler=self.on_itext_selection)
     
-    def on_filter_text_selection(self, evt):
-        line = self.__lines[self.AutoCompGetCurrent()]
+    def on_itext_selection(self, evt):
+        i = self.AutoCompGetCurrent()
+        if i == -1:
+            evt.Skip()
+            return
+        line = self.__itextlines[i]
         self.EnsureVisible(line) # expand if folded
         self.goto_line(line)
         self.recenter()
-        self.on_filter_text_exit(evt)
+        self.on_itext_exit(evt)
     
     def OnIndicatorClick(self, evt):
         ## i = self.IndicatorValue #? -> 1 常に１が返される▲ BUG of wx.stc ?
@@ -1084,7 +1086,6 @@ class EditorInterface(CtrlInterface):
             q = self.IndicatorEnd(0, pos)
             self.goto_char(pos)
             self.handler('select_itext', self.GetTextRange(p, q))
-        ## evt.Skip(False) # DO NOT SKIP to system handler.
     
     ## --------------------------------
     ## goto / skip / selection / etc.
