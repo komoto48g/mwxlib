@@ -1125,7 +1125,7 @@ class ShellFrame(MiniFrame):
         ## py-mode
         self.Scratch.set_attributes(Style=Nautilus.STYLE)
         
-        self.set_traceable(self.Scratch)
+        self.set_hookable(self.Scratch)
         
         @self.Scratch.define_key('C-j')
         def eval_line(v):
@@ -1138,7 +1138,7 @@ class ShellFrame(MiniFrame):
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
         
         ## text-mode
-        self.set_traceable(self.Log)
+        self.set_hookable(self.Log)
         
         self.Log.set_attributes(ReadOnly=True)
         self.Help.set_attributes(ReadOnly=True)
@@ -1561,7 +1561,7 @@ class ShellFrame(MiniFrame):
         del shell.globals
         self.indicator.Value = 1
     
-    def set_traceable(self, book, traceable=True):
+    def set_hookable(self, book, traceable=True):
         """Bind pointer to set/unset trace."""
         if traceable:
             book.handler.bind('pointer_set', _F(self.start_trace, book=book))
@@ -1569,6 +1569,8 @@ class ShellFrame(MiniFrame):
         else:
             book.handler.unbind('pointer_set')
             book.handler.unbind('pointer_unset')
+    
+    set_traceable = set_hookable # for backward compatibility
     
     def start_trace(self, line, book):
         if not self.debugger.busy:
