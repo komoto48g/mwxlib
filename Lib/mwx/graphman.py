@@ -813,7 +813,7 @@ class Frame(mwx.Frame):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
             subprocess.Popen(cmd)
-            self.message(cmd)
+            self.statusbar(cmd)
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
@@ -1284,13 +1284,13 @@ class Frame(mwx.Frame):
         if not plug:
             return
         if plug.reloadable:
-            current_session = {}
+            session = {}
             try:
-                plug.save_session(current_session)
+                plug.save_session(session)
             except Exception:
                 traceback.print_exc()
                 print("- Failed to save session: {}".format(plug))
-            return self.load_plug(plug.__module__, force=1, session=current_session)
+            return self.load_plug(plug.__module__, force=1, session=session)
         return False
     
     def edit_plug(self, name):
@@ -1553,7 +1553,7 @@ class Frame(mwx.Frame):
         if view not in self.graphic_windows:
             view = self.selected_view
         
-        if isinstance(paths, str): # for single frame:backward compatibility
+        if isinstance(paths, str): # for single frame: backward compatibility
             paths = [paths]
         
         if paths is None:
@@ -1748,17 +1748,13 @@ class Frame(mwx.Frame):
                 basename = os.path.basename(path)
                 if basename == "__init__.py": # is module package?
                     path = path[:-12]
-                current_session = {}
+                session = {}
                 try:
-                    plug.save_session(current_session)
+                    plug.save_session(session)
                 except Exception:
                     traceback.print_exc()
                     print("- Failed to save session: {}".format(plug))
-                o.write("self.load_plug({name!r}, show={show}, session={jssn!r})\n".format(
-                        name = path,
-                        show = plug.IsShown(),
-                        jssn = current_session or None,
-                ))
+                o.write("self.load_plug({!r}, session={!r})\n".format(path, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             ## set-global-unit
