@@ -1069,7 +1069,7 @@ class EditorInterface(CtrlInterface):
         if self.AutoCompActive():
             self.AutoCompCancel()
         self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                    self.on_filter_text_selection)
+                    handler=self.on_filter_text_selection)
     
     def on_filter_text_selection(self, evt):
         line = self.__lines[self.AutoCompGetCurrent()]
