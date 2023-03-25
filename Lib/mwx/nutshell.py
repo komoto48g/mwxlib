@@ -549,12 +549,11 @@ class EditorInterface(CtrlInterface):
         if topic:
             return topic
         with self.save_excursion():
-            delims = "({[<>]}),:; \t\r\n"
             p = q = self.cpos
-            if self.get_char(p-1) not in delims:
+            if self.get_char(p-1).isalnum():
                 self.WordLeft()
                 p = self.cpos
-            if self.get_char(q) not in delims:
+            if self.get_char(q).isalnum():
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
@@ -745,13 +744,12 @@ class EditorInterface(CtrlInterface):
         self.goto_char(p)
         self.cpos = q = self.eol
         self.CaptureMouse()
-        if 1:
-            lc = self.LineFromPosition(p)
-            if not self.GetFoldExpanded(lc): # :not expanded
-                self.CharRightExtend()
-                q = self.cpos
-                if q == self.TextLength:
-                    q -= 1
+        lc = self.LineFromPosition(p)
+        if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
+            self.CharRightExtend()
+            q = self.cpos
+            if q == self.TextLength:
+                q -= 1
         self._anchors = [p, q]
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
@@ -762,7 +760,7 @@ class EditorInterface(CtrlInterface):
             text = self.GetLine(lc)
             self.cpos = p + len(text)
             self.anchor = po
-            if not self.GetFoldExpanded(lc): # :not expanded
+            if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
                 self.CharRightExtend()
                 self._anchors[1] = self.cpos
         else:
@@ -1031,13 +1029,13 @@ class EditorInterface(CtrlInterface):
     
     def filter_text(self, text=None):
         self.__lines = []
-        if not text:
+        for i in range(2):
+            self.SetIndicatorCurrent(i)
+            self.IndicatorClearRange(0, self.TextLength)
+        if text is None:
             text = self.topic_at_caret
         if not text:
             self.message("- No words")
-            for i in range(2):
-                self.SetIndicatorCurrent(i)
-                self.IndicatorClearRange(0, self.TextLength)
             return
         lw = len(text.encode()) # for multi-byte string
         lines = []
