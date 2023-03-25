@@ -95,7 +95,7 @@ class EditorInterface(CtrlInterface):
                   'M-e pressed' : (0, _F(self.end_of_line)),
                   'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
                                        _F(self.recenter)),
-                  'M-f pressed' : (10, _F(self.filter_text), self.on_filter_text_enter),
+                  'M-f pressed' : (10, _F(self.filter_text), self.on_itext_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
@@ -119,16 +119,17 @@ class EditorInterface(CtrlInterface):
               'Rbutton pressed' : (0, lambda v: click_fork(v, 'Rclick')),
               'Mbutton pressed' : (0, lambda v: click_fork(v, 'Mclick')),
              'Lbutton dblclick' : (0, lambda v: click_fork(v, 'dblclick')),
+                'margin_Lclick' : (0, self.on_margin_click),
               'margin_dblclick' : (0, self.on_margin_dblclick),
-                 'select_itext' : (10, self.filter_text, self.on_filter_text_enter),
+                 'select_itext' : (10, self.filter_text, self.on_itext_enter),
                   'select_line' : (100, self.on_linesel_begin, skip),
             },
             10 : {
-                         'quit' : (0, self.on_filter_text_exit),
-                    '* pressed' : (0, self.on_filter_text_exit),
+                         'quit' : (0, self.on_itext_exit),
+                    '* pressed' : (0, self.on_itext_exit),
                    'up pressed' : (10, skip),
                  'down pressed' : (10, skip),
-                'enter pressed' : (0, self.on_filter_text_selection),
+                'enter pressed' : (0, self.on_itext_selection),
             },
             100 : {
                        'motion' : (100, self.on_linesel_motion, skip),
@@ -226,7 +227,7 @@ class EditorInterface(CtrlInterface):
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
         self.SetMarginWidth(2, 1)
-        self.SetMarginSensitive(2, False) # cf. show_folder
+        self.SetMarginSensitive(2, False)
         
         self.SetMarginLeft(2) # +1 margin at the left
         
@@ -548,12 +549,11 @@ class EditorInterface(CtrlInterface):
         if topic:
             return topic
         with self.save_excursion():
-            delims = "({[<>]}),:; \t\r\n"
             p = q = self.cpos
-            if self.get_char(p-1) not in delims:
+            if self.get_char(p-1).isalnum():
                 self.WordLeft()
                 p = self.cpos
-            if self.get_char(q) not in delims:
+            if self.get_char(q).isalnum():
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
@@ -659,9 +659,6 @@ class EditorInterface(CtrlInterface):
     ## Fold / Unfold functions
     ## --------------------------------
     
-    ## def is_folder_shown(self):
-    ##     return self.GetMarginSensitive(0)
-    
     def show_folder(self, show=True):
         """Show folder margin.
         
@@ -687,12 +684,9 @@ class EditorInterface(CtrlInterface):
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        
         ## `level` indicates indent-header flag or indent-level number
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
-        else:
-            self.handler('select_line', evt)
     
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
         """Popup context menu."""
@@ -707,7 +701,11 @@ class EditorInterface(CtrlInterface):
                 lambda v: self.FoldAll(1)),
         ])
     
-    def on_margin_dblclick(self, evt):
+    def on_margin_click(self, evt): #<wx._core.MouseEvent>
+        if evt.Margin < 2:
+            self.handler('select_line', evt)
+    
+    def on_margin_dblclick(self, evt): #<wx._core.MouseEvent>
         if evt.Margin < 2:
             self.FoldAll(0)
     
@@ -740,18 +738,18 @@ class EditorInterface(CtrlInterface):
             le += 1
         return lc, le
     
-    def on_linesel_begin(self, evt):
-        p = evt.Position
+    def on_linesel_begin(self, evt): #<wx._core.MouseEvent>
+        ## p = evt.Position
+        p = self.PositionFromPoint(evt.Position)
         self.goto_char(p)
         self.cpos = q = self.eol
         self.CaptureMouse()
-        if 1:
-            lc = self.LineFromPosition(p)
-            if not self.GetFoldExpanded(lc): # :not expanded
-                self.CharRightExtend()
-                q = self.cpos
-                if q == self.TextLength:
-                    q -= 1
+        lc = self.LineFromPosition(p)
+        if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
+            self.CharRightExtend()
+            q = self.cpos
+            if q == self.TextLength:
+                q -= 1
         self._anchors = [p, q]
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
@@ -762,7 +760,7 @@ class EditorInterface(CtrlInterface):
             text = self.GetLine(lc)
             self.cpos = p + len(text)
             self.anchor = po
-            if not self.GetFoldExpanded(lc): # :not expanded
+            if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
                 self.CharRightExtend()
                 self._anchors[1] = self.cpos
         else:
@@ -800,7 +798,7 @@ class EditorInterface(CtrlInterface):
             ## hi (fore) the other color
             self.BackgroundColour = item.get('back')
             self.ForegroundColour = item.get('fore')
-            if self.GetMarginSensitive(2):
+            if self.GetMarginWidth(2) > 1:
                 ## 12 pixel chequeboard, fore being default colour
                 self.SetFoldMarginColour(True, item.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
@@ -1030,14 +1028,14 @@ class EditorInterface(CtrlInterface):
             yield pos
     
     def filter_text(self, text=None):
-        self.__lines = []
-        if not text:
+        self.__itextlines = []
+        for i in range(2):
+            self.SetIndicatorCurrent(i)
+            self.IndicatorClearRange(0, self.TextLength)
+        if text is None:
             text = self.topic_at_caret
         if not text:
             self.message("- No words")
-            for i in range(2):
-                self.SetIndicatorCurrent(i)
-                self.IndicatorClearRange(0, self.TextLength)
             return
         lw = len(text.encode()) # for multi-byte string
         lines = []
@@ -1046,37 +1044,39 @@ class EditorInterface(CtrlInterface):
             for i in range(2):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
-        self.__lines = sorted(set(lines)) # keep order, no duplication
+        self.__itextlines = sorted(set(lines)) # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
         try:
             self.TopLevelParent.findData.FindString = text
         except AttributeError:
             pass
     
-    def on_filter_text_enter(self, evt):
-        if not self.__lines:
+    def on_itext_enter(self, evt):
+        if not self.__itextlines:
             self.handler('quit', evt)
             return
         def _format(ln):
             return "{:4d} {}".format(ln+1, self.GetLine(ln).rstrip())
         self.AutoCompSetSeparator(ord('\n'))
-        self.AutoCompShow(0, '\n'.join(map(_format, self.__lines))) # cf. gen_autocomp
+        self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines))) # cf. gen_autocomp
         self.AutoCompSelect("{:4d}".format(self.cline+1))
-        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                  self.on_filter_text_selection)
+        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
     
-    def on_filter_text_exit(self, evt):
+    def on_itext_exit(self, evt):
         if self.AutoCompActive():
             self.AutoCompCancel()
-        self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION,
-                    self.on_filter_text_selection)
+        self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION, handler=self.on_itext_selection)
     
-    def on_filter_text_selection(self, evt):
-        line = self.__lines[self.AutoCompGetCurrent()]
+    def on_itext_selection(self, evt):
+        i = self.AutoCompGetCurrent()
+        if i == -1:
+            evt.Skip()
+            return
+        line = self.__itextlines[i]
         self.EnsureVisible(line) # expand if folded
         self.goto_line(line)
         self.recenter()
-        self.on_filter_text_exit(evt)
+        self.on_itext_exit(evt)
     
     def OnIndicatorClick(self, evt):
         ## i = self.IndicatorValue #? -> 1 常に１が返される▲ BUG of wx.stc ?
@@ -1086,7 +1086,6 @@ class EditorInterface(CtrlInterface):
             q = self.IndicatorEnd(0, pos)
             self.goto_char(pos)
             self.handler('select_itext', self.GetTextRange(p, q))
-        ## evt.Skip(False) # DO NOT SKIP to system handler.
     
     ## --------------------------------
     ## goto / skip / selection / etc.
