@@ -1569,7 +1569,7 @@ class GraphPlot(MatplotPanel):
     
     @property
     def Markers(self):
-        """Marked poitns data array [[x],[y]]."""
+        """Marked points data array [[x],[y]]."""
         xm, ym = self.marked.get_data(orig=0)
         return np.array((xm, ym))
     

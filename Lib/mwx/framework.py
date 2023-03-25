@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.6"
+__version__ = "0.81.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1748,7 +1748,7 @@ try:
     def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
         """
         Bind an event to an event handler.
-        (override) to recode and return handler
+        (override) Record the handler in the list and return the handler.
         """
         assert isinstance(event, wx.PyEventBinder)
         assert callable(handler) or handler is None
@@ -1780,7 +1780,7 @@ try:
         """
         Disconnects the event handler binding for event from `self`.
         Returns ``True`` if successful.
-        (override) to remove handler
+        (override) Delete the handler from the list.
         """
         if source is not None:
             id  = source.GetId()

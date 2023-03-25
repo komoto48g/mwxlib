@@ -765,7 +765,7 @@ class FSM(dict):
         
         equiv. self[state] += {event : [state2, action]}
         
-        The transaction is exepcted to be a list (not a tuple).
+        The transaction is expected to be a list (not a tuple).
         If no action, it creates only the transition and returns @decor(binder).
         """
         assert isinstance(event, str)
@@ -812,7 +812,7 @@ class FSM(dict):
         
         equiv. self[state] -= {event : [?, action]}
         
-        The transaction is exepcted to be a list (not a tuple).
+        The transaction is expected to be a list (not a tuple).
         If no action, it will remove the transaction from the context.
         """
         warn = self.log
