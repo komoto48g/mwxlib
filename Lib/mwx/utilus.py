@@ -1011,7 +1011,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         ## Builtin functions don't have an argspec that we can get.
         ## Try alalyzing the doc:str to get argspec info.
         ## 
-        ## Wx buitl-in method doc is written in the following style:
+        ## Wx builtin method doc is written in the following style:
         ## ```name(argspec) -> retval
         ## 
         ## ...(details)...
