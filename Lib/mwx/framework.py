@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.81.7"
+__version__ = "0.81.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1212,8 +1212,8 @@ class ShellFrame(MiniFrame):
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                     "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
                     "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
-                    "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
-                    "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
+                    ## "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
+                    ## "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
                     "self._mgr.Update()",
                     ""
                 )))
