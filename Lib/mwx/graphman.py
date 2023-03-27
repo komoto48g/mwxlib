@@ -883,8 +883,7 @@ class Frame(mwx.Frame):
         ## [S-menu] Reset floating position of a stray window.
         if wx.GetKeyState(wx.WXK_SHIFT):
             pane.floating_pos = wx.GetMousePosition()
-            if self.get_plug(name):
-                pane.Float()
+            pane.Float()
             show = True
         
         self._show_pane(name, show)
@@ -902,10 +901,11 @@ class Frame(mwx.Frame):
             if show:
                 ## Modify aui pane floating position when it is shown,
                 ## to address a known BUG with wxWidgets 3.17 -- 3.20.
-                w, h = wx.DisplaySize()
-                x, y = pane.floating_pos
-                if x > 2*w or y > h:
-                    pane.floating_pos = wx.GetMousePosition()
+                if wx.VERSION <= (4,2,0):
+                    w, h = wx.DisplaySize()
+                    x, y = pane.floating_pos
+                    if x > 2*w or y > h:
+                        pane.floating_pos = wx.GetMousePosition()
                 if not pane.IsShown():
                     plug.handler('page_shown', plug)
             else:
