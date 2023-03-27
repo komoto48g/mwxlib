@@ -9,7 +9,6 @@ import wx
 import wx.lib.inspection as it
 
 from .controls import Icon
-from .nutshell import Nautilus
 from .framework import CtrlInterface, Menu, watchit
 
 
@@ -31,8 +30,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.timer = wx.Timer(self)
         self.toolFrame = self
         
-        self._noWatchList = [self, self.GetTopLevelParent()]
-        self._noWatchClsList = (Nautilus,)
+        self._noWatchList = [self,
+                             self.GetTopLevelParent()]
         
         self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
@@ -146,8 +145,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()
         if (wnd and wnd is not self.target
-                and wnd not in self._noWatchList
-                and not isinstance(wnd, self._noWatchClsList)):
+                and wnd not in self._noWatchList):
             self.SetObj(wnd)
         evt.Skip()
     
