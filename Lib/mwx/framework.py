@@ -1810,22 +1810,7 @@ except ImportError as e:
     print("wxPython {}".format(wx.version()))
     pass
 
-
-def timeit(f, *args, **kwargs):
-    from timeit import timeit
-    try:
-        dt = timeit(lambda: f(*args, **kwargs), number=1)
-        print("duration time: {:g} s".format(dt))
-    except TypeError as e:
-        print(e)
-
-
-def profile(obj, *args, **kwargs):
-    from profile import Profile
-    pr = Profile()
-    pr.runcall(obj, *args, **kwargs)
-    pr.print_stats()
-
+## class wxpyInspectionTools:
 
 def watchit(widget=None, **kwargs):
     """Diver's watch to go deep into the wx process to inspect the widget.
@@ -1865,6 +1850,22 @@ def filling(obj=None, **kwargs):
     frame.filling.text.Zoom = -1 # zoom level of size of fonts
     frame.Show()
     return frame
+
+
+def timeit(f, *args, **kwargs):
+    from timeit import timeit
+    try:
+        dt = timeit(lambda: f(*args, **kwargs), number=1)
+        print("duration time: {:g} s".format(dt))
+    except TypeError as e:
+        print(e)
+
+
+def profile(obj, *args, **kwargs):
+    from profile import Profile
+    pr = Profile()
+    pr.runcall(obj, *args, **kwargs)
+    pr.print_stats()
 
 
 def dump(widget=None):

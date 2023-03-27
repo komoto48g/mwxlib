@@ -724,8 +724,7 @@ class ControlPanel(scrolled.ScrolledPanel):
         ## Set appearance of the layout group
         self.show(-1, visible)
         self.fold(-1, not show)
-        if 1:
-            self.Sizer.Fit(self)
+        self.Sizer.Fit(self)
     
     pack = pack
     
@@ -854,6 +853,11 @@ if 1:
     }
 
 def Icon(key, size=None):
+    """Returns an iconic bitmap with the specified size (w,h).
+
+    The key is either Icon.provided_arts or Icon.custom_images key.
+    If the key is empty it returns a transparent bitmap, otherwise `NullBitmap`.
+    """
     if key:
         try:
             art = _custom_images.get(key) # None => AttributeError
