@@ -1845,6 +1845,7 @@ def filling(obj=None, **kwargs):
     from .py.filling import FillingFrame
     frame = FillingFrame(rootObject=obj,
                          rootLabel=typename(obj),
+                         pos=wx.GetMousePosition(),
                          **kwargs)
     frame.filling.text.WrapMode = 0 # no wrap
     frame.filling.text.Zoom = -1 # zoom level of size of fonts

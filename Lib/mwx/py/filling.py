@@ -97,8 +97,10 @@ class FillingTree(wx.TreeCtrl):
         item = event.GetItem()
         text = self.getFullName(item)
         obj = self.GetItemData(item)
-        frame = FillingFrame(parent=self, size=(600, 100), rootObject=obj,
-                             rootLabel=text, rootIsNamespace=False)
+        frame = FillingFrame(parent=None,
+                             size=(600,400), pos=self.ClientToScreen(0,0),
+                             rootObject=obj, rootLabel=text,
+                             rootIsNamespace=False)
         frame.Show()
 
     def objHasChildren(self, obj):
@@ -175,7 +177,7 @@ class FillingTree(wx.TreeCtrl):
         for key in (B & A):
             i = items[key]
             child = children[key]
-            if self.GetItemData(i) != child:
+            if self.GetItemData(i) is not child:
                 self.SetItemData(i, child)
         for key in sorted(B - A):
             itemtext = six.text_type(key)
@@ -228,7 +230,7 @@ class FillingTree(wx.TreeCtrl):
                 try:
                     # data = self.objGetChildren(obj)[key] # overheads...
                     data = getattr(obj, key) # easier way to access here.
-                    if self.GetItemData(item) != data:
+                    if self.GetItemData(item) is not data:
                         self.SetItemData(item, data)
                         return item
                 except AttributeError:
