@@ -9,7 +9,7 @@ import wx
 import wx.lib.inspection as it
 
 from .controls import Icon
-from .framework import CtrlInterface, Menu, watchit
+from .framework import CtrlInterface, Menu, watchit, filling
 
 
 class Inspector(it.InspectionTree, CtrlInterface):
@@ -183,6 +183,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 lambda v: self.addref(obj),
                 lambda v: v.Enable(valid)),
             (),
+            (8, "&Filling View", miniIcon('ShowFilling'),
+                lambda v: filling(obj),
+                lambda v: v.Enable(valid)),
+                
             (10, "&Inspection Tool", Icon('inspect'),
                 lambda v: watchit(obj),
                 lambda v: v.Enable(valid)),
@@ -199,6 +203,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
 
 
 def miniIcon(key, size=(16,16)):
+    if key == 'ShowFilling':
+        return wx.py.filling.images.getPyImage().Scale(16,16).ConvertToBitmap()
     art = getattr(it, key)
     return art.GetImage().Scale(*size).ConvertToBitmap()
 
