@@ -98,7 +98,8 @@ class FillingTree(wx.TreeCtrl):
         text = self.getFullName(item)
         obj = self.GetItemData(item)
         frame = FillingFrame(parent=None,
-                             size=(600,400), pos=self.ClientToScreen(0,0),
+                             size=self.GrandParent.Size,
+                             pos=self.ClientToScreen(0,0),
                              rootObject=obj, rootLabel=text,
                              rootIsNamespace=False)
         frame.Show()
