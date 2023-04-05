@@ -29,7 +29,8 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import split_words, split_paren, find_modules
+from .utilus import split_words, split_paren
+from .utilus import find_modules, deprecated
 from .framework import CtrlInterface, AuiNotebook, Menu
 
 
@@ -329,6 +330,7 @@ class EditorInterface(CtrlInterface):
     
     def add_marker(self, line, n):
         if self.MarkerAdd(line, n):
+            self.EnsureVisible(line) # expand if folded
             self.handler('{}_set'.format(self.marker_names[n]), line)
     
     def del_marker(self, n):
@@ -395,7 +397,7 @@ class EditorInterface(CtrlInterface):
         if v != -1:
             self.__mark = v
             ln = self.LineFromPosition(v)
-            self.set_marker(ln, 0)
+            self.set_marker(ln, 0) # [mark_set]
         else:
             del self.mark
     
@@ -404,7 +406,7 @@ class EditorInterface(CtrlInterface):
         v = self.__mark
         if v != -1:
             self.__mark = -1
-            self.del_marker(0)
+            self.del_marker(0) # [mark_unset]
     
     def set_mark(self):
         self.mark = self.cpos
@@ -415,9 +417,11 @@ class EditorInterface(CtrlInterface):
         else:
             self.pointer = self.cline
     
+    @deprecated
     def goto_mark(self):
         self.goto_marker(0b001)
     
+    @deprecated
     def goto_pointer(self):
         self.goto_marker(0b11000)
     
@@ -1548,7 +1552,7 @@ class Buffer(EditWindow, EditorInterface):
             self.EmptyUndoBuffer()
             self.SetSavePoint()
         self.markline = lineno - 1
-        self.goto_mark()
+        self.goto_marker(1)
         self.filename = filename
         self.handler('buffer_loaded', self)
     
@@ -1556,7 +1560,7 @@ class Buffer(EditWindow, EditorInterface):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
             self.markline = lineno - 1
-            self.goto_mark()
+            self.goto_marker(1)
             self.filename = filename
             self.handler('buffer_loaded', self)
             return True

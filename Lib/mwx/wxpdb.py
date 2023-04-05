@@ -343,7 +343,7 @@ class Debugger(Pdb):
             if filename == buffer.filename:
                 if code != self.code:
                     buffer.markline = firstlineno - 1 # (o) entry:marker
-                    buffer.goto_mark()
+                    buffer.goto_marker(1)
                     buffer.recenter(3)
                 buffer.goto_line(lineno - 1)
                 buffer.pointer = lineno - 1 # (->) pointer:marker

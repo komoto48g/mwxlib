@@ -434,6 +434,21 @@ def get_rootpath(f):
     return os.path.join(home, f)
 
 
+def deprecated(f=None, version="the future", count=1):
+    if f is None:
+        return lambda f: deprecated(f, version, count)
+    @wraps(f)
+    def _f(*args, **kwargs):
+        nonlocal count
+        if count:
+            warnings.warn(
+                f"{f.__name__!r} is deprecated and will be removed in {version}.",
+                DeprecationWarning, stacklevel=2)
+            count -= 1
+        return f(*args, **kwargs)
+    return _f
+
+
 ## --------------------------------
 ## Finite State Machine
 ## --------------------------------
