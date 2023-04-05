@@ -175,6 +175,10 @@ class EditorInterface(CtrlInterface):
         ## This event occurs when lines that are hidden should be made visible.
         self.Bind(stc.EVT_STC_NEEDSHOWN, eof)
         
+        ## Automatically show lines as needed.
+        ## This avoids sending the `EVT_STC_NEEDSHOWN` notification.
+        self.SetAutomaticFold(stc.STC_AUTOMATICFOLD_SHOW)
+        
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
@@ -684,7 +688,8 @@ class EditorInterface(CtrlInterface):
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
-        ## `level` indicates indent-header flag or indent-level number
+        ## `level` indicates indent-level number
+        ##                 & indent-header (stc.STC_FOLDLEVELHEADERFLAG)
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
     
