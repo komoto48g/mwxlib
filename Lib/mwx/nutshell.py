@@ -194,7 +194,11 @@ class EditorInterface(CtrlInterface):
         
         ## To prevent @filling crash (Never access to DropTarget)
         ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
-        self.SetDropTarget(None)
+        ## self.SetDropTarget(None)
+        
+        self.Bind(stc.EVT_STC_START_DRAG, self.OnDrag)
+        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragging)
+        self.Bind(stc.EVT_STC_DO_DROP, self.OnDragged)
         
         ## Global style for all languages
         ## wx.Font style
@@ -306,6 +310,30 @@ class EditorInterface(CtrlInterface):
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
     stc.STC_STYLE_ANNOTATION = 41
+    
+    dnd = None
+    dnd_flag = 0 # 1:copy 2:ctrl-pressed
+    
+    def OnDrag(self, evt): #<wx._core.StyledTextEvent>
+        EditorInterface.dnd = evt.EventObject
+        evt.Skip()
+    
+    def OnDragging(self, evt): #<wx._core.StyledTextEvent>
+        if isinstance(self.dnd, Shell):
+            if self.dnd is not evt.EventObject and self.dnd_flag == 1:
+                vk = wx.UIActionSimulator()
+                vk.KeyDown(wx.WXK_CONTROL) # force [C-Ldrag]
+                EditorInterface.dnd_flag += 1
+                def _release():
+                    vk.KeyUp(wx.WXK_CONTROL)
+                    EditorInterface.dnd_flag -= 1
+                wx.CallLater(1000, _release)
+        evt.Skip()
+    
+    def OnDragged(self, evt): #<wx._core.StyledTextEvent>
+        EditorInterface.dnd = None
+        EditorInterface.dnd_flag = 0
+        evt.Skip()
     
     ## --------------------------------
     ## Marker attributes of the editor
@@ -2305,6 +2333,20 @@ class Nautilus(Shell, EditorInterface):
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
+        
+        def on_drag(v): #<wx._core.StyledTextEvent>
+            EditorInterface.dnd_flag = (v.Position < self.bolc) # copy
+            v.Skip()
+        self.Bind(stc.EVT_STC_START_DRAG, on_drag)
+        
+        def on_dragging(v): #<wx._core.StyledTextEvent>
+            if v.Position < self.bolc:
+                v.DragResult = wx.DragNone # Don't drop (as readonly)
+            elif self.dnd_flag:
+                v.DragResult = wx.DragCopy # Don't move
+            v.Skip()
+        self.Bind(stc.EVT_STC_DRAG_OVER, on_dragging)
+        self.Bind(stc.EVT_STC_DO_DROP, on_dragging)
         
         def destroy(v):
             if v.EventObject is self:
