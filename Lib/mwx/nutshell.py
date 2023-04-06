@@ -1072,7 +1072,7 @@ class EditorInterface(CtrlInterface):
         if text is None:
             text = self.topic_at_caret
         if not text:
-            self.message("- No words")
+            self.message("No words")
             return
         lw = len(text.encode()) # for multi-byte string
         lines = []
@@ -1448,10 +1448,19 @@ class Buffer(EditWindow, EditorInterface):
     
     @property
     def mtdelta(self):
-        """Timestamp delta (for checking external mod)."""
+        """Timestamp delta (for checking external mod).
+        
+        Returns:
+            None : No file
+            = 0  : a file
+            > 0  : a file edited externally
+            < 0  : a url file
+        """
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
+        elif f and re.match('https?://', f):
+            return -1
     
     def pre_command_hook(self, evt):
         self.parent.handler(self.handler.event, evt)
@@ -1522,9 +1531,6 @@ class Buffer(EditWindow, EditorInterface):
             return code is self.code\
                 or code in self.code.co_consts
     
-    ## def __str__(self):
-    ##     return "{}:{}".format(self.filename, self.markline+1)
-    
     def trace_position(self):
         text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
@@ -1535,25 +1541,24 @@ class Buffer(EditWindow, EditorInterface):
             self.handler('stc_updated', evt)
         evt.Skip()
     
-    def _set_caption_prefix(self, prefix):
-        if self.mtdelta is not None:
-            caption = '{}{}'.format(prefix, self.name)
-            self.parent.handler('buffer_caps', self, caption)
-    
     def OnSavePointLeft(self, evt):
-        self._set_caption_prefix('* ')
+        if self.mtdelta is not None:
+            prefix = '* ' if self.mtdelta == 0 else '*! '
+            self.parent.handler('buffer_caps', self, prefix + self.name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        self._set_caption_prefix('')
+        if self.mtdelta is not None:
+            prefix = '' if self.mtdelta == 0 else '! '
+            self.parent.handler('buffer_caps', self, prefix + self.name)
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
-        if self.mtdelta:
-            self._set_caption_prefix('! ')
-            self.message("File: {!r} has been modified externally. "
-                         ## "Please load the file before editing."
+        if self.mtdelta is not None and self.mtdelta > 0:
+            prefix = '! ' if not buf.IsModified() else '*! '
+            self.parent.handler('buffer_caps', self, prefix + self.name)
+            self.message("{!r} has been modified externally."
                          .format(self.filename))
         title = "{} file: {}".format(self.parent.Name, self.filename)
         self.parent.handler('title_window', title)
@@ -1993,7 +1998,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Save the current buffer to a file.
         """
         buf = buf or self.buffer
-        if buf.mtdelta:
+        if buf.mtdelta is not None and buf.mtdelta > 0:
             self.swap_page(buf)
             if wx.MessageBox(
                     "The file has been modified externally.\n\n"
