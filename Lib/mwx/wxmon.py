@@ -199,7 +199,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         obj = evt.EventObject
         name = self.get_name(event)
         source = ew._makeSourceString(obj) + " id=0x{:X}".format(id(evt))
-        ## timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-4]
         stamp = 1
         
         with warnings.catch_warnings():
