@@ -443,7 +443,7 @@ class Graph(GraphPlot):
             },
         })
         ## ドロップターゲットを許可する
-        self.SetDropTarget(MyFileDropLoader(self.loader, target=self))
+        self.SetDropTarget(MyFileDropLoader(self, self.loader))
     
     def refresh(self):
         if self.frame:
@@ -500,7 +500,7 @@ class MyFileDropLoader(wx.FileDropTarget):
         loader : mainframe
         target : target window to drop in, e.g. frame, graph, pane, etc.
     """
-    def __init__(self, loader, target):
+    def __init__(self, target, loader):
         wx.FileDropTarget.__init__(self)
         
         self.target = target
@@ -788,7 +788,7 @@ class Frame(mwx.Frame):
         self.define_key('C-g', self.Quit)
         
         ## Accepts DnD
-        self.SetDropTarget(MyFileDropLoader(self, target=self))
+        self.SetDropTarget(MyFileDropLoader(self, self))
     
     sync_switch = True
     
