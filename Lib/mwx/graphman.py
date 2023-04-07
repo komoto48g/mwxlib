@@ -1703,13 +1703,9 @@ class Frame(mwx.Frame):
             nan = np.nan,
             inf = np.inf,
         )
-        try:
-            shell.Freeze()
-            with open(f) as i:
-                shell.Execute(i.read())
-            self._mgr.Update()
-        finally:
-            shell.Thaw()
+        with open(f) as i:
+            shell.Execute(i.read())
+        self._mgr.Update()
         
         self.menubar.reset()
         dirname_ = os.path.dirname(f)
