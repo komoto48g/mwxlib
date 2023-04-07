@@ -1459,7 +1459,7 @@ class Buffer(EditWindow, EditorInterface):
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
-        elif f and re.match('https?://', f):
+        elif f and re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", f):
             return -1
     
     def pre_command_hook(self, evt):
@@ -1938,6 +1938,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def load_url(self, url, *args, **kwargs):
         import requests
+        if wx.MessageBox(
+                "You are loadint URL contents.\n\n"
+               f"{url!r}\n"
+                "Continue loading?",
+                "Load URL",
+                style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+            self.post_message("The load has been canceled.")
+            return None
         try:
             res = requests.get(url)
         except Exception as e:
