@@ -1570,20 +1570,16 @@ class Frame(mwx.Frame):
                 f = os.path.basename(path)
                 self.statusbar("Loading {!r} ({} of {})...".format(f, i+1, len(paths)))
                 try:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", ResourceWarning)
-                        buf, info = self.read_buffer(path)
-                    
+                    buf, info = self.read_buffer(path)
                 except Image.UnidentifiedImageError:
                     retvals = self.handler('unknown_format', path)
                     if retvals and any(retvals):
                         continue
                     raise # no contexts or handlers
                 
-                frame = view.load(buf, f, show=0, # do not show while loading
-                                  pathname=path, **info)
+                ## Do not show while loading
+                frame = view.load(buf, f, show=0, pathname=path, **info)
                 frames.append(frame)
-                wx.GetApp().Yield()
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
@@ -1661,9 +1657,9 @@ class Frame(mwx.Frame):
                                "now saving {!r}...".format(name))
             stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
             stack[0].save(path,
-                    save_all=True,
-                    compression="tiff_deflate", # cf. tiff_lzw
-                    append_images=stack[1:])
+                          save_all=True,
+                          compression="tiff_deflate", # cf. tiff_lzw
+                          append_images=stack[1:])
             
             self.statusbar("\b done.")
             return True
@@ -1703,13 +1699,9 @@ class Frame(mwx.Frame):
             nan = np.nan,
             inf = np.inf,
         )
-        try:
-            shell.Freeze()
-            with open(f) as i:
-                shell.Execute(i.read())
-            self._mgr.Update()
-        finally:
-            shell.Thaw()
+        with open(f) as i:
+            shell.Execute(i.read())
+        self._mgr.Update()
         
         self.menubar.reset()
         dirname_ = os.path.dirname(f)
