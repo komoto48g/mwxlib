@@ -1580,10 +1580,9 @@ class Frame(mwx.Frame):
                         continue
                     raise # no contexts or handlers
                 
-                frame = view.load(buf, f, show=0, # do not show while loading
-                                  pathname=path, **info)
+                ## Do not show while loading
+                frame = view.load(buf, f, show=0, pathname=path, **info)
                 frames.append(frame)
-                wx.GetApp().Yield()
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
@@ -1661,9 +1660,9 @@ class Frame(mwx.Frame):
                                "now saving {!r}...".format(name))
             stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
             stack[0].save(path,
-                    save_all=True,
-                    compression="tiff_deflate", # cf. tiff_lzw
-                    append_images=stack[1:])
+                          save_all=True,
+                          compression="tiff_deflate", # cf. tiff_lzw
+                          append_images=stack[1:])
             
             self.statusbar("\b done.")
             return True
