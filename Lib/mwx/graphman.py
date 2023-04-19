@@ -1570,10 +1570,7 @@ class Frame(mwx.Frame):
                 f = os.path.basename(path)
                 self.statusbar("Loading {!r} ({} of {})...".format(f, i+1, len(paths)))
                 try:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", ResourceWarning)
-                        buf, info = self.read_buffer(path)
-                    
+                    buf, info = self.read_buffer(path)
                 except Image.UnidentifiedImageError:
                     retvals = self.handler('unknown_format', path)
                     if retvals and any(retvals):
