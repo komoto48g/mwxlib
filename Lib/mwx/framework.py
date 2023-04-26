@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.1"
+__version__ = "0.82.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1202,10 +1202,10 @@ class ShellFrame(MiniFrame):
                     "",
                 )))
                 for book in self.get_pages(type(self.Log)):
-                    for buffer in book.all_buffers:
-                        if buffer.mtdelta is not None:
-                            o.write("self._load_file({!r}, {!r}, {})\n".format(
-                                     book.Name, buffer.filename, buffer.markline+1))
+                    for buf in book.all_buffers:
+                        if buf.mtdelta is not None:
+                            o.write("self._load_file({!r}, {!r}, {})\n"
+                                    .format(book.Name, buf.filename, buf.markline+1))
                 o.write('\n'.join((
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
@@ -1613,8 +1613,8 @@ class ShellFrame(MiniFrame):
     
     def on_title_window(self, obj):
         """Set title to the frame."""
-        self.SetTitle("Nautilus - {}".format(
-                      obj if isinstance(obj, str) else repr(obj)))
+        title = obj if isinstance(obj, str) else repr(obj)
+        self.SetTitle("Nautilus - {}".format(title))
     
     def add_log(self, text):
         """Add text to the logging buffer."""

@@ -1558,8 +1558,7 @@ class Buffer(EditWindow, EditorInterface):
         if self.mtdelta is not None and self.mtdelta > 0:
             prefix = '! ' if not buf.IsModified() else '*! '
             self.parent.handler('buffer_caps', self, prefix + self.name)
-            self.message("{!r} has been modified externally."
-                         .format(self.filename))
+            self.message("{!r} has been modified externally.".format(self.filename))
         title = "{} file: {}".format(self.parent.Name, self.filename)
         self.parent.handler('title_window', title)
         self.trace_position()
