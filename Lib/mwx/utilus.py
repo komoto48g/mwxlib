@@ -316,6 +316,9 @@ def _extract_words_from_tokens(tokens, reverse=False):
     until sep is found after the parenthesis is closed.
     
     The default sep includes `@, ops, delims, and whitespaces, etc.
+    Returns:
+        A token list extracted including the parenthesis.
+        If reverse is True, the order of the tokens will be reversed.
     """
     sep = "`@=+-/*%<>&|^~!?,:; \t\r\n#"
     p, q = "({[", ")}]"
@@ -327,26 +330,29 @@ def _extract_words_from_tokens(tokens, reverse=False):
         if c in p:
             stack.append(c)
         elif c in q:
-            if not stack: # error("open-paren", c)
+            if not stack: # error("open-paren")
                 break
-            if c != q[p.index(stack.pop())]: # error("mismatch-paren", c)
+            if c != q[p.index(stack.pop())]: # error("mismatch-paren")
                 break
         elif not stack and c in sep: # ok
             break
         words.append(c)
     else:
         j = None
-        if stack: # error("unclosed-paren", ''.join(stack))
+        if stack: # error("unclosed-paren")
             pass
     del tokens[:j] # remove extracted tokens
-    return words #''.join(reversed(words) if reverse else words)
+    return words
 
 
 def _extract_paren_from_tokens(tokens, reverse=False):
     """Extracts parenthesis from tokens.
     
     The first token must be a parenthesis.
-    If the parenthesis is not closed, returns None.
+    Returns:
+        A token list extracted including the parenthesis,
+        or an empy list if the parenthesis is not closed.
+        If reverse is True, the order of the tokens will be reversed.
     """
     p, q = "({[", ")}]"
     if reverse:
@@ -357,16 +363,18 @@ def _extract_paren_from_tokens(tokens, reverse=False):
         if c in p:
             stack.append(c)
         elif c in q:
-            if not stack: # error("open-paren", c)
-                return None
-            if c != q[p.index(stack.pop())]: # error("mismatch-paren", c)
-                return None
+            if not stack: # error("open-paren")
+                return []
+            if c != q[p.index(stack.pop())]: # error("mismatch-paren")
+                return []
         elif j == 0:
-            return None # not found
+            return [] # not found
         words.append(c)
         if not stack: # ok
             del tokens[:j+1] # remove extracted tokens
-            return words #''.join(reversed(words) if reverse else words)
+            return words
+    else:
+        return [] # error("unclosed-paren")
 
 
 def find_modules(force=False, verbose=True):
