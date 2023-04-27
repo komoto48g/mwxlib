@@ -1559,8 +1559,6 @@ class Buffer(EditWindow, EditorInterface):
             prefix = '! ' if not buf.IsModified() else '*! '
             self.parent.handler('buffer_caps', self, prefix + self.name)
             self.message("{!r} has been modified externally.".format(self.filename))
-        title = "{} file: {}".format(self.parent.Name, self.filename)
-        self.parent.handler('title_window', title)
         self.trace_position()
     
     def on_inactivated(self, buf):
@@ -1760,10 +1758,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 'buffer_loaded' : [ None, self.set_caption ],
                'buffer_removed' : [ None, ],
               'buffer_selected' : [ None, ],
-             'buffer_activated' : [ None, ],
-           'buffer_inactivated' : [ None, ],
+             'buffer_activated' : [ None, self.on_activated, dispatch ],
+           'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
           'buffer_filename_set' : [ None, ],
-                 'title_window' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -1840,6 +1837,15 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.defaultBufferStyle.update(kwargs)
             for buf in self.all_buffers:
                 _setattribute(buf, self.defaultBufferStyle)
+    
+    def on_activated(self, buf):
+        """Called when the buffer is activated."""
+        title = "{} file: {}".format(self.Name, buf.filename)
+        self.parent.handler('title_window', title)
+    
+    def on_inactivated(self, buf):
+        """Called when the buffer is inactivated."""
+        pass
     
     ## --------------------------------
     ## Buffer list controls
