@@ -1932,8 +1932,16 @@ class EditorBook(AuiNotebook, CtrlInterface):
     ]
     
     def need_buffer_save_p(self, buf):
-        """Returns whether the buffer should be saved."""
+        """Returns whether the buffer should be saved.
+        The file has been modified internally.
+        """
         return buf.mtdelta is not None and buf.IsModified()
+    
+    def need_buffer_load_p(self, buf):
+        """Returns whether the buffer should be loaded.
+        The file has been modified externally.
+        """
+        return buf.mtdelta is not None and buf.mtdelta > 0
     
     def load_url(self, url, *args, **kwargs):
         import requests
@@ -2005,7 +2013,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Save the current buffer to a file.
         """
         buf = buf or self.buffer
-        if buf.mtdelta is not None and buf.mtdelta > 0:
+        if self.need_buffer_load_p(buf):
             self.swap_page(buf)
             if wx.MessageBox(
                     "The file has been modified externally.\n\n"
