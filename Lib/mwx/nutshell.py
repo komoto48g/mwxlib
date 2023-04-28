@@ -1967,7 +1967,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if res.status_code == 200: # success
             buf = self.find_buffer(url) or self.create_buffer(url)
             buf._load_textfile(res.text, url)
-            buf.SetFocus()
+            self.swap_page(buf)
             return True
         return False
     
@@ -1982,7 +1982,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if lines:
             buf = self.find_buffer(filename) or self.create_buffer(filename)
             buf._load_textfile(''.join(lines), filename, lineno)
-            buf.SetFocus()
+            self.swap_page(buf)
             return True
         return False
     
@@ -2003,7 +2003,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.Freeze()
             org = self.buffer
             if buf._load_file(buf.filename, lineno):
-                buf.SetFocus()
+                self.swap_page(buf)
                 return True
             return False
         except Exception as e:

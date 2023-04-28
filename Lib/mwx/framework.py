@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.2"
+__version__ = "0.82.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1452,13 +1452,8 @@ class ShellFrame(MiniFrame):
             lineno = 0
         book = next((x for x in self.get_pages(type(self.Log))
                              if x.find_buffer(filename)), self.Log)
-        try:
-            wnd = wx.Window.FindFocus() # original focus
-            self.popup_window(book, focus=focus)
-            return book.load_file(filename, lineno)
-        finally:
-            if wnd and not focus: # restore focus if needed
-                wnd.SetFocus()
+        self.popup_window(book, focus=focus)
+        return book.load_file(filename, lineno)
     
     def info(self, obj):
         self.rootshell.info(obj)
