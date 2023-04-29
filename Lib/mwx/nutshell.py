@@ -1752,15 +1752,15 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.handler.update({ # DNA<EditorBook>
             None : {
-                   'buffer_new' : [ None, ],
-                  'buffer_caps' : [ None, self.set_caption ],
-                 'buffer_saved' : [ None, self.set_caption ],
-                'buffer_loaded' : [ None, self.set_caption ],
-               'buffer_removed' : [ None, ],
-              'buffer_selected' : [ None, ],
-             'buffer_activated' : [ None, self.on_activated, dispatch ],
-           'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
-          'buffer_filename_set' : [ None, ],
+                   'buffer_new' : [ None, dispatch, ],
+                  'buffer_caps' : [ None, dispatch, self.set_caption ],
+                 'buffer_saved' : [ None, dispatch, self.set_caption ],
+                'buffer_loaded' : [ None, dispatch, self.set_caption ],
+               'buffer_removed' : [ None, dispatch, ],
+              'buffer_selected' : [ None, dispatch, ],
+             'buffer_activated' : [ None, dispatch, self.on_activated ],
+           'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
+          'buffer_filename_set' : [ None, dispatch, ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -2409,10 +2409,10 @@ class Nautilus(Shell, EditorInterface):
         self.handler.update({ # DNA<Nautilus>
             None : {
                   'stc_updated' : [ None, ],
-                'shell_deleted' : [ None, self.on_deleted ],
-              'shell_activated' : [ None, self.on_activated ],
-            'shell_inactivated' : [ None, self.on_inactivated ],
                  'interp_error' : [ None, self.on_interp_error ],
+                'shell_deleted' : [ None, dispatch, self.on_deleted ],
+              'shell_activated' : [ None, dispatch, self.on_activated ],
+            'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
