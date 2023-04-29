@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.3"
+__version__ = "0.82.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -957,7 +957,6 @@ class ShellFrame(MiniFrame):
         builtins.pp = pp
         builtins.mro = mro
         builtins.where = where
-        builtins.watch = watchit
         builtins.filling = filling
         builtins.profile = profile
         builtins.timeit = timeit
@@ -966,6 +965,7 @@ class ShellFrame(MiniFrame):
         builtins.dive = self.clone_shell
         builtins.load = self.load
         builtins.debug = self.debug
+        builtins.watch = self.watch
         builtins.highlight = self.highlight
         
         from .nutshell import Nautilus, EditorBook
@@ -1460,6 +1460,10 @@ class ShellFrame(MiniFrame):
     
     def help(self, obj):
         self.rootshell.help(obj)
+    
+    def watch(self, obj):
+        self.monitor.watch(obj)
+        self.popup_window(self.monitor)
     
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)
