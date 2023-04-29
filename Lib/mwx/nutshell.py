@@ -140,11 +140,11 @@ class EditorInterface(CtrlInterface):
         })
         
         def click_fork(v, click):
-            if self._margin is not None:
-                v.Margin = self._margin # Add info to event object. OK ??
+            if self.__margin is not None:
+                v.Margin = self.__margin # Add info to event object. OK ??
                 self.handler(f"margin_{click}", v)
             v.Skip()
-        self._margin = None
+        self.__margin = None
         
         def on_motion(v):
             self._window_handler('motion', v)
@@ -153,9 +153,9 @@ class EditorInterface(CtrlInterface):
             for m in range(4):
                 w += self.GetMarginWidth(m)
                 if x < w:
-                    self._margin = m # current margin under mouse
+                    self.__margin = m # current margin under mouse
                     return
-            self._margin = None
+            self.__margin = None
             v.Skip()
         self.Bind(wx.EVT_MOTION, on_motion)
         
@@ -787,11 +787,11 @@ class EditorInterface(CtrlInterface):
             q = self.cpos
             if q == self.TextLength:
                 q -= 1
-        self._anchors = [p, q]
+        self.__anchors = [p, q]
     
     def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
         p = self.PositionFromPoint(evt.Position)
-        po, qo = self._anchors
+        po, qo = self.__anchors
         if p >= po:
             lc = self.LineFromPosition(p)
             text = self.GetLine(lc)
@@ -799,14 +799,14 @@ class EditorInterface(CtrlInterface):
             self.anchor = po
             if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
                 self.CharRightExtend()
-                self._anchors[1] = self.cpos
+                self.__anchors[1] = self.cpos
         else:
             self.cpos = p
             self.anchor = qo
         self.EnsureCaretVisible()
     
     def on_linesel_end(self, evt):
-        del self._anchors
+        del self.__anchors
         if self.HasCapture():
             self.ReleaseMouse()
     
