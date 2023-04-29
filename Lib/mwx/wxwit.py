@@ -31,7 +31,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.toolFrame = self
         
         self._noWatchList = [self,
-                             self.GetTopLevelParent()]
+                             self.TopLevelParent]
         
         self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
@@ -65,7 +65,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
         evt.Skip()
     
     def OnSetFocus(self, evt):
-        self.parent.handler('title_window', self.__class__.__name__)
+        title = self.__class__.__name__
+        self.parent.handler('title_window', title)
         evt.Skip()
     
     ## --------------------------------
