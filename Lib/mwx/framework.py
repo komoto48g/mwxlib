@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.4"
+__version__ = "0.82.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1267,7 +1267,7 @@ class ShellFrame(MiniFrame):
         ## Confirm close
         for book in self.get_pages(type(self.Log)):
             for buf in book.all_buffers:
-                if book.need_buffer_save_p(buf):
+                if buf.need_buffer_save:
                     self.popup_window(book)
                     buf.SetFocus()
                     if wx.MessageBox(

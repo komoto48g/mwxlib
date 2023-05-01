@@ -1462,6 +1462,20 @@ class Buffer(EditWindow, EditorInterface):
         elif f and re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", f):
             return -1
     
+    @property
+    def need_buffer_save(self):
+        """Returns whether the buffer should be saved.
+        The file has been modified internally.
+        """
+        return self.mtdelta is not None and self.IsModified()
+    
+    @property
+    def need_buffer_load(self):
+        """Returns whether the buffer should be loaded.
+        The file has been modified externally.
+        """
+        return self.mtdelta is not None and self.mtdelta > 0
+    
     def pre_command_hook(self, evt):
         self.parent.handler(self.handler.event, evt)
         return EditorInterface.pre_command_hook(self, evt)
@@ -1777,7 +1791,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         buf = nb.all_buffers[evt.Selection]
-        if self.need_buffer_save_p(buf):
+        if buf.need_buffer_save:
             if wx.MessageBox(
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
@@ -1937,18 +1951,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
         "ALL files (*.*)|*.*",
     ]
     
-    def need_buffer_save_p(self, buf):
-        """Returns whether the buffer should be saved.
-        The file has been modified internally.
-        """
-        return buf.mtdelta is not None and buf.IsModified()
-    
-    def need_buffer_load_p(self, buf):
-        """Returns whether the buffer should be loaded.
-        The file has been modified externally.
-        """
-        return buf.mtdelta is not None and buf.mtdelta > 0
-    
     def load_url(self, url, *args, **kwargs):
         import requests
         if wx.MessageBox(
@@ -1990,7 +1992,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Load a file into an existing or new buffer.
         """
         buf = self.find_buffer(filename) or self.create_buffer(filename)
-        if self.need_buffer_save_p(buf):
+        if buf.need_buffer_save:
             if wx.MessageBox(
                     "You are leaving unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
@@ -2019,7 +2021,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Save the current buffer to a file.
         """
         buf = buf or self.buffer
-        if self.need_buffer_load_p(buf):
+        if buf.need_buffer_load:
             self.swap_page(buf)
             if wx.MessageBox(
                     "The file has been modified externally.\n\n"
@@ -2075,8 +2077,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
     save_as_buffer = save_buffer_as # backward compatibility
     
     def save_all_buffers(self):
-        for buf in filter(self.need_buffer_save_p, self.all_buffers):
-            self.save_buffer(buf)
+        for buf in self.all_buffers:
+            if buf.need_buffer_save:
+                self.save_buffer(buf)
     
     def open_buffer(self):
         """Confirm the open with the dialog."""
@@ -2090,7 +2093,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
         buf = buf or self.buffer
-        if self.need_buffer_save_p(buf):
+        if buf.need_buffer_save:
             if wx.MessageBox(
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
@@ -2102,16 +2105,16 @@ class EditorBook(AuiNotebook, CtrlInterface):
         wx.CallAfter(self.remove_buffer, buf)
     
     def kill_all_buffers(self):
-        for buf in filter(self.need_buffer_save_p, self.all_buffers):
-            buf.SetFocus()
-            if wx.MessageBox(
-                    "You are closing unsaved content.\n\n"
-                    "Changes to the content will be discarded.\n"
-                    "Continue closing?",
-                    "Close {!r}".format(buf.name),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The close has been canceled.")
-                return None
+        for buf in self.all_buffers:
+            if buf.need_buffer_save:
+                if wx.MessageBox(
+                        "You are closing unsaved content.\n\n"
+                        "Changes to the content will be discarded.\n"
+                        "Continue closing?",
+                        "Close {!r}".format(buf.name),
+                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    self.post_message("The close has been canceled.")
+                    return None
         wx.CallAfter(self.remove_all_buffers)
 
 
