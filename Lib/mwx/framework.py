@@ -1196,17 +1196,16 @@ class ShellFrame(MiniFrame):
                 scratch.SaveFile(self.SCRATCH_FILE)
             
             with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
-                o.write('\n'.join((
-                    "#! Session file (This file is generated automatically)",
-                    "self.SetSize({})".format(self.Size),
-                    "",
-                )))
+                o.write("#! Session file (This file is generated automatically)\n")
+                
                 for book in self.get_pages(type(self.Log)):
                     for buf in book.all_buffers:
                         if buf.mtdelta is not None:
                             o.write("self._load_file({!r}, {!r}, {})\n"
                                     .format(book.Name, buf.filename, buf.markline+1))
                 o.write('\n'.join((
+                    "self.SetSize({})".format(self.Size),
+                    "self.SetPosition({})".format(self.Position),
                     "self.ghost.SetSelection({})".format(self.ghost.Selection),
                     "self.watcher.SetSelection({})".format(self.watcher.Selection),
                     "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),

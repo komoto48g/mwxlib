@@ -1729,11 +1729,10 @@ class Frame(mwx.Frame):
         
         with open(f, 'w') as o,\
           np.printoptions(threshold=np.inf): # printing all(inf) elements
-            o.write('\n'.join((
-                "#! Session file (This file is generated automatically)",
-                "self.SetSize({})".format(self.Size),
-                ""
-            )))
+            o.write("#! Session file (This file is generated automatically)\n")
+            o.write("self.SetSize({})\n".format(self.Size))
+            o.write("self.SetPosition({})\n".format(self.Position))
+            
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
                 path = os.path.abspath(module.__file__)
