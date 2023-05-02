@@ -208,9 +208,9 @@ class KeyCtrlInterfaceMixin:
         """Enter extension mode.
         Check text selection for [C-c/C-x].
         """
-        win = wx.Window.FindFocus()
-        if isinstance(win, wx.TextEntry) and win.StringSelection\
-        or isinstance(win, stc.StyledTextCtrl) and win.SelectedText:
+        wnd = wx.Window.FindFocus()
+        if isinstance(wnd, wx.TextEntry) and wnd.StringSelection\
+        or isinstance(wnd, stc.StyledTextCtrl) and wnd.SelectedText:
             ## or any other of pre-selection-p?
             self.handler('quit', evt)
         else:
@@ -1647,15 +1647,15 @@ class ShellFrame(MiniFrame):
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
         pages = [x for x in self.get_pages() if x.IsShownOnScreen()]
-        win = wx.Window.FindFocus()
-        while win:
-            if win in pages:
-                j = pages.index(win) + p
+        wnd = wx.Window.FindFocus()
+        while wnd:
+            if wnd in pages:
+                j = pages.index(wnd) + p
                 if mod:
                     j %= len(pages)
                 pages[j].SetFocus()
                 break
-            win = win.Parent
+            wnd = wnd.Parent
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
@@ -1705,12 +1705,12 @@ class ShellFrame(MiniFrame):
             self.findDlg.SetFocus()
             return
         
-        win = wx.Window.FindFocus()
-        if not isinstance(win, stc.StyledTextCtrl):
+        wnd = wx.Window.FindFocus()
+        if not isinstance(wnd, stc.StyledTextCtrl):
             return
-        self.__find_target = win
-        self.findData.FindString = win.topic_at_caret
-        self.findDlg = wx.FindReplaceDialog(win, self.findData, "Find",
+        self.__find_target = wnd
+        self.findData.FindString = wnd.topic_at_caret
+        self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find",
                             style=(wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN))
         self.findDlg.Show()
     
@@ -1720,16 +1720,16 @@ class ShellFrame(MiniFrame):
         if (backward and down_p) or (not backward and not down_p):
             data.Flags ^= wx.FR_DOWN # toggle up/down flag
         
-        win = wx.Window.FindFocus()
-        if not isinstance(win, stc.StyledTextCtrl):
-            win = self.__find_target
-            if not win:
+        wnd = wx.Window.FindFocus()
+        if not isinstance(wnd, stc.StyledTextCtrl):
+            wnd = self.__find_target
+            if not wnd:
                 return
-        win.DoFindNext(data, self.findDlg or win)
+        wnd.DoFindNext(data, self.findDlg or wnd)
         if self.findDlg:
             self.OnFindClose(None)
-        win.EnsureVisible(win.cline)
-        win.EnsureLineMoreOnScreen(win.cline)
+        wnd.EnsureVisible(wnd.cline)
+        wnd.EnsureLineMoreOnScreen(wnd.cline)
     
     def OnFindPrev(self, evt):
         self.OnFindNext(evt, backward=True)
