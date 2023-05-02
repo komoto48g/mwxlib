@@ -16,16 +16,18 @@ class Plugin(Layer):
         self.g2 = Gauge(self, range=24, size=(100,24))
         
         self.sig = Indicator(self, size=(-1,24))
-        self.param = LParam("value", (0,self.g1.Range,1), 0)
+        self.param = LParam("value", (0, 24, 1), 0)
+        self.blink = LParam("blink", (0, 1000, 10), 500)
         
         self.layout((
                 self.g1, None,
                 self.g2, None,
-                (self.sig, 0),
                 self.param,
+                (self.sig, 0),
+                self.blink,
             ),
             row=2, expand=1,
-            type='slider*', style='button', tw=0, h=22
+            type='slider*', lw=40, tw=40, h=22
         )
         @self.param.bind
         def set(p):
@@ -35,7 +37,11 @@ class Plugin(Layer):
         
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
-        self.Bind(wx.EVT_TIMER, lambda v: self.sig.blink(900))
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+    
+    def OnTimer(self, evt):
+        self.sig.Value = self.param.value
+        self.sig.blink(self.blink.value)
     
     def Destroy(self):
         try:

@@ -854,7 +854,7 @@ if 1:
 
 def Icon(key, size=None):
     """Returns an iconic bitmap with the specified size (w,h).
-
+    
     The key is either Icon.provided_arts or Icon.custom_images key.
     If the key is empty it returns a transparent bitmap, otherwise `NullBitmap`.
     """
@@ -1138,16 +1138,24 @@ class Indicator(wx.Control):
     radius = 5
     
     def __init__(self, parent, value=0, tip='',
-                 size=(-1,-1), style=wx.BORDER_NONE, **kwargs):
-        s = self.spacing # minimum size:(6s,2s)
-        w = max(size[0], s*6)
-        h = max(size[1], s*2+1)
-        wx.Control.__init__(self, parent, size=(w,h), style=style, **kwargs)
+                 style=wx.BORDER_NONE, **kwargs):
+        wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
         self.ToolTip = tip.strip()
         
+        ## Sizes the window to fit its best size.
+        ## May be needed if sizer is not defined.
+        self.InvalidateBestSize()
+        self.Fit()
+        
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+    
+    def DoGetBestSize(self):
+        s = self.spacing # minimum size: (6s, 2s)
+        w = s*2*len(self.tricolor)
+        h = s*2+1
+        return wx.Size(w, h)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
