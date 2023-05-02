@@ -7,13 +7,14 @@ from .framework import __version__, __author__
 from .framework import pack, Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame
 
+## Controls
 ## from . import controls
-## from .controls import Param, LParam, Knob, ControlPanel, Icon
+## from .controls import Param, LParam, Knob, ControlPanel, Clipboard, Icon
 ## from .controls import Button, ToggleButton, TextCtrl, Choice, Gauge, Indicator
 
+## Plugman
 ## from . import graphman
-## from .graphman import Layer, Thread, Graph
-## from .graphman import Frame as Graphman
+## from .graphman import Frame, Layer, Thread, Graph
 
 ## Matplot
 ## from .matplot2 import MatplotPanel

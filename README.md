@@ -76,7 +76,7 @@ you can watch, inspect, and change everything in the target.
 The framework has an extended class based on wx.py.shell.Shell named Nautilus,
 which has the following features:
 
-1. Auto-completion and apropos functions are reinfoced.
+1. Auto-completion and apropos functions are reinforced.
     - [1] history-comp-mode
     - [2] word-comp-mode
     - [3] apropos-comp-mode

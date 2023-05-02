@@ -351,7 +351,7 @@ def _extract_paren_from_tokens(tokens, reverse=False):
     The first token must be a parenthesis.
     Returns:
         A token list extracted including the parenthesis,
-        or an empy list if the parenthesis is not closed.
+        or an empty list if the parenthesis is not closed.
         If reverse is True, the order of the tokens will be reversed.
     """
     p, q = "({[", ")}]"
