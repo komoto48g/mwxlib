@@ -1748,7 +1748,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         
         def destroy(v):
             obj = v.EventObject
@@ -1771,7 +1770,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
                'buffer_removed' : [ None, dispatch, ],
-              'buffer_selected' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
           'buffer_filename_set' : [ None, dispatch, ],
@@ -1806,10 +1804,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
-        evt.Skip()
-    
-    def OnPageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
-        self.handler('buffer_selected', self.CurrentPage)
         evt.Skip()
     
     def set_caption(self, buf, caption=None):
