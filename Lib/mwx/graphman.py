@@ -548,24 +548,29 @@ class AuiNotebook(aui.AuiNotebook):
             pass
     
     def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.CurrentPage
-        if page:
-            page.handler('page_shown', page)
+        win = self.CurrentPage
+        win.handler('page_shown', win)
         evt.Skip()
     
     def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        page = self.CurrentPage
-        obj = evt.EventObject #<wx._aui.AuiTabCtrl><wx._aui.AuiNotebook>
-        ## if wx.VERSION >= (4,1,0):
-        try:
-            if obj is self.ActiveTabCtrl:
-                win = obj.Pages[evt.Selection].window #<wx._aui.AuiNotebookPage>
-                if not win.IsShownOnScreen():
-                    ## Check if the (selected) window is hidden now.
-                    ## False means that the page will be hidden by the window.
-                    page.handler('page_hidden', page)
-        except AttributeError:
-            pass
+        org = self.CurrentPage
+        obj = evt.EventObject
+        if obj is not self:
+            ## if wx.VERSION >= (4,1,0):
+            try:
+                win = obj.Pages[evt.Selection].window # Changing org --> win <Layer>
+                atc = self.ActiveTabCtrl # Changing atc --> obj <aui.AuiTabCtrl>
+                if obj is not atc:
+                    for page in obj.Pages: # Check if there is a page to be hidden.
+                        org = page.window
+                        if org.IsShownOnScreen() and org is not win:
+                            break
+                    else:
+                        evt.Skip() # No windows to be hidden.
+                        return
+                org.handler('page_hidden', org)
+            except AttributeError:
+                pass
         evt.Skip()
 
 
