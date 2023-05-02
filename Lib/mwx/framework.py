@@ -1462,7 +1462,10 @@ class ShellFrame(MiniFrame):
     
     def watch(self, obj):
         self.monitor.watch(obj)
-        self.popup_window(self.monitor)
+        if obj:
+            self.popup_window(self.monitor, focus=0)
+            self.linfo.watch(obj.__dict__)
+            self.ginfo.watch({})
     
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)
@@ -1475,7 +1478,6 @@ class ShellFrame(MiniFrame):
                 self.message("- args:{} and kwargs:{} were given,"
                              " but ignored for object monitoring.")
             self.monitor.watch(obj)
-            self.console.SetFocus() # focus orginal-window
             if obj:
                 self.popup_window(self.monitor, focus=0)
                 self.linfo.watch(obj.__dict__)
