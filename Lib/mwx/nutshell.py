@@ -1606,6 +1606,8 @@ class Buffer(EditWindow, EditorInterface):
             self.markline = lineno - 1
             self.goto_marker(1)
             self.filename = filename
+            self.EmptyUndoBuffer()
+            self.SetSavePoint()
             self.handler('buffer_loaded', self)
             return True
         return False
@@ -1614,6 +1616,7 @@ class Buffer(EditWindow, EditorInterface):
         """Wrapped method of SaveFile."""
         if self.SaveFile(filename):
             self.filename = filename
+            self.SetSavePoint()
             self.handler('buffer_saved', self)
             return True
         return False
@@ -1626,8 +1629,6 @@ class Buffer(EditWindow, EditorInterface):
         with open(filename, "r", encoding='utf-8', newline='') as i:
             with self.off_readonly():
                 self.Text = i.read()
-        self.EmptyUndoBuffer()
-        self.SetSavePoint()
         return True
     
     def SaveFile(self, filename):
@@ -1637,7 +1638,6 @@ class Buffer(EditWindow, EditorInterface):
         """
         with open(filename, "w", encoding='utf-8', newline='') as o:
             o.write(self.Text)
-        self.SetSavePoint()
         return True
     
     ## --------------------------------
