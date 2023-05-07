@@ -116,14 +116,8 @@ class EditorInterface(CtrlInterface):
                 'C-S-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                 'C-S-: pressed' : (0, _F(self.uncomment_line)),
-              'Lbutton pressed' : (0, lambda v: click_fork(v, 'Lclick')),
-              'Rbutton pressed' : (0, lambda v: click_fork(v, 'Rclick')),
-              'Mbutton pressed' : (0, lambda v: click_fork(v, 'Mclick')),
-             'Lbutton dblclick' : (0, lambda v: click_fork(v, 'dblclick')),
-                'margin_Lclick' : (0, self.on_margin_click),
-              'margin_dblclick' : (0, self.on_margin_dblclick),
                  'select_itext' : (10, self.filter_text, self.on_itext_enter),
-                  'select_line' : (100, self.on_linesel_begin, skip),
+                  'select_line' : (100, self.on_linesel_begin),
             },
             10 : {
                          'quit' : (0, self.on_itext_exit),
@@ -133,17 +127,12 @@ class EditorInterface(CtrlInterface):
                 'enter pressed' : (0, self.on_itext_selection),
             },
             100 : {
-                       'motion' : (100, self.on_linesel_motion, skip),
-                 'capture_lost' : (0, self.on_linesel_end, skip),
-             'Lbutton released' : (0, self.on_linesel_end, skip),
+                       'motion' : (100, self.on_linesel_motion),
+                 'capture_lost' : (0, self.on_linesel_end),
+             'Lbutton released' : (0, self.on_linesel_end),
             },
         })
         
-        def click_fork(v, click):
-            if self.__margin is not None:
-                v.Margin = self.__margin # Add info to event object. OK ??
-                self.handler(f"margin_{click}", v)
-            v.Skip()
         self.__margin = None
         
         def on_motion(v):
@@ -154,13 +143,16 @@ class EditorInterface(CtrlInterface):
                 w += self.GetMarginWidth(m)
                 if x < w:
                     self.__margin = m # current margin under mouse
-                    return
-            self.__margin = None
+                    break
+            else:
+                self.__margin = None
             v.Skip()
         self.Bind(wx.EVT_MOTION, on_motion)
         
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                  lambda v: self._window_handler('capture_lost', v))
+        def on_capture_lost(v):
+            self._window_handler('capture_lost', v)
+            v.Skip()
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, on_capture_lost)
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -724,6 +716,8 @@ class EditorInterface(CtrlInterface):
         ##                 & indent-header (stc.STC_FOLDLEVELHEADERFLAG)
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
+        else:
+            self.handler('select_line', evt)
     
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
         """Popup context menu."""
@@ -737,14 +731,6 @@ class EditorInterface(CtrlInterface):
             (wx.ID_UP, "&Expand ALL", _Icon(wx.ART_PLUS),
                 lambda v: self.FoldAll(1)),
         ])
-    
-    def on_margin_click(self, evt): #<wx._core.MouseEvent>
-        if evt.Margin < 2:
-            self.handler('select_line', evt)
-    
-    def on_margin_dblclick(self, evt): #<wx._core.MouseEvent>
-        if evt.Margin < 2:
-            self.FoldAll(0)
     
     def toggle_fold(self, lc):
         """Similar to ToggleFold, but the top header containing
@@ -775,12 +761,10 @@ class EditorInterface(CtrlInterface):
             le += 1
         return lc, le
     
-    def on_linesel_begin(self, evt): #<wx._core.MouseEvent>
-        ## p = evt.Position
-        p = self.PositionFromPoint(evt.Position)
+    def on_linesel_begin(self, evt):
+        p = evt.Position #<wx._stc.StyledTextEvent>
         self.goto_char(p)
         self.cpos = q = self.eol
-        self.CaptureMouse()
         lc = self.LineFromPosition(p)
         if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
             self.CharRightExtend()
@@ -788,25 +772,30 @@ class EditorInterface(CtrlInterface):
             if q == self.TextLength:
                 q -= 1
         self.__anchors = [p, q]
+        if 1:
+            self.CaptureMouse()
     
-    def on_linesel_motion(self, evt): #<wx._core.MouseEvent>
-        p = self.PositionFromPoint(evt.Position)
+    def on_linesel_motion(self, evt):
+        p = self.PositionFromPoint(evt.Position) #<wx._core.MouseEvent>
         po, qo = self.__anchors
-        if p >= po:
-            lc = self.LineFromPosition(p)
-            text = self.GetLine(lc)
-            self.cpos = p + len(text)
-            self.anchor = po
-            if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
-                self.CharRightExtend()
-                self.__anchors[1] = self.cpos
+        if self.__margin:
+            if p >= po:
+                lc = self.LineFromPosition(p)
+                text = self.GetLine(lc)
+                self.cpos = p + len(text)
+                self.anchor = po
+                if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
+                    self.CharRightExtend()
+                    self.__anchors[1] = self.cpos
+            else:
+                self.cpos = p
+                self.anchor = qo
         else:
             self.cpos = p
-            self.anchor = qo
+            self.anchor = po if p >= po else qo
         self.EnsureCaretVisible()
     
     def on_linesel_end(self, evt):
-        del self.__anchors
         if self.HasCapture():
             self.ReleaseMouse()
     
