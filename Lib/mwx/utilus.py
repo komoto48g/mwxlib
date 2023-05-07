@@ -694,7 +694,7 @@ class FSM(dict):
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
-                self.log("  -- None {0!r} {a}".format(
+                self.log(" --> None {0!r} {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         

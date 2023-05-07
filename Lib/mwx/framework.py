@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.6"
+__version__ = "0.82.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1151,7 +1151,7 @@ class ShellFrame(MiniFrame):
     LOGGING_FILE = get_rootpath("deb-logging.log")
     HISTORY_FILE = get_rootpath("deb-history.log")
     
-    def load_session(self, rc=None):
+    def load_session(self, rc=None, flush=True):
         """Load session from file."""
         if not rc:
             with wx.FileDialog(self, 'Load session',
@@ -1160,9 +1160,10 @@ class ShellFrame(MiniFrame):
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 rc = dlg.Path
-        ## flush
-        for book in self.get_pages(type(self.Log)):
-            book.remove_all_buffers()
+        
+        if flush:
+            for book in self.get_pages(type(self.Log)):
+                book.remove_all_buffers()
         
         self.SESSION_FILE = os.path.abspath(rc)
         try:
@@ -1170,13 +1171,13 @@ class ShellFrame(MiniFrame):
             if not scratch or scratch.mtdelta is not None:
                 scratch = self.Scratch.new_buffer()
             scratch.LoadFile(self.SCRATCH_FILE)
-            
+        except FileNotFoundError as e:
+            print(e)
+        try:
             with open(self.SESSION_FILE, encoding='utf-8', newline='') as i:
                 exec(i.read())
-            
         except Exception:
-            traceback.print_exc()
-            print("- Failed to load session")
+            pass
     
     def save_session_as(self):
         """Save session as a new file."""
@@ -1190,35 +1191,30 @@ class ShellFrame(MiniFrame):
     
     def save_session(self):
         """Save session to file."""
-        try:
-            scratch = self.Scratch.default_buffer
-            if scratch and scratch.mtdelta is None:
-                scratch.SaveFile(self.SCRATCH_FILE)
+        scratch = self.Scratch.default_buffer
+        if scratch and scratch.mtdelta is None:
+            scratch.SaveFile(self.SCRATCH_FILE)
+        
+        with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
+            o.write("#! Session file (This file is generated automatically)\n")
             
-            with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
-                o.write("#! Session file (This file is generated automatically)\n")
-                
-                for book in self.get_pages(type(self.Log)):
-                    for buf in book.all_buffers:
-                        if buf.mtdelta is not None:
-                            o.write("self._load_file({!r}, {!r}, {})\n"
-                                    .format(book.Name, buf.filename, buf.markline+1))
-                o.write('\n'.join((
-                    "self.SetSize({})".format(self.Size),
-                    "self.SetPosition({})".format(self.Position),
-                    "self.ghost.SetSelection({})".format(self.ghost.Selection),
-                    "self.watcher.SetSelection({})".format(self.watcher.Selection),
-                    "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
-                    "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
-                    "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
-                    ## "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
-                    ## "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
-                    "self._mgr.Update()",
-                    ""
-                )))
-        except Exception:
-            traceback.print_exc()
-            print("- Failed to save session")
+            for book in self.get_pages(type(self.Log)):
+                for buf in book.all_buffers:
+                    if buf.mtdelta is not None:
+                        o.write("self._load_file({!r}, {!r}, {})\n"
+                                .format(book.Name, buf.filename, buf.markline+1))
+            o.write('\n'.join((
+                "self.SetSize({})".format(self.Size),
+                "self.SetPosition({})".format(self.Position),
+                "self.ghost.SetSelection({})".format(self.ghost.Selection),
+                "self.watcher.SetSelection({})".format(self.watcher.Selection),
+                "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
+                "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
+                "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
+                ## "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
+                ## "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
+                "self._mgr.Update()\n",
+            )))
     
     def _load_file(self, bookname, filename, lineno):
         try:
