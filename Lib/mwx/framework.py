@@ -1243,7 +1243,7 @@ class ShellFrame(MiniFrame):
     
     def OnClose(self, evt):
         if self.debugger.busy:
-            if wx.MessageBox(
+            if wx.MessageBox( # Confirm close.
                     "The debugger is running.\n\n"
                     "Enter [q]uit to exit before closing.\n"
                     "Continue closing?",
@@ -1260,13 +1260,12 @@ class ShellFrame(MiniFrame):
                           "The trace pointer will be cleared.")
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
-        ## Confirm close
         for book in self.get_pages(type(self.Log)):
             for buf in book.all_buffers:
                 if buf.need_buffer_save:
                     self.popup_window(book)
                     buf.SetFocus()
-                    if wx.MessageBox(
+                    if wx.MessageBox( # Confirm close.
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",

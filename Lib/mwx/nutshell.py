@@ -762,6 +762,7 @@ class EditorInterface(CtrlInterface):
         return lc, le
     
     def on_linesel_begin(self, evt):
+        """Called when a line of text selection begins."""
         p = evt.Position #<wx._stc.StyledTextEvent>
         self.goto_char(p)
         self.cpos = q = self.eol
@@ -776,6 +777,7 @@ class EditorInterface(CtrlInterface):
             self.CaptureMouse()
     
     def on_linesel_motion(self, evt):
+        """Called when a line of text selection is changing."""
         p = self.PositionFromPoint(evt.Position) #<wx._core.MouseEvent>
         po, qo = self.__anchors
         if self.__margin:
@@ -796,6 +798,7 @@ class EditorInterface(CtrlInterface):
         self.EnsureCaretVisible()
     
     def on_linesel_end(self, evt):
+        """Called when a line of text selection ends."""
         if self.HasCapture():
             self.ReleaseMouse()
     
@@ -1054,6 +1057,7 @@ class EditorInterface(CtrlInterface):
             yield pos
     
     def filter_text(self, text=None):
+        """Show indicators for the selected text."""
         self.__itextlines = []
         for i in range(2):
             self.SetIndicatorCurrent(i)
@@ -1078,6 +1082,7 @@ class EditorInterface(CtrlInterface):
             pass
     
     def on_itext_enter(self, evt):
+        """Called when entering filter_text mode."""
         if not self.__itextlines:
             self.handler('quit', evt)
             return
@@ -1089,11 +1094,13 @@ class EditorInterface(CtrlInterface):
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
     
     def on_itext_exit(self, evt):
+        """Called when exiting filter_text mode."""
         if self.AutoCompActive():
             self.AutoCompCancel()
         self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION, handler=self.on_itext_selection)
     
     def on_itext_selection(self, evt):
+        """Called when filter_text is selected."""
         i = self.AutoCompGetCurrent()
         if i == -1:
             evt.Skip()
@@ -1779,7 +1786,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         nb = evt.EventObject
         buf = nb.all_buffers[evt.Selection]
         if buf.need_buffer_save:
-            if wx.MessageBox(
+            if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
                     "Continue closing?",
@@ -1936,7 +1943,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def load_url(self, url, *args, **kwargs):
         import requests
-        if wx.MessageBox(
+        if wx.MessageBox( # Confirm URL load.
                 "You are loadint URL contents.\n\n"
                f"{url!r}\n"
                 "Continue loading?",
@@ -1976,7 +1983,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """
         buf = self.find_buffer(filename) or self.create_buffer(filename)
         if buf.need_buffer_save:
-            if wx.MessageBox(
+            if wx.MessageBox( # Confirm load.
                     "You are leaving unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
                     "Continue loading?",
@@ -2006,7 +2013,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         buf = buf or self.buffer
         if buf.need_buffer_load:
             self.swap_page(buf)
-            if wx.MessageBox(
+            if wx.MessageBox( # Confirm save.
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
                     "Continue saving?",
@@ -2077,7 +2084,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Confirm the close with the dialog."""
         buf = buf or self.buffer
         if buf.need_buffer_save:
-            if wx.MessageBox(
+            if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
                     "Changes to the content will be discarded.\n"
                     "Continue closing?",
@@ -2090,7 +2097,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def kill_all_buffers(self):
         for buf in self.all_buffers:
             if buf.need_buffer_save:
-                if wx.MessageBox(
+                if wx.MessageBox( # Confirm close.
                         "You are closing unsaved content.\n\n"
                         "Changes to the content will be discarded.\n"
                         "Continue closing?",
