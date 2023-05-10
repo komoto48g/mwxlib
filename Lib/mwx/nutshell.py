@@ -1788,7 +1788,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
-                    "Changes to the content will be discarded.\n"
+                    "The changes will be discarded.\n"
                     "Continue closing?",
                     "Close {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
@@ -1944,7 +1944,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def load_url(self, url, *args, **kwargs):
         import requests
         if wx.MessageBox( # Confirm URL load.
-                "You are loadint URL contents.\n\n"
+                "You are loading URL contents.\n\n"
                f"{url!r}\n"
                 "Continue loading?",
                 "Load URL",
@@ -1985,7 +1985,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm load.
                     "You are leaving unsaved content.\n\n"
-                    "Changes to the content will be discarded.\n"
+                    "The changes will be discarded.\n"
                     "Continue loading?",
                     "Load {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
@@ -2064,7 +2064,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             if dlg.ShowModal() == wx.ID_OK:
                 return self.save_file(dlg.Path, buf)
     
-    save_as_buffer = save_buffer_as # backward compatibility
+    save_as_buffer = save_buffer_as # for backward compatibility
     
     def save_all_buffers(self):
         for buf in self.all_buffers:
@@ -2086,7 +2086,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
-                    "Changes to the content will be discarded.\n"
+                    "The changes will be discarded.\n"
                     "Continue closing?",
                     "Close {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
@@ -2099,7 +2099,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             if buf.need_buffer_save:
                 if wx.MessageBox( # Confirm close.
                         "You are closing unsaved content.\n\n"
-                        "Changes to the content will be discarded.\n"
+                        "The changes will be discarded.\n"
                         "Continue closing?",
                         "Close {!r}".format(buf.name),
                         style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:

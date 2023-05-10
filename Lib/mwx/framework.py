@@ -1066,6 +1066,7 @@ class ShellFrame(MiniFrame):
         def on_timer(evt):
             if self.indicator.Value not in (1, 3):
                 self.indicator.blink(500)
+            evt.Skip()
         self.Bind(wx.EVT_TIMER, on_timer)
         
         def on_size(evt):
@@ -1684,6 +1685,8 @@ class ShellFrame(MiniFrame):
         """Yields all pages of the specified type in the notebooks."""
         yield from self.console.get_pages(type)
         yield from self.ghost.get_pages(type)
+    
+    get_pages = get_all_pages # for backward compatibility
     
     @property
     def current_shell(self):
