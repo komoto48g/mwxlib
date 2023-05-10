@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.8"
+__version__ = "0.82.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1048,6 +1048,30 @@ class ShellFrame(MiniFrame):
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_SHOW, self.OnShow)
+        
+        self.__autoload = True
+        
+        def on_activate(evt):
+            evt.Skip()
+            if not evt.Active:
+                ## Reset autoload when active focus going outside.
+                self.__autoload = True
+            elif evt.GetActivationReason() == evt.Reason_Mouse\
+              and self.__autoload:
+                ## Check all buffers that need to be loaded.
+                for book in self.get_all_pages(type(self.Log)):
+                    for buf in book.all_buffers:
+                        if buf.need_buffer_load:
+                            if wx.MessageBox( # Confirm load.
+                                    "The file has been modified externally.\n\n"
+                                    "The contents of the buffer will be overwritten.\n"
+                                    "Continue loading?",
+                                    "Load {!r}".format(buf.name),
+                                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                                self.__autoload = False # Don't ask any more.
+                                return
+                            book.load_file(buf)
+        self.Bind(wx.EVT_ACTIVATE, on_activate)
         
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
