@@ -871,25 +871,28 @@ class Frame(mwx.Frame):
     def show_pane(self, name, show=True):
         """Show named pane or notebook pane."""
         pane = self.get_pane(name)
+        plug = self.get_plug(name)
         if not pane.IsOk():
             return
         
-        ## Set graph and output size be as half & half.
+        ## Set the graph and output window sizes to half & half.
         if name == "output" or name is self.output:
             w, h = self.graph.GetClientSize()
             pane.best_size = (w//2, h) # ドッキング時に再計算される
         
-        ## [M-menu] Reload plugin (ret: None if succeeded).
-        if wx.GetKeyState(wx.WXK_ALT):
-            self.reload_plug(name)
-            pane = self.get_pane(name)
-            show = True
-        
-        ## [S-menu] Reset floating position of a stray window.
-        if wx.GetKeyState(wx.WXK_SHIFT):
-            pane.floating_pos = wx.GetMousePosition()
-            pane.Float()
-            show = True
+        ## Force Layer windows to show.
+        if _isLayer(plug):
+            ## [M-menu] Reload plugin (ret: None if succeeded).
+            if wx.GetKeyState(wx.WXK_ALT):
+                self.reload_plug(name)
+                pane = self.get_pane(name)
+                show = True
+            
+            ## [S-menu] Reset floating position of a stray window.
+            if wx.GetKeyState(wx.WXK_SHIFT):
+                pane.floating_pos = wx.GetMousePosition()
+                pane.Float()
+                show = True
         
         self._show_pane(name, show)
         self._mgr.Update()

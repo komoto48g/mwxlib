@@ -426,10 +426,9 @@ class GraphPlot(MatplotPanel):
                 'frame_removed' : [ None ], # del[] ! event arg is indices, not frames.
                'frame_selected' : [ None ], # = focus_set
              'frame_deselected' : [ None ], # = focus_kill
-               'frame_modified' : [ None ], # set[],load,roi, (frame.update_buffer)
-               #'frame_updated' : [ None ], # unit,name,ratio (frame.update_extent)
-                'frame_updated' : [ None, _F(self.writeln) ],
-                'frame_cmapped' : [ None ], # cmap
+               'frame_modified' : [ None, _F(self.writeln) ], # set[],load,roi  => update_buffer
+                'frame_updated' : [ None, _F(self.writeln) ], # unit,name,ratio => update_extent
+                'frame_cmapped' : [ None, _F(self.writeln) ], # cmap
                     'line_draw' : [ None ],
                    'line_drawn' : [ None, draw_idle ],
                     'line_move' : [ None ],
@@ -876,8 +875,7 @@ class GraphPlot(MatplotPanel):
         if self.Markers.size: self.Markers *= r
         if self.Region.size: self.Region *= r
         self.draw()
-        self.writeln()
-        
+    
     def kill_buffer(self):
         if self.buffer is not None:
             del self.buffer
@@ -931,7 +929,6 @@ class GraphPlot(MatplotPanel):
             self.frame.set_cmap(name)
             self.handler('frame_cmapped', self.frame)
             self.draw()
-            self.writeln()
     
     def invert_cmap(self):
         if self.frame:
