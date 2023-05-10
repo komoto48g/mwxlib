@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.7"
+__version__ = "0.82.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1162,7 +1162,7 @@ class ShellFrame(MiniFrame):
                 rc = dlg.Path
         
         if flush:
-            for book in self.get_pages(type(self.Log)):
+            for book in self.get_all_pages(type(self.Log)):
                 book.remove_all_buffers()
         
         self.SESSION_FILE = os.path.abspath(rc)
@@ -1198,7 +1198,7 @@ class ShellFrame(MiniFrame):
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
             
-            for book in self.get_pages(type(self.Log)):
+            for book in self.get_all_pages(type(self.Log)):
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
                         o.write("self._load_file({!r}, {!r}, {})\n"
@@ -1243,7 +1243,7 @@ class ShellFrame(MiniFrame):
     
     def OnClose(self, evt):
         if self.debugger.busy:
-            if wx.MessageBox( # Confirm close.
+            if wx.MessageBox( # Confirm debugger close.
                     "The debugger is running.\n\n"
                     "Enter [q]uit to exit before closing.\n"
                     "Continue closing?",
@@ -1260,7 +1260,7 @@ class ShellFrame(MiniFrame):
                           "The trace pointer will be cleared.")
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
-        for book in self.get_pages(type(self.Log)):
+        for book in self.get_all_pages(type(self.Log)):
             for buf in book.all_buffers:
                 if buf.need_buffer_save:
                     self.popup_window(book)
@@ -1444,7 +1444,7 @@ class ShellFrame(MiniFrame):
         else:
             filename = obj
             lineno = 0
-        book = next((x for x in self.get_pages(type(self.Log))
+        book = next((x for x in self.get_all_pages(type(self.Log))
                              if x.find_buffer(filename)), self.Log)
         self.popup_window(book, focus=focus)
         return book.load_file(filename, lineno)
@@ -1643,7 +1643,7 @@ class ShellFrame(MiniFrame):
     
     def other_window(self, p=1, mod=True):
         "Move focus to other window"
-        pages = [x for x in self.get_pages() if x.IsShownOnScreen()]
+        pages = [x for x in self.get_all_pages() if x.IsShownOnScreen()]
         wnd = wx.Window.FindFocus()
         while wnd:
             if wnd in pages:
@@ -1680,7 +1680,7 @@ class ShellFrame(MiniFrame):
     ## Attributes for notebook pages
     ## --------------------------------
     
-    def get_pages(self, type=None):
+    def get_all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks."""
         yield from self.console.get_pages(type)
         yield from self.ghost.get_pages(type)
