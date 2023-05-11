@@ -1566,20 +1566,20 @@ class Buffer(EditWindow, EditorInterface):
     def OnSavePointLeft(self, evt):
         prefix = self.caption_prefix
         if prefix is not None:
-            self.parent.handler('buffer_caps', self, prefix + self.name)
+            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
         prefix = self.caption_prefix
         if prefix is not None:
-            self.parent.handler('buffer_caps', self, prefix + self.name)
+            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
         prefix = self.caption_prefix
         if prefix is not None:
-            self.parent.handler('buffer_caps', self, prefix + self.name)
+            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
         self.trace_position()
     
     def on_inactivated(self, buf):
@@ -1773,13 +1773,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, dispatch, ],
-                  'buffer_caps' : [ None, dispatch, self.set_caption ],
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
                'buffer_removed' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
           'buffer_filename_set' : [ None, dispatch, ],
+        'buffer_caption_prefix' : [ None, dispatch, self.set_caption ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
