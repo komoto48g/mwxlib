@@ -1459,6 +1459,18 @@ class Buffer(EditWindow, EditorInterface):
             return -1
     
     @property
+    def caption_prefix(self):
+        if self.mtdelta is not None:
+            prefix = ''
+            if self.IsModified():
+                prefix += '*'
+            if self.mtdelta > 0:
+                prefix += '!'
+            elif self.mtdelta < 0:
+                prefix += '%'
+            return prefix + ' ' if prefix else ''
+    
+    @property
     def need_buffer_save(self):
         """Returns whether the buffer should be saved.
         The file has been modified internally.
@@ -1552,23 +1564,22 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        if self.mtdelta is not None:
-            prefix = '* ' if self.mtdelta == 0 else '*! '
-            self.parent.handler('buffer_caps', self, prefix + self.name)
+        prefix = self.caption_prefix
+        if prefix is not None:
+            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.mtdelta is not None:
-            prefix = '' if self.mtdelta == 0 else '! '
-            self.parent.handler('buffer_caps', self, prefix + self.name)
+        prefix = self.caption_prefix
+        if prefix is not None:
+            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
-        if self.mtdelta is not None and self.mtdelta > 0:
-            prefix = '! ' if not buf.IsModified() else '*! '
-            self.parent.handler('buffer_caps', self, prefix + self.name)
-            self.message("{!r} has been modified externally.".format(self.filename))
+        prefix = self.caption_prefix
+        if prefix is not None:
+            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
         self.trace_position()
     
     def on_inactivated(self, buf):
@@ -1762,13 +1773,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, dispatch, ],
-                  'buffer_caps' : [ None, dispatch, self.set_caption ],
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
                'buffer_removed' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
           'buffer_filename_set' : [ None, dispatch, ],
+        'buffer_caption_prefix' : [ None, dispatch, self.set_caption ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -1803,11 +1814,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
         evt.Skip()
     
     def set_caption(self, buf, caption=None):
-        caption = caption or buf.name
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
-            tab.GetPage(idx).caption = caption
+            tab.GetPage(idx).caption = caption or buf.name
             tab.Refresh()
         except AttributeError:
             pass
