@@ -1459,6 +1459,18 @@ class Buffer(EditWindow, EditorInterface):
             return -1
     
     @property
+    def caption_prefix(self):
+        if self.mtdelta is not None:
+            prefix = ''
+            if self.IsModified():
+                prefix += '*'
+            if self.mtdelta > 0:
+                prefix += '!'
+            elif self.mtdelta < 0:
+                prefix += '%'
+            return prefix + ' ' if prefix else ''
+    
+    @property
     def need_buffer_save(self):
         """Returns whether the buffer should be saved.
         The file has been modified internally.
@@ -1552,23 +1564,22 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        if self.mtdelta is not None:
-            prefix = '* ' if self.mtdelta == 0 else '*! '
+        prefix = self.caption_prefix
+        if prefix is not None:
             self.parent.handler('buffer_caps', self, prefix + self.name)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.mtdelta is not None:
-            prefix = '' if self.mtdelta == 0 else '! '
+        prefix = self.caption_prefix
+        if prefix is not None:
             self.parent.handler('buffer_caps', self, prefix + self.name)
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
-        if self.mtdelta is not None and self.mtdelta > 0:
-            prefix = '! ' if not buf.IsModified() else '*! '
+        prefix = self.caption_prefix
+        if prefix is not None:
             self.parent.handler('buffer_caps', self, prefix + self.name)
-            self.message("{!r} has been modified externally.".format(self.filename))
         self.trace_position()
     
     def on_inactivated(self, buf):
@@ -1803,11 +1814,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
         evt.Skip()
     
     def set_caption(self, buf, caption=None):
-        caption = caption or buf.name
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
-            tab.GetPage(idx).caption = caption
+            tab.GetPage(idx).caption = caption or buf.name
             tab.Refresh()
         except AttributeError:
             pass
