@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.82.9"
+__version__ = "0.83.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1153,12 +1153,12 @@ class ShellFrame(MiniFrame):
         self.set_hookable(self.Scratch)
         
         @self.Scratch.define_key('C-j')
-        def eval_line(v):
+        def eval_line():
             shell = self.current_shell
             self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
         
         @self.Scratch.define_key('M-j')
-        def exec_buffer(v):
+        def exec_buffer():
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
         
