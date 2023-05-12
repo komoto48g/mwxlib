@@ -284,6 +284,7 @@ class Debugger(Pdb):
                          "Debugger is closed.\n\n{}".format(e))
         finally:
             self.set_quit()
+            return
     
     ## --------------------------------
     ## Actions for handler
@@ -369,8 +370,9 @@ class Debugger(Pdb):
         Note: self.busy -> True (until this stage)
         """
         self.__interactive = None
-        del self.editor.buffer.pointer
-        self.editor = None
+        if self.editor:
+            del self.editor.buffer.pointer
+            self.editor = None
         self.code = None
         main = threading.main_thread()
         thread = threading.current_thread()
@@ -470,7 +472,8 @@ class Debugger(Pdb):
         try:
             Pdb.set_quit(self)
         finally:
-            self.handler('debug_end', self.curframe)
+            if self.parent: # Check if Destroy has begun.
+                self.handler('debug_end', self.curframe)
             return
     
     ## --------------------------------
