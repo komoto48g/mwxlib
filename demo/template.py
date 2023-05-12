@@ -44,11 +44,7 @@ class Plugin(Layer):
         if src is None:
             self.message("- No buffer")
             return
-        ## CV2 normally accepts uint8/16 and float32/64.
-        if src.dtype in (np.uint32, np.int32): src = src.astype(np.float32)
-        if src.dtype in (np.uint64, np.int64): src = src.astype(np.float64)
-        
-        dst = cv2.GaussianBlur(src, (k,k), 0.)
+        dst = cv2.GaussianBlur(src, (k, k), 0.)
         self.output.load(dst, name="*gauss*")
 
 
