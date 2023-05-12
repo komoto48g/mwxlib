@@ -22,6 +22,16 @@ from numpy import pi, nan
 from scipy import ndimage as ndi
 
 
+def imcv(src):
+    """Convert the image to a type that can be applied to the cv2 function.
+    Note:
+        CV2 normally accepts uint8/16 and float32/64.
+    """
+    if src.dtype in (np.uint32, np.int32): src = src.astype(np.float32)
+    if src.dtype in (np.uint64, np.int64): src = src.astype(np.float64)
+    return src
+
+
 def imbuffer(img):
     if isinstance(img, (Image.Image, ImageFile.ImageFile)):
         ## return np.asarray(img) # ref
@@ -64,11 +74,8 @@ def imconvert(src, cutoff=0, threshold=24e6, binning=1):
             bins = n # binning or threshold; Select the larger one.
     
     if bins > 1:
-        ## cv2.resize accepts uint8, uint16, float32, and float64 only..
-        if src.dtype in (np.uint32, np.int32): src = src.astype(np.float32)
-        if src.dtype in (np.uint64, np.int64): src = src.astype(np.float64)
-        
         ## src = src[::bins,::bins]
+        src = imcv(src)
         src = cv2.resize(src, None, fx=1/bins, fy=1/bins, interpolation=cv2.INTER_AREA)
     
     if src.dtype == np.uint8:
