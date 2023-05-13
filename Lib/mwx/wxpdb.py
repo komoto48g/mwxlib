@@ -206,33 +206,30 @@ class Debugger(Pdb):
     
     def watch(self, bp):
         """Start tracing."""
-        if not self.busy: # don't set while debugging
-            if not bp:
-                self.unwatch()
-                return
-            elif not bp[0]: # no target
-                return
-            self.__hookpoint = bp
-            self.reset()
-            sys.settrace(self.trace_dispatch)
-            threading.settrace(self.trace_dispatch)
-            self.handler('trace_begin', bp)
+        if self.busy: # don't set while debugging
+            return
+        self.__hookpoint = bp
+        self.reset()
+        sys.settrace(self.trace_dispatch)
+        threading.settrace(self.trace_dispatch)
+        self.handler('trace_begin', bp)
     
     def unwatch(self):
         """End tracing."""
-        if not self.busy: # don't unset while debugging
-            bp = self.__hookpoint
-            self.reset()
-            sys.settrace(None)
-            threading.settrace(None)
-            ## delete bp *after* setting dispatcher -> None
-            self.__hookpoint = None
-            if bp:
-                self.handler('trace_end', bp)
-            else:
-                ## Called to abort when the debugger is invalid status:
-                ## e.g., (self.handler.current_state > 0 and not self.busy)
-                self.handler('abort')
+        if self.busy: # don't unset while debugging
+            return
+        bp = self.__hookpoint
+        self.reset()
+        sys.settrace(None)
+        threading.settrace(None)
+        ## delete bp *after* setting dispatcher -> None
+        self.__hookpoint = None
+        if bp:
+            self.handler('trace_end', bp)
+        else:
+            ## Called to abort when the debugger is invalid status:
+            ## e.g., (self.handler.current_state > 0 but not busy)
+            self.handler('abort')
     
     def debug(self, obj, *args, **kwargs):
         """Debug a callable object.

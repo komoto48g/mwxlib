@@ -1595,6 +1595,7 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch()
             self.debugger.editor = book
             self.debugger.watch((book.buffer.filename, line+1))
+            self.debugger.send_input('') # clear input
         book.buffer.del_marker(4)
     
     def stop_trace(self, line, book):
