@@ -304,9 +304,6 @@ class Debugger(Pdb):
         """Called before set_trace.
         Note: self.busy -> False or None
         """
-        shell = self.interactive_shell
-        shell.goto_char(shell.eolc)
-        self.__interactive = shell.cpos
         self.__hookpoint = None
         self.indents = ' ' * 2
         self.stdin.input = '' # clear stdin buffer
@@ -348,28 +345,27 @@ class Debugger(Pdb):
                 buffer.EnsureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
-        self.__interactive = self.interactive_shell.cpos
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)."""
+        shell = self.interactive_shell
+        self.__cpos = shell.cpos
         def _next():
-            shell = self.interactive_shell
             shell.goto_char(shell.eolc)
-            pos = self.__interactive
+            pos = self.__cpos
             out = shell.GetTextRange(pos, shell.cpos)
             if out.strip(' ') == self.prompt.strip(' ') and pos > shell.bol:
                 shell.cpos = pos # backward selection
                 shell.ReplaceSelection('')
                 shell.prompt()
             shell.EnsureCaretVisible()
-            self.__interactive = shell.cpos
+            self.__cpos = shell.cpos
         wx.CallAfter(_next)
     
     def on_debug_end(self, frame):
         """Called after set_quit.
         Note: self.busy -> True (until this stage)
         """
-        self.__interactive = None
         if self.editor:
             del self.editor.buffer.pointer
             self.editor = None
