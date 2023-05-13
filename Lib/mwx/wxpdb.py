@@ -193,9 +193,9 @@ class Debugger(Pdb):
         """Send input:str (echo message if needed)."""
         def _send():
             self.stdin.input = c
+            if echo or self.verbose:
+                self.message(c, indent=0)
         wx.CallAfter(_send)
-        if echo or self.verbose:
-            self.message(c, indent=0)
     
     def message(self, msg, indent=True):
         """Add prefix and insert msg at the end of command-line."""
@@ -206,33 +206,30 @@ class Debugger(Pdb):
     
     def watch(self, bp):
         """Start tracing."""
-        if not self.busy: # don't set while debugging
-            if not bp:
-                self.unwatch()
-                return
-            elif not bp[0]: # no target
-                return
-            self.__hookpoint = bp
-            self.reset()
-            sys.settrace(self.trace_dispatch)
-            threading.settrace(self.trace_dispatch)
-            self.handler('trace_begin', bp)
+        if self.busy: # don't set while debugging
+            return
+        self.__hookpoint = bp
+        self.reset()
+        sys.settrace(self.trace_dispatch)
+        threading.settrace(self.trace_dispatch)
+        self.handler('trace_begin', bp)
     
     def unwatch(self):
         """End tracing."""
-        if not self.busy: # don't unset while debugging
-            bp = self.__hookpoint
-            self.reset()
-            sys.settrace(None)
-            threading.settrace(None)
-            ## delete bp *after* setting dispatcher -> None
-            self.__hookpoint = None
-            if bp:
-                self.handler('trace_end', bp)
-            else:
-                ## Called to abort when the debugger is invalid status:
-                ## e.g., (self.handler.current_state > 0 and not self.busy)
-                self.handler('abort')
+        if self.busy: # don't unset while debugging
+            return
+        bp = self.__hookpoint
+        self.reset()
+        sys.settrace(None)
+        threading.settrace(None)
+        ## delete bp *after* setting dispatcher -> None
+        self.__hookpoint = None
+        if bp:
+            self.handler('trace_end', bp)
+        else:
+            ## Called to abort when the debugger is invalid status:
+            ## e.g., (self.handler.current_state > 0 but not busy)
+            self.handler('abort')
     
     def debug(self, obj, *args, **kwargs):
         """Debug a callable object.
@@ -284,6 +281,7 @@ class Debugger(Pdb):
                          "Debugger is closed.\n\n{}".format(e))
         finally:
             self.set_quit()
+            return
     
     ## --------------------------------
     ## Actions for handler
@@ -303,9 +301,6 @@ class Debugger(Pdb):
         """Called before set_trace.
         Note: self.busy -> False or None
         """
-        shell = self.interactive_shell
-        shell.goto_char(shell.eolc)
-        self.__interactive = shell.cpos
         self.__hookpoint = None
         self.indents = ' ' * 2
         self.stdin.input = '' # clear stdin buffer
@@ -347,35 +342,35 @@ class Debugger(Pdb):
                 buffer.EnsureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
-        self.__interactive = self.interactive_shell.cpos
     
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)."""
+        shell = self.interactive_shell
+        self.__cpos = shell.cpos
         def _next():
-            shell = self.interactive_shell
             shell.goto_char(shell.eolc)
-            pos = self.__interactive
+            pos = self.__cpos
             out = shell.GetTextRange(pos, shell.cpos)
             if out.strip(' ') == self.prompt.strip(' ') and pos > shell.bol:
                 shell.cpos = pos # backward selection
                 shell.ReplaceSelection('')
                 shell.prompt()
             shell.EnsureCaretVisible()
-            self.__interactive = shell.cpos
+            self.__cpos = shell.cpos
         wx.CallAfter(_next)
     
     def on_debug_end(self, frame):
         """Called after set_quit.
         Note: self.busy -> True (until this stage)
         """
-        self.__interactive = None
-        del self.editor.buffer.pointer
-        self.editor = None
+        if self.editor:
+            del self.editor.buffer.pointer
+            self.editor = None
         self.code = None
-        main = threading.main_thread()
-        thread = threading.current_thread()
-        if thread is not main:
-            self.send_input('\n') # terminates the reader
+        
+        ## Note: Required to terminate the reader of threading pdb.
+        self.send_input('\n')
+        
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
@@ -470,7 +465,8 @@ class Debugger(Pdb):
         try:
             Pdb.set_quit(self)
         finally:
-            self.handler('debug_end', self.curframe)
+            if self.parent: # Check if Destroy has begun.
+                self.handler('debug_end', self.curframe)
             return
     
     ## --------------------------------

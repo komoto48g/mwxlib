@@ -1277,8 +1277,7 @@ class ShellFrame(MiniFrame):
                 evt.Veto()
                 return
             #? RuntimeError('wrapped C/C++ object ... has been deleted')
-            ## self.Quit()
-            return
+            self.Quit()
         
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
@@ -1299,7 +1298,6 @@ class ShellFrame(MiniFrame):
                         self.message("The close has been canceled.")
                         evt.Veto()
                         return
-        
         if self.__standalone:
             evt.Skip() # Close the window
         else:
@@ -1597,6 +1595,7 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch()
             self.debugger.editor = book
             self.debugger.watch((book.buffer.filename, line+1))
+            self.debugger.send_input('') # clear input
         book.buffer.del_marker(4)
     
     def stop_trace(self, line, book):
