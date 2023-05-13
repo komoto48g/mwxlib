@@ -193,9 +193,9 @@ class Debugger(Pdb):
         """Send input:str (echo message if needed)."""
         def _send():
             self.stdin.input = c
+            if echo or self.verbose:
+                self.message(c, indent=0)
         wx.CallAfter(_send)
-        if echo or self.verbose:
-            self.message(c, indent=0)
     
     def message(self, msg, indent=True):
         """Add prefix and insert msg at the end of command-line."""
@@ -370,10 +370,10 @@ class Debugger(Pdb):
             del self.editor.buffer.pointer
             self.editor = None
         self.code = None
-        main = threading.main_thread()
-        thread = threading.current_thread()
-        if thread is not main:
-            self.send_input('\n') # terminates the reader
+        
+        ## Note: Required to terminate the reader of threading pdb.
+        self.send_input('\n')
+        
         def _continue():
             if wx.IsBusy():
                 wx.EndBusyCursor()
