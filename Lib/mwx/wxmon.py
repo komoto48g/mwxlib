@@ -83,7 +83,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         @self.handler.bind('*button* released')
         def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.current_event, v)
             v.Skip()
     
     def OnDestroy(self, evt):

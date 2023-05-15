@@ -67,7 +67,7 @@ class EditorInterface(CtrlInterface):
         
         def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.current_event, v)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -1485,12 +1485,12 @@ class Buffer(EditWindow, EditorInterface):
         return self.mtdelta is not None and self.mtdelta > 0
     
     def pre_command_hook(self, evt):
-        self.parent.handler(self.handler.event, evt)
+        self.parent.handler(self.handler.current_event, evt)
         return EditorInterface.pre_command_hook(self, evt)
     pre_command_hook.__name__ = str('pre_command_dispatch') # alias
     
     def post_command_hook(self, evt):
-        self.parent.handler(self.handler.event, evt)
+        self.parent.handler(self.handler.current_event, evt)
         return EditorInterface.post_command_hook(self, evt)
     post_command_hook.__name__ = str('post_command_dispatch') # alias
     
@@ -1520,7 +1520,7 @@ class Buffer(EditWindow, EditorInterface):
         
         def dispatch(*v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, *v)
+            self.parent.handler(self.handler.current_event, *v)
         
         self.handler.update({ # DNA<Buffer>
             None : {
@@ -1765,7 +1765,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         def dispatch(*v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, *v)
+            self.parent.handler(self.handler.current_event, *v)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -2403,11 +2403,11 @@ class Nautilus(Shell, EditorInterface):
             self.message("")
         
         def fork(v):
-            self.handler(self.handler.event, v)
+            self.handler(self.handler.current_event, v)
         
         def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.current_event, v)
         
         self.handler.update({ # DNA<Nautilus>
             None : {

@@ -543,9 +543,10 @@ class FSM(dict):
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
     
-    event = property(lambda self: self.__event)
     current_event = property(lambda self: self.__event)
     previous_event = property(lambda self: self.__prev_event)
+    
+    event = current_event # for backward compatibility
     
     @current_state.setter
     def current_state(self, state):

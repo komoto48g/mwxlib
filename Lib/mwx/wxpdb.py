@@ -110,7 +110,7 @@ class Debugger(Pdb):
         
         def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.event, v)
+            self.parent.handler(self.handler.current_event, v)
         
         self.__handler = FSM({ # DNA<Debugger>
             0 : {

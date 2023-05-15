@@ -1112,7 +1112,7 @@ class ShellFrame(MiniFrame):
         
         def fork(v):
             """Fork key events to the debugger."""
-            self.debugger.handler(self.handler.event, v)
+            self.debugger.handler(self.handler.current_event, v)
         
         self.handler.update({ # DNA<ShellFrame>
             None : {
