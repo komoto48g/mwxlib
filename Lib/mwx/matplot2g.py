@@ -468,8 +468,6 @@ class GraphPlot(MatplotPanel):
                'M-down pressed' : (NORMAL, self.OnPageDown),
                'pageup pressed' : (NORMAL, self.OnPageUp),
              'pagedown pressed' : (NORMAL, self.OnPageDown),
-                 'home pressed' : (NORMAL, _F(self.select, j=0)),
-                  'end pressed' : (NORMAL, _F(self.select, j=-1)),
                   'M-a pressed' : (NORMAL, _F(self.fit_to_canvas)),
                   'C-a pressed' : (NORMAL, _F(self.update_axis)),
                   'C-c pressed' : (NORMAL, _F(self.write_buffer_to_clipboard)),
