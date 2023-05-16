@@ -585,8 +585,9 @@ class FSM(dict):
     
     def __call__(self, event, *args, **kwargs):
         """Handle the event.
-        First, call handlers with the state:None.
-        Then, call handlers with the current state.
+        
+        First, call handlers with the state: None.
+        Then call handlers with the current state.
         
         Returns:
             list or None depending on the handler
@@ -622,6 +623,17 @@ class FSM(dict):
         self.__prev_event = self.__event
         if recept:
             return retvals
+    
+    def fork(self, event, *args, **kwargs):
+        """Invoke the event handlers (internal use only).
+        
+        Intended to fork events in the same handler.
+        Similar to __call__, but ignore state: None.
+        """
+        self.__event = event
+        ret = self.call(event, *args, **kwargs)
+        self.__prev_event = self.__event
+        return ret
     
     def call(self, event, *args, **kwargs):
         """Invoke the event handlers (internal use only).
