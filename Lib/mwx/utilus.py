@@ -597,11 +597,11 @@ class FSM(dict):
         """
         recept = False # Is transaction performed?
         retvals = [] # retvals of actions
+        self.__event = event
         if None in self:
             org = self.__state
             prev = self.__prev_state
             try:
-                self.__event = event
                 self.__state = None
                 ret = self.call(event, *args, **kwargs) # None process
                 if ret is not None:
@@ -612,15 +612,15 @@ class FSM(dict):
                     self.__state = org
                     self.__prev_state = prev
         
-        self.__event = event
         if self.__state is not None:
             ret = self.call(event, *args, **kwargs) # normal process
             if ret is not None:
                 recept = True
                 retvals += ret
         
+        ## Save the previous state / event for next handler call.
         self.__prev_state = self.__state
-        self.__prev_event = event
+        self.__prev_event = self.__event
         if recept:
             return retvals
     
