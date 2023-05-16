@@ -625,10 +625,10 @@ class FSM(dict):
             return retvals
     
     def call(self, event, *args, **kwargs):
-        """Invoke the event handlers.
+        """Invoke the event handlers (internal use only).
         
-        1. transit the state
-        2. try actions after transition
+        1. Transit the state.
+        2. Try actions after transition.
         
         Returns:
             list or None depending on the handler
@@ -668,7 +668,8 @@ class FSM(dict):
                         break
             self.__matched_pattern = None
             return retvals
-        elif isinstance(event, str): # matching test using fnmatch
+        
+        if isinstance(event, str): # matching test using fnmatch
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
                     self.__matched_pattern = pat

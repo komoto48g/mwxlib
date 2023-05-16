@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.0"
+__version__ = "0.83.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -306,11 +306,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: _M('Xbutton2 pressed', v))
         self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dblclick', v))
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dblclick', v))
-    
-    ## Note: Return value of handler.call and skip processing.
-    ##     None => Call v.Skip() if there is no handler.
-    ##     [..] => Don't call v.Skip() if there is a context w or w/o action.
-    ##             Call v.Skip() yourself if needed.
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when key down."""
