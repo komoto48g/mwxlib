@@ -618,8 +618,7 @@ class FSM(dict):
                 recept = True
                 retvals += ret
         
-        ## Save the previous state / event for next handler call.
-        self.__prev_state = self.__state
+        ## Save the previous event for next handler debug call.
         self.__prev_event = self.__event
         if recept:
             return retvals
