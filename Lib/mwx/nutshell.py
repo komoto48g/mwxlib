@@ -1440,7 +1440,7 @@ class Buffer(EditWindow, EditorInterface):
             renamed = False
         self.__filename = f
         if renamed:
-            self.parent.handler('buffer_filename_set', self)
+            self.parent.handler('buffer_filename_reset', self)
     
     @property
     def mtdelta(self):
@@ -1459,16 +1459,18 @@ class Buffer(EditWindow, EditorInterface):
             return -1
     
     @property
-    def caption_prefix(self):
+    def caption(self):
+        prefix = ''
         if self.mtdelta is not None:
-            prefix = ''
             if self.IsModified():
                 prefix += '*'
             if self.mtdelta > 0:
                 prefix += '!'
             elif self.mtdelta < 0:
                 prefix += '%'
-            return prefix + ' ' if prefix else ''
+            if prefix:
+                prefix += ' '
+        return prefix + self.name
     
     @property
     def need_buffer_save(self):
@@ -1518,9 +1520,9 @@ class Buffer(EditWindow, EditorInterface):
             v.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
-        def dispatch(*v):
+        def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.current_event, *v)
+            self.parent.handler(self.handler.current_event, v)
         
         self.handler.update({ # DNA<Buffer>
             None : {
@@ -1564,22 +1566,19 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
-        prefix = self.caption_prefix
-        if prefix is not None:
-            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
+        if self.mtdelta is not None:
+            self.parent.handler('buffer_caption_reset', self)
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        prefix = self.caption_prefix
-        if prefix is not None:
-            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
+        if self.mtdelta is not None:
+            self.parent.handler('buffer_caption_reset', self)
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
-        prefix = self.caption_prefix
-        if prefix is not None:
-            self.parent.handler('buffer_caption_prefix', self, prefix + self.name)
+        if self.mtdelta is not None:
+            self.parent.handler('buffer_caption_reset', self)
         self.trace_position()
     
     def on_inactivated(self, buf):
@@ -1763,9 +1762,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
             v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
-        def dispatch(*v):
+        def dispatch(v):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.current_event, *v)
+            self.parent.handler(self.handler.current_event, v)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -1778,8 +1777,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                'buffer_removed' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
-          'buffer_filename_set' : [ None, dispatch, ],
-        'buffer_caption_prefix' : [ None, dispatch, self.set_caption ],
+         'buffer_caption_reset' : [ None, dispatch, self.set_caption ],
+        'buffer_filename_reset' : [ None, dispatch, ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -1817,7 +1816,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         ## if wx.VERSION >= (4,1,0):
         try:
             _p, tab, idx = self.FindTab(buf)
-            tab.GetPage(idx).caption = caption or buf.name
+            tab.GetPage(idx).caption = caption or buf.caption
             tab.Refresh()
         except AttributeError:
             pass
