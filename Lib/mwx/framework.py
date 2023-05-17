@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.2"
+__version__ = "0.83.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1488,7 +1488,7 @@ class ShellFrame(MiniFrame):
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, wx.Object) or obj is None:
             if args or kwargs:
-                self.message("- args:{} and kwargs:{} were given,"
+                self.message("- Args:{} and kwargs:{} were given,"
                              " but ignored for object monitoring.")
             self.monitor.watch(obj)
             if obj:

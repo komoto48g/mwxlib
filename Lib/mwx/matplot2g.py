@@ -1042,6 +1042,21 @@ class GraphPlot(MatplotPanel):
             self.message("- No data in clipboard: {}".format(e))
             traceback.print_exc()
     
+    def destroy_colorbar(self):
+        if self.cbar:
+            self.cbar = None
+            cax = self.figure.axes[1]
+            self.figure.delaxes(cax)
+            self.canvas.draw_idle()
+            self.handler.unbind('frame_cmapped', self.update_colorbar)
+            self.handler.unbind('frame_shown', self.update_colorbar)
+    
+    def update_colorbar(self, frame):
+        if self.cbar:
+            self.cbar.update_normal(frame)
+            self.canvas.draw_idle()
+            self.figure.draw_without_rendering()
+    
     def create_colorbar(self):
         """Make a colorbar.
         The colorbar is plotted in self.figure.axes[1] (second axes)
@@ -1050,18 +1065,16 @@ class GraphPlot(MatplotPanel):
         if self.frame:
             divider = make_axes_locatable(self.axes)
             cax = divider.append_axes('right', size=0.1, pad=0.1)
-            cbar = self.figure.colorbar(self.frame, cax=cax)
-            @self.handler.bind('frame_cmapped')
-            @self.handler.bind('frame_shown')
-            def update_cmap(frame):
-                cbar.update_normal(frame)
-                cbar.draw_all()
-                self.canvas.draw_idle()
-            update_cmap(self.frame)
+            self.cbar = self.figure.colorbar(self.frame, cax=cax)
+            self.update_colorbar(self.frame)
+            self.handler.bind('frame_cmapped', self.update_colorbar)
+            self.handler.bind('frame_shown', self.update_colorbar)
         else:
-            self['*dummy*'] = np.random.rand(2,2) # dummy
-            self.create_colorbar()
-            del self['*dummy*']
+            self.message("- A frame must exist to create a colorbar.")
+            ## self['*dummy*'] = np.random.rand(2,2) # dummy
+            ## self.create_colorbar()
+            ## del self['*dummy*']
+            pass
     
     ## --------------------------------
     ## matplotlib interfaces
@@ -1579,7 +1592,7 @@ class GraphPlot(MatplotPanel):
     def Markers(self, v):
         x, y = v
         if len(x) > self.maxnum_markers:
-            self.message("- got too many markers ({}) to plot".format(len(x)))
+            self.message("- Got too many markers ({}) to plot".format(len(x)))
             return
         self.marked.set_data(x, y)
         self.__marksel = []
@@ -1759,7 +1772,8 @@ if __name__ == "__main__":
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/サンプル.bmp"), "サンプル")
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample_circ.bmp"), "sample data")
     
-    frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
+    ## frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
+    frm.graph.newbuffer = np.float32(np.random.randn(512,512))
     frm.graph.frame.unit = 0.5
     frm.graph.create_colorbar()
     
