@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.1"
+__version__ = "0.83.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1105,7 +1105,7 @@ class ShellFrame(MiniFrame):
                     self.indicator.Value = 7
             v.Skip()
         
-        def fork(v):
+        def dispatch(v):
             """Fork key events to the debugger."""
             self.debugger.handler(self.handler.current_event, v)
         
@@ -1126,9 +1126,9 @@ class ShellFrame(MiniFrame):
                  'title_window' : [ None, self.on_title_window ],
             },
             0 : {
-                    '* pressed' : (0, skip, fork), # => debugger
-                   '* released' : (0, skip, fork), # => debugger
-                  'C-g pressed' : (0, self.Quit, skip, fork), # => debugger
+                    '* pressed' : (0, skip, dispatch), # => debugger
+                   '* released' : (0, skip, dispatch), # => debugger
+                  'C-g pressed' : (0, self.Quit, skip, dispatch), # => debugger
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),

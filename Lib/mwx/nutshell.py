@@ -2402,7 +2402,7 @@ class Nautilus(Shell, EditorInterface):
             self.message("")
         
         def fork(v):
-            self.handler(self.handler.current_event, v)
+            self.handler.fork(self.handler.current_event, v)
         
         def dispatch(v):
             """Fork mouse events to the parent."""
