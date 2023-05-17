@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.3"
+__version__ = "0.83.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1410,17 +1410,14 @@ class ShellFrame(MiniFrame):
         if show is None:
             show = not pane.IsShown() # toggle show
         
-        ## Modify aui pane floating position when it is shown,
-        ## Note: This is a known bug in wxWidgets 3.17--3.20,
-        ##       and will be fixed in wxPython 4.2.1.
-        if show:
-            w, h = wx.DisplaySize()
-            x, y = pane.floating_pos
-            if x > 2*w or y > h:
-                pane.floating_pos = wx.GetMousePosition()
-        
         if wnd and win.IsShown(): # restore focus
             wnd.SetFocus()
+        
+        ## Modify the floating position of the pane when displayed.
+        ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
+        ##       and will be fixed in wxPython 4.2.1.
+        if wx.Display.GetFromWindow(pane.window) == -1:
+            pane.floating_pos = wx.GetMousePosition()
         
         nb.Show(show)
         pane.Show(show)
