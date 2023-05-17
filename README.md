@@ -20,27 +20,27 @@ These instructions will get you a copy of the project up and running on your loc
     - pillow
     - matplotlib
     - opencv-python
-- Python 3.10  
+- Python 3.10
     - wxpython >= 4.2.0
+        * You can also download the latest snapshot from https://wxpython.org/Phoenix/snapshot-builds/.
     - numpy
     - pillow
     - matplotlib
     - opencv-python
+- Python 3.11
+    - A version of wxpython for PY311 has not yet released on PyPi.
+        * You can download the latest snapshot from Azure Pipelines https://alldunn.visualstudio.com/wxPython-CI/_build?definitionId=2&_a=summary
 
-A version of wxpython for PY311 has not yet released on PyPi.
-<!--
-Please download the latest snapshot from https://wxpython.org/Phoenix/snapshot-builds/
--->
 
 ### Installing
 
 To install, type:
 ```
-py -3 -m pip install mwxlib
+pip install mwxlib
 ```
 To install latest version from GitHub, type:
 ```
-py -3 -m pip install git+https://github.com/komoto48g/mwxlib.git
+pip install git+https://github.com/komoto48g/mwxlib.git
 ```
 
 ### How to use
