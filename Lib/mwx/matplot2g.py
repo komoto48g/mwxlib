@@ -1055,8 +1055,8 @@ class GraphPlot(MatplotPanel):
             @self.handler.bind('frame_shown')
             def update_cmap(frame):
                 cbar.update_normal(frame)
-                cbar.draw_all()
                 self.canvas.draw_idle()
+                self.figure.draw_without_rendering()
             update_cmap(self.frame)
         else:
             self['*dummy*'] = np.random.rand(2,2) # dummy
@@ -1759,7 +1759,8 @@ if __name__ == "__main__":
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/サンプル.bmp"), "サンプル")
     frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample_circ.bmp"), "sample data")
     
-    frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
+    ## frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
+    frm.graph.newbuffer = np.float32(np.random.randn(512,512))
     frm.graph.frame.unit = 0.5
     frm.graph.create_colorbar()
     
