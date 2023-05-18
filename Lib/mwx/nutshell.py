@@ -1947,7 +1947,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         "ALL files (*.*)|*.*",
     ]
     
-    def load_url(self, url, *args, **kwargs):
+    def load_url(self, url, lineno=0):
         import requests
         if wx.MessageBox( # Confirm URL load.
                 "You are loading URL contents.\n\n"
@@ -1964,7 +1964,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return None
         if res.status_code == 200: # success
             buf = self.find_buffer(url) or self.create_buffer(url)
-            buf._load_textfile(res.text, url)
+            buf._load_textfile(res.text, url, lineno)
             self.swap_page(buf)
             return True
         return False
@@ -2043,10 +2043,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if buf.mtdelta is None:
             self.post_message("No filename.")
             return None
-        if buf.mtdelta == 0 and not buf.IsModified():
+        elif buf.mtdelta == 0 and not buf.IsModified():
             self.post_message("No need to load.")
             return None
-        return self.load_file(buf, buf.markline+1)
+        elif buf.mtdelta < 0:
+            return self.load_url(buf.filename, buf.markline+1)
+        else:
+            return self.load_file(buf, buf.markline+1)
     
     def save_buffer(self, buf=None):
         """Confirm the save with the dialog."""
@@ -2054,10 +2057,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if buf.mtdelta is None:
             self.post_message("No filename.")
             return None
-        if buf.mtdelta == 0 and not buf.IsModified():
+        elif buf.mtdelta == 0 and not buf.IsModified():
             self.post_message("No need to save.")
             return None
-        return self.save_file(buf.filename, buf)
+        else:
+            return self.save_file(buf.filename, buf)
     
     def save_buffer_as(self, buf=None):
         """Confirm the saveas with the dialog."""
