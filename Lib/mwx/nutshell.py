@@ -1385,7 +1385,6 @@ class Buffer(EditWindow, EditorInterface):
     Attributes:
         name     : buffer-name (basename)
         filename : buffer-file-name
-        codename : code-file-name (e.g. '<scratch>')
         code     : code object
     """
     STYLE = {
@@ -1461,15 +1460,16 @@ class Buffer(EditWindow, EditorInterface):
     @property
     def caption(self):
         prefix = ''
-        if self.mtdelta is not None:
+        dt = self.mtdelta
+        if dt is not None:
             if self.IsModified():
                 prefix += '*'
-            if self.mtdelta > 0:
+            if dt > 0:
                 prefix += '!'
-            elif self.mtdelta < 0:
+            elif dt < 0:
                 prefix += '%'
-            if prefix:
-                prefix += ' '
+        if prefix:
+            prefix += ' '
         return prefix + self.name
     
     @property
@@ -1502,7 +1502,6 @@ class Buffer(EditWindow, EditorInterface):
         
         self.parent = parent
         self.filename = filename
-        self.codename = ''
         self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1697,7 +1696,6 @@ class Buffer(EditWindow, EditorInterface):
             self.message("- {!r}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
-            self.codename = filename
             self.code = code
             del self.pointer # Reset pointer (debugger hook point).
             del self.red_arrow
@@ -1887,9 +1885,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
         for buf in self.all_buffers:
-            if f is buf or f in buf: # check code
-                return buf
-            if f == buf.codename or f == buf.filename:
+            if f is buf or f in buf or f == buf.filename: # check code
                 return buf
     
     def create_buffer(self, filename, index=None):
@@ -2040,13 +2036,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def load_buffer(self, buf=None):
         """Confirm the load with the dialog."""
         buf = buf or self.buffer
-        if buf.mtdelta is None:
+        dt = buf.mtdelta
+        if dt is None:
             self.post_message("No filename.")
             return None
-        elif buf.mtdelta == 0 and not buf.IsModified():
+        elif dt == 0 and not buf.IsModified():
             self.post_message("No need to load.")
             return None
-        elif buf.mtdelta < 0:
+        elif dt < 0:
             return self.load_url(buf.filename, buf.markline+1)
         else:
             return self.load_file(buf, buf.markline+1)
@@ -2054,10 +2051,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def save_buffer(self, buf=None):
         """Confirm the save with the dialog."""
         buf = buf or self.buffer
-        if buf.mtdelta is None:
+        dt = buf.mtdelta
+        if dt is None:
             self.post_message("No filename.")
             return None
-        elif buf.mtdelta == 0 and not buf.IsModified():
+        elif dt == 0 and not buf.IsModified():
             self.post_message("No need to save.")
             return None
         else:
