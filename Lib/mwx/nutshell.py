@@ -1889,11 +1889,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
         for buf in self.all_buffers:
             if f is buf or f in buf: # check code
                 return buf
-            elif isinstance(f, str):
-                if buf.code and f == buf.codename:
-                    return buf
-                if f == buf.filename:
-                    return buf
+            if f == buf.codename or f == buf.filename:
+                return buf
     
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""

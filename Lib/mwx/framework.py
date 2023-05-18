@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.4"
+__version__ = "0.83.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1239,7 +1239,10 @@ class ShellFrame(MiniFrame):
     def _load_file(self, bookname, filename, lineno):
         try:
             book = getattr(self, bookname)
-            book.load_file(filename, lineno)
+            if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename):
+                book.load_url(filename, lineno)
+            else:
+                book.load_file(filename, lineno)
         except Exception:
             pass
     
@@ -1509,8 +1512,7 @@ class ShellFrame(MiniFrame):
                 self.debugger.interactive_shell = self.current_shell
                 self.debugger.editor = self.Log # set default logger
                 filename = "<string>"
-                buf = self.Log.find_buffer(filename)\
-                  or self.Log.create_buffer(filename)
+                buf = self.Log.find_buffer(filename) or self.Log.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj)
