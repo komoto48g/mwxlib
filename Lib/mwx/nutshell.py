@@ -37,6 +37,11 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 ## URL pattern (flag = re.M | re.A)
 url_re = r"https?://[\w/:%#\$&\?()~.=+-]+"
 
+## Python syntax pattern
+py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
+py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
+py_closing_re = r"break|pass|return|raise|continue"
+
 
 def skip(v):
     v.Skip()
@@ -594,10 +599,6 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
-    py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
-    py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
-    py_closing_re = r"break|pass|return|raise|continue"
-    
     def on_indent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
@@ -638,7 +639,7 @@ class EditorInterface(CtrlInterface):
         indent = self.py_calc_indentation(text) # check previous line
         text = self.GetLine(self.cline)
         lstr, _indent = self.py_strip_indents(text) # check current line
-        if re.match(self.py_outdent_re, lstr):
+        if re.match(py_outdent_re, lstr):
             indent -= 4
         return indent
     
@@ -655,9 +656,9 @@ class EditorInterface(CtrlInterface):
         text = text.rstrip()
         if text.endswith('\\'):
             return indent + 2
-        if text.endswith(':') and re.match(self.py_indent_re, lstr):
+        if text.endswith(':') and re.match(py_indent_re, lstr):
             return indent + 4
-        if re.match(self.py_closing_re, lstr):
+        if re.match(py_closing_re, lstr):
             return indent - 4
         return indent
     
@@ -3180,7 +3181,7 @@ class Nautilus(Shell, EditorInterface):
             lstr = line.lstrip()
             if (lstr and lstr == line # no indent
                 and not lstr.startswith('#') # no comment
-                and not re.match(self.py_outdent_re, lstr)): # no outdent pattern
+                and not re.match(py_outdent_re, lstr)): # no outdent pattern
                 if cmd:
                     commands.append(cmd) # Add stacked commands to the list
                 cmd = line
@@ -3192,7 +3193,7 @@ class Nautilus(Shell, EditorInterface):
         if len(commands) > 1:
             suffix = sys.ps2
             for j, cmd in enumerate(commands):
-                if re.match(self.py_indent_re, cmd):
+                if re.match(py_indent_re, cmd):
                     ## multi-line code-block ends with [\r\n... ]
                     if not cmd.endswith(os.linesep):
                         cmd = cmd.rstrip('\r\n') + os.linesep
@@ -3222,7 +3223,7 @@ class Nautilus(Shell, EditorInterface):
             lstr = line.lstrip()
             if (lstr and lstr == line # no indent
                 and not lstr.startswith('#') # no comment
-                and not re.match(self.py_outdent_re, lstr)): # no outdent pattern
+                and not re.match(py_outdent_re, lstr)): # no outdent pattern
                 if cmd:
                     commands.append(cmd) # Add the previous command to the list
                 cmd = line
