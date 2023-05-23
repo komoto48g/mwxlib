@@ -381,7 +381,7 @@ class LayerInterface(CtrlInterface):
     
     def Show(self, show=True):
         """Show associated pane (override) window."""
-        wx.CallAfter(self.parent.show_pane, self, show)
+        self.parent.show_pane(self, show)
     
     Drawn = property(
         lambda self: self.IsDrawn(),
