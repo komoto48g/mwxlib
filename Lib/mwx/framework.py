@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.7"
+__version__ = "0.83.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1183,7 +1183,7 @@ class ShellFrame(MiniFrame):
         
         if flush:
             for book in self.get_all_pages(type(self.Log)):
-                book.remove_all_buffers()
+                book.delete_all_buffers()
         
         self.SESSION_FILE = os.path.abspath(rc)
         try:

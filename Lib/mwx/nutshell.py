@@ -1774,7 +1774,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         def destroy(v):
             obj = v.EventObject
             if isinstance(obj, Buffer):
-                self.handler('buffer_removed', obj)
+                self.handler('buffer_deleted', obj)
             v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
@@ -1790,7 +1790,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                    'buffer_new' : [ None, dispatch, ],
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
-               'buffer_removed' : [ None, dispatch, ],
+               'buffer_deleted' : [ None, dispatch, ],
               'buffer_modified' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
@@ -1931,7 +1931,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         buf.SetFocus()
         return buf
     
-    def remove_buffer(self, buf=None):
+    def delete_buffer(self, buf=None):
         """Pop the current buffer from the buffer list."""
         if not buf:
             buf = self.buffer
@@ -1941,7 +1941,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             if not self.buffer: # no buffers
                 self.new_buffer()
     
-    def remove_all_buffers(self):
+    def delete_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
         self.new_buffer()
@@ -2019,7 +2019,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
-            self.remove_buffer(buf)
+            self.delete_buffer(buf)
             if org:
                 self.swap_page(org)
             return False
@@ -2117,7 +2117,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.remove_buffer, buf)
+        wx.CallAfter(self.delete_buffer, buf)
     
     def kill_all_buffers(self):
         for buf in self.all_buffers:
@@ -2130,7 +2130,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                         style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                     self.post_message("The close has been canceled.")
                     return None
-        wx.CallAfter(self.remove_all_buffers)
+        wx.CallAfter(self.delete_all_buffers)
 
 
 class Interpreter(interpreter.Interpreter):
