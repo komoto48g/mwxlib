@@ -692,6 +692,9 @@ class FSM(dict):
         return None # no event, no action
     
     def __debcall__(self, pattern, *args, **kwargs):
+        def log(*args):
+            self.log(*args, end='' if v > 7 else '\n')
+        
         v = self.debug
         if v and self.__state is not None:
             transaction = self[self.__prev_state].get(pattern) or []
@@ -700,7 +703,7 @@ class FSM(dict):
              or v > 1 and self.__prev_event != self.__event
              or v > 2 and actions
              or v > 3):
-                self.log("{c} {1} --> {2} {0!r} {a}".format(
+                log("{c} {1} --> {2} [{0}] {a}".format(
                     self.__event, self.__prev_state, self.__state,
                     a = '' if not actions else ('=> ' + actions),
                     c = '*' if self.__prev_state != self.__state else ' '))
@@ -709,17 +712,16 @@ class FSM(dict):
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
-                self.log(" --> None {0!r} {a}".format(
+                log("  None [{0}] {a}".format(
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         
         if v > 7: # max verbose level puts all args
-            self.log("\t:", args)
-            self.log("\t:", kwargs)
+            self.log("\t:", args, kwargs)
     
     @staticmethod
-    def log(*args):
-        print(*args, file=sys.__stdout__)
+    def log(*args, **kwargs):
+        print(*args, file=sys.__stdout__, **kwargs)
     
     @staticmethod
     def dump(*args):
