@@ -1527,7 +1527,7 @@ class Buffer(EditWindow, EditorInterface):
               'buffer_modified' : [ None, self.on_modified, dispatch ],
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
-           'py_region_executed' : [ None, ],
+       'buffer_region_executed' : [ None, ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1717,7 +1717,7 @@ class Buffer(EditWindow, EditorInterface):
             self.code = code
             del self.pointer # Reset pointer (debugger hook point).
             del self.red_arrow
-            self.handler('py_region_executed', self)
+            self.handler('buffer_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
             self.AnnotationClearAll()
     
