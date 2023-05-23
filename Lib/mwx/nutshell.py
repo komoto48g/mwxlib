@@ -34,6 +34,10 @@ from .utilus import find_modules, deprecated
 from .framework import CtrlInterface, AuiNotebook, Menu
 
 
+## URL pattern (flag = re.M | re.A)
+url_re = r"https?://[\w/:%#\$&\?()~.=+-]+"
+
+
 def skip(v):
     v.Skip()
 
@@ -278,6 +282,11 @@ class EditorInterface(CtrlInterface):
         ## Custom indicator [2] for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
+        try:
+            self.IndicatorSetHoverStyle(2, stc.STC_INDIC_PLAIN)
+            self.IndicatorSetHoverForeground(2, "light gray")
+        except AttributeError:
+            pass
         
         ## Custom annotation
         self.AnnotationSetVisible(stc.STC_ANNOTATION_BOXED)
@@ -852,11 +861,6 @@ class EditorInterface(CtrlInterface):
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
             self.IndicatorSetForeground(1, item.get('back') or "yellow")
-            try:
-                self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
-                self.IndicatorSetHoverForeground(1, "blue")
-            except AttributeError:
-                pass
         
         ## Apply the rest of the style
         for key, value in spec.items():
@@ -1019,9 +1023,9 @@ class EditorInterface(CtrlInterface):
                 p -= 1
         return p, q, st
     
-    def grep_forward(self, pattern):
+    def grep_forward(self, pattern, flags=re.M):
         text = self.GetTextRange(self.eol, self.TextLength)
-        errs = re.finditer(pattern, text, re.M)
+        errs = re.finditer(pattern, text, flags)
         for err in errs:
             p, q = err.span()
             self.goto_char(q + self.eol)
@@ -1030,9 +1034,9 @@ class EditorInterface(CtrlInterface):
             self.EnsureVisible(self.cline)
             yield err
     
-    def grep_barckward(self, pattern):
+    def grep_barckward(self, pattern, flags=re.M):
         text = self.GetTextRange(0, self.cpos)
-        errs = re.finditer(pattern, text, re.M)
+        errs = re.finditer(pattern, text, flags)
         for err in reversed(list(errs)):
             p, q = err.span()
             self.goto_char(p)
@@ -1040,6 +1044,10 @@ class EditorInterface(CtrlInterface):
             self.mark = self.cpos
             self.EnsureVisible(self.cline)
             yield err
+    
+    def grep(self, pattern, flags=re.M):
+        text = self.GetTextRange(0, self.TextLength)
+        yield from re.finditer(pattern, text, flags)
     
     def search_text(self, text):
         """Yields raw-positions where `text` is found."""
@@ -1441,7 +1449,7 @@ class Buffer(EditWindow, EditorInterface):
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
-        elif f and re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", f):
+        elif f and re.match(url_re, f):
             return -1
     
     @property
@@ -1493,6 +1501,8 @@ class Buffer(EditWindow, EditorInterface):
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         
+        self.Bind(stc.EVT_STC_INDICATOR_CLICK, self.OnIndicatorClick)
+        
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         
@@ -1512,12 +1522,12 @@ class Buffer(EditWindow, EditorInterface):
         
         self.handler.update({ # DNA<Buffer>
             None : {
-                  'stc_updated' : [ None, ],
-                 'buffer_saved' : [ None, self.on_activated, dispatch ],
-                'buffer_loaded' : [ None, self.on_activated, dispatch ],
+                 'buffer_saved' : [ None, dispatch ],
+                'buffer_loaded' : [ None, dispatch ],
+              'buffer_modified' : [ None, self.on_modified, dispatch ],
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
-           'py_region_executed' : [ None, self.on_activated ],
+           'py_region_executed' : [ None, ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1548,8 +1558,27 @@ class Buffer(EditWindow, EditorInterface):
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
-            self.handler('stc_updated', evt)
+            if evt.Updated & stc.STC_UPDATE_CONTENT:
+                self.handler('buffer_modified', self)
         evt.Skip()
+    
+    def OnIndicatorClick(self, evt):
+        pos = evt.Position
+        if self.IndicatorValueAt(2, pos):
+            p = self.IndicatorStart(2, pos)
+            q = self.IndicatorEnd(2, pos)
+            text = self.GetTextRange(p, q).strip()
+            ## Note: Do postcall a confirmation dialog.
+            wx.CallAfter(self.parent.load_url, text)
+        evt.Skip()
+    
+    def on_modified(self, buf):
+        """Called when the buffer is modified."""
+        self.SetIndicatorCurrent(2)
+        self.IndicatorClearRange(0, self.TextLength)
+        for m in self.grep(url_re):
+            p, q = m.span()
+            self.IndicatorFillRange(p, q-p+1)
     
     def OnSavePointLeft(self, evt):
         if self.mtdelta is not None:
@@ -1760,6 +1789,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
                'buffer_removed' : [ None, dispatch, ],
+              'buffer_modified' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
          'buffer_caption_reset' : [ None, dispatch, self.set_caption ],
@@ -1772,8 +1802,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
                    '* released' : (0, skip),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
-               'M-left pressed' : (0, dispatch),
-              'M-right pressed' : (0, dispatch),
             },
         })
     
@@ -2396,9 +2424,9 @@ class Nautilus(Shell, EditorInterface):
         
         self.handler.update({ # DNA<Nautilus>
             None : {
-                  'stc_updated' : [ None, ],
                  'interp_error' : [ None, self.on_interp_error ],
                 'shell_deleted' : [ None, dispatch, self.on_deleted ],
+               'shell_modified' : [ None, dispatch, ],
               'shell_activated' : [ None, dispatch, self.on_activated ],
             'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
              '*button* pressed' : [ None, dispatch, skip ],
@@ -2628,7 +2656,8 @@ class Nautilus(Shell, EditorInterface):
                         tip = tip.splitlines()[0]
                     self.message(tip) # clear if no tip
                     self.__text = text
-            self.handler('stc_updated', evt)
+            if evt.Updated & stc.STC_UPDATE_CONTENT:
+                self.handler('shell_modified', self)
         evt.Skip()
     
     def OnCallTipClick(self, evt):
