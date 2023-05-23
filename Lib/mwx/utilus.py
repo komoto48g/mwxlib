@@ -604,6 +604,7 @@ class FSM(dict):
             prev = self.__prev_state
             try:
                 self.__state = None
+                self.__prev_state = None
                 ret = self.call(event, *args, **kwargs) # None process
                 if ret is not None:
                     recept = True
@@ -621,6 +622,7 @@ class FSM(dict):
         
         ## Save the previous event for next handler debug call.
         self.__prev_event = self.__event
+        self.__prev_state = self.__state
         if recept:
             return retvals
     
