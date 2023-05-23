@@ -852,11 +852,6 @@ class EditorInterface(CtrlInterface):
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
             self.IndicatorSetForeground(1, item.get('back') or "yellow")
-            try:
-                self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
-                self.IndicatorSetHoverForeground(1, "blue")
-            except AttributeError:
-                pass
         
         ## Apply the rest of the style
         for key, value in spec.items():
