@@ -1563,6 +1563,9 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
+        if self.SelectedText:
+            evt.Skip()
+            return
         pos = evt.Position
         if self.IndicatorValueAt(2, pos):
             p = self.IndicatorStart(2, pos)
@@ -1570,7 +1573,6 @@ class Buffer(EditWindow, EditorInterface):
             text = self.GetTextRange(p, q).strip()
             ## Note: Do postcall a confirmation dialog.
             wx.CallAfter(self.parent.load_url, text)
-        evt.Skip()
     
     def on_modified(self, buf):
         """Called when the buffer is modified."""
@@ -1578,7 +1580,7 @@ class Buffer(EditWindow, EditorInterface):
         self.IndicatorClearRange(0, self.TextLength)
         for m in self.grep(url_re):
             p, q = m.span()
-            self.IndicatorFillRange(p, q-p+1)
+            self.IndicatorFillRange(p, q-p)
     
     def OnSavePointLeft(self, evt):
         if self.mtdelta is not None:
