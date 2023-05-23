@@ -42,6 +42,10 @@ py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
 py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
+## Python interp traceback pattern
+py_error_re = r"^\s+File \"(.*?)\", line ([0-9]+)"
+py_frame_re = r"^\s+file \'(.*?)\', line ([0-9]+)"
+
 
 def skip(v):
     v.Skip()
@@ -1702,7 +1706,7 @@ class Buffer(EditWindow, EditorInterface):
                             sender=self, command=None, more=False)
         except Exception as e:
             msg = traceback.format_exc()
-            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
+            err = re.findall(py_error_re, msg, re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
                 lx = lines[-1] - 1
@@ -2940,7 +2944,7 @@ class Nautilus(Shell, EditorInterface):
             Argument `text` is raw output:str with no magic cast.
         """
         ln = self.cmdline_region[0]
-        err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
+        err = re.findall(py_error_re, text, re.M)
         self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
@@ -3329,7 +3333,7 @@ class Nautilus(Shell, EditorInterface):
                 self.exec(code)
             except Exception as e:
                 msg = traceback.format_exc()
-                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
+                err = re.findall(py_error_re, msg, re.M)
                 lines = [int(l) for f,l in err if f == filename]
                 if lines:
                     region = self.get_region(self.cline)
