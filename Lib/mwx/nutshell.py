@@ -37,6 +37,15 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 ## URL pattern (flag = re.M | re.A)
 url_re = r"https?://[\w/:%#\$&\?()~.=+-]+"
 
+## Python syntax pattern
+py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
+py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
+py_closing_re = r"break|pass|return|raise|continue"
+
+## Python interp traceback pattern
+py_error_re = r"^\s+File \"(.*?)\", line ([0-9]+)"
+py_frame_re = r"^\s+file \'(.*?)\', line ([0-9]+)"
+
 
 def skip(v):
     v.Skip()
@@ -594,10 +603,6 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
-    py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
-    py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
-    py_closing_re = r"break|pass|return|raise|continue"
-    
     def on_indent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
@@ -638,7 +643,7 @@ class EditorInterface(CtrlInterface):
         indent = self.py_calc_indentation(text) # check previous line
         text = self.GetLine(self.cline)
         lstr, _indent = self.py_strip_indents(text) # check current line
-        if re.match(self.py_outdent_re, lstr):
+        if re.match(py_outdent_re, lstr):
             indent -= 4
         return indent
     
@@ -655,9 +660,9 @@ class EditorInterface(CtrlInterface):
         text = text.rstrip()
         if text.endswith('\\'):
             return indent + 2
-        if text.endswith(':') and re.match(self.py_indent_re, lstr):
+        if text.endswith(':') and re.match(py_indent_re, lstr):
             return indent + 4
-        if re.match(self.py_closing_re, lstr):
+        if re.match(py_closing_re, lstr):
             return indent - 4
         return indent
     
@@ -1527,7 +1532,7 @@ class Buffer(EditWindow, EditorInterface):
               'buffer_modified' : [ None, self.on_modified, dispatch ],
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
-           'py_region_executed' : [ None, ],
+       'buffer_region_executed' : [ None, ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1701,7 +1706,7 @@ class Buffer(EditWindow, EditorInterface):
                             sender=self, command=None, more=False)
         except Exception as e:
             msg = traceback.format_exc()
-            err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
+            err = re.findall(py_error_re, msg, re.M)
             lines = [int(l) for f,l in err if f == filename]
             if lines:
                 lx = lines[-1] - 1
@@ -1717,7 +1722,7 @@ class Buffer(EditWindow, EditorInterface):
             self.code = code
             del self.pointer # Reset pointer (debugger hook point).
             del self.red_arrow
-            self.handler('py_region_executed', self)
+            self.handler('buffer_region_executed', self)
             self.message("Evaluated {!r} successfully".format(filename))
             self.AnnotationClearAll()
     
@@ -1774,7 +1779,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         def destroy(v):
             obj = v.EventObject
             if isinstance(obj, Buffer):
-                self.handler('buffer_removed', obj)
+                self.handler('buffer_deleted', obj)
             v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
@@ -1790,7 +1795,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                    'buffer_new' : [ None, dispatch, ],
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
-               'buffer_removed' : [ None, dispatch, ],
+               'buffer_deleted' : [ None, dispatch, ],
               'buffer_modified' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
@@ -1931,7 +1936,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         buf.SetFocus()
         return buf
     
-    def remove_buffer(self, buf=None):
+    def delete_buffer(self, buf=None):
         """Pop the current buffer from the buffer list."""
         if not buf:
             buf = self.buffer
@@ -1941,7 +1946,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             if not self.buffer: # no buffers
                 self.new_buffer()
     
-    def remove_all_buffers(self):
+    def delete_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
         self.new_buffer()
@@ -2019,7 +2024,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
-            self.remove_buffer(buf)
+            self.delete_buffer(buf)
             if org:
                 self.swap_page(org)
             return False
@@ -2117,7 +2122,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.remove_buffer, buf)
+        wx.CallAfter(self.delete_buffer, buf)
     
     def kill_all_buffers(self):
         for buf in self.all_buffers:
@@ -2130,7 +2135,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                         style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                     self.post_message("The close has been canceled.")
                     return None
-        wx.CallAfter(self.remove_all_buffers)
+        wx.CallAfter(self.delete_all_buffers)
 
 
 class Interpreter(interpreter.Interpreter):
@@ -2939,7 +2944,7 @@ class Nautilus(Shell, EditorInterface):
             Argument `text` is raw output:str with no magic cast.
         """
         ln = self.cmdline_region[0]
-        err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", text, re.M)
+        err = re.findall(py_error_re, text, re.M)
         self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
@@ -3180,7 +3185,7 @@ class Nautilus(Shell, EditorInterface):
             lstr = line.lstrip()
             if (lstr and lstr == line # no indent
                 and not lstr.startswith('#') # no comment
-                and not re.match(self.py_outdent_re, lstr)): # no outdent pattern
+                and not re.match(py_outdent_re, lstr)): # no outdent pattern
                 if cmd:
                     commands.append(cmd) # Add stacked commands to the list
                 cmd = line
@@ -3192,7 +3197,7 @@ class Nautilus(Shell, EditorInterface):
         if len(commands) > 1:
             suffix = sys.ps2
             for j, cmd in enumerate(commands):
-                if re.match(self.py_indent_re, cmd):
+                if re.match(py_indent_re, cmd):
                     ## multi-line code-block ends with [\r\n... ]
                     if not cmd.endswith(os.linesep):
                         cmd = cmd.rstrip('\r\n') + os.linesep
@@ -3222,7 +3227,7 @@ class Nautilus(Shell, EditorInterface):
             lstr = line.lstrip()
             if (lstr and lstr == line # no indent
                 and not lstr.startswith('#') # no comment
-                and not re.match(self.py_outdent_re, lstr)): # no outdent pattern
+                and not re.match(py_outdent_re, lstr)): # no outdent pattern
                 if cmd:
                     commands.append(cmd) # Add the previous command to the list
                 cmd = line
@@ -3328,7 +3333,7 @@ class Nautilus(Shell, EditorInterface):
                 self.exec(code)
             except Exception as e:
                 msg = traceback.format_exc()
-                err = re.findall(r"^\s+File \"(.*?)\", line ([0-9]+)", msg, re.M)
+                err = re.findall(py_error_re, msg, re.M)
                 lines = [int(l) for f,l in err if f == filename]
                 if lines:
                     region = self.get_region(self.cline)
