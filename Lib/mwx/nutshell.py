@@ -116,7 +116,6 @@ class EditorInterface(CtrlInterface):
                 'C-S-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                 'C-S-: pressed' : (0, _F(self.uncomment_line)),
-                 'select_itext' : (10, self.filter_text, self.on_itext_enter),
                   'select_line' : (100, self.on_linesel_begin),
             },
             10 : {
@@ -261,7 +260,8 @@ class EditorInterface(CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicator [0,1] for search-word
+        ## Custom indicator [0,1] for filter_text
+        ## if wx.VERSION >= (4,1,0):
         try:
             self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
@@ -269,15 +269,11 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
             self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
         
+        self.IndicatorSetUnder(1, True)
+        self.IndicatorSetAlpha(1, 60)
+        self.IndicatorSetOutlineAlpha(1, 120)
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
-        try:
-            self.IndicatorSetHoverStyle(1, stc.STC_INDIC_ROUNDBOX)
-            self.IndicatorSetHoverForeground(1, "blue")
-        except AttributeError:
-            pass
-        
-        self.Bind(stc.EVT_STC_INDICATOR_CLICK, self.OnIndicatorClick)
         
         ## Custom indicator [2] for match_paren
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
@@ -867,14 +863,14 @@ class EditorInterface(CtrlInterface):
             self.StyleSetSpec(key, value)
     
     def match_paren(self):
-        self.SetIndicatorCurrent(2)
-        self.IndicatorClearRange(0, self.TextLength)
+        ## self.SetIndicatorCurrent(2)
+        ## self.IndicatorClearRange(0, self.TextLength)
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched the preceding char
-                self.IndicatorFillRange(q, p-q)
+                ## self.IndicatorFillRange(q, p-q)
                 return q
             else:
                 self.BraceBadLight(p-1)
@@ -882,7 +878,7 @@ class EditorInterface(CtrlInterface):
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched the following char
-                self.IndicatorFillRange(p, q-p+1)
+                ## self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
@@ -1110,15 +1106,6 @@ class EditorInterface(CtrlInterface):
         self.goto_line(line)
         self.recenter()
         self.on_itext_exit(evt)
-    
-    def OnIndicatorClick(self, evt):
-        ## i = self.IndicatorValue #? -> 1 常に１が返される▲ BUG of wx.stc ?
-        pos = evt.Position
-        if self.IndicatorValueAt(0, pos): # check indicator [0]
-            p = self.IndicatorStart(0, pos)
-            q = self.IndicatorEnd(0, pos)
-            self.goto_char(pos)
-            self.handler('select_itext', self.GetTextRange(p, q))
     
     ## --------------------------------
     ## goto / skip / selection / etc.
