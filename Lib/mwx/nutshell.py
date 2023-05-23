@@ -863,14 +863,14 @@ class EditorInterface(CtrlInterface):
             self.StyleSetSpec(key, value)
     
     def match_paren(self):
-        self.SetIndicatorCurrent(2)
-        self.IndicatorClearRange(0, self.TextLength)
+        ## self.SetIndicatorCurrent(2)
+        ## self.IndicatorClearRange(0, self.TextLength)
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched the preceding char
-                self.IndicatorFillRange(q, p-q)
+                ## self.IndicatorFillRange(q, p-q)
                 return q
             else:
                 self.BraceBadLight(p-1)
@@ -878,7 +878,7 @@ class EditorInterface(CtrlInterface):
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched the following char
-                self.IndicatorFillRange(p, q-p+1)
+                ## self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
