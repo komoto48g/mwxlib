@@ -1507,12 +1507,12 @@ class Buffer(EditWindow, EditorInterface):
         
         self.handler.update({ # DNA<Buffer>
             None : {
-                  'stc_updated' : [ None, ],
-                 'buffer_saved' : [ None, self.on_activated, dispatch ],
-                'buffer_loaded' : [ None, self.on_activated, dispatch ],
+                 'buffer_saved' : [ None, dispatch ],
+                'buffer_loaded' : [ None, dispatch ],
+              'buffer_modified' : [ None, dispatch ],
              'buffer_activated' : [ None, self.on_activated, dispatch ],
            'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
-           'py_region_executed' : [ None, self.on_activated ],
+           'py_region_executed' : [ None, ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -1543,7 +1543,8 @@ class Buffer(EditWindow, EditorInterface):
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
-            self.handler('stc_updated', evt)
+            if evt.Updated & stc.STC_UPDATE_CONTENT:
+                self.handler('buffer_modified', self)
         evt.Skip()
     
     def OnSavePointLeft(self, evt):
@@ -1755,6 +1756,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                  'buffer_saved' : [ None, dispatch, self.set_caption ],
                 'buffer_loaded' : [ None, dispatch, self.set_caption ],
                'buffer_removed' : [ None, dispatch, ],
+              'buffer_modified' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
          'buffer_caption_reset' : [ None, dispatch, self.set_caption ],
@@ -1767,8 +1769,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
                    '* released' : (0, skip),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
-               'M-left pressed' : (0, dispatch),
-              'M-right pressed' : (0, dispatch),
             },
         })
     
@@ -2391,9 +2391,9 @@ class Nautilus(Shell, EditorInterface):
         
         self.handler.update({ # DNA<Nautilus>
             None : {
-                  'stc_updated' : [ None, ],
                  'interp_error' : [ None, self.on_interp_error ],
                 'shell_deleted' : [ None, dispatch, self.on_deleted ],
+               'shell_modified' : [ None, dispatch, ],
               'shell_activated' : [ None, dispatch, self.on_activated ],
             'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
              '*button* pressed' : [ None, dispatch, skip ],
@@ -2623,7 +2623,8 @@ class Nautilus(Shell, EditorInterface):
                         tip = tip.splitlines()[0]
                     self.message(tip) # clear if no tip
                     self.__text = text
-            self.handler('stc_updated', evt)
+            if evt.Updated & stc.STC_UPDATE_CONTENT:
+                self.handler('shell_modified', self)
         evt.Skip()
     
     def OnCallTipClick(self, evt):
