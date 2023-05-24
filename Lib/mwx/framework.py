@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.8"
+__version__ = "0.83.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1239,7 +1239,7 @@ class ShellFrame(MiniFrame):
     def _load_file(self, bookname, filename, lineno):
         try:
             book = getattr(self, bookname)
-            if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename):
+            if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename): # url_re
                 book.load_url(filename, lineno)
             else:
                 book.load_file(filename, lineno)
@@ -1443,7 +1443,7 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def load(self, obj, focus=False):
+    def load(self, obj, show=True, focus=False):
         """Load file @where the object is defined.
         
         Args:
@@ -1464,7 +1464,7 @@ class ShellFrame(MiniFrame):
             lineno = 0
         book = next((x for x in self.get_all_pages(type(self.Log))
                              if x.find_buffer(filename)), self.Log)
-        self.popup_window(book, focus=focus)
+        self.popup_window(book, show, focus)
         return book.load_file(filename, lineno)
     
     def info(self, obj):

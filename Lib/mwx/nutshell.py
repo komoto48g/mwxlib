@@ -1529,10 +1529,10 @@ class Buffer(EditWindow, EditorInterface):
             None : {
                  'buffer_saved' : [ None, dispatch ],
                 'buffer_loaded' : [ None, dispatch ],
-              'buffer_modified' : [ None, self.on_modified, dispatch ],
-             'buffer_activated' : [ None, self.on_activated, dispatch ],
-           'buffer_inactivated' : [ None, self.on_inactivated, dispatch ],
-       'buffer_region_executed' : [ None, ],
+              'buffer_modified' : [ None, dispatch, self.on_modified ],
+             'buffer_activated' : [ None, dispatch, self.on_activated ],
+           'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
+       'buffer_region_executed' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
