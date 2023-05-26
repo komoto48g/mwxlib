@@ -520,8 +520,9 @@ class EditorInterface(CtrlInterface):
         """
         if start > end:
             start, end = end, start
-        return self.GetTextRange(max(start, 0),
-                                 min(end, self.TextLength))
+        p = max(start, 0)
+        q = min(end, self.TextLength)
+        return self.GetTextRange(p, q)
     
     anchor = property(
         lambda self: self.GetAnchor(),
@@ -1051,8 +1052,7 @@ class EditorInterface(CtrlInterface):
             yield err
     
     def grep(self, pattern, flags=re.M):
-        text = self.GetTextRange(0, self.TextLength)
-        yield from re.finditer(pattern, text, flags)
+        yield from re.finditer(pattern, self.Text, flags)
     
     def search_text(self, text):
         """Yields raw-positions where `text` is found."""
@@ -1337,7 +1337,6 @@ class EditorInterface(CtrlInterface):
     @editable
     def kill_line(self):
         p = self.eol
-        text, lp = self.CurLine
         if p == self.cpos:
             if self.get_char(p) == '\r': p += 1
             if self.get_char(p) == '\n': p += 1
@@ -1569,6 +1568,7 @@ class Buffer(EditWindow, EditorInterface):
     
     def OnIndicatorClick(self, evt):
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
+            ## Processing text selection, dragging, or dragging+
             evt.Skip()
             return
         pos = evt.Position
