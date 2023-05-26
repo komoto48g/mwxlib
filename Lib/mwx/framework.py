@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.83.9"
+__version__ = "0.84.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1443,25 +1443,23 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def load(self, obj, show=True, focus=False):
+    def load(self, filename, lineno=0, show=True, focus=False):
         """Load file @where the object is defined.
         
         Args:
-            obj     : target object.
-            focus   : Set the focus if the window is displayed.
+            filename : target filename or object.
+            focus    : Set the focus if the window is displayed.
         """
-        if not isinstance(obj, str):
-            obj = where(obj)
-        if obj is None:
-            return False
-        
-        m = re.match("(.*?):([0-9]+)", obj)
-        if m:
-            filename, ln = m.groups()
-            lineno = int(ln)
-        else:
-            filename = obj
-            lineno = 0
+        if not isinstance(filename, str):
+            filename = where(filename)
+            if filename is None:
+                return False
+        ## Support <'filename:lineno'>
+        if not lineno:
+            m = re.match("(.*?):([0-9]+)", filename)
+            if m:
+                filename, ln = m.groups()
+                lineno = int(ln)
         book = next((x for x in self.get_all_pages(type(self.Log))
                              if x.find_buffer(filename)), self.Log)
         self.popup_window(book, show, focus)
