@@ -1568,7 +1568,7 @@ class Buffer(EditWindow, EditorInterface):
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
-        if self.SelectedText:
+        if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
             evt.Skip()
             return
         pos = evt.Position
@@ -1576,6 +1576,7 @@ class Buffer(EditWindow, EditorInterface):
             p = self.IndicatorStart(2, pos)
             q = self.IndicatorEnd(2, pos)
             text = self.GetTextRange(p, q).strip()
+            self.message("URL {!r}".format(text))
             ## Note: Do postcall a confirmation dialog.
             wx.CallAfter(self.parent.load_url, text)
     
@@ -1966,12 +1967,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
     ]
     
     def load_url(self, url, lineno=0):
+        surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
         import requests
         if wx.MessageBox( # Confirm URL load.
                 "You are loading URL contents.\n\n"
-               f"{url!r}\n"
                 "Continue loading?",
-                "Load URL",
+                "Load {!r}".format(surl),
                 style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
             self.post_message("The load has been canceled.")
             return None
