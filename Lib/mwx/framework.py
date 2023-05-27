@@ -122,10 +122,13 @@ _speckeys = {
     wx.WXK_WINDOWS_RIGHT        : 'Rwin',
 }
 
-## def speckey_state(key):
-##     for k, v in _speckeys.items():
-##         if v == key:
-##             return wx.GetKeyState(k) # cf. wx.GetMouseState
+def speckey_state(key):
+    """Returns GetKeyState for abbreviation key:str."""
+    try:
+        return wx.GetKeyState(_speckeys_wxkmap[key])
+    except KeyError:
+        pass
+_speckeys_wxkmap = dict((v, k) for k, v in _speckeys.items())
 
 
 def hotkey(evt):
