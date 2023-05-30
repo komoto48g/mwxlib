@@ -881,15 +881,16 @@ class FSM(dict):
 
 
 class TreeList(object):
-    """Tree access wrapper of list<item : (key, value)>
-    [
-        [key, [item,
-               item, ...]],
-        [key, [item,
-               [branch], => [key, [item,
-                                   item, ...]],
-               ...]],
-    ]
+    """Interface class for tree list control.
+    
+    >>> list<item : (key, value)>
+        [[key, [item,
+                item, ...]],
+         [key, [item,
+                branch => [key, [item,
+                                 item, ...]],
+                ...]],
+        ]
     """
     ## A dummy list to avoid RecursionError occurs when
     ## __getattr__ may be called before __init__.

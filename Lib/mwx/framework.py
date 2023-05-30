@@ -375,13 +375,14 @@ def ID_(id):
 def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     """Do layout
     
-    Examples:
-        >>> self.SetSizer(
+    Examples::
+    
+        self.SetSizer(
             pack(self, (
                 (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
                 ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
-                ))
-            )
+            ))
+        )
     
     Args:
         items   : wx objects (with some packing parameters)
@@ -489,15 +490,14 @@ class Menu(wx.Menu):
 class MenuBar(wx.MenuBar, TreeList):
     """MenuBar control
     
-    Construct menubar in the order of menu:list
-    -> root
-        ├ [key, [item,
-        │        item,...]],
-        │
-        ├ [key, [item,
-        │        item,
-        │        submenu => [key, [item,
-        ：        ...               item,...]],
+    Construct menubar in the order of menu<TreeList>::
+    
+        root
+         ├ [key, [item,
+         │        item,...]],
+         ├ [key, [item,
+         │        submenu => [key, [item,
+         ：        ...               item,...]],
     """
     def __init__(self, *args, **kwargs):
         wx.MenuBar.__init__(self, *args, **kwargs)

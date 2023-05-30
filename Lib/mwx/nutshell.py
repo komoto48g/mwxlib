@@ -1887,6 +1887,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     @property
     def all_buffers(self):
+        """Returns all buffer pages.
+        cf. equiv. AuiNotebook.all_pages
+        """
         return [self.GetPage(j) for j in range(self.PageCount)]
     
     @property
