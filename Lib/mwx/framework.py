@@ -1224,8 +1224,8 @@ class ShellFrame(MiniFrame):
             for book in self.all_books:
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
-                        o.write("self._load_file({!r}, {!r}, {})\n"
-                                .format(book.Name, buf.filename, buf.markline+1))
+                        o.write("self.load({!r}, {!r}, {!r})\n"
+                                .format(buf.filename, buf.markline+1, book.Name))
             o.write('\n'.join((
                 "self.SetSize({})".format(self.Size),
                 "self.SetPosition({})".format(self.Position),
@@ -1238,16 +1238,6 @@ class ShellFrame(MiniFrame):
                 ## "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
                 "self._mgr.Update()\n",
             )))
-    
-    def _load_file(self, bookname, filename, lineno):
-        try:
-            book = getattr(self, bookname)
-            if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename): # url_re
-                book.load_url(filename, lineno)
-            else:
-                book.load_file(filename, lineno)
-        except Exception:
-            pass
     
     def Init(self):
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
@@ -1391,7 +1381,7 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.Help, focus=0)
     
     def toggle_window(self, win, focus=False):
-        self.popup_window(win, None, focus)
+        self.popup_window(win, show=None, focus=focus)
     
     def popup_window(self, win, show=True, focus=True):
         """Show the notebook page and move the focus.
@@ -1446,27 +1436,41 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def load(self, filename, lineno=0, show=True, focus=False):
+    def load(self, filename, lineno=0, book=None, show=True, focus=False):
         """Load file @where the object is defined.
         
         Args:
-            filename : target filename or object.
+            filename : target filename:str or object.
+                       It also supports <'filename:lineno'> format.
+            lineno   : Set mark to lineno on load.
+            book     : book of the buffer to load.
+            show     : Show the book.
             focus    : Set the focus if the window is displayed.
         """
         if not isinstance(filename, str):
             filename = where(filename)
             if filename is None:
                 return False
-        ## Support <'filename:lineno'>
         if not lineno:
             m = re.match("(.*?):([0-9]+)", filename)
             if m:
                 filename, ln = m.groups()
                 lineno = int(ln)
-        book = next((x for x in self.get_all_pages(type(self.Log))
-                             if x.find_buffer(filename)), self.Log)
-        self.popup_window(book, show, focus)
-        return book.load_file(filename, lineno)
+        if isinstance(book, str):
+            try:
+                book = getattr(self, book)
+            except Exception:
+                pass
+        if not book:
+            book = next((x for x in self.all_books
+                            if x.find_buffer(filename)), self.Log)
+        if show:
+            self.popup_window(book, focus=focus)
+        
+        if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename): # url_re
+            return book.load_url(filename, lineno)
+        else:
+            return book.load_file(filename, lineno)
     
     def info(self, obj):
         self.rootshell.info(obj)
