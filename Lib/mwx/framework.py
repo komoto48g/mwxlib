@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.84.0"
+__version__ = "0.84.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1057,7 +1057,7 @@ class ShellFrame(MiniFrame):
             elif evt.GetActivationReason() == evt.Reason_Mouse\
               and self.__autoload:
                 ## Check all buffers that need to be loaded.
-                for book in self.get_all_pages(type(self.Log)):
+                for book in self.all_books:
                     for buf in book.all_buffers:
                         if buf.need_buffer_load:
                             if wx.MessageBox( # Confirm load.
@@ -1185,7 +1185,7 @@ class ShellFrame(MiniFrame):
                 rc = dlg.Path
         
         if flush:
-            for book in self.get_all_pages(type(self.Log)):
+            for book in self.all_books:
                 book.delete_all_buffers()
         
         self.SESSION_FILE = os.path.abspath(rc)
@@ -1221,7 +1221,7 @@ class ShellFrame(MiniFrame):
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
             
-            for book in self.get_all_pages(type(self.Log)):
+            for book in self.all_books:
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
                         o.write("self._load_file({!r}, {!r}, {})\n"
@@ -1285,7 +1285,7 @@ class ShellFrame(MiniFrame):
                           "The trace pointer will be cleared.")
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
-        for book in self.get_all_pages(type(self.Log)):
+        for book in self.all_books:
             for buf in book.all_buffers:
                 if buf.need_buffer_save:
                     self.popup_window(book)
@@ -1705,6 +1705,11 @@ class ShellFrame(MiniFrame):
         yield from self.ghost.get_pages(type)
     
     get_pages = get_all_pages # for backward compatibility
+    
+    @property
+    def all_books(self):
+        """Yields all books in the notebooks."""
+        yield from self.get_all_pages(type(self.Log))
     
     @property
     def current_shell(self):
