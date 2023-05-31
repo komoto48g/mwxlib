@@ -1096,7 +1096,7 @@ class EditorInterface(CtrlInterface):
             self.handler('quit', evt)
             return
         def _format(ln):
-            return "{:4d} {}".format(ln+1, self.GetLine(ln).rstrip())
+            return "{:4d} {}".format(ln+1, self.GetLine(ln).strip())
         self.AutoCompSetSeparator(ord('\n'))
         self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines))) # cf. gen_autocomp
         self.AutoCompSelect("{:4d}".format(self.cline+1))
