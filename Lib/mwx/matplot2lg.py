@@ -222,10 +222,10 @@ class Histogram(LinePlot):
         }
         self.modeline.Show(0)
         
-        def destroy(evt):
+        def destroy(v):
             for graph in self.__graphs:
                 self.detach(graph)
-            evt.Skip()
+            v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
     
     def clear(self):
@@ -441,10 +441,10 @@ class LineProfile(LinePlot):
                 lambda v: v.Check(not self.__logicp)),
         ]
         
-        def destroy(evt):
+        def destroy(v):
             for graph in self.__graphs:
                 self.detach(graph)
-            evt.Skip()
+            v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
     
     def clear(self):
