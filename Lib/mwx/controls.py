@@ -11,7 +11,7 @@ import wx.lib.scrolledpanel as scrolled
 
 from . import images
 from .utilus import SSM
-from .framework import pack, Menu, CtrlInterface
+from .framework import pack, Menu
 
 import numpy as np
 from numpy import nan, inf
@@ -54,7 +54,9 @@ class Param(object):
             self.__format = lambda v: '{:04X}'.format(int(v))
         else:
             self.__eval = lambda v: eval(v)
-            self.__format = fmt if callable(fmt) else (lambda v: (fmt or "%g") % v)
+            if isinstance(fmt, str):  # support % format:str
+                fmt = lambda v: fmt % v
+            self.__format = fmt or "{:,g}".format
         self.callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
@@ -765,8 +767,8 @@ class ControlPanel(scrolled.ScrolledPanel):
     
     def copy_to_clipboard(self, checked_only=False):
         params = self.get_params(checked_only)
-        text = '\t'.join(str(p) if isinstance(p, Param)
-                         else str(p.value) for p in params)
+        text = '\t'.join(str(p) if isinstance(p, Param) else
+                         str(p.value) for p in params)
         Clipboard.write(text)
     
     def paste_from_clipboard(self, checked_only=False):
