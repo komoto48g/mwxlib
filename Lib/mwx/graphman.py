@@ -23,7 +23,7 @@ from wx import aui
 from . import framework as mwx
 from .utilus import funcall as _F
 from .controls import ControlPanel, Icon
-from .framework import CtrlInterface
+from .framework import CtrlInterface, AuiNotebook
 from .matplot2g import GraphPlot
 from .matplot2lg import Histogram
 
@@ -346,6 +346,14 @@ class LayerInterface(CtrlInterface):
             v.Skip()
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
+        def on_show(v):
+            if v.IsShown():
+                self.handler('page_shown', self)
+            else:
+                self.handler('page_hidden', self)
+            v.Skip()
+        self.Bind(wx.EVT_SHOW, on_show)
+        
         try:
             self.Init()
             if session:
@@ -525,55 +533,6 @@ class MyFileDropLoader(wx.FileDropTarget):
         if paths:
             self.loader.load_frame(paths, self.target)
         return True
-
-
-class AuiNotebook(aui.AuiNotebook):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('style',
-            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-            ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-            ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
-        )
-        aui.AuiNotebook.__init__(self, *args, **kwargs)
-        
-        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
-        
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
-        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGING, self.on_page_changing)
-    
-    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject
-        try:
-            win = obj.Pages[evt.Selection].window # GetPage for split notebook
-            mwx.Menu.Popup(self, win.menu)
-        except AttributeError:
-            pass
-    
-    def on_page_changed(self, evt): #<wx._aui.AuiNotebookEvent>
-        win = self.CurrentPage
-        win.handler('page_shown', win)
-        evt.Skip()
-    
-    def on_page_changing(self, evt): #<wx._aui.AuiNotebookEvent>
-        org = self.CurrentPage
-        obj = evt.EventObject
-        if obj is not self:
-            ## if wx.VERSION >= (4,1,0):
-            try:
-                win = obj.Pages[evt.Selection].window # Changing org --> win <Layer>
-                atc = self.ActiveTabCtrl # Changing atc --> obj <aui.AuiTabCtrl>
-                if obj is not atc:
-                    for page in obj.Pages: # Check if there is a page to be hidden.
-                        org = page.window
-                        if org.IsShownOnScreen() and org is not win:
-                            break
-                    else:
-                        evt.Skip() # No windows to be hidden.
-                        return
-                org.handler('page_hidden', org)
-            except AttributeError:
-                pass
-        evt.Skip()
 
 
 class Frame(mwx.Frame):
