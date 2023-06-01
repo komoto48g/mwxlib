@@ -222,6 +222,9 @@ class LayerInterface(CtrlInterface):
     ## funcall = interactive_call
     funcall = staticmethod(_F)
     
+    ## for debug
+    pane = property(lambda self: self.parent.get_pane(self))
+    
     @property
     def Arts(self):
         """List of arts <matplotlib.artist.Artist>."""
@@ -818,7 +821,11 @@ class Frame(mwx.Frame):
     ## --------------------------------
     
     def get_pane(self, name):
-        """Get named pane or notebook pane."""
+        """Get the named pane or notebook pane.
+        
+        Args:
+            name : str or plug object.
+        """
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
@@ -919,12 +926,13 @@ class Frame(mwx.Frame):
         pane = evt.GetPane()
         win = pane.window
         if isinstance(win, aui.AuiNotebook):
-            for j in range(win.PageCount):
-                plug = win.GetPage(j)
+            for plug in win.all_pages:
                 plug.handler('page_closed', plug)
         else:
             win.handler('page_closed', win)
-        ## evt.Skip() # cause the same event call twice?
+        pane.Show(0)
+        self._mgr.Update()
+        evt.Veto() # Don't skip. Just hide it.
     
     ## --------------------------------
     ## Plugin (Layer) interface
@@ -946,7 +954,11 @@ class Frame(mwx.Frame):
         return plug
     
     def get_plug(self, name):
-        """Find named plug window in registered plugins."""
+        """Find the named plug window in registered plugins.
+        
+        Args:
+            name : str or plug object.
+        """
         if isinstance(name, str):
             if name.endswith(".py") or name.endswith(".pyc"):
                 name,_ = os.path.splitext(os.path.basename(name))
