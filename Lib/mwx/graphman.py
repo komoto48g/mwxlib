@@ -381,7 +381,8 @@ class LayerInterface(CtrlInterface):
     
     def Show(self, show=True):
         """Show associated pane (override) window."""
-        self.parent.show_pane(self, show)
+        ## Note: This might be called from a thread.
+        wx.CallAfter(self.parent.show_pane, self, show)
     
     Drawn = property(
         lambda self: self.IsDrawn(),
@@ -418,6 +419,7 @@ class Layer(ControlPanel, LayerInterface):
     ## Explicit (override) precedence
     message = LayerInterface.message
     IsShown = LayerInterface.IsShown
+    Shown = LayerInterface.Shown
     Show = LayerInterface.Show
 
 
@@ -1017,6 +1019,7 @@ class Frame(mwx.Frame):
             ## Explicit (override) precedence
             message = LayerInterface.message
             IsShown = LayerInterface.IsShown
+            Shown = LayerInterface.Shown
             Show = LayerInterface.Show
             
             ## Implicit (override) precedence
@@ -1751,7 +1754,7 @@ class Frame(mwx.Frame):
                 except Exception:
                     traceback.print_exc()
                     print("- Failed to save session: {}".format(plug))
-                o.write("self.load_plug({!r}, session={!r})\n".format(path, session or None))
+                o.write("self.load_plug({!r}, session={})\n".format(path, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             ## set-global-unit
