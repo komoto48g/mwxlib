@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.84.3"
+__version__ = "0.84.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1200,7 +1200,8 @@ class ShellFrame(MiniFrame):
             with open(self.SESSION_FILE, encoding='utf-8', newline='') as i:
                 exec(i.read())
         except Exception:
-            pass
+            ## pass
+            traceback.print_exc()
     
     def save_session_as(self):
         """Save session as a new file."""
@@ -1224,7 +1225,7 @@ class ShellFrame(MiniFrame):
             for book in self.all_books:
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
-                        o.write("self.load({!r}, {!r}, {!r})\n"
+                        o.write("self._load({!r}, {!r}, {!r})\n"
                                 .format(buf.filename, buf.markline+1, book.Name))
             o.write('\n'.join((
                 "self.SetSize({})".format(self.Size),
@@ -1436,6 +1437,14 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
+    def _load(self, filename, lineno, bookname):
+        """Load file in the session (internal use only)."""
+        try:
+            book = getattr(self, bookname)
+            return self.load(filename, lineno, book, show=0)
+        except Exception:
+            pass
+    
     def load(self, filename, lineno=0, book=None, show=True, focus=False):
         """Load file @where the object is defined.
         
@@ -1456,11 +1465,6 @@ class ShellFrame(MiniFrame):
             if m:
                 filename, ln = m.groups()
                 lineno = int(ln)
-        if isinstance(book, str):
-            try:
-                book = getattr(self, book)
-            except Exception:
-                pass
         if not book:
             book = next((x for x in self.all_books
                             if x.find_buffer(filename)), self.Log)
