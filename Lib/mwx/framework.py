@@ -1834,9 +1834,7 @@ try:
     del core
 
 except ImportError as e:
-    print("- {!r}".format(e))
-    print("Python {}".format(sys.version))
-    print("wxPython {}".format(wx.version()))
+    print(e)
     pass
 
 ## class wxpyInspectionTools:
