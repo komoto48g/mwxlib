@@ -294,9 +294,9 @@ class LayerInterface(CtrlInterface):
                    'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                   'page_shown' : [ None, _F(self.Draw, True)  ], # when active
-                  'page_closed' : [ None, _F(self.Draw, False) ], # when inactive
-                  'page_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
+                   'page_shown' : [ None, _F(self.Draw, True)  ],
+                  'page_closed' : [ None, _F(self.Draw, False) ],
+                  'page_hidden' : [ None, _F(self.Draw, False) ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -591,6 +591,7 @@ class Frame(mwx.Frame):
         ]
         self.select_view(self.graph)
         
+        ## Set winow.Name for inspection.
         self.graph.Name = "graph"
         self.output.Name = "output"
         self.histogram.Name = "histogram"
@@ -725,11 +726,14 @@ class Frame(mwx.Frame):
         ]
         self.menubar.reset()
         
+        def show_graph(frame):
+            wx.CallAfter(self.show_pane, frame.parent) # Show graph / output
+        
         self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, lambda v: self.show_pane("graph") ],
-               'frame_modified' : [ None, lambda v: self.show_pane("graph") ],
+                 'frame_loaded' : [ None, show_graph ],
+               'frame_modified' : [ None, show_graph ],
                'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
             },
@@ -737,8 +741,8 @@ class Frame(mwx.Frame):
         self.output.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, lambda v: self.show_pane("output") ],
-               'frame_modified' : [ None, lambda v: self.show_pane("output") ],
+                 'frame_loaded' : [ None, show_graph ],
+               'frame_modified' : [ None, show_graph ],
                'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.output, self.graph) ],
             },
