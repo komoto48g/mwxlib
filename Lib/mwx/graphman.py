@@ -294,9 +294,9 @@ class LayerInterface(CtrlInterface):
                    'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                   'page_shown' : [ None, _F(self.Draw, True)  ], # when active
-                  'page_closed' : [ None, _F(self.Draw, False) ], # when inactive
-                  'page_hidden' : [ None, _F(self.Draw, False) ], # when hidden (not closed)
+                   'page_shown' : [ None, _F(self.Draw, True)  ],
+                  'page_closed' : [ None, _F(self.Draw, False) ],
+                  'page_hidden' : [ None, _F(self.Draw, False) ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -450,6 +450,8 @@ class Graph(GraphPlot):
         self.handler.append({ # DNA<Graph>
             None : {
                     'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
+                   'page_shown' : [ None, ],
+                  'page_closed' : [ None, ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
                   'S-a pressed' : [ None, _F(self.toggle_infobar) ],
                    'f5 pressed' : [ None, _F(self.refresh) ],
@@ -591,6 +593,7 @@ class Frame(mwx.Frame):
         ]
         self.select_view(self.graph)
         
+        ## Set winow.Name for inspection.
         self.graph.Name = "graph"
         self.output.Name = "output"
         self.histogram.Name = "histogram"
@@ -725,11 +728,14 @@ class Frame(mwx.Frame):
         ]
         self.menubar.reset()
         
+        def show_graph(frame):
+            wx.CallAfter(self.show_pane, frame.parent) # Show graph / output
+        
         self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, lambda v: self.show_pane("graph") ],
-               'frame_modified' : [ None, lambda v: self.show_pane("graph") ],
+                 'frame_loaded' : [ None, show_graph ],
+               'frame_modified' : [ None, show_graph ],
                'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
             },
@@ -737,8 +743,8 @@ class Frame(mwx.Frame):
         self.output.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, lambda v: self.show_pane("output") ],
-               'frame_modified' : [ None, lambda v: self.show_pane("output") ],
+                 'frame_loaded' : [ None, show_graph ],
+               'frame_modified' : [ None, show_graph ],
                'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.output, self.graph) ],
             },
@@ -809,12 +815,8 @@ class Frame(mwx.Frame):
             evt.Skip()
     
     def Destroy(self):
-        try:
-            for pane in self._mgr.GetAllPanes():
-                pane.window.Destroy()
-        finally:
-            self._mgr.UnInit()
-            return mwx.Frame.Destroy(self)
+        self._mgr.UnInit()
+        return mwx.Frame.Destroy(self)
     
     ## --------------------------------
     ## pane window interface
@@ -873,12 +875,14 @@ class Frame(mwx.Frame):
             nb = plug.__notebook # given when load_plug
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
-            if show:
-                if not pane.IsShown():
-                    plug.handler('page_shown', plug)
-            else:
-                if pane.IsShown():
-                    plug.handler('page_closed', plug)
+        
+        win = plug or pane.window
+        if show:
+            if not pane.IsShown():
+                win.handler('page_shown', win)
+        else:
+            if pane.IsShown():
+                win.handler('page_closed', win)
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
