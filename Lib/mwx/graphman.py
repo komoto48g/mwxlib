@@ -815,12 +815,8 @@ class Frame(mwx.Frame):
             evt.Skip()
     
     def Destroy(self):
-        try:
-            for pane in self._mgr.GetAllPanes():
-                pane.window.Destroy()
-        finally:
-            self._mgr.UnInit()
-            return mwx.Frame.Destroy(self)
+        self._mgr.UnInit()
+        return mwx.Frame.Destroy(self)
     
     ## --------------------------------
     ## pane window interface
