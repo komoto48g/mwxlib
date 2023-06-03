@@ -450,6 +450,8 @@ class Graph(GraphPlot):
         self.handler.append({ # DNA<Graph>
             None : {
                     'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
+                   'page_shown' : [ None, ],
+                  'page_closed' : [ None, ],
                   'frame_shown' : [ None, _F(self.update_infobar) ],
                   'S-a pressed' : [ None, _F(self.toggle_infobar) ],
                    'f5 pressed' : [ None, _F(self.refresh) ],
@@ -877,12 +879,14 @@ class Frame(mwx.Frame):
             nb = plug.__notebook # given when load_plug
             if nb and show:
                 nb.SetSelection(nb.GetPageIndex(plug))
-            if show:
-                if not pane.IsShown():
-                    plug.handler('page_shown', plug)
-            else:
-                if pane.IsShown():
-                    plug.handler('page_closed', plug)
+        
+        win = plug or pane.window
+        if show:
+            if not pane.IsShown():
+                win.handler('page_shown', win)
+        else:
+            if pane.IsShown():
+                win.handler('page_closed', win)
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
