@@ -831,11 +831,9 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif _isLayer(name):
-            if name: # Check if wrapped C/C++ object of Layer has been deleted.
-                name = name.category or name
-            else:
-                name = '' # to return a dummy pane
+        elif name and _isLayer(name):
+            ## Also check if wrapped C/C++ object of Layer has been deleted.
+            name = name.category or name
         return self._mgr.GetPane(name)
     
     def show_pane(self, name, show=True):
@@ -968,9 +966,9 @@ class Frame(mwx.Frame):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
-        elif _isLayer(name):
-            if name: # Check if wrapped C/C++ object of Layer has been deleted.
-                return name
+        elif name and _isLayer(name):
+            ## Also check if wrapped C/C++ object of Layer has been deleted.
+            return name
     
     @staticmethod
     def register(cls, module=None):
