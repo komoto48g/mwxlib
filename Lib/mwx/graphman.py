@@ -350,7 +350,7 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def on_show(v):
-            if self and isinstance(self.Parent, aui.AuiNotebook):
+            if self.category: # -> notebook
                 if v.IsShown():
                     self.handler('page_shown', self)
                 else:
@@ -866,8 +866,11 @@ class Frame(mwx.Frame):
         win = pane.window # -> Window (plug / notebook / Graph)
         if show:
             if isinstance(win, aui.AuiNotebook):
-                win.SetSelection(win.GetPageIndex(plug)) # => [page_shown]
-            
+                j = win.GetPageIndex(plug)
+                if j != win.Selection:
+                    win.Selection = j # the focus is moved => [page_shown]
+                else:
+                    plug.handler('page_shown', plug)
             elif not pane.IsShown():
                 win.handler('page_shown', win)
         else:
