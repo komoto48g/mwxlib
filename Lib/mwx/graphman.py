@@ -851,8 +851,8 @@ class Frame(mwx.Frame):
         
         ## Force Layer windows to show.
         if interactive:
-            ## [M-menu] Reload plugin (ret: None if succeeded).
-            if wx.GetKeyState(wx.WXK_ALT):
+            ## [M-S-menu] Reload plugin
+            if wx.GetKeyState(wx.WXK_ALT) and wx.GetKeyState(wx.WXK_SHIFT):
                 self.reload_plug(name)
                 pane = self.get_pane(name)
                 show = True
@@ -1270,6 +1270,7 @@ class Frame(mwx.Frame):
         if plug.reloadable:
             session = {}
             try:
+                print("Reloading {}...".format(plug))
                 plug.save_session(session)
             except Exception:
                 traceback.print_exc()
