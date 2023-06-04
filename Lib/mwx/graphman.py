@@ -222,7 +222,7 @@ class LayerInterface(CtrlInterface):
     ## funcall = interactive_call
     funcall = staticmethod(_F)
     
-    ## for debug
+    ## for debug (internal use only)
     pane = property(lambda self: self.parent.get_pane(self))
     
     @property
@@ -350,10 +350,11 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def on_show(v):
-            if v.IsShown():
-                self.handler('page_shown', self)
-            else:
-                self.handler('page_hidden', self)
+            if self and isinstance(self.Parent, aui.AuiNotebook):
+                if v.IsShown():
+                    self.handler('page_shown', self)
+                else:
+                    self.handler('page_hidden', self)
             v.Skip()
         self.Bind(wx.EVT_SHOW, on_show)
         
@@ -831,17 +832,14 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif _isLayer(name):
-            if name: # Check if wrapped C/C++ object of Layer has been deleted.
-                name = name.category or name
-            else:
-                name = '' # to return a dummy pane
+        elif name and _isLayer(name):
+            ## Also check if wrapped C/C++ object of Layer has been deleted.
+            name = name.category or name
         return self._mgr.GetPane(name)
     
-    def show_pane(self, name, show=True):
+    def show_pane(self, name, show=True, interactive=False):
         """Show named pane or notebook pane."""
         pane = self.get_pane(name)
-        plug = self.get_plug(name)
         if not pane.IsOk():
             return
         
@@ -851,7 +849,7 @@ class Frame(mwx.Frame):
             pane.best_size = (w//2, h) # ドッキング時に再計算される
         
         ## Force Layer windows to show.
-        if _isLayer(plug):
+        if interactive:
             ## [M-menu] Reload plugin (ret: None if succeeded).
             if wx.GetKeyState(wx.WXK_ALT):
                 self.reload_plug(name)
@@ -864,24 +862,19 @@ class Frame(mwx.Frame):
                 pane.Float()
                 show = True
         
-        self._show_pane(name, show)
-        self._mgr.Update()
-    
-    def _show_pane(self, name, show=True):
-        """Show named pane window (internal use only)."""
-        pane = self.get_pane(name)
-        plug = self.get_plug(name)
-        if plug:
-            nb = plug.__notebook # given when load_plug
-            if nb and show:
-                nb.SetSelection(nb.GetPageIndex(plug))
-        
-        win = plug or pane.window
+        plug = self.get_plug(name) # -> None if pane.window is Graph
+        win = pane.window # -> Window (plug / notebook / Graph)
         if show:
-            if not pane.IsShown():
+            if isinstance(win, aui.AuiNotebook):
+                win.SetSelection(win.GetPageIndex(plug)) # => [page_shown]
+            
+            elif not pane.IsShown():
                 win.handler('page_shown', win)
         else:
-            if pane.IsShown():
+            if isinstance(win, aui.AuiNotebook):
+                for plug in win.all_pages: # => [page_closed] to all pages
+                    plug.handler('page_closed', plug)
+            elif pane.IsShown():
                 win.handler('page_closed', win)
         
         ## Modify the floating position of the pane when displayed.
@@ -890,6 +883,7 @@ class Frame(mwx.Frame):
         if wx.Display.GetFromWindow(pane.window) == -1:
             pane.floating_pos = wx.GetMousePosition()
         pane.Show(show)
+        self._mgr.Update()
     
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane.
@@ -923,7 +917,7 @@ class Frame(mwx.Frame):
             pane.Dock()
         else:
             pane.Float()
-        self._show_pane(name, show)
+        self.show_pane(name, show)
         self._mgr.Update()
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
@@ -968,9 +962,9 @@ class Frame(mwx.Frame):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
-        elif _isLayer(name):
-            if name: # Check if wrapped C/C++ object of Layer has been deleted.
-                return name
+        elif name and _isLayer(name):
+            ## Also check if wrapped C/C++ object of Layer has been deleted.
+            return name
     
     @staticmethod
     def register(cls, module=None):
@@ -1099,7 +1093,7 @@ class Frame(mwx.Frame):
         
         module = self.load_module(root, force, session, **props)
         if not module:
-            return module # None or False
+            return module # None (if not force) or False (failed to import)
         
         try:
             name = module.Plugin.__module__
@@ -1210,7 +1204,7 @@ class Frame(mwx.Frame):
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
                 module.ID_, text, hint, wx.ITEM_CHECK,
-                lambda v: self.show_pane(name, v.IsChecked()),
+                lambda v: self.show_pane(name, v.IsChecked(), interactive=1),
                 lambda v: v.Check(self.get_pane(name).IsShown()),
             )
             if menu not in self.menubar:
