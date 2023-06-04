@@ -861,24 +861,19 @@ class Frame(mwx.Frame):
                 pane.Float()
                 show = True
         
-        self._show_pane(name, show)
-        self._mgr.Update()
-    
-    def _show_pane(self, name, show=True):
-        """Show named pane window (internal use only)."""
-        pane = self.get_pane(name)
-        plug = self.get_plug(name)
-        if plug:
-            nb = plug.__notebook # given when load_plug
-            if nb and show:
-                nb.SetSelection(nb.GetPageIndex(plug))
-        
-        win = plug or pane.window
+        plug = self.get_plug(name) # -> None if pane.window is Graph
+        win = pane.window # -> Window (plug / notebook / Graph)
         if show:
-            if not pane.IsShown():
+            if isinstance(win, aui.AuiNotebook):
+                win.SetSelection(win.GetPageIndex(plug)) # => [page_shown]
+            
+            elif not pane.IsShown():
                 win.handler('page_shown', win)
         else:
-            if pane.IsShown():
+            if isinstance(win, aui.AuiNotebook):
+                for plug in win.all_pages: # => [page_closed] to all pages
+                    plug.handler('page_closed', plug)
+            elif pane.IsShown():
                 win.handler('page_closed', win)
         
         ## Modify the floating position of the pane when displayed.
@@ -887,6 +882,7 @@ class Frame(mwx.Frame):
         if wx.Display.GetFromWindow(pane.window) == -1:
             pane.floating_pos = wx.GetMousePosition()
         pane.Show(show)
+        self._mgr.Update()
     
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane.
