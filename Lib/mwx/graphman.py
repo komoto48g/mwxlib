@@ -201,6 +201,7 @@ class LayerInterface(CtrlInterface):
     
     Note:
         parent <Frame> is not always equal to Parent when floating.
+        Parent type can be <Frame>, <AuiFloatingFrame>, or <AuiNotebook>.
     """
     MENU = "Plugins" # default menu for Plugins
     menukey = property(lambda self: "{}/&{}".format(self.MENU, self.__module__))
@@ -1184,13 +1185,14 @@ class Frame(mwx.Frame):
                                        .Name(name).Caption(caption)
                                        .FloatingSize(size).MinSize(size).Show(0))
         
-        ## set reference of notebook (optional)
-        plug.__notebook = nb
-        plug.__Menu_item = None
+        ## Set winow.Name for inspection.
         plug.Name = name
+        
         self.update_pane(name, **props)
         
         ## Create a menu
+        plug.__Menu_item = None
+        
         if not hasattr(module, 'ID_'): # give a unique index to the module
             global __plug_ID__ # cache ID *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
             try:
@@ -1235,12 +1237,13 @@ class Frame(mwx.Frame):
                 self.menubar[menu].remove(plug.__Menu_item)
                 self.menubar.update(menu)
             
-            nb = plug.__notebook
-            if nb:
+            if isinstance(plug.Parent, aui.AuiNotebook):
+                nb = plug.Parent
                 j = nb.GetPageIndex(plug)
                 nb.RemovePage(j) # just remove page
                 ## nb.DeletePage(j) # cf. destroy plug object too
             else:
+                nb = None
                 self._mgr.DetachPane(plug)
                 self._mgr.Update()
             
