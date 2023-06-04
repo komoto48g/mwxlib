@@ -222,7 +222,7 @@ class LayerInterface(CtrlInterface):
     ## funcall = interactive_call
     funcall = staticmethod(_F)
     
-    ## for debug
+    ## for debug (internal use only)
     pane = property(lambda self: self.parent.get_pane(self))
     
     @property
@@ -350,10 +350,11 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def on_show(v):
-            if v.IsShown():
-                self.handler('page_shown', self)
-            else:
-                self.handler('page_hidden', self)
+            if self and isinstance(self.Parent, aui.AuiNotebook):
+                if v.IsShown():
+                    self.handler('page_shown', self)
+                else:
+                    self.handler('page_hidden', self)
             v.Skip()
         self.Bind(wx.EVT_SHOW, on_show)
         
