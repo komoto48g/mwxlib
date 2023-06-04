@@ -836,10 +836,9 @@ class Frame(mwx.Frame):
             name = name.category or name
         return self._mgr.GetPane(name)
     
-    def show_pane(self, name, show=True):
+    def show_pane(self, name, show=True, interactive=False):
         """Show named pane or notebook pane."""
         pane = self.get_pane(name)
-        plug = self.get_plug(name)
         if not pane.IsOk():
             return
         
@@ -849,7 +848,7 @@ class Frame(mwx.Frame):
             pane.best_size = (w//2, h) # ドッキング時に再計算される
         
         ## Force Layer windows to show.
-        if _isLayer(plug):
+        if interactive:
             ## [M-menu] Reload plugin (ret: None if succeeded).
             if wx.GetKeyState(wx.WXK_ALT):
                 self.reload_plug(name)
@@ -921,7 +920,7 @@ class Frame(mwx.Frame):
             pane.Dock()
         else:
             pane.Float()
-        self._show_pane(name, show)
+        self.show_pane(name, show)
         self._mgr.Update()
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
@@ -1097,7 +1096,7 @@ class Frame(mwx.Frame):
         
         module = self.load_module(root, force, session, **props)
         if not module:
-            return module # None or False
+            return module # None (if not force) or False (failed to import)
         
         try:
             name = module.Plugin.__module__
@@ -1208,7 +1207,7 @@ class Frame(mwx.Frame):
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
                 module.ID_, text, hint, wx.ITEM_CHECK,
-                lambda v: self.show_pane(name, v.IsChecked()),
+                lambda v: self.show_pane(name, v.IsChecked(), interactive=1),
                 lambda v: v.Check(self.get_pane(name).IsShown()),
             )
             if menu not in self.menubar:
