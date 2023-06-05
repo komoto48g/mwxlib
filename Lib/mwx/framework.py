@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.84.9"
+__version__ = "0.85.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1591,8 +1591,6 @@ class ShellFrame(MiniFrame):
             book.handler.unbind('pointer_set')
             book.handler.unbind('pointer_unset')
     
-    set_traceable = set_hookable # for backward compatibility
-    
     def start_trace(self, line, book):
         if not self.debugger.busy:
             self.debugger.unwatch()
@@ -1711,8 +1709,6 @@ class ShellFrame(MiniFrame):
         """Yields all pages of the specified type in the notebooks."""
         yield from self.console.get_pages(type)
         yield from self.ghost.get_pages(type)
-    
-    get_pages = get_all_pages # for backward compatibility
     
     @property
     def all_books(self):

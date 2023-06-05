@@ -2098,8 +2098,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             if dlg.ShowModal() == wx.ID_OK:
                 return self.save_file(dlg.Path, buf)
     
-    save_as_buffer = save_buffer_as # for backward compatibility
-    
     def save_all_buffers(self):
         for buf in self.all_buffers:
             if buf.need_buffer_save:
