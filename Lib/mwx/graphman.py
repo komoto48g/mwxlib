@@ -351,11 +351,10 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def on_show(v):
-            if self.category: # -> notebook
-                if v.IsShown():
-                    self.handler('page_shown', self)
-                else:
-                    self.handler('page_hidden', self)
+            if v.IsShown():
+                self.handler('page_shown', self)
+            elif self and isinstance(self.Parent, aui.AuiNotebook):
+                self.handler('page_hidden', self) # -> notebook
             v.Skip()
         self.Bind(wx.EVT_SHOW, on_show)
         
@@ -863,7 +862,7 @@ class Frame(mwx.Frame):
                 pane.Float()
                 show = True
         
-        plug = self.get_plug(name) # -> None if pane.window is Graph
+        plug = self.get_plug(name) # -> None if pane.window is a Graph
         win = pane.window # -> Window (plug / notebook / Graph)
         if show:
             if isinstance(win, aui.AuiNotebook):
@@ -873,7 +872,8 @@ class Frame(mwx.Frame):
                 else:
                     plug.handler('page_shown', plug)
             elif not pane.IsShown():
-                win.handler('page_shown', win)
+                if not plug or win.Parent is not self: # otherwise Layer.on_show
+                    win.handler('page_shown', win)
         else:
             if isinstance(win, aui.AuiNotebook):
                 for plug in win.all_pages: # => [page_closed] to all pages
