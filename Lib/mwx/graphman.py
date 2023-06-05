@@ -1538,7 +1538,7 @@ class Frame(mwx.Frame):
         if view not in self.graphic_windows:
             view = self.selected_view
         
-        if isinstance(paths, str): # for single frame: backward compatibility
+        if isinstance(paths, str): # for single frame
             paths = [paths]
         
         if paths is None:
@@ -1755,18 +1755,17 @@ if __name__ == "__main__":
     frm = Frame(None)
     
     frm.handler.debug = 0
-    frm.graph.handler.debug = 4
+    frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     
-    frm.load_buffer(r"C:\usr\home\lib\python\demo\sample.bmp")
-    frm.load_buffer(r"C:\usr\home\lib\python\demo\sample2.tif")
+    frm.load_frame([r"C:\usr\home\lib\python\demo\sample.bmp",
+                    r"C:\usr\home\lib\python\demo\sample2.tif",
+                    ])
     frm.graph.load(np.random.randn(1024,1024))
     
     ## Note: 次の二つは別モジュール扱い
     ## frm.load_plug("demo.template.py", show=1, force=1)
     ## frm.load_plug("demo/template.py", show=1, force=1)
-    
-    frm.load_plug(r"C:\usr\home\lib\python\demo\template.py", show=1, dock=4)
     
     frm.Show()
     app.MainLoop()
