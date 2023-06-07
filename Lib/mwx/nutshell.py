@@ -795,7 +795,7 @@ class EditorInterface(CtrlInterface):
             if p >= po:
                 lc = self.LineFromPosition(p)
                 text = self.GetLine(lc)
-                self.cpos = p + len(text)
+                self.cpos = p + len(text.encode()) # Count bytes.
                 self.anchor = po
                 if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
                     self.CharRightExtend()
@@ -1052,7 +1052,11 @@ class EditorInterface(CtrlInterface):
             yield err
     
     def grep(self, pattern, flags=re.M):
-        yield from re.finditer(pattern, self.Text, flags)
+        ## Note: Count bytes; Use self.GetTextRange(p,q).
+        yield from re.finditer(pattern.encode(), self.TextRaw, flags)
+        
+        ## Note: Count multi-byte chars; Use self.Text[p:q].
+        ## yield from re.finditer(pattern, self.Text, flags)
     
     def search_text(self, text):
         """Yields raw-positions where `text` is found."""
