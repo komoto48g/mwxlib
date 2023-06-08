@@ -9,7 +9,7 @@ import wx
 import wx.lib.inspection as it
 
 from .controls import Icon
-from .framework import CtrlInterface, Menu, watchit, filling
+from .framework import CtrlInterface, Menu, filling
 
 
 class Inspector(it.InspectionTree, CtrlInterface):
@@ -229,3 +229,20 @@ def dump(widget=None):
             lc = list(_dump(obj))
             yield [obj, lc] if lc else obj
     return [widget, list(_dump(widget))]
+
+
+def watchit(widget=None, **kwargs):
+    """Diver's watch to go deep into the wx process to inspect the widget.
+    Wx.py tool for watching tree structure and events across the wx.Objects.
+    
+    Args:
+        **kwargs: InspectionTool arguments such as
+                  pos, size, conifg, locals, and app
+    """
+    from wx.lib.inspection import InspectionTool
+    if widget:
+        kwargs.update(locals=widget.__dict__)
+    it = InspectionTool()
+    it.Init(**kwargs)
+    it.Show(widget)
+    return it._frame

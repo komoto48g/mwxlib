@@ -88,7 +88,10 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
-            self.unwatch()
+            try:
+                self.unwatch()
+            except Exception as e:
+                print(e)
         evt.Skip()
     
     def OnSetFocus(self, evt):
@@ -317,3 +320,13 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                  lambda v: v.Enable(obj is not None)),
         ]
         Menu.Popup(self, menu)
+
+
+def monit(widget=None, **kwargs):
+    """Wx.py tool for watching events of the widget.
+    """
+    from wx.lib.eventwatcher import EventWatcher
+    ew = EventWatcher(None, **kwargs)
+    ew.watch(widget)
+    ew.Show()
+    return ew

@@ -1833,34 +1833,6 @@ except ImportError as e:
     print(e)
     pass
 
-## class wxpyInspectionTools:
-
-def watchit(widget=None, **kwargs):
-    """Diver's watch to go deep into the wx process to inspect the widget.
-    Wx.py tool for watching tree structure and events across the wx.Objects.
-    
-    Args:
-        **kwargs: InspectionTool arguments such as
-                  pos, size, conifg, locals, and app
-    """
-    from wx.lib.inspection import InspectionTool
-    if widget:
-        kwargs.update(locals=widget.__dict__)
-    it = InspectionTool()
-    it.Init(**kwargs)
-    it.Show(widget)
-    return it._frame
-
-
-def monit(widget=None, **kwargs):
-    """Wx.py tool for watching events of the widget.
-    """
-    from wx.lib.eventwatcher import EventWatcher
-    ew = EventWatcher(None, **kwargs)
-    ew.watch(widget)
-    ew.Show()
-    return ew
-
 
 def filling(obj=None, **kwargs):
     """Wx.py tool for watching ingredients of the widget.
