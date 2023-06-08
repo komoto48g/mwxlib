@@ -215,9 +215,17 @@ def dumptree(self):
         item, cookie = self.GetFirstChild(parent)
         while item:
             obj = self.GetItemData(item)
-            yield obj
-            data = list(_dump(item))
-            if data:
-                yield data
+            lc = list(_dump(item))
+            yield [obj, lc] if lc else obj
             item, cookie = self.GetNextChild(parent, cookie)
     return list(_dump(self.RootItem))
+
+
+def dump(widget=None):
+    if not widget:
+        return [dump(w) for w in wx.GetTopLevelWindows()]
+    def _dump(w):
+        for obj in w.Children:
+            lc = list(_dump(obj))
+            yield [obj, lc] if lc else obj
+    return [widget, list(_dump(widget))]

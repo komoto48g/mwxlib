@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.0"
+__version__ = "0.85.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1892,17 +1892,6 @@ def profile(obj, *args, **kwargs):
     pr.print_stats()
 
 
-def dump(widget=None):
-    def _dump(widget):
-        for obj in widget.Children:
-            yield obj
-            yield from _dump(obj) # dump as flatiter
-    if widget:
-        return list(_dump(widget))
-    else:
-        return [[w, list(_dump(w))] for w in wx.GetTopLevelWindows()]
-
-
 if __name__ == "__main__":
     from mwx.nutshell import Buffer
     
@@ -1912,10 +1901,6 @@ if 1:
     dive(self.shellframe)
     dive(self.shellframe.rootshell)
     """
-    ## import numpy as np
-    ## from scipy import constants as const
-    ## np.set_printoptions(linewidth=256) # default 75
-    
     app = wx.App()
     frm = Frame(None,
         title=repr(Frame),
