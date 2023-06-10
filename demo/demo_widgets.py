@@ -7,22 +7,8 @@ from numpy import inf
 sys.path.append("../Lib")
 import mwx
 from mwx.controls import Param, LParam
-from mwx.controls import Icon, Button, ToggleButton, TextCtrl, Choice
+from mwx.controls import Button, ToggleButton, TextCtrl, Choice, Icon, Iconify
 from mwx.graphman import Layer, Frame
-
-
-def iconify(icon, w, h):
-    ## if wx.VERSION >= (4,1,0):
-    try:
-        import wx.svg
-        import requests
-        url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
-        content = requests.get(url).content
-        img = wx.svg.SVGimage.CreateFromBytes(content)
-        bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
-        return bmp
-    except Exception:
-        pass
 
 
 class Plugin(Layer):
@@ -33,7 +19,7 @@ class Plugin(Layer):
                         handler=lambda v: self.statusline(v.Int, v.IsChecked()),
                         tip="this is a button",
                         ## icon='v',
-                        icon=iconify("openmoji:annoyed-face-with-tongue", 32, 32),
+                        icon=Iconify("openmoji:annoyed-face-with-tongue", 32, 32),
                         size=(80,-1),
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",
@@ -116,6 +102,6 @@ class Plugin(Layer):
 if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
-    frm.load_plug(__file__, show=1)
+    frm.load_plug(Plugin, show=1)
     frm.Show()
     app.MainLoop()
