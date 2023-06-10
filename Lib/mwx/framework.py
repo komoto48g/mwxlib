@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.1"
+__version__ = "0.85.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1437,13 +1437,18 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def _load(self, filename, lineno, bookname):
+    def _load(self, filename, lineno, book, verbose=False):
         """Load file in the session (internal use only)."""
         try:
-            book = getattr(self, bookname)
-            return self.load(filename, lineno, book, show=0)
-        except Exception:
-            pass
+            if isinstance(book, str):
+                book = getattr(self, book)
+        except AttributeError:
+            return False
+        
+        if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename): # url_re
+            return book.load_url(filename, lineno, verbose)
+        else:
+            return book.load_file(filename, lineno)
     
     def load(self, filename, lineno=0, book=None, show=True, focus=False):
         """Load file @where the object is defined.
@@ -1470,11 +1475,7 @@ class ShellFrame(MiniFrame):
                             if x.find_buffer(filename)), self.Log)
         if show:
             self.popup_window(book, focus=focus)
-        
-        if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename): # url_re
-            return book.load_url(filename, lineno)
-        else:
-            return book.load_file(filename, lineno)
+        self._load(filename, lineno, book, verbose=1)
     
     def info(self, obj):
         self.rootshell.info(obj)
