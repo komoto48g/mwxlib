@@ -891,6 +891,33 @@ Icon.provided_arts = _provided_arts
 Icon.custom_images = _custom_images
 
 
+def Icon2(back, fore, size, subsize=0.5):
+    if isinstance(subsize, float):
+        subsize = wx.Size(size) * subsize
+    back = Icon(back, size)
+    fore = Icon(fore, subsize)
+    x = size[0] - subsize[0]
+    y = size[1] - subsize[1]
+    dc = wx.MemoryDC(back)
+    dc.DrawBitmap(fore, x, y, useMask=True)
+    del dc
+    return back
+
+
+def Iconify(icon, w, h):
+    ## if wx.VERSION >= (4,1,0):
+    try:
+        import wx.svg
+        import requests
+        url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
+        content = requests.get(url).content
+        img = wx.svg.SVGimage.CreateFromBytes(content)
+        bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
+        return bmp
+    except Exception:
+        pass
+
+
 def _Icon(v):
     if isinstance(v, (str, bytes)):
         return Icon(v)
