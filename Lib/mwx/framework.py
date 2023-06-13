@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.2"
+__version__ = "0.85.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -123,7 +123,7 @@ _speckeys = {
 }
 
 def speckey_state(key):
-    """Returns GetKeyState for abbreviation key:str."""
+    """Returns `KeyState` for abbreviation key:str."""
     try:
         return wx.GetKeyState(_speckeys_wxkmap[key])
     except KeyError:
@@ -790,7 +790,6 @@ class AuiNotebook(aui.AuiNotebook):
                 self.Selection = j # the focus is moved
             if wnd and wnd is not org: # restore focus other window
                 wnd.SetFocus()
-            return win
     
     def find_tab(self, win):
         """Returns AuiTabCtrl and AuiNotebookPage for the window.

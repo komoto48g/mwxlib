@@ -1996,14 +1996,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return True
         return False
     
-    def load_cache(self, filename, lineno=0, globals=None):
+    def load_cache(self, filename, lineno=0):
         """Load a file from cache using linecache.
         Note:
             The filename should be an absolute path.
             The buffer will be reloaded without confirmation.
         """
         linecache.checkcache(filename)
-        lines = linecache.getlines(filename, globals)
+        lines = linecache.getlines(filename)
         if lines:
             buf = self.find_buffer(filename) or self.create_buffer(filename)
             buf._load_textfile(''.join(lines), filename, lineno)
