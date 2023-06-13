@@ -179,17 +179,6 @@ class Debugger(Pdb):
         if not self.verbose:
             self.message("--> {}".format(where(self.curframe)), indent=0)
     
-    def stamp_marker(self, lineno, style):
-        """Set a marker to lineno, with the following style markers:
-        [1] white-arrow for breakpoints
-        [2] red-arrow for exception
-        """
-        if self.editor:
-            if lineno:
-                self.editor.buffer.MarkerAdd(lineno - 1, style)
-            else:
-                self.editor.buffer.MarkerDeleteAll(style)
-    
     def send_input(self, c, echo=False):
         """Send input:str (echo message if needed)."""
         def _send():
@@ -288,6 +277,17 @@ class Debugger(Pdb):
     ## Actions for handler
     ## --------------------------------
     
+    def _markbp(self, lineno, style):
+        """Add a marker to lineno, with the following style markers:
+        [1] white-arrow for breakpoints
+        [2] red-arrow for exception
+        """
+        if self.editor:
+            if lineno:
+                self.editor.buffer.MarkerAdd(lineno - 1, style)
+            else:
+                self.editor.buffer.MarkerDeleteAll(style)
+    
     def find_editor(self, f):
         """Find parent editor which has the specified f:object,
         where `f` can be filename or code object.
@@ -332,7 +332,7 @@ class Debugger(Pdb):
             self.editor.buffer.SetFocus()
         
         for ln in self.get_file_breaks(filename):
-            self.stamp_marker(ln, 1) # (>>) bp:white-arrow
+            self._markbp(ln, 1) # (>>) bp:white-arrow
         
         def _mark():
             buffer = self.editor.buffer
@@ -462,7 +462,7 @@ class Debugger(Pdb):
         Pdb.set_trace(self, frame)
     
     def set_break(self, filename, lineno, *args, **kwargs):
-        self.stamp_marker(lineno, 1)
+        self._markbp(lineno, 1)
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
     
     def set_quit(self):
@@ -532,7 +532,7 @@ class Debugger(Pdb):
         (override) Update exception:markers.
         """
         t, v, tb = exc_info
-        self.stamp_marker(tb.tb_lineno, 2)
+        self._markbp(tb.tb_lineno, 2)
         self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
     
@@ -544,9 +544,9 @@ class Debugger(Pdb):
         """
         filename = frame.f_code.co_filename
         breakpoints = self.get_file_breaks(filename)
-        self.stamp_marker(None, 1)
+        self._markbp(None, 1)
         for lineno in breakpoints:
-            self.stamp_marker(lineno, 1)
+            self._markbp(lineno, 1)
         return Pdb.bp_commands(self, frame)
     
     @echo
