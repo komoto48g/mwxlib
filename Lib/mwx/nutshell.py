@@ -1581,7 +1581,7 @@ class Buffer(EditWindow, EditorInterface):
             q = self.IndicatorEnd(2, pos)
             text = self.GetTextRange(p, q).strip()
             self.message("URL {!r}".format(text))
-            ## Note: Do postcall a confirmation dialog.
+            ## Note: Need a post-call of the confirmation dialog.
             wx.CallAfter(self.parent.load_url, text)
     
     def on_modified(self, buf):
