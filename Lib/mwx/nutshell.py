@@ -2835,7 +2835,7 @@ class Nautilus(Shell, EditorInterface):
         Note:
             This is called before run, execute, and original magic.
         """
-        sep1 = "`@=+-/*%<>&|^~;\t\r\n#"   # [`] ops, seps (no space, no comma)
+        sep1 = "`@=;\r\n#"                # [`] no ops, no spaces, no comma
         sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] ops, seps
         
         def _popiter(ls, f):
