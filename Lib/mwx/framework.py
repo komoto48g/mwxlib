@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.3"
+__version__ = "0.85.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1173,28 +1173,31 @@ class ShellFrame(MiniFrame):
     LOGGING_FILE = get_rootpath("deb-logging.log")
     HISTORY_FILE = get_rootpath("deb-history.log")
     
-    def load_session(self, rc=None, flush=True):
+    def load_session(self, f=None, flush=True):
         """Load session from file."""
-        if not rc:
+        if not f:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.debrc)|*.debrc",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                rc = dlg.Path
+                f = dlg.Path
         
         if flush:
             for book in self.all_books:
                 book.delete_all_buffers()
         
-        self.SESSION_FILE = os.path.abspath(rc)
-        try:
-            scratch = self.Scratch.default_buffer
-            if not scratch or scratch.mtdelta is not None:
-                scratch = self.Scratch.new_buffer()
-            scratch.LoadFile(self.SCRATCH_FILE)
-        except FileNotFoundError as e:
-            print(e)
+        def _fload(editor, filename):
+            try:
+                buffer = editor.default_buffer or editor.new_buffer()
+                buffer.LoadFile(filename)
+                buffer.EmptyUndoBuffer()
+            except Exception:
+                pass
+        
+        _fload(self.Scratch, self.SCRATCH_FILE) # resotre scratch
+        
+        self.SESSION_FILE = os.path.abspath(f)
         try:
             with open(self.SESSION_FILE, encoding='utf-8', newline='') as i:
                 exec(i.read())
@@ -1214,9 +1217,17 @@ class ShellFrame(MiniFrame):
     
     def save_session(self):
         """Save session to file."""
-        scratch = self.Scratch.default_buffer
-        if scratch and scratch.mtdelta is None:
-            scratch.SaveFile(self.SCRATCH_FILE)
+        def _fsave(editor, filename):
+            try:
+                buffer = editor.default_buffer
+                buffer.SaveFile(filename)
+                buffer.SetSavePoint()
+            except Exception:
+                pass
+        
+        _fsave(self.Scratch, self.SCRATCH_FILE) # save scratch
+        _fsave(self.Log,     self.LOGGING_FILE)
+        _fsave(self.History, self.HISTORY_FILE)
         
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
@@ -1249,10 +1260,6 @@ class ShellFrame(MiniFrame):
         try:
             self.timer.Stop()
             self.save_session()
-            if self.Log.default_buffer:
-                self.Log.default_buffer.SaveFile(self.LOGGING_FILE)
-            if self.History.default_buffer:
-                self.History.default_buffer.SaveFile(self.HISTORY_FILE)
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)

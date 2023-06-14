@@ -1627,7 +1627,7 @@ class Buffer(EditWindow, EditorInterface):
         with self.off_readonly():
             self.Text = text
             self.EmptyUndoBuffer()
-            self.SetSavePoint()
+            ## self.SetSavePoint()
         self.markline = lineno - 1
         self.goto_marker(1)
         self.filename = filename
@@ -1640,7 +1640,7 @@ class Buffer(EditWindow, EditorInterface):
             self.goto_marker(1)
             self.filename = filename
             self.EmptyUndoBuffer()
-            self.SetSavePoint()
+            ## self.SetSavePoint()
             self.handler('buffer_loaded', self)
             return True
         return False
