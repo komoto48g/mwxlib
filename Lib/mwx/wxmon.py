@@ -121,12 +121,12 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     
     @staticmethod
     def get_actions(event, widget):
-        """Wx.PyEventBinder and the handlers."""
+        """All handlers bound to widget except onWatchedEvent."""
         try:
             handlers = widget.__event_handler__[event]
             ## Exclude ew:onWatchedEvent by comparing names instead of objects
-            ## cf. [a for a in handlers if a != self.onWatchedEvent]
-            return [a for a in handlers if a.__name__ != 'onWatchedEvent']
+            ## cf. [v for k, v in handlers if v != self.onWatchedEvent]
+            return [v for k, v in handlers if v.__name__ != 'onWatchedEvent']
         except AttributeError:
             pass
         except KeyError:
@@ -186,7 +186,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                     ssmap[event] = actions
                     if verbose:
                         name = self.get_name(event)
-                        values = ('\n'+' '*41).join(str(where(a)) for a in actions)
+                        values = ('\n'+' '*41).join(str(where(v)) for v in actions)
                         print("{:8d}:{:32s}{!s}".format(event, name, values))
         except AttributeError:
             pass

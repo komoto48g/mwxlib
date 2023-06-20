@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.5"
+__version__ = "0.85.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1792,27 +1792,25 @@ try:
         Bind an event to an event handler.
         (override) Record the handler in the list and return the handler.
         """
+        if handler is None:
+            return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
+        
         assert isinstance(event, wx.PyEventBinder)
         assert callable(handler) or handler is None
         assert source is None or hasattr(source, 'GetId')
-        if handler is None:
-            return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
         if source is not None:
             id  = source.GetId()
         event.Bind(self, id, id2, handler)
-        ## Record all handlers as a single state machine
+        
+        ## Record all handlers.
         try:
-            if not hasattr(self, '__event_handler__'):
-                self.__event_handler__ = {}
-            if event.typeId not in self.__event_handler__:
-                self.__event_handler__[event.typeId] = [handler]
-            else:
-                self.__event_handler__[event.typeId].insert(0, handler)
-        except Exception as e:
-            print("An error occurred in Bind: {}".format(e))
-            t, v, tb = sys.exc_info()
-            traceback.print_stack(tb.tb_frame.f_back)
-            traceback.print_exc()
+            vmap = self.__event_handler__
+        except AttributeError:
+            vmap = self.__event_handler__ = {}
+        try:
+            vmap[event.typeId].insert(0, (id, handler))
+        except KeyError:
+            vmap[event.typeId] = [(id, handler)]
         return handler
 
     core.EvtHandler.Bind = _EvtHandler_Bind
@@ -1827,18 +1825,25 @@ try:
         if source is not None:
             id  = source.GetId()
         retval = event.Unbind(self, id, id2, handler)
-        ## Remove the specified handler or all handlers
+        
+        ## Remove the specified handler or all handlers.
         if retval:
             try:
-                actions = self.__event_handler__[event.typeId]
-                if handler is None:
-                    actions.clear()
+                vmap = self.__event_handler__
+            except AttributeError:
+                return retval
+            try:
+                handlers = vmap[event.typeId]
+                if handler or id != wx.ID_ANY:
+                    for v in handlers.copy():
+                        if v[0] == id or v[1] == handler:
+                            handlers.remove(v)
                 else:
-                    actions.remove(handler)
-                if not actions:
-                    del self.__event_handler__[event.typeId]
-            except Exception:
-                pass
+                    handlers.pop(0) # No optional arguments are specified.
+                if not handlers:
+                    del vmap[event.typeId]
+            except KeyError:
+                pass # Note: vmap is actually inconsistent, but ignored.
         return retval
 
     core.EvtHandler.Unbind = _EvtHandler_Unbind
