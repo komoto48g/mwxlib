@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.4"
+__version__ = "0.85.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -464,9 +464,9 @@ class Menu(wx.Menu):
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
                 try:
-                    owner.Bind(wx.EVT_MENU, handlers[0], menu_item)
-                    owner.Bind(wx.EVT_UPDATE_UI, handlers[1], menu_item)
-                    owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], menu_item)
+                    self.owner.Bind(wx.EVT_MENU, handlers[0], menu_item)
+                    self.owner.Bind(wx.EVT_UPDATE_UI, handlers[1], menu_item)
+                    self.owner.Bind(wx.EVT_MENU_HIGHLIGHT, handlers[2], menu_item)
                 except IndexError:
                     pass
             else:
@@ -479,6 +479,21 @@ class Menu(wx.Menu):
                 self.Append(submenu_item)
                 self.Enable(submenu_item.Id, len(subitems)) # Disable an empty menu.
                 submenu.Id = submenu_item.Id # <- ID_ANY (dummy to check empty sbumenu)
+    
+    def _unbind(self):
+        for item in self.MenuItems: # delete all items
+            if item.Id != wx.ID_SEPARATOR:
+                self.owner.Unbind(wx.EVT_MENU, item)
+                self.owner.Unbind(wx.EVT_UPDATE_UI, item)
+                self.owner.Unbind(wx.EVT_MENU_HIGHLIGHT, item)
+            if item.SubMenu:
+                item.SubMenu._unbind()
+    
+    def Destroy(self):
+        try:
+            self._unbind()
+        finally:
+            return wx.Menu.Destroy(self)
     
     @staticmethod
     def Popup(parent, menu, *args, **kwargs):
@@ -522,10 +537,8 @@ class MenuBar(wx.MenuBar, TreeList):
                 self.reset()
                 return
             
+            menu._unbind()
             for item in menu.MenuItems: # delete all items
-                self.Parent.Unbind(wx.EVT_MENU, item)
-                self.Parent.Unbind(wx.EVT_UPDATE_UI, item)
-                self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, item)
                 menu.Delete(item)
             
             menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
@@ -542,10 +555,6 @@ class MenuBar(wx.MenuBar, TreeList):
         if self.Parent:
             for j in range(self.GetMenuCount()): # remove and del all top-level menu
                 menu = self.Remove(0)
-                for item in menu.MenuItems: # delete all items
-                    self.Parent.Unbind(wx.EVT_MENU, item)
-                    self.Parent.Unbind(wx.EVT_UPDATE_UI, item)
-                    self.Parent.Unbind(wx.EVT_MENU_HIGHLIGHT, item)
                 menu.Destroy()
             
             for j, (key, values) in enumerate(self):
@@ -1195,7 +1204,7 @@ class ShellFrame(MiniFrame):
             except Exception:
                 pass
         
-        _fload(self.Scratch, self.SCRATCH_FILE) # resotre scratch
+        _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
         self.SESSION_FILE = os.path.abspath(f)
         try:
