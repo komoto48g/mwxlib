@@ -142,6 +142,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
         shell.SetFocus()
         return shell
     
+    ## --------------------------------
+    ## Actions on tree items
+    ## --------------------------------
+    
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
         wnd = wx.Window.FindFocus()

@@ -119,19 +119,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         """All watched event binders except noWatchList."""
         return (x for x in ew._eventBinders if x not in ew._noWatchList)
     
-    @staticmethod
-    def get_actions(event, widget):
-        """Wx.PyEventBinder and the handlers."""
-        try:
-            handlers = widget.__event_handler__[event]
-            ## Exclude ew:onWatchedEvent by comparing names instead of objects
-            ## cf. [a for a in handlers if a != self.onWatchedEvent]
-            return [a for a in handlers if a.__name__ != 'onWatchedEvent']
-        except AttributeError:
-            pass
-        except KeyError:
-            print("- No such event: {}".format(event))
-    
     def watch(self, widget=None):
         """Begin watching the widget."""
         self.clear()
@@ -180,20 +167,21 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
         try:
-            for event in sorted(widget.__event_handler__):
-                actions = self.get_actions(event, widget)
+            for event, handlers in sorted(widget.__event_handler__.items()):
+                actions = [v for k, v in handlers if v.__name__ != 'onWatchedEvent']
                 if actions and event not in exclusions:
                     ssmap[event] = actions
                     if verbose:
                         name = self.get_name(event)
-                        values = ('\n'+' '*41).join(str(where(a)) for a in actions)
-                        print("{:8d}:{:32s}{!s}".format(event, name, values))
+                        print("{:8d}:{}".format(event, name))
+                        for v in actions:
+                            print(' '*8, "> {}".format(where(v)))
         except AttributeError:
             pass
         return ssmap
     
     ## --------------------------------
-    ## Actions for event-logger items
+    ## Actions on list items
     ## --------------------------------
     
     def clear(self):
