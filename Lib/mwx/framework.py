@@ -435,7 +435,8 @@ class Menu(wx.Menu):
     """Construct menu
     
     Args:
-        values : list of MenuItem args
+        menulist : list of MenuItem args
+        owner    : window object to bind handlers
     
     (id, text, hint, style, icon,  ... Menu.Append arguments
        action, updater, highlight) ... Menu Event handlers
@@ -446,11 +447,11 @@ class Menu(wx.Menu):
         - updater -> EVT_UPDATE_UI handler
         - highlight -> EVT_MENU_HIGHLIGHT handler
     """
-    def __init__(self, owner, values):
+    def __init__(self, owner, menulist):
         wx.Menu.__init__(self)
         self.owner = owner
         
-        for item in values:
+        for item in menulist:
             if not item:
                 self.AppendSeparator()
                 continue
@@ -481,7 +482,7 @@ class Menu(wx.Menu):
                 submenu.Id = submenu_item.Id # <- ID_ANY (dummy to check empty sbumenu)
     
     def _unbind(self):
-        for item in self.MenuItems: # delete all items
+        for item in self.MenuItems:
             if item.Id != wx.ID_SEPARATOR:
                 self.owner.Unbind(wx.EVT_MENU, item)
                 self.owner.Unbind(wx.EVT_UPDATE_UI, item)
@@ -496,8 +497,8 @@ class Menu(wx.Menu):
             return wx.Menu.Destroy(self)
     
     @staticmethod
-    def Popup(parent, menu, *args, **kwargs):
-        menu = Menu(parent, menu)
+    def Popup(parent, menulist, *args, **kwargs):
+        menu = Menu(parent, menulist)
         parent.PopupMenu(menu, *args, **kwargs)
         menu.Destroy()
 
