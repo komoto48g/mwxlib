@@ -119,19 +119,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         """All watched event binders except noWatchList."""
         return (x for x in ew._eventBinders if x not in ew._noWatchList)
     
-    @staticmethod
-    def get_actions(event, widget):
-        """All handlers bound to widget except onWatchedEvent."""
-        try:
-            handlers = widget.__event_handler__[event]
-            ## Exclude ew:onWatchedEvent by comparing names instead of objects
-            ## cf. [v for k, v in handlers if v != self.onWatchedEvent]
-            return [v for k, v in handlers if v.__name__ != 'onWatchedEvent']
-        except AttributeError:
-            pass
-        except KeyError:
-            print("- No such event: {}".format(event))
-    
     def watch(self, widget=None):
         """Begin watching the widget."""
         self.clear()
@@ -180,8 +167,8 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
         try:
-            for event in sorted(widget.__event_handler__):
-                actions = self.get_actions(event, widget)
+            for event, handlers in sorted(widget.__event_handler__.items()):
+                actions = [v for k, v in handlers if v.__name__ != 'onWatchedEvent']
                 if actions and event not in exclusions:
                     ssmap[event] = actions
                     if verbose:
