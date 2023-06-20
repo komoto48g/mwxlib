@@ -181,7 +181,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         return ssmap
     
     ## --------------------------------
-    ## Actions for event-logger items
+    ## Actions on list items
     ## --------------------------------
     
     def clear(self):

@@ -85,6 +85,10 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def unwatch(self):
         self.target = None
     
+    ## --------------------------------
+    ## Actions on list items
+    ## --------------------------------
+    
     def clear(self):
         self.DeleteAllItems()
         del self.__items[:]
