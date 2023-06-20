@@ -186,8 +186,9 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                     ssmap[event] = actions
                     if verbose:
                         name = self.get_name(event)
-                        values = ('\n'+' '*41).join(str(where(v)) for v in actions)
-                        print("{:8d}:{:32s}{!s}".format(event, name, values))
+                        print("{:8d}:{}".format(event, name))
+                        for v in actions:
+                            print(' '*8, "> {}".format(where(v)))
         except AttributeError:
             pass
         return ssmap
