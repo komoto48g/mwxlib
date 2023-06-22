@@ -43,8 +43,8 @@ py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
 ## Python interp traceback pattern
-py_error_re = r"^\s+File \"(.*?)\", line ([0-9]+)"
-py_frame_re = r"^\s+file \'(.*?)\', line ([0-9]+)"
+py_error_re = r'^ +File "(.*?)", line ([0-9]+)'
+py_frame_re = r"^ +file '(.*?)', line ([0-9]+)"
 
 
 def skip(v):
@@ -2095,7 +2095,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def save_buffer_as(self, buf=None):
         """Confirm the saveas with the dialog."""
         buf = buf or self.buffer
-        name = re.sub("[\\/:*?\"<>|]", '', buf.name)
+        name = re.sub('[\\/:*?"<>|]', '', buf.name)
         with wx.FileDialog(self, "Save buffer as",
                 defaultFile=name,
                 wildcard='|'.join(self.wildcards),
