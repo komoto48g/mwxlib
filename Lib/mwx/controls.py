@@ -11,6 +11,7 @@ import wx.lib.scrolledpanel as scrolled
 
 from . import images
 from .utilus import SSM
+from .utilus import funcall as _F
 from .framework import pack, Menu
 
 import numpy as np
@@ -953,7 +954,7 @@ class Button(pb.PlateButton):
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_BUTTON, handler)
+            self.Bind(wx.EVT_BUTTON, _F(handler))
         
         tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
@@ -1002,7 +1003,7 @@ class ToggleButton(wx.ToggleButton):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_TOGGLEBUTTON, handler)
+            self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
         tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
