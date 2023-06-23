@@ -729,8 +729,6 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.fold(-1, not show)
         self.Sizer.Fit(self)
     
-    pack = pack
-    
     ## --------------------------------
     ## 外部入出力／クリップボード通信
     ## --------------------------------

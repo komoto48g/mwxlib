@@ -4,7 +4,7 @@
 """
 from .utilus import apropos, FSM
 from .framework import __version__, __author__
-from .framework import pack, Menu, MenuBar, StatusBar
+from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame
 
 ## Controls
