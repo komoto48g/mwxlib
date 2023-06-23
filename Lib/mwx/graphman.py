@@ -220,6 +220,9 @@ class LayerInterface(CtrlInterface):
     ## thread_type = Thread
     thread = None
     
+    ## layout helper function
+    pack = mwx.pack
+    
     ## funcall = interactive_call
     funcall = staticmethod(_F)
     

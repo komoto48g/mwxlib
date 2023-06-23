@@ -11,6 +11,7 @@ import wx.lib.scrolledpanel as scrolled
 
 from . import images
 from .utilus import SSM
+from .utilus import funcall as _F
 from .framework import pack, Menu
 
 import numpy as np
@@ -728,8 +729,6 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.fold(-1, not show)
         self.Sizer.Fit(self)
     
-    pack = pack
-    
     ## --------------------------------
     ## 外部入出力／クリップボード通信
     ## --------------------------------
@@ -953,7 +952,7 @@ class Button(pb.PlateButton):
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_BUTTON, handler)
+            self.Bind(wx.EVT_BUTTON, _F(handler))
         
         tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
@@ -1002,7 +1001,7 @@ class ToggleButton(wx.ToggleButton):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
-            self.Bind(wx.EVT_TOGGLEBUTTON, handler)
+            self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
         tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
         self.ToolTip = tip.strip()
@@ -1018,7 +1017,7 @@ class TextCtrl(wx.Control):
         updater : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
         tip     : tip:str displayed on the button
-        readonly: flag:bool for wx.TE_READONLY
+        readonly: flag:bool for style=wx.TE_READONLY
         **kwargs: keywords for wx.TextCtrl
                   e.g., value:str
     """
@@ -1047,6 +1046,10 @@ class TextCtrl(wx.Control):
                             | wx.TE_PROCESS_ENTER
                             | (wx.TE_READONLY if readonly else 0))
         
+        tip = '\n'.join(filter(None, (tip,
+                                      handler and handler.__doc__,
+                                      updater and updater.__doc__)))
+        
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon, tip,
                                  size=(-1,-1) if label or icon else (0,0))
@@ -1057,13 +1060,18 @@ class TextCtrl(wx.Control):
             ))
         )
         if handler:
-            def _f(v):
-                self.value = v
-                handler(self)
-            self.reset = _f
+            self._handler = handler
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
         if updater:
+            self.updater = updater
             self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+    
+    def reset(self, v):
+        try:
+            self.Value = v
+            self._handler(self)
+        except AttributeError:
+            pass
 
 
 class Choice(wx.Control):
@@ -1075,7 +1083,7 @@ class Choice(wx.Control):
         updater : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
         tip     : tip:str displayed on the button
-        readonly: flag:bool for wx.TE_READONLY
+        readonly: flag:bool for style=wx.TE_READONLY
         **kwargs: keywords for wx.ComboBox
                   e.g., choices:list
     
@@ -1118,6 +1126,10 @@ class Choice(wx.Control):
                             | wx.TE_PROCESS_ENTER
                             | (wx.CB_READONLY if readonly else 0))
         
+        tip = '\n'.join(filter(None, (tip,
+                                      handler and handler.__doc__,
+                                      updater and updater.__doc__)))
+        
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon, tip,
                                  size=(-1,-1) if label or icon else (0,0))
@@ -1128,15 +1140,20 @@ class Choice(wx.Control):
             ))
         )
         if handler:
-            def _f(v):
-                self.value = v
-                handler(self)
-            self.reset = _f
+            self._handler = handler
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
             self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
         self._ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         if updater:
+            self._updater = updater
             self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+    
+    def reset(self, v):
+        try:
+            self.Value = v
+            self._handler(self)
+        except AttributeError:
+            pass
     
     def OnTextEnter(self, evt):
         s = evt.String.strip()

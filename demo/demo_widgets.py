@@ -15,15 +15,19 @@ class Plugin(Layer):
     menukey = "Plugins/&Demo/"
     
     def Init(self):
+        def on_press(v):
+            """Test button handler"""
+            self.statusline(v.Int, v.IsChecked())
+        
         self.btn = Button(self, label="button",
-                        handler=lambda v: self.statusline(v.Int, v.IsChecked()),
+                        handler=on_press,
                         tip="this is a button",
                         ## icon='v',
                         icon=Iconify("openmoji:annoyed-face-with-tongue", 32, 32),
                         size=(80,-1),
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",
-                        handler=lambda v: self.statusline(v.Int, v.IsChecked()),
+                        handler=on_press,
                         tip="this is a toggle-button",
                         icon=('w','v'), # must be the same size icon
                         size=(120,-1),
@@ -33,9 +37,9 @@ class Plugin(Layer):
                         updater=lambda v: self.statusline(v.Value, "update"),
                         tip="this is a textctrl",
                         icon=wx.ART_NEW,
-                        readonly=0,
-                        value="default value",
                         size=(200,22),
+                        value="default value",
+                        ## style=wx.TE_READONLY, # readonly=0,
                         )
         self.choice = Choice(self, label="control",
                         handler=lambda v: self.statusline(v.Value, "selected"),
@@ -43,8 +47,9 @@ class Plugin(Layer):
                         choices=['1','2','3'],
                         tip="this is a choice",
                         icon=wx.ART_NEW,
-                        readonly=0,
                         size=(200,22),
+                        value='2',
+                        ## style=wx.CB_READONLY, # readonly=0,
                         )
         self.layout((
                 self.btn,
@@ -79,6 +84,7 @@ class Plugin(Layer):
             type='slider', style='chkbox', cw=100, lw=20, tw=40, h=22,
         )
         
+        ## Regular wx.TextCtrl is not handled by Clipboard copy and paste.
         self.textctrl = wx.TextCtrl(self,
                         value=TextCtrl.__doc__,
                         size=(200,100),
