@@ -1060,11 +1060,11 @@ class TextCtrl(wx.Control):
             ))
         )
         if handler:
-            self._handler = handler
-            self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
+            self._handler = _F(handler)
+            self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
         if updater:
-            self.updater = updater
-            self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+            self._updater =  _F(updater)
+            self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
     
     def reset(self, v):
         try:
@@ -1140,13 +1140,13 @@ class Choice(wx.Control):
             ))
         )
         if handler:
-            self._handler = handler
-            self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: handler(self))
-            self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: handler(self))
+            self._handler = _F(handler)
+            self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
+            self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: self._handler(self))
         self._ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         if updater:
-            self._updater = updater
-            self._btn.Bind(wx.EVT_BUTTON, lambda v: updater(self))
+            self._updater = _F(updater)
+            self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
     
     def reset(self, v):
         try:

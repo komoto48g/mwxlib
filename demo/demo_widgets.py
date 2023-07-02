@@ -16,7 +16,7 @@ class Plugin(Layer):
     
     def Init(self):
         def on_press(v):
-            """Test button handler"""
+            """Test button."""
             self.statusline(v.Int, v.IsChecked())
         
         self.btn = Button(self, label="button",
@@ -33,8 +33,8 @@ class Plugin(Layer):
                         size=(120,-1),
                         )
         self.text = TextCtrl(self, label="control",
-                        handler=lambda v: self.statusline(v.Value, "enter"),
-                        updater=lambda v: self.statusline(v.Value, "update"),
+                        handler=lambda v: self.statusline(f"Enter {v.Value!r}"),
+                        updater=lambda v: self.statusline(f"Update {v.Value!r}"),
                         tip="this is a textctrl",
                         icon=wx.ART_NEW,
                         size=(200,22),
@@ -42,8 +42,8 @@ class Plugin(Layer):
                         ## style=wx.TE_READONLY, # readonly=0,
                         )
         self.choice = Choice(self, label="control",
-                        handler=lambda v: self.statusline(v.Value, "selected"),
-                        updater=lambda v: self.statusline(v.Value, "update"),
+                        handler=lambda v: self.statusline(f"Selected {v.Value!r}"),
+                        updater=lambda v: self.statusline(f"update {v.Value!r}"),
                         choices=['1','2','3'],
                         tip="this is a choice",
                         icon=wx.ART_NEW,
