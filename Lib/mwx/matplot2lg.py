@@ -305,7 +305,7 @@ class Histogram(LinePlot):
             else:
                 self.region = None
         else:
-            self.__plot.set_data([],[])
+            self.__plot.set_data([], [])
             self.region = None
         
         self.update_position()
@@ -521,6 +521,8 @@ class LineProfile(LinePlot):
         if frame:
             sel = frame.selector
             if sel.shape[1] < 2:
+                return
+            if len(frame.buffer.shape) > 2: # RGB image
                 return
             
             xx, yy = sel[:,-2:] # get the last 2-selected line
