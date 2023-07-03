@@ -337,11 +337,9 @@ def _extract_words_from_tokens(tokens, reverse=False):
         elif not stack and c in sep: # ok
             break
         words.append(c)
-    else:
+    else: # if stack: error("unclosed-paren")
         j = None
-        if stack: # error("unclosed-paren")
-            pass
-    del tokens[:j] # remove extracted tokens
+    del tokens[:j] # remove extracted tokens (except the last one)
     return words
 
 
@@ -364,17 +362,16 @@ def _extract_paren_from_tokens(tokens, reverse=False):
             stack.append(c)
         elif c in q:
             if not stack: # error("open-paren")
-                return []
+                break
             if c != q[p.index(stack.pop())]: # error("mismatch-paren")
-                return []
+                break
         elif j == 0:
-            return [] # not found
+            break # first char is not paren
         words.append(c)
         if not stack: # ok
             del tokens[:j+1] # remove extracted tokens
             return words
-    else:
-        return [] # error("unclosed-paren")
+    return [] # error("unclosed-paren")
 
 
 def find_modules(force=False, verbose=True):

@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.7"
+__version__ = "0.85.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -998,7 +998,7 @@ class ShellFrame(MiniFrame):
                                  stdout=self.__shell.interp.stdout,
                                  skip=[Debugger.__module__,
                                        EventMonitor.__module__,
-                                       FSM.__module__,
+                                       ## FSM.__module__,
                                        'fnmatch', 'warnings', 'bdb', 'pdb',
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
