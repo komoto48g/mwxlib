@@ -140,7 +140,7 @@ class MatplotPanel(wx.Panel):
         self.__handler = mwx.FSM({ # DNA<MatplotPanel>
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
-                #'canvas_drawn' : [ None, ],             # after canvas.draw :deprecated
+                #'canvas_drawn' : [ None, ],             # after canvas.draw
               #'canvas_resized' : [ None, ],
                     'focus_set' : [ None, self.on_focus_set, self.escape ],
                    'focus_kill' : [ None, self.on_focus_kill, self.escape ],
