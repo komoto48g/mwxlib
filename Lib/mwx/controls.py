@@ -55,9 +55,9 @@ class Param(object):
             self.__format = lambda v: '{:04X}'.format(int(v))
         else:
             self.__eval = lambda v: eval(v)
-            if isinstance(fmt, str):  # support % format:str
-                fmt = lambda v: fmt % v
             self.__format = fmt or "{:,g}".format
+            if isinstance(fmt, str): # support %-format:str (to be deprecated)
+                self.__format = lambda v: fmt % v
         self.callback = SSM({
             'control' : [ handler ] if handler else [],
              'update' : [ updater ] if updater else [],
