@@ -55,13 +55,13 @@ class Param(object):
             self.__format = lambda v: '{:04X}'.format(int(v))
         else:
             self.__eval = lambda v: eval(v)
-            if isinstance(fmt, str):  # support % format:str
-                fmt = lambda v: fmt % v
             self.__format = fmt or "{:,g}".format
+            if isinstance(fmt, str): # support %-format:str (to be deprecated)
+                self.__format = lambda v: fmt % v
         self.callback = SSM({
-            'control' : [ handler ] if handler else [],
-             'update' : [ updater ] if updater else [],
-              'check' : [ updater ] if updater else [],
+            'control' : [ _F(handler) ] if handler else [],
+             'update' : [ _F(updater) ] if updater else [],
+              'check' : [ _F(updater) ] if updater else [],
            'overflow' : [],
           'underflow' : [],
         })
@@ -90,6 +90,8 @@ class Param(object):
         la = self.callback[target]
         if not f:
             return lambda f: self.bind(f, target)
+        if not callable(f):
+            raise TypeError(f"{f!r} is not callable")
         if f not in la:
             la.append(f)
         return f
@@ -98,9 +100,13 @@ class Param(object):
         la = self.callback[target]
         if not f:
             la[:] = [a for a in la if not callable(a)]
-            return
+            return True
+        if not callable(f):
+            raise TypeError(f"{f!r} is not callable")
         if f in la:
             la.remove(f)
+            return True
+        return False
     
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs) with callback."""
@@ -1063,7 +1069,7 @@ class TextCtrl(wx.Control):
             self._handler = _F(handler)
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
         if updater:
-            self._updater =  _F(updater)
+            self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
     
     def reset(self, v):
