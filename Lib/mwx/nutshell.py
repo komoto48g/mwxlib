@@ -2316,7 +2316,7 @@ class Nautilus(Shell, EditorInterface):
         """Reset the shell target object; Rename the parent title.
         """
         if not hasattr(obj, '__dict__'):
-            raise TypeError("Unable to target primitive object: {!r}".format(obj))
+            raise TypeError("primitive objects cannot be targeted")
         
         self.__target = obj
         self.interp.locals = obj.__dict__

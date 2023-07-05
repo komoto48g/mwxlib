@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.85.8"
+__version__ = "0.85.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1698,7 +1698,7 @@ class ShellFrame(MiniFrame):
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
-            raise TypeError("Unable to target primitive object: {!r}".format(target))
+            raise TypeError("primitive objects cannot be targeted")
         
         shell = self.rootshell.__class__(self, target, name="clone",
                     style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
