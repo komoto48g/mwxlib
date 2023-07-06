@@ -86,27 +86,11 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
-    def bind(self, f=None, target='control'):
-        la = self.callback[target]
-        if not f:
-            return lambda f: self.bind(f, target)
-        if not callable(f):
-            raise TypeError(f"{f!r} is not callable")
-        if f not in la:
-            la.append(f)
-        return f
+    def bind(self, action=None, target='control'):
+        return self.callback.bind(target, action)
     
-    def unbind(self, f=None, target='control'):
-        la = self.callback[target]
-        if not f:
-            la[:] = [a for a in la if not callable(a)]
-            return True
-        if not callable(f):
-            raise TypeError(f"{f!r} is not callable")
-        if f in la:
-            la.remove(f)
-            return True
-        return False
+    def unbind(self, action=None, target='control'):
+        return self.callback.unbind(target, action)
     
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs) with callback."""
