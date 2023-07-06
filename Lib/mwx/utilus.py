@@ -479,23 +479,25 @@ class SSM(dict):
     
     def bind(self, event, action=None):
         """Append a transaction to the context."""
+        assert callable(action) or action is None
+        if event not in self:
+            self[event] = []
         transaction = self[event]
         if action is None:
             return lambda f: self.bind(event, f)
-        if not callable(action):
-            raise TypeError("{!r} is not callable".format(action))
         if action not in transaction:
             transaction.append(action)
         return action
     
     def unbind(self, event, action=None):
         """Remove a transaction from the context."""
+        assert callable(action) or action is None
+        if event not in self:
+            return None
         transaction = self[event]
         if action is None:
-            del self[event]
+            transaction.clear()
             return True
-        if not callable(action):
-            raise TypeError("{!r} is not callable".format(action))
         if action in transaction:
             transaction.remove(action)
             return True
@@ -801,6 +803,7 @@ class FSM(dict):
         If no action, it creates only the transition and returns @decor(binder).
         """
         assert isinstance(event, str)
+        assert callable(action) or action is None
         warn = self.log
         
         if state not in self:
@@ -830,7 +833,6 @@ class FSM(dict):
         if action is None:
             return lambda f: self.bind(event, f, state, state2)
         
-        assert callable(action), "{!r} is not callable".format(action)
         if action not in transaction:
             try:
                 transaction.append(action)
@@ -847,6 +849,7 @@ class FSM(dict):
         The transaction is expected to be a list (not a tuple).
         If no action, it will remove the transaction from the context.
         """
+        assert callable(action) or action is None
         warn = self.log
         
         if state not in self:
@@ -864,7 +867,6 @@ class FSM(dict):
                 self.unbind(event, act, state)
             return True
         
-        assert callable(action), "{!r} is not callable".format(action)
         if action in transaction:
             try:
                 transaction.remove(action)
