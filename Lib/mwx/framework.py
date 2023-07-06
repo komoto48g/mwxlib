@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.0"
+__version__ = "0.86.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -248,26 +248,33 @@ class KeyCtrlInterfaceMixin:
         Note:
             kwargs `doc` and `alias` are reserved as kw-only-args.
         """
+        assert isinstance(keymap, str)
+        assert callable(action) or action is None
+        
         map, key, state = self._get_keymap_state(keymap)
         if map not in self.handler:
             self.make_keymap(map) # make new keymap
-        if action:
-            _f = _F(action, *args, **kwargs)
-            @wraps(_f)
-            def f(*v, **kw):
-                self.message(f.__name__)
-                return _f(*v, **kw)
-            if map != state:
-                self.handler.update({map: {key: [state, self.post_command_hook, f]}})
-            else:
-                self.handler.update({map: {key: [state, f]}})
-            return action
-        else:
+        
+        if action is None:
             self.handler.update({map: {key: [state]}})
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
+        
+        _f = _F(action, *args, **kwargs)
+        @wraps(_f)
+        def f(*v, **kw):
+            self.message(f.__name__)
+            return _f(*v, **kw)
+        
+        if map != state:
+            self.handler.update({map: {key: [state, self.post_command_hook, f]}})
+        else:
+            self.handler.update({map: {key: [state, f]}})
+        return action
     
     def undefine_key(self, keymap):
         """Delete [map key (pressed)] context."""
+        assert isinstance(keymap, str)
+        
         map, key, state = self._get_keymap_state(keymap)
         try:
             del self.handler[map][key]
