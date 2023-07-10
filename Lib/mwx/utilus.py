@@ -987,8 +987,8 @@ class TreeList(object):
 def funcall(f, *args, doc=None, alias=None, **kwargs):
     """Decorator of event handler
     
-    Check if the event argument can be omitted
-    and required arguments are given by args and kwargs.
+    Check if the event argument can be omitted and if any other
+    required arguments are specified in args and kwargs.
     
     Returns:
         lambda: Decorated function f as `alias<doc>`
@@ -996,9 +996,10 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         >>> Act1 = lambda *v,**kw: f(*(v+args), **(kwargs|kw))
         >>> Act2 = lambda *v,**kw: f(*args, **(kwargs|kw))
         
-        Act1 that accepts event arguments if there are any 
-        remaining arguments that must be explicitly specified in f.
-        Otherwise, Act2 that ignores event arguments.
+        Returns Act1 (accepts event arguments) if event arguments
+        cannot be omitted or if there are any remaining arguments
+        that must be explicitly specified.
+        Otherwise, returns Act2 (ignores event arguments).
     """
     assert callable(f)
     assert isinstance(doc, (str, type(None)))
@@ -1007,7 +1008,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     @wraps(f)
     def _Act(*v, **kw):
         kwargs.update(kw)
-        return f(*(v + args), **kwargs) # function with event args
+        return f(*v, *args, **kwargs) # function with event args
     
     @wraps(f)
     def _Act2(*v, **kw):
@@ -1019,23 +1020,29 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     def _explicit_args(argv, defaults):
         """The rest of argv that must be given explicitly in f."""
         N = len(argv)
-        j = len(defaults)
         i = len(args)
-        return set(argv[i:N-j]) - set(kwargs)
+        assert i <= N, "too many args"
+        return set(argv[i:]) - set(defaults) - set(kwargs)
     
     if not inspect.isbuiltin(f):
         sig = inspect.signature(f)
         argv = []
-        defaults = []
+        defaults = {}
         varargs = None
         varkwargs = None
+        kwonlyargs = []
+        kwonlydefaults = {}
         for k, v in sig.parameters.items():
-            if v.kind <= 1: # POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD
+            if v.kind <= 1: # POSITIONAL_ONLY / POSITIONAL_OR_KEYWORD
                 argv.append(k)
                 if v.default != v.empty:
-                    defaults.append(v.default)
+                    defaults[k] = v.default
             elif v.kind == 2: # VAR_POSITIONAL (*args)
                 varargs = k
+            elif v.kind == 3: # KEYWORD_ONLY
+                kwonlyargs.append(k)
+                if v.default != v.empty:
+                    kwonlydefaults[k] = v.default
             elif v.kind == 4: # VAR_KEYWORD (**kwargs)
                 varkwargs = k
         if varargs:
@@ -1056,11 +1063,9 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         if m:
             name, argspec = m.groups()
             argv = [x for x in argspec.strip().split(',') if x]
-            defaults = re.findall(r"\w+\s*=(\w+)", argspec)
+            defaults = dict(re.findall(r"(\w+)\s*=\s*([\w' ]+)", argspec))
             if not _explicit_args(argv, defaults):
                 action = _Act2
-                if len(docs) > 1:
-                    action.__doc__ = '\n'.join(docs[1:])
     
     if alias:
         action.__name__ = str(alias)
