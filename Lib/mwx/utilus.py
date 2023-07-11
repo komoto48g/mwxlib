@@ -984,6 +984,49 @@ class TreeList(object):
         ls.remove(next(x for x in ls if x and x[0] == key))
 
 
+def get_fullargspec(f):
+    argv = []
+    defaults = {}
+    varargs = None
+    varkwargs = None
+    kwonlyargs = []
+    kwonlydefaults = {}
+    try:
+        sig = inspect.signature(f)
+        for k, v in sig.parameters.items():
+            if v.kind <= 1: # POSITIONAL_ONLY / POSITIONAL_OR_KEYWORD
+                argv.append(k)
+                if v.default != v.empty:
+                    defaults[k] = v.default
+            elif v.kind == 2: # VAR_POSITIONAL (*args)
+                varargs = k
+            elif v.kind == 3: # KEYWORD_ONLY
+                kwonlyargs.append(k)
+                if v.default != v.empty:
+                    kwonlydefaults[k] = v.default
+            elif v.kind == 4: # VAR_KEYWORD (**kwargs)
+                varkwargs = k
+    except ValueError:
+        ## Builtin functions don't have an argspec that we can get.
+        ## Try alalyzing the doc:str to get argspec info.
+        ## 
+        ## Wx builtin method doc is written in the following style:
+        ## ```name(argspec) -> retval
+        ## 
+        ## ...(details)...
+        ## ```
+        docs = [ln for ln in inspect.getdoc(f).splitlines() if ln]
+        m = re.search(r"(\w+)\((.*)\)", docs[0])
+        if m:
+            name, argspec = m.groups()
+            argv = [x for x in argspec.strip().split(',') if x]
+            defaults = dict(re.findall(r"(\w+)\s*=\s*([\w' ]+)", argspec))
+        else:
+            return None
+    return (argv, varargs, varkwargs,
+            defaults, kwonlyargs, kwonlydefaults)
+
+
 def funcall(f, *args, doc=None, alias=None, **kwargs):
     """Decorator of event handler
     
@@ -1016,57 +1059,19 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         return f(*args, **kwargs) # function with no explicit args
     
     action = _Act
-    
-    def _explicit_args(argv, defaults):
-        """The rest of argv that must be given explicitly in f."""
+    try:
+        (argv, varargs, varkwargs, defaults,
+            kwonlyargs, kwonlydefaults) = get_fullargspec(f)
+    except Exception:
+        return f
+    if not varargs:
         N = len(argv)
         i = len(args)
         assert i <= N, "too many args"
-        return set(argv[i:]) - set(defaults) - set(kwargs)
-    
-    if not inspect.isbuiltin(f):
-        sig = inspect.signature(f)
-        argv = []
-        defaults = {}
-        varargs = None
-        varkwargs = None
-        kwonlyargs = []
-        kwonlydefaults = {}
-        for k, v in sig.parameters.items():
-            if v.kind <= 1: # POSITIONAL_ONLY / POSITIONAL_OR_KEYWORD
-                argv.append(k)
-                if v.default != v.empty:
-                    defaults[k] = v.default
-            elif v.kind == 2: # VAR_POSITIONAL (*args)
-                varargs = k
-            elif v.kind == 3: # KEYWORD_ONLY
-                kwonlyargs.append(k)
-                if v.default != v.empty:
-                    kwonlydefaults[k] = v.default
-            elif v.kind == 4: # VAR_KEYWORD (**kwargs)
-                varkwargs = k
-        if varargs:
-            action = _Act
-        elif not _explicit_args(argv, defaults):
+        ## remaining arguments that need to be specified explicitly.
+        rest = set(argv[i:]) - set(defaults) - set(kwargs)
+        if not rest:
             action = _Act2
-    else:
-        ## Builtin functions don't have an argspec that we can get.
-        ## Try alalyzing the doc:str to get argspec info.
-        ## 
-        ## Wx builtin method doc is written in the following style:
-        ## ```name(argspec) -> retval
-        ## 
-        ## ...(details)...
-        ## ```
-        docs = [ln for ln in inspect.getdoc(f).splitlines() if ln]
-        m = re.search(r"(\w+)\((.*)\)", docs[0])
-        if m:
-            name, argspec = m.groups()
-            argv = [x for x in argspec.strip().split(',') if x]
-            defaults = dict(re.findall(r"(\w+)\s*=\s*([\w' ]+)", argspec))
-            if not _explicit_args(argv, defaults):
-                action = _Act2
-    
     if alias:
         action.__name__ = str(alias)
     if doc:
