@@ -1422,10 +1422,10 @@ class Frame(mwx.Frame):
             savedir = os.path.dirname(f)
             
             with open(f) as i:
-                from numpy import nan, inf # noqa: necessary to eval
-                import datetime # noqa: necessary to eval
+                from numpy import nan, inf  # noqa: necessary to eval
+                import datetime             # noqa: necessary to eval
                 
-                res.update(eval(i.read()))
+                res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
                 path = os.path.join(savedir, name)  # search by relpath (dir+name)
@@ -1458,8 +1458,10 @@ class Frame(mwx.Frame):
             new.update(res) # copy res back keeping new order.
             
             with open(f, 'w') as o:
-                pprint(tuple(new.items()), stream=o) # save all attributes
-                ## pprint(new, stream=o, sort_dicts=False) # PY38
+                try:
+                    pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
+                except Exception:
+                    pprint(tuple(new.items()), stream=o) # PY37 or less
             
         except Exception as e:
             print("- Failed to write attributes: {}".format(e))
