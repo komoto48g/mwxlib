@@ -1018,8 +1018,13 @@ def get_fullargspec(f):
         docs = [ln for ln in inspect.getdoc(f).splitlines() if ln]
         m = re.search(r"(\w+)\((.*)\)", docs[0])
         if m:
+            ## Note: Cannot process args containing commas.
+            ## e.g., v='Hello, world"
             name, argspec = m.groups()
-            argv = [x for x in argspec.strip().split(',') if x]
+            for v in argspec.strip().split(','):
+                m = re.search(r"(\w+)", v)
+                if m:
+                    argv.append(m.group(1))
             defaults = dict(re.findall(r"(\w+)\s*=\s*([\w' ]+)", argspec))
         else:
             return None
@@ -1068,7 +1073,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         N = len(argv)
         i = len(args)
         assert i <= N, "too many args"
-        ## remaining arguments that need to be specified explicitly.
+        ## Check remaining arguments that need to be specified explicitly.
         rest = set(argv[i:]) - set(defaults) - set(kwargs)
         if not rest:
             action = _Act2
