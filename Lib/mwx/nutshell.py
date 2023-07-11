@@ -2199,15 +2199,20 @@ class Interpreter(interpreter.Interpreter):
         except AttributeError:
             pass
     
-    def getCallTip(self, *args, **kwargs):
+    def getCallTip(self, command='', *args, **kwargs):
         """Return call tip text for a command.
         
         (override) Ignore DeprecationWarning: for function,
                    `formatargspec` is deprecated since Python 3.5.
+        (override) Ignore ValueError: no signature found for builtin
+                   if the unwrapped function is a builtin function.
         """
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
-            return interpreter.Interpreter.getCallTip(self, *args, **kwargs)
+            try:
+                return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
+            except ValueError:
+                return interpreter.Interpreter.getCallTip(self) # dummy
 
 
 class Nautilus(Shell, EditorInterface):
@@ -2471,7 +2476,6 @@ class Nautilus(Shell, EditorInterface):
               'M-enter pressed' : (0, _F(self.duplicate_command)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
-               'C-left pressed' : (0, self.OnBackspace),
                   'C-[ pressed' : (0, _F(self.goto_previous_mark_arrow)),
                 'C-S-[ pressed' : (0, _F(self.goto_previous_mark_arrow, selection=1)),
                   'C-] pressed' : (0, _F(self.goto_next_mark_arrow)),

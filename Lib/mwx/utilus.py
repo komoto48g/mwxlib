@@ -984,65 +984,29 @@ class TreeList(object):
         ls.remove(next(x for x in ls if x and x[0] == key))
 
 
-def funcall(f, *args, doc=None, alias=None, **kwargs):
-    """Decorator of event handler
-    
-    Check if the event argument can be omitted
-    and required arguments are given by args and kwargs.
-    
-    Returns:
-        lambda: Decorated function f as `alias<doc>`
-        
-        >>> Act1 = lambda *v,**kw: f(*(v+args), **(kwargs|kw))
-        >>> Act2 = lambda *v,**kw: f(*args, **(kwargs|kw))
-        
-        Act1 that accepts event arguments if there are any 
-        remaining arguments that must be explicitly specified in f.
-        Otherwise, Act2 that ignores event arguments.
-    """
-    assert callable(f)
-    assert isinstance(doc, (str, type(None)))
-    assert isinstance(alias, (str, type(None)))
-    
-    @wraps(f)
-    def _Act(*v, **kw):
-        kwargs.update(kw)
-        return f(*(v + args), **kwargs) # function with event args
-    
-    @wraps(f)
-    def _Act2(*v, **kw):
-        kwargs.update(kw)
-        return f(*args, **kwargs) # function with no explicit args
-    
-    action = _Act
-    
-    def _explicit_args(argv, defaults):
-        """The rest of argv that must be given explicitly in f."""
-        N = len(argv)
-        j = len(defaults)
-        i = len(args)
-        return set(argv[i:N-j]) - set(kwargs)
-    
-    if not inspect.isbuiltin(f):
+def get_fullargspec(f):
+    argv = []
+    defaults = {}
+    varargs = None
+    varkwargs = None
+    kwonlyargs = []
+    kwonlydefaults = {}
+    try:
         sig = inspect.signature(f)
-        argv = []
-        defaults = []
-        varargs = None
-        varkwargs = None
         for k, v in sig.parameters.items():
-            if v.kind <= 1: # POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD
+            if v.kind <= 1: # POSITIONAL_ONLY / POSITIONAL_OR_KEYWORD
                 argv.append(k)
                 if v.default != v.empty:
-                    defaults.append(v.default)
+                    defaults[k] = v.default
             elif v.kind == 2: # VAR_POSITIONAL (*args)
                 varargs = k
+            elif v.kind == 3: # KEYWORD_ONLY
+                kwonlyargs.append(k)
+                if v.default != v.empty:
+                    kwonlydefaults[k] = v.default
             elif v.kind == 4: # VAR_KEYWORD (**kwargs)
                 varkwargs = k
-        if varargs:
-            action = _Act
-        elif not _explicit_args(argv, defaults):
-            action = _Act2
-    else:
+    except ValueError:
         ## Builtin functions don't have an argspec that we can get.
         ## Try alalyzing the doc:str to get argspec info.
         ## 
@@ -1056,12 +1020,58 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         if m:
             name, argspec = m.groups()
             argv = [x for x in argspec.strip().split(',') if x]
-            defaults = re.findall(r"\w+\s*=(\w+)", argspec)
-            if not _explicit_args(argv, defaults):
-                action = _Act2
-                if len(docs) > 1:
-                    action.__doc__ = '\n'.join(docs[1:])
+            defaults = dict(re.findall(r"(\w+)\s*=\s*([\w' ]+)", argspec))
+        else:
+            return None
+    return (argv, varargs, varkwargs,
+            defaults, kwonlyargs, kwonlydefaults)
+
+
+def funcall(f, *args, doc=None, alias=None, **kwargs):
+    """Decorator of event handler
     
+    Check if the event argument can be omitted and if any other
+    required arguments are specified in args and kwargs.
+    
+    Returns:
+        lambda: Decorated function f as `alias<doc>`
+        
+        >>> Act1 = lambda *v,**kw: f(*(v+args), **(kwargs|kw))
+        >>> Act2 = lambda *v,**kw: f(*args, **(kwargs|kw))
+        
+        Returns Act1 (accepts event arguments) if event arguments
+        cannot be omitted or if there are any remaining arguments
+        that must be explicitly specified.
+        Otherwise, returns Act2 (ignores event arguments).
+    """
+    assert callable(f)
+    assert isinstance(doc, (str, type(None)))
+    assert isinstance(alias, (str, type(None)))
+    
+    @wraps(f)
+    def _Act(*v, **kw):
+        kwargs.update(kw)
+        return f(*v, *args, **kwargs) # function with event args
+    
+    @wraps(f)
+    def _Act2(*v, **kw):
+        kwargs.update(kw)
+        return f(*args, **kwargs) # function with no explicit args
+    
+    action = _Act
+    try:
+        (argv, varargs, varkwargs, defaults,
+            kwonlyargs, kwonlydefaults) = get_fullargspec(f)
+    except Exception:
+        return f
+    if not varargs:
+        N = len(argv)
+        i = len(args)
+        assert i <= N, "too many args"
+        ## remaining arguments that need to be specified explicitly.
+        rest = set(argv[i:]) - set(defaults) - set(kwargs)
+        if not rest:
+            action = _Act2
     if alias:
         action.__name__ = str(alias)
     if doc:
