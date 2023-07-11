@@ -816,7 +816,17 @@ class Frame(mwx.Frame):
             elif ret == wx.ID_CANCEL:
                 evt.Veto()
                 return
-            evt.Skip()
+        for frame in self.graph.all_frames:
+            if frame.pathname is None:
+                if wx.MessageBox( # Confirm close.
+                        "You are closing unsaved frame.\n\n"
+                        "Continue closing?",
+                        "Close {!r}".format(frame.name),
+                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    self.message("The close has been canceled.")
+                    evt.Veto()
+                    return
+        evt.Skip()
     
     def Destroy(self):
         self._mgr.UnInit()
