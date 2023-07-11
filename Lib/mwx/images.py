@@ -260,6 +260,26 @@ edit = PyEmbeddedImage(
     b'O2T2PyFunSz8jchwAAAAAElFTkSuQmCC')
 
 #----------------------------------------------------------------------
+erase = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
+    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAMOSURBVHjaYjx66tobAT4e9n//'
+    b'/zPAwD8g88ePnwy/f/1mePPuI9Of3//ef/78xYOZheUKExMTw+1bNxkaqjPAagECiIWdjY1b'
+    b'U02GgwEJ/Aca9uPXP4a/fxgY7t5/zMDDzcl198Hz/U+evQxlZ2c/gKwWIICYGLAARkZGBqBF'
+    b'DIxM/xiYmJkYJCRFGBysdUXUVeV3srKwhPxDOJYBIIBYsBkAkmcEYjY2Fob7Dx4zvHr5koGL'
+    b'm4Phz++/bJ8+flj979+/IqB0P0gtQABhdQHYFUxAVwBNERURYvj1j5Hh5YuPDHfuPmZg42Bj'
+    b'+PLlQxtMHUAAYXUByHYmoDf+/P7DoGugwfDrBzAwP/9kePf8OQMrKxvDqRNH4WoBAgjhgn9/'
+    b'GRiun2JguHmW4R+Q+wfojz+srAxf7t1jYOoqYmDdu46BlYsb6C1WBmZmZrg2gABCuODJLQaG'
+    b'4zsYGL5+YPj/6B7DV5sQhv8PbzIITqpiYN+7g4FT7hjDb20zBiYxaWAgI1wLEEAIAySVGRjk'
+    b'1RkY9qxjYL45n4H7zFEGpjt3GFgPH2T4LaXE8D6nkYFZRJyBlfEf1JMQABBALDD2DyYg0y6E'
+    b'gfHbTwbWFTMY2K9uZmB49Z7ht5YBw7u6qQy/FTUYmL98YQAmJnA0wwBAALHAAuEPMAgYWZkZ'
+    b'WJg4GBifvmJgePaageHzDwaGp28ZGIGxwAjyO1AfMyMsoiEAIICY/sFC/vcvBrbFkxnYOysY'
+    b'GF5/ZPhrZMHwj1uYgfXsDQZhH1cG9m1AF3FyQW1HuAAggOCxwHJkBwPr1A4GhhdvGH5FJjN8'
+    b'XriT4WvvLIb/fPwMzK9eMQgU5zIwvXrB8B8YjcgAIIAQXjBzYmB08mP4L6PC8CulEJwffvv6'
+    b'MnxYvZGBq6yA4Wt6FsM/XqBhwLSB7AWAAGKBpWtuQT4GhvbpYClWIP77F5SpgLSLHcOv8+eA'
+    b'XvzPwP31FwMLCytKIAIEEMvHT5++tnVO/sPExALNB/+APmQCav4HNuA/NGf8B3P+AzUzMXz5'
+    b'BEyWUAAQYABehgBuH0rveAAAAABJRU5ErkJggg==')
+
+#----------------------------------------------------------------------
 exit = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
     b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAN1SURBVHjaYvz//z8DJQAggFhA'
@@ -416,6 +436,20 @@ load = PyEmbeddedImage(
     b'6PPX3x9+eADD5g0w7BiAmegRAzPzN2x1BUAAMWFURSAfsLPsAiYrlRtn7+U1l6x9t3zyEYb/'
     b'n78wcHADSx8ulhsMHEDMzAiK1m+4qiaAAEINij9/GcAuAcUWKHYYwRmFC1g1tQmIcGd8/f33'
     b'ye/ff7WAEr/AsQjLoWAnQipdWFAABBgAhGIfg4WD5MwAAAAASUVORK5CYII=')
+
+#----------------------------------------------------------------------
+memo = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACEElEQVR4AY2TA5BbUQBFs5mO'
+    b'2kFt2xrVtm2bw9pGWNu2ubZt24y+cZtX//X9xjnPKhK9UbNOZzhrOaM5iaoO+z9Z9msvVWXR'
+    b'6s9YC4sKIMsyqoqjoyOuXb/KntWeWmJcrFYrBKQEAtsoK8yWMpSZS1FaVozi0iIUlRSgoCgP'
+    b'3t5eCAsLw6M9G/gXzRvIjxqqI+80d6j3V0BCBBaruVLJh4/vkR74DW/at0b28ePwGDYYdzo4'
+    b'fFIIKNqG0LBQUt0Kx2XtTrzTTEPyzYPwnz8bHm3b4mFdlaQQMAxNJP/VxARSk6QIF3zQTkOB'
+    b'2xFIrmvhOq4VHtVR4WZ3h3UKAcuxCAsPU5T84ekVvDs7BfmuhyF+X4iY871xfX1D6LcvBWEV'
+    b'Ap7nQCQMS2pCISPeF+81dtjlIETHRYgwdMf1DY1QlBkFwlQQCKKA8PDwXyU/v443pyYi12k/'
+    b'gRGs6YJrGxojIyEIgFy5QJIkIgHPcXh9fDRyHPcRGP6nO+P21lbISY+EyWwCgMoFZC5ERETg'
+    b'7X0NnC7Mgei8Ep7HOuDaxhb4/O4pomOiYbZWLfibA5sn4u6ugbi9sSGe7h2A0sIM0AwFG2WD'
+    b'1WapXsBSJsyf2BOanbORmxQIXuDB/exYhkhAUbaaBGUQWOpvn4ii+FfC2iUsx5CmKgX2lWg1'
+    b'mUyoTQhcVFwIrf6slbC1Xc6Kg/xLGML+APJWxIkWy8dWAAAAAElFTkSuQmCC')
 
 #----------------------------------------------------------------------
 paste = PyEmbeddedImage(
