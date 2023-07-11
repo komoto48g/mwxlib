@@ -38,7 +38,7 @@ class Plugin(Layer):
         ## )
         
         def _btn2(back, fore):
-            icon = Icon2(back, fore, (16,16), 0.5)
+            icon = Icon2(back, fore, (16,16), 0.6)
             return Button(self, label='', tip=fore, icon=icon)
         
         a = 'folder'

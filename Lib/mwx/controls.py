@@ -880,7 +880,9 @@ Icon.provided_arts = _provided_arts
 Icon.custom_images = _custom_images
 
 
-def Icon2(back, fore, size, subsize=0.5):
+def Icon2(back, fore, size=None, subsize=0.6):
+    if not size:
+        size = (16,16)
     if isinstance(subsize, float):
         subsize = wx.Size(size) * subsize
     back = Icon(back, size)

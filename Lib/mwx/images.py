@@ -214,6 +214,19 @@ colour_grey = PyEmbeddedImage(
     b'YII=')
 
 #----------------------------------------------------------------------
+copy = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QAAAAAAAD5Q7t/AAAA'
+    b'CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1QoaFAgvgxQ0mwAAAX9JREFUOMuVk0tLAlEY'
+    b'ht8jM2PagP0KzwjdFv2PCFq2iKB1F/BCtrBFkXbbREREG7E2Bf4EMbM2gWUwo7+gmjAFN83t'
+    b'tGl0Rkexb/Wdw3kf3vfjO+ToJDOv6/osRijBz71trsXvnHecYRjT8ejWKHqkD/YmAbgBdtNq'
+    b'NcEY6xMRQgAAodCEJ5RzHmq1Gl6rlYXGd2NmkIv9zG7K7nmev3UBJElCsVSY+kekRRdAUZRO'
+    b'jFarOVRsR3IBKKUolgqdsyzLnuJIJNI/A8YYZFl2DdL5cFC5AJRSlMrFoQ56oZwttiwGRRnN'
+    b'QTA4jna73QXoug7GGMJhivJTaagDSiWYpoHKS6UL0LQfBAJjsCw21O7l1QUeHu/dEQSer56d'
+    b'n7oWhzHL07YoilhZXoVlmVC/VOSus+A21qN5AHnHcmwbhuHrFTtLVVXkbrIA8OzzGpKm6fD7'
+    b'/RAEAaIoghCCer0OgODj890WpxKx5BzpFR8ep7OmaS55fay/KgAoJGLJHQD4BUJZpgMViPfY'
+    b'AAAAAElFTkSuQmCC')
+
+#----------------------------------------------------------------------
 core = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwY'
     b'AAAABGdBTUEAALGOfPtRkwAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAA'
@@ -403,6 +416,20 @@ load = PyEmbeddedImage(
     b'6PPX3x9+eADD5g0w7BiAmegRAzPzN2x1BUAAMWFURSAfsLPsAiYrlRtn7+U1l6x9t3zyEYb/'
     b'n78wcHADSx8ulhsMHEDMzAiK1m+4qiaAAEINij9/GcAuAcUWKHYYwRmFC1g1tQmIcGd8/f33'
     b'ye/ff7WAEr/AsQjLoWAnQipdWFAABBgAhGIfg4WD5MwAAAAASUVORK5CYII=')
+
+#----------------------------------------------------------------------
+paste = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwY'
+    b'AAAAB3RJTUUH1QoOABwVr+LxGAAAAdBJREFUOMuVk7FrU1EUxn/3vTSCJDGN1JQMhSIGXFy0'
+    b'amIE0RJwdtAhOBRFbR3ExUGXgjgIjvoPNIO7m6hL1S66OCmRUqjRSEJeb2zQRu85DqExL20g'
+    b'ftv9zj0/zvngGAZUKpWM73vPnZPZft/3vRfOSbFcLmu/bwBuzporBh4qjCsedvISudwRPM8A'
+    b'IKKsrHxgX+0pBgFoquqtxy9ZMvNnifieCS6cORj70snwLsjStB2mp6cwZhsgrK2tk0xEOZr8'
+    b'zKS/zrPXq1ZUUxEg5nlmLBrxeV/Psnj/EUEQUKlUQqvNzR0ilUpx7+5tLma+IaoxIBrp/9Te'
+    b'gkQigaowM3NsMB7i8Thbf8Cp6Xk9gGooG5bfvA29C/kcuynCEJ0+lecfXBBxwwG6S2F7AlVF'
+    b'RcidPP5/ExTyOUQEEUFVsNYyMZEeDdDfKNJtbv1ojT6BiOtBql+rNBr1HSGHAQM157qAVsvS'
+    b'qNcpFs8P2xRv2ATWblD7XkNEev71+atcnloevsLeMaUZNEmnM6TTGbLZw1i7gapwY+Far9k3'
+    b'GgJsiujv9i+350TyIw8W7/DT7YymsP8Tq+0DACS1ijFmU1U7BmDhXPcaMYwzglS71/jkFUt/'
+    b'AU/m4Zh4acTaAAAAAElFTkSuQmCC')
 
 #----------------------------------------------------------------------
 pen = PyEmbeddedImage(
