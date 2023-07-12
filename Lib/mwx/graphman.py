@@ -20,13 +20,6 @@ import re
 import wx
 from wx import aui
 
-from . import framework as mwx
-from .utilus import funcall as _F
-from .controls import ControlPanel, Icon
-from .framework import CtrlInterface, AuiNotebook
-from .matplot2g import GraphPlot
-from .matplot2lg import Histogram
-
 from matplotlib import cm
 from matplotlib import colors
 ## from matplotlib import pyplot as plt
@@ -34,6 +27,13 @@ import numpy as np
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
+
+from . import framework as mwx
+from .utilus import funcall as _F
+from .controls import ControlPanel, Icon
+from .framework import CtrlInterface, AuiNotebook
+from .matplot2g import GraphPlot
+from .matplot2lg import Histogram
 
 
 class Thread(object):

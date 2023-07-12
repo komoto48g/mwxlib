@@ -7,12 +7,6 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import traceback
 import wx
 
-from . import framework as mwx
-from .utilus import funcall as _F
-from .controls import Clipboard
-from .matplot2 import MatplotPanel
-from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
-
 from matplotlib import cm
 from matplotlib import patches
 from PIL import Image
@@ -21,6 +15,12 @@ import cv2
 import numpy as np
 from numpy import pi, nan
 from scipy import ndimage as ndi
+
+from . import framework as mwx
+from .utilus import funcall as _F
+from .controls import Clipboard
+from .matplot2 import MatplotPanel
+from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 
 
 def imcv(src):

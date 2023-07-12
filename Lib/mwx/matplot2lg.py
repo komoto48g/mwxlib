@@ -8,16 +8,16 @@ from itertools import chain
 import io
 import wx
 
+from matplotlib import patches
+import numpy as np
+from scipy import signal
+## from scipy import ndimage as ndi
+
 from . import framework as mwx
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, MARK, LINE, REGION
-
-from matplotlib import patches
-import numpy as np
-from scipy import signal
-## from scipy import ndimage as ndi
 
 
 class LinePlot(MatplotPanel):
