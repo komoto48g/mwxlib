@@ -7,11 +7,6 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 import traceback
 import wx
 
-from . import framework as mwx
-from .utilus import funcall as _F
-from .matplot2 import MatplotPanel
-from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
-
 from matplotlib import cm
 from matplotlib import patches
 from PIL import Image
@@ -20,6 +15,12 @@ import cv2
 import numpy as np
 from numpy import pi, nan
 from scipy import ndimage as ndi
+
+from . import framework as mwx
+from .utilus import funcall as _F
+from .controls import Clipboard
+from .matplot2 import MatplotPanel
+from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 
 
 def imcv(src):
@@ -363,59 +364,6 @@ class AxesImagePhantom(object):
         return np.vstack((x, y))
 
 
-class Clipboard:
-    """Clipboard interface of images
-    
-    This does not work unless wx.App exists.
-    The clipboard data cannot be transferred unless wx.Frame exists.
-    """
-    verbose = True
-    
-    @staticmethod
-    def imread():
-        do = wx.BitmapDataObject()
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.GetData(do)
-            wx.TheClipboard.Close()
-            bmp = do.GetBitmap()
-        else:
-            print("- Unable to open clipboard.")
-            return
-        try:
-            ## Convert bmp --> buf
-            img = bmp.ConvertToImage()
-            buf = np.array(img.GetDataBuffer()) # do copy, don't ref
-            if Clipboard.verbose:
-                print("From clipboard {:.1f} Mb data".format(buf.nbytes/1e6))
-            w, h = img.GetSize()
-            return buf.reshape(h, w, 3)
-        except Exception:
-            print("- The contents of the clipboard are not images.")
-    
-    @staticmethod
-    def imwrite(buf):
-        try:
-            ## Convert buf --> bmp
-            h, w = buf.shape[:2]
-            if buf.ndim < 3:
-                ## buf = np.array([buf] * 3).transpose((1,2,0)) # convert to gray bitmap
-                buf = buf.repeat(3, axis=1) # convert to gray bitmap
-            img = wx.Image(w, h, buf.tobytes())
-            bmp = img.ConvertToBitmap()
-        except Exception:
-            print("- The contents of the clipboard are not images.")
-            return
-        do = wx.BitmapDataObject(bmp)
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(do)
-            wx.TheClipboard.Flush()
-            wx.TheClipboard.Close()
-            if Clipboard.verbose:
-                print("To clipboard: {:.1f} Mb data".format(buf.nbytes/1e6))
-        else:
-            print("- Unable to open clipboard.")
-
-
 class GraphPlot(MatplotPanel):
     """Graph panel for 2D graph
     """
@@ -592,7 +540,7 @@ class GraphPlot(MatplotPanel):
             (wx.ID_PASTE, "&Paste buffer\t(C-v)", "Paste from clipboard", _Icon(wx.ART_PASTE),
                 lambda v: self.read_buffer_from_clipboard()),
             (),
-            (mwx.ID_(510), "&Invert Color", "Invert colormap", wx.ITEM_CHECK,
+            (mwx.ID_(500), "&Invert Color", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.invert_cmap(),
                 lambda v: v.Check(self.get_cmap()[-2:] == "_r")),
             (),

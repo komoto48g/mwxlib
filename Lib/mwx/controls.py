@@ -767,35 +767,77 @@ class ControlPanel(scrolled.ScrolledPanel):
 
 
 class Clipboard:
-    """Clipboard interface of text
+    """Clipboard interface of text and image
     
     This does not work unless wx.App instance exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
-    verbose = True
-    
     @staticmethod
-    def read():
+    def read(verbose=True):
         do = wx.TextDataObject()
         if wx.TheClipboard.Open():
             wx.TheClipboard.GetData(do)
             wx.TheClipboard.Close()
             text = do.GetText()
-            if Clipboard.verbose:
+            if verbose:
                 print("From clipboard: {}".format(text))
             return text
         else:
             print("- Unable to open clipboard.")
     
     @staticmethod
-    def write(text):
+    def write(text, verbose=True):
         do = wx.TextDataObject(str(text))
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
-            if Clipboard.verbose:
+            if verbose:
                 print("To clipboard: {}".format(text))
+        else:
+            print("- Unable to open clipboard.")
+    
+    @staticmethod
+    def imread(verbose=True):
+        do = wx.BitmapDataObject()
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.GetData(do)
+            wx.TheClipboard.Close()
+            bmp = do.GetBitmap()
+        else:
+            print("- Unable to open clipboard.")
+            return
+        try:
+            ## Convert bmp --> buf
+            img = bmp.ConvertToImage()
+            buf = np.array(img.GetDataBuffer()) # do copy, don't ref
+            if verbose:
+                print("From clipboard {:.1f} Mb data".format(buf.nbytes/1e6))
+            w, h = img.GetSize()
+            return buf.reshape(h, w, 3)
+        except Exception:
+            print("- The contents of the clipboard are not images.")
+    
+    @staticmethod
+    def imwrite(buf, verbose=True):
+        try:
+            ## Convert buf --> bmp
+            h, w = buf.shape[:2]
+            if buf.ndim < 3:
+                ## buf = np.array([buf] * 3).transpose((1,2,0)) # convert to gray bitmap
+                buf = buf.repeat(3, axis=1) # convert to gray bitmap
+            img = wx.Image(w, h, buf.tobytes())
+            bmp = img.ConvertToBitmap()
+        except Exception:
+            print("- The contents of the clipboard are not images.")
+            return
+        do = wx.BitmapDataObject(bmp)
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(do)
+            wx.TheClipboard.Flush()
+            wx.TheClipboard.Close()
+            if verbose:
+                print("To clipboard: {:.1f} Mb data".format(buf.nbytes/1e6))
         else:
             print("- Unable to open clipboard.")
 

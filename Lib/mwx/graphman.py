@@ -20,13 +20,6 @@ import re
 import wx
 from wx import aui
 
-from . import framework as mwx
-from .utilus import funcall as _F
-from .controls import ControlPanel, Icon
-from .framework import CtrlInterface, AuiNotebook
-from .matplot2g import GraphPlot
-from .matplot2lg import Histogram
-
 from matplotlib import cm
 from matplotlib import colors
 ## from matplotlib import pyplot as plt
@@ -34,6 +27,13 @@ import numpy as np
 from PIL import Image
 from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
+
+from . import framework as mwx
+from .utilus import funcall as _F
+from .controls import ControlPanel, Icon
+from .framework import CtrlInterface, AuiNotebook
+from .matplot2g import GraphPlot
+from .matplot2lg import Histogram
 
 
 class Thread(object):
@@ -495,7 +495,9 @@ class Graph(GraphPlot):
         return self.marked.get_visible()
     
     def set_markups_visible(self, v):
+        self.selected.set_visible(v)
         self.marked.set_visible(v)
+        self.rected.set_visible(v)
         self.update_art_of_mark()
     
     def remove_markups(self):
@@ -508,7 +510,7 @@ class Graph(GraphPlot):
             plug = self.parent.get_plug(name)
             for art in plug.Arts:
                 art.set_visible(0)
-        self.remove_markups()
+        self.set_markups_visible(0)
         self.draw()
 
 
@@ -680,13 +682,12 @@ class Frame(mwx.Frame):
                 lambda v: self.__view.set_frame_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_frame_visible())),
                 
-            (mwx.ID_(21), "Show &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
+            (mwx.ID_(21), "Toggle &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
                 lambda v: self.__view.set_markups_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_markups_visible())),
                 
-            (mwx.ID_(22), "&Remove Markers", "Remove markups", wx.ITEM_CHECK, Icon('-'),
-                lambda v: self.__view.remove_markups(),
-                lambda v: v.Check(self.__view.Markers.size)),
+            (mwx.ID_(22), "&Remove Markers", "Remove markups", Icon('-'),
+                lambda v: self.__view.remove_markups()),
             (),
             (mwx.ID_(23), "Hide all &Layers", "Hide all layers", Icon('xr'),
                 lambda v: self.__view.hide_layers()),
@@ -816,7 +817,17 @@ class Frame(mwx.Frame):
             elif ret == wx.ID_CANCEL:
                 evt.Veto()
                 return
-            evt.Skip()
+        for frame in self.graph.all_frames:
+            if frame.pathname is None:
+                if wx.MessageBox( # Confirm close.
+                        "You are closing unsaved frame.\n\n"
+                        "Continue closing?",
+                        "Close {!r}".format(frame.name),
+                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    self.message("The close has been canceled.")
+                    evt.Veto()
+                    return
+        evt.Skip()
     
     def Destroy(self):
         self._mgr.UnInit()
@@ -1422,10 +1433,10 @@ class Frame(mwx.Frame):
             savedir = os.path.dirname(f)
             
             with open(f) as i:
-                from numpy import nan, inf # noqa: necessary to eval
-                import datetime # noqa: necessary to eval
+                from numpy import nan, inf  # noqa: necessary to eval
+                import datetime             # noqa: necessary to eval
                 
-                res.update(eval(i.read()))
+                res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
                 path = os.path.join(savedir, name)  # search by relpath (dir+name)
@@ -1458,8 +1469,10 @@ class Frame(mwx.Frame):
             new.update(res) # copy res back keeping new order.
             
             with open(f, 'w') as o:
-                pprint(tuple(new.items()), stream=o) # save all attributes
-                ## pprint(new, stream=o, sort_dicts=False) # PY38
+                try:
+                    pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
+                except Exception:
+                    pprint(tuple(new.items()), stream=o) # PY37 or less
             
         except Exception as e:
             print("- Failed to write attributes: {}".format(e))
