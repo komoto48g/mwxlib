@@ -5,10 +5,12 @@
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from itertools import chain
+import io
 import wx
 
 from . import framework as mwx
 from .utilus import funcall as _F
+from .controls import Clipboard
 from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, MARK, LINE, REGION
 
@@ -431,6 +433,8 @@ class LineProfile(LinePlot):
         self.modeline.Show(1)
         
         self.menu += [
+            (mwx.ID_(510), "&Copy data", "Copy data to clipboard",
+                lambda v: self.copy_data_to_clipboard()),
             (),
             (mwx.ID_(511), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),
@@ -454,14 +458,16 @@ class LineProfile(LinePlot):
         self.__frame = None
         
         #<matplotlib.lines.Line2D>
-        self.__plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1, picker=True, pickradius=2)
+        self.__plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1,
+                                      picker=True, pickradius=2)
         
         #<matplotlib.patches.Polygon>
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=0.8)
         self.axes.add_patch(self.__fil)
         
         #<matplotlib.lines.Line2D>
-        self.__hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1, visible=0, zorder=2)
+        self.__hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
+                                         visible=0, zorder=2)
         
         self.__linewidth = 1
         self.__logicp = True
@@ -590,6 +596,15 @@ class LineProfile(LinePlot):
                    a = '%%' if not frame.buffer.flags.writeable else '--'))
         else:
             self.modeline.write("")
+    
+    def copy_data_to_clipboard(self):
+        """Copy plotdata to clipboard."""
+        self.message("Copy data to clipboard")
+        X, Y = self.plotdata
+        with io.StringIO() as o:
+            for x, y in zip(X, Y):
+                o.write(f"{x:g}\t{y:g}\n")
+            Clipboard.write(o.getvalue(), verbose=0)
     
     ## --------------------------------
     ## Motion/Drag actions (override)
