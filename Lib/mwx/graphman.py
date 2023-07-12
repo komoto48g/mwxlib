@@ -495,7 +495,9 @@ class Graph(GraphPlot):
         return self.marked.get_visible()
     
     def set_markups_visible(self, v):
+        self.selected.set_visible(v)
         self.marked.set_visible(v)
+        self.rected.set_visible(v)
         self.update_art_of_mark()
     
     def remove_markups(self):
@@ -508,7 +510,7 @@ class Graph(GraphPlot):
             plug = self.parent.get_plug(name)
             for art in plug.Arts:
                 art.set_visible(0)
-        self.remove_markups()
+        self.set_markups_visible(0)
         self.draw()
 
 
@@ -680,13 +682,12 @@ class Frame(mwx.Frame):
                 lambda v: self.__view.set_frame_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_frame_visible())),
                 
-            (mwx.ID_(21), "Show &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
+            (mwx.ID_(21), "Toggle &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
                 lambda v: self.__view.set_markups_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_markups_visible())),
                 
-            (mwx.ID_(22), "&Remove Markers", "Remove markups", wx.ITEM_CHECK, Icon('-'),
-                lambda v: self.__view.remove_markups(),
-                lambda v: v.Check(self.__view.Markers.size)),
+            (mwx.ID_(22), "&Remove Markers", "Remove markups", Icon('-'),
+                lambda v: self.__view.remove_markups()),
             (),
             (mwx.ID_(23), "Hide all &Layers", "Hide all layers", Icon('xr'),
                 lambda v: self.__view.hide_layers()),
