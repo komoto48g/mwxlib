@@ -1728,7 +1728,7 @@ class Buffer(EditWindow, EditorInterface):
             del self.pointer # Reset pointer (debugger hook point).
             del self.red_arrow
             self.handler('buffer_region_executed', self)
-            self.message("Evaluated {!r} successfully".format(filename))
+            self.message("Evaluated {!r} successfully.".format(filename))
             self.AnnotationClearAll()
     
     def py_get_region(self, line):
@@ -3353,7 +3353,7 @@ class Nautilus(Shell, EditorInterface):
                 ## print(msg, file=sys.__stderr__)
             else:
                 del self.pointer
-                self.message("Evaluated {!r} successfully".format(filename))
+                self.message("Evaluated {!r} successfully.".format(filename))
         else:
             self.message("No region")
     
@@ -3433,7 +3433,7 @@ class Nautilus(Shell, EditorInterface):
             self.cpos = p # backward selection to the point
             self.__comp_ind = j
         except IndexError:
-            self.message("no completion words")
+            self.message("No completion words")
     
     def call_history_comp(self, evt):
         """Called when history-comp mode."""

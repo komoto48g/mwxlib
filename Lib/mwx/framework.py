@@ -1096,11 +1096,9 @@ class ShellFrame(MiniFrame):
         def skip(v):
             if self.debugger.handler.current_state:
                 if self.debugger.tracing:
-                    self.message("- The current status is tracing. "
-                                 "- Press [C-g] to quit.")
+                    self.message("Current status is tracing. Press [C-g] to quit.")
                 elif not self.debugger.busy:
-                    self.message("- The current status is inconsistent. "
-                                 "- Press [C-g] to quit.")
+                    self.message("Current status is inconsistent. Press [C-g] to quit.")
                     self.indicator.Value = 7
             v.Skip()
         
@@ -1371,7 +1369,7 @@ class ShellFrame(MiniFrame):
         ## win = nb.CurrentPage # NG
         win = nb.all_pages[evt.Selection]
         if win is self.rootshell:
-            ## self.message("- Don't close the root shell.")
+            ## self.message("Don't close the root shell.")
             nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             evt.Veto()
         elif self.debugger.busy and win is self.debugger.interactive_shell:
@@ -1639,7 +1637,7 @@ class ShellFrame(MiniFrame):
     
     def on_trace_hook(self, frame):
         """Called when a breakpoint is reached."""
-        self.message("Debugger hooked {!r}".format(frame))
+        self.message("Debugger hooked {!r}.".format(frame))
     
     def on_trace_end(self, frame):
         """Called when unset-trace."""

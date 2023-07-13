@@ -72,8 +72,10 @@ class Debugger(Pdb):
     
     @property
     def busy(self):
-        """The current state is debug mode.
-        True from entering `set_trace` until the end of `set_quit`
+        """Indicates that the current state is debug mode.
+        
+        Note:
+            This flag is True from entering `set_trace` until the end of `set_quit`.
         """
         ## cf. (self.handler.current_state == 1)
         try:
@@ -83,7 +85,7 @@ class Debugger(Pdb):
     
     @property
     def tracing(self):
-        """The current state is trace mode.
+        """Indicates that the current state is trace mode.
         """
         ## cf. (self.handler.current_state == 2)
         return self.__hookpoint is not None

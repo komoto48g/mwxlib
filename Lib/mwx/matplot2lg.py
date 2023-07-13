@@ -599,7 +599,7 @@ class LineProfile(LinePlot):
     
     def copy_data_to_clipboard(self):
         """Copy plotdata to clipboard."""
-        self.message("Copy data to clipboard")
+        self.message("Copy data to clipboard.")
         X, Y = self.plotdata
         with io.StringIO() as o:
             for x, y in zip(X, Y):

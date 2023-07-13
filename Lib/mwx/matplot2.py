@@ -405,7 +405,7 @@ class MatplotPanel(wx.Panel):
     ##             if dlg.ShowModal() != wx.ID_OK:
     ##                 return
     ##             path = dlg.Path
-    ##     self.message("Save image to {!r}'".format(path))
+    ##     self.message("Save image to {!r}.".format(path))
     ##     try:
     ##         b = self.selected.get_visible()
     ##         self.selected.set_visible(0)
@@ -419,7 +419,7 @@ class MatplotPanel(wx.Panel):
     
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
-        self.message("Copy image to clipboard")
+        self.message("Copy image to clipboard.")
         try:
             b = self.selected.get_visible()
             self.selected.set_visible(0)

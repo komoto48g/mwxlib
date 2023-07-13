@@ -962,7 +962,7 @@ class GraphPlot(MatplotPanel):
             self.message("No frame")
             return
         try:
-            self.message("Write buffer to clipboard")
+            self.message("Write buffer to clipboard.")
             name = self.frame.name
             data = self.frame.roi
             GraphPlot.clipboard_name = name
@@ -979,12 +979,12 @@ class GraphPlot(MatplotPanel):
             name = GraphPlot.clipboard_name
             data = GraphPlot.clipboard_data
             if name:
-                self.message("Read buffer from clipboard")
+                self.message("Read buffer from clipboard.")
                 self.load(data)
                 GraphPlot.clipboard_name = None
                 GraphPlot.clipboard_data = None
             else:
-                self.message("Read image from clipboard")
+                self.message("Read image from clipboard.")
                 self.load(Clipboard.imread())
         except Exception as e:
             self.message("- No data in clipboard: {}".format(e))
