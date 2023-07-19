@@ -808,6 +808,17 @@ class AuiNotebook(aui.AuiNotebook):
             if wnd and wnd is not org: # restore focus other window
                 wnd.SetFocus()
     
+    def get_caption(self, win):
+        tab, page = self.find_tab(win)
+        return page.caption
+    
+    def set_caption(self, win, caption):
+        tab, page = self.find_tab(win)
+        if page.caption != caption:
+            page.caption = caption
+            tab.Refresh()
+            return True
+    
     def find_tab(self, win):
         """Returns AuiTabCtrl and AuiNotebookPage for the window.
         
