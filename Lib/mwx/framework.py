@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.4"
+__version__ = "0.86.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -878,7 +878,6 @@ class AuiNotebook(aui.AuiNotebook):
             ## Create a new tab using Split method.
             ## Note: The normal way of creating panes with `_mgr` crashes.
             
-            ## all_names = [self.find_tab(win)[1].caption for win in self.all_pages]
             all_names = [win.Name for win in self.all_pages]
             for names, k in tabinfo[1:]:
                 names, k = eval(names), int(k)
@@ -1121,6 +1120,7 @@ class ShellFrame(MiniFrame):
                      'add_help' : [ None, self.add_help ],
                   'add_history' : [ None, self.add_history ],
                  'title_window' : [ None, self.on_title_window ],
+         'buffer_caption_reset' : [ None, self.on_buffer_caption ],
             },
             0 : {
                     '* pressed' : (0, skip, dispatch), # => debugger
@@ -1309,13 +1309,14 @@ class ShellFrame(MiniFrame):
                         if wx.MessageBox( # Confirm load.
                                 "The file has been modified externally.\n\n"
                                 "The contents of the buffer will be overwritten.\n"
-                                "Continue loading?",
+                                "Continue loading {}/{}?".format(book.Name, buf.name),
                                 "Load {!r}".format(buf.name),
                                 style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                             self.__autoload = False # Don't ask any more.
                             return
                         book.load_file(buf)
-        evt.Skip()
+        else:
+            evt.Skip()
     
     def OnShow(self, evt):
         pane = self._mgr.GetPane(self.watcher)
@@ -1658,6 +1659,13 @@ class ShellFrame(MiniFrame):
         """Set title to the frame."""
         title = obj if isinstance(obj, str) else repr(obj)
         self.SetTitle("Nautilus - {}".format(title))
+    
+    def on_buffer_caption(self, buf):
+        """Called when the buffer caption is updated."""
+        if buf.caption.startswith('!'):
+            v = wx.ActivateEvent(wx.wxEVT_ACTIVATE, True,
+                                 buf.Id, ActivationReason=0)
+            self.EventHandler.ProcessEvent(v)
     
     def add_log(self, text):
         """Add text to the logging buffer."""
