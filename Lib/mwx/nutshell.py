@@ -1437,7 +1437,7 @@ class Buffer(EditWindow, EditorInterface):
         else:
             self.__mtime = None
         try:
-            renamed = (self.filename != f)
+            renamed = (self.__filename != f)
         except AttributeError:
             renamed = False
         self.__filename = f
@@ -1474,6 +1474,14 @@ class Buffer(EditWindow, EditorInterface):
         if prefix:
             prefix += ' '
         return prefix + self.name
+    
+    def update_caption(self):
+        try:
+            if self.mtdelta is not None:
+                if self.parent.set_caption(self, self.caption):
+                    self.parent.handler('buffer_caption_reset', self)
+        except AttributeError:
+            pass
     
     @property
     def need_buffer_save(self):
@@ -1593,19 +1601,16 @@ class Buffer(EditWindow, EditorInterface):
             self.IndicatorFillRange(p, q-p)
     
     def OnSavePointLeft(self, evt):
-        if self.mtdelta is not None:
-            self.parent.handler('buffer_caption_reset', self)
+        self.update_caption()
         evt.Skip()
     
     def OnSavePointReached(self, evt):
-        if self.mtdelta is not None:
-            self.parent.handler('buffer_caption_reset', self)
+        self.update_caption()
         evt.Skip()
     
     def on_activated(self, buf):
         """Called when the buffer is activated."""
-        if self.mtdelta is not None:
-            self.parent.handler('buffer_caption_reset', self)
+        self.update_caption()
         self.trace_position()
     
     def on_inactivated(self, buf):
@@ -1627,7 +1632,7 @@ class Buffer(EditWindow, EditorInterface):
         with self.off_readonly():
             self.Text = text
             self.EmptyUndoBuffer()
-            ## self.SetSavePoint()
+            self.SetSavePoint()
         self.markline = lineno - 1
         self.goto_marker(1)
         self.filename = filename
@@ -1640,7 +1645,7 @@ class Buffer(EditWindow, EditorInterface):
             self.goto_marker(1)
             self.filename = filename
             self.EmptyUndoBuffer()
-            ## self.SetSavePoint()
+            self.SetSavePoint()
             self.handler('buffer_loaded', self)
             return True
         return False
@@ -1798,13 +1803,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.handler.update({ # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, dispatch, ],
-                 'buffer_saved' : [ None, dispatch, self.set_caption ],
-                'buffer_loaded' : [ None, dispatch, self.set_caption ],
+                 'buffer_saved' : [ None, dispatch, ],
+                'buffer_loaded' : [ None, dispatch, ],
                'buffer_deleted' : [ None, dispatch, ],
               'buffer_modified' : [ None, dispatch, ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
-         'buffer_caption_reset' : [ None, dispatch, self.set_caption ],
+         'buffer_caption_reset' : [ None, dispatch, ],
         'buffer_filename_reset' : [ None, dispatch, ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
@@ -1836,15 +1841,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if self.PageCount == 0:
             self.new_buffer()
         evt.Skip()
-    
-    def set_caption(self, buf, caption=None):
-        ## if wx.VERSION >= (4,1,0):
-        try:
-            _p, tab, idx = self.FindTab(buf)
-            tab.GetPage(idx).caption = caption or buf.caption
-            tab.Refresh()
-        except AttributeError:
-            pass
     
     def set_attributes(self, buf=None, **kwargs):
         """Sets attributes and defaultBufferStyle
