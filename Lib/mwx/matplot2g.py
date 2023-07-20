@@ -209,13 +209,12 @@ class AxesImagePhantom(object):
         if 'aspect' in attr:
             self.aspect_ratio = attr['aspect']
         
-        if 'pathname' in attr:
-            self.parent.handler('frame_updated', self)
-        
         if 'annotation' in attr:
             v = attr['annotation']
             if self.parent.frame is self:
                 self.parent.infobar.ShowMessage(v)
+        
+        if {'pathname', 'annotation'} & attr.keys():
             self.parent.handler('frame_updated', self)
     
     selector = _Property('Selector')

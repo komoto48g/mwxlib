@@ -1802,15 +1802,15 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.handler.update({ # DNA<EditorBook>
             None : {
-                   'buffer_new' : [ None, dispatch, ],
-                 'buffer_saved' : [ None, dispatch, ],
-                'buffer_loaded' : [ None, dispatch, ],
-               'buffer_deleted' : [ None, dispatch, ],
-              'buffer_modified' : [ None, dispatch, ],
+                   'buffer_new' : [ None, dispatch ],
+                 'buffer_saved' : [ None, dispatch ],
+                'buffer_loaded' : [ None, dispatch ],
+               'buffer_deleted' : [ None, dispatch ],
+              'buffer_modified' : [ None, dispatch ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
-         'buffer_caption_reset' : [ None, dispatch, ],
-        'buffer_filename_reset' : [ None, dispatch, ],
+         'buffer_caption_reset' : [ None, dispatch ],
+        'buffer_filename_reset' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -2441,7 +2441,7 @@ class Nautilus(Shell, EditorInterface):
             None : {
                  'interp_error' : [ None, self.on_interp_error ],
                 'shell_deleted' : [ None, dispatch, self.on_deleted ],
-               'shell_modified' : [ None, dispatch, ],
+               'shell_modified' : [ None, dispatch ],
               'shell_activated' : [ None, dispatch, self.on_activated ],
             'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
              '*button* pressed' : [ None, dispatch, skip ],
