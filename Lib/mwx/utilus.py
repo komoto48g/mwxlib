@@ -8,11 +8,12 @@ from functools import wraps
 from bdb import BdbQuit
 import traceback
 import warnings
-import shlex
 import time
 import sys
 import os
 import re
+import io
+import tokenize
 import fnmatch
 import pkgutil
 import pydoc
@@ -266,7 +267,10 @@ if pp:
 
 
 def split_paren(text, reverse=False):
-    tokens = _split_tokens(text)
+    """Split text into a head parenthesis and the rest, including the tail.
+    If reverse is True, search from tail to head.
+    """
+    tokens = list(split_tokens(text))
     if reverse:
         tokens = tokens[::-1]
     words = _extract_paren_from_tokens(tokens, reverse)
@@ -279,7 +283,10 @@ def split_paren(text, reverse=False):
 
 
 def split_words(text, reverse=False):
-    tokens = _split_tokens(text)
+    """Generates words extracted from text.
+    If reverse is True, process from tail to head.
+    """
+    tokens = list(split_tokens(text))
     if reverse:
         tokens = tokens[::-1]
     while tokens:
@@ -290,25 +297,26 @@ def split_words(text, reverse=False):
             yield tokens.pop(0)
 
 
-def _split_tokens(text):
-    lexer = shlex.shlex(text)
-    lexer.wordchars += '.'
-    lexer.whitespace = '' # nothing is white (for multiline analysis)
-    lexer.commenters = '' # don't ignore comment lines
-    ls = []
-    n = 0
-    p = re.compile(r"([a-zA-Z])[\"\']") # check [bfru]-string
+def split_tokens(text):
+    """Generates tokens extracted from text.
+    If reverse is True, process from tail to head.
+    """
     try:
-        for token in lexer:
-            m = p.match(token)
-            if m:
-                ls.append(m.group(1))
-                return ls + _split_tokens(text[n+1:])
-            ls.append(token)
-            n += len(token)
-    except ValueError:
+        f = io.StringIO(text)
+        tokens = tokenize.generate_tokens(f.readline)
+        j, k = 1, 0
+        for type, string, start, end, line in tokens:
+            if type in (0,5,6) or not string:
+                continue
+            l, m = start
+            if l > j and m > 0:
+                yield ' ' * m  # indent spaces
+            elif m > k:
+                yield ' ' * (m-k) # white spaces
+            j, k = end
+            yield string
+    except tokenize.TokenError:
         pass
-    return ls
 
 
 def _extract_words_from_tokens(tokens, reverse=False):

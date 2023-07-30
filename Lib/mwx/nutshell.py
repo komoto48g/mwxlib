@@ -2861,12 +2861,10 @@ class Nautilus(Shell, EditorInterface):
                 
                 ## func(a,b,c) @debug --> func,a,b,c @debug
                 if rhs in ("debug", "profile", "timeit"):
-                    if lhs[-1] in ')]':
+                    if lhs[-1] in ')':
                         L, R = split_paren(lhs, reverse=1)
-                        if R.startswith('('):
+                        if R:
                             lhs = "{}, {}".format(L, R[1:-1])
-                        elif R.startswith('['):
-                            lhs = "{}.__getitem__, ({})".format(L, R[1:-1])
                 
                 ## @(y1,,,yn) --> @partial(y1,,,yn)
                 elif rhs.startswith('('):
