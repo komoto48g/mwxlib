@@ -1613,7 +1613,7 @@ class Frame(mwx.Frame):
                 return
         
         if not path:
-            name = re.sub('[\\/:*?"<>|]', '_', frame.name)
+            name = re.sub(r'[\/:*?"<>|]', '_', frame.name)
             with wx.FileDialog(self, "Save buffer as",
                     defaultFile=name,
                     wildcard='|'.join(self.wildcards),

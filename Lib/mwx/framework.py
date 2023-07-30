@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.5"
+__version__ = "0.86.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1479,7 +1479,7 @@ class ShellFrame(MiniFrame):
         except AttributeError:
             return False
         
-        if re.match(r"https?://[\w/:%#\$&\?()~.=+-]+", filename): # url_re
+        if re.match(r"https?://[\w/:%#$&?()~.=+-]+", filename): # url_re
             return book.load_url(filename, lineno, verbose)
         else:
             return book.load_file(filename, lineno)

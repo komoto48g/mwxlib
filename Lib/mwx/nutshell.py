@@ -35,7 +35,7 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 
 
 ## URL pattern (flag = re.M | re.A)
-url_re = r"https?://[\w/:%#\$&\?()~.=+-]+"
+url_re = r"https?://[\w/:%#$&?()~.=+-]+"
 
 ## Python syntax pattern
 py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
@@ -2091,7 +2091,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def save_buffer_as(self, buf=None):
         """Confirm the saveas with the dialog."""
         buf = buf or self.buffer
-        name = re.sub('[\\/:*?"<>|]', '', buf.name)
+        name = re.sub(r'[\/:*?"<>|]', '_', buf.name)
         with wx.FileDialog(self, "Save buffer as",
                 defaultFile=name,
                 wildcard='|'.join(self.wildcards),
