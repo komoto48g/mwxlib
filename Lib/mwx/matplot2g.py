@@ -347,8 +347,8 @@ class AxesImagePhantom(object):
         nx = (x - l) / ux
         ny = (t - y) / uy # Y ピクセルインデクスは座標と逆
         if cast:
-            return np.vstack((pixel_cast(nx), pixel_cast(ny)))
-        return np.vstack((nx-0.5, ny-0.5))
+            return (pixel_cast(nx), pixel_cast(ny))
+        return (nx-0.5, ny-0.5)
     
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
@@ -360,7 +360,7 @@ class AxesImagePhantom(object):
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
-        return np.vstack((x, y))
+        return (x, y)
 
 
 class GraphPlot(MatplotPanel):
