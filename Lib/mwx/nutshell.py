@@ -93,8 +93,6 @@ class EditorInterface(CtrlInterface):
                 'pointer_unset' : [ None, dispatch ],
             },
             0 : {
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
                'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
@@ -1553,8 +1551,8 @@ class Buffer(EditWindow, EditorInterface):
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-                    '* pressed' : (0, dispatch), # => skip
-                   '* released' : (0, dispatch), # => skip
+                    '* pressed' : (0, skip, dispatch),
+                   '* released' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
             },
         })
@@ -1815,8 +1813,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             '*button* released' : [ None, dispatch, skip ],
             },
             0 : { # Normal mode
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
             },

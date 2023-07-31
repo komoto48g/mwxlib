@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.7"
+__version__ = "0.86.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -672,8 +672,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                 None : {
                 },
                 0 : {
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
                   'M-q pressed' : (0, close),
                 },
             },
@@ -742,8 +740,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
                 None : {
                 },
                 0 : {
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
                   'M-q pressed' : (0, close),
                 },
             },
