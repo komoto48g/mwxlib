@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.7"
+__version__ = "0.86.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1897,11 +1897,18 @@ def filling(obj=None, **kwargs):
 
 def timeit(f, *args, **kwargs):
     from timeit import timeit
-    try:
-        dt = timeit(lambda: f(*args, **kwargs), number=1)
-        print("duration time: {:g} s".format(dt))
-    except TypeError as e:
-        print(e)
+    if callable(f):
+        try:
+            dt = timeit(lambda: f(*args, **kwargs), number=1)
+            print("duration time: {:g} s".format(dt))
+        except TypeError as e:
+            print(e)
+    elif isinstance(f, str):
+        try:
+            dt = timeit(f, number=1)
+            print("duration time: {:g} s".format(dt))
+        except Exception as e:
+            print(e)
 
 
 def profile(obj, *args, **kwargs):
