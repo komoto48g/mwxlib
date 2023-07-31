@@ -672,8 +672,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                 None : {
                 },
                 0 : {
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
                   'M-q pressed' : (0, close),
                 },
             },
@@ -742,8 +740,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
                 None : {
                 },
                 0 : {
-                    '* pressed' : (0, skip),
-                   '* released' : (0, skip),
                   'M-q pressed' : (0, close),
                 },
             },

@@ -544,7 +544,6 @@ class FSM(dict):
         There is no enter/exit event handler.
     """
     debug = 0
-    debugger = None
     
     default_state = None
     current_state = property(lambda self: self.__state)
@@ -680,10 +679,6 @@ class FSM(dict):
                               "    args : {}".format(args),
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
-                    if self.debugger:
-                        self.debugger(act, *args, **kwargs)
-                        self.clear(self.default_state)
-                        break
             self.__matched_pattern = None
             return retvals
         
