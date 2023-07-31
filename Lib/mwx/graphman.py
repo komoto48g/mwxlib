@@ -510,7 +510,7 @@ class Graph(GraphPlot):
             plug = self.parent.get_plug(name)
             for art in plug.Arts:
                 art.set_visible(0)
-        self.set_markups_visible(0)
+        self.remove_markups()
         self.draw()
 
 
