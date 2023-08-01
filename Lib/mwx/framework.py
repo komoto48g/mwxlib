@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.8"
+__version__ = "0.86.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1322,8 +1322,7 @@ class ShellFrame(MiniFrame):
                             self.__autoload = False # Don't ask any more.
                             return
                         book.load_file(buf)
-        else:
-            evt.Skip()
+        evt.Skip()
     
     def OnShow(self, evt):
         pane = self._mgr.GetPane(self.watcher)
