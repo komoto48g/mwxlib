@@ -19,10 +19,6 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         parent : shellframe
         target : locals:dict to watch
     """
-    _alist = (
-        ("key", 140),
-        ("value", 0),
-    )
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
@@ -37,7 +33,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.__dir = True # sort direction
         self.__items = [] # list of data:str
         
-        for k, (header, w) in enumerate(self._alist):
+        _alist = (
+            ("key", 140),
+            ("value", 0),
+        )
+        for k, (header, w) in enumerate(_alist):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
@@ -49,6 +49,10 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.current_event, v)
             v.Skip()
+        
+        @self.handler.bind('C-c pressed')
+        def copy(v):
+            self.copy()
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
     
@@ -129,6 +133,16 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallAfter(wx.CallLater, 1000, reset_color)
     
+    def copy(self):
+        if not self.SelectedItemCount:
+            return
+        text = ''
+        for i in range(self.ItemCount):
+            if self.IsSelected(i):
+                key, vstr = self.__items[i]
+                text += "{} = {}\n".format(key, vstr)
+        Clipboard.write(text.strip('\n'))
+    
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
@@ -150,15 +164,9 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.Focus(i)
     
     def OnContextMenu(self, evt):
-        def copy():
-            def _T(i):
-                return "{} = {}".format(*self.__items[i])
-            Clipboard.write('\n'.join(_T(i) for i in selected_items))
-        
-        selected_items = list(filter(self.IsSelected, range(self.ItemCount)))
         menu = [
             (1, "Copy data", Icon('copy'),
-                lambda v: copy(),
-                lambda v: v.Enable(selected_items != [])),
+                lambda v: self.copy(),
+                lambda v: v.Enable(self.SelectedItemCount)),
         ]
         Menu.Popup(self, menu)
