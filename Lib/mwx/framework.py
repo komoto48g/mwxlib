@@ -1206,6 +1206,10 @@ class ShellFrame(MiniFrame):
         except Exception:
             ## pass
             traceback.print_exc()
+        
+        ## Reposition the window if it is off the desktop.
+        if wx.Display.GetFromWindow(self) == -1:
+            self.Position = (0, 0)
     
     def save_session_as(self):
         """Save session as a new file."""
