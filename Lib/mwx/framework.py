@@ -1425,7 +1425,8 @@ class ShellFrame(MiniFrame):
             show : True, False, otherwise None:toggle
                    The pane window will be hidden if no show.
         """
-        wnd = win if focus else wx.Window.FindFocus() # original focus
+        wnd = wx.Window.FindFocus() # original focus
+        
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
             if nb is win:
@@ -1440,8 +1441,10 @@ class ShellFrame(MiniFrame):
         if show is None:
             show = not pane.IsShown() # toggle show
         
-        if wnd and win.IsShown(): # restore focus
-            wnd.SetFocus()
+        if focus and win.IsShown():
+            win.SetFocus() # move focus
+        elif wnd:
+            wnd.SetFocus() # restore focus
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
