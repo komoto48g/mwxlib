@@ -1522,7 +1522,7 @@ class ShellFrame(MiniFrame):
     def watch(self, obj):
         self.monitor.watch(obj)
         if obj:
-            self.popup_window(self.monitor, focus=0)
+            self.popup_window(self.monitor, focus=1)
             self.linfo.watch(obj.__dict__)
             self.ginfo.watch({})
     
@@ -1532,15 +1532,9 @@ class ShellFrame(MiniFrame):
     ## Note: history 変数に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
-        if isinstance(obj, wx.Object) or obj is None:
-            if args or kwargs:
-                self.message("- Args:{} and kwargs:{} were given,"
-                             " but ignored for object monitoring.")
-            self.monitor.watch(obj)
-            if obj:
-                self.popup_window(self.monitor, focus=0)
-                self.linfo.watch(obj.__dict__)
-                self.ginfo.watch({})
+        if isinstance(obj, wx.Object):
+            self.watch(obj)
+        
         elif isinstance(obj, type(print)):
             wx.MessageBox("Builtin method or function.\n\n"
                           "Unable to debug {!r}".format(obj))
