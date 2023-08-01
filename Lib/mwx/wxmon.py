@@ -45,12 +45,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         parent : shellframe
         target : widget to monitor
     """
-    _alist = (
-        ("typeId",    62),
-        ("typeName", 200),
-        ("stamp",     40),
-        ("source",     0),
-    )
     def __init__(self, parent, **kwargs):
         CheckList.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
@@ -66,12 +60,18 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.__dir = True # sort direction
         self.__items = []
         
-        for k, (header, w) in enumerate(self._alist):
+        _alist = (
+            ("typeId",    62),
+            ("typeName", 200),
+            ("stamp",     40),
+            ("source",     0),
+        )
+        for k, (header, w) in enumerate(_alist):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
-        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -85,6 +85,10 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.current_event, v)
             v.Skip()
+        
+        @self.handler.bind('C-c pressed')
+        def copy(v):
+            self.copy()
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -248,6 +252,16 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallAfter(wx.CallLater, 1000, reset_color)
     
+    def copy(self):
+        if not self.SelectedItemCount:
+            return
+        text = ''
+        for i in range(self.ItemCount):
+            if self.IsSelected(i):
+                event, name, *_, attribs = self.__items[i]
+                text += "{}\t{}\n{}\n\n".format(event, name, attribs)
+        Clipboard.write(text.strip('\n'))
+    
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
@@ -282,22 +296,12 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         evt.Skip()
     
     def OnContextMenu(self, evt):
-        i = self.FocusedItem
-        item = self.__items[i] if i != -1 else []
         obj = self.target
         wnd = self.__prev
         menu = [
-            ('No Item selected', item) if not item
-        else
-            (item[1], Icon('copy'), (
-                (1, "Copy typeName",
-                    lambda v: Clipboard.write(item[1]),
-                    lambda v: v.Enable(item is not None)),
-                    
-                (2, "Copy typeInfo",
-                    lambda v: Clipboard.write('\n'.join(str(x) for x in item)),
-                    lambda v: v.Enable(item is not None)),
-            )),
+            (1, "Copy data", Icon('copy'),
+                lambda v: self.copy(),
+                lambda v: v.Enable(self.SelectedItemCount)),
             (),
             (11, "Restart watching {}".format(wnd.__class__.__name__), Icon('ghost'),
                  lambda v: self.watch(wnd),
