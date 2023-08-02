@@ -1485,7 +1485,7 @@ class ShellFrame(MiniFrame):
         if re.match(r"https?://[\w/:%#$&?()~.=+-]+", filename): # url_re
             return book.load_url(filename, lineno, verbose)
         else:
-            return book.load_file(filename, lineno)
+            return book.load_file(filename, lineno, verbose)
     
     def load(self, filename, lineno=0, book=None, show=True, focus=False):
         """Load file @where the object is defined.
@@ -1670,10 +1670,10 @@ class ShellFrame(MiniFrame):
     
     def on_buffer_caption(self, buf):
         """Called when the buffer caption is updated."""
-        if buf.caption.startswith('!'):
+        if buf.caption_prefix.startswith('!'):
             v = wx.ActivateEvent(wx.wxEVT_ACTIVATE, True,
                                  buf.Id, ActivationReason=0)
-            self.EventHandler.ProcessEvent(v)
+            self.EventHandler.ProcessEvent(v) # => self.OnActivate
     
     def add_log(self, text):
         """Add text to the logging buffer."""

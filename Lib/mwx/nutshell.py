@@ -1459,7 +1459,7 @@ class Buffer(EditWindow, EditorInterface):
             return -1
     
     @property
-    def caption(self):
+    def caption_prefix(self):
         prefix = ''
         dt = self.mtdelta
         if dt is not None:
@@ -1471,7 +1471,11 @@ class Buffer(EditWindow, EditorInterface):
                 prefix += '%'
         if prefix:
             prefix += ' '
-        return prefix + self.name
+        return prefix
+    
+    @property
+    def caption(self):
+        return self.caption_prefix + self.name
     
     def update_caption(self):
         try:
