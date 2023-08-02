@@ -1445,7 +1445,8 @@ class ShellFrame(MiniFrame):
                     nb.Selection = j # the focus is moved
                 break
         else:
-            return
+            return # no such pane.windows
+        
         if show is None:
             show = not pane.IsShown() # toggle show
         
@@ -1494,16 +1495,13 @@ class ShellFrame(MiniFrame):
         else:
             return book.load_file(filename, lineno, verbose)
     
-    def load(self, filename, lineno=0, book=None, show=True, focus=False):
+    def load(self, filename, lineno=0):
         """Load file @where the object is defined.
         
         Args:
             filename : target filename:str or object.
                        It also supports <'filename:lineno'> format.
             lineno   : Set mark to lineno on load.
-            book     : book of the buffer to load.
-            show     : Show the book.
-            focus    : Set the focus if the window is displayed.
         """
         if not isinstance(filename, str):
             filename = where(filename)
@@ -1514,12 +1512,10 @@ class ShellFrame(MiniFrame):
             if m:
                 filename, ln = m.groups()
                 lineno = int(ln)
-        if not book:
-            book = next((x for x in self.all_books
-                            if x.find_buffer(filename)), self.Log)
-        if show:
-            self.popup_window(book, focus=focus)
-        self._load(filename, lineno, book, verbose=1)
+        book = next((x for x in self.all_books
+                        if x.find_buffer(filename)), self.Log)
+        if self._load(filename, lineno, book, verbose=1):
+            self.popup_window(book, focus=0)
     
     def info(self, obj):
         self.rootshell.info(obj)
