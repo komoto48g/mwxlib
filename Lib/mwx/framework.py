@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.86.9"
+__version__ = "0.87.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1297,11 +1297,12 @@ class ShellFrame(MiniFrame):
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",
-                            "Close {!r}".format(buf.name),
+                            "Close {!r}".format(book.Name),
                             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                         self.message("The close has been canceled.")
                         evt.Veto()
                         return
+                    break # Don't ask any more.
         if self.__standalone:
             evt.Skip() # Close the window
         else:

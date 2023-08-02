@@ -827,6 +827,7 @@ class Frame(mwx.Frame):
                     self.message("The close has been canceled.")
                     evt.Veto()
                     return
+                break
         evt.Skip()
     
     def Destroy(self):
