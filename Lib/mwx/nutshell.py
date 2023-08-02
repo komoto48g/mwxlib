@@ -29,8 +29,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import split_words, split_paren
-from .utilus import find_modules, deprecated
+from .utilus import split_words, split_paren, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
 
@@ -448,14 +447,6 @@ class EditorInterface(CtrlInterface):
             self.pointer = -1 # toggle marker
         else:
             self.pointer = self.cline
-    
-    @deprecated
-    def goto_mark(self):
-        self.goto_marker(0b001)
-    
-    @deprecated
-    def goto_pointer(self):
-        self.goto_marker(0b11000)
     
     def exchange_point_and_mark(self):
         p = self.cpos

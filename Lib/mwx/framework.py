@@ -37,6 +37,13 @@ def postcall(f):
     return _f
 
 
+def deprecated(item=None, msg='', useName=False):
+    """A decorator of wx.deprecated."""
+    if item is None:
+        return lambda f: deprecated(f, msg, useName)
+    return wx.deprecated(item, msg, useName)
+
+
 def skip(v):
     v.Skip()
 
