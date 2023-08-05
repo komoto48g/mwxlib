@@ -1471,7 +1471,8 @@ class Buffer(EditWindow, EditorInterface):
     def update_caption(self):
         try:
             if self.mtdelta is not None:
-                if self.parent.set_caption(self, self.caption):
+                if self.parent.set_caption(self,
+                        self.caption_prefix + self.name):
                     self.parent.handler('buffer_caption_reset', self)
         except AttributeError:
             pass
