@@ -812,10 +812,14 @@ class AuiNotebook(aui.AuiNotebook):
                 wnd.SetFocus()
     
     def get_caption(self, win):
+        """Get caption of tab/page for specifiend window."""
         tab, page = self.find_tab(win)
         return page.caption
     
     def set_caption(self, win, caption):
+        """Set caption of tab/page for specifiend window.
+        Returns True if the caption has changed.
+        """
         tab, page = self.find_tab(win)
         if page.caption != caption:
             page.caption = caption
@@ -859,6 +863,10 @@ class AuiNotebook(aui.AuiNotebook):
     def savePerspective(self):
         """Saves the entire user interface layout into an encoded string,
         which can then be stored by the application.
+        
+        Note:
+            Perspectives are saved according to page.window.Name.
+            User should give it (not page.caption) a unique name.
         """
         for j, pane in enumerate(self.all_panes):
             pane.name = f"pane{j+1}"
@@ -877,8 +885,8 @@ class AuiNotebook(aui.AuiNotebook):
         """Loads a saved perspective.
         
         Note:
-            This function will be called after the session is loaded.
-            At that point, some pages may be missing.
+            Perspectives are loaded after the session is resumed.
+            At that point, some user-cusotm pages may be missing.
         """
         tabs, frames = spec.split('@')
         tabinfo = re.findall(r"pane\w+?=(.*?);(.*?)\|", tabs)
@@ -1445,7 +1453,7 @@ class ShellFrame(MiniFrame):
                     nb.Selection = j # the focus is moved
                 break
         else:
-            return # no such pane.windows
+            return # no such pane.window
         
         if show is None:
             show = not pane.IsShown() # toggle show
