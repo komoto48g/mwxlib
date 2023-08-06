@@ -1967,15 +1967,17 @@ class EditorBook(AuiNotebook, CtrlInterface):
     ]
     
     def load_url(self, url, lineno=0, verbose=True):
-        if verbose:
-            surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
-            if wx.MessageBox( # Confirm URL load.
-                    "You are loading URL contents.\n\n"
-                    "Continue loading?",
-                    "Load {!r}".format(surl),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The load has been canceled.")
-                return None
+        """Load a url into an existing or new buffer.
+        """
+        ## if verbose:
+        ##     surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
+        ##     if wx.MessageBox( # Confirm URL load.
+        ##             "You are loading URL contents.\n\n"
+        ##             "Continue loading?",
+        ##             "Load {!r}".format(surl),
+        ##             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+        ##         self.post_message("The load has been canceled.")
+        ##         return None
         try:
             import requests
             res = requests.get(url)
@@ -1983,7 +1985,18 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.post_message("Failed to load URL: {}".format(e))
             return None
         if res.status_code == 200: # success
-            buf = self.find_buffer(url) or self.create_buffer(url)
+            buf = self.find_buffer(url)
+            if not buf:
+                buf = self.create_buffer(url)
+            elif buf.need_buffer_save and verbose:
+                if wx.MessageBox( # Confirm load.
+                        "You are leaving unsaved content.\n\n"
+                        "The changes will be discarded.\n"
+                        "Continue loading?",
+                        "Load {!r}".format(buf.name),
+                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    self.post_message("The load has been canceled.")
+                    return None
             buf._load_textfile(res.text, url, lineno)
             self.swap_page(buf)
             return True
@@ -1998,7 +2011,15 @@ class EditorBook(AuiNotebook, CtrlInterface):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename)
         if lines:
-            buf = self.find_buffer(filename) or self.create_buffer(filename)
+            buf = self.find_buffer(filename)
+            if not buf:
+                buf = self.create_buffer(filename)
+            elif not buf.need_buffer_load:
+                self.swap_page(buf)
+                if lineno:
+                    buf.markline = lineno - 1
+                    buf.goto_marker(1)
+                return True
             buf._load_textfile(''.join(lines), filename, lineno)
             self.swap_page(buf)
             return True
@@ -2007,8 +2028,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def load_file(self, filename, lineno=0, verbose=True):
         """Load a file into an existing or new buffer.
         """
-        buf = self.find_buffer(filename) or self.create_buffer(filename)
-        if buf.need_buffer_save and verbose:
+        buf = self.find_buffer(filename)
+        if not buf:
+            buf = self.create_buffer(filename)
+        elif buf.need_buffer_save and verbose:
             if wx.MessageBox( # Confirm load.
                     "You are leaving unsaved content.\n\n"
                     "The changes will be discarded.\n"
@@ -2017,6 +2040,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The load has been canceled.")
                 return None
+        elif not buf.need_buffer_load:
+            self.swap_page(buf)
+            if lineno:
+                buf.markline = lineno - 1
+                buf.goto_marker(1)
+            return True
         try:
             self.Freeze()
             org = self.buffer
