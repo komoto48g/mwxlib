@@ -1971,6 +1971,18 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def load_url(self, url, lineno=0, verbose=True):
         """Load a url into an existing or new buffer.
         """
+        buf = self.find_buffer(url)
+        if not buf:
+            buf = self.create_buffer(url)
+        elif buf.need_buffer_save and verbose:
+            if wx.MessageBox( # Confirm load.
+                    "You are leaving unsaved content.\n\n"
+                    "The changes will be discarded.\n"
+                    "Continue loading?",
+                    "Load {!r}".format(buf.name),
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.post_message("The load has been canceled.")
+                return None
         ## if verbose:
         ##     surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
         ##     if wx.MessageBox( # Confirm URL load.
@@ -1981,28 +1993,20 @@ class EditorBook(AuiNotebook, CtrlInterface):
         ##         self.post_message("The load has been canceled.")
         ##         return None
         try:
+            busy = wx.BusyInfo("One moment please.\n"
+                               "Loading {!r}...".format(url))
             import requests
             res = requests.get(url)
+            if res.status_code == 200: # success
+                buf._load_textfile(res.text, url)
+                self.swap_buffer(buf, lineno)
+                return True
+            return False
         except Exception as e:
             self.post_message("Failed to load URL: {}".format(e))
-            return None
-        if res.status_code == 200: # success
-            buf = self.find_buffer(url)
-            if not buf:
-                buf = self.create_buffer(url)
-            elif buf.need_buffer_save and verbose:
-                if wx.MessageBox( # Confirm load.
-                        "You are leaving unsaved content.\n\n"
-                        "The changes will be discarded.\n"
-                        "Continue loading?",
-                        "Load {!r}".format(buf.name),
-                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                    self.post_message("The load has been canceled.")
-                    return None
-            buf._load_textfile(res.text, url)
-            self.swap_buffer(buf, lineno)
-            return True
-        return False
+            return False
+        finally:
+            del busy
     
     def load_cache(self, filename, lineno=0):
         """Load a file from cache using linecache.
