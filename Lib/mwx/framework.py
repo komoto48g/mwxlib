@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.87.0"
+__version__ = "0.87.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1495,13 +1495,15 @@ class ShellFrame(MiniFrame):
         else:
             return book.load_file(filename, lineno, verbose)
     
-    def load(self, filename, lineno=0):
+    def load(self, filename, lineno=0, show=True, focus=False):
         """Load file @where the object is defined.
         
         Args:
             filename : target filename:str or object.
                        It also supports <'filename:lineno'> format.
             lineno   : Set mark to lineno on load.
+            show     : Show the book.
+            focus    : Focus the window if visible.
         """
         if not isinstance(filename, str):
             filename = where(filename)
@@ -1515,7 +1517,7 @@ class ShellFrame(MiniFrame):
         book = next((x for x in self.all_books
                         if x.find_buffer(filename)), self.Log)
         if self._load(filename, lineno, book, verbose=1):
-            self.popup_window(book, focus=0)
+            self.popup_window(book, show, focus)
     
     def info(self, obj):
         self.rootshell.info(obj)
