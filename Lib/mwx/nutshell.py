@@ -1621,21 +1621,17 @@ class Buffer(EditWindow, EditorInterface):
     ## File I/O
     ## --------------------------------
     
-    def _load_textfile(self, text, filename, lineno=0):
+    def _load_textfile(self, text, filename):
         with self.off_readonly():
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.markline = lineno - 1
-        self.goto_marker(1)
         self.filename = filename
         self.handler('buffer_loaded', self)
     
-    def _load_file(self, filename, lineno=0):
+    def _load_file(self, filename):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
-            self.markline = lineno - 1
-            self.goto_marker(1)
             self.filename = filename
             self.EmptyUndoBuffer()
             self.SetSavePoint()
@@ -1911,6 +1907,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 if f is buf or f in buf: # check code
                     return buf
     
+    def swap_buffer(self, buf, lineno=0):
+        self.swap_page(buf)
+        if lineno:
+            buf.markline = lineno - 1
+            buf.goto_marker(1)
+    
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         try:
@@ -1997,8 +1999,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                         style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                     self.post_message("The load has been canceled.")
                     return None
-            buf._load_textfile(res.text, url, lineno)
-            self.swap_page(buf)
+            buf._load_textfile(res.text, url)
+            self.swap_buffer(buf, lineno)
             return True
         return False
     
@@ -2015,13 +2017,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
             if not buf:
                 buf = self.create_buffer(filename)
             elif not buf.need_buffer_load:
-                self.swap_page(buf)
-                if lineno:
-                    buf.markline = lineno - 1
-                    buf.goto_marker(1)
+                self.swap_buffer(buf, lineno)
                 return True
-            buf._load_textfile(''.join(lines), filename, lineno)
-            self.swap_page(buf)
+            buf._load_textfile(''.join(lines), filename)
+            self.swap_buffer(buf, lineno)
             return True
         return False
     
@@ -2041,23 +2040,20 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.post_message("The load has been canceled.")
                 return None
         elif not buf.need_buffer_load:
-            self.swap_page(buf)
-            if lineno:
-                buf.markline = lineno - 1
-                buf.goto_marker(1)
+            self.swap_buffer(buf, lineno)
             return True
         try:
             self.Freeze()
             org = self.buffer
-            if buf._load_file(buf.filename, lineno):
-                self.swap_page(buf)
+            if buf._load_file(buf.filename):
+                self.swap_buffer(buf, lineno)
                 return True
             return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.delete_buffer(buf)
             if org:
-                self.swap_page(org)
+                self.swap_buffer(org)
             return False
         finally:
             self.Thaw()
@@ -2067,7 +2063,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """
         buf = buf or self.buffer
         if buf.need_buffer_load and verbose:
-            self.swap_page(buf)
+            self.swap_buffer(buf)
             if wx.MessageBox( # Confirm save.
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
