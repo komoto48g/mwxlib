@@ -1421,16 +1421,16 @@ class Buffer(EditWindow, EditorInterface):
     
     @filename.setter
     def filename(self, f):
+        try:
+            org = self.__filename
+        except AttributeError:
+            org = None
         if f and os.path.isfile(f):
             self.__mtime = os.path.getmtime(f)
         else:
             self.__mtime = None
-        try:
-            renamed = (self.__filename != f)
-        except AttributeError:
-            renamed = False
         self.__filename = f
-        if renamed:
+        if self.__filename != org:
             self.parent.handler('buffer_filename_reset', self)
     
     @property
@@ -1446,7 +1446,7 @@ class Buffer(EditWindow, EditorInterface):
         f = self.filename
         if f and os.path.isfile(f):
             return os.path.getmtime(f) - self.__mtime
-        elif f and re.match(url_re, f):
+        if f and re.match(url_re, f):
             return -1
     
     @property
@@ -1901,9 +1901,15 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def find_buffer(self, f):
         """Find buffer with specified f:filename or code."""
-        for buf in self.all_buffers:
-            if f is buf or f in buf or f == buf.filename: # check code
-                return buf
+        if isinstance(f, str):
+            g = os.path.realpath(f)
+            for buf in self.all_buffers:
+                if f == buf.filename or g == os.path.realpath(buf.filename):
+                    return buf
+        else:
+            for buf in self.all_buffers:
+                if f is buf or f in buf: # check code
+                    return buf
     
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
