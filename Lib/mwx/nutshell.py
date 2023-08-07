@@ -1621,21 +1621,17 @@ class Buffer(EditWindow, EditorInterface):
     ## File I/O
     ## --------------------------------
     
-    def _load_textfile(self, text, filename, lineno=0):
+    def _load_textfile(self, text, filename):
         with self.off_readonly():
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.markline = lineno - 1
-        self.goto_marker(1)
         self.filename = filename
         self.handler('buffer_loaded', self)
     
-    def _load_file(self, filename, lineno=0):
+    def _load_file(self, filename):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
-            self.markline = lineno - 1
-            self.goto_marker(1)
             self.filename = filename
             self.EmptyUndoBuffer()
             self.SetSavePoint()
@@ -1911,6 +1907,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 if f is buf or f in buf: # check code
                     return buf
     
+    def swap_buffer(self, buf, lineno=0):
+        self.swap_page(buf)
+        if lineno:
+            buf.markline = lineno - 1
+            buf.goto_marker(1)
+    
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         try:
@@ -1967,27 +1969,44 @@ class EditorBook(AuiNotebook, CtrlInterface):
     ]
     
     def load_url(self, url, lineno=0, verbose=True):
-        if verbose:
-            surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
-            if wx.MessageBox( # Confirm URL load.
-                    "You are loading URL contents.\n\n"
+        """Load a url into an existing or new buffer.
+        """
+        buf = self.find_buffer(url)
+        if not buf:
+            buf = self.create_buffer(url)
+        elif buf.need_buffer_save and verbose:
+            if wx.MessageBox( # Confirm load.
+                    "You are leaving unsaved content.\n\n"
+                    "The changes will be discarded.\n"
                     "Continue loading?",
-                    "Load {!r}".format(surl),
+                    "Load {!r}".format(buf.name),
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The load has been canceled.")
                 return None
+        ## if verbose:
+        ##     surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
+        ##     if wx.MessageBox( # Confirm URL load.
+        ##             "You are loading URL contents.\n\n"
+        ##             "Continue loading?",
+        ##             "Load {!r}".format(surl),
+        ##             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+        ##         self.post_message("The load has been canceled.")
+        ##         return None
         try:
+            busy = wx.BusyInfo("One moment please.\n"
+                               "Loading {!r}...".format(url))
             import requests
             res = requests.get(url)
+            if res.status_code == 200: # success
+                buf._load_textfile(res.text, url)
+                self.swap_buffer(buf, lineno)
+                return True
+            return False
         except Exception as e:
             self.post_message("Failed to load URL: {}".format(e))
-            return None
-        if res.status_code == 200: # success
-            buf = self.find_buffer(url) or self.create_buffer(url)
-            buf._load_textfile(res.text, url, lineno)
-            self.swap_page(buf)
-            return True
-        return False
+            return False
+        finally:
+            del busy
     
     def load_cache(self, filename, lineno=0):
         """Load a file from cache using linecache.
@@ -1998,17 +2017,24 @@ class EditorBook(AuiNotebook, CtrlInterface):
         linecache.checkcache(filename)
         lines = linecache.getlines(filename)
         if lines:
-            buf = self.find_buffer(filename) or self.create_buffer(filename)
-            buf._load_textfile(''.join(lines), filename, lineno)
-            self.swap_page(buf)
+            buf = self.find_buffer(filename)
+            if not buf:
+                buf = self.create_buffer(filename)
+            elif not buf.need_buffer_load:
+                self.swap_buffer(buf, lineno)
+                return True
+            buf._load_textfile(''.join(lines), filename)
+            self.swap_buffer(buf, lineno)
             return True
         return False
     
     def load_file(self, filename, lineno=0, verbose=True):
         """Load a file into an existing or new buffer.
         """
-        buf = self.find_buffer(filename) or self.create_buffer(filename)
-        if buf.need_buffer_save and verbose:
+        buf = self.find_buffer(filename)
+        if not buf:
+            buf = self.create_buffer(filename)
+        elif buf.need_buffer_save and verbose:
             if wx.MessageBox( # Confirm load.
                     "You are leaving unsaved content.\n\n"
                     "The changes will be discarded.\n"
@@ -2017,18 +2043,21 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The load has been canceled.")
                 return None
+        elif not buf.need_buffer_load:
+            self.swap_buffer(buf, lineno)
+            return True
         try:
             self.Freeze()
             org = self.buffer
-            if buf._load_file(buf.filename, lineno):
-                self.swap_page(buf)
+            if buf._load_file(buf.filename):
+                self.swap_buffer(buf, lineno)
                 return True
             return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.delete_buffer(buf)
             if org:
-                self.swap_page(org)
+                self.swap_buffer(org)
             return False
         finally:
             self.Thaw()
@@ -2038,7 +2067,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """
         buf = buf or self.buffer
         if buf.need_buffer_load and verbose:
-            self.swap_page(buf)
+            self.swap_buffer(buf)
             if wx.MessageBox( # Confirm save.
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
