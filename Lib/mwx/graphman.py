@@ -204,7 +204,7 @@ class LayerInterface(CtrlInterface):
         Parent type can be <Frame>, <AuiFloatingFrame>, or <AuiNotebook>.
     """
     MENU = "Plugins" # default menu for Plugins
-    menukey = property(lambda self: "{}/&{}".format(self.MENU, self.__module__))
+    menukey = "Plugins/"
     caption = True
     category = None
     dockable = True
