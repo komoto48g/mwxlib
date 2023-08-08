@@ -1421,17 +1421,14 @@ class Buffer(EditWindow, EditorInterface):
     
     @filename.setter
     def filename(self, f):
-        try:
-            org = self.__filename
-        except AttributeError:
-            org = None
         if f and os.path.isfile(f):
             self.__mtime = os.path.getmtime(f)
         else:
             self.__mtime = None
-        self.__filename = f
-        if self.__filename != org:
+        if self.__filename != f:
+            self.__filename = f
             self.parent.handler('buffer_filename_reset', self)
+            self.update_caption()
     
     @property
     def mtdelta(self):
@@ -1470,10 +1467,8 @@ class Buffer(EditWindow, EditorInterface):
     
     def update_caption(self):
         try:
-            if self.mtdelta is not None:
-                if self.parent.set_caption(self,
-                        self.caption_prefix + self.name):
-                    self.parent.handler('buffer_caption_reset', self)
+            if self.parent.set_caption(self, self.caption):
+                self.parent.handler('buffer_caption_reset', self)
         except AttributeError:
             pass
     
@@ -1506,6 +1501,7 @@ class Buffer(EditWindow, EditorInterface):
         EditorInterface.__init__(self)
         
         self.parent = parent
+        self.__filename = filename
         self.filename = filename
         self.code = None
         
