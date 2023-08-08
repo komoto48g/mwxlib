@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.87.2"
+__version__ = "0.87.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1497,11 +1497,7 @@ class ShellFrame(MiniFrame):
                 book = getattr(self, book)
         except AttributeError:
             return False
-        
-        if re.match(r"https?://[\w/:%#$&?()~.=+-]+", filename): # url_re
-            return book.load_url(filename, lineno, verbose)
-        else:
-            return book.load_file(filename, lineno, verbose)
+        return book.load_file(filename, lineno, verbose)
     
     def load(self, filename, lineno=0, show=True, focus=False):
         """Load file @where the object is defined.

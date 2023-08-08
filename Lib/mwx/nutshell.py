@@ -16,6 +16,7 @@ import dis
 import pydoc
 import keyword
 import linecache
+import requests
 import shlex
 import sys
 import os
@@ -1965,46 +1966,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
         "ALL files (*.*)|*.*",
     ]
     
-    def load_url(self, url, lineno=0, verbose=True):
-        """Load a url into an existing or new buffer.
-        """
-        buf = self.find_buffer(url)
-        if not buf:
-            buf = self.create_buffer(url)
-        elif buf.need_buffer_save and verbose:
-            if wx.MessageBox( # Confirm load.
-                    "You are leaving unsaved content.\n\n"
-                    "The changes will be discarded.\n"
-                    "Continue loading?",
-                    "Load {!r}".format(buf.name),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.post_message("The load has been canceled.")
-                return None
-        ## if verbose:
-        ##     surl = re.sub(r"(https?://.+?)/(.+)/(.+)", r"\1 ... \3", url)
-        ##     if wx.MessageBox( # Confirm URL load.
-        ##             "You are loading URL contents.\n\n"
-        ##             "Continue loading?",
-        ##             "Load {!r}".format(surl),
-        ##             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-        ##         self.post_message("The load has been canceled.")
-        ##         return None
-        try:
-            busy = wx.BusyInfo("One moment please.\n"
-                               "Loading {!r}...".format(url))
-            import requests
-            res = requests.get(url)
-            if res.status_code == 200: # success
-                buf._load_textfile(res.text, url)
-                self.swap_buffer(buf, lineno)
-                return True
-            return False
-        except Exception as e:
-            self.post_message("Failed to load URL: {}".format(e))
-            return False
-        finally:
-            del busy
-    
     def load_cache(self, filename, lineno=0):
         """Load a file from cache using linecache.
         Note:
@@ -2044,12 +2005,22 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.swap_buffer(buf, lineno)
             return True
         try:
+            ## busy = wx.BusyInfo("One moment please.\n"
+            ##                    "Loading {!r}...".format(filename))
             self.Freeze()
             org = self.buffer
-            if buf._load_file(buf.filename):
-                self.swap_buffer(buf, lineno)
-                return True
-            return False
+            if re.match(url_re, filename):
+                res = requests.get(filename, timeout=3.0)
+                if res.status_code == 200:
+                    buf._load_textfile(res.text, filename)
+                    self.swap_buffer(buf, lineno)
+                    return True
+                return False
+            else:
+                if buf._load_file(buf.filename):
+                    self.swap_buffer(buf, lineno)
+                    return True
+                return False
         except Exception as e:
             self.post_message("Failed to load {!r}: {}".format(buf.name, e))
             self.delete_buffer(buf)
@@ -2058,6 +2029,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return False
         finally:
             self.Thaw()
+    
+    load_url = load_file # for backward compatibility
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
@@ -2093,10 +2066,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
         elif dt == 0 and not buf.IsModified():
             self.post_message("No need to load.")
             return None
-        elif dt < 0:
-            return self.load_url(buf.filename, buf.markline+1)
         else:
-            return self.load_file(buf, buf.markline+1)
+            return self.load_file(buf.filename, buf.markline+1)
     
     def save_buffer(self, buf=None):
         """Confirm the save with the dialog."""
