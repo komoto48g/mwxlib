@@ -204,7 +204,7 @@ class LayerInterface(CtrlInterface):
         Parent type can be <Frame>, <AuiFloatingFrame>, or <AuiNotebook>.
     """
     MENU = "Plugins" # default menu for Plugins
-    menukey = property(lambda self: "{}/&{}".format(self.MENU, self.__module__))
+    menukey = "Plugins/"
     caption = True
     category = None
     dockable = True
@@ -1346,7 +1346,7 @@ class Frame(mwx.Frame):
     def import_index(self, f=None, view=None):
         """Load frames :ref to the Index file.
         """
-        if view not in self.graphic_windows:
+        if not view:
             view = self.selected_view
         
         if not f:
@@ -1552,7 +1552,7 @@ class Frame(mwx.Frame):
         
         If no view given, the currently selected view is chosen.
         """
-        if view not in self.graphic_windows:
+        if not view:
             view = self.selected_view
         
         if isinstance(paths, str): # for single frame
