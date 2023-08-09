@@ -177,7 +177,7 @@ class MatplotPanel(wx.Panel):
         'C-*[LR]button pressed' : (PAN+DRAGGING, ),
      'space+[LR]button pressed' : (PAN+DRAGGING, ),
               '*[LR]drag begin' : (PAN+DRAGGING, ),
-                'ctrl released' : (NORMAL, self.OnPanEnd),
+               '*ctrl released' : (NORMAL, self.OnPanEnd),
                'space released' : (NORMAL, self.OnPanEnd),
                  'figure_leave' : (NORMAL, self.OnPanEnd),
                    'axes_leave' : (NORMAL, self.OnPanEnd),
