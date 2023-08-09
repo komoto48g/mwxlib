@@ -943,11 +943,12 @@ def Iconify(icon, w, h):
         import wx.svg
         import requests
         url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
-        content = requests.get(url).content
-        img = wx.svg.SVGimage.CreateFromBytes(content)
+        res = requests.get(url, timeout=3.0)
+        img = wx.svg.SVGimage.CreateFromBytes(res.content)
         bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
         return bmp
     except Exception:
+        print("- Failed to load iconify.design/{}".format(icon))
         pass
 
 

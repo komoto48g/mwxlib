@@ -16,7 +16,6 @@ import dis
 import pydoc
 import keyword
 import linecache
-import requests
 import shlex
 import sys
 import os
@@ -2010,8 +2009,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.Freeze()
             org = self.buffer
             if re.match(url_re, filename):
+                import requests
                 res = requests.get(filename, timeout=3.0)
-                if res.status_code == 200:
+                if res.status_code == requests.codes.ok:
                     buf._load_textfile(res.text, filename)
                     self.swap_buffer(buf, lineno)
                     return True
