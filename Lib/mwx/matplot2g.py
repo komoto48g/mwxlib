@@ -340,8 +340,8 @@ class AxesImagePhantom(object):
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
             x, y = x
-        if not isinstance(x, np.ndarray): x = np.array([x])
-        if not isinstance(y, np.ndarray): y = np.array([y])
+        x = self._to_array(x)
+        y = self._to_array(y)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
@@ -354,13 +354,21 @@ class AxesImagePhantom(object):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
         if ny is None:
             nx, ny = nx
-        if not isinstance(nx, np.ndarray): nx = np.array([nx])
-        if not isinstance(ny, np.ndarray): ny = np.array([ny])
+        nx = self._to_array(nx)
+        ny = self._to_array(ny)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
         return (x, y)
+    
+    @staticmethod
+    def _to_array(x):
+        if isinstance(x, np.ndarray):
+            return x
+        if hasattr(x, '__iter__'):
+            return np.array(x)
+        return np.array([x])
 
 
 class GraphPlot(MatplotPanel):
