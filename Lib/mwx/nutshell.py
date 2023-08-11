@@ -959,15 +959,6 @@ class EditorInterface(CtrlInterface):
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
             return p
-        if st == 'comment':
-            text, lp = self.CurLine
-            text = text[lp:]
-            if text[0] in "\"\'":
-                try:
-                    lexer = shlex.shlex(text)
-                    return p + len(lexer.get_token())
-                except ValueError:
-                    pass # no closing quotation
     
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
@@ -977,15 +968,6 @@ class EditorInterface(CtrlInterface):
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
             return p
-        if st == 'comment':
-            text, lp = self.CurLine
-            text = text[:lp][::-1]
-            if text[0] in "\"\'":
-                try:
-                    lexer = shlex.shlex(text)
-                    return p - len(lexer.get_token())
-                except ValueError:
-                    pass # no closing quotation
     
     def get_following_atom(self, p):
         q = p
