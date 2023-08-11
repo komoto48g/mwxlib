@@ -16,7 +16,6 @@ import dis
 import pydoc
 import keyword
 import linecache
-import shlex
 import sys
 import os
 import re
@@ -29,7 +28,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import split_words, split_paren, find_modules
+from .utilus import split_words, split_paren, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
 
@@ -675,13 +674,8 @@ class EditorInterface(CtrlInterface):
     
     @classmethod
     def py_strip_comments(self, text):
-        """Returns text without a trailing comment."""
-        try:
-            lexer = shlex.shlex(text)
-            lexer.whitespace = '' # nothing is white
-            return ''.join(lexer)
-        except ValueError:
-            return text
+        """Returns text without comments."""
+        return ''.join(split_tokens(text, comment=False))
     
     ## --------------------------------
     ## Fold / Unfold functions
