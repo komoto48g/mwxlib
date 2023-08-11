@@ -297,9 +297,9 @@ def split_words(text, reverse=False):
             yield tokens.pop(0)
 
 
-def split_tokens(text):
+def split_tokens(text, comment=True):
     """Generates tokens extracted from text.
-    If reverse is True, process from tail to head.
+    If comment is True, generate comment tokens too.
     """
     try:
         f = io.StringIO(text)
@@ -307,6 +307,9 @@ def split_tokens(text):
         j, k = 1, 0
         for type, string, start, end, line in tokens:
             if type in (0,5,6) or not string:
+                continue
+            if type == 61 and not comment:
+                next(tokens, '') # skip the trailing cr/lf
                 continue
             l, m = start
             if l > j and m > 0:
