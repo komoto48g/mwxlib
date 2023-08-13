@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.87.7"
+__version__ = "0.87.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -993,8 +993,8 @@ class ShellFrame(MiniFrame):
         builtins.mro = mro
         builtins.where = where
         builtins.filling = filling
-        builtins.profile = profile
-        builtins.timeit = timeit
+        builtins.timeit = self.timeit
+        builtins.profile = self.profile
         builtins.info = self.info
         builtins.help = self.help
         builtins.dive = self.clone_shell
@@ -1539,6 +1539,46 @@ class ShellFrame(MiniFrame):
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)
     
+    def timeit(self, obj, *args, **kwargs):
+        """Measure the duration cpu time (per one execution)."""
+        from timeit import timeit
+        if callable(obj):
+            try:
+                dt = timeit(lambda: obj(*args, **kwargs), number=1)
+                print("duration time: {:g} s".format(dt))
+            except TypeError as e:
+                print(e)
+        elif isinstance(obj, str):
+            try:
+                dt = timeit(obj, number=1,
+                            globals=self.current_shell.globals)
+                print("duration time: {:g} s".format(dt))
+            except Exception as e:
+                print(e)
+        else:
+            print("- obj is neither a string nor callable")
+    
+    def profile(self, obj, *args, **kwargs):
+        """Profile a single function call."""
+        from profile import Profile
+        if callable(obj):
+            try:
+                pr = Profile()
+                pr.runcall(obj, *args, **kwargs)
+                pr.print_stats()
+            except TypeError as e:
+                print(e)
+        elif isinstance(obj, str):
+            try:
+                pr = Profile()
+                pr.runctx(obj, self.current_shell.globals,
+                               self.current_shell.locals)
+                pr.print_stats()
+            except TypeError as e:
+                print(e)
+        else:
+            print("- obj must be callable or be a string, bytes or code object")
+    
     ## Note: history 変数に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
@@ -1546,8 +1586,9 @@ class ShellFrame(MiniFrame):
             self.watch(obj)
         
         elif isinstance(obj, type(print)):
-            wx.MessageBox("Builtin method or function.\n\n"
-                          "Unable to debug {!r}".format(obj))
+            wx.MessageBox("Unable to debug builtin functions.\n\n"
+                          "Target must be callable or wx.Object.",
+                          style=wx.ICON_ERROR)
         elif callable(obj):
             try:
                 shell = self.debugger.interactive_shell
@@ -1574,10 +1615,9 @@ class ShellFrame(MiniFrame):
             self.ginfo.watch({})
             self.popup_window(self.linfo, focus=0)
         else:
-            print("- cannot debug {!r}".format(obj))
-            print("  The debug target must be callable or wx.Object.")
-            wx.MessageBox("Not a callable object\n\n"
-                          "Unable to debug {!r}".format(obj))
+            wx.MessageBox("Unable to debug non-callable objects.\n\n"
+                          "Target must be callable or wx.Object.",
+                          style=wx.ICON_ERROR)
     
     def on_debug_begin(self, frame):
         """Called before set_trace."""
@@ -1888,8 +1928,7 @@ except ImportError as e:
 
 
 def filling(obj=None, **kwargs):
-    """Wx.py tool for watching ingredients of the widget.
-    """
+    """Wx.py tool for watching ingredients of the widget."""
     from .py.filling import FillingFrame
     frame = FillingFrame(rootObject=obj,
                          rootLabel=typename(obj),
@@ -1899,29 +1938,6 @@ def filling(obj=None, **kwargs):
     frame.filling.text.Zoom = -1 # zoom level of size of fonts
     frame.Show()
     return frame
-
-
-def timeit(f, *args, **kwargs):
-    from timeit import timeit
-    if callable(f):
-        try:
-            dt = timeit(lambda: f(*args, **kwargs), number=1)
-            print("duration time: {:g} s".format(dt))
-        except TypeError as e:
-            print(e)
-    elif isinstance(f, str):
-        try:
-            dt = timeit(f, number=1)
-            print("duration time: {:g} s".format(dt))
-        except Exception as e:
-            print(e)
-
-
-def profile(obj, *args, **kwargs):
-    from profile import Profile
-    pr = Profile()
-    pr.runcall(obj, *args, **kwargs)
-    pr.print_stats()
 
 
 if __name__ == "__main__":
