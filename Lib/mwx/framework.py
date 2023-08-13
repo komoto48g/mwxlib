@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.87.8"
+__version__ = "0.87.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -955,18 +955,18 @@ class ShellFrame(MiniFrame):
     
         @p          : Synonym of print.
         @pp         : Synonym of pprint.
+        @mro        : Display mro list and filename:lineno.
+        @where      : Display filename:lineno.
         @info       : Short info.
         @help       : Full description.
+        @load       : Load a file in Log.
         @dive       : Clone the shell with new target.
-        @timeit     : Measure the duration cpu time (per one execution).
+        @debug      : Open pdb debugger or event monitor.
+        @watch      : Watch for events using event monitor.
+        @timeit     : Measure CPU time (per one execution).
         @profile    : Profile a single function call.
-        @filling    : Inspection using ``wx.lib.filling.Filling``.
-        @watch      : Inspection using ``wx.lib.inspection.InspectionTool``.
-        @load       : Load file in Log.
-        @where      : Displays filename:lineno or the module name.
-        @mro        : Displays mro list and filename:lineno or the module name.
-        @debug      : Open pdb or event-monitor.
         @highlight  : Highlight the widget.
+        @filling    : Inspection using ``wx.lib.filling.Filling``.
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
@@ -983,7 +983,7 @@ class ShellFrame(MiniFrame):
         
         self.__standalone = bool(ensureClose)
         
-        ## Add useful global abbreviations to builtins
+        ## Add useful built-in functions and methods
         builtins.apropos = apropos
         builtins.typename = typename
         builtins.reload = reload
@@ -992,16 +992,16 @@ class ShellFrame(MiniFrame):
         builtins.pp = pp
         builtins.mro = mro
         builtins.where = where
-        builtins.filling = filling
-        builtins.timeit = self.timeit
-        builtins.profile = self.profile
         builtins.info = self.info
         builtins.help = self.help
-        builtins.dive = self.clone_shell
         builtins.load = self.load
+        builtins.dive = self.clone_shell
         builtins.debug = self.debug
         builtins.watch = self.watch
+        builtins.timeit = self.timeit
+        builtins.profile = self.profile
         builtins.highlight = self.highlight
+        builtins.filling = filling
         
         from .nutshell import Nautilus, EditorBook
         
@@ -1281,6 +1281,17 @@ class ShellFrame(MiniFrame):
         try:
             self.timer.Stop()
             self.save_session()
+            
+            ## Remove built-in methods
+            del builtins.info
+            del builtins.help
+            del builtins.load
+            del builtins.dive
+            del builtins.debug
+            del builtins.watch
+            del builtins.timeit
+            del builtins.profile
+            del builtins.highlight
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
