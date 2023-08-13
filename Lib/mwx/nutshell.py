@@ -638,8 +638,8 @@ class EditorInterface(CtrlInterface):
     
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
-        text, lp = self.CurLine
-        return self.py_calc_indentation(text[:lp])
+        text, lp = self.CurLineRaw
+        return self.py_calc_indentation(text[:lp].decode())
     
     @classmethod
     def py_calc_indentation(self, text):
