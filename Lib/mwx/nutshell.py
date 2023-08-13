@@ -2825,7 +2825,9 @@ class Nautilus(Shell, EditorInterface):
                 if rhs in ("debug", "profile", "timeit"):
                     if lhs[-1] in ')':
                         L, R = split_paren(lhs, reverse=1)
-                        if R:
+                        if not L:
+                            lhs = "{!r}".format(R[1:-1])
+                        elif R:
                             lhs = "{}, {}".format(L, R[1:-1])
                 
                 ## @(y1,,,yn) --> @partial(y1,,,yn)
