@@ -539,11 +539,7 @@ class EditorInterface(CtrlInterface):
     
     @property
     def caretline(self):
-        """Text of the range (bol, eol) at the caret-line.
-        
-        Similar to CurLine, but with the trailing crlf truncated.
-        For shells, the leading prompt is also be truncated due to overridden bol.
-        """
+        """Text of the range (bol, eol) at the caret-line."""
         return self.GetTextRange(self.bol, self.eol)
     
     @property
@@ -1017,11 +1013,7 @@ class EditorInterface(CtrlInterface):
             yield err
     
     def grep(self, pattern, flags=re.M):
-        ## Note: Count bytes; Use self.GetTextRange(p,q).
         yield from re.finditer(pattern.encode(), self.TextRaw, flags)
-        
-        ## Note: Count multi-byte chars; Use self.Text[p:q].
-        ## yield from re.finditer(pattern, self.Text, flags)
     
     def search_text(self, text):
         """Yields raw-positions where `text` is found."""
@@ -1329,7 +1321,7 @@ class EditorInterface(CtrlInterface):
         タブの気持ちになって半角スペースを入力する
         """
         self.eat_white_forward()
-        text, lp = self.CurLine
+        _text, lp = self.CurLine
         self.WriteText(' ' * (4 - lp % 4))
     
     @editable
@@ -1338,7 +1330,7 @@ class EditorInterface(CtrlInterface):
         シフト+タブの気持ちになって半角スペースを消す
         """
         self.eat_white_forward()
-        text, lp = self.CurLine
+        _text, lp = self.CurLine
         for i in range(lp % 4 or 4):
             p = self.cpos
             if self.get_char(p-1) != ' ' or p == self.bol:
@@ -1534,7 +1526,7 @@ class Buffer(EditWindow, EditorInterface):
                 or code in self.code.co_consts
     
     def trace_position(self):
-        text, lp = self.CurLine
+        _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
@@ -2626,7 +2618,7 @@ class Nautilus(Shell, EditorInterface):
         self.__text = ''
     
     def trace_position(self):
-        text, lp = self.CurLine
+        _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
