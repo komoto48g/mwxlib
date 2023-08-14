@@ -20,16 +20,16 @@ These instructions will get you a copy of the project up and running on your loc
     - pillow
     - matplotlib
     - opencv-python
-- Python 3.10
+- Python 3.10 -- 3.11
     - wxpython >= 4.2.0
-        * You can also download the latest snapshot from https://wxpython.org/Phoenix/snapshot-builds/.
     - numpy
     - pillow
     - matplotlib
     - opencv-python
-- Python 3.11
+- Python 3.12
     - A version of wxpython for PY311 has not yet released on PyPi.
-        * You can download the latest snapshot from Azure Pipelines https://alldunn.visualstudio.com/wxPython-CI/_build?definitionId=2&_a=summary
+        * You can download the snapshot from https://wxpython.org/Phoenix/snapshot-builds/,
+        * or the latest snapshot from Azure Pipelines https://alldunn.visualstudio.com/wxPython-CI/_build?definitionId=2&_a=summary
 
 
 ### Installing
@@ -145,18 +145,18 @@ See [key bindings](key-bindings.md) for more information.
 
     @p          : Synonym of print.
     @pp         : Synonym of pprint.
+    @mro        : Display mro list and filename:lineno.
+    @where      : Display filename:lineno.
     @info       : Short info.
     @help       : Full description.
+    @load       : Load a file in Log.
     @dive       : Clone the shell with new target.
-    @timeit     : Measure the duration cpu time (per one execution).
+    @debug      : Open pdb debugger or event monitor.
+    @watch      : Watch for events using event monitor.
+    @timeit     : Measure CPU time (per one execution).
     @profile    : Profile a single function call.
-    @filling    : Inspection using ``wx.lib.filling.Filling``.
-    @watch      : Inspection using ``wx.lib.inspection.InspectionTool``.
-    @load       : Load file in Log.
-    @where      : Displays filename:lineno or the module name.
-    @mro        : Displays mro list and filename:lineno or the module name.
-    @debug      : Open pdb or event-monitor.
     @highlight  : Highlight the widget.
+    @filling    : Inspection using ``wx.lib.filling.Filling``.
 
 
 ## Ghost in the shell
