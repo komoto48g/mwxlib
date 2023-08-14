@@ -236,13 +236,7 @@ def dump(widget=None):
 
 
 def watchit(widget=None, **kwargs):
-    """Diver's watch to go deep into the wx process to inspect the widget.
-    Wx.py tool for watching tree structure and events across the wx.Objects.
-    
-    Args:
-        **kwargs: InspectionTool arguments such as
-                  pos, size, conifg, locals, and app
-    """
+    """Wx.py tool for watching widget tree structure and events."""
     from wx.lib.inspection import InspectionTool
     if widget:
         kwargs.update(locals=widget.__dict__)

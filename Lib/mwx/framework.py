@@ -1939,7 +1939,7 @@ except ImportError as e:
 
 
 def filling(obj=None, **kwargs):
-    """Wx.py tool for watching ingredients of the widget."""
+    """Wx.py tool for watching widget ingredients."""
     from .py.filling import FillingFrame
     frame = FillingFrame(rootObject=obj,
                          rootLabel=typename(obj),
