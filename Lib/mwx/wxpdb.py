@@ -44,7 +44,7 @@ class Debugger(Pdb):
         C-g     : quit
         C-q     : quit
         C-n     : next   (step-over)
-        C-s     : step   (setep-in)
+        C-s     : step   (step-in)
         C-r     : return (step-out)
         C-b     : Set a breakpoint at the current line.
         C-@     : Jump to the first lineno of the code.
