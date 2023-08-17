@@ -1985,7 +1985,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     return True
                 return False
             else:
-                if buf._load_file(buf.filename):
+                if buf._load_file(filename):
                     self.swap_buffer(buf, lineno)
                     return True
                 return False

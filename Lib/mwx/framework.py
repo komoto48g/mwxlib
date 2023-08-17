@@ -1352,7 +1352,7 @@ class ShellFrame(MiniFrame):
                                 style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                             self.__autoload = False # Don't ask any more.
                             return
-                        book.load_file(buf)
+                        book.load_file(buf.filename)
         evt.Skip()
     
     def OnShow(self, evt):
