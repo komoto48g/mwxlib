@@ -634,8 +634,13 @@ class EditorInterface(CtrlInterface):
     
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
-        text, lp = self.CurLineRaw
-        return self.py_calc_indentation(text[:lp].decode())
+        ## Note:
+        ##     The last char is replaced with b'\x00'.
+        ##     It looks like a bug in wx.stc.
+        ## text, lp = self.CurLineRaw
+        ## return self.py_calc_indentation(text[:lp].decode())
+        text, lp = self.CurLine
+        return self.py_calc_indentation(text[:lp])
     
     @classmethod
     def py_calc_indentation(self, text):
