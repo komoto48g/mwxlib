@@ -306,12 +306,14 @@ def split_tokens(text, comment=True):
         tokens = tokenize.generate_tokens(f.readline)
         j, k = 1, 0
         for type, string, start, end, line in tokens:
+            l, m = start
             if type in (0,5,6) or not string:
                 continue
             if type == 61 and not comment:
-                next(tokens, '') # skip the trailing cr/lf
-                continue
-            l, m = start
+                token = next(tokens)  # eats a trailing token
+                string = token.string # cr/lf or ''
+                if m == 0:
+                    continue  # line starting with a comment
             if l > j and m > 0:
                 yield ' ' * m  # indent spaces
             elif m > k:
