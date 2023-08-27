@@ -1632,7 +1632,11 @@ class Frame(mwx.Frame):
             
             self.statusbar("\b done.")
             return frame
-        
+        except ValueError:
+            ## ValueError('unknown file extension')
+            if not path.endswith('.tif'):
+                return self.save_buffer(path + '.tif', frame)
+            raise
         except Exception as e:
             print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
