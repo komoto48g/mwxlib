@@ -23,17 +23,17 @@ from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 
 
-def imcv(src):
+def _imcv(src):
     """Convert the image to a type that can be applied to the cv2 function.
     Note:
         CV2 normally accepts uint8/16 and float32/64.
     """
-    if src.dtype in (np.uint32, np.int32): src = src.astype(np.float32)
-    if src.dtype in (np.uint64, np.int64): src = src.astype(np.float64)
+    if src.dtype in (np.uint32, np.int32): return src.astype(np.float32)
+    if src.dtype in (np.uint64, np.int64): return src.astype(np.float64)
     return src
 
 
-def imbuffer(img):
+def _imbuffer(img):
     if isinstance(img, (Image.Image, ImageFile.ImageFile)):
         ## return np.asarray(img) # ref
         return np.array(img) # copy
@@ -76,7 +76,7 @@ def imconvert(src, cutoff=0, threshold=24e6, binning=1):
     
     if bins > 1:
         ## src = src[::bins,::bins]
-        src = imcv(src)
+        src = _imcv(src)
         src = cv2.resize(src, None, fx=1/bins, fy=1/bins, interpolation=cv2.INTER_AREA)
     
     if src.dtype == np.uint8:
@@ -137,7 +137,7 @@ class AxesImagePhantom(object):
         self.__aspect_ratio = aspect
         self.__attributes = attributes
         self.__attributes['localunit'] = self.__localunit
-        self.__buf = imbuffer(buf)
+        self.__buf = _imbuffer(buf)
         bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
@@ -282,7 +282,7 @@ class AxesImagePhantom(object):
     def update_buffer(self, buf=None):
         """Update buffer and the image."""
         if buf is not None:
-            self.__buf = imbuffer(buf)
+            self.__buf = _imbuffer(buf)
         
         bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
