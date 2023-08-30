@@ -1614,9 +1614,8 @@ class Frame(mwx.Frame):
                 return
         
         if not path:
-            name = re.sub(r'[\/:*?"<>|]', '_', frame.name)
             with wx.FileDialog(self, "Save buffer as",
-                    defaultFile=name,
+                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:

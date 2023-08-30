@@ -60,7 +60,7 @@ def imconvert(src, cutoff=0, threshold=24e6, binning=1):
             beta = -a * alpha
     
     Args:
-        cutoff      : cutoff score [%] to cut the upper/lower limits
+        cutoff      : cutoff score [%] to cut the lo/hi limits
         threshold   : limit bytes of image (to make matplotlib light)
         binning     : minimum binning number of src array
     """

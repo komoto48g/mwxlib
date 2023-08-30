@@ -2058,9 +2058,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def save_buffer_as(self, buf=None):
         """Confirm the saveas with the dialog."""
         buf = buf or self.buffer
-        name = re.sub(r'[\/:*?"<>|]', '_', buf.name)
         with wx.FileDialog(self, "Save buffer as",
-                defaultFile=name,
+                defaultFile=re.sub(r'[\/:*?"<>|]', '_', buf.name),
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
