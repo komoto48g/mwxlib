@@ -1713,6 +1713,11 @@ class Frame(mwx.Frame):
         dirname_ = os.path.dirname(f)
         if dirname_:
             os.chdir(dirname_)
+        
+        ## Reposition the window if it is not on the desktop.
+        if wx.Display.GetFromWindow(self) == -1:
+            self.Position = (0, 0)
+        
         self.statusbar("\b done.")
     
     def save_session_as(self):

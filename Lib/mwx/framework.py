@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.0"
+__version__ = "0.88.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1222,7 +1222,7 @@ class ShellFrame(MiniFrame):
             ## pass
             traceback.print_exc()
         
-        ## Reposition the window if it is off the desktop.
+        ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:
             self.Position = (0, 0)
     
