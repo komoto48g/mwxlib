@@ -1631,7 +1631,11 @@ class Frame(mwx.Frame):
             
             self.statusbar("\b done.")
             return frame
-        
+        except ValueError:
+            ## ValueError('unknown file extension')
+            if not path.endswith('.tif'):
+                return self.save_buffer(path + '.tif', frame)
+            raise
         except Exception as e:
             print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
@@ -1708,6 +1712,11 @@ class Frame(mwx.Frame):
         dirname_ = os.path.dirname(f)
         if dirname_:
             os.chdir(dirname_)
+        
+        ## Reposition the window if it is not on the desktop.
+        if wx.Display.GetFromWindow(self) == -1:
+            self.Position = (0, 0)
+        
         self.statusbar("\b done.")
     
     def save_session_as(self):
