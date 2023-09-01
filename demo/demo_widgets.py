@@ -63,16 +63,16 @@ class Plugin(Layer):
         )
         
         def trace(v):
-            """Trace events"""
-            print("$(v) = {!r}".format(v))
+            """Trace events.
+            
+            In addition to direct key input to the textctrl,
+            [up][down][wheelup][wheeldown] keys can be used,
+            with modifiers S- 2x, C- 16x, and M- 256x steps.
+            [Mbutton] resets to the std. value if it exists.
+            """
+            print(v)
         
-        self.L =  LParam('L', (-1,1,0.01), 0,
-                        handler=print,
-                        tip="Linear param\n\n"
-                            "In addition to direct key input to the textctrl,\n"
-                            "[up][down][wheelup][wheeldown] keys can be used,\n"
-                            "with modifiers S- 2x, C- 16x, and M- 256x steps.\n"
-                            "[Mbutton] resets to the std. value if it exists.\n")
+        self.L =  LParam('L', (-1,1,0.01), 0, handler=trace)
         self.U = Param('U', (1,2,3,inf))
         
         self.layout((

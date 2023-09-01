@@ -21,7 +21,7 @@ class Plugin(Layer):
     caption = True
     
     def Init(self):
-        self.ksize = LParam("ksize", (1,99,2), 13, tip="kernel window size")
+        self.ksize = LParam("ksize", (1,99,2), 13) # kernel window size
         
         self.btn = wx.Button(self, label="Run", size=(-1,22))
         self.btn.Bind(wx.EVT_BUTTON, lambda v: self.run())
