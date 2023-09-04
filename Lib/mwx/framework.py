@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.1"
+__version__ = "0.88.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -621,9 +621,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """
     handler = property(lambda self: self.__handler)
     
-    def message(self, *args, **kwargs):
-        if self.statusbar:
-            return self.statusbar(*args, **kwargs)
+    message = property(lambda self: self.statusbar)
     
     def post_command_hook(self, evt):
         pass
@@ -707,9 +705,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """
     handler = property(lambda self: self.__handler)
     
-    def message(self, *args, **kwargs):
-        if self.statusbar:
-            return self.statusbar(*args, **kwargs)
+    message = property(lambda self: self.statusbar)
     
     def post_command_hook(self, evt):
         pass

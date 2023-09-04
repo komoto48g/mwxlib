@@ -1379,8 +1379,9 @@ class Buffer(EditWindow, EditorInterface):
         stc.STC_P_DECORATOR       : "fore:#e08040",
     }
     
-    def message(self, *args, **kwargs):
-        return self.parent.message(*args, **kwargs)
+    @property
+    def message(self):
+        return self.parent.message
     
     @property
     def name(self):
@@ -1723,8 +1724,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
         default_name   : default buffer name (e.g. '*scratch*')
         default_buffer : default buffer
     """
-    def message(self, *args, **kwargs):
-        return self.parent.message(*args, **kwargs)
+    @property
+    def message(self):
+        return self.parent.message
     
     def __init__(self, parent, name="book", **kwargs):
         kwargs.setdefault('style',
@@ -2271,8 +2273,9 @@ class Nautilus(Shell, EditorInterface):
         stc.STC_P_DECORATOR       : "fore:#ff8040",
     }
     
-    def message(self, *args, **kwargs):
-        return self.parent.message(*args, **kwargs)
+    @property
+    def message(self):
+        return self.parent.message
     
     @property
     def target(self):

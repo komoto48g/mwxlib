@@ -217,6 +217,8 @@ class LayerInterface(CtrlInterface):
     histogram = property(lambda self: self.parent.histogram)
     selected_view = property(lambda self: self.parent.selected_view)
     
+    message = property(lambda self: self.parent.message)
+    
     ## thread_type = Thread
     thread = None
     
@@ -268,9 +270,6 @@ class LayerInterface(CtrlInterface):
                     art.remove()
                     art._transformSet = False
                 self.Arts.remove(art)
-    
-    def message(self, *args, **kwargs):
-        return self.parent.message(*args, **kwargs)
     
     def __init__(self, parent, session=None):
         CtrlInterface.__init__(self)
