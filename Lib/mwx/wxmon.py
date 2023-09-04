@@ -101,8 +101,8 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnSetFocus(self, evt):
         title = "{} target: {}".format(self.__class__.__name__, self.target)
         self.parent.handler('title_window', title)
-        if self.target:
-            self.parent.handler('monitor_begin', self.target)
+        ## if self.target:
+        ##     self.parent.handler('monitor_begin', self.target)
         evt.Skip()
     
     ## --------------------------------

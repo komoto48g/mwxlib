@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.2"
+__version__ = "0.88.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1537,11 +1537,13 @@ class ShellFrame(MiniFrame):
         self.rootshell.help(obj)
     
     def watch(self, obj):
-        self.monitor.watch(obj)
-        if obj:
-            self.popup_window(self.monitor, focus=1)
+        if isinstance(obj, wx.Object):
+            self.monitor.watch(obj)
+            self.popup_window(self.monitor, focus=0)
+        elif hasattr(obj, '__dict__'):
             self.linfo.watch(obj.__dict__)
             self.ginfo.watch({})
+            self.popup_window(self.linfo, focus=0)
     
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)
@@ -1589,10 +1591,7 @@ class ShellFrame(MiniFrame):
     ## Note: history 変数に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
-        if isinstance(obj, wx.Object):
-            self.watch(obj)
-        
-        elif isinstance(obj, type(print)):
+        if isinstance(obj, type(print)):
             wx.MessageBox("Unable to debug builtin functions.\n\n"
                           "Target must be callable or wx.Object.",
                           style=wx.ICON_ERROR)
@@ -1616,11 +1615,8 @@ class ShellFrame(MiniFrame):
                 self.debugger.run(obj)
             finally:
                 self.debugger.interactive_shell = shell
-        elif hasattr(obj, '__dict__'):
-            self.message("Building locals info list...")
-            self.linfo.watch(obj.__dict__)
-            self.ginfo.watch({})
-            self.popup_window(self.linfo, focus=0)
+        elif isinstance(obj, wx.Object):
+            self.watch(obj)
         else:
             wx.MessageBox("Unable to debug non-callable objects.\n\n"
                           "Target must be callable or wx.Object.",
