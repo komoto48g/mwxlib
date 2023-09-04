@@ -1410,7 +1410,7 @@ class Frame(mwx.Frame):
                 print(" ", self.statusbar("\b done."))
             except (PermissionError, OSError):
                 print("-", self.statusbar("\b failed. pass."))
-                pass
+        
         frames = output_frames
         res, mis = self.write_attributes(f, frames)
         n = len(frames)
@@ -1418,6 +1418,7 @@ class Frame(mwx.Frame):
             "{} frames were exported, "
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis)))
+        print(self.statusbar.read())
         return frames
     
     ## --------------------------------

@@ -1889,7 +1889,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Create a new buffer (internal use only)."""
         try:
             self.Freeze()
-            buf = Buffer(self, filename)
+            buf = Buffer(self, filename, style=wx.BORDER_DEFAULT)
             self.set_attributes(buf, **self.defaultBufferStyle)
             self.handler('buffer_new', buf)
             if index is None:
@@ -2391,7 +2391,7 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         def clear(v):
-            ## Clear selection and statusline, no skip.
+            ## Clear selection and message, no skip.
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
             ## if self.AutoCompActive():
             ##     self.AutoCompCancel() # may delete selection
@@ -2936,12 +2936,19 @@ class Nautilus(Shell, EditorInterface):
     ## If del shell.history, the history of the class variable is used
     history = []
     
-    bolc = property(lambda self: self.promptPosEnd, doc="beginning of command-line")
-    eolc = property(lambda self: self.TextLength, doc="end of command-line")
+    @property
+    def bolc(self):
+        "Beginning of command-line."
+        return self.promptPosEnd
+    
+    @property
+    def eolc(self):
+        "End of command-line."
+        return self.TextLength
     
     @property
     def bol(self):
-        """beginning of line (override) excluding prompt."""
+        """Beginning of line (override) excluding prompt."""
         text, lp = self.CurLine
         for ps in (sys.ps1, sys.ps2, sys.ps3):
             if text.startswith(ps):
