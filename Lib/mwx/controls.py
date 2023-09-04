@@ -29,7 +29,6 @@ class Param(object):
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
-        check   : check flag
         tip     : tooltip:str shown on the associated knobs
     
     Attributes:
@@ -43,13 +42,13 @@ class Param(object):
             - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
-                 handler=None, updater=None, check=False, tip=None):
+                 handler=None, updater=None, tip=None):
         self.knobs = []
         self.name = name
         self.range = range
         self.__std_value = value
         self.__value = value if value is not None else self.min
-        self.__check = check
+        self.__check = False
         if fmt is hex:
             self.__eval = lambda v: int(v, 16)
             self.__format = lambda v: '{:04X}'.format(int(v))
