@@ -609,7 +609,7 @@ class GraphPlot(MatplotPanel):
         names = [art.name for art in self.__Arts]
         while name in names:
             i += 1
-            name = "{}({:d})".format(base, i)
+            name = "{}<{:d}>".format(base, i)
         return name
     
     def load(self, buf, name=None, pos=None, show=True, **kwargs):

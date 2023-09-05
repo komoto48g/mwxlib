@@ -1371,6 +1371,7 @@ class Frame(mwx.Frame):
             "{} frames were imported, "
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis)))
+        print(self.statusbar.read())
         return frames
     
     def export_index(self, f=None, frames=None):
@@ -1440,10 +1441,10 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
-                path = os.path.join(savedir, name)  # search by relpath (dir+name)
-                if not os.path.exists(path):        # search by abspath (pathname)
+                path = os.path.join(savedir, name)
+                if not os.path.exists(path): # search by relpath (dir+name)
                     path = attr.get('pathname')
-                if not os.path.exists(path):        # check & pop missing files
+                if not os.path.exists(path): # check & pop missing files
                     res.pop(name)
                     mis.update({name:attr})
                 else:
@@ -1489,14 +1490,14 @@ class Frame(mwx.Frame):
         """
         frames = self.load_buffer(paths, view)
         if frames:
-            ls = [os.path.dirname(x.pathname) for x in frames]
-            savedirs = sorted(set(ls), key=ls.index) # keep order but no duplication
-            results = {}
-            for savedir in savedirs:
-                f = os.path.join(savedir, self.ATTRIBUTESFILE)
-                res, mis = self.read_attributes(f)
-                results.update(res)
+            savedirs = {}
             for frame in frames:
+                savedir = os.path.dirname(frame.pathname)
+                if savedir not in savedirs:
+                    f = os.path.join(savedir, self.ATTRIBUTESFILE)
+                    res, mis = self.read_attributes(f)
+                    savedirs[savedir] = res
+                results = savedirs[savedir]
                 frame.update_attributes(results.get(frame.name))
         return frames
     
@@ -1776,6 +1777,8 @@ class Frame(mwx.Frame):
 
 
 if __name__ == "__main__":
+    import glob
+    
     app = wx.App()
     frm = Frame(None)
     
@@ -1783,9 +1786,11 @@ if __name__ == "__main__":
     frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     
-    frm.load_frame([r"C:\usr\home\lib\python\demo\sample.bmp",
-                    r"C:\usr\home\lib\python\demo\sample2.tif",
-                    ])
+    ## frm.load_frame([r"C:\usr\home\lib\python\demo\sample.bmp",
+    ##                 r"C:\usr\home\lib\python\demo\sample2.tif",
+    ##                 ])
+    frm.load_frame(glob.glob(r"C:\usr\home\lib\python\demo\*.bmp"))
+    frm.load_frame(glob.glob(r"C:\usr\home\workspace\images\*.bmp"))
     frm.graph.load(np.random.randn(1024,1024))
     
     ## Note: 次の二つは別モジュール扱い
