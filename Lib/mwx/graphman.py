@@ -1777,6 +1777,8 @@ class Frame(mwx.Frame):
 
 
 if __name__ == "__main__":
+    import glob
+    
     app = wx.App()
     frm = Frame(None)
     
@@ -1784,9 +1786,11 @@ if __name__ == "__main__":
     frm.graph.handler.debug = 0
     frm.output.handler.debug = 0
     
-    frm.load_frame([r"C:\usr\home\lib\python\demo\sample.bmp",
-                    r"C:\usr\home\lib\python\demo\sample2.tif",
-                    ])
+    ## frm.load_frame([r"C:\usr\home\lib\python\demo\sample.bmp",
+    ##                 r"C:\usr\home\lib\python\demo\sample2.tif",
+    ##                 ])
+    frm.load_frame(glob.glob(r"C:\usr\home\lib\python\demo\*.bmp"))
+    frm.load_frame(glob.glob(r"C:\usr\home\workspace\images\*.bmp"))
     frm.graph.load(np.random.randn(1024,1024))
     
     ## Note: 次の二つは別モジュール扱い
