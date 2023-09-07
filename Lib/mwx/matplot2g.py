@@ -895,7 +895,7 @@ class GraphPlot(MatplotPanel):
             name = self.frame.get_cmap().name
             self.set_cmap(name + "_r" if name[-2:] != "_r" else name[:-2])
     
-    def trace_point(self, x, y, type=None):
+    def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
         if self.frame:
             if not hasattr(x, '__iter__'): # called from OnMotion
@@ -922,15 +922,15 @@ class GraphPlot(MatplotPanel):
                 self.message("[Line] "
                     "Length: {:.1f} pixel ({:g}u) "
                     "Angle: {:.1f} deg".format(li, lu, a))
-                
+            
             elif type == REGION: # N-Selector trace polygon (called from Region:setter)
                 nx, ny = self.frame.xytopixel(x, y)
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
                 self.message("[Region] "
-                    ## "Size: [{0:4d}, {1:4d}] "
-                    ## "Point: [{2:4d}, {3:4d}] "
                     "crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
+            else:
+                return self.trace_point(x[[0,-1]], y[[0,-1]], type)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
