@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.3"
+__version__ = "0.88.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1187,7 +1187,8 @@ class ShellFrame(MiniFrame):
         if not f:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.debrc)|*.debrc",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
+                                    |wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 f = dlg.Path
@@ -1221,9 +1222,10 @@ class ShellFrame(MiniFrame):
     def save_session_as(self):
         """Save session as a new file."""
         with wx.FileDialog(self, "Save session as",
-                defaultFile=self.SESSION_FILE or '',
+                defaultFile=os.path.basename(self.SESSION_FILE or ''),
                 wildcard="Session file (*.debrc)|*.debrc",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT
+                                |wx.FD_CHANGE_DIR) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 self.SESSION_FILE = dlg.Path
                 self.save_session()

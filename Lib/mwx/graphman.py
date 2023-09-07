@@ -1685,7 +1685,8 @@ class Frame(mwx.Frame):
         if not f:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.jssn)|*.jssn",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
+                                    |wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 f = dlg.Path
@@ -1723,9 +1724,11 @@ class Frame(mwx.Frame):
     def save_session_as(self):
         """Save session as a new file."""
         with wx.FileDialog(self, "Save session as",
-                defaultFile=self.session_file or '',
+                defaultDir=os.path.dirname(self.session_file or ''),
+                defaultFile=os.path.basename(self.session_file or ''),
                 wildcard="Session file (*.jssn)|*.jssn",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR) as dlg:
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT
+                                |wx.FD_CHANGE_DIR) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 self.session_file = dlg.Path
                 self.save_session()
