@@ -586,16 +586,12 @@ class StatusBar(wx.StatusBar):
         field   : list of field widths
         pane    : index of status text field
     """
-    lock = None
-    
     def __init__(self, *args, **kwargs):
         wx.StatusBar.__init__(self, *args, **kwargs)
     
     def __call__(self, *args, **kwargs):
         text = ' '.join(str(v) for v in args)
-        if not self.lock:
-            return self.write(text, **kwargs)
-        return text
+        return self.write(text, **kwargs)
     
     def resize(self, field):
         self.SetFieldsCount(len(field))
