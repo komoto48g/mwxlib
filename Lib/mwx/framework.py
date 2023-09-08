@@ -999,7 +999,7 @@ class ShellFrame(MiniFrame):
         
         self.__shell = Nautilus(self,
                                 target or __import__("__main__"),
-                                style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
+                                style=wx.CLIP_CHILDREN|wx.BORDER_NONE,
                                 **kwargs)
         
         self.Scratch = EditorBook(self, name="Scratch")
@@ -1773,8 +1773,7 @@ class ShellFrame(MiniFrame):
             raise TypeError("primitive objects cannot be targeted")
         
         shell = self.rootshell.__class__(self, target, name="clone",
-                    style=(wx.CLIP_CHILDREN | wx.BORDER_NONE),
-                    )
+                    style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
         self.handler('shell_new', shell)
         self.console.AddPage(shell, typename(shell.target))
         self.Show()
@@ -1827,7 +1826,7 @@ class ShellFrame(MiniFrame):
         self.__find_target = wnd
         self.findData.FindString = wnd.topic_at_caret
         self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find",
-                            style=(wx.FR_NOWHOLEWORD | wx.FR_NOUPDOWN))
+                            style=wx.FR_NOWHOLEWORD|wx.FR_NOUPDOWN)
         self.findDlg.Show()
     
     def OnFindNext(self, evt, backward=False): #<wx._core.FindDialogEvent>

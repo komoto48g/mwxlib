@@ -1321,7 +1321,8 @@ class Frame(mwx.Frame):
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
                 wildcard="Python file (*.py)|*.py",
-                style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
+                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
+                                |wx.FD_MULTIPLE) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 for path in dlg.Paths:
                     self.load_plug(path)
@@ -1562,7 +1563,8 @@ class Frame(mwx.Frame):
         if paths is None:
             with wx.FileDialog(self, "Open image files",
                     wildcard='|'.join(self.wildcards),
-                    style=wx.FD_OPEN|wx.FD_MULTIPLE|wx.FD_FILE_MUST_EXIST) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
+                                    |wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 paths = dlg.Paths
