@@ -732,9 +732,6 @@ if __name__ == "__main__":
     from PIL import Image
     from mwx.matplot2g import GraphPlot
     
-    def _imread(path):
-        return Image.open(path)
-    
     def _plot(axes):
         axes.grid(True)
         x = np.arange(-2,2,0.01)
@@ -755,8 +752,8 @@ if __name__ == "__main__":
     frm.graph.handler.debug = 0
     
     frm.graph.unit = 0.1
-    frm.graph.load(_imread("C:/usr/home/workspace/images/sample.bmp"), "sample")
-    frm.graph.load(_imread("C:/usr/home/workspace/images/sample_diff.bmp"), "circ")
+    frm.graph.load("C:/usr/home/workspace/images/sample.bmp", "sample")
+    frm.graph.load("C:/usr/home/workspace/images/sample_diff.bmp", "circ")
     frm.Show()
     if 1:
         lfrm = mwx.Frame(None, title='Line')

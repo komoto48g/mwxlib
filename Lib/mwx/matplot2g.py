@@ -630,6 +630,9 @@ class GraphPlot(MatplotPanel):
         if buf is None:
             return
         
+        if isinstance(buf, str):
+            buf = Image.open(buf)
+        
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
@@ -1720,12 +1723,9 @@ if __name__ == "__main__":
     frm.handler.debug = 0
     frm.graph.handler.debug = 4
     
-    def _imread(path):
-        return Image.open(path)
-    
-    frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample.bmp"), "sample")
-    frm.graph.load(_imread(u"C:/usr/home/workspace/images/サンプル.bmp"), "サンプル")
-    frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample_circ.bmp"), "sample data")
+    frm.graph.load("C:/usr/home/workspace/images/sample.bmp", "sample")
+    frm.graph.load("C:/usr/home/workspace/images/サンプル.bmp", "サンプル")
+    frm.graph.load("C:/usr/home/workspace/images/sample_circ.bmp", "sample data")
     
     ## frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
     frm.graph.newbuffer = np.float32(np.random.randn(512,512))
