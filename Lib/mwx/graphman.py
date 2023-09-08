@@ -529,17 +529,17 @@ class MyFileDropLoader(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         pos = self.target.ScreenPosition + (x,y)
         paths = []
-        for path in filenames:
-            name, ext = os.path.splitext(path)
-            if ext == '.py' or os.path.isdir(path):
-                self.loader.load_plug(path, show=1, floating_pos=pos,
+        for f in filenames:
+            name, ext = os.path.splitext(f)
+            if ext == '.py' or os.path.isdir(f):
+                self.loader.load_plug(f, show=1, floating_pos=pos,
                                       force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
-                self.loader.load_session(path)
+                self.loader.load_session(f)
             elif ext == '.index':
-                self.loader.import_index(path, self.target)
+                self.loader.import_index(f, self.target)
             else:
-                paths.append(path) # image file just stacks to be loaded
+                paths.append(f) # image file just stacks to be loaded
         if paths:
             self.loader.load_frame(paths, self.target)
         return True
@@ -1384,9 +1384,9 @@ class Frame(mwx.Frame):
                 return
         
         if not file:
-            path = next((x.pathname for x in frames if x.pathname), '')
+            f = next((x.pathname for x in frames if x.pathname), '')
             with wx.FileDialog(self, "Select index file to export",
-                    defaultDir=os.path.dirname(path),
+                    defaultDir=os.path.dirname(f),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1399,15 +1399,15 @@ class Frame(mwx.Frame):
         for frame in frames:
             try:
                 self.statusbar("Export index of {!r}...".format(frame.name))
-                path = frame.pathname
-                if not path:
-                    path = os.path.join(savedir, frame.name) # new file
-                if not os.path.exists(path):
-                    if not path.endswith('.tif'):
-                        path += '.tif'
-                    self.write_buffer(path, frame.buffer)
-                    frame.pathname = path
-                    frame.name = os.path.basename(path) # new name and pathname
+                f = frame.pathname
+                if not f:
+                    f = os.path.join(savedir, frame.name) # new file
+                if not os.path.exists(f):
+                    if not f.endswith('.tif'):
+                        f += '.tif'
+                    self.write_buffer(f, frame.buffer)
+                    frame.pathname = f
+                    frame.name = os.path.basename(f) # new name and pathname
                 output_frames.append(frame)
                 print(" ", self.statusbar("\b done."))
             except (PermissionError, OSError):
@@ -1442,14 +1442,14 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
-                path = os.path.join(savedir, name)
-                if not os.path.exists(path): # search by relpath (dir+name)
-                    path = attr.get('pathname')
-                if not os.path.exists(path): # check & pop missing files
+                f = os.path.join(savedir, name)
+                if not os.path.exists(f): # search by relpath (dir+name)
+                    f = attr.get('pathname')
+                if not os.path.exists(f): # check & pop missing files
                     res.pop(name)
                     mis.update({name:attr})
                 else:
-                    attr.update(pathname=path)
+                    attr.update(pathname=f)
         except FileNotFoundError:
             pass
         except Exception as e:
