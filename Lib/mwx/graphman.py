@@ -1343,13 +1343,13 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ATTRIBUTESFILE = "results.index"
     
-    def import_index(self, f=None, view=None):
+    def import_index(self, file=None, view=None):
         """Load frames :ref to the Index file.
         """
         if not view:
             view = self.selected_view
         
-        if not f:
+        if not file:
             with wx.FileDialog(self, "Select index file to import",
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
@@ -1357,9 +1357,9 @@ class Frame(mwx.Frame):
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                f = dlg.Path
+                file = dlg.Path
         
-        res, mis = self.read_attributes(f)
+        res, mis = self.read_attributes(file)
         
         paths = [attr['pathname'] for attr in res.values()]
         frames = self.load_buffer(paths, view)
@@ -1375,7 +1375,7 @@ class Frame(mwx.Frame):
         print(self.statusbar.read())
         return frames
     
-    def export_index(self, f=None, frames=None):
+    def export_index(self, file=None, frames=None):
         """Save frames :ref to the Index file.
         """
         if not frames:
@@ -1383,7 +1383,7 @@ class Frame(mwx.Frame):
             if not frames:
                 return
         
-        if not f:
+        if not file:
             path = next((x.pathname for x in frames if x.pathname), '')
             with wx.FileDialog(self, "Select index file to export",
                     defaultDir=os.path.dirname(path),
@@ -1392,9 +1392,9 @@ class Frame(mwx.Frame):
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                f = dlg.Path
+                file = dlg.Path
         
-        savedir = os.path.dirname(f)
+        savedir = os.path.dirname(file)
         output_frames = []
         for frame in frames:
             try:
@@ -1414,7 +1414,7 @@ class Frame(mwx.Frame):
                 print("-", self.statusbar("\b failed. pass."))
         
         frames = output_frames
-        res, mis = self.write_attributes(f, frames)
+        res, mis = self.write_attributes(file, frames)
         n = len(frames)
         self.statusbar(
             "{} frames were exported, "
@@ -1428,14 +1428,14 @@ class Frame(mwx.Frame):
     ## --------------------------------
     
     @classmethod
-    def read_attributes(self, f):
+    def read_attributes(self, file):
         """Read attributes file."""
         try:
             res = {}
             mis = {}
-            savedir = os.path.dirname(f)
+            savedir = os.path.dirname(file)
             
-            with open(f) as i:
+            with open(file) as i:
                 from numpy import nan, inf  # noqa: necessary to eval
                 import datetime             # noqa: necessary to eval
                 
@@ -1459,10 +1459,10 @@ class Frame(mwx.Frame):
             return res, mis # finally raises no exception
     
     @classmethod
-    def write_attributes(self, f, frames):
+    def write_attributes(self, file, frames):
         """Write attributes file."""
         try:
-            res, mis = self.read_attributes(f)
+            res, mis = self.read_attributes(file)
             new = dict((x.name, x.attributes) for x in frames)
             
             ## `res` order may differ from that of given frames,
@@ -1471,7 +1471,7 @@ class Frame(mwx.Frame):
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
-            with open(f, 'w') as o:
+            with open(file, 'w') as o:
                 try:
                     pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
                 except Exception:
@@ -1682,16 +1682,16 @@ class Frame(mwx.Frame):
     ## --------------------------------
     session_file = None
     
-    def load_session(self, f=None, flush=True):
+    def load_session(self, file=None, flush=True):
         """Load session from file."""
-        if not f:
+        if not file:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.jssn)|*.jssn",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                f = dlg.Path
+                file = dlg.Path
         
         if flush:
             for name in list(self.plugins): # plugins:dict mutates during iteration
@@ -1699,21 +1699,22 @@ class Frame(mwx.Frame):
             del self.graph[:]
             del self.output[:]
         
-        self.statusbar("Loading session from {!r}...".format(f))
-        self.session_file = os.path.abspath(f)
+        self.session_file = os.path.abspath(file)
         
         ## Load the session in the shell.
+        self.statusbar("Loading session from {!r}...".format(self.session_file))
+        
         shell = self.shellframe.rootshell
         shell.locals.update(
             nan = np.nan,
             inf = np.inf,
         )
-        with open(f) as i:
+        with open(self.session_file) as i:
             shell.Execute(i.read())
         self._mgr.Update()
-        
         self.menubar.reset()
-        dirname_ = os.path.dirname(f)
+        
+        dirname_ = os.path.dirname(i.name)
         if dirname_:
             os.chdir(dirname_)
         
@@ -1737,13 +1738,12 @@ class Frame(mwx.Frame):
     
     def save_session(self):
         """Save session to file."""
-        f = self.session_file
-        if not f:
+        if not self.session_file:
             return self.save_session_as()
         
-        self.statusbar("Saving session to {!r}...".format(f))
+        self.statusbar("Saving session to {!r}...".format(self.session_file))
         
-        with open(f, 'w') as o,\
+        with open(self.session_file, 'w') as o,\
           np.printoptions(threshold=np.inf): # printing all(inf) elements
             o.write("#! Session file (This file is generated automatically)\n")
             o.write("self.SetSize({})\n".format(self.Size))
