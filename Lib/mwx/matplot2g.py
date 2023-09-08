@@ -630,6 +630,9 @@ class GraphPlot(MatplotPanel):
         if buf is None:
             return
         
+        if isinstance(buf, str):
+            buf = Image.open(buf)
+        
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
@@ -895,7 +898,7 @@ class GraphPlot(MatplotPanel):
             name = self.frame.get_cmap().name
             self.set_cmap(name + "_r" if name[-2:] != "_r" else name[:-2])
     
-    def trace_point(self, x, y, type=None):
+    def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
         if self.frame:
             if not hasattr(x, '__iter__'): # called from OnMotion
@@ -922,15 +925,15 @@ class GraphPlot(MatplotPanel):
                 self.message("[Line] "
                     "Length: {:.1f} pixel ({:g}u) "
                     "Angle: {:.1f} deg".format(li, lu, a))
-                
+            
             elif type == REGION: # N-Selector trace polygon (called from Region:setter)
                 nx, ny = self.frame.xytopixel(x, y)
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
                 self.message("[Region] "
-                    ## "Size: [{0:4d}, {1:4d}] "
-                    ## "Point: [{2:4d}, {3:4d}] "
                     "crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
+            else:
+                return self.trace_point(x[[0,-1]], y[[0,-1]], type)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
@@ -1720,12 +1723,9 @@ if __name__ == "__main__":
     frm.handler.debug = 0
     frm.graph.handler.debug = 4
     
-    def _imread(path):
-        return Image.open(path)
-    
-    frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample.bmp"), "sample")
-    frm.graph.load(_imread(u"C:/usr/home/workspace/images/サンプル.bmp"), "サンプル")
-    frm.graph.load(_imread(u"C:/usr/home/workspace/images/sample_circ.bmp"), "sample data")
+    frm.graph.load("C:/usr/home/workspace/images/sample.bmp", "sample")
+    frm.graph.load("C:/usr/home/workspace/images/サンプル.bmp", "サンプル")
+    frm.graph.load("C:/usr/home/workspace/images/sample_circ.bmp", "sample data")
     
     ## frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
     frm.graph.newbuffer = np.float32(np.random.randn(512,512))
