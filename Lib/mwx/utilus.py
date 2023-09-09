@@ -294,7 +294,7 @@ def split_words(text, reverse=False):
         if words:
             yield ''.join(reversed(words) if reverse else words)
         else:
-            yield tokens.pop(0)
+            yield tokens.pop(0) # sep-token
 
 
 def split_tokens(text, comment=True):
@@ -325,10 +325,12 @@ def split_tokens(text, comment=True):
 
 
 def _extract_words_from_tokens(tokens, reverse=False):
-    """Extracts pythonic expressions from tokens
-    until sep is found after the parenthesis is closed.
+    """Extracts pythonic expressions from tokens.
     
-    The default sep includes `@, ops, delims, and whitespaces, etc.
+    Extraction continues until the parenthesis is closed
+    and the following token starts with a char in sep, where
+    the sep includes `@, ops, delims, and whitespaces, etc.
+    
     Returns:
         A token list extracted including the parenthesis.
         If reverse is True, the order of the tokens will be reversed.
@@ -347,7 +349,7 @@ def _extract_words_from_tokens(tokens, reverse=False):
                 break
             if c != q[p.index(stack.pop())]: # error("mismatch-paren")
                 break
-        elif not stack and c in sep: # ok
+        elif not stack and c[0] in sep: # ok; starts with a char in sep
             break
         words.append(c)
     else: # if stack: error("unclosed-paren")
