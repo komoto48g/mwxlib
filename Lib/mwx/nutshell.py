@@ -126,6 +126,7 @@ class EditorInterface(CtrlInterface):
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                 'C-S-: pressed' : (0, _F(self.uncomment_line)),
                   'select_line' : (100, self.on_linesel_begin),
+                 'select_lines' : (100, self.on_linesel_next),
             },
             10 : {
                          'quit' : (0, self.on_itext_exit),
@@ -711,6 +712,8 @@ class EditorInterface(CtrlInterface):
         ##                 & indent-header (stc.STC_FOLDLEVELHEADERFLAG)
         if level and evt.Margin == 2:
             self.toggle_fold(lc)
+        elif wx.GetKeyState(wx.WXK_SHIFT):
+            self.handler('select_lines', evt)
         else:
             self.handler('select_line', evt)
     
@@ -758,38 +761,17 @@ class EditorInterface(CtrlInterface):
     
     def on_linesel_begin(self, evt):
         """Called when a line of text selection begins."""
-        p = evt.Position #<wx._stc.StyledTextEvent>
-        self.goto_char(p)
-        self.cpos = q = self.eol
-        lc = self.LineFromPosition(p)
-        if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
-            self.CharRightExtend()
-            q = self.cpos
-            if q == self.TextLength:
-                q -= 1
-        self.__anchors = [p, q]
-        if 1:
-            self.CaptureMouse()
+        self.cpos = self.anchor = evt.Position #<select_line>
+        self.CaptureMouse()
+    
+    def on_linesel_next(self, evt):
+        """Called when next line of text selection begins."""
+        self.cpos = evt.Position #<select_lines>
+        self.CaptureMouse()
     
     def on_linesel_motion(self, evt):
         """Called when a line of text selection is changing."""
-        p = self.PositionFromPoint(evt.Position) #<wx._core.MouseEvent>
-        po, qo = self.__anchors
-        if self.__margin:
-            if p >= po:
-                lc = self.LineFromPosition(p)
-                text = self.GetLine(lc)
-                self.cpos = p + len(text.encode()) # Count bytes.
-                self.anchor = po
-                if not self.GetFoldExpanded(lc): # Select more lines hidden if folded.
-                    self.CharRightExtend()
-                    self.__anchors[1] = self.cpos
-            else:
-                self.cpos = p
-                self.anchor = qo
-        else:
-            self.cpos = p
-            self.anchor = po if p >= po else qo
+        self.cpos = self.PositionFromPoint(evt.Position) #<motion>
         self.EnsureCaretVisible()
     
     def on_linesel_end(self, evt):
