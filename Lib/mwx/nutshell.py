@@ -2787,17 +2787,16 @@ class Nautilus(Shell, EditorInterface):
         Note:
             This is called before run, execute, and original magic.
         """
-        sep1 = "`@=;\r\n#"                # [`] no ops, no spaces, no comma
-        sep2 = "`@=+-/*%<>&|^~;, \t\r\n#" # [@] ops, seps
+        sep1 = "`@=;#"                # [`] no ops, no spaces, no comma
+        sep2 = "`@=+-/*%<>&|^~,; \t#" # [@] ops, delims, and whitespaces
         
-        def _popiter(ls, f):
-            p = f if callable(f) else re.compile(f).match
-            while ls and p(ls[0]):
+        def _popiter(ls, pred):
+            while ls and pred(ls[0]):
                 yield ls.pop(0)
         
         def _eats(r, sep):
-            return ''.join(_popiter(r, "[ \t]"))\
-                 + ''.join(_popiter(r, lambda c: c not in sep))
+            return ''.join(_popiter(r, lambda c: c.isspace()))\
+                 + ''.join(_popiter(r, lambda c: c[0] not in sep))
         
         lhs = ''
         tokens = list(tokens)
