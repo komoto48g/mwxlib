@@ -1987,7 +1987,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         finally:
             self.Thaw()
     
-    load_url = load_file # for backward compatibility
+    load_url = load_file #: for backward compatibility
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.

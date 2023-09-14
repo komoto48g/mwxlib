@@ -37,7 +37,8 @@ class Param(object):
         callback    : single state machine that handles following events
         
             - control -> when index changed by knobs or reset (handler)
-            - check   -> when check ticks on/off (updater)
+            - update  -> when button pressed (updater)
+            - check   -> when check marked (updater)
             - overflow -> when value overflows
             - underflow -> when value underflows
     """
@@ -1051,7 +1052,7 @@ class TextCtrl(wx.Control):
         updater : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
         tip     : tip:str displayed on the button
-        readonly: flag:bool for style=wx.TE_READONLY
+        readonly: flag:bool (equiv. style=wx.TE_READONLY)
         **kwargs: keywords for wx.TextCtrl
                   e.g., value:str
     """
@@ -1060,7 +1061,7 @@ class TextCtrl(wx.Control):
         lambda self,v: self._ctrl.SetValue(v),
         doc="textctrl value:str")
     
-    value = Value # internal use only
+    value = Value #: internal use only
     
     @property
     def icon(self):
@@ -1086,7 +1087,7 @@ class TextCtrl(wx.Control):
         
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon, tip,
-                                 size=(-1,-1) if label or icon else (0,0))
+                           size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1117,7 +1118,7 @@ class Choice(wx.Control):
         updater : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
         tip     : tip:str displayed on the button
-        readonly: flag:bool for style=wx.TE_READONLY
+        readonly: flag:bool (equiv. style=wx.CB_READONLY)
         **kwargs: keywords for wx.ComboBox
                   e.g., choices:list
     
@@ -1130,7 +1131,7 @@ class Choice(wx.Control):
         lambda self,v: self._ctrl.SetValue(v),
         doc="combobox value:str")
     
-    value = Value # internal use only
+    value = Value #: internal use only
     
     Selection = property(
         lambda self: self._ctrl.GetSelection(),
@@ -1166,7 +1167,7 @@ class Choice(wx.Control):
         
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon, tip,
-                                 size=(-1,-1) if label or icon else (0,0))
+                           size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),

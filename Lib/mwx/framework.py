@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.6"
+__version__ = "0.88.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -759,7 +759,7 @@ class AuiNotebook(aui.AuiNotebook):
         )
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
-        self._mgr = self.EventHandler # internal use only
+        self._mgr = self.EventHandler
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
     
@@ -1497,12 +1497,10 @@ class ShellFrame(MiniFrame):
     
     def _load(self, filename, lineno, book, verbose=False):
         """Load file in the session (internal use only)."""
-        try:
-            if isinstance(book, str):
-                book = getattr(self, book)
-        except AttributeError:
-            return False
-        return book.load_file(filename, lineno, verbose)
+        if isinstance(book, str):
+            book = getattr(self, book, None)
+        if book:
+            return book.load_file(filename, lineno, verbose)
     
     def load(self, filename, lineno=0, show=True, focus=False):
         """Load file @where the object is defined.
