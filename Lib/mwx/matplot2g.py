@@ -48,7 +48,7 @@ def _imbuffer(img):
     return img
 
 
-def imconvert(src, cutoff=0, threshold=24e6, binning=1):
+def imconvert(src, cutoff=0, threshold=None, binning=1):
     """Convert buffer to image<uint8>
     
     >>> dst = (src-a) * 255 / (b-a)
@@ -116,13 +116,6 @@ class AxesImagePhantom(object):
         aspect      : initial aspect ratio
         localunit   : initial localunit
         attributes  : additional info:dict
-    
-    The displayed image is an array<uint8> converted from buffer by `imconvert`.
-    
-    >>> binning, vlim, image = imconvert(self.buffer,
-    ...     cutoff = self.parent.score_percentile,
-    ...     threshold = self.parent.nbytes_threshold,
-    ... )
     
     Note:
         Due to the problem of performance,
@@ -977,7 +970,7 @@ class GraphPlot(MatplotPanel):
             data = self.frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = imconvert(data, self.frame.vlim, threshold=None)
+            bins, vlim, img = imconvert(data, self.frame.vlim)
             Clipboard.imwrite(img)
         except Exception as e:
             self.message("- Failure in clipboard: {}".format(e))

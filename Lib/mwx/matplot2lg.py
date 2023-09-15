@@ -263,7 +263,6 @@ class Histogram(LinePlot):
         img = frame.image
         if img.dtype == np.uint8:
             ## 整数ビット画像は，高速なビンづめ法で計算する
-            ## image は imconvert によって変換された輝度．buffer と違う
             ## bins = np.arange(0, img.max()+1)
             hist = np.bincount(img.ravel(), minlength=256)
             bins = np.arange(256)
