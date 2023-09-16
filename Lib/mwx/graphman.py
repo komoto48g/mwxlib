@@ -1582,18 +1582,16 @@ class Frame(mwx.Frame):
                         continue
                     raise # no contexts or handlers
                 
-                ## Do not show while loading
-                frame = view.load(buf, f, show=0, pathname=path, **info)
-                frames.append(frame)
-                
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
-                    dg = int(np.log10(n)) + 1
-                    fmt = "{{:0>{}}}-{}".format(dg, f) # zero padding for numerical sort
-                    for j in range(1,n):
+                    d = len(str(n))
+                    for j in range(n):
                         self.statusbar("Loading {!r} [{} of {} pages]...".format(f, j+1, n))
                         buf.seek(j)
-                        frame = view.load(buf, name=fmt.format(j), show=0)
+                        frame = view.load(buf, f"{j:0{d}}-{f}", show=0)
+                else:
+                    frame = view.load(buf, f, show=0, pathname=path, **info)
+                    frames.append(frame)
             
             self.statusbar("\b done.")
             view.select(frame)
