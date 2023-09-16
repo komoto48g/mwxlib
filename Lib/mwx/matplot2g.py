@@ -10,7 +10,6 @@ import wx
 from matplotlib import cm
 from matplotlib import patches
 from PIL import Image
-from PIL import ImageFile
 import cv2
 import numpy as np
 from numpy import pi, nan
@@ -34,7 +33,7 @@ def _imcv(src):
 
 
 def _to_buffer(img):
-    if isinstance(img, (Image.Image, ImageFile.ImageFile)):
+    if isinstance(img, Image.Image):
         ## return np.asarray(img) # ref
         return np.array(img) # copy
     

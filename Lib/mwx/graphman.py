@@ -25,7 +25,6 @@ from matplotlib import colors
 ## from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image
-from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 
 from . import framework as mwx
@@ -1527,14 +1526,11 @@ class Frame(mwx.Frame):
         """Read buffer from a file (to be overridden)."""
         buf = Image.open(path)
         info = {}
-        if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
-            return buf, info
-        
         if buf.mode[:3] == 'RGB':  # 今のところカラー画像には対応する気はない▼
             buf = buf.convert('L') # ここでグレースケールに変換する
-        
         ## return np.asarray(buf), info # ref
-        return np.array(buf), info # copy
+        ## return np.array(buf), info # copy
+        return buf, info
     
     @staticmethod
     def write_buffer(path, buf):
