@@ -10,7 +10,6 @@ import wx
 from matplotlib import cm
 from matplotlib import patches
 from PIL import Image
-from PIL import ImageFile
 import cv2
 import numpy as np
 from numpy import pi, nan
@@ -33,8 +32,8 @@ def _imcv(src):
     return src
 
 
-def _imbuffer(img):
-    if isinstance(img, (Image.Image, ImageFile.ImageFile)):
+def _to_buffer(img):
+    if isinstance(img, Image.Image):
         ## return np.asarray(img) # ref
         return np.array(img) # copy
     
@@ -48,7 +47,15 @@ def _imbuffer(img):
     return img
 
 
-def imconvert(src, cutoff=0, threshold=24e6, binning=1):
+def _to_array(x):
+    if isinstance(x, np.ndarray):
+        return x
+    if hasattr(x, '__iter__'):
+        return np.array(x)
+    return np.array([x])
+
+
+def imconvert(src, cutoff=0, threshold=None, binning=1):
     """Convert buffer to image<uint8>
     
     >>> dst = (src-a) * 255 / (b-a)
@@ -117,13 +124,6 @@ class AxesImagePhantom(object):
         localunit   : initial localunit
         attributes  : additional info:dict
     
-    The displayed image is an array<uint8> converted from buffer by `imconvert`.
-    
-    >>> binning, vlim, image = imconvert(self.buffer,
-    ...     cutoff = self.parent.score_percentile,
-    ...     threshold = self.parent.nbytes_threshold,
-    ... )
-    
     Note:
         Due to the problem of performance,
         the image pixel size could be reduced by binning.
@@ -137,7 +137,7 @@ class AxesImagePhantom(object):
         self.__aspect_ratio = aspect
         self.__attributes = attributes
         self.__attributes['localunit'] = self.__localunit
-        self.__buf = _imbuffer(buf)
+        self.__buf = _to_buffer(buf)
         bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
@@ -282,7 +282,7 @@ class AxesImagePhantom(object):
     def update_buffer(self, buf=None):
         """Update buffer and the image."""
         if buf is not None:
-            self.__buf = _imbuffer(buf)
+            self.__buf = _to_buffer(buf)
         
         bins, vlim, img = imconvert(self.__buf,
                 cutoff = self.parent.score_percentile,
@@ -340,8 +340,8 @@ class AxesImagePhantom(object):
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
             x, y = x
-        x = self._to_array(x)
-        y = self._to_array(y)
+        x = _to_array(x)
+        y = _to_array(y)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
@@ -354,21 +354,13 @@ class AxesImagePhantom(object):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
         if ny is None:
             nx, ny = nx
-        nx = self._to_array(nx)
-        ny = self._to_array(ny)
+        nx = _to_array(nx)
+        ny = _to_array(ny)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
         return (x, y)
-    
-    @staticmethod
-    def _to_array(x):
-        if isinstance(x, np.ndarray):
-            return x
-        if hasattr(x, '__iter__'):
-            return np.array(x)
-        return np.array([x])
 
 
 class GraphPlot(MatplotPanel):
@@ -977,7 +969,7 @@ class GraphPlot(MatplotPanel):
             data = self.frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = imconvert(data, self.frame.vlim, threshold=None)
+            bins, vlim, img = imconvert(data, self.frame.vlim)
             Clipboard.imwrite(img)
         except Exception as e:
             self.message("- Failure in clipboard: {}".format(e))

@@ -25,7 +25,6 @@ from matplotlib import colors
 ## from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image
-from PIL import ImageFile
 from PIL.TiffImagePlugin import TiffImageFile
 
 from . import framework as mwx
@@ -417,8 +416,12 @@ class LayerInterface(CtrlInterface):
             ## Arts may be belonging to graph, output, and any other windows.
             for art in self.Arts:
                 art.set_visible(show)
-            art.axes.figure.canvas.draw_idle()
-        except RuntimeError as e:
+            ## EVT_SHOW [page_hidden] is called when the page is destroyed.
+            ## To avoid RuntimeError, check if canvas object has been deleted.
+            canvas = art.axes.figure.canvas
+            if canvas:
+                canvas.draw_idle()
+        except Exception as e:
             print("- Failed to draw Arts of {!r}: {}".format(self.__module__, e))
             del self.Arts
 
@@ -1527,14 +1530,11 @@ class Frame(mwx.Frame):
         """Read buffer from a file (to be overridden)."""
         buf = Image.open(path)
         info = {}
-        if isinstance(buf, TiffImageFile): # tiff はそのまま返して後処理に回す
-            return buf, info
-        
         if buf.mode[:3] == 'RGB':  # 今のところカラー画像には対応する気はない▼
             buf = buf.convert('L') # ここでグレースケールに変換する
-        
         ## return np.asarray(buf), info # ref
-        return np.array(buf), info # copy
+        ## return np.array(buf), info # copy
+        return buf, info
     
     @staticmethod
     def write_buffer(path, buf):
@@ -1582,18 +1582,16 @@ class Frame(mwx.Frame):
                         continue
                     raise # no contexts or handlers
                 
-                ## Do not show while loading
-                frame = view.load(buf, f, show=0, pathname=path, **info)
-                frames.append(frame)
-                
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
-                    dg = int(np.log10(n)) + 1
-                    fmt = "{{:0>{}}}-{}".format(dg, f) # zero padding for numerical sort
-                    for j in range(1,n):
+                    d = len(str(n))
+                    for j in range(n):
                         self.statusbar("Loading {!r} [{} of {} pages]...".format(f, j+1, n))
                         buf.seek(j)
-                        frame = view.load(buf, name=fmt.format(j), show=0)
+                        frame = view.load(buf, f"{j:0{d}}-{f}", show=0)
+                else:
+                    frame = view.load(buf, f, show=0, pathname=path, **info)
+                    frames.append(frame)
             
             self.statusbar("\b done.")
             view.select(frame)

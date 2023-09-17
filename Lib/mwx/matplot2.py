@@ -29,7 +29,7 @@ MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 
 
 ## Monkey-patch for matplotlib 3.4/WXAgg
-if 1:
+if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     from matplotlib.backend_bases import Event
     
     def __init__(self, name, canvas, guiEvent=None):
