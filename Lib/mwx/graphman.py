@@ -416,8 +416,12 @@ class LayerInterface(CtrlInterface):
             ## Arts may be belonging to graph, output, and any other windows.
             for art in self.Arts:
                 art.set_visible(show)
-            art.axes.figure.canvas.draw_idle()
-        except RuntimeError as e:
+            ## EVT_SHOW [page_hidden] is called when the page is destroyed.
+            ## To avoid RuntimeError, check if canvas object has been deleted.
+            canvas = art.axes.figure.canvas
+            if canvas:
+                canvas.draw_idle()
+        except Exception as e:
             print("- Failed to draw Arts of {!r}: {}".format(self.__module__, e))
             del self.Arts
 
