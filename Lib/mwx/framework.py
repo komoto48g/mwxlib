@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.7"
+__version__ = "0.88.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -970,9 +970,6 @@ class ShellFrame(MiniFrame):
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        if debrc:
-            self.SESSION_FILE = os.path.abspath(debrc)
-        
         self.__standalone = bool(ensureClose)
         
         ## Add useful built-in functions and methods
@@ -1175,7 +1172,12 @@ class ShellFrame(MiniFrame):
         self.Help.set_attributes(ReadOnly=True)
         self.History.set_attributes(ReadOnly=True)
         
-        self.Init()
+        msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
+        self.add_history(msg)
+        self.add_log(msg)
+        
+        self.load_session(
+            os.path.abspath(debrc) if debrc else self.SESSION_FILE)
     
     SESSION_FILE = get_rootpath(".debrc")
     SCRATCH_FILE = get_rootpath("scratch.py")
@@ -1207,13 +1209,13 @@ class ShellFrame(MiniFrame):
         
         _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
-        self.SESSION_FILE = os.path.abspath(file)
+        f = os.path.abspath(file)
         try:
-            with open(self.SESSION_FILE, encoding='utf-8', newline='') as i:
+            with open(f, encoding='utf-8', newline='') as i:
                 exec(i.read())
-        except Exception:
-            ## pass
-            traceback.print_exc()
+        except FileNotFoundError:
+            pass
+        self.SESSION_FILE = f
         
         ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:
@@ -1264,12 +1266,6 @@ class ShellFrame(MiniFrame):
                 ## "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
                 "self._mgr.Update()\n",
             )))
-    
-    def Init(self):
-        msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
-        self.add_history(msg)
-        self.add_log(msg)
-        self.load_session(self.SESSION_FILE)
     
     def Destroy(self):
         try:
