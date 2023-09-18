@@ -602,7 +602,7 @@ class LineProfile(LinePlot):
         X, Y = self.plotdata
         with io.StringIO() as o:
             for x, y in zip(X, Y):
-                o.write(f"{x:g}\t{y:g}\n")
+                o.write("{:g}\t{:g}\n".format(x, y))
             Clipboard.write(o.getvalue(), verbose=0)
     
     ## --------------------------------

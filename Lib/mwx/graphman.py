@@ -1433,15 +1433,13 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, file):
         """Read attributes file."""
+        from numpy import nan, inf  # noqa: necessary to eval
+        import datetime             # noqa: necessary to eval
         try:
             res = {}
             mis = {}
             savedir = os.path.dirname(file)
-            
             with open(file) as i:
-                from numpy import nan, inf  # noqa: necessary to eval
-                import datetime             # noqa: necessary to eval
-                
                 res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):

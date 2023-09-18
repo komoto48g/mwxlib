@@ -938,7 +938,7 @@ class TreeList(object):
         for x in ls:
             if isinstance(x, (tuple, list)) and x and x[0] == key:
                 if len(x) < 2:
-                    raise ValueError("No value for key={!r}".format(key))
+                    raise ValueError(f"No value for {key=!r}")
                 return x
     
     def getf(self, ls, key):
@@ -970,7 +970,7 @@ class TreeList(object):
             else:
                 ls.append([key, value]) # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
-            print("- TreeList:warning {!r}: key={!r}".format(e, key))
+            print(f"- TreeList:warning {e!r}: {key=!r}")
     
     def delf(self, ls, key):
         if '/' in key:
