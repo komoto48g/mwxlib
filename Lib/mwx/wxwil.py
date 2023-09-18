@@ -12,6 +12,13 @@ from .controls import Icon, Clipboard
 from .framework import CtrlInterface, Menu
 
 
+def _repr(value):
+    try:
+        return repr(value)
+    except Exception as e:
+        return "- {!r}".format(e)
+
+
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Locals info watcher
     
@@ -76,7 +83,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.DeleteAllItems()
             data = self.__items
             for key, value in self.target.items():
-                vstr = repr(value)
+                vstr = _repr(value)
                 i = len(data)
                 item = [key, vstr]
                 data.append(item)
@@ -109,7 +116,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 del data[j]
         
         for key, value in self.target.items():
-            vstr = repr(value)
+            vstr = _repr(value)
             i = next((i for i, item in enumerate(data)
                                     if item[0] == key), None)
             if i is not None:
