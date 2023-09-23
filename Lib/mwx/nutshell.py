@@ -98,7 +98,6 @@ class EditorInterface(CtrlInterface):
             'C-S-right pressed' : (0, _F(self.selection_forward_word_or_paren)),
                'C-S-up pressed' : (0, _F(self.LineUpExtend)),
              'C-S-down pressed' : (0, _F(self.LineDownExtend)),
-                'C-S-c pressed' : (0, _F(self.Copy)),
                   'C-a pressed' : (0, _F(self.beginning_of_line)),
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
@@ -2430,7 +2429,8 @@ class Nautilus(Shell, EditorInterface):
                 'C-S-] pressed' : (0, _F(self.goto_next_mark_arrow, selection=1)),
                  'M-up pressed' : (0, _F(self.goto_previous_white_arrow)),
                'M-down pressed' : (0, _F(self.goto_next_white_arrow)),
-                'C-S-c pressed' : (0, skip),
+                # 'C-c pressed' : (0, skip), # -> spec-map
+                'C-S-c pressed' : (0, skip), # -> Copy selected text, retaining prompts.
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
