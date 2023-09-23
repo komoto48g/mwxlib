@@ -9,9 +9,6 @@ import wx
 import matplotlib; matplotlib.use('wxagg') # noqa
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
-#from matplotlib.backends.backend_wx import NavigationToolbar2Wx as Toolbar
-#from matplotlib.backends.backend_wxagg import Toolbar
-#from matplotlib.backend_bases import Cursors
 from matplotlib.widgets import Cursor
 from matplotlib.figure import Figure
 from matplotlib import cm
@@ -397,38 +394,19 @@ class MatplotPanel(wx.Panel):
     ## External I/O file and clipboard 
     ## --------------------------------
     
-    ## def save_to_file(self, path=None):
-    ##     """Save canvas image to file."""
-    ##     if not path:
-    ##         with wx.FileDialog(self, 'Save Figure as',
-    ##             style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-    ##             if dlg.ShowModal() != wx.ID_OK:
-    ##                 return
-    ##             path = dlg.Path
-    ##     self.message("Save image to {!r}.".format(path))
-    ##     try:
-    ##         b = self.selected.get_visible()
-    ##         self.selected.set_visible(0)
-    ##         self.cursor.visible = 0
-    ##         self.canvas.draw()
-    ##         self.canvas.print_figure(path, dpi=300) # canvas figure to image
-    ##     finally:
-    ##         self.selected.set_visible(b)
-    ##         self.cursor.visible = 1
-    ##         self.canvas.draw()
-    
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
         self.message("Copy image to clipboard.")
         try:
             b = self.selected.get_visible()
+            c = self.cursor.visible
             self.selected.set_visible(0)
             self.cursor.visible = 0
             self.canvas.draw()
             self.canvas.Copy_to_Clipboard()
         finally:
             self.selected.set_visible(b)
-            self.cursor.visible = 1
+            self.cursor.visible = c
             self.canvas.draw()
     
     ## --------------------------------
