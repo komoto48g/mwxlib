@@ -28,14 +28,30 @@ MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 ## Monkey-patch for matplotlib 3.4/WXAgg
 if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     from matplotlib.backend_bases import Event
-    
+
     def __init__(self, name, canvas, guiEvent=None):
         self.name = name
         self.canvas = canvas
         self.guiEvent = None
-    
+
     Event.__init__ = __init__
     del __init__
+
+## (local) Monkey-patch for matplotlib 3.8/WXAgg
+if 1:
+    class Cursor(Cursor):
+        def onmove(self, event):
+            if self.ignore(event)\
+              or not self.canvas.widgetlock.available(self):
+                return
+            ## xdata, ydata = self._get_data_coords(event) # >= 3.8 only
+            xdata, ydata = event.xdata, event.ydata
+            self.linev.set_xdata((xdata, xdata))
+            self.linev.set_visible(self.visible and self.vertOn)
+            self.lineh.set_ydata((ydata, ydata))
+            self.lineh.set_visible(self.visible and self.horizOn)
+            if self.visible and (self.vertOn or self.horizOn):
+                self._update()
 
 
 class MatplotPanel(wx.Panel):
