@@ -288,12 +288,8 @@ class MatplotPanel(wx.Panel):
         Called every time the drawing is updated.
         """
         if isinstance(art, matplotlib.artist.Artist):
-            ## bg = self.canvas.copy_from_bbox(self.axes.bbox)
-            ## self.canvas.restore_region(bg)
             self.axes.draw_artist(art)
-            self.canvas.blit(art.get_clip_box())
-            self.canvas.draw_idle()
-        ## elif art is None:
+            self.canvas.blit(art.clipbox)
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
