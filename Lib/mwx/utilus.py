@@ -247,10 +247,7 @@ def mro(obj):
     if not isinstance(obj, type):
         obj = type(obj)
     for base in obj.__mro__:
-        f = where(base)
-        print("  {:40s} {}".format(str(base),
-                        getattr(f, '__file__', None) or
-                        getattr(f, '__name__', None) or f))
+        print("  {:40s} {}".format(str(base), where(base)))
 
 
 def pp(obj):
