@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.8"
+__version__ = "0.88.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -178,10 +178,10 @@ class KeyCtrlInterfaceMixin:
     
     keymap::
     
-        global-map : 0 (default)
-         ctl-x-map : 'C-x'
-          spec-map : 'C-c'
-           esc-map : 'escape'
+        global-map  : 0 (default)
+        ctl-x-map   : 'C-x'
+        spec-map    : 'C-c'
+        esc-map     : 'escape'
     """
     message = print # override this in subclass
     post_message = property(lambda self: postcall(self.message))
@@ -1511,7 +1511,7 @@ class ShellFrame(MiniFrame):
         if not isinstance(filename, str):
             filename = where(filename)
             if filename is None:
-                return False
+                return None
         if not lineno:
             m = re.match("(.*?):([0-9]+)", filename)
             if m:
@@ -1519,8 +1519,10 @@ class ShellFrame(MiniFrame):
                 lineno = int(ln)
         book = next((x for x in self.all_books
                         if x.find_buffer(filename)), self.Log)
-        if self._load(filename, lineno, book, verbose=1):
+        ret = self._load(filename, lineno, book, verbose=1)
+        if ret:
             self.popup_window(book, show, focus)
+        return ret
     
     def info(self, obj):
         self.rootshell.info(obj)
