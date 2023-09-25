@@ -9,9 +9,6 @@ import wx
 import matplotlib; matplotlib.use('wxagg') # noqa
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
-#from matplotlib.backends.backend_wx import NavigationToolbar2Wx as Toolbar
-#from matplotlib.backends.backend_wxagg import Toolbar
-#from matplotlib.backend_bases import Cursors
 from matplotlib.widgets import Cursor
 from matplotlib.figure import Figure
 from matplotlib import cm
@@ -31,14 +28,30 @@ MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 ## Monkey-patch for matplotlib 3.4/WXAgg
 if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     from matplotlib.backend_bases import Event
-    
+
     def __init__(self, name, canvas, guiEvent=None):
         self.name = name
         self.canvas = canvas
         self.guiEvent = None
-    
+
     Event.__init__ = __init__
     del __init__
+
+## (local) Monkey-patch for matplotlib 3.8/WXAgg
+if 1:
+    class Cursor(Cursor):
+        def onmove(self, event):
+            if self.ignore(event)\
+              or not self.canvas.widgetlock.available(self):
+                return
+            ## xdata, ydata = self._get_data_coords(event) # >= 3.8 only
+            xdata, ydata = event.xdata, event.ydata
+            self.linev.set_xdata((xdata, xdata))
+            self.linev.set_visible(self.visible and self.vertOn)
+            self.lineh.set_ydata((ydata, ydata))
+            self.lineh.set_visible(self.visible and self.horizOn)
+            if self.visible and (self.vertOn or self.horizOn):
+                self._update()
 
 
 class MatplotPanel(wx.Panel):
@@ -291,12 +304,8 @@ class MatplotPanel(wx.Panel):
         Called every time the drawing is updated.
         """
         if isinstance(art, matplotlib.artist.Artist):
-            ## bg = self.canvas.copy_from_bbox(self.axes.bbox)
-            ## self.canvas.restore_region(bg)
             self.axes.draw_artist(art)
-            self.canvas.blit(art.get_clip_box())
-            self.canvas.draw_idle()
-        ## elif art is None:
+            self.canvas.blit(art.clipbox)
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
@@ -397,38 +406,19 @@ class MatplotPanel(wx.Panel):
     ## External I/O file and clipboard 
     ## --------------------------------
     
-    ## def save_to_file(self, path=None):
-    ##     """Save canvas image to file."""
-    ##     if not path:
-    ##         with wx.FileDialog(self, 'Save Figure as',
-    ##             style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-    ##             if dlg.ShowModal() != wx.ID_OK:
-    ##                 return
-    ##             path = dlg.Path
-    ##     self.message("Save image to {!r}.".format(path))
-    ##     try:
-    ##         b = self.selected.get_visible()
-    ##         self.selected.set_visible(0)
-    ##         self.cursor.visible = 0
-    ##         self.canvas.draw()
-    ##         self.canvas.print_figure(path, dpi=300) # canvas figure to image
-    ##     finally:
-    ##         self.selected.set_visible(b)
-    ##         self.cursor.visible = 1
-    ##         self.canvas.draw()
-    
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
         self.message("Copy image to clipboard.")
         try:
             b = self.selected.get_visible()
+            c = self.cursor.visible
             self.selected.set_visible(0)
             self.cursor.visible = 0
             self.canvas.draw()
             self.canvas.Copy_to_Clipboard()
         finally:
             self.selected.set_visible(b)
-            self.cursor.visible = 1
+            self.cursor.visible = c
             self.canvas.draw()
     
     ## --------------------------------
