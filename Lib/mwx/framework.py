@@ -4,11 +4,12 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.88.9"
+__version__ = "0.89.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
 from importlib import reload
+import contextlib
 import traceback
 import builtins
 import datetime
@@ -25,6 +26,14 @@ from wx.py import dispatcher
 from .utilus import funcall as _F
 from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
 from .utilus import get_rootpath
+
+
+@contextlib.contextmanager
+def App(loop=True):
+    app = wx.GetApp() or wx.App()
+    yield app
+    if loop and not app.GetMainLoop():
+        app.MainLoop()
 
 
 def postcall(f):

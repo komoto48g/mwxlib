@@ -5,7 +5,7 @@
 from .framework import __version__, __author__
 from .framework import FSM
 from .framework import Menu, MenuBar, StatusBar
-from .framework import Frame, MiniFrame, ShellFrame
+from .framework import App, Frame, MiniFrame, ShellFrame
 
 ## Controls
 ## from . import controls
@@ -63,13 +63,9 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     app = wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
     frame.Show()
-    shell = frame.rootshell
-    shell.SetFocus()
+    frame.rootshell.SetFocus()
     if locals:
-        shell.locals.update(locals)
-    if loop:
-        if not app.GetMainLoop():
-            app.MainLoop()
-        else:
-            pass # The mainloop is already running.
+        frame.rootshell.locals.update(locals)
+    if loop and not app.GetMainLoop():
+        app.MainLoop()
     return frame
