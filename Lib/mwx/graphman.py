@@ -1346,13 +1346,13 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ATTRIBUTESFILE = "results.index"
     
-    def import_index(self, file=None, view=None):
+    def import_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
         """
         if not view:
             view = self.selected_view
         
-        if not file:
+        if not filename:
             with wx.FileDialog(self, "Select index file to import",
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
@@ -1360,9 +1360,9 @@ class Frame(mwx.Frame):
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                file = dlg.Path
+                filename = dlg.Path
         
-        res, mis = self.read_attributes(file)
+        res, mis = self.read_attributes(filename)
         
         paths = [attr['pathname'] for attr in res.values()]
         frames = self.load_buffer(paths, view)
@@ -1378,7 +1378,7 @@ class Frame(mwx.Frame):
         print(self.statusbar.read())
         return frames
     
-    def export_index(self, file=None, frames=None):
+    def export_index(self, filename=None, frames=None):
         """Save frames :ref to the Index file.
         """
         if not frames:
@@ -1386,7 +1386,7 @@ class Frame(mwx.Frame):
             if not frames:
                 return
         
-        if not file:
+        if not filename:
             f = next((x.pathname for x in frames if x.pathname), '')
             with wx.FileDialog(self, "Select index file to export",
                     defaultDir=os.path.dirname(f),
@@ -1395,9 +1395,9 @@ class Frame(mwx.Frame):
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                file = dlg.Path
+                filename = dlg.Path
         
-        savedir = os.path.dirname(file)
+        savedir = os.path.dirname(filename)
         output_frames = []
         for frame in frames:
             try:
@@ -1417,7 +1417,7 @@ class Frame(mwx.Frame):
                 print("-", self.statusbar("\b failed. pass."))
         
         frames = output_frames
-        res, mis = self.write_attributes(file, frames)
+        res, mis = self.write_attributes(filename, frames)
         n = len(frames)
         self.statusbar(
             "{} frames were exported, "
@@ -1431,15 +1431,15 @@ class Frame(mwx.Frame):
     ## --------------------------------
     
     @classmethod
-    def read_attributes(self, file):
+    def read_attributes(self, filename):
         """Read attributes file."""
         from numpy import nan, inf  # noqa: necessary to eval
         import datetime             # noqa: necessary to eval
         try:
             res = {}
             mis = {}
-            savedir = os.path.dirname(file)
-            with open(file) as i:
+            savedir = os.path.dirname(filename)
+            with open(filename) as i:
                 res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
@@ -1460,10 +1460,10 @@ class Frame(mwx.Frame):
             return res, mis # finally raises no exception
     
     @classmethod
-    def write_attributes(self, file, frames):
+    def write_attributes(self, filename, frames):
         """Write attributes file."""
         try:
-            res, mis = self.read_attributes(file)
+            res, mis = self.read_attributes(filename)
             new = dict((x.name, x.attributes) for x in frames)
             
             ## `res` order may differ from that of given frames,
@@ -1472,7 +1472,7 @@ class Frame(mwx.Frame):
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
-            with open(file, 'w') as o:
+            with open(filename, 'w') as o:
                 try:
                     pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
                 except Exception:
@@ -1678,16 +1678,16 @@ class Frame(mwx.Frame):
     ## --------------------------------
     session_file = None
     
-    def load_session(self, file=None, flush=True):
+    def load_session(self, filename=None, flush=True):
         """Load session from file."""
-        if not file:
+        if not filename:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.jssn)|*.jssn",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                file = dlg.Path
+                filename = dlg.Path
         
         if flush:
             for name in list(self.plugins): # plugins:dict mutates during iteration
@@ -1695,7 +1695,7 @@ class Frame(mwx.Frame):
             del self.graph[:]
             del self.output[:]
         
-        self.session_file = os.path.abspath(file)
+        self.session_file = os.path.abspath(filename)
         
         ## Load the session in the shell.
         self.statusbar("Loading session from {!r}...".format(self.session_file))

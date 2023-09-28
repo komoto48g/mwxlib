@@ -1193,16 +1193,16 @@ class ShellFrame(MiniFrame):
     LOGGING_FILE = get_rootpath("deb-logging.log")
     HISTORY_FILE = get_rootpath("deb-history.log")
     
-    def load_session(self, file=None, flush=True):
+    def load_session(self, filename=None, flush=True):
         """Load session from file."""
-        if not file:
+        if not filename:
             with wx.FileDialog(self, 'Load session',
                     wildcard="Session file (*.debrc)|*.debrc",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
-                file = dlg.Path
+                filename = dlg.Path
         
         if flush:
             for book in self.all_books:
@@ -1218,7 +1218,7 @@ class ShellFrame(MiniFrame):
         
         _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
-        f = os.path.abspath(file)
+        f = os.path.abspath(filename)
         try:
             with open(f, encoding='utf-8', newline='') as i:
                 exec(i.read())
