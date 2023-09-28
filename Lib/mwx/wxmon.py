@@ -268,7 +268,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         
         data = self.__items
-        f = data[self.FocusedItem]
+        fi = data[self.FocusedItem]
         ls = [data[i] for i in range(n) if self.IsSelected(i)]
         lc = [data[i] for i in range(n) if self.IsItemChecked(i)]
         lb = [data[i] for i in range(n) if self.GetItemTextColour(i) == 'blue']
@@ -285,7 +285,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetItemTextColour(i, 'black') # reset font
             if item in lb:
                 self.SetItemTextColour(i, 'blue')
-            if item == f:
+            if item == fi:
                 self.Focus(i)
     
     def OnItemDClick(self, evt): #<wx._core.MouseEvent>

@@ -1375,13 +1375,13 @@ class Buffer(EditWindow, EditorInterface):
         return self.__filename
     
     @filename.setter
-    def filename(self, f):
-        if f and os.path.isfile(f):
-            self.__mtime = os.path.getmtime(f)
+    def filename(self, fn):
+        if fn and os.path.isfile(fn):
+            self.__mtime = os.path.getmtime(fn)
         else:
             self.__mtime = None
-        if self.__filename != f:
-            self.__filename = f
+        if self.__filename != fn:
+            self.__filename = fn
             self.parent.handler('buffer_filename_reset', self)
             self.update_caption()
     
@@ -1395,10 +1395,10 @@ class Buffer(EditWindow, EditorInterface):
             > 0  : a file edited externally
             < 0  : a url file
         """
-        f = self.filename
-        if f and os.path.isfile(f):
-            return os.path.getmtime(f) - self.__mtime
-        if f and re.match(url_re, f):
+        fn = self.filename
+        if fn and os.path.isfile(fn):
+            return os.path.getmtime(fn) - self.__mtime
+        if fn and re.match(url_re, fn):
             return -1
     
     @property
@@ -1658,7 +1658,7 @@ class Buffer(EditWindow, EditorInterface):
         except Exception as e:
             msg = traceback.format_exc()
             err = re.findall(py_error_re, msg, re.M)
-            lines = [int(l) for f,l in err if f == filename]
+            lines = [int(ln) for fn, ln in err if fn == filename]
             if lines:
                 lx = lines[-1] - 1
                 self.red_arrow = lx
@@ -1848,16 +1848,16 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Returns the currently selected page or None."""
         return self.CurrentPage
     
-    def find_buffer(self, f):
-        """Find buffer with specified f:filename or code."""
-        if isinstance(f, str):
-            g = os.path.realpath(f)
+    def find_buffer(self, fn):
+        """Find buffer with specified fn:filename or code."""
+        if isinstance(fn, str):
+            g = os.path.realpath(fn)
             for buf in self.all_buffers:
-                if f == buf.filename or g == os.path.realpath(buf.filename):
+                if fn == buf.filename or g == os.path.realpath(buf.filename):
                     return buf
         else:
             for buf in self.all_buffers:
-                if f is buf or f in buf: # check code
+                if fn is buf or fn in buf: # check code
                     return buf
     
     def swap_buffer(self, buf, lineno=0):
@@ -2060,8 +2060,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                 |wx.FD_MULTIPLE) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
-                for f in dlg.Paths:
-                    self.load_file(f)
+                for fn in dlg.Paths:
+                    self.load_file(fn)
     
     def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
@@ -3299,7 +3299,7 @@ class Nautilus(Shell, EditorInterface):
             except Exception as e:
                 msg = traceback.format_exc()
                 err = re.findall(py_error_re, msg, re.M)
-                lines = [int(l) for f,l in err if f == filename]
+                lines = [int(ln) for fn, ln in err if fn == filename]
                 if lines:
                     region = self.get_region(self.cline)
                     self.pointer = region[0] + lines[-1] - 1

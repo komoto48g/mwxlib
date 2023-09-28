@@ -290,12 +290,11 @@ class Debugger(Pdb):
             else:
                 self.editor.buffer.MarkerDeleteAll(style)
     
-    def find_editor(self, f):
-        """Find parent editor which has the specified f:object,
-        where `f` can be filename or code object.
+    def find_editor(self, fn):
+        """Find parent editor which has the specified fn:filename or code.
         """
         for editor in self.parent.get_all_pages(type(self.editor)):
-            buf = editor.find_buffer(f)
+            buf = editor.find_buffer(fn)
             if buf:
                 editor.swap_page(buf)
                 return editor

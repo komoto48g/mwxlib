@@ -532,17 +532,17 @@ class MyFileDropLoader(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         pos = self.target.ScreenPosition + (x,y)
         paths = []
-        for f in filenames:
-            name, ext = os.path.splitext(f)
-            if ext == '.py' or os.path.isdir(f):
-                self.loader.load_plug(f, show=1, floating_pos=pos,
+        for fn in filenames:
+            name, ext = os.path.splitext(fn)
+            if ext == '.py' or os.path.isdir(fn):
+                self.loader.load_plug(fn, show=1, floating_pos=pos,
                                       force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
-                self.loader.load_session(f)
+                self.loader.load_session(fn)
             elif ext == '.index':
-                self.loader.import_index(f, self.target)
+                self.loader.import_index(fn, self.target)
             else:
-                paths.append(f) # image file just stacks to be loaded
+                paths.append(fn) # image file just stacks to be loaded
         if paths:
             self.loader.load_frame(paths, self.target)
         return True
@@ -787,11 +787,11 @@ class Frame(mwx.Frame):
     
     Editor = "notepad"
     
-    def edit(self, f):
-        if hasattr(f, '__file__'):
-            name,_ = os.path.splitext(f.__file__)
-            f = name + '.py'
-        cmd = '{} "{}"'.format(self.Editor, f)
+    def edit(self, fn):
+        if hasattr(fn, '__file__'):
+            name,_ = os.path.splitext(fn.__file__)
+            fn = name + '.py'
+        cmd = '{} "{}"'.format(self.Editor, fn)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
             subprocess.Popen(cmd)
@@ -1387,9 +1387,9 @@ class Frame(mwx.Frame):
                 return
         
         if not filename:
-            f = next((x.pathname for x in frames if x.pathname), '')
+            fn = next((x.pathname for x in frames if x.pathname), '')
             with wx.FileDialog(self, "Select index file to export",
-                    defaultDir=os.path.dirname(f),
+                    defaultDir=os.path.dirname(fn),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1402,15 +1402,15 @@ class Frame(mwx.Frame):
         for frame in frames:
             try:
                 self.statusbar("Export index of {!r}...".format(frame.name))
-                f = frame.pathname
-                if not f:
-                    f = os.path.join(savedir, frame.name) # new file
-                if not os.path.exists(f):
-                    if not f.endswith('.tif'):
-                        f += '.tif'
-                    self.write_buffer(f, frame.buffer)
-                    frame.pathname = f
-                    frame.name = os.path.basename(f) # new name and pathname
+                fn = frame.pathname
+                if not fn:
+                    fn = os.path.join(savedir, frame.name) # new file
+                if not os.path.exists(fn):
+                    if not fn.endswith('.tif'):
+                        fn += '.tif'
+                    self.write_buffer(fn, frame.buffer)
+                    frame.pathname = fn
+                    frame.name = os.path.basename(fn) # new name and pathname
                 output_frames.append(frame)
                 print(" ", self.statusbar("\b done."))
             except (PermissionError, OSError):
@@ -1443,14 +1443,14 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
-                f = os.path.join(savedir, name)
-                if not os.path.exists(f): # search by relpath (dir+name)
-                    f = attr.get('pathname')
-                if not os.path.exists(f): # check & pop missing files
+                fn = os.path.join(savedir, name)
+                if not os.path.exists(fn): # search by relpath (dir+name)
+                    fn = attr.get('pathname')
+                if not os.path.exists(fn): # check & pop missing files
                     res.pop(name)
                     mis.update({name:attr})
                 else:
-                    attr.update(pathname=f)
+                    attr.update(pathname=fn)
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -1496,8 +1496,8 @@ class Frame(mwx.Frame):
             for frame in frames:
                 savedir = os.path.dirname(frame.pathname)
                 if savedir not in savedirs:
-                    f = os.path.join(savedir, self.ATTRIBUTESFILE)
-                    res, mis = self.read_attributes(f)
+                    fn = os.path.join(savedir, self.ATTRIBUTESFILE)
+                    res, mis = self.read_attributes(fn)
                     savedirs[savedir] = res
                 results = savedirs[savedir]
                 frame.update_attributes(results.get(frame.name))
@@ -1511,8 +1511,8 @@ class Frame(mwx.Frame):
         frame = self.save_buffer(path, frame)
         if frame:
             savedir = os.path.dirname(frame.pathname)
-            f = os.path.join(savedir, self.ATTRIBUTESFILE)
-            res, mis = self.write_attributes(f, [frame])
+            fn = os.path.join(savedir, self.ATTRIBUTESFILE)
+            res, mis = self.write_attributes(fn, [frame])
         return frame
     
     ## --------------------------------
@@ -1570,8 +1570,8 @@ class Frame(mwx.Frame):
             frames = []
             frame = None
             for i, path in enumerate(paths):
-                f = os.path.basename(path)
-                self.statusbar("Loading {!r} ({} of {})...".format(f, i+1, len(paths)))
+                fn = os.path.basename(path)
+                self.statusbar("Loading {!r} ({} of {})...".format(fn, i+1, len(paths)))
                 try:
                     buf, info = self.read_buffer(path)
                 except Image.UnidentifiedImageError:
@@ -1584,11 +1584,11 @@ class Frame(mwx.Frame):
                     n = buf.n_frames
                     d = len(str(n))
                     for j in range(n):
-                        self.statusbar("Loading {!r} [{} of {} pages]...".format(f, j+1, n))
+                        self.statusbar("Loading {!r} [{} of {} pages]...".format(fn, j+1, n))
                         buf.seek(j)
-                        frame = view.load(buf, f"{j:0{d}}-{f}", show=0)
+                        frame = view.load(buf, f"{j:0{d}}-{fn}", show=0)
                 else:
-                    frame = view.load(buf, f, show=0, pathname=path, **info)
+                    frame = view.load(buf, fn, show=0, pathname=path, **info)
                     frames.append(frame)
             
             self.statusbar("\b done.")

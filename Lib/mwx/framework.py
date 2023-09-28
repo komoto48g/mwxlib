@@ -1218,13 +1218,13 @@ class ShellFrame(MiniFrame):
         
         _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
-        f = os.path.abspath(filename)
+        fn = os.path.abspath(filename)
         try:
-            with open(f, encoding='utf-8', newline='') as i:
+            with open(fn, encoding='utf-8', newline='') as i:
                 exec(i.read())
         except FileNotFoundError:
             pass
-        self.SESSION_FILE = f
+        self.SESSION_FILE = fn
         
         ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:

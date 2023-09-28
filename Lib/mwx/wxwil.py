@@ -156,7 +156,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         
         data = self.__items
-        f = data[self.FocusedItem]
+        fi = data[self.FocusedItem]
         ls = [data[i] for i in range(n) if self.IsSelected(i)]
         
         col = evt.Column
@@ -167,7 +167,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             for j, v in enumerate(item):
                 self.SetItem(i, j, v)
             self.Select(i, item in ls)
-            if item == f:
+            if item == fi:
                 self.Focus(i)
     
     def OnContextMenu(self, evt):

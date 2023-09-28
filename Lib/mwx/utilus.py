@@ -299,8 +299,8 @@ def split_tokens(text, comment=True):
     If comment is True, generate comment tokens too.
     """
     try:
-        f = io.StringIO(text)
-        tokens = tokenize.generate_tokens(f.readline)
+        fs = io.StringIO(text)
+        tokens = tokenize.generate_tokens(fs.readline)
         j, k = 1, 0
         for type, string, start, end, line in tokens:
             l, m = start
@@ -392,7 +392,7 @@ def find_modules(force=False, verbose=True):
     Similar to pydoc.help, it scans packages, but also submodules.
     This creates a log file in ~/.mwxlib and save the list.
     """
-    f = get_rootpath("deb-modules-{}.log".format(sys.winver))
+    fn = get_rootpath("deb-modules-{}.log".format(sys.winver))
     
     def _callback(path, modname, desc=''):
         if verbose:
@@ -405,8 +405,8 @@ def find_modules(force=False, verbose=True):
             print("- failed: {}".format(modname),
                   file=sys.__stderr__)
     
-    if not force and os.path.exists(f):
-        with open(f, 'r') as o:
+    if not force and os.path.exists(fn):
+        with open(fn, 'r') as o:
             lm = eval(o.read()) # read and evaluate module list
         
         ## Check additional packages/modules
@@ -435,20 +435,20 @@ def find_modules(force=False, verbose=True):
             _callback(None, info.name)
         
         lm.sort(key=str.upper)
-        with open(f, 'w') as o:
+        with open(fn, 'w') as o:
             pprint(lm, stream=o) # write module list
-        print("The results were written in {!r}.".format(f))
+        print("The results were written in {!r}.".format(fn))
     return lm
 
 
-def get_rootpath(f):
-    """Return pathname ~/.mwxlib/f.
+def get_rootpath(fn):
+    """Return pathname ~/.mwxlib/fn.
     If ~/.mwxlib/ does not exist, it will be created.
     """
     home = os.path.normpath(os.path.expanduser("~/.mwxlib"))
     if not os.path.exists(home):
         os.mkdir(home)
-    return os.path.join(home, f)
+    return os.path.join(home, fn)
 
 
 ## --------------------------------
@@ -712,8 +712,8 @@ class FSM(dict):
     @staticmethod
     def dump(*args):
         print(*args, sep='\n', file=sys.__stderr__)
-        f = get_rootpath("deb-dump.log")
-        with open(f, 'a') as o:
+        fn = get_rootpath("deb-dump.log")
+        with open(fn, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
             print(*args, sep='\n', end='\n', file=o)
             print(traceback.format_exc(), file=o)
