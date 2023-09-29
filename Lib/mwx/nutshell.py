@@ -135,32 +135,11 @@ class EditorInterface(CtrlInterface):
                 'enter pressed' : (0, self.on_itext_selection),
             },
             100 : {
-                       'motion' : (100, self.on_linesel_motion),
+                     '* motion' : (100, self.on_linesel_motion),
                  'capture_lost' : (0, self.on_linesel_end),
              'Lbutton released' : (0, self.on_linesel_end),
             },
         })
-        
-        self.__margin = None
-        
-        def on_motion(v):
-            self._window_handler('motion', v)
-            x, y = v.Position
-            w = 0
-            for m in range(4):
-                w += self.GetMarginWidth(m)
-                if x < w:
-                    self.__margin = m # current margin under mouse
-                    break
-            else:
-                self.__margin = None
-            v.Skip()
-        self.Bind(wx.EVT_MOTION, on_motion)
-        
-        def on_capture_lost(v):
-            self._window_handler('capture_lost', v)
-            v.Skip()
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, on_capture_lost)
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
@@ -762,21 +741,25 @@ class EditorInterface(CtrlInterface):
         """Called when a line of text selection begins."""
         self.cpos = self.anchor = evt.Position #<select_line>
         self.CaptureMouse()
+        evt.Skip()
     
     def on_linesel_next(self, evt):
         """Called when next line of text selection begins."""
         self.cpos = evt.Position #<select_lines>
         self.CaptureMouse()
+        evt.Skip()
     
     def on_linesel_motion(self, evt):
         """Called when a line of text selection is changing."""
         self.cpos = self.PositionFromPoint(evt.Position) #<motion>
         self.EnsureCaretVisible()
+        evt.Skip()
     
     def on_linesel_end(self, evt):
         """Called when a line of text selection ends."""
         if self.HasCapture():
             self.ReleaseMouse()
+        evt.Skip()
     
     ## --------------------------------
     ## Preferences / Appearance
