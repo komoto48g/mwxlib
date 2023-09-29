@@ -316,8 +316,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             if self.handler(event, evt) is None:
                 evt.Skip()
         
-        ## self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_press)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_dndrag)
         self.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -353,6 +353,15 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__key = regulate_key(key + '+')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
+    
+    def on_hotkey_dndrag(self, evt): #<wx._core.KeyEvent>
+        """Called when a key is pressed while dragging.
+        Specifically called when the mouse is being captured.
+        """
+        if self.__isDragging:
+            self.on_hotkey_press(evt)
+        else:
+            evt.Skip() # for TextCtrl
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up."""
