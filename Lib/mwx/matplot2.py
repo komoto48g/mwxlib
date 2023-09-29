@@ -131,7 +131,7 @@ class MatplotPanel(wx.Panel):
         ## self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
-        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_ndrag)
+        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_dndrag)
         self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
         
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.handler('Xbutton1 pressed', v))
@@ -517,10 +517,12 @@ class MatplotPanel(wx.Panel):
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
-    def on_hotkey_ndrag(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_dndrag(self, evt): #<wx._core.KeyEvent>
         """Called when key down while dragging."""
         if self.__isDragging:
             self.on_hotkey_press(evt)
+        else:
+            evt.Skip()
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Called when key up."""
@@ -538,10 +540,11 @@ class MatplotPanel(wx.Panel):
         
         key = self.__key
         if evt.button in (1,2,3):
-            key += 'LMR'[evt.button-1] #{1:L,2:M,3:R}
+            key += 'LMR'[evt.button-1] #{1:L, 2:M, 3:R}
+            evt.key = key + 'button'
         elif evt.button in ('up', 'down'):
             key += 'wheel{}'.format(evt.button) # up/down
-        evt.key = key
+            evt.key = key
         return key
     
     def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
@@ -572,11 +575,11 @@ class MatplotPanel(wx.Panel):
         """Called when the mouse is moved."""
         key = self._on_mouse_event(evt)
         if evt.button in (1,2,3):
-            if self.__isDragging:
-                self.handler('{}drag move'.format(key), evt)
-            else:
+            if not self.__isDragging:
                 self.__isDragging = True
                 self.handler('{}drag begin'.format(key), evt)
+            else:
+                self.handler('{}drag move'.format(key), evt)
         elif evt.inaxes is self.axes:
             self.handler('axes motion', evt)
         else:
