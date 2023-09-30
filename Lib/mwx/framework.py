@@ -345,7 +345,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_lost', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
-        """Called when key down."""
+        """Called when a key is pressed."""
         if evt.EventObject is not self:
             evt.Skip()
             return
@@ -364,14 +364,14 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             evt.Skip() # for TextCtrl
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
-        """Called when key up."""
+        """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
     
     def on_mousewheel(self, evt): #<wx._core.MouseEvent>
-        """Called when wheel event.
+        """Called on mouse wheel events.
         Trigger event: 'key+wheel[up|down|right|left] pressed'
         """
         if evt.GetWheelAxis():
@@ -383,7 +383,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             evt.Skip()
     
     def on_motion(self, evt):
-        """Called when mouse motion events.
+        """Called on mouse motion events.
         Trigger event: 'key+[LMR]drag begin/motion/end'
         """
         if self.__button:
@@ -398,7 +398,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         evt.Skip()
     
     def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
-        """Called when mouse event.
+        """Called on mouse button events.
         Trigger event: 'key+[LMRX]button pressed/released/dblclick'
         """
         event = self.__key + event

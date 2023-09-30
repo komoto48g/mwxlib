@@ -511,39 +511,40 @@ class MatplotPanel(wx.Panel):
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
-        """Called when key down."""
+        """Called when a key is pressed."""
         key = mwx.hotkey(evt)
         self.__key = mwx.regulate_key(key + '+')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
     def on_hotkey_dndrag(self, evt): #<wx._core.KeyEvent>
-        """Called when key down while dragging."""
+        """Called when a key is pressed while dragging.
+        Specifically called when the mouse is being captured.
+        """
         if self.__isDragging:
             self.on_hotkey_press(evt)
         else:
             evt.Skip()
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
-        """Called when key up."""
+        """Called when a key is released."""
         key = mwx.hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
     
     def _on_mouse_event(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        """Called in the mouse event handlers.
-        Save the current event and overwrite evt.key with modifiers
-        """
+        """Called in mouse event handlers."""
         if not evt.inaxes or evt.inaxes is not self.axes:
             (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
         
+        ## Overwrite evt.key with modifiers.
         key = self.__key
         if evt.button in (1,2,3):
             key += 'LMR'[evt.button-1] #{1:L, 2:M, 3:R}
             evt.key = key + 'button'
         elif evt.button in ('up', 'down'):
-            key += 'wheel{}'.format(evt.button) # up/down
+            key += 'wheel{}'.format(evt.button) # wheel[up|down]
             evt.key = key
         return key
     
