@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.1"
+__version__ = "0.89.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -392,7 +392,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
                 self.__isDragging = True
                 self.handler('{}drag begin'.format(kbtn), evt)
             else:
-                self.handler('{}drag motion'.format(kbtn), evt)
+                self.handler('{}drag move'.format(kbtn), evt)
         else:
             self.handler('motion', evt)
         evt.Skip()

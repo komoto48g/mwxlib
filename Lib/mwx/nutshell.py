@@ -135,7 +135,7 @@ class EditorInterface(CtrlInterface):
                 'enter pressed' : (0, self.on_itext_selection),
             },
             100 : {
-                     '* motion' : (100, self.on_linesel_motion),
+                  '*Ldrag move' : (100, self.on_linesel_motion),
                  'capture_lost' : (0, self.on_linesel_end),
              'Lbutton released' : (0, self.on_linesel_end),
             },
@@ -751,7 +751,7 @@ class EditorInterface(CtrlInterface):
     
     def on_linesel_motion(self, evt):
         """Called when a line of text selection is changing."""
-        self.cpos = self.PositionFromPoint(evt.Position) #<motion>
+        self.cpos = self.PositionFromPoint(evt.Position)
         self.EnsureCaretVisible()
         evt.Skip()
     
