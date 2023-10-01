@@ -308,13 +308,26 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__key = ''
         self.__button = ''
         self.__isDragging = False
-        self.__handler = FSM({None:{}, 0:{}}, default=0)
+        self.__handler = FSM({None:{}, 0:{}})
         
         _M = self._mouse_handler
         
         def _N(event, evt):
             if self.handler(event, evt) is None:
                 evt.Skip()
+        
+        def activate(evt):
+            self.handler('focus_set', evt)
+            evt.Skip()
+        self.Bind(wx.EVT_SET_FOCUS, activate)
+        
+        def inactivate(evt):
+            self.__key = ''
+            self.__button = ''
+            self.__isDragging = False
+            self.handler('focus_kill', evt)
+            evt.Skip()
+        self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
         self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_dndrag)
@@ -724,7 +737,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                   'M-q pressed' : (0, close),
                 },
             },
-            default = 0
         )
         self.make_keymap('C-x')
     
@@ -790,7 +802,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
                   'M-q pressed' : (0, close),
                 },
             },
-            default = 0
         )
         self.make_keymap('C-x')
     
