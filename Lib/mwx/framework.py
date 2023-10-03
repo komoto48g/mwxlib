@@ -1020,26 +1020,6 @@ class ShellFrame(MiniFrame):
         
         self.__standalone = bool(ensureClose)
         
-        ## Add useful built-in functions and methods
-        builtins.apropos = apropos
-        builtins.typename = typename
-        builtins.reload = reload
-        builtins.partial = partial
-        builtins.p = print
-        builtins.pp = pp
-        builtins.mro = mro
-        builtins.where = where
-        builtins.info = self.info
-        builtins.help = self.help
-        builtins.load = self.load
-        builtins.dive = self.clone_shell
-        builtins.debug = self.debug
-        builtins.watch = self.watch
-        builtins.timeit = self.timeit
-        builtins.profile = self.profile
-        builtins.highlight = self.highlight
-        builtins.filling = filling
-        
         from .nutshell import Nautilus, EditorBook
         
         self.__shell = Nautilus(self,
@@ -1224,6 +1204,7 @@ class ShellFrame(MiniFrame):
         self.add_history(msg)
         self.add_log(msg)
         
+        self.Init()
         self.load_session(
             os.path.abspath(debrc) if debrc else self.SESSION_FILE)
     
@@ -1315,6 +1296,31 @@ class ShellFrame(MiniFrame):
                 "self._mgr.Update()\n",
             )))
     
+    def Init(self):
+        try:
+            builtins.dive
+        except AttributeError:
+            ## Add useful built-in functions and methods
+            self.message("Initialize self-specific builtins.")
+            builtins.apropos = apropos
+            builtins.typename = typename
+            builtins.reload = reload
+            builtins.partial = partial
+            builtins.p = print
+            builtins.pp = pp
+            builtins.mro = mro
+            builtins.where = where
+            builtins.info = self.info
+            builtins.help = self.help
+            builtins.load = self.load
+            builtins.dive = self.clone_shell
+            builtins.debug = self.debug
+            builtins.watch = self.watch
+            builtins.timeit = self.timeit
+            builtins.profile = self.profile
+            builtins.highlight = self.highlight
+            builtins.filling = filling
+    
     def Destroy(self):
         try:
             self.timer.Stop()
@@ -1391,6 +1397,9 @@ class ShellFrame(MiniFrame):
                             self.__autoload = False # Don't ask any more.
                             return
                         book.load_file(buf.filename)
+        ## Reinitialize self-specific builtins if other instances are destroyed.
+        if evt.Active:
+            self.Init()
         evt.Skip()
     
     def OnShow(self, evt):
