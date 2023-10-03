@@ -305,7 +305,8 @@ class MatplotPanel(wx.Panel):
         """
         if isinstance(art, matplotlib.artist.Artist):
             self.axes.draw_artist(art)
-            self.canvas.blit(art.clipbox)
+            self.canvas.blit(art.get_clip_box())
+            self.canvas.draw_idle()
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
@@ -386,14 +387,14 @@ class MatplotPanel(wx.Panel):
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour(self.selectedModeLineBg)
             self.modeline.SetForegroundColour(self.selectedModeLineFg)
-            self.Refresh()
+            self.modeline.Refresh()
         evt.Skip()
     
     def on_focus_kill(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour(self.unselectedModeLineBg)
             self.modeline.SetForegroundColour(self.unselectedModeLineFg)
-            self.Refresh()
+            self.modeline.Refresh()
         evt.Skip()
     
     def escape(self, evt=None):
