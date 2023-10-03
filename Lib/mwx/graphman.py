@@ -574,14 +574,13 @@ class Frame(mwx.Frame):
         """
         return self.__graphic_windows
     
-    ## @property
-    ## def graphic_windows_on_screen(self):
-    ##     return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
+    @property
+    def graphic_windows_on_screen(self):
+        return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
     
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
-        #<wx.aui.AuiManager>
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
