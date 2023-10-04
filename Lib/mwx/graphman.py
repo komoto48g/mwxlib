@@ -1411,9 +1411,9 @@ class Frame(mwx.Frame):
                     frame.pathname = fn
                     frame.name = os.path.basename(fn) # new name and pathname
                 output_frames.append(frame)
-                print(" ", self.statusbar("\b done."))
+                print(' ', self.statusbar("\b done."))
             except (PermissionError, OSError):
-                print("-", self.statusbar("\b failed. pass."))
+                print('-', self.statusbar("\b failed."))
         
         frames = output_frames
         res, mis = self.write_attributes(filename, frames)
@@ -1589,12 +1589,10 @@ class Frame(mwx.Frame):
                 else:
                     frame = view.load(buf, fn, show=0, pathname=path, **info)
                     frames.append(frame)
-            
             self.statusbar("\b done.")
-        
         except Exception as e:
-            print("-", self.statusbar("\b failed."))
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            self.statusbar("\b failed.")
+            wx.MessageBox(repr(e), style=wx.ICON_ERROR)
         
         if frame:
             view.select(frame)
@@ -1634,7 +1632,7 @@ class Frame(mwx.Frame):
                 return self.save_buffer(path + '.tif', frame)
             raise
         except Exception as e:
-            print("-", self.statusbar("\b failed."))
+            self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
@@ -1667,7 +1665,7 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             return True
         except Exception as e:
-            print("-", self.statusbar("\b failed."))
+            self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             del busy
