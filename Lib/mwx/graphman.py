@@ -1577,7 +1577,7 @@ class Frame(mwx.Frame):
                     retvals = self.handler('unknown_format', path)
                     if retvals and any(retvals):
                         continue
-                    raise # no contexts or handlers
+                    raise # no context or no handlers or cannot identify image file
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
@@ -1591,14 +1591,13 @@ class Frame(mwx.Frame):
                     frames.append(frame)
             
             self.statusbar("\b done.")
-            view.select(frame)
-            return frames
         
         except Exception as e:
             print("-", self.statusbar("\b failed."))
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         
-        view.select(frame)
+        if frame:
+            view.select(frame)
         return frames
     
     def save_buffer(self, path=None, frame=None):
@@ -1658,6 +1657,7 @@ class Frame(mwx.Frame):
             self.statusbar("Saving {!r}...".format(name))
             busy = wx.BusyInfo("One moment please, "
                                "now saving {!r}...".format(name))
+            
             stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
             stack[0].save(path,
                           save_all=True,
