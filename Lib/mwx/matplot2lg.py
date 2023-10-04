@@ -747,7 +747,7 @@ if __name__ == "__main__":
     
     app = wx.App()
     frm = mwx.Frame(None, title="Graph", size=(300,300))
-    frm.graph = GraphPlot(frm, log=frm.statusbar, margin=None)
+    frm.graph = GraphPlot(frm, log=frm.message, margin=None)
     frm.graph.handler.debug = 0
     
     frm.graph.unit = 0.1
@@ -756,21 +756,21 @@ if __name__ == "__main__":
     frm.Show()
     if 1:
         lfrm = mwx.Frame(None, title='Line')
-        lfrm.graph = LinePlot(lfrm, log=lfrm.statusbar, size=(200,100))
+        lfrm.graph = LinePlot(lfrm, log=lfrm.message, size=(200,100))
         lfrm.graph.handler.debug = 4
         _plot(lfrm.graph.axes)
         lfrm.graph.update_position()
         lfrm.Show()
     if 0:
         hfrm = mwx.Frame(None, title="Histogram")
-        hfrm.graph = Histogram(hfrm, log=hfrm.statusbar, size=(200,100))
+        hfrm.graph = Histogram(hfrm, log=hfrm.message, size=(200,100))
         hfrm.graph.modeline.Show(1)
         hfrm.graph.attach(frm.graph)
         hfrm.graph.handler.debug = 4
         hfrm.Show()
     if 1:
         lpf = mwx.Frame(None, title="Line profile")
-        lpf.graph = LineProfile(lpf, log=lpf.statusbar, size=(200,100))
+        lpf.graph = LineProfile(lpf, log=lpf.message, size=(200,100))
         lpf.graph.attach(frm.graph)
         lpf.graph.handler.debug = 4
         lpf.Show()

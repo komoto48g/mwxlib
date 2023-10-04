@@ -1709,7 +1709,7 @@ if __name__ == "__main__":
     app = wx.App()
     frm = mwx.Frame(None)
     frm.graph = GraphPlot(frm,
-                          log=frm.statusbar,
+                          log=frm.message,
                           margin=(.1,.1,.9,.9),
                           size=(300,240))
     frm.handler.debug = 0

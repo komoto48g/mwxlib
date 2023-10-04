@@ -587,10 +587,10 @@ class Frame(mwx.Frame):
         
         self.__plugins = {} # modules in the order of load/save
         
-        self.__graph = Graph(self, log=self.statusbar, margin=None, size=(600,600))
-        self.__output = Graph(self, log=self.statusbar, margin=None, size=(600,600))
+        self.__graph = Graph(self, log=self.message, margin=None, size=(600,600))
+        self.__output = Graph(self, log=self.message, margin=None, size=(600,600))
         
-        self.__histgrm = Histogram(self, log=self.statusbar, margin=None, size=(130,65))
+        self.__histgrm = Histogram(self, log=self.message, margin=None, size=(130,65))
         self.__histgrm.attach(self.graph)
         self.__histgrm.attach(self.output)
         
@@ -794,7 +794,7 @@ class Frame(mwx.Frame):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
             subprocess.Popen(cmd)
-            self.statusbar(cmd)
+            self.message(cmd)
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
@@ -1370,11 +1370,11 @@ class Frame(mwx.Frame):
                 frame.update_attributes(res.get(frame.name))
         
         n = len(frames)
-        self.statusbar(
+        self.message(
             "{} frames were imported, "
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis)))
-        print(self.statusbar.read())
+        print(self.message.read())
         return frames
     
     def export_index(self, filename=None, frames=None):
@@ -1400,7 +1400,7 @@ class Frame(mwx.Frame):
         output_frames = []
         for frame in frames:
             try:
-                self.statusbar("Export index of {!r}...".format(frame.name))
+                self.message("Export index of {!r}...".format(frame.name))
                 fn = frame.pathname
                 if not fn:
                     fn = os.path.join(savedir, frame.name) # new file
@@ -1411,18 +1411,18 @@ class Frame(mwx.Frame):
                     frame.pathname = fn
                     frame.name = os.path.basename(fn) # new name and pathname
                 output_frames.append(frame)
-                print(' ', self.statusbar("\b done."))
+                print(' ', self.message("\b done."))
             except (PermissionError, OSError):
-                print('-', self.statusbar("\b failed."))
+                print('-', self.message("\b failed."))
         
         frames = output_frames
         res, mis = self.write_attributes(filename, frames)
         n = len(frames)
-        self.statusbar(
+        self.message(
             "{} frames were exported, "
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis)))
-        print(self.statusbar.read())
+        print(self.message.read())
         return frames
     
     ## --------------------------------
@@ -1570,7 +1570,7 @@ class Frame(mwx.Frame):
             frame = None
             for i, path in enumerate(paths):
                 fn = os.path.basename(path)
-                self.statusbar("Loading {!r} ({} of {})...".format(fn, i+1, len(paths)))
+                self.message("Loading {!r} ({} of {})...".format(fn, i+1, len(paths)))
                 try:
                     buf, info = self.read_buffer(path)
                 except Image.UnidentifiedImageError:
@@ -1583,15 +1583,15 @@ class Frame(mwx.Frame):
                     n = buf.n_frames
                     d = len(str(n))
                     for j in range(n):
-                        self.statusbar("Loading {!r} [{} of {} pages]...".format(fn, j+1, n))
+                        self.message("Loading {!r} [{} of {} pages]...".format(fn, j+1, n))
                         buf.seek(j)
                         frame = view.load(buf, f"{j:0{d}}-{fn}", show=0)
                 else:
                     frame = view.load(buf, fn, show=0, pathname=path, **info)
                     frames.append(frame)
-            self.statusbar("\b done.")
+            self.message("\b done.")
         except Exception as e:
-            self.statusbar("\b failed.")
+            self.message("\b failed.")
             wx.MessageBox(repr(e), style=wx.ICON_ERROR)
         
         if frame:
@@ -1618,13 +1618,13 @@ class Frame(mwx.Frame):
                 path = dlg.Path
         try:
             name = os.path.basename(path)
-            self.statusbar("Saving {!r}...".format(name))
+            self.message("Saving {!r}...".format(name))
             
             self.write_buffer(path, frame.buffer)
             frame.name = name
             frame.pathname = path
             
-            self.statusbar("\b done.")
+            self.message("\b done.")
             return frame
         except ValueError:
             ## ValueError('unknown file extension')
@@ -1632,7 +1632,7 @@ class Frame(mwx.Frame):
                 return self.save_buffer(path + '.tif', frame)
             raise
         except Exception as e:
-            self.statusbar("\b failed.")
+            self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
@@ -1652,7 +1652,7 @@ class Frame(mwx.Frame):
                 path = dlg.Path
         try:
             name = os.path.basename(path)
-            self.statusbar("Saving {!r}...".format(name))
+            self.message("Saving {!r}...".format(name))
             busy = wx.BusyInfo("One moment please, "
                                "now saving {!r}...".format(name))
             
@@ -1662,10 +1662,10 @@ class Frame(mwx.Frame):
                           compression="tiff_deflate", # cf. tiff_lzw
                           append_images=stack[1:])
             
-            self.statusbar("\b done.")
+            self.message("\b done.")
             return True
         except Exception as e:
-            self.statusbar("\b failed.")
+            self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             del busy
@@ -1695,7 +1695,7 @@ class Frame(mwx.Frame):
         self.session_file = os.path.abspath(filename)
         
         ## Load the session in the shell.
-        self.statusbar("Loading session from {!r}...".format(self.session_file))
+        self.message("Loading session from {!r}...".format(self.session_file))
         
         shell = self.shellframe.rootshell
         shell.locals.update(
@@ -1715,7 +1715,7 @@ class Frame(mwx.Frame):
         if wx.Display.GetFromWindow(self) == -1:
             self.Position = (0, 0)
         
-        self.statusbar("\b done.")
+        self.message("\b done.")
     
     def save_session_as(self):
         """Save session as a new file."""
@@ -1734,7 +1734,7 @@ class Frame(mwx.Frame):
         if not self.session_file:
             return self.save_session_as()
         
-        self.statusbar("Saving session to {!r}...".format(self.session_file))
+        self.message("Saving session to {!r}...".format(self.session_file))
         
         with open(self.session_file, 'w') as o,\
           np.printoptions(threshold=np.inf): # printing all(inf) elements
@@ -1771,7 +1771,7 @@ class Frame(mwx.Frame):
                 if frame and frame.pathname:
                     o.write("self.graph.select({!r})\n".format(frame.name))
         
-        self.statusbar("\b done.")
+        self.message("\b done.")
 
 
 if __name__ == "__main__":
