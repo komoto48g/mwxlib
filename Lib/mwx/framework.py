@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.3"
+__version__ = "0.89.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1031,6 +1031,10 @@ class ShellFrame(MiniFrame):
         
         self.__standalone = bool(ensureClose)
         
+        ## Initialize self-specific builtins.
+        ## Note: This should be called before creating rootshell.
+        self.Init()
+        
         from .nutshell import Nautilus, EditorBook
         
         self.__shell = Nautilus(self,
@@ -1215,7 +1219,6 @@ class ShellFrame(MiniFrame):
         self.add_history(msg)
         self.add_log(msg)
         
-        self.Init()
         self.load_session(
             os.path.abspath(debrc) if debrc else self.SESSION_FILE)
     
@@ -1312,7 +1315,6 @@ class ShellFrame(MiniFrame):
             builtins.dive
         except AttributeError:
             ## Add useful built-in functions and methods
-            self.message("Initialize self-specific builtins.")
             builtins.apropos = apropos
             builtins.typename = typename
             builtins.reload = reload
