@@ -574,14 +574,13 @@ class Frame(mwx.Frame):
         """
         return self.__graphic_windows
     
-    ## @property
-    ## def graphic_windows_on_screen(self):
-    ##     return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
+    @property
+    def graphic_windows_on_screen(self):
+        return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
     
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
-        #<wx.aui.AuiManager>
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
@@ -1412,9 +1411,9 @@ class Frame(mwx.Frame):
                     frame.pathname = fn
                     frame.name = os.path.basename(fn) # new name and pathname
                 output_frames.append(frame)
-                print(" ", self.statusbar("\b done."))
+                print(' ', self.statusbar("\b done."))
             except (PermissionError, OSError):
-                print("-", self.statusbar("\b failed. pass."))
+                print('-', self.statusbar("\b failed."))
         
         frames = output_frames
         res, mis = self.write_attributes(filename, frames)
@@ -1578,7 +1577,7 @@ class Frame(mwx.Frame):
                     retvals = self.handler('unknown_format', path)
                     if retvals and any(retvals):
                         continue
-                    raise # no contexts or handlers
+                    raise # no context or no handlers or cannot identify image file
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
@@ -1590,16 +1589,13 @@ class Frame(mwx.Frame):
                 else:
                     frame = view.load(buf, fn, show=0, pathname=path, **info)
                     frames.append(frame)
-            
             self.statusbar("\b done.")
-            view.select(frame)
-            return frames
-        
         except Exception as e:
-            print("-", self.statusbar("\b failed."))
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            self.statusbar("\b failed.")
+            wx.MessageBox(repr(e), style=wx.ICON_ERROR)
         
-        view.select(frame)
+        if frame:
+            view.select(frame)
         return frames
     
     def save_buffer(self, path=None, frame=None):
@@ -1636,7 +1632,7 @@ class Frame(mwx.Frame):
                 return self.save_buffer(path + '.tif', frame)
             raise
         except Exception as e:
-            print("-", self.statusbar("\b failed."))
+            self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
@@ -1659,6 +1655,7 @@ class Frame(mwx.Frame):
             self.statusbar("Saving {!r}...".format(name))
             busy = wx.BusyInfo("One moment please, "
                                "now saving {!r}...".format(name))
+            
             stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
             stack[0].save(path,
                           save_all=True,
@@ -1668,7 +1665,7 @@ class Frame(mwx.Frame):
             self.statusbar("\b done.")
             return True
         except Exception as e:
-            print("-", self.statusbar("\b failed."))
+            self.statusbar("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             del busy
