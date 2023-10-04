@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.4"
+__version__ = "0.89.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -37,7 +37,7 @@ def App(loop=True):
 
 
 def postcall(f):
-    """A decorator of wx.CallAfter
+    """A decorator of wx.CallAfter.
     Wx posts the message that forces `f` to take place in the main thread.
     """
     @wraps(f)
@@ -183,7 +183,7 @@ def regulate_key(key):
 
 
 class KeyCtrlInterfaceMixin:
-    """Keymap interface mixin
+    """Keymap interface mixin.
     
     keymap::
     
@@ -300,7 +300,7 @@ class KeyCtrlInterfaceMixin:
 
 
 class CtrlInterface(KeyCtrlInterfaceMixin):
-    """Mouse/Key event interface mixin
+    """Mouse/Key event interface mixin.
     """
     handler = property(lambda self: self.__handler)
     
@@ -448,7 +448,7 @@ def ID_(id):
 
 
 def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
-    """Do layout
+    """Do layout.
     
     Examples::
     
@@ -507,7 +507,7 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
 
 
 class Menu(wx.Menu):
-    """Construct menu
+    """Construct the menu.
     
     Args:
         menulist : list of MenuItem args
@@ -579,9 +579,9 @@ class Menu(wx.Menu):
 
 
 class MenuBar(wx.MenuBar, TreeList):
-    """MenuBar control
+    """Construct the menubar.
     
-    Construct menubar in the order of menu<TreeList>::
+    menu <TreeList>::
     
         root
          ├ [key, [item,
@@ -625,7 +625,7 @@ class MenuBar(wx.MenuBar, TreeList):
                 self.Enable(menu.Id, menu.MenuItemCount > 0) # Disable empty submenu.
     
     def reset(self):
-        """Recreates menubar if the Parent were attached by SetMenuBar.
+        """Recreates the menubar if the Parent was attached.
         Call when the menulist is changed.
         """
         if self.Parent:
@@ -641,7 +641,7 @@ class MenuBar(wx.MenuBar, TreeList):
 
 
 class StatusBar(wx.StatusBar):
-    """Construct statusbar with read/write
+    """Construct the statusbar with read/write interfaces.
     
     Attributes:
         field   : list of field widths
@@ -669,7 +669,7 @@ class StatusBar(wx.StatusBar):
 
 
 class Frame(wx.Frame, KeyCtrlInterfaceMixin):
-    """Frame base class
+    """Frame extension class.
     
     Attributes:
         menubar     : MenuBar
@@ -713,7 +713,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.timer.Start(1000)
         
         def on_timer(evt):
-            self.statusbar.write(time.strftime('%m/%d %H:%M'), pane=-1)
+            self.message(time.strftime('%m/%d %H:%M'), pane=-1)
         self.Bind(wx.EVT_TIMER, on_timer)
         
         ## AcceleratorTable mimic
@@ -753,10 +753,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
 
 
 class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
-    """MiniFrame base class
+    """MiniFrame extension class.
     
     Attributes:
-        menubar     : MenuBar (not created by default)
+        menubar     : MenuBar
         statusbar   : StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
@@ -810,6 +810,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
 
 class AuiNotebook(aui.AuiNotebook):
+    """AuiNotebook extension class.
+    """
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
