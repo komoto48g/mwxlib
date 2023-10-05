@@ -306,7 +306,7 @@ class MatplotPanel(wx.Panel):
         if isinstance(art, matplotlib.artist.Artist):
             self.axes.draw_artist(art)
             self.canvas.blit(art.get_clip_box())
-            self.canvas.draw_idle()
+            ## self.canvas.draw_idle()
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
