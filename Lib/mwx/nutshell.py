@@ -167,7 +167,6 @@ class EditorInterface(CtrlInterface):
         ## AutoComp setting
         self.AutoCompSetAutoHide(False)
         self.AutoCompSetIgnoreCase(True)
-        ## self.AutoCompSetSeparator(ord('\t')) => gen_autocomp
         self.AutoCompSetMaxWidth(80)
         self.AutoCompSetMaxHeight(10)
         
@@ -180,11 +179,6 @@ class EditorInterface(CtrlInterface):
         self.Bind(stc.EVT_STC_DO_DROP, self.OnDragged)
         
         ## Global style for all languages
-        ## wx.Font style
-        ##    family : DEFAULT, DECORATIVE, ROMAN, SCRIPT, SWISS, MODERN, TELETYPE
-        ##     slant : NORMAL, SLANT, ITALIC
-        ##    weight : NORMAL, LIGHT, BOLD
-        ## underline : False
         ## font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, "MS Gothic")
         ## self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
         
@@ -1006,6 +1000,7 @@ class EditorInterface(CtrlInterface):
         if not text:
             self.message("No words")
             return
+        
         lw = len(text.encode()) # for multi-byte string
         lines = []
         for p in self.search_text(text):
@@ -1025,12 +1020,20 @@ class EditorInterface(CtrlInterface):
         if not self.__itextlines:
             self.handler('quit', evt)
             return
+        
         def _format(ln):
             return "{:4d} {}".format(ln+1, self.GetLine(ln).strip())
+        
+        pts = self.StyleGetSize(stc.STC_STYLE_DEFAULT)
+        self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts-1)
+        
         self.AutoCompSetSeparator(ord('\n'))
-        self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines))) # cf. gen_autocomp
+        self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines)))
         self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
+        
+        self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
+
     
     def on_itext_exit(self, evt):
         """Called when exiting filter_text mode."""
@@ -3231,7 +3234,7 @@ class Nautilus(Shell, EditorInterface):
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
     def gen_autocomp(self, offset, words, sep=' '):
-        """Call AutoCompShow for the specified words."""
+        """Call AutoCompShow for the specified words and sep."""
         if words:
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(offset, sep.join(words))
