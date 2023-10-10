@@ -2947,16 +2947,21 @@ class Nautilus(Shell, EditorInterface):
         return lc, le
     
     ## cf. getCommand() -> caret-line that starts with a prompt
-    ## cf. getMultilineCommand() -> [BUG 4.1.1] Don't use against the current prompt
+    ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
+    ##     [BUG 4.1.1] Don't use for current prompt --> Fixed in 4.2.0.
     
     @property
     def Command(self):
         """Extract a command from the editor."""
-        return self.getCommand()
+        return self.getCommand(rstrip=False)
     
     @property
     def MultilineCommand(self):
-        """Extract a multi-line command from the editor."""
+        """Extract a multi-line command from the editor.
+        
+        Similar to getMultilineCommand(), but does not exclude
+        a trailing ps2 + blank command.
+        """
         region = self.get_region(self.cline)
         if region:
             p, q = (self.PositionFromLine(x) for x in region)
