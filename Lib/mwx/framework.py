@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.6"
+__version__ = "0.89.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -546,7 +546,7 @@ class Menu(wx.Menu):
                 except IndexError:
                     pass
             else:
-                subitems = list(argv.pop())
+                subitems = list(argv.pop()) # extract the last element as submenu
                 submenu = Menu(owner, subitems)
                 submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
                 submenu_item.SetSubMenu(submenu)
@@ -1823,16 +1823,17 @@ class ShellFrame(MiniFrame):
         if noerr is not None:
             buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     
-    def other_window(self, p=1, mod=True):
+    def other_window(self, p=1):
         "Move focus to other window"
         pages = [x for x in self.get_all_pages() if x.IsShownOnScreen()]
         wnd = wx.Window.FindFocus()
         while wnd:
             if wnd in pages:
-                j = pages.index(wnd) + p
-                if mod:
-                    j %= len(pages)
-                pages[j].SetFocus()
+                j = (pages.index(wnd) + p) % len(pages)
+                obj = pages[j]
+                if isinstance(obj, aui.AuiNotebook):
+                    obj = obj.CurrentPage
+                obj.SetFocus()
                 break
             wnd = wnd.Parent
     
