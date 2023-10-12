@@ -175,15 +175,6 @@ class Thread(object):
         wx.CallAfter(_Stop)
 
 
-def _isLayer(obj):
-    """Check if obj is an instance of Layer."""
-    ## If this script file is executed i.e., `this` module is __main__,
-    ## this.Layer <class '__main__.Layer'> is not <mwx.graphman.Layer>.
-    ## So, we check it in two ways:
-    return isinstance(obj, LayerInterface)\
-        or isinstance(obj, CtrlInterface) and hasattr(obj, 'category')
-
-
 class LayerInterface(CtrlInterface):
     """Graphman.Layer interface mixin
     
@@ -840,7 +831,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     
     def get_pane(self, name):
-        """Get the named pane or notebook pane.
+        """Get named pane or notebook pane.
         
         Args:
             name : str or plug object.
@@ -848,10 +839,10 @@ class Frame(mwx.Frame):
         if name in self.plugins:
             plug = self.plugins[name].__plug__
             name = plug.category or name
-        elif name and _isLayer(name):
-            ## Also check if wrapped C/C++ object of Layer has been deleted.
+        elif isinstance(name, LayerInterface):
             name = name.category or name
-        return self._mgr.GetPane(name)
+        if name:
+            return self._mgr.GetPane(name)
     
     def show_pane(self, name, show=True, interactive=False):
         """Show named pane or notebook pane."""
@@ -972,7 +963,7 @@ class Frame(mwx.Frame):
         return plug
     
     def get_plug(self, name):
-        """Find the named plug window in registered plugins.
+        """Get named plug window.
         
         Args:
             name : str or plug object.
@@ -982,8 +973,7 @@ class Frame(mwx.Frame):
                 name,_ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
-        elif name and _isLayer(name):
-            ## Also check if wrapped C/C++ object of Layer has been deleted.
+        elif isinstance(name, LayerInterface):
             return name
     
     @staticmethod
