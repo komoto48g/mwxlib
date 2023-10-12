@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.7"
+__version__ = "0.89.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -2007,30 +2007,3 @@ def filling(obj=None, **kwargs):
     frame.filling.text.Zoom = -1 # zoom level of size of fonts
     frame.Show()
     return frame
-
-
-if __name__ == "__main__":
-    from mwx.nutshell import Buffer
-    
-    SHELLSTARTUP = """
-if 1:
-    self
-    dive(self.shellframe)
-    dive(self.shellframe.rootshell)
-    """
-    app = wx.App()
-    frm = Frame(None,
-        title=repr(Frame),
-        style=wx.DEFAULT_FRAME_STYLE,
-        size=(200,80),
-    )
-    frm.editor = Buffer(frm)
-    
-    frm.handler.debug = 4
-    frm.editor.handler.debug = 4
-    
-    frm.shellframe.Show()
-    frm.shellframe.rootshell.SetFocus()
-    frm.shellframe.rootshell.Execute(SHELLSTARTUP)
-    frm.Show()
-    app.MainLoop()

@@ -1772,28 +1772,3 @@ class Frame(mwx.Frame):
                     o.write("self.graph.select({!r})\n".format(frame.name))
         
         self.message("\b done.")
-
-
-if __name__ == "__main__":
-    import glob
-    
-    app = wx.App()
-    frm = Frame(None)
-    
-    frm.handler.debug = 0
-    frm.graph.handler.debug = 0
-    frm.output.handler.debug = 0
-    
-    ## frm.load_frame([r"C:\usr\home\lib\python\demo\sample.bmp",
-    ##                 r"C:\usr\home\lib\python\demo\sample2.tif",
-    ##                 ])
-    frm.load_frame(glob.glob(r"C:\usr\home\lib\python\demo\*.bmp"))
-    frm.load_frame(glob.glob(r"C:\usr\home\workspace\images\*.bmp"))
-    frm.graph.load(np.random.randn(1024,1024))
-    
-    ## Note: 次の二つは別モジュール扱い
-    ## frm.load_plug("demo.template.py", show=1, force=1)
-    ## frm.load_plug("demo/template.py", show=1, force=1)
-    
-    frm.Show()
-    app.MainLoop()

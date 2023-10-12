@@ -1703,35 +1703,3 @@ class GraphPlot(MatplotPanel):
             self.next_mark((j[-1]-1) % n)
         elif n:
             self.next_mark(-1)
-
-
-if __name__ == "__main__":
-    app = wx.App()
-    frm = mwx.Frame(None)
-    frm.graph = GraphPlot(frm,
-                          log=frm.message,
-                          margin=(.1,.1,.9,.9),
-                          size=(300,240))
-    frm.handler.debug = 0
-    frm.graph.handler.debug = 4
-    
-    frm.graph.load("C:/usr/home/workspace/images/sample.bmp", "sample")
-    frm.graph.load("C:/usr/home/workspace/images/サンプル.bmp", "サンプル")
-    frm.graph.load("C:/usr/home/workspace/images/sample_circ.bmp", "sample data")
-    
-    ## frm.graph.newbuffer = np.uint8(255 * np.random.randn(512,512,3))
-    frm.graph.newbuffer = np.float32(np.random.randn(512,512))
-    frm.graph.frame.unit = 0.5
-    frm.graph.create_colorbar()
-    
-    def _plot(graph, r=10):
-        ux = uy = graph.unit
-        t = np.arange(0,4,0.01) * pi
-        x = r * ux * np.cos(t)
-        y = r * uy * np.sin(t)
-        graph.axes.plot(x, y, 'r-', lw=0.5)
-    ## _plot(frm.graph)
-    
-    frm.Fit()
-    frm.Show()
-    app.MainLoop()
