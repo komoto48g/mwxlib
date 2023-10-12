@@ -4,13 +4,14 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.8"
+__version__ = "0.89.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
 from importlib import reload
 import contextlib
 import traceback
+import warnings
 import builtins
 import datetime
 import textwrap
@@ -305,6 +306,10 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     handler = property(lambda self: self.__handler)
     
     def __init__(self):
+        if hasattr(self, 'handler'):
+            warnings.warn("Duplicate iniheritance of CtrlInterface by {!r}."
+                          .format(self.__class__.__name__), stacklevel=2)
+            return
         self.__key = ''
         self.__button = ''
         self.__isDragging = False
