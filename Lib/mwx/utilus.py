@@ -872,7 +872,7 @@ class FSM(dict):
 class TreeList(object):
     """Interface class for tree list control.
     
-    >>> list<item : (key, value)>
+    >>> list[item:(key,value)]
         [[key, [item,
                 item, ...]],
          [key, [item,
@@ -881,55 +881,32 @@ class TreeList(object):
                 ...]],
         ]
     """
-    ## A dummy list to avoid RecursionError occurs when
-    ## __getattr__ may be called before __init__.
-    __items = None
-    
     def __init__(self, ls=None):
         self.__items = ls or []
     
     def __call__(self, k):
         return TreeList(self[k])
     
-    def __getattr__(self, attr):
-        return getattr(self.__items, attr)
-    
     def __contains__(self, k):
-        return self.getf(self.__items, k)
+        return self._getf(self.__items, k)
     
     def __iter__(self):
         return self.__items.__iter__()
     
     def __getitem__(self, k):
         if isinstance(k, str):
-            return self.getf(self.__items, k)
+            return self._getf(self.__items, k)
         return self.__items.__getitem__(k)
     
     def __setitem__(self, k, v):
         if isinstance(k, str):
-            return self.setf(self.__items, k, v)
+            return self._setf(self.__items, k, v)
         return self.__items.__setitem__(k, v)
     
     def __delitem__(self, k):
         if isinstance(k, str):
-            return self.delf(self.__items, k)
+            return self._delf(self.__items, k)
         return self.__items.__delitem__(k)
-    
-    def items(self):
-        def _items(ls, key=None):
-            for item in ls:
-                try:
-                    k, v = item
-                    rootkey = f"{key}/{k}" if key else k
-                    if not isinstance(k, str):
-                        yield key, item
-                    elif v and isinstance(v, list):
-                        yield from _items(v, rootkey)
-                    else:
-                        yield rootkey, v
-                except Exception:
-                    yield key, item
-        yield from _items(self)
     
     def _find_item(self, ls, key):
         for x in ls:
@@ -938,25 +915,25 @@ class TreeList(object):
                     raise ValueError(f"No value for {key=!r}")
                 return x
     
-    def getf(self, ls, key):
+    def _getf(self, ls, key):
         if '/' in key:
             a, b = key.split('/', 1)
-            la = self.getf(ls, a)
+            la = self._getf(ls, a)
             if la is not None:
-                return self.getf(la, b)
+                return self._getf(la, b)
             return None
         li = self._find_item(ls, key)
         if li is not None:
             return li[-1]
     
-    def setf(self, ls, key, value):
+    def _setf(self, ls, key, value):
         if '/' in key:
             a, b = key.split('/', 1)
-            la = self.getf(ls, a)
+            la = self._getf(ls, a)
             if la is not None:
-                return self.setf(la, b, value)
+                return self._setf(la, b, value)
             p, key = key.rsplit('/', 1)
-            return self.setf(ls, p, [[key, value]]) # >>> ls[p].append([key, value])
+            return self._setf(ls, p, [[key, value]]) # ls[p].append([key, value])
         try:
             li = self._find_item(ls, key)
             if li is not None:
@@ -969,10 +946,10 @@ class TreeList(object):
         except (ValueError, TypeError, AttributeError) as e:
             print(f"- TreeList:warning {e!r}: {key=!r}")
     
-    def delf(self, ls, key):
+    def _delf(self, ls, key):
         if '/' in key:
             p, key = key.rsplit('/', 1)
-            ls = self.getf(ls, p)
+            ls = self._getf(ls, p)
         ls.remove(next(x for x in ls if x and x[0] == key))
 
 
