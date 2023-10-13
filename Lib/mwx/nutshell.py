@@ -2776,7 +2776,8 @@ class Nautilus(Shell, EditorInterface):
         sep1 = "`@=;#"                # [`] no ops, no spaces, no comma
         sep2 = "`@=+-/*%<>&|^~,; \t#" # [@] ops, delims, and whitespaces
         
-        def _popiter(ls, pred):
+        def _popiter(ls, f):
+            pred = f if callable(f) else re.compile(f).match
             while ls and pred(ls[0]):
                 yield ls.pop(0)
         
