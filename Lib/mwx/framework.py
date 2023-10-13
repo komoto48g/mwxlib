@@ -940,8 +940,6 @@ class AuiNotebook(aui.AuiNotebook):
             spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
     
-    ## Note: Should be called after all pages have been added.
-    @postcall
     def loadPerspective(self, spec):
         """Loads a saved perspective.
         
@@ -1312,11 +1310,10 @@ class ShellFrame(MiniFrame):
                 "self.SetPosition({})".format(self.Position),
                 "self.ghost.SetSelection({})".format(self.ghost.Selection),
                 "self.watcher.SetSelection({})".format(self.watcher.Selection),
-                "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
-                "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
-                "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
-                ## "self._mgr.GetPane('ghost').FloatingPosition(self.Position)",
-                ## "self._mgr.GetPane('watcher').FloatingPosition(self.Position)",
+                ## Note: Perspectives should be called after all pages have been added.
+                "wx.CallAfter(self._mgr.LoadPerspective, {!r})".format(self._mgr.SavePerspective()),
+                "wx.CallAfter(self.ghost.loadPerspective, {!r})".format(self.ghost.savePerspective()),
+                "wx.CallAfter(self.watcher.loadPerspective, {!r})".format(self.watcher.savePerspective()),
                 "self._mgr.Update()\n",
             )))
     
