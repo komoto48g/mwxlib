@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.89.9"
+__version__ = "0.90.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1004,7 +1004,6 @@ class ShellFrame(MiniFrame):
         Scratch     : Book of scratch (tooltip)
         Help        : Book of help
         Log         : Book of logging
-        History     : Book of shell history
         monitor     : wxmon.EventMonitor object
         inspector   : wxwit.Inspector object
         debugger    : wxpdb.Debugger object
@@ -1053,7 +1052,6 @@ class ShellFrame(MiniFrame):
         self.Scratch = EditorBook(self, name="Scratch")
         self.Log = EditorBook(self, name="Log")
         self.Help = EditorBook(self, name="Help")
-        self.History = EditorBook(self, name="History")
         
         from .wxpdb import Debugger
         from .wxwit import Inspector
@@ -1089,7 +1087,6 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Scratch, "Scratch")
         self.ghost.AddPage(self.Log,     "Log")
         self.ghost.AddPage(self.Help,    "Help")
-        self.ghost.AddPage(self.History, "History")
         self.ghost.Name = "ghost"
         
         ## self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
@@ -1221,7 +1218,6 @@ class ShellFrame(MiniFrame):
         
         self.Log.set_attributes(ReadOnly=True)
         self.Help.set_attributes(ReadOnly=True)
-        self.History.set_attributes(ReadOnly=True)
         
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
         self.add_history(msg)
@@ -1233,7 +1229,6 @@ class ShellFrame(MiniFrame):
     SESSION_FILE = get_rootpath(".debrc")
     SCRATCH_FILE = get_rootpath("scratch.py")
     LOGGING_FILE = get_rootpath("deb-logging.log")
-    HISTORY_FILE = get_rootpath("deb-history.log")
     
     def load_session(self, filename=None, flush=True):
         """Load session from file."""
@@ -1295,7 +1290,6 @@ class ShellFrame(MiniFrame):
         
         _fsave(self.Scratch, self.SCRATCH_FILE) # save scratch
         _fsave(self.Log,     self.LOGGING_FILE)
-        _fsave(self.History, self.HISTORY_FILE)
         
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
@@ -1820,7 +1814,7 @@ class ShellFrame(MiniFrame):
         """Add text to the history buffer."""
         if not text or text.isspace():
             return
-        buf = self.History.default_buffer or self.History.new_buffer()
+        buf = self.Log.default_buffer or self.Log.new_buffer()
         with buf.off_readonly():
             buf.goto_char(buf.TextLength) # line to set an arrow marker
             buf.write(text)
