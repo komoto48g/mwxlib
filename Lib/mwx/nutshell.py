@@ -51,9 +51,9 @@ def skip(v):
 
 def editable(f):
     @wraps(f)
-    def _f(self, *args, **kwargs):
+    def _f(self, *v, **kw):
         if self.CanEdit():
-            return f(self, *args, **kwargs)
+            return f(self, *v, **kw)
     return _f
 
 
@@ -2789,7 +2789,7 @@ class Nautilus(Shell, EditorInterface):
         for i, c in enumerate(tokens):
             rest = tokens[i+1:]
             
-            if c == '@' and not lhs.strip() and '\n' in rest: # @dcor
+            if c == '@' and not lhs.strip() and '\n' in rest: # @decor
                 pass
             
             elif c == '@':

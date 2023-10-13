@@ -125,15 +125,15 @@ class Thread(object):
         """Decorator of thread starter function."""
         @wraps(f)
         def _f(*v):
-            return self.Start(f, *v+args, **kwargs)
+            return self.Start(f, *v, *args, **kwargs)
         return _f
     
     def Start(self, f, *args, **kwargs):
         @wraps(f)
-        def _f(*args, **kwargs):
+        def _f(*v, **kw):
             try:
                 self.handler('thread_begin', self)
-                self.result = f(*args, **kwargs)
+                self.result = f(*v, **kw)
             except BdbQuit:
                 pass
             except (KeyboardInterrupt, Thread.ThreadInterrupt) as e:

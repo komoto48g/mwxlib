@@ -42,8 +42,8 @@ def postcall(f):
     Wx posts the message that forces `f` to take place in the main thread.
     """
     @wraps(f)
-    def _f(*args, **kwargs):
-        wx.CallAfter(f, *args, **kwargs)
+    def _f(*v, **kw):
+        wx.CallAfter(f, *v, **kw)
     return _f
 
 
@@ -194,7 +194,10 @@ class KeyCtrlInterfaceMixin:
         esc-map     : 'escape'
     """
     message = print # override this in subclass
-    post_message = property(lambda self: postcall(self.message))
+    
+    @postcall
+    def post_message(self, *args, **kwargs):
+        return self.message(*args, **kwargs)
     
     def make_keymap(self, keymap):
         """Make a basis of extension map in the handler.
@@ -276,11 +279,11 @@ class KeyCtrlInterfaceMixin:
             self.handler.update({map: {key: [state]}})
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
-        _f = _F(action, *args, **kwargs)
-        @wraps(_f)
+        F = _F(action, *args, **kwargs)
+        @wraps(F)
         def f(*v, **kw):
             self.message(f.__name__)
-            return _f(*v, **kw)
+            return F(*v, **kw)
         
         if map != state:
             self.handler.update({map: {key: [state, self.post_command_hook, f]}})
