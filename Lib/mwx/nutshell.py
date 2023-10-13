@@ -3006,7 +3006,7 @@ class Nautilus(Shell, EditorInterface):
         """Add command to the command history.
         
         (override) If the command is new (i.e., not found in the head of the list).
-                   Then, write the command to History buffer.
+                   Then, write the command to the logging buffer.
         """
         if not command:
             return
@@ -3025,7 +3025,7 @@ class Nautilus(Shell, EditorInterface):
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
-            self.parent.handler('add_history', command + os.linesep, noerr)
+            self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
             ## shell.__init__ よりも先に実行される

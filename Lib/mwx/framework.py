@@ -1177,7 +1177,6 @@ class ShellFrame(MiniFrame):
                     'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
-                  'add_history' : [ None, self.add_history ],
                  'title_window' : [ None, self.on_title_window ],
          'buffer_caption_reset' : [ None, self.on_buffer_caption ],
             },
@@ -1220,7 +1219,6 @@ class ShellFrame(MiniFrame):
         self.Help.set_attributes(ReadOnly=True)
         
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
-        self.add_history(msg)
         self.add_log(msg)
         
         self.load_session(
@@ -1653,7 +1651,7 @@ class ShellFrame(MiniFrame):
         else:
             print("- obj must be callable or be a string, bytes or code object")
     
-    ## Note: history 変数に余計な文字列が入らないようにする
+    ## Note: history に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
         if isinstance(obj, type(print)):
@@ -1792,11 +1790,18 @@ class ShellFrame(MiniFrame):
                                  buf.Id, ActivationReason=0)
             self.EventHandler.ProcessEvent(v) # => self.OnActivate
     
-    def add_log(self, text):
-        """Add text to the logging buffer."""
+    def add_log(self, text, noerr=None):
+        """Add text to the logging buffer.
+        If noerr <bool> is specified, add a line-marker.
+        """
         buf = self.Log.default_buffer or self.Log.new_buffer()
         with buf.off_readonly():
+            buf.goto_char(buf.TextLength) # line to set an arrow marker
             buf.write(text)
+        if noerr is not None:
+            ## Set a marker on the current line.
+            buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
+            return
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(text)
@@ -1809,18 +1814,6 @@ class ShellFrame(MiniFrame):
         ## Overwrite text and popup the window.
         self.popup_window(self.Help, focus=0)
         self.Help.swap_page(buf)
-    
-    def add_history(self, text, noerr=None):
-        """Add text to the history buffer."""
-        if not text or text.isspace():
-            return
-        buf = self.Log.default_buffer or self.Log.new_buffer()
-        with buf.off_readonly():
-            buf.goto_char(buf.TextLength) # line to set an arrow marker
-            buf.write(text)
-        ## Set a marker on the current line.
-        if noerr is not None:
-            buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
     
     def other_window(self, p=1):
         "Move focus to other window"
