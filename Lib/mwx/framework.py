@@ -276,7 +276,7 @@ class KeyCtrlInterfaceMixin:
             self.make_keymap(map) # make new keymap
         
         if action is None:
-            self.handler.update({map: {key: [state]}})
+            self.handler.update({map: {key: [state, ]}})
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
         F = _F(action, *args, **kwargs)
@@ -297,6 +297,8 @@ class KeyCtrlInterfaceMixin:
         
         map, key, state = self._get_keymap_state(keymap)
         try:
+            ## cf. self.handler.update({map: {key: [state, ]}})
+            ## Remove the keymap context.
             del self.handler[map][key]
             return True
         except KeyError:
