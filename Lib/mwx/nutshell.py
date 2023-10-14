@@ -3172,41 +3172,6 @@ class Nautilus(Shell, EditorInterface):
             self.write(cmd)
             self.processLine()
     
-    def Execute(self, text):
-        """Replace selection with text and run commands.
-        
-        (override) Patch `finally` miss-indentation
-        """
-        command = self.regulate_cmd(text)
-        commands = []
-        cmd = ''
-        for line in command.splitlines():
-            lstr = line.lstrip()
-            if (lstr and lstr == line # no indent
-                and not lstr.startswith('#') # no comment
-                and not re.match(py_outdent_re, lstr)): # no outdent pattern
-                if cmd:
-                    commands.append(cmd) # Add the previous command to the list
-                cmd = line
-            else:
-                cmd += '\n' + line # Multiline command; Add to the command
-        commands.append(cmd)
-        
-        self.Replace(self.bolc, self.eolc, '')
-        for cmd in commands:
-            self.write(cmd.replace('\n', os.linesep + sys.ps2))
-            self.processLine()
-    
-    def run(self, command, prompt=True, verbose=True):
-        """Execute command as if it was typed in directly.
-        
-        (override) Set interp.more False to clear `commandBuffer`.
-                   Deselect and move to the end of the command line.
-        """
-        self.interp.more = False
-        self.goto_char(self.eolc)
-        return Shell.run(self, command, prompt, verbose)
-    
     ## --------------------------------
     ## Autocomp actions of the shell
     ## --------------------------------
