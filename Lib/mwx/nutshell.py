@@ -607,9 +607,7 @@ class EditorInterface(CtrlInterface):
     
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
-        ## Note:
-        ##     The last char is replaced with b'\x00'.
-        ##     It looks like a bug in wx.stc.
+        ## [BUG 4.2.0] The last char is replaced with b'\x00'.
         ## text, lp = self.CurLineRaw
         ## return self.py_calc_indentation(text[:lp].decode())
         text, lp = self.CurLine
@@ -3023,6 +3021,7 @@ class Nautilus(Shell, EditorInterface):
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
+                command = self.fixLineEndings(command)
             self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
@@ -3071,7 +3070,13 @@ class Nautilus(Shell, EditorInterface):
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
-        """Regulate text to executable command."""
+        """Regulate text to executable command.
+        
+        cf. Execute
+        Note:
+            The eol-code (cr/lf) is not fixed.
+            Call self.fixLineEndings in advance as necessary.
+        """
         text = self.lstripPrompt(text) # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
