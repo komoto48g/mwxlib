@@ -2997,17 +2997,14 @@ class Nautilus(Shell, EditorInterface):
         
         (override) Mark points before push.
         """
-        try:
-            self.on_text_input(command)
-        except AttributeError:
-            pass
+        self.on_text_input(command)
         Shell.push(self, command, **kwargs)
     
     def addHistory(self, command):
         """Add command to the command history.
         
-        (override) If the command is new (i.e., not found in the head of the list).
-                   Then, write the command to the logging buffer.
+        (override) If the command is not found at the head of the list,
+                   write the command to the logging buffer.
         """
         if not command:
             return
@@ -3035,8 +3032,8 @@ class Nautilus(Shell, EditorInterface):
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
-        (override) Add globals when executing su:startupScript
-                   Fix history point
+        (override) Add globals when executing su:startupScript.
+                   Fix history point.
         """
         ## self.globals = self.locals
         self.promptPosEnd = self.TextLength # fix history point
@@ -3059,21 +3056,18 @@ class Nautilus(Shell, EditorInterface):
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
             if wx.TheClipboard.GetData(data):
-                text = data.GetText()
-                command = text.rstrip()
-                endl = text[len(command):] # the rest whitespace
+                command = data.GetText()
+                ## command = command.rstrip()
                 command = self.fixLineEndings(command)
                 command = self.regulate_cmd(command)
                 ps = sys.ps2
-                if self.cpos == self.eolc: # caret at the end of the buffer
-                    endl = endl.replace('\n', os.linesep + ps)
                 _text, lp = self.CurLine
                 if rectangle:
                     ps += ' ' * (lp - len(ps)) # add offset
                 if lp == 0:
                     command = ps + command # paste-line
                 command = command.replace('\n', os.linesep + ps)
-                self.ReplaceSelection(command + endl)
+                self.ReplaceSelection(command)
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
