@@ -322,3 +322,76 @@ def monit(widget=None, **kwargs):
     ew.watch(widget)
     ew.Show()
     return ew
+
+
+## Monkey-patch for wx.core (to be deprecated)
+try:
+    from wx import core # PY3
+
+    def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+        """
+        Bind an event to an event handler.
+        (override) Record the handler in the list and return the handler.
+        """
+        if handler is None:
+            return lambda f: _EvtHandler_Bind(self, event, f, source, id, id2)
+        
+        assert isinstance(event, wx.PyEventBinder)
+        assert callable(handler) or handler is None
+        assert source is None or hasattr(source, 'GetId')
+        if source is not None:
+            id  = source.GetId()
+        event.Bind(self, id, id2, handler)
+        
+        ## Record all handlers.
+        try:
+            vmap = self.__event_handler__
+        except AttributeError:
+            vmap = self.__event_handler__ = {}
+        try:
+            vmap[event.typeId].insert(0, (id, handler))
+        except KeyError:
+            vmap[event.typeId] = [(id, handler)]
+        return handler
+
+    core.EvtHandler.Bind = _EvtHandler_Bind
+    ## del _EvtHandler_Bind
+
+    def _EvtHandler_Unbind(self, event, source=None, id=wx.ID_ANY, id2=wx.ID_ANY, handler=None):
+        """
+        Disconnects the event handler binding for event from `self`.
+        Returns ``True`` if successful.
+        (override) Delete the handler from the list.
+        """
+        if source is not None:
+            id  = source.GetId()
+        retval = event.Unbind(self, id, id2, handler)
+        
+        ## Remove the specified handler or all handlers.
+        if retval:
+            try:
+                vmap = self.__event_handler__
+            except AttributeError:
+                return retval
+            try:
+                handlers = vmap[event.typeId]
+                if handler or id != wx.ID_ANY:
+                    for v in handlers.copy():
+                        if v[0] == id or v[1] == handler:
+                            handlers.remove(v)
+                else:
+                    handlers.pop(0) # No optional arguments are specified.
+                if not handlers:
+                    del vmap[event.typeId]
+            except KeyError:
+                pass # Note: vmap is actually inconsistent, but ignored.
+        return retval
+
+    core.EvtHandler.Unbind = _EvtHandler_Unbind
+    ## del _EvtHandler_Unbind
+
+    del core
+
+except ImportError as e:
+    print(e)
+    pass
