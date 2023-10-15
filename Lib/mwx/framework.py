@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.1"
+__version__ = "0.90.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -45,13 +45,6 @@ def postcall(f):
     def _f(*v, **kw):
         wx.CallAfter(f, *v, **kw)
     return _f
-
-
-def deprecated(item=None, msg='', useName=False):
-    """A decorator of wx.deprecated."""
-    if item is None:
-        return lambda f: deprecated(f, msg, useName)
-    return wx.deprecated(item, msg, useName)
 
 
 def skip(v):
