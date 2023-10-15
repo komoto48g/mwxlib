@@ -2933,12 +2933,6 @@ class Nautilus(Shell, EditorInterface):
         """Full command-(multi-)line (excluding ps1:prompt)."""
         return self.GetTextRange(self.bolc, self.eolc)
     
-    def cmdline_atoms(self):
-        q = self.bolc
-        while q < self.eolc:
-            p, q, st = self.get_following_atom(q)
-            yield self.GetTextRange(p, q)
-    
     @property
     def cmdline_region(self):
         lc = self.LineFromPosition(self.bolc)
@@ -3129,11 +3123,20 @@ class Nautilus(Shell, EditorInterface):
                         sender=self, command=None, more=False)
     
     def exec_cmdline(self):
-        """Execute command-line directly."""
+        """Execute command-line directly.
+        
+        cf. Execute
+        """
+        def _cmdline_atoms():
+            q = self.bolc
+            while q < self.eolc:
+                p, q, st = self.get_following_atom(q)
+                yield self.GetTextRange(p, q)
+        
         commands = []
         cmd = ''
         lines = ''
-        for atom in self.cmdline_atoms():
+        for atom in _cmdline_atoms():
             lines += atom
             if atom[0] not in '\r\n':
                 continue
