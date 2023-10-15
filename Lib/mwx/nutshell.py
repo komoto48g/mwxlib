@@ -607,9 +607,7 @@ class EditorInterface(CtrlInterface):
     
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
-        ## Note:
-        ##     The last char is replaced with b'\x00'.
-        ##     It looks like a bug in wx.stc.
+        ## [BUG 4.2.0] The last char is replaced with b'\x00'.
         ## text, lp = self.CurLineRaw
         ## return self.py_calc_indentation(text[:lp].decode())
         text, lp = self.CurLine
@@ -2935,12 +2933,6 @@ class Nautilus(Shell, EditorInterface):
         """Full command-(multi-)line (excluding ps1:prompt)."""
         return self.GetTextRange(self.bolc, self.eolc)
     
-    def cmdline_atoms(self):
-        q = self.bolc
-        while q < self.eolc:
-            p, q, st = self.get_following_atom(q)
-            yield self.GetTextRange(p, q)
-    
     @property
     def cmdline_region(self):
         lc = self.LineFromPosition(self.bolc)
@@ -2997,17 +2989,14 @@ class Nautilus(Shell, EditorInterface):
         
         (override) Mark points before push.
         """
-        try:
-            self.on_text_input(command)
-        except AttributeError:
-            pass
+        self.on_text_input(command)
         Shell.push(self, command, **kwargs)
     
     def addHistory(self, command):
         """Add command to the command history.
         
-        (override) If the command is new (i.e., not found in the head of the list).
-                   Then, write the command to the logging buffer.
+        (override) If the command is not found at the head of the list,
+                   write the command to the logging buffer.
         """
         if not command:
             return
@@ -3026,6 +3015,7 @@ class Nautilus(Shell, EditorInterface):
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
+                command = self.fixLineEndings(command)
             self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
@@ -3035,8 +3025,8 @@ class Nautilus(Shell, EditorInterface):
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
-        (override) Add globals when executing su:startupScript
-                   Fix history point
+        (override) Add globals when executing su:startupScript.
+                   Fix history point.
         """
         ## self.globals = self.locals
         self.promptPosEnd = self.TextLength # fix history point
@@ -3059,25 +3049,28 @@ class Nautilus(Shell, EditorInterface):
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
             if wx.TheClipboard.GetData(data):
-                text = data.GetText()
-                command = text.rstrip()
-                endl = text[len(command):] # the rest whitespace
+                command = data.GetText()
+                ## command = command.rstrip()
                 command = self.fixLineEndings(command)
                 command = self.regulate_cmd(command)
                 ps = sys.ps2
-                if self.cpos == self.eolc: # caret at the end of the buffer
-                    endl = endl.replace('\n', os.linesep + ps)
                 _text, lp = self.CurLine
                 if rectangle:
                     ps += ' ' * (lp - len(ps)) # add offset
                 if lp == 0:
                     command = ps + command # paste-line
                 command = command.replace('\n', os.linesep + ps)
-                self.ReplaceSelection(command + endl)
+                self.ReplaceSelection(command)
             wx.TheClipboard.Close()
     
     def regulate_cmd(self, text):
-        """Regulate text to executable command."""
+        """Regulate text to executable command.
+        
+        cf. Execute
+        Note:
+            The eol-code (cr/lf) is not fixed.
+            Call self.fixLineEndings in advance as necessary.
+        """
         text = self.lstripPrompt(text) # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
@@ -3130,11 +3123,20 @@ class Nautilus(Shell, EditorInterface):
                         sender=self, command=None, more=False)
     
     def exec_cmdline(self):
-        """Execute command-line directly."""
+        """Execute command-line directly.
+        
+        cf. Execute
+        """
+        def _cmdline_atoms():
+            q = self.bolc
+            while q < self.eolc:
+                p, q, st = self.get_following_atom(q)
+                yield self.GetTextRange(p, q)
+        
         commands = []
         cmd = ''
         lines = ''
-        for atom in self.cmdline_atoms():
+        for atom in _cmdline_atoms():
             lines += atom
             if atom[0] not in '\r\n':
                 continue
@@ -3171,41 +3173,6 @@ class Nautilus(Shell, EditorInterface):
         for cmd in commands:
             self.write(cmd)
             self.processLine()
-    
-    def Execute(self, text):
-        """Replace selection with text and run commands.
-        
-        (override) Patch `finally` miss-indentation
-        """
-        command = self.regulate_cmd(text)
-        commands = []
-        cmd = ''
-        for line in command.splitlines():
-            lstr = line.lstrip()
-            if (lstr and lstr == line # no indent
-                and not lstr.startswith('#') # no comment
-                and not re.match(py_outdent_re, lstr)): # no outdent pattern
-                if cmd:
-                    commands.append(cmd) # Add the previous command to the list
-                cmd = line
-            else:
-                cmd += '\n' + line # Multiline command; Add to the command
-        commands.append(cmd)
-        
-        self.Replace(self.bolc, self.eolc, '')
-        for cmd in commands:
-            self.write(cmd.replace('\n', os.linesep + sys.ps2))
-            self.processLine()
-    
-    def run(self, command, prompt=True, verbose=True):
-        """Execute command as if it was typed in directly.
-        
-        (override) Set interp.more False to clear `commandBuffer`.
-                   Deselect and move to the end of the command line.
-        """
-        self.interp.more = False
-        self.goto_char(self.eolc)
-        return Shell.run(self, command, prompt, verbose)
     
     ## --------------------------------
     ## Autocomp actions of the shell
