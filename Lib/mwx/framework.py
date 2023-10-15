@@ -1187,8 +1187,6 @@ class ShellFrame(MiniFrame):
                 'S-f11 pressed' : (0, _F(self.toggle_window, self.watcher, doc="Toggle watcher")),
                   'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
              '*f[0-9]* pressed' : (0, ),
-               'M-left pressed' : (0, _F(self.other_window, p=-1)),
-              'M-right pressed' : (0, _F(self.other_window, p=+1)),
             },
         })
         
@@ -1809,20 +1807,6 @@ class ShellFrame(MiniFrame):
         ## Overwrite text and popup the window.
         self.popup_window(self.Help, focus=0)
         self.Help.swap_page(buf)
-    
-    def other_window(self, p=1):
-        "Move focus to other window"
-        pages = [x for x in self.get_all_pages() if x.IsShownOnScreen()]
-        wnd = wx.Window.FindFocus()
-        while wnd:
-            if wnd in pages:
-                j = (pages.index(wnd) + p) % len(pages)
-                obj = pages[j]
-                if isinstance(obj, aui.AuiNotebook):
-                    obj = obj.CurrentPage
-                obj.SetFocus()
-                break
-            wnd = wnd.Parent
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
