@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.2"
+__version__ = "0.90.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1190,11 +1190,13 @@ class ShellFrame(MiniFrame):
         self.set_hookable(self.Scratch)
         
         @self.Scratch.define_key('C-j')
+        @postcall
         def eval_line():
             shell = self.current_shell
             self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
         
         @self.Scratch.define_key('M-j')
+        @postcall
         def exec_buffer():
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
@@ -1731,7 +1733,6 @@ class ShellFrame(MiniFrame):
             self.debugger.editor = book
             self.debugger.watch((book.buffer.filename, line+1))
             self.debugger.send_input('') # clear input
-        book.buffer.del_marker(4)
     
     def stop_trace(self, line, book):
         if self.debugger.busy:
@@ -1739,7 +1740,6 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-        book.buffer.set_marker(line, 4)
     
     def on_trace_begin(self, frame):
         """Called when set-trace."""

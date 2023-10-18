@@ -7,6 +7,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from functools import wraps
 from importlib import import_module
 from pprint import pformat
+from bdb import BdbQuit
 import traceback
 import warnings
 import inspect
@@ -35,14 +36,19 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 ## URL pattern (flag = re.M | re.A)
 url_re = r"https?://[\w/:%#$&?()~.=+-]+"
 
+## no-file pattern
+nofile_re = r'[\/:*?"<>|]'
+
 ## Python syntax pattern
 py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
 py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
 ## Python interp traceback pattern
-py_error_re = r'^ +File "(.*?)", line ([0-9]+)'
-py_frame_re = r"^ +file '(.*?)', line ([0-9]+)"
+py_error_re = r' +File "(.*?)", line ([0-9]+)'
+py_frame_re = r" +file '(.*?)', line ([0-9]+)"
+py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
+py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 
 
 def skip(v):
@@ -111,7 +117,7 @@ class EditorInterface(CtrlInterface):
                   'C-t pressed' : (0, ),                  # overrides transpose-line
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
-            'C-S-space pressed' : (0, _F(self.set_pointer)),
+              'S-space pressed' : (0, _F(self.set_pointer)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -376,6 +382,11 @@ class EditorInterface(CtrlInterface):
         lambda self,v: self.set_marker(v, 3), # [pointer_set]
         lambda self: self.del_marker(3))      # [pointer_unset]
     
+    red_pointer = property(
+        lambda self: self.get_marker(4),
+        lambda self,v: self.set_marker(v, 4), # [red-pointer_set]
+        lambda self: self.del_marker(4))      # [red-pointer_unset]
+    
     @property
     def markline(self):
         return self.MarkerNext(0, 1<<0)
@@ -416,9 +427,10 @@ class EditorInterface(CtrlInterface):
     
     def set_pointer(self):
         if self.pointer == self.cline:
-            self.pointer = -1 # toggle marker
+            self.pointer = -1
         else:
             self.pointer = self.cline
+            self.red_pointer = -1
     
     def exchange_point_and_mark(self):
         p = self.cpos
@@ -1607,7 +1619,7 @@ class Buffer(EditWindow, EditorInterface):
     ## Python eval / exec
     ## --------------------------------
     
-    def py_eval_line(self, globals, locals):
+    def py_eval_line(self, globals=None, locals=None):
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -1631,7 +1643,7 @@ class Buffer(EditWindow, EditorInterface):
                 return
         self.message(status)
     
-    def py_exec_region(self, globals, locals, filename=None):
+    def py_exec_region(self, globals=None, locals=None, filename=None):
         if not filename:
             filename = self.filename
         try:
@@ -1639,6 +1651,9 @@ class Buffer(EditWindow, EditorInterface):
             exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
+        except BdbQuit:
+            self.red_pointer = self.cline
+            pass
         except Exception as e:
             msg = traceback.format_exc()
             err = re.findall(py_error_re, msg, re.M)
@@ -1651,7 +1666,7 @@ class Buffer(EditWindow, EditorInterface):
                 self.EnsureCaretVisible()
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
-            self.message("- {!r}".format(e))
+            self.message("- {}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
             self.code = code
@@ -2261,7 +2276,7 @@ class Nautilus(Shell, EditorInterface):
             obj.this = inspect.getmodule(obj)
             obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
-            ## print("- cannot overwrite target vars: {!r}".format(e))
+            ## print("- cannot overwrite target vars: {}".format(e))
             pass
         self.parent.handler('title_window', obj)
     
@@ -2714,6 +2729,7 @@ class Nautilus(Shell, EditorInterface):
             self.goto_char(self.eolc)
             self.promptPosEnd = 0
             self.prompt()
+        self.AnnotationClearAll()
     
     def on_enter_notemode(self, evt):
         self.noteMode = True
@@ -3262,7 +3278,7 @@ class Nautilus(Shell, EditorInterface):
                 if lines:
                     region = self.get_region(self.cline)
                     self.pointer = region[0] + lines[-1] - 1
-                self.message("- {!r}".format(e))
+                self.message("- {}".format(e))
                 ## print(msg, file=sys.__stderr__)
             else:
                 del self.pointer

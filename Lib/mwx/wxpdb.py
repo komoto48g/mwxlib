@@ -370,7 +370,7 @@ class Debugger(Pdb):
         """
         if self.editor:
             del self.editor.buffer.pointer
-            self.editor = None
+        self.editor = None
         self.code = None
         
         ## Note: Required to terminate the reader of threading pdb.

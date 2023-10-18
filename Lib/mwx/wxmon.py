@@ -53,10 +53,10 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.parent = parent
         self.target = None
+        self._target = None # previous target
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.__prev = None
         self.__dir = True # sort direction
         self.__items = []
         
@@ -128,13 +128,14 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         self.clear()
         self.unwatch()
         if widget is None:
-            widget = self.__prev # Restart
+            widget = self._target # Resume watching the previous target.
         if not widget:
             return
         if not isinstance(widget, wx.Object):
             wx.MessageBox("Cannot watch the widget.\n\n"
                           "- {!r} is not a wx.Object.".format(widget))
             return
+        self._target = widget
         self.target = widget
         ssmap = self.dump(widget, verbose=0)
         for binder in self.get_watchlist():
@@ -158,7 +159,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
             if not widget.Unbind(binder, handler=self.onWatchedEvent):
                 print("- Failed to unbind {}: {}".format(binder.typeId, widget))
         self.parent.handler('monitor_end', widget)
-        self.__prev = widget
         self.target = None
     
     def onWatchedEvent(self, evt):
@@ -297,7 +297,7 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     
     def OnContextMenu(self, evt):
         obj = self.target
-        wnd = self.__prev
+        wnd = self._target
         menu = [
             (1, "Copy data", Icon('copy'),
                 lambda v: self.copy(),
