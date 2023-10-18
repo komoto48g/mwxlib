@@ -134,14 +134,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.target = None
         self.timer.Stop()
     
-    def addref(self, obj, ref='obj'):
-        shell = self.parent.current_shell
-        if shell is not obj:
-            shell.locals[ref] = obj
-            self.parent.message("self.{} -> {!r}".format(ref, obj))
-        shell.SetFocus()
-        return shell
-    
     ## --------------------------------
     ## Actions on tree items
     ## --------------------------------
@@ -177,16 +169,13 @@ class Inspector(it.InspectionTree, CtrlInterface):
         valid = (obj is not None)
         menu = [
             (1, "&Dive into the shell", Icon('core'),
-                lambda v: self.parent.clone_shell(obj),
+                lambda v: dive(obj),
                 lambda v: v.Enable(valid)),
                 
             (2, "&Watch the event", Icon('ghost'),
-                lambda v: self.parent.debug(obj),
+                lambda v: debug(obj),
                 lambda v: v.Enable(valid)),
                 
-            (3, "&Add reference", Icon('tag'),
-                lambda v: self.addref(obj),
-                lambda v: v.Enable(valid)),
             (),
             (8, "&Filling View", miniIcon('ShowFilling'),
                 lambda v: filling(obj),
