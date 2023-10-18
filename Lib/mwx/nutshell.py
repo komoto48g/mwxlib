@@ -7,6 +7,7 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 from functools import wraps
 from importlib import import_module
 from pprint import pformat
+from bdb import BdbQuit
 import traceback
 import warnings
 import inspect
@@ -111,7 +112,7 @@ class EditorInterface(CtrlInterface):
                   'C-t pressed' : (0, ),                  # overrides transpose-line
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
-            'C-S-space pressed' : (0, _F(self.set_pointer)),
+              'S-space pressed' : (0, _F(self.set_pointer)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
@@ -376,6 +377,11 @@ class EditorInterface(CtrlInterface):
         lambda self,v: self.set_marker(v, 3), # [pointer_set]
         lambda self: self.del_marker(3))      # [pointer_unset]
     
+    red_pointer = property(
+        lambda self: self.get_marker(4),
+        lambda self,v: self.set_marker(v, 4), # [red-pointer_set]
+        lambda self: self.del_marker(4))      # [red-pointer_unset]
+    
     @property
     def markline(self):
         return self.MarkerNext(0, 1<<0)
@@ -416,9 +422,10 @@ class EditorInterface(CtrlInterface):
     
     def set_pointer(self):
         if self.pointer == self.cline:
-            self.pointer = -1 # toggle marker
+            self.pointer = -1
         else:
             self.pointer = self.cline
+            self.red_pointer = -1
     
     def exchange_point_and_mark(self):
         p = self.cpos
@@ -1607,7 +1614,7 @@ class Buffer(EditWindow, EditorInterface):
     ## Python eval / exec
     ## --------------------------------
     
-    def py_eval_line(self, globals, locals):
+    def py_eval_line(self, globals=None, locals=None):
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -1631,7 +1638,7 @@ class Buffer(EditWindow, EditorInterface):
                 return
         self.message(status)
     
-    def py_exec_region(self, globals, locals, filename=None):
+    def py_exec_region(self, globals=None, locals=None, filename=None):
         if not filename:
             filename = self.filename
         try:
@@ -1639,6 +1646,9 @@ class Buffer(EditWindow, EditorInterface):
             exec(code, globals, locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
+        except BdbQuit:
+            self.red_pointer = self.cline
+            pass
         except Exception as e:
             msg = traceback.format_exc()
             err = re.findall(py_error_re, msg, re.M)

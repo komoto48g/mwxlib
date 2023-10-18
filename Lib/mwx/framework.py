@@ -1733,7 +1733,6 @@ class ShellFrame(MiniFrame):
             self.debugger.editor = book
             self.debugger.watch((book.buffer.filename, line+1))
             self.debugger.send_input('') # clear input
-        book.buffer.del_marker(4)
     
     def stop_trace(self, line, book):
         if self.debugger.busy:
@@ -1741,7 +1740,6 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-        book.buffer.set_marker(line, 4)
     
     def on_trace_begin(self, frame):
         """Called when set-trace."""
