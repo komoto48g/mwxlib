@@ -47,10 +47,6 @@ def postcall(f):
     return _f
 
 
-def skip(v):
-    v.Skip()
-
-
 _speckeys = {
     wx.WXK_ALT                  : 'alt',
     wx.WXK_BACK                 : 'backspace',
@@ -1146,7 +1142,9 @@ class ShellFrame(MiniFrame):
             evt.Skip()
         self.Bind(wx.EVT_SIZE, on_size)
         
-        def skip(v):
+        def dispatch(v):
+            """Fork key events to the debugger."""
+            self.debugger.handler(self.handler.current_event, v)
             if self.debugger.handler.current_state:
                 if self.debugger.tracing:
                     self.message("Current status is tracing. Press [C-g] to quit.")
@@ -1154,10 +1152,6 @@ class ShellFrame(MiniFrame):
                     self.message("Current status is inconsistent. Press [C-g] to quit.")
                     self.indicator.Value = 7
             v.Skip()
-        
-        def dispatch(v):
-            """Fork key events to the debugger."""
-            self.debugger.handler(self.handler.current_event, v)
         
         self.handler.update({ # DNA<ShellFrame>
             None : {
@@ -1176,9 +1170,9 @@ class ShellFrame(MiniFrame):
          'buffer_caption_reset' : [ None, self.on_buffer_caption ],
             },
             0 : {
-                    '* pressed' : (0, skip, dispatch), # => debugger
-                   '* released' : (0, skip, dispatch), # => debugger
-                  'C-g pressed' : (0, self.Quit, skip, dispatch), # => debugger
+                    '* pressed' : (0, dispatch), # => debugger
+                   '* released' : (0, dispatch), # => debugger
+                  'C-g pressed' : (0, self.Quit, dispatch), # => debugger
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
