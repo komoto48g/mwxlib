@@ -36,14 +36,19 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 ## URL pattern (flag = re.M | re.A)
 url_re = r"https?://[\w/:%#$&?()~.=+-]+"
 
+## no-file pattern
+nofile_re = r'[\/:*?"<>|]'
+
 ## Python syntax pattern
 py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
 py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
 ## Python interp traceback pattern
-py_error_re = r'^ +File "(.*?)", line ([0-9]+)'
-py_frame_re = r"^ +file '(.*?)', line ([0-9]+)"
+py_error_re = r' +File "(.*?)", line ([0-9]+)'
+py_frame_re = r" +file '(.*?)', line ([0-9]+)"
+py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
+py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 
 
 def skip(v):
@@ -1661,7 +1666,7 @@ class Buffer(EditWindow, EditorInterface):
                 self.EnsureCaretVisible()
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
-            self.message("- {!r}".format(e))
+            self.message("- {}".format(e))
             ## print(msg, file=sys.__stderr__)
         else:
             self.code = code
@@ -2271,7 +2276,7 @@ class Nautilus(Shell, EditorInterface):
             obj.this = inspect.getmodule(obj)
             obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
-            ## print("- cannot overwrite target vars: {!r}".format(e))
+            ## print("- cannot overwrite target vars: {}".format(e))
             pass
         self.parent.handler('title_window', obj)
     
@@ -2724,6 +2729,7 @@ class Nautilus(Shell, EditorInterface):
             self.goto_char(self.eolc)
             self.promptPosEnd = 0
             self.prompt()
+        self.AnnotationClearAll()
     
     def on_enter_notemode(self, evt):
         self.noteMode = True
@@ -3272,7 +3278,7 @@ class Nautilus(Shell, EditorInterface):
                 if lines:
                     region = self.get_region(self.cline)
                     self.pointer = region[0] + lines[-1] - 1
-                self.message("- {!r}".format(e))
+                self.message("- {}".format(e))
                 ## print(msg, file=sys.__stderr__)
             else:
                 del self.pointer
