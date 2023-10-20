@@ -173,7 +173,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 lambda v: v.Enable(valid)),
                 
             (2, "&Watch the event", Icon('ghost'),
-                lambda v: debug(obj),
+                lambda v: watch(obj),
                 lambda v: v.Enable(valid)),
                 
             (),

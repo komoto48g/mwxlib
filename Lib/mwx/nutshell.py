@@ -287,11 +287,12 @@ class EditorInterface(CtrlInterface):
         
         self.__mark = -1
     
-    ## custom constants embedded in stc
+    ## Custom constants embedded in stc
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
     stc.STC_STYLE_ANNOTATION = 41
     
+    ## Common DnD target and flags
     dnd = None
     dnd_flag = 0 # 1:copy 2:ctrl-pressed
     
@@ -301,7 +302,8 @@ class EditorInterface(CtrlInterface):
     
     def OnDragging(self, evt): #<wx._core.StyledTextEvent>
         if isinstance(self.dnd, Shell):
-            if self.dnd is not evt.EventObject and self.dnd_flag == 1:
+            if EditorInterface.dnd is not evt.EventObject\
+              and EditorInterface.dnd_flag == 1:
                 vk = wx.UIActionSimulator()
                 vk.KeyDown(wx.WXK_CONTROL) # force [C-Ldrag]
                 EditorInterface.dnd_flag += 1
@@ -1477,6 +1479,9 @@ class Buffer(EditWindow, EditorInterface):
             """Fork mouse events to the parent."""
             self.parent.handler(self.handler.current_event, v)
         
+        ## Note: Key events are not propagated from Buffer to EditorBook.
+        ## They are explicitly dispatched from buffer.handler to editor.handler.
+        
         self.handler.update({ # DNA<Buffer>
             None : {
                  'buffer_saved' : [ None, dispatch ],
@@ -2349,7 +2354,7 @@ class Nautilus(Shell, EditorInterface):
         def on_dragging(v): #<wx._core.StyledTextEvent>
             if v.Position < self.bolc:
                 v.DragResult = wx.DragNone # Don't drop (as readonly)
-            elif self.dnd_flag:
+            elif EditorInterface.dnd_flag:
                 v.DragResult = wx.DragCopy # Don't move
             v.Skip()
         self.Bind(stc.EVT_STC_DRAG_OVER, on_dragging)

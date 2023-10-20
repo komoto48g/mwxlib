@@ -162,7 +162,7 @@ class Thread(object):
         self.event.set()
     
     def Stop(self):
-        def _Stop():
+        def _stop():
             self.active = 0
             if self.running:
                 try:
@@ -172,7 +172,7 @@ class Thread(object):
                     self.worker.join(1)
                 finally:
                     del busy
-        wx.CallAfter(_Stop)
+        wx.CallAfter(_stop)
 
 
 class LayerInterface(CtrlInterface):

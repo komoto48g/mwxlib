@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.3"
+__version__ = "0.90.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1542,7 +1542,7 @@ class ShellFrame(MiniFrame):
         self.ginfo.unwatch()
         self.linfo.unwatch()
         self.debugger.unwatch()
-        self.debugger.send_input('\n') # terminates the reader
+        self.debugger.send_input('\n') # terminates the reader of threading pdb
         shell = self.debugger.interactive_shell # reset interp locals
         del shell.locals
         del shell.globals
