@@ -117,7 +117,7 @@ class EditorInterface(CtrlInterface):
                   'C-t pressed' : (0, ),                  # overrides transpose-line
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
-              'S-space pressed' : (0, _F(self.set_pointer)),
+            'C-S-space pressed' : (0, _F(self.set_pointer)),
           'C-backspace pressed' : (0, skip),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
