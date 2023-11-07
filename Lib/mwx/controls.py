@@ -1320,19 +1320,21 @@ class Gauge(wx.Control):
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
-        def color(x):
-            y = 4*x
-            if   x < 0.25: rgb = (0, y, 1)
-            elif x < 0.50: rgb = (0, 1, 2-y)
-            elif x < 0.75: rgb = (y-2, 1, 0)
-            else:          rgb = (1, 4-y, 0)
-            return [int(round(255 * x)) for x in rgb]
+        def gradients(x):
+            y = 4 * x
+            if   y < 1: rgb = (0, y, 1)
+            elif y < 2: rgb = (0, 1, 2-y)
+            elif y < 3: rgb = (y-2, 1, 0)
+            else:       rgb = (1, 4-y, 0)
+            return [int(255 * x) for x in rgb]
         
         w, h = self.ClientSize
         N = self.__range
+        d = max(w//N - 1, 1)
         for i in range(N):
+            x = int(i * w / N)
             if i < self.__value:
-                dc.SetBrush(wx.Brush(wx.Colour(color(i/N))))
+                dc.SetBrush(wx.Brush(wx.Colour(gradients(i/N))))
             else:
                 dc.SetBrush(wx.Brush('white'))
-            dc.DrawRectangle(i*w//N, 0, w//N-1, h)
+            dc.DrawRectangle(x, 0, d, h)
