@@ -267,6 +267,11 @@ class KeyCtrlInterfaceMixin:
         if action is None:
             self.handler.update({map: {key: [state, ]}})
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
+        else:
+            transaction = self.handler[map].get(key, [state])
+            if len(transaction) > 1:
+                warnings.warn("Duplicate define_key {!r} in {}."
+                              .format(keymap, self.__class__.__name__), stacklevel=2)
         
         F = _F(action, *args, **kwargs)
         @wraps(F)
