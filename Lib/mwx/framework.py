@@ -4,7 +4,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.4"
+__version__ = "0.90.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -685,8 +685,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     message = property(lambda self: self.statusbar)
     
     def post_command_hook(self, evt):
+        ## (override) Don't skip events as a TopLevelWindow.
         pass
-    post_command_hook.__name__ = str('noskip') # Don't skip the event
+    post_command_hook.__name__ = str('noskip')
     
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
@@ -768,8 +769,9 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     message = property(lambda self: self.statusbar)
     
     def post_command_hook(self, evt):
+        ## (override) Don't skip events as a TopLevelWindow.
         pass
-    post_command_hook.__name__ = str('noskip') # Don't skip the event
+    post_command_hook.__name__ = str('noskip')
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)

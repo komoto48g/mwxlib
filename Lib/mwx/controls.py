@@ -56,7 +56,7 @@ class Param(object):
         else:
             self.__eval = lambda v: eval(v)
             self.__format = fmt or "{:,g}".format
-            if isinstance(fmt, str): # support %-format:str (to be deprecated)
+            if isinstance(fmt, str): # support %-format:str (deprecated)
                 self.__format = lambda v: fmt % v
         self.callback = SSM({
             'control' : [ _F(handler) ] if handler else [],

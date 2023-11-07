@@ -324,7 +324,7 @@ def monit(widget=None, **kwargs):
     return ew
 
 
-## Monkey-patch for wx.core (to be deprecated)
+## Monkey-patch for wx.core (deprecated)
 try:
     from wx import core # PY3
 

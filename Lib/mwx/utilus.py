@@ -892,7 +892,8 @@ class TreeList(object):
         return TreeList(self[k])
     
     def __getattr__(self, attr):
-        ## warnings.warn("Accessing deprecated wrapped method.", stacklevel=2)
+        ## warnings.warn("Accessing deprecated wrapped method of list.",
+        ##               DeprecationWarning, stacklevel=2)
         return getattr(self.__items, attr)
     
     def __len__(self):
