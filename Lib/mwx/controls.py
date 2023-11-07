@@ -1286,15 +1286,6 @@ class Gauge(wx.Control):
         self.__value = int(v)
         self.Draw()
     
-    @property
-    def Range(self):
-        return self.__range
-    
-    @Range.setter
-    def Range(self, v):
-        self.__range = int(v)
-        self.Draw()
-    
     def __init__(self, parent, range=24, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
