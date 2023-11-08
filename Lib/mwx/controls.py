@@ -1233,10 +1233,9 @@ class Indicator(wx.Control):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def DoGetBestSize(self):
-        s = self.spacing # minimum size: (6s, 2s)
-        w = s*2*len(self.tricolor)
-        h = s*2+1
-        return wx.Size(w, h)
+        N = len(self.tricolor)
+        s = self.spacing
+        return wx.Size((2*s-1)*N+2, 2*s+1)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
@@ -1249,7 +1248,7 @@ class Indicator(wx.Control):
         dc.SetBrush(wx.Brush(self.background,
                     style=wx.BRUSHSTYLE_SOLID if self.background else
                           wx.BRUSHSTYLE_TRANSPARENT))
-        dc.DrawRoundedRectangle(0, h//2-s, s*2*N-1, s*2+1, s)
+        dc.DrawRoundedRectangle(0, h//2-s, (2*s-1)*N+2, 2*s+1, s)
         dc.SetPen(wx.Pen(self.background))
         for j, name in enumerate(self.tricolor):
             if not self.__value & (1 << N-1-j):
