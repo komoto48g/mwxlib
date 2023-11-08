@@ -1233,10 +1233,9 @@ class Indicator(wx.Control):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def DoGetBestSize(self):
-        s = self.spacing # minimum size: (6s, 2s)
-        w = s*2*len(self.tricolor)
-        h = s*2+1
-        return wx.Size(w, h)
+        N = len(self.tricolor)
+        s = self.spacing
+        return wx.Size((2*s-1)*N+2, 2*s+1)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
@@ -1249,7 +1248,7 @@ class Indicator(wx.Control):
         dc.SetBrush(wx.Brush(self.background,
                     style=wx.BRUSHSTYLE_SOLID if self.background else
                           wx.BRUSHSTYLE_TRANSPARENT))
-        dc.DrawRoundedRectangle(0, h//2-s, s*2*N-1, s*2+1, s)
+        dc.DrawRoundedRectangle(0, h//2-s, (2*s-1)*N+2, 2*s+1, s)
         dc.SetPen(wx.Pen(self.background))
         for j, name in enumerate(self.tricolor):
             if not self.__value & (1 << N-1-j):
@@ -1286,15 +1285,6 @@ class Gauge(wx.Control):
         self.__value = int(v)
         self.Draw()
     
-    @property
-    def Range(self):
-        return self.__range
-    
-    @Range.setter
-    def Range(self, v):
-        self.__range = int(v)
-        self.Draw()
-    
     def __init__(self, parent, range=24, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
@@ -1320,19 +1310,21 @@ class Gauge(wx.Control):
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
-        def color(x):
-            y = 4*x
-            if   x < 0.25: rgb = (0, y, 1)
-            elif x < 0.50: rgb = (0, 1, 2-y)
-            elif x < 0.75: rgb = (y-2, 1, 0)
-            else:          rgb = (1, 4-y, 0)
-            return [int(round(255 * x)) for x in rgb]
+        def gradients(x):
+            y = 4 * x
+            if   y < 1: rgb = (0, y, 1)
+            elif y < 2: rgb = (0, 1, 2-y)
+            elif y < 3: rgb = (y-2, 1, 0)
+            else:       rgb = (1, 4-y, 0)
+            return [int(255 * x) for x in rgb]
         
         w, h = self.ClientSize
         N = self.__range
+        d = max(w//N - 1, 1)
         for i in range(N):
+            x = int(i * w / N)
             if i < self.__value:
-                dc.SetBrush(wx.Brush(wx.Colour(color(i/N))))
+                dc.SetBrush(wx.Brush(wx.Colour(gradients(i/N))))
             else:
                 dc.SetBrush(wx.Brush('white'))
-            dc.DrawRectangle(i*w//N, 0, w//N-1, h)
+            dc.DrawRectangle(x, 0, d, h)
