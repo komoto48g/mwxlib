@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 """mwxlib param controller and wx custom controls
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>

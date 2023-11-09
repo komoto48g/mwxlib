@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 """mwxlib icons library
 
 Default icons are provided by `wx.ArtProvider`.

@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 from setuptools import setup 
 from Lib.mwx import __version__, __author__
 

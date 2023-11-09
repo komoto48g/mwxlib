@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 """Test of FSM [A Gate Keeper]
 
 Usage: Input 'coin' or 'pass' to the prompt.

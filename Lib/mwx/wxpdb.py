@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 """Graphical debugger
    of the phoenix, by the phoenix, for the phoenix
 

@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 """mwxlib framework (based on matplotlib/wx)
 """
 from .framework import __version__, __author__

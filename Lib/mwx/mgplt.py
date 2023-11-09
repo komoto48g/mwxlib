@@ -1,5 +1,4 @@
 #! python3
-# -*- coding: utf-8 -*-
 """Gnuplot wrapper for py3k
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
