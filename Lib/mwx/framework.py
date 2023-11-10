@@ -3,7 +3,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.5"
+__version__ = "0.90.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -263,14 +263,14 @@ class KeyCtrlInterfaceMixin:
         if map not in self.handler:
             self.make_keymap(map) # make new keymap
         
+        transaction = self.handler[map].get(key, [state])
+        if len(transaction) > 1:
+            warnings.warn("Duplicate define_key {!r} in {}."
+                          .format(keymap, self.__class__.__name__), stacklevel=2)
+        
         if action is None:
             self.handler.update({map: {key: [state, ]}})
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
-        else:
-            transaction = self.handler[map].get(key, [state])
-            if len(transaction) > 1:
-                warnings.warn("Duplicate define_key {!r} in {}."
-                              .format(keymap, self.__class__.__name__), stacklevel=2)
         
         F = _F(action, *args, **kwargs)
         @wraps(F)
