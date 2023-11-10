@@ -1240,20 +1240,21 @@ class Indicator(wx.Control):
         dc = wx.PaintDC(self)
         dc.Clear()
         N = len(self.tricolor)
-        s = self.spacing
         r = self.radius
+        s = self.spacing
+        ss = 2*s-1
         w, h = self.ClientSize
         dc.SetPen(wx.Pen(self.background, style=wx.PENSTYLE_TRANSPARENT))
         dc.SetBrush(wx.Brush(self.background,
                     style=wx.BRUSHSTYLE_SOLID if self.background else
                           wx.BRUSHSTYLE_TRANSPARENT))
-        dc.DrawRoundedRectangle(0, h//2-s, (2*s-1)*N+2, 2*s+1, s)
+        dc.DrawRoundedRectangle(0, h//2-s, ss*N+2, 2*s+1, s)
         dc.SetPen(wx.Pen(self.background))
         for j, name in enumerate(self.tricolor):
             if not self.__value & (1 << N-1-j):
                 name = self.foreground
             dc.SetBrush(wx.Brush(name))
-            dc.DrawCircle(s*(2*j+1)-j, h//2, r)
+            dc.DrawCircle(ss*j+s, h//2, r)
     
     def blink(self, msec, mask=0):
         """Blinks once for given milliseconds.
