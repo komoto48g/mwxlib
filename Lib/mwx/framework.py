@@ -3,7 +3,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.6"
+__version__ = "0.90.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1148,7 +1148,7 @@ class ShellFrame(MiniFrame):
             evt.Skip()
         self.Bind(wx.EVT_SIZE, on_size)
         
-        def dispatch(v):
+        def fork_debugger(v):
             """Fork key events to the debugger."""
             self.debugger.handler(self.handler.current_event, v)
             if self.debugger.handler.current_state:
@@ -1176,9 +1176,9 @@ class ShellFrame(MiniFrame):
          'buffer_caption_reset' : [ None, self.on_buffer_caption ],
             },
             0 : {
-                    '* pressed' : (0, dispatch), # => debugger
-                   '* released' : (0, dispatch), # => debugger
-                  'C-g pressed' : (0, self.Quit, dispatch), # => debugger
+                    '* pressed' : (0, fork_debugger),
+                   '* released' : (0, fork_debugger),
+                  'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
