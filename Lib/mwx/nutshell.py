@@ -82,7 +82,7 @@ class EditorInterface(CtrlInterface):
         CtrlInterface.__init__(self)
         
         def dispatch(v):
-            """Fork mouse events to the parent."""
+            """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, v)
         
         self.make_keymap('C-x')
@@ -1475,7 +1475,7 @@ class Buffer(EditWindow, EditorInterface):
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         def dispatch(v):
-            """Fork mouse events to the parent."""
+            """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, v)
         
         ## Note: Key events are not propagated from Buffer to EditorBook.
@@ -1739,7 +1739,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def dispatch(v):
-            """Fork mouse events to the parent."""
+            """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, v)
         
         self.make_keymap('C-x')
@@ -2388,7 +2388,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler.fork(self.handler.current_event, v)
         
         def dispatch(v):
-            """Fork mouse events to the parent."""
+            """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, v)
         
         self.handler.update({ # DNA<Nautilus>

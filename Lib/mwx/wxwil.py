@@ -52,7 +52,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
         def dispatch(v):
-            """Fork mouse events to the parent."""
+            """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, v)
             v.Skip()
         
