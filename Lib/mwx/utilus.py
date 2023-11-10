@@ -828,7 +828,7 @@ class FSM(dict):
             try:
                 transaction.append(action)
             except AttributeError:
-                warn("- FSM:warning: appending action to context ({!r} : {!r})\n"
+                warn("- FSM:warning: cannot append new transaction ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
         return action
     

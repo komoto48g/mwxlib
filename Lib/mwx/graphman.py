@@ -759,7 +759,11 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         ## Custom Key Bindings
-        self.define_key('C-g', self.Quit)
+        self.define_key('* C-g', self.Quit)
+        
+        @self.shellframe.define_key('* C-g')
+        def quit(v):
+            self.handler('C-g pressed', v)
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self, self))
