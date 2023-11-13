@@ -368,7 +368,7 @@ class GraphPlot(MatplotPanel):
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        def draw_idle(v):
+        def _draw_idle(v):
             self.canvas.draw_idle()
         
         self.handler.update({ # DNA<GraphPlot>
@@ -383,16 +383,16 @@ class GraphPlot(MatplotPanel):
                 'frame_updated' : [ None, _F(self.writeln) ], # unit,name,ratio => update_extent
                 'frame_cmapped' : [ None, _F(self.writeln) ], # cmap
                     'line_draw' : [ None ],
-                   'line_drawn' : [ None, draw_idle ],
+                   'line_drawn' : [ None, _draw_idle ],
                     'line_move' : [ None ],
-                   'line_moved' : [ None, draw_idle ],
-                 'line_removed' : [ None, draw_idle ],
+                   'line_moved' : [ None, _draw_idle ],
+                 'line_removed' : [ None, _draw_idle ],
                     'mark_draw' : [ None ],
-                   'mark_drawn' : [ None, draw_idle ],
-                 'mark_removed' : [ None, draw_idle ],
+                   'mark_drawn' : [ None, _draw_idle ],
+                 'mark_removed' : [ None, _draw_idle ],
                   'region_draw' : [ None ],
-                 'region_drawn' : [ None, draw_idle ],
-               'region_removed' : [ None, draw_idle ],
+                 'region_drawn' : [ None, _draw_idle ],
+               'region_removed' : [ None, _draw_idle ],
                  'M-up pressed' : [ None, self.OnPageUp ],
                'M-down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],
@@ -415,7 +415,7 @@ class GraphPlot(MatplotPanel):
                     'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'r+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'M-Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
-               'escape pressed' : (NORMAL, self.OnEscapeSelection, draw_idle),
+               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw_idle),
                 'shift pressed' : (NORMAL, self.on_picker_lock),
                'shift released' : (NORMAL, self.on_picker_unlock),
               'Lbutton pressed' : (NORMAL, self.OnDragLock),
@@ -477,7 +477,7 @@ class GraphPlot(MatplotPanel):
                'right released' : (MARK, self.OnMarkShiftEnd),
                     'n pressed' : (MARK, self.OnMarkSkipNext),
                     'p pressed' : (MARK, self.OnMarkSkipPrevious),
-               'escape pressed' : (NORMAL, self.OnMarkDeselected, draw_idle),
+               'escape pressed' : (NORMAL, self.OnMarkDeselected, _draw_idle),
                'delete pressed' : (MARK, self.OnMarkRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -506,7 +506,7 @@ class GraphPlot(MatplotPanel):
                 'down released' : (REGION, self.OnRegionShiftEnd),
                 'left released' : (REGION, self.OnRegionShiftEnd),
                'right released' : (REGION, self.OnRegionShiftEnd),
-               'escape pressed' : (NORMAL, self.OnRegionDeselected, draw_idle),
+               'escape pressed' : (NORMAL, self.OnRegionDeselected, _draw_idle),
                'delete pressed' : (NORMAL, self.OnRegionRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
