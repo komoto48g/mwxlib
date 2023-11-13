@@ -89,9 +89,6 @@ class Thread(object):
                    'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                      '*:enter' : [ None ], # enter module:co_name
-                       '*:exit' : [ None ], # exit module:co_name
-                      '*:error' : [ None ], # error
                 },
             })
     
@@ -103,28 +100,34 @@ class Thread(object):
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
         name = frame.f_code.co_name
+        filename = frame.f_code.co_filename
+        if module:
+            fname = module.__name__
+        if not module:
+            fname = os.path.basename(filename)
         
         assert self.active, "cannot enter {!r}".format(name)
         
-        event = "{}:{}:enter".format(module.__name__, name)
-        self.handler(event, self)
+        self.handler(f"{fname}/{name}:enter", self)
     
     def __exit__(self, t, v, tb):
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
         name = frame.f_code.co_name
-        if t:
-            event = "{}:{}:error".format(module.__name__, name)
-            self.handler(event, self)
+        filename = frame.f_code.co_filename
+        if module:
+            fname = module.__name__
+        if not module:
+            fname = os.path.basename(filename)
         
-        event = "{}:{}:exit".format(module.__name__, name)
-        self.handler(event, self)
+        self.handler(f"{fname}/{name}:error" if t
+                else f"{fname}/{name}:exit", self)
     
     def __call__(self, f, *args, **kwargs):
         """Decorator of thread starter function."""
         @wraps(f)
-        def _f(*v):
-            return self.Start(f, *v, *args, **kwargs)
+        def _f(*v, **kw):
+            return self.Start(f, *v, *args, **kw, **kwargs)
         return _f
     
     def Start(self, f, *args, **kwargs):
@@ -197,7 +200,7 @@ class LayerInterface(CtrlInterface):
     caption = True
     category = None
     dockable = True
-    editable = True # to be deprecated
+    editable = True # deprecated
     reloadable = True
     unloadable = True
     
@@ -312,7 +315,7 @@ class LayerInterface(CtrlInterface):
                 lambda v: reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (wx.ID_EDIT, "&Edit module", "Edit module src", Icon('pen'),
+            (wx.ID_EDIT, "&Edit module", "Edit module", Icon('pen'),
                 lambda v: self.parent.edit_plug(self.__module__),
                 lambda v: v.Enable(self.editable)),
                 
@@ -756,7 +759,11 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         ## Custom Key Bindings
-        self.define_key('C-g', self.Quit)
+        self.define_key('* C-g', self.Quit)
+        
+        @self.shellframe.define_key('* C-g')
+        def quit(v):
+            self.handler('C-g pressed', v)
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self, self))
