@@ -871,7 +871,6 @@ class GraphPlot(MatplotPanel):
         MatplotPanel.on_focus_kill(self, evt)
         if self.frame:
             self.handler('frame_deselected', self.frame)
-            ## self.on_picker_lock(evt)
     
     def get_cmap(self):
         if self.frame:
@@ -1049,7 +1048,7 @@ class GraphPlot(MatplotPanel):
                 self.__isPicked = None # release pick guard
             else:
                 self.handler('image_picked', evt)
-            
+        
         ## その他のプロットが選択された場合
         else:
             if evt.artist is self.marked:
@@ -1069,6 +1068,7 @@ class GraphPlot(MatplotPanel):
             else:
                 self.__isPicked = 'art'
                 MatplotPanel.on_pick(self, evt) # [art_picked]
+        
         self.canvas.draw_idle()
     
     def on_picker_lock(self, evt):
@@ -1203,7 +1203,6 @@ class GraphPlot(MatplotPanel):
         self.handler('line_drawn', self.frame)
     
     def OnDragLock(self, evt):
-        ## pressed/drug の時間差を埋める？
         pass
     
     def OnDragBegin(self, evt):
