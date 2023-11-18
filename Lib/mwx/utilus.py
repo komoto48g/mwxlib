@@ -782,6 +782,8 @@ class FSM(dict):
                 del self[k]
     
     def define(self, event, action=None, state=None, state2=None):
+        warnings.warn("Call to deprecated method: handler.define.",
+                      DeprecationWarning, stacklevel=2)
         self.unbind(event, None, state)
         return self.bind(event, action, state, state2)
     

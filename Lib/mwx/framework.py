@@ -3,7 +3,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.90.7"
+__version__ = "0.90.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1178,7 +1178,7 @@ class ShellFrame(MiniFrame):
             0 : {
                     '* pressed' : (0, fork_debugger),
                    '* released' : (0, fork_debugger),
-                  'C-g pressed' : (0, self.Quit, fork_debugger),
+                  'C-g pressed' : (0, self.quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1358,7 +1358,7 @@ class ShellFrame(MiniFrame):
                 evt.Veto()
                 return
             #? RuntimeError('wrapped C/C++ object ... has been deleted')
-            self.Quit()
+            self.quit()
         
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
@@ -1542,7 +1542,8 @@ class ShellFrame(MiniFrame):
     ## Actions for handler
     ## --------------------------------
     
-    def Quit(self, evt=None):
+    def quit(self, evt=None):
+        """Stop debugger and monitor."""
         ## self.inspector.unwatch()
         self.monitor.unwatch()
         self.ginfo.unwatch()

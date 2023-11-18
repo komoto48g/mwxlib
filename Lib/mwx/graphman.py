@@ -763,6 +763,7 @@ class Frame(mwx.Frame):
         
         @self.shellframe.define_key('* C-g')
         def quit(v):
+            """Dispatch quit to the main Frame."""
             self.handler('C-g pressed', v)
         
         ## Accepts DnD
