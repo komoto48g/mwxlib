@@ -31,6 +31,8 @@ class LinePlot(MatplotPanel):
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
+                  'M-a pressed' : (NORMAL, self.OnHomePosition),
+                  'C-a pressed' : (NORMAL, self.OnHomePosition),
              'Lbutton dblclick' : (NORMAL, self.OnEscapeSelection),
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
@@ -359,7 +361,6 @@ class Histogram(LinePlot):
     
     def OnEscapeSelection(self, evt):
         LinePlot.OnEscapeSelection(self, evt)
-        self.OnHomePosition(evt)
         
         if self.__frame:
             self.__frame.clim = self.xlim
