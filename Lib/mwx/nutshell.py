@@ -773,6 +773,8 @@ class EditorInterface(CtrlInterface):
     def set_style(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
         spec.update(kwargs)
+        if not spec:
+            return
         
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(',') if kv)
@@ -1806,8 +1808,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """
         def _setattribute(buf, attr):
             for k, v in attr.items():
+                if k == 'Style':
+                    buf.set_style(v)
                 setattr(buf, k, v)
-                buf.set_style(attr.get('Style'))
         if buf:
             _setattribute(buf, kwargs)
         else:
