@@ -54,7 +54,7 @@ def skip(v):
     v.Skip()
 
 
-def editable(f):
+def can_edit(f):
     @wraps(f)
     def _f(self, *v, **kw):
         if self.CanEdit():
@@ -586,7 +586,7 @@ class EditorInterface(CtrlInterface):
         else:
             self.py_outdent_line()
     
-    @editable
+    @can_edit
     def py_indent_line(self):
         """Indent the current line."""
         text = self.caretline  # w/ no-prompt
@@ -597,7 +597,7 @@ class EditorInterface(CtrlInterface):
         self.Replace(self.bol, p, ' '*indent)
         self.goto_char(self.bol + indent + offset)
     
-    @editable
+    @can_edit
     def py_outdent_line(self):
         """Outdent the current line."""
         text = self.caretline  # w/ no-prompt
@@ -1219,7 +1219,7 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     comment_prefix = "## "
     
-    @editable
+    @can_edit
     def comment_out_selection(self, from_=None, to_=None):
         """Comment out the selected text."""
         if from_ is not None: self.anchor = from_
@@ -1233,7 +1233,7 @@ class EditorInterface(CtrlInterface):
                 text = text[:-len(prefix)]
             self.ReplaceSelection(text)
     
-    @editable
+    @can_edit
     def uncomment_selection(self, from_=None, to_=None):
         """Uncomment the selected text."""
         if from_ is not None: self.anchor = from_
@@ -1243,7 +1243,7 @@ class EditorInterface(CtrlInterface):
             if text != self.SelectedText:
                 self.ReplaceSelection(text)
     
-    @editable
+    @can_edit
     def comment_out_line(self):
         if self.SelectedText:
             self.comment_out_selection()
@@ -1259,7 +1259,7 @@ class EditorInterface(CtrlInterface):
             self.comment_out_selection(self.cpos, self.eol)
             self.LineDown()
     
-    @editable
+    @can_edit
     def uncomment_line(self):
         if self.SelectedText:
             self.uncomment_selection()
@@ -1268,19 +1268,19 @@ class EditorInterface(CtrlInterface):
             self.uncomment_selection(self.cpos, self.eol)
             self.LineDown()
     
-    @editable
+    @can_edit
     def eat_white_forward(self):
         p = self.cpos
         self.skip_chars_forward(' \t')
         self.Replace(p, self.cpos, '')
     
-    @editable
+    @can_edit
     def eat_white_backward(self):
         p = self.cpos
         self.skip_chars_backward(' \t')
         self.Replace(max(self.cpos, self.bol), p, '')
     
-    @editable
+    @can_edit
     def kill_line(self):
         p = self.eol
         if p == self.cpos:
@@ -1288,7 +1288,7 @@ class EditorInterface(CtrlInterface):
             if self.get_char(p) == '\n': p += 1
         self.Replace(self.cpos, p, '')
     
-    @editable
+    @can_edit
     def backward_kill_line(self):
         p = self.bol
         text, lp = self.CurLine
@@ -1300,7 +1300,7 @@ class EditorInterface(CtrlInterface):
             if self.get_char(p-1) == '\r': p -= 1
         self.Replace(p, self.cpos, '')
     
-    @editable
+    @can_edit
     def insert_space_like_tab(self):
         """Insert half-width spaces forward as if feeling like [tab].
         タブの気持ちになって半角スペースを入力する
@@ -1309,7 +1309,7 @@ class EditorInterface(CtrlInterface):
         _text, lp = self.CurLine
         self.WriteText(' ' * (4 - lp % 4))
     
-    @editable
+    @can_edit
     def delete_backward_space_like_tab(self):
         """Delete half-width spaces backward as if feeling like [S-tab].
         シフト+タブの気持ちになって半角スペースを消す
@@ -2401,7 +2401,6 @@ class Nautilus(Shell, EditorInterface):
             ## Quit to avoid backspace over the last non-continuation prompt.
             if self.cpos == self.bolc:
                 self.handler('quit', v)
-                print("$(v) = {!r}".format((v)))
             v.Skip()
         
         def fork(v):
