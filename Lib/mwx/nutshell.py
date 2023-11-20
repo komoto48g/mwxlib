@@ -2379,13 +2379,30 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         def clear(v):
-            ## Clear selection and message, no skip.
+            ## """Clear selection and message, no skip."""
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
             ## if self.AutoCompActive():
             ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
                 self.ReplaceSelection("")
             self.message("")
+        
+        def clear_autocomp(v):
+            ## """Clear Autocomp, selection, and message."""
+            if self.AutoCompActive():
+                self.AutoCompCancel()
+            if self.CanEdit():
+                self.ReplaceSelection("")
+            self.message("")
+        
+        def skip_autocomp(v):
+            ## """Don't eat backward prompt whitespace."""
+            ## Prevent autocomp from eating prompts.
+            ## Quit to avoid backspace over the last non-continuation prompt.
+            if self.cpos == self.bolc:
+                self.handler('quit', v)
+                print("$(v) = {!r}".format((v)))
+            v.Skip()
         
         def fork(v):
             self.handler.fork(self.handler.current_event, v)
@@ -2483,15 +2500,15 @@ class Nautilus(Shell, EditorInterface):
              '*f[0-9]* pressed' : (1, ),
             },
             2 : { # word auto completion AS-mode
-                         'quit' : (0, self.clear_autocomp),
-                    '* pressed' : (0, self.clear_autocomp, fork),
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
                    'up pressed' : (2, self.on_completion_backward, skip),
                  'down pressed' : (2, self.on_completion_forward, skip),
                 '*left pressed' : (2, skip),
                '*right pressed' : (2, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, self.clear_autocomp),
+               'escape pressed' : (0, clear_autocomp),
                   'C-. pressed' : (2, ),
                  'C-. released' : (2, self.call_word_autocomp),
                   'M-. pressed' : (2, ),
@@ -2502,7 +2519,7 @@ class Nautilus(Shell, EditorInterface):
            'S-[a-z\\] released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
              '*delete released' : (2, self.call_word_autocomp),
-           '*backspace pressed' : (2, self.skipback_autocomp, skip),
+           '*backspace pressed' : (2, skip_autocomp),
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
@@ -2516,15 +2533,15 @@ class Nautilus(Shell, EditorInterface):
              '*f[0-9]* pressed' : (2, ),
             },
             3 : { # apropos auto completion AS-mode
-                         'quit' : (0, self.clear_autocomp),
-                    '* pressed' : (0, self.clear_autocomp, fork),
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
                    'up pressed' : (3, self.on_completion_backward, skip),
                  'down pressed' : (3, self.on_completion_forward, skip),
                 '*left pressed' : (3, skip),
                '*right pressed' : (3, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, self.clear_autocomp),
+               'escape pressed' : (0, clear_autocomp),
                   'M-/ pressed' : (3, ),
                  'M-/ released' : (3, self.call_apropos_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
@@ -2532,7 +2549,7 @@ class Nautilus(Shell, EditorInterface):
             'S-[a-z\\] pressed' : (3, skip),
            'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
-           '*backspace pressed' : (3, self.skipback_autocomp, skip),
+           '*backspace pressed' : (3, skip_autocomp),
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
@@ -2546,15 +2563,15 @@ class Nautilus(Shell, EditorInterface):
              '*f[0-9]* pressed' : (3, ),
             },
             4 : { # text auto completion AS-mode
-                         'quit' : (0, self.clear_autocomp),
-                    '* pressed' : (0, self.clear_autocomp, fork),
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
                    'up pressed' : (4, self.on_completion_backward, skip),
                  'down pressed' : (4, self.on_completion_forward, skip),
                 '*left pressed' : (4, skip),
                '*right pressed' : (4, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, self.clear_autocomp),
+               'escape pressed' : (0, clear_autocomp),
                   'M-, pressed' : (4, ),
                  'M-, released' : (4, self.call_text_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
@@ -2562,7 +2579,7 @@ class Nautilus(Shell, EditorInterface):
             'S-[a-z\\] pressed' : (4, skip),
            'S-[a-z\\] released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
-           '*backspace pressed' : (4, self.skipback_autocomp, skip),
+           '*backspace pressed' : (4, skip_autocomp),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
@@ -2576,22 +2593,22 @@ class Nautilus(Shell, EditorInterface):
              '*f[0-9]* pressed' : (4, ),
             },
             5 : { # module auto completion AS-mode
-                         'quit' : (0, self.clear_autocomp),
-                    '* pressed' : (0, self.clear_autocomp, fork),
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
                    'up pressed' : (5, self.on_completion_backward, skip),
                  'down pressed' : (5, self.on_completion_forward, skip),
                 '*left pressed' : (5, skip),
                '*right pressed' : (5, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, self.clear_autocomp),
+               'escape pressed' : (0, clear_autocomp),
                   'M-m pressed' : (5, ),
                  'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
           '[a-z0-9_.,] pressed' : (5, skip),
          '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
-           '*backspace pressed' : (5, self.skipback_autocomp, skip),
+           '*backspace pressed' : (5, skip_autocomp),
           '*backspace released' : (5, self.call_module_autocomp),
         'C-S-backspace pressed' : (5, ),
                  '*alt pressed' : (5, ),
@@ -2662,8 +2679,8 @@ class Nautilus(Shell, EditorInterface):
     
     def OnEnter(self, evt):
         """Called when enter pressed."""
-        if not self.CanEdit(): # go back to the end of command line
-            self.goto_char(self.eolc)
+        if not self.CanEdit():
+            self.goto_char(self.eolc) # go to end of command line
             return
         if self.AutoCompActive(): # skip to auto completion
             evt.Skip()
@@ -3092,7 +3109,7 @@ class Nautilus(Shell, EditorInterface):
     def clear(self):
         """Delete all text (override) put new prompt."""
         self.ClearAll()
-        self.promptPosStart = 0 # CanEdit:True
+        self.promptPosStart = 0
         self.promptPosEnd = 0
         self.prompt()
     
@@ -3311,21 +3328,6 @@ class Nautilus(Shell, EditorInterface):
                     c == '(' and p == self.eol) # => CallTipShow
             except Exception as e:
                 self.message("- {} : {!r}".format(e, text))
-    
-    def clear_autocomp(self, evt):
-        """Clear Autocomp, selection, and message."""
-        if self.AutoCompActive():
-            self.AutoCompCancel()
-        if self.CanEdit():
-            self.ReplaceSelection("")
-        self.message("")
-    
-    def skipback_autocomp(self, evt):
-        """Don't eat backward prompt whitespace."""
-        if self.cpos == self.bolc:
-            ## Do not skip to prevent autocomp eats prompt
-            ## so not to backspace over the latest non-continuation prompt
-            self.handler('quit', evt)
     
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
