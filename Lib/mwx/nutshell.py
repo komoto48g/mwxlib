@@ -2426,7 +2426,6 @@ class Nautilus(Shell, EditorInterface):
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
-              'M-enter pressed' : (0, _F(self.duplicate_command)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
                  'left pressed' : (0, self.OnBackspace),
                   'C-[ pressed' : (0, _F(self.goto_previous_mark_arrow)),
@@ -2713,16 +2712,6 @@ class Nautilus(Shell, EditorInterface):
         st = self.get_style(p-1)
         if st in ('nil', 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self.')
-    
-    def duplicate_command(self, clear=True):
-        if self.CanEdit():
-            return
-        cmd = self.MultilineCommand
-        if cmd:
-            self.mark = self.cpos
-            if clear:
-                self.clearCommand() # => move to the prompt end
-            self.write(cmd.rstrip('\r\n'), -1)
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
