@@ -98,30 +98,22 @@ class Thread(object):
     
     def __enter__(self):
         frame = inspect.currentframe().f_back
-        module = inspect.getmodule(frame)
-        name = frame.f_code.co_name
         filename = frame.f_code.co_filename
-        if module:
-            fname = module.__name__
-        if not module:
-            fname = os.path.basename(filename)
-        
+        name = frame.f_code.co_name
+        fname,_ = os.path.splitext(os.path.basename(filename))
+        ## The thread must be activated first.
         assert self.active, "cannot enter {!r}".format(name)
-        
         self.handler(f"{fname}/{name}:enter", self)
     
     def __exit__(self, t, v, tb):
         frame = inspect.currentframe().f_back
-        module = inspect.getmodule(frame)
-        name = frame.f_code.co_name
         filename = frame.f_code.co_filename
-        if module:
-            fname = module.__name__
-        if not module:
-            fname = os.path.basename(filename)
-        
-        self.handler(f"{fname}/{name}:error" if t
-                else f"{fname}/{name}:exit", self)
+        name = frame.f_code.co_name
+        fname,_ = os.path.splitext(os.path.basename(filename))
+        if t:
+            self.handler(f"{fname}/{name}:error", self)
+        else:
+            self.handler(f"{fname}/{name}:exit", self)
     
     def __call__(self, f, *args, **kwargs):
         """Decorator of thread starter function."""
