@@ -56,9 +56,9 @@ class Thread(object):
     
     The event object can be used to suspend/resume the thread:
     
-        1. event.clear -> clear flag:False so that the thread suspends when wait is called.
+        1. event.clear -> clear flag so that the thread suspends when wait is called.
         2. event.wait -> wait until the chequer flag to be set True.
-        3. event.set -> set flag:True to resume the thread.
+        3. event.set -> set flag to resume the thread.
         
         The event.wait blocks until the internal flag is True when it is False,
         and returns immediately when it is True.
@@ -115,12 +115,44 @@ class Thread(object):
         else:
             self.handler(f"{fname}/{name}:exit", self)
     
-    def __call__(self, f, *args, **kwargs):
+    def wraps(self, f, *args, **kwargs):
         """Decorator of thread starter function."""
         @wraps(f)
         def _f(*v, **kw):
             return self.Start(f, *v, *args, **kw, **kwargs)
         return _f
+    
+    def check(self, timeout=None):
+        """Check the thread event flags.
+        """
+        if not self.running:
+            return
+        if not self.event.wait(timeout): # wait until set in time
+            raise KeyboardInterrupt("timeout")
+        if not self.active:
+            raise KeyboardInterrupt("terminated by user")
+    
+    def pause(self, msg="Pausing", timeout=None):
+        """Pause the thread.
+        
+        Use ``check`` method where you want to pause.
+        
+        Note:
+            Even after the message dialog is displayed, the thread
+            does not suspend until check (or event.wait) is called.
+        """
+        if not self.running:
+            return
+        try:
+            self.event.clear() # suspend
+            if wx.MessageBox(msg + "...\n\n"
+                    "Press [OK] to continue.\n"
+                    "Press [CANCEL] to terminate the process.",
+                    style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
+                return False
+            return True
+        finally:
+            self.event.set() # resume
     
     def Start(self, f, *args, **kwargs):
         @wraps(f)
