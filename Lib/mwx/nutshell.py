@@ -1415,13 +1415,9 @@ class Buffer(EditWindow, EditorInterface):
             prefix += ' '
         return prefix
     
-    @property
-    def caption(self):
-        return self.caption_prefix + self.name
-    
     def update_caption(self):
         try:
-            if self.parent.set_caption(self, self.caption):
+            if self.parent.set_caption(self, self.caption_prefix + self.name):
                 self.parent.handler('buffer_caption_reset', self)
         except AttributeError:
             pass
