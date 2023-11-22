@@ -781,12 +781,6 @@ class FSM(dict):
             if not v:
                 del self[k]
     
-    def define(self, event, action=None, state=None, state2=None):
-        warnings.warn("Call to deprecated method: handler.define.",
-                      DeprecationWarning, stacklevel=2)
-        self.unbind(event, None, state)
-        return self.bind(event, action, state, state2)
-    
     def bind(self, event, action=None, state=None, state2=None):
         """Append a transaction to the context.
         
