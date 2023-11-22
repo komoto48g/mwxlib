@@ -2343,7 +2343,7 @@ class Nautilus(Shell, EditorInterface):
         if not self.modules:
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
-            Nautilus.modules = find_modules(force)
+            Nautilus.modules = set(find_modules(force))
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
@@ -3417,39 +3417,44 @@ class Nautilus(Shell, EditorInterface):
         if not self.CanEdit():
             self.handler('quit', evt)
             return
+        
+        def _continue(hints):
+            if hints.endswith(' ') and not force: # 'x, y |'
+                return
+            h = hints.strip()
+            if (not h or h.endswith(',')) and not force: # 'x, y,|'
+                return
+            lh = h.split(',')[-1]   # 'x, y, z|' last hint after ','
+            if len(lh.split()) > 1: # 'x, y as|' contains a space before 'as'
+                return
+            return lh
+        
         try:
-            def _continue():
-                h = hints.strip()
-                if (not h or h.endswith(',')) and not force:
-                    self.message("[module]>>> waiting for key input...")
-                    return
-                if hints.endswith(' ') and not force: # `x, y |`
-                    return
-                lh = h.split(',')[-1]   # `x, y, z|` the last hint after `,`
-                if len(lh.split()) > 1: # `x, y as|` and contains a space, e.g., `as`?
-                    return
-                return True
-            
             cmdl = self.cmdlc
             hint = self.get_last_hint(cmdl)
             
             m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
             if m:
                 text, hints = m.groups()
-                if not _continue():
+                if not _continue(hints):
+                    self.message("[module]>>> waiting for key input...")
                     return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
                 try:
-                    modules = dir(import_module(text))
+                    modules = set(dir(import_module(text)))
                 except ImportError as e:
                     self.message("\b failed: {}".format(e))
                     return
+                ## Add unimported module names.
+                keys = [x[len(text)+1:] for x in self.modules if x.startswith(f"{text}.{hint}")]
+                modules.update(k for k in keys if '.' not in k)
             else:
                 m = re.match(r"(import|from)\s+(.*)", cmdl)
                 if m:
                     text, hints = m.groups()
-                    if not _continue():
+                    if not _continue(hints):
+                        self.message("[module]>>> waiting for key input...")
                         return
                     modules = self.modules
                 else:
@@ -3460,7 +3465,7 @@ class Nautilus(Shell, EditorInterface):
                     if not hasattr(obj, '__dict__'):
                         self.message("[module] primitive object: {}".format(obj))
                         return
-                    modules = [k for k, v in vars(obj).items() if inspect.ismodule(v)]
+                    modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
