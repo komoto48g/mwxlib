@@ -167,6 +167,8 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
     
     def dump(self, widget, verbose=True):
         """Dump all event handlers bound to the widget."""
+        ## Note: This will not work unless [Monkey-patch for wx.core] is applied.
+        ##       This is currently deprecated (see below).
         exclusions = [x.typeId for x in ew._noWatchList]
         ssmap = {}
         try:
@@ -324,7 +326,7 @@ def monit(widget=None, **kwargs):
 
 
 ## Monkey-patch for wx.core (deprecated)
-try:
+if 0:
     from wx import core # PY3
 
     def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
@@ -390,7 +392,3 @@ try:
     ## del _EvtHandler_Unbind
 
     del core
-
-except ImportError as e:
-    print(e)
-    pass

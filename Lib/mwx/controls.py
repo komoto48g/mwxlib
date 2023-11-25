@@ -608,15 +608,6 @@ class ControlPanel(scrolled.ScrolledPanel):
                         break
         evt.Skip()
     
-    def Scroll(self, *args):
-        """Scrolls a window so the view start is at the given point.
-        (override) Ignore DeprecationWarning: an integer is required.
-        """
-        if len(args) == 1:
-            args = args[0]
-        x, y = [int(v) for v in args]
-        return scrolled.ScrolledPanel.Scroll(self, x, y)
-    
     ## --------------------------------
     ## Layout commands and attributes
     ## --------------------------------
