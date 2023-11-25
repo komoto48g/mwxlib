@@ -791,7 +791,9 @@ class FSM(dict):
         """
         assert isinstance(event, str)
         assert callable(action) or action is None
-        warn = self.log
+        
+        def warn(msg):
+            warnings.warn(msg, stacklevel=3)
         
         if state not in self:
             warn("- FSM:warning: [{!r}] context newly created.".format(state))
@@ -837,7 +839,9 @@ class FSM(dict):
         If no action, it will remove the transaction from the context.
         """
         assert callable(action) or action is None
-        warn = self.log
+        
+        def warn(msg):
+            warnings.warn(msg, stacklevel=3)
         
         if state not in self:
             warn("- FSM:warning: [{!r}] context does not exist.".format(state))
