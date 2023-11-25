@@ -880,20 +880,11 @@ class TreeList(object):
                 ...]],
         ]
     """
-    ## A dummy list to avoid RecursionError occurs when
-    ## __getattr__(__event_handler__) may be called  before __init__.
-    __items = None
-    
     def __init__(self, ls=None):
         self.__items = ls or []
     
     def __call__(self, k):
         return TreeList(self[k])
-    
-    def __getattr__(self, attr):
-        ## warnings.warn("Accessing deprecated wrapped method of list.",
-        ##               DeprecationWarning, stacklevel=2)
-        return getattr(self.__items, attr)
     
     def __len__(self):
         return len(self.__items)
