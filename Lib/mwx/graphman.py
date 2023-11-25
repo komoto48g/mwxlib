@@ -3,9 +3,10 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-from importlib import reload, import_module
-from pprint import pprint, pformat
 from functools import wraps
+from importlib import reload, import_module
+from contextlib import contextmanager
+from pprint import pprint, pformat
 from bdb import BdbQuit
 import subprocess
 import threading
@@ -97,6 +98,8 @@ class Thread(object):
             self.Stop()
     
     def __enter__(self):
+        warnings.warn("Using deprecated method. Use `entry` instead.",
+                      DeprecationWarning, stacklevel=2)
         frame = inspect.currentframe().f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
@@ -106,12 +109,33 @@ class Thread(object):
         self.handler(f"{fname}/{name}:enter", self)
     
     def __exit__(self, t, v, tb):
+        warnings.warn("Using deprecated method. Use `entry` instead.",
+                      DeprecationWarning, stacklevel=2)
         frame = inspect.currentframe().f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
         fname,_ = os.path.splitext(os.path.basename(filename))
         if t:
             self.handler(f"{fname}/{name}:error", self)
+        else:
+            self.handler(f"{fname}/{name}:exit", self)
+    
+    @contextmanager
+    def entry(self):
+        frame = inspect.currentframe().f_back.f_back
+        filename = frame.f_code.co_filename
+        name = frame.f_code.co_name
+        fname,_ = os.path.splitext(os.path.basename(filename))
+        
+        ## The thread must be activated first.
+        assert self.active == 1, "cannot enter {!r}".format(name)
+        try:
+            self.handler(f"{fname}/{name}:enter", self)
+            self.active = 2
+            yield self
+        except Exception:
+            self.handler(f"{fname}/{name}:error", self)
+            raise
         else:
             self.handler(f"{fname}/{name}:exit", self)
     

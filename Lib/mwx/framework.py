@@ -3,12 +3,12 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.91.0"
+__version__ = "0.91.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
 from importlib import reload
-import contextlib
+from contextlib import contextmanager
 import traceback
 import warnings
 import builtins
@@ -28,7 +28,7 @@ from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
 from .utilus import get_rootpath
 
 
-@contextlib.contextmanager
+@contextmanager
 def App(loop=True):
     app = wx.GetApp() or wx.App()
     yield app

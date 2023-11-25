@@ -5,13 +5,13 @@ Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
 from functools import wraps
 from importlib import import_module
+from contextlib import contextmanager
 from pprint import pformat
 from bdb import BdbQuit
 import traceback
 import warnings
 import inspect
 import builtins
-import contextlib
 import dis
 import pydoc
 import keyword
@@ -1179,7 +1179,7 @@ class EditorInterface(CtrlInterface):
         self.cpos = p
         return sty
     
-    @contextlib.contextmanager
+    @contextmanager
     def save_excursion(self):
         try:
             p = self.cpos
@@ -1193,7 +1193,7 @@ class EditorInterface(CtrlInterface):
             self.ScrollToLine(vpos)
             self.SetXOffset(hpos)
     
-    @contextlib.contextmanager
+    @contextmanager
     def pre_selection(self):
         try:
             p = self.cpos
@@ -1205,7 +1205,7 @@ class EditorInterface(CtrlInterface):
             else:
                 self.anchor = q
     
-    @contextlib.contextmanager
+    @contextmanager
     def off_readonly(self):
         try:
             r = self.ReadOnly
