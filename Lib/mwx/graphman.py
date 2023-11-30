@@ -173,10 +173,16 @@ class Thread(object):
                     "Press [OK] to continue.\n"
                     "Press [CANCEL] to terminate the process.",
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
+                self.quit()
                 return False
             return True
         finally:
             self.event.set() # resume
+    
+    def quit(self):
+        if self.active:
+            self.active = 0  # worker-thread から直接切り替える
+            self.Stop()      # main-thread で終了させる
     
     def Start(self, f, *args, **kwargs):
         @wraps(f)
@@ -1379,9 +1385,7 @@ class Frame(mwx.Frame):
         for name in self.plugins:
             plug = self.get_plug(name)
             try:
-                if plug.thread and plug.thread.active:
-                    plug.thread.active = 0 # worker-thread から直接切り替える
-                    plug.thread.Stop()     # main-thread で終了させる
+                plug.thread.quit()
             except AttributeError:
                 pass
     
