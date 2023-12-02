@@ -64,9 +64,6 @@ class Thread(object):
         The event.wait blocks until the internal flag is True when it is False,
         and returns immediately when it is True.
     """
-    class ThreadInterrupt(Exception):
-        pass
-    
     @property
     def running(self):
         if self.worker:
@@ -96,29 +93,6 @@ class Thread(object):
     def __del__(self):
         if self.active:
             self.Stop()
-    
-    def __enter__(self):
-        warnings.warn("Using deprecated method. Use `entry` instead.",
-                      DeprecationWarning, stacklevel=2)
-        frame = inspect.currentframe().f_back
-        filename = frame.f_code.co_filename
-        name = frame.f_code.co_name
-        fname,_ = os.path.splitext(os.path.basename(filename))
-        ## The thread must be activated first.
-        assert self.active, "cannot enter {!r}".format(name)
-        self.handler(f"{fname}/{name}:enter", self)
-    
-    def __exit__(self, t, v, tb):
-        warnings.warn("Using deprecated method. Use `entry` instead.",
-                      DeprecationWarning, stacklevel=2)
-        frame = inspect.currentframe().f_back
-        filename = frame.f_code.co_filename
-        name = frame.f_code.co_name
-        fname,_ = os.path.splitext(os.path.basename(filename))
-        if t:
-            self.handler(f"{fname}/{name}:error", self)
-        else:
-            self.handler(f"{fname}/{name}:exit", self)
     
     @contextmanager
     def entry(self):
@@ -195,7 +169,7 @@ class Thread(object):
                 self.result = f(*v, **kw)
             except BdbQuit:
                 pass
-            except (KeyboardInterrupt, Thread.ThreadInterrupt) as e:
+            except KeyboardInterrupt as e:
                 print("- Thread:execution stopped: {}".format(e))
             except AssertionError as e:
                 print("- Thread:execution failed: {}".format(e))
