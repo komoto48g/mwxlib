@@ -1191,7 +1191,13 @@ class Choice(wx.Control):
 
 
 class Indicator(wx.Control):
-    """Traffic light indicator tricolor mode
+    """Traffic light indicator
+    
+    Args:
+        colors  : list of colors (default is tricolor) cf. wx.ColourDatabase
+        value   : initial value
+        tip     : tip:str displayed on the control
+        **kwargs: keywords for wx.Control
     """
     @property
     def Value(self):
@@ -1202,17 +1208,18 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
-    tricolor = ('red', 'yellow', 'green')
+    tricolor = ('green', 'yellow', 'red')
     background = 'black'
     foreground = 'gray'
     spacing = 7
     radius = 5
     
-    def __init__(self, parent, value=0, tip='',
+    def __init__(self, parent, colors=None, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
+        self.colors = list(colors or self.tricolor)
         self.ToolTip = tip.strip()
         
         ## Sizes the window to fit its best size.
@@ -1223,14 +1230,14 @@ class Indicator(wx.Control):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def DoGetBestSize(self):
-        N = len(self.tricolor)
+        N = len(self.colors)
         s = self.spacing
         return wx.Size((2*s-1)*N+2, 2*s+1)
     
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
         dc.Clear()
-        N = len(self.tricolor)
+        N = len(self.colors)
         r = self.radius
         s = self.spacing
         ss = 2*s-1
@@ -1241,11 +1248,11 @@ class Indicator(wx.Control):
                           wx.BRUSHSTYLE_TRANSPARENT))
         dc.DrawRoundedRectangle(0, h//2-s, ss*N+2, 2*s+1, s)
         dc.SetPen(wx.Pen(self.background))
-        for j, name in enumerate(self.tricolor):
-            if not self.__value & (1 << N-1-j):
+        for j, name in enumerate(self.colors):
+            if not self.__value & (1 << j):
                 name = self.foreground
             dc.SetBrush(wx.Brush(name))
-            dc.DrawCircle(ss*j+s, h//2, r)
+            dc.DrawCircle(ss*(N-1-j)+s, h//2, r)
     
     def blink(self, msec, mask=0):
         """Blinks once for given milliseconds.
@@ -1265,7 +1272,13 @@ class Indicator(wx.Control):
 
 
 class Gauge(wx.Control):
-    """Rainbow gauge panel
+    """Rainbow gauge
+    
+    Args:
+        range   : maximum value
+        value   : initial value
+        tip     : tip:str displayed on the control
+        **kwargs: keywords for wx.Control
     """
     @property
     def Value(self):
