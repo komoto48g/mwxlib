@@ -127,11 +127,14 @@ class Thread(object):
         name = frame.f_code.co_name
         fname,_ = os.path.splitext(os.path.basename(filename))
         
-        ## The thread must be activated first.
-        assert self.active == 1, "cannot enter {!r}".format(name)
+        ## Other threads are not allowed to enter.
+        ct = threading.current_thread()
+        assert self.worker is ct, f"{ct!r} are not allowed to enter {name!r}."
+        
+        ## The thread must be activated to enter.
+        ## assert self.active, f"{self!r} must be activated to enter {name!r}."
         try:
             self.handler(f"{fname}/{name}:enter", self)
-            self.active = 2
             yield self
         except Exception:
             self.handler(f"{fname}/{name}:error", self)
