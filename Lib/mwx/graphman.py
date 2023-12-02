@@ -103,7 +103,7 @@ class Thread(object):
         
         ## Other threads are not allowed to enter.
         ct = threading.current_thread()
-        assert self.worker is ct, f"{ct!r} are not allowed to enter {name!r}."
+        assert self.worker is ct, f"{ct.name} are not allowed to enter {name!r}."
         
         ## The thread must be activated to enter.
         ## assert self.active, f"{self!r} must be activated to enter {name!r}."
@@ -113,7 +113,7 @@ class Thread(object):
         except Exception:
             self.handler(f"{fname}/{name}:error", self)
             raise
-        else:
+        finally:
             self.handler(f"{fname}/{name}:exit", self)
     
     def wraps(self, f, *args, **kwargs):
@@ -133,7 +133,7 @@ class Thread(object):
         if not self.active:
             raise KeyboardInterrupt("terminated by user")
     
-    def pause(self, msg="Pausing", timeout=None):
+    def pause(self, msg="Pausing..."):
         """Pause the thread.
         
         Use ``check`` method where you want to pause.
@@ -146,7 +146,7 @@ class Thread(object):
             return
         try:
             self.event.clear() # suspend
-            if wx.MessageBox(msg + "...\n\n"
+            if wx.MessageBox(msg + "\n\n"
                     "Press [OK] to continue.\n"
                     "Press [CANCEL] to terminate the process.",
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
