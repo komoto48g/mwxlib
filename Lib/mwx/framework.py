@@ -3,7 +3,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.91.2"
+__version__ = "0.91.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1130,7 +1130,7 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
         self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
-        self.indicator.background = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
+        self.indicator.backgroundColour = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
         self.indicator.ToolTip = "[R] Invalid [Y] Debug/Trace [G] Normal"
         
         self.timer = wx.Timer(self)

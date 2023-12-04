@@ -1194,7 +1194,7 @@ class Indicator(wx.Control):
     """Traffic light indicator
     
     Args:
-        colors  : list of colors (default is tricolor) cf. wx.ColourDatabase
+        colors  : list of colors (default is tricolour) cf. wx.ColourDatabase
         value   : initial value
         tip     : tip:str displayed on the control
         **kwargs: keywords for wx.Control
@@ -1208,9 +1208,9 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
-    tricolor = ('green', 'yellow', 'red')
-    background = 'black'
-    foreground = 'gray'
+    tricolour = ('green', 'yellow', 'red')
+    backgroundColour = 'black'
+    foregroundColour = 'gray'
     spacing = 7
     radius = 5
     
@@ -1219,7 +1219,7 @@ class Indicator(wx.Control):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
-        self.colors = list(colors or self.tricolor)
+        self.colors = list(colors or self.tricolour)
         self.ToolTip = tip.strip()
         
         ## Sizes the window to fit its best size.
@@ -1227,6 +1227,9 @@ class Indicator(wx.Control):
         self.InvalidateBestSize()
         self.Fit()
         
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        
+        self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def DoGetBestSize(self):
@@ -1234,23 +1237,27 @@ class Indicator(wx.Control):
         s = self.spacing
         return wx.Size((2*s-1)*N+2, 2*s+1)
     
+    def OnSize(self, evt):
+        self.Refresh()
+    
     def OnPaint(self, evt):
-        dc = wx.PaintDC(self)
+        dc = wx.BufferedPaintDC(self)
+        ## dc = wx.PaintDC(self)
         dc.Clear()
         N = len(self.colors)
         r = self.radius
         s = self.spacing
         ss = 2*s-1
         w, h = self.ClientSize
-        dc.SetPen(wx.Pen(self.background, style=wx.PENSTYLE_TRANSPARENT))
-        dc.SetBrush(wx.Brush(self.background,
-                    style=wx.BRUSHSTYLE_SOLID if self.background else
+        dc.SetPen(wx.Pen(self.backgroundColour, style=wx.PENSTYLE_TRANSPARENT))
+        dc.SetBrush(wx.Brush(self.backgroundColour,
+                    style=wx.BRUSHSTYLE_SOLID if self.backgroundColour else
                           wx.BRUSHSTYLE_TRANSPARENT))
         dc.DrawRoundedRectangle(0, h//2-s, ss*N+2, 2*s+1, s)
-        dc.SetPen(wx.Pen(self.background))
+        dc.SetPen(wx.Pen(self.backgroundColour))
         for j, name in enumerate(self.colors):
             if not self.__value & (1 << j):
-                name = self.foreground
+                name = self.foregroundColour
             dc.SetBrush(wx.Brush(name))
             dc.DrawCircle(ss*(N-1-j)+s, h//2, r)
     
