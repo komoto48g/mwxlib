@@ -3237,7 +3237,8 @@ class Nautilus(Shell, EditorInterface):
             self.AutoCompShow(offset, sep.join(words))
     
     def eval_line(self, evt):
-        """Call ToolTip of the selected word or line."""
+        """Evaluate the selected word or line.
+        """
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -3266,7 +3267,7 @@ class Nautilus(Shell, EditorInterface):
         self.message(status)
     
     def exec_region(self, evt):
-        """Call ToolTip of the selected region."""
+        """Execute the the selected region."""
         if self.CallTipActive():
             self.CallTipCancel()
         

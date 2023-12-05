@@ -3,7 +3,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.91.3"
+__version__ = "0.91.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1131,13 +1131,13 @@ class ShellFrame(MiniFrame):
         
         self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
         self.indicator.backgroundColour = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
-        self.indicator.ToolTip = "[R] Invalid [Y] Debug/Trace [G] Normal"
+        self.indicator.SetToolTip("[R] Invalid [Y] Debug/Trace [G] Normal")
         
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         
         def on_timer(evt):
-            if self.indicator.Value not in (1, 3):
+            if self.indicator.Value & 0b110:
                 self.indicator.blink(500)
             evt.Skip()
         self.Bind(wx.EVT_TIMER, on_timer)

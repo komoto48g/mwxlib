@@ -242,7 +242,7 @@ class LayerInterface(CtrlInterface):
     
     message = property(lambda self: self.parent.message)
     
-    thread_type = Thread
+    ## thread_type = Thread
     thread = None
     
     ## layout helper function

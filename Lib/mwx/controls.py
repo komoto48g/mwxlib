@@ -661,7 +661,7 @@ class ControlPanel(scrolled.ScrolledPanel):
             row     : number of row to arange widgets
             expand  : (0) fixed size
                       (1) to expand horizontally
-                      (2) to exapnd horizontally and vertically
+                      (2) to expand horizontally and vertically
             border  : size of outline border
             hspacing: horizontal spacing among packed objs inside the group
             vspacing: vertical spacing among packed objs inside the group
@@ -1235,7 +1235,7 @@ class Indicator(wx.Control):
     def DoGetBestSize(self):
         N = len(self.colors)
         s = self.spacing
-        return wx.Size((2*s-1)*N+2, 2*s+1)
+        return wx.Size((2*s-1)*N+4, 2*s+1)
     
     def OnSize(self, evt):
         self.Refresh()
@@ -1266,7 +1266,7 @@ class Indicator(wx.Control):
         >>> self.timer = wx.Timer(self)
         >>> self.timer.Start(1000)
         >>> self.Bind(wx.EVT_TIMER,
-                      lambda v: self.indicater.blink(500))
+                      lambda v: self.indicator.blink(500))
         """
         def _blink():
             if self and self.Value == v & mask:
@@ -1339,7 +1339,7 @@ class Gauge(wx.Control):
         for i in range(N):
             x = int(i * w / N)
             if i < self.__value:
-                dc.SetBrush(wx.Brush(wx.Colour(gradients(i/N))))
+                dc.SetBrush(wx.Brush(gradients(i/N)))
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(x, 0, d, h)
