@@ -879,7 +879,7 @@ def Icon(key, size=None):
     """Returns an iconic bitmap with the specified size (w,h).
     
     The key is either Icon.provided_arts or Icon.custom_images key.
-    If the key is empty it returns a transparent bitmap, otherwise `NullBitmap`.
+    If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
     """
     if key:
         try:
@@ -1242,7 +1242,6 @@ class Indicator(wx.Control):
     
     def OnPaint(self, evt):
         dc = wx.BufferedPaintDC(self)
-        ## dc = wx.PaintDC(self)
         dc.Clear()
         N = len(self.colors)
         r = self.radius
@@ -1294,7 +1293,7 @@ class Gauge(wx.Control):
     @Value.setter
     def Value(self, v):
         self.__value = int(v)
-        self.Draw()
+        self.Refresh()
     
     @property
     def Range(self):
@@ -1303,7 +1302,7 @@ class Gauge(wx.Control):
     @Range.setter
     def Range(self, v):
         self.__range = int(v)
-        self.Draw()
+        self.Refresh()
     
     def __init__(self, parent, range=24, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
@@ -1312,21 +1311,17 @@ class Gauge(wx.Control):
         self.__range = range
         self.__value = value
         self.ToolTip = tip.strip()
-        self.canvas = wx.Bitmap(self.ClientSize)
+        
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def OnSize(self, evt):
-        if all(self.ClientSize):
-            self.canvas = wx.Bitmap(self.ClientSize)
-            self.Draw()
+        self.Refresh()
     
     def OnPaint(self, evt):
-        dc = wx.BufferedPaintDC(self, self.canvas)
-    
-    def Draw(self):
-        dc = wx.BufferedDC(wx.ClientDC(self), self.canvas)
+        dc = wx.BufferedPaintDC(self)
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
