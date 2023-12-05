@@ -879,7 +879,7 @@ def Icon(key, size=None):
     """Returns an iconic bitmap with the specified size (w,h).
     
     The key is either Icon.provided_arts or Icon.custom_images key.
-    If the key is empty it returns a transparent bitmap, otherwise `NullBitmap`.
+    If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
     """
     if key:
         try:
@@ -1191,7 +1191,13 @@ class Choice(wx.Control):
 
 
 class Indicator(wx.Control):
-    """Traffic light indicator tricolor mode
+    """Traffic light indicator
+    
+    Args:
+        colors  : list of colors (default is tricolour) cf. wx.ColourDatabase
+        value   : initial value
+        tip     : tip:str displayed on the control
+        **kwargs: keywords for wx.Control
     """
     @property
     def Value(self):
@@ -1202,17 +1208,18 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
-    tricolor = ('red', 'yellow', 'green')
-    background = 'black'
-    foreground = 'gray'
+    tricolour = ('green', 'yellow', 'red')
+    backgroundColour = 'black'
+    foregroundColour = 'gray'
     spacing = 7
     radius = 5
     
-    def __init__(self, parent, value=0, tip='',
+    def __init__(self, parent, colors=None, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
+        self.colors = list(colors or self.tricolour)
         self.ToolTip = tip.strip()
         
         ## Sizes the window to fit its best size.
@@ -1220,32 +1227,38 @@ class Indicator(wx.Control):
         self.InvalidateBestSize()
         self.Fit()
         
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        
+        self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def DoGetBestSize(self):
-        N = len(self.tricolor)
+        N = len(self.colors)
         s = self.spacing
         return wx.Size((2*s-1)*N+2, 2*s+1)
     
+    def OnSize(self, evt):
+        self.Refresh()
+    
     def OnPaint(self, evt):
-        dc = wx.PaintDC(self)
+        dc = wx.BufferedPaintDC(self)
         dc.Clear()
-        N = len(self.tricolor)
+        N = len(self.colors)
         r = self.radius
         s = self.spacing
         ss = 2*s-1
         w, h = self.ClientSize
-        dc.SetPen(wx.Pen(self.background, style=wx.PENSTYLE_TRANSPARENT))
-        dc.SetBrush(wx.Brush(self.background,
-                    style=wx.BRUSHSTYLE_SOLID if self.background else
+        dc.SetPen(wx.Pen(self.backgroundColour, style=wx.PENSTYLE_TRANSPARENT))
+        dc.SetBrush(wx.Brush(self.backgroundColour,
+                    style=wx.BRUSHSTYLE_SOLID if self.backgroundColour else
                           wx.BRUSHSTYLE_TRANSPARENT))
         dc.DrawRoundedRectangle(0, h//2-s, ss*N+2, 2*s+1, s)
-        dc.SetPen(wx.Pen(self.background))
-        for j, name in enumerate(self.tricolor):
-            if not self.__value & (1 << N-1-j):
-                name = self.foreground
+        dc.SetPen(wx.Pen(self.backgroundColour))
+        for j, name in enumerate(self.colors):
+            if not self.__value & (1 << j):
+                name = self.foregroundColour
             dc.SetBrush(wx.Brush(name))
-            dc.DrawCircle(ss*j+s, h//2, r)
+            dc.DrawCircle(ss*(N-1-j)+s, h//2, r)
     
     def blink(self, msec, mask=0):
         """Blinks once for given milliseconds.
@@ -1265,7 +1278,13 @@ class Indicator(wx.Control):
 
 
 class Gauge(wx.Control):
-    """Rainbow gauge panel
+    """Rainbow gauge
+    
+    Args:
+        range   : maximum value
+        value   : initial value
+        tip     : tip:str displayed on the control
+        **kwargs: keywords for wx.Control
     """
     @property
     def Value(self):
@@ -1274,7 +1293,16 @@ class Gauge(wx.Control):
     @Value.setter
     def Value(self, v):
         self.__value = int(v)
-        self.Draw()
+        self.Refresh()
+    
+    @property
+    def Range(self):
+        return self.__range
+    
+    @Range.setter
+    def Range(self, v):
+        self.__range = int(v)
+        self.Refresh()
     
     def __init__(self, parent, range=24, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
@@ -1283,21 +1311,17 @@ class Gauge(wx.Control):
         self.__range = range
         self.__value = value
         self.ToolTip = tip.strip()
-        self.canvas = wx.Bitmap(self.ClientSize)
+        
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
     
     def OnSize(self, evt):
-        if all(self.ClientSize):
-            self.canvas = wx.Bitmap(self.ClientSize)
-            self.Draw()
+        self.Refresh()
     
     def OnPaint(self, evt):
-        dc = wx.BufferedPaintDC(self, self.canvas)
-    
-    def Draw(self):
-        dc = wx.BufferedDC(wx.ClientDC(self), self.canvas)
+        dc = wx.BufferedPaintDC(self)
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
