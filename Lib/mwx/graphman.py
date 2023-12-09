@@ -36,9 +36,9 @@ from .matplot2lg import Histogram
 
 
 class Thread(object):
-    """Thread for graphman.Layer
+    """Thread manager for graphman.Layer
     
-    The worker:thread runs the given target:f of owner:object.
+    The worker:thread runs the given target.
     
     Attributes:
         target  : A target method of the Layer.
@@ -96,6 +96,9 @@ class Thread(object):
     
     @contextmanager
     def entry(self):
+        """Exclusive reentrant lock manager.
+        Allows only this worker (but no other thread) to enter.
+        """
         frame = inspect.currentframe().f_back.f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
@@ -124,8 +127,7 @@ class Thread(object):
         return _f
     
     def check(self, timeout=None):
-        """Check the thread event flags.
-        """
+        """Check the thread event flags."""
         if not self.running:
             return
         if not self.event.wait(timeout): # wait until set in time
@@ -162,6 +164,7 @@ class Thread(object):
             self.Stop()      # main-thread で終了させる
     
     def Start(self, f, *args, **kwargs):
+        """Start the thread to run the specified function."""
         @wraps(f)
         def _f(*v, **kw):
             try:
@@ -195,8 +198,12 @@ class Thread(object):
         self.event.set()
     
     def Stop(self):
+        """Stop the thread.
+        
+        Use ``check`` method where you want to quit.
+        """
+        self.active = 0 # worker-thread から直接切り替える
         def _stop():
-            self.active = 0
             if self.running:
                 try:
                     busy = wx.BusyInfo("One moment please, "
@@ -205,7 +212,7 @@ class Thread(object):
                     self.worker.join(1)
                 finally:
                     del busy
-        wx.CallAfter(_stop)
+        wx.CallAfter(_stop) # main-thread で終了させる
 
 
 class LayerInterface(CtrlInterface):
