@@ -152,16 +152,11 @@ class Thread(object):
                     "Press [OK] to continue.\n"
                     "Press [CANCEL] to terminate the process.",
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
-                self.quit()
+                self.Stop()
                 return False
             return True
         finally:
             self.event.set() # resume
-    
-    def quit(self):
-        if self.active:
-            self.active = 0  # worker-thread から直接切り替える
-            self.Stop()      # main-thread で終了させる
     
     def Start(self, f, *args, **kwargs):
         """Start the thread to run the specified function."""
@@ -202,17 +197,17 @@ class Thread(object):
         
         Use ``check`` method where you want to quit.
         """
-        self.active = 0 # worker-thread から直接切り替える
         def _stop():
-            if self.running:
-                try:
-                    busy = wx.BusyInfo("One moment please, "
-                                       "waiting for threads to die...")
-                    self.handler('thread_quit', self)
-                    self.worker.join(1)
-                finally:
-                    del busy
-        wx.CallAfter(_stop) # main-thread で終了させる
+            try:
+                busy = wx.BusyInfo("One moment please, "
+                                   "waiting for threads to die...")
+                self.handler('thread_quit', self)
+                self.worker.join(1)
+            finally:
+                del busy
+        if self.running:
+            self.active = 0
+            wx.CallAfter(_stop) # main-thread で終了させる
 
 
 class LayerInterface(CtrlInterface):
@@ -1365,13 +1360,13 @@ class Frame(mwx.Frame):
                     self.load_plug(path)
     
     def Quit(self, evt=None):
-        """Stop all Layer.thread."""
+        """Stop all Layer threads."""
         for name in self.plugins:
             plug = self.get_plug(name)
-            try:
-                plug.thread.quit()
-            except AttributeError:
-                pass
+            thread = plug.thread  # Note: thread can be None or shared.
+            if thread and thread.active:
+                thread.active = 0
+                thread.Stop()
     
     ## --------------------------------
     ## load/save index file
