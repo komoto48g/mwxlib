@@ -502,12 +502,12 @@ class Graph(GraphPlot):
         if self.infobar.IsShown():
             self.infobar.Dismiss()
         elif self.frame:
-            self.infobar.ShowMessage(str(self.frame.annotation))
+            self.infobar.ShowMessage(self.frame.annotation)
     
     def update_infobar(self, frame):
         """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
-            self.infobar.ShowMessage(str(frame.annotation))
+            self.infobar.ShowMessage(frame.annotation)
     
     def get_frame_visible(self):
         if self.frame:

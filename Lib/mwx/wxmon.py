@@ -23,7 +23,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
-                           style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+                             style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
