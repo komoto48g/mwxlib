@@ -36,9 +36,9 @@ from .matplot2lg import Histogram
 
 
 class Thread(object):
-    """Thread for graphman.Layer
+    """Thread manager for graphman.Layer
     
-    The worker:thread runs the given target:f of owner:object.
+    The worker:thread runs the given target.
     
     Attributes:
         target  : A target method of the Layer.
@@ -96,6 +96,9 @@ class Thread(object):
     
     @contextmanager
     def entry(self):
+        """Exclusive reentrant lock manager.
+        Allows only this worker (but no other thread) to enter.
+        """
         frame = inspect.currentframe().f_back.f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
@@ -124,8 +127,7 @@ class Thread(object):
         return _f
     
     def check(self, timeout=None):
-        """Check the thread event flags.
-        """
+        """Check the thread event flags."""
         if not self.running:
             return
         if not self.event.wait(timeout): # wait until set in time
@@ -150,18 +152,14 @@ class Thread(object):
                     "Press [OK] to continue.\n"
                     "Press [CANCEL] to terminate the process.",
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
-                self.quit()
+                self.Stop()
                 return False
             return True
         finally:
             self.event.set() # resume
     
-    def quit(self):
-        if self.active:
-            self.active = 0  # worker-thread から直接切り替える
-            self.Stop()      # main-thread で終了させる
-    
     def Start(self, f, *args, **kwargs):
+        """Start the thread to run the specified function."""
         @wraps(f)
         def _f(*v, **kw):
             try:
@@ -195,17 +193,21 @@ class Thread(object):
         self.event.set()
     
     def Stop(self):
+        """Stop the thread.
+        
+        Use ``check`` method where you want to quit.
+        """
         def _stop():
+            try:
+                busy = wx.BusyInfo("One moment please, "
+                                   "waiting for threads to die...")
+                self.handler('thread_quit', self)
+                self.worker.join(1)
+            finally:
+                del busy
+        if self.running:
             self.active = 0
-            if self.running:
-                try:
-                    busy = wx.BusyInfo("One moment please, "
-                                       "waiting for threads to die...")
-                    self.handler('thread_quit', self)
-                    self.worker.join(1)
-                finally:
-                    del busy
-        wx.CallAfter(_stop)
+            wx.CallAfter(_stop) # main-thread で終了させる
 
 
 class LayerInterface(CtrlInterface):
@@ -1358,13 +1360,13 @@ class Frame(mwx.Frame):
                     self.load_plug(path)
     
     def Quit(self, evt=None):
-        """Stop all Layer.thread."""
+        """Stop all Layer threads."""
         for name in self.plugins:
             plug = self.get_plug(name)
-            try:
-                plug.thread.quit()
-            except AttributeError:
-                pass
+            thread = plug.thread  # Note: thread can be None or shared.
+            if thread and thread.active:
+                thread.active = 0
+                thread.Stop()
     
     ## --------------------------------
     ## load/save index file
