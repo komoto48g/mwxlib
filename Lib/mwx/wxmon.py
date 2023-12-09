@@ -14,30 +14,7 @@ from .controls import Icon, Clipboard
 from .framework import CtrlInterface, Menu
 
 
-if wx.VERSION < (4,1,0):
-    from wx.lib.mixins.listctrl import CheckListCtrlMixin
-
-    class CheckList(wx.ListCtrl, CheckListCtrlMixin):
-        def __init__(self, *args, **kwargs):
-            wx.ListCtrl.__init__(self, *args, **kwargs)
-            CheckListCtrlMixin.__init__(self)
-            
-            ## self.ToolTip = ''
-            self.IsItemChecked = self.IsChecked # for wx 4.1.0 compatibility
-
-else:
-    class CheckList(wx.ListCtrl):
-        def __init__(self, *args, **kwargs):
-            wx.ListCtrl.__init__(self, *args, **kwargs)
-            
-            ## If we use a custom ToolTip, chkbox will disappear.
-            ## To avoid this *BUG* (4.1.1), set a blank string.
-            ## Note: the default Tooltip will disappear too.
-            ## self.ToolTip = ''
-            self.EnableCheckBoxes()
-
-
-class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
+class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Event monitor
     
     Attributes:
@@ -45,10 +22,12 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         target : widget to monitor
     """
     def __init__(self, parent, **kwargs):
-        CheckList.__init__(self, parent,
+        wx.ListCtrl.__init__(self, parent,
                            style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
+        
+        self.EnableCheckBoxes()
         
         self.parent = parent
         self.target = None
@@ -203,11 +182,6 @@ class EventMonitor(CheckList, ListCtrlAutoWidthMixin, CtrlInterface):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             attribs = ew._makeAttribString(evt)
-        
-        if wx.VERSION < (4,1,0): # ignore self insert event
-            if event == wx.EVT_LIST_INSERT_ITEM.typeId\
-              and obj is self:
-                return
         
         data = self.__items
         for i, item in enumerate(data):
