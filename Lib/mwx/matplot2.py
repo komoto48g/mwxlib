@@ -95,7 +95,7 @@ class MatplotPanel(wx.Panel):
         self.modeline.Bind(wx.EVT_LEFT_DOWN, lambda v: self.canvas.SetFocus())
         
         self.infobar = wx.InfoBar(self)
-        self.infobar.Size = self.canvas.Size # workaround for incorrect wrap sizing
+        self.infobar.Size = (0, 0) # workaround for incorrect wrap sizing
         
         self.SetSizer(
             mwx.pack(self, (
