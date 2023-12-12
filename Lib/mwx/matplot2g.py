@@ -1167,7 +1167,7 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     
     def calc_point(self, x, y, centred=True):
-        """Restrict point (x,y) in image area.
+        """Restrict point (x, y) in image area.
         If centred, correct the point to the center of the nearest pixel.
         """
         l,r,b,t = self.frame.get_extent()
@@ -1184,6 +1184,9 @@ class GraphPlot(MatplotPanel):
         return (x, y)
     
     def calc_shiftpoint(self, xo, yo, x, y, centred=True):
+        """Restrict point (x, y) from (xo, yo) in pi/8 step angles.
+        If centred, correct the point to the center of the nearest pixel.
+        """
         dx, dy = x-xo, y-yo
         L = np.hypot(dy,dx)
         a = np.arctan2(dy,dx)
@@ -1229,7 +1232,7 @@ class GraphPlot(MatplotPanel):
         x, y = self.calc_point(evt.xdata, evt.ydata)
         xo, yo = self.__lastpoint
         if x == xo and y == yo:
-            self.Selector = (x, y)
+            self.Selector = ([x], [y])
         self.handler('line_drawn', self.frame)
     
     ## --------------------------------

@@ -503,7 +503,8 @@ class MatplotPanel(wx.Panel):
             evt.index = k = indices[distances.argmin()] # index of the nearest point
             evt.xdata = x = xs[k]
             evt.ydata = y = ys[k]
-            self.Selector = (x, y)
+            self.Selector = ([x], [y])
+            self.canvas.draw_idle()
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
     
