@@ -3,7 +3,7 @@
 
 Author: Kazuya O'moto <komoto@jeol.co.jp>
 """
-__version__ = "0.91.5"
+__version__ = "0.91.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -261,6 +261,8 @@ class KeyCtrlInterfaceMixin:
         
         map, key, state = self._get_keymap_state(keymap)
         if map not in self.handler:
+            warnings.warn("New map to define_key {!r} in {}."
+                          .format(keymap, self.__class__.__name__), stacklevel=2)
             self.make_keymap(map) # make new keymap
         
         transaction = self.handler[map].get(key, [state])
@@ -269,7 +271,7 @@ class KeyCtrlInterfaceMixin:
                           .format(keymap, self.__class__.__name__), stacklevel=2)
         
         if action is None:
-            self.handler.update({map: {key: [state, ]}})
+            self.handler[map].pop(key, None) # cf. undefine_key
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
         F = _F(action, *args, **kwargs)
@@ -283,19 +285,6 @@ class KeyCtrlInterfaceMixin:
         else:
             self.handler.update({map: {key: [state, f]}})
         return action
-    
-    def undefine_key(self, keymap):
-        """Delete [map key (pressed)] context."""
-        assert isinstance(keymap, str)
-        
-        map, key, state = self._get_keymap_state(keymap)
-        try:
-            ## cf. self.handler.update({map: {key: [state, ]}})
-            ## Remove the keymap context.
-            del self.handler[map][key]
-            return True
-        except KeyError:
-            return False
 
 
 class CtrlInterface(KeyCtrlInterfaceMixin):
