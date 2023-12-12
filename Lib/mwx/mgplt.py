@@ -143,7 +143,7 @@ class GnuplotFrame(mwx.Frame):
                 lambda v: self.panel.paste_from_clipboard()),
             (),
             (wx.ID_RESET, "&Reset params\tCtrl-n", "Reset params to ini-value",
-                lambda v: self.panel.reset_params()),
+                lambda v: self.panel.set_params()),
         ]
         self.menubar["Gnuplot"] = [
             (mwx.ID_(80), "&Gnuplot setting\tCtrl-g", "Edit settings",

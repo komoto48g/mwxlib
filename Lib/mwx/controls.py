@@ -579,7 +579,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                 lambda v: v.Enable(self.__params != [])),
             (),
             (wx.ID_RESET, "&Reset params", "Reset params",
-                lambda v: self.reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
+                lambda v: self.set_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self.__params != [])),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))
@@ -718,7 +718,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     
     @parameters.setter
     def parameters(self, v):
-        self.reset_params(v)
+        self.set_params(v)
     
     def get_params(self, checked_only=False):
         params = chain(*self.__params)
@@ -726,7 +726,7 @@ class ControlPanel(scrolled.ScrolledPanel):
             return params
         return filter(lambda c: getattr(c, 'check', None), params)
     
-    def reset_params(self, argv=None, checked_only=False):
+    def set_params(self, argv=None, checked_only=False):
         params = self.get_params(checked_only)
         if argv is None:
             for p in params:
@@ -744,6 +744,8 @@ class ControlPanel(scrolled.ScrolledPanel):
                     print("- Failed to reset {!r}: {}".format(p, e))
                     pass
     
+    reset_params = set_params #: for backward compatibility
+    
     def copy_to_clipboard(self, checked_only=False):
         params = self.get_params(checked_only)
         text = '\t'.join(str(p) if isinstance(p, Param) else
@@ -753,7 +755,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     def paste_from_clipboard(self, checked_only=False):
         text = Clipboard.read()
         if text:
-            self.reset_params(text.split('\t'), checked_only)
+            self.set_params(text.split('\t'), checked_only)
 
 
 class Clipboard:

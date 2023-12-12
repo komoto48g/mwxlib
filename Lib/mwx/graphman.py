@@ -314,7 +314,7 @@ class LayerInterface(CtrlInterface):
         def reset_params(**kwargs):
             self.Draw(None)
             if self.parameters:
-                return self.reset_params(**kwargs)
+                return self.set_params(**kwargs)
         
         self.handler.append({ # DNA<Layer>
             None : {
