@@ -418,10 +418,10 @@ class LayerInterface(CtrlInterface):
     def IsShown(self):
         return self.parent.get_pane(self).IsShown()
     
-    def Show(self, show=True):
+    def Show(self, show=True, interactive=False):
         """Show associated pane (override) window."""
         ## Note: This might be called from a thread.
-        wx.CallAfter(self.parent.show_pane, self, show)
+        wx.CallAfter(self.parent.show_pane, self, show, interactive)
     
     Drawn = property(
         lambda self: self.IsDrawn(),
@@ -1223,7 +1223,8 @@ class Frame(mwx.Frame):
                                          .Name(title).Caption(title)
                                          .FloatingSize(size).MinSize(size).Show(0))
             j = nb.GetPageIndex(plug)
-            nb.SetPageToolTip(j, "[{}]\n{}".format(plug.__module__, plug.__doc__))
+            tip = "[{}]\n{}".format(plug.__module__, plug.__doc__)
+            nb.SetPageToolTip(j, tip.strip())
         else:
             nb = None
             size = plug.GetSize()
