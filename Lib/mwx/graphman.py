@@ -1468,7 +1468,7 @@ class Frame(mwx.Frame):
             mis = {}
             savedir = os.path.dirname(filename)
             with open(filename) as i:
-                res.update(eval(i.read()))  # read res <dict>
+                res.update(eval(i.read())) # read res <dict>
             
             for name, attr in tuple(res.items()):
                 fn = os.path.join(savedir, name)
@@ -1501,10 +1501,8 @@ class Frame(mwx.Frame):
             new.update(res) # copy res back keeping new order.
             
             with open(filename, 'w') as o:
-                try:
-                    pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
-                except Exception:
-                    pprint(tuple(new.items()), stream=o) # PY37 or less
+                ## pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
+                pprint(tuple(new.items()), stream=o)
             
         except Exception as e:
             print("- Failed to write attributes: {}".format(e))
