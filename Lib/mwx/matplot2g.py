@@ -1,7 +1,5 @@
 #! python3
-"""mwxlib graph for image
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib graph plot for images.
 """
 import traceback
 import wx

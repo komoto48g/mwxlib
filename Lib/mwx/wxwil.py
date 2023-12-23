@@ -1,7 +1,5 @@
 #! python3
-"""Local info list tool
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""Watcher of locals info.
 """
 import wx
 from wx.py import dispatcher

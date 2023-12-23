@@ -1,7 +1,5 @@
 #! python3
-"""mwxlib framework
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib Nautilus in the shell.
 """
 from functools import wraps
 from importlib import import_module

@@ -1,7 +1,5 @@
 #! python3
-"""mwxlib base plotter
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib base plot.
 """
 import wx
 

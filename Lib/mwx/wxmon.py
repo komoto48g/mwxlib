@@ -1,8 +1,7 @@
 #! python3
-"""Widget minitor
-*** Inspired by wx.lib.eventwatcher ***
+"""Widget monitor.
 
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+*** Inspired by wx.lib.eventwatcher ***
 """
 import warnings
 import wx

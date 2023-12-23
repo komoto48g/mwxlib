@@ -1,7 +1,5 @@
 #! python3
-"""Graph manager
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""Graph manager.
 """
 from functools import wraps
 from importlib import reload, import_module

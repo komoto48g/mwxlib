@@ -1,7 +1,5 @@
 #! python3
-"""Gnuplot wrapper for py3k
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""Gnuplot wrapper for py3k.
 """
 from subprocess import Popen, PIPE
 import warnings

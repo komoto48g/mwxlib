@@ -1,8 +1,6 @@
 #! python3
 """Graphical debugger
-   of the phoenix, by the phoenix, for the phoenix
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+   of the phoenix, by the phoenix, for the phoenix.
 """
 from functools import wraps
 from bdb import BdbQuit

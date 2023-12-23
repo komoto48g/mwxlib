@@ -1,9 +1,7 @@
 #! python3
-"""mwxlib framework
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib framework.
 """
-__version__ = "0.91.6"
+__version__ = "0.91.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -133,6 +131,7 @@ def speckey_state(key):
         return wx.GetKeyState(_speckeys_wxkmap[key])
     except KeyError:
         pass
+
 _speckeys_wxkmap = dict((v, k) for k, v in _speckeys.items())
 
 

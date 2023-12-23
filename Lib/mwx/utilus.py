@@ -1,7 +1,5 @@
 #! python3
-"""mwxlib core
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib core utilities.
 """
 from functools import wraps
 from bdb import BdbQuit

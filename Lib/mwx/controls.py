@@ -1,7 +1,5 @@
 #! python3
-"""mwxlib param controller and wx custom controls
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib param controller and wx custom controls.
 """
 from itertools import chain
 import wx

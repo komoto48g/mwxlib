@@ -1,8 +1,7 @@
 #! python3
-"""Widget inspection tool
-*** Inspired by wx.lib.inspection ***
+"""Widget inspection tool.
 
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+*** Inspired by wx.lib.inspection ***
 """
 import wx
 import wx.lib.inspection as it

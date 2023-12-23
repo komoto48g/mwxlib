@@ -1,7 +1,5 @@
 #! python3
-"""mwxlib line plot for image
-
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""mwxlib line plot for images.
 """
 from itertools import chain
 import io
