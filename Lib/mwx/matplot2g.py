@@ -358,6 +358,30 @@ class AxesImagePhantom(object):
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
         return (x, y)
+    
+    def calc_point(self, x, y, centred=True, inaxes=False):
+        """Computes the nearest pixelated point from a point (x, y).
+        If centred, correct the points to the center of the nearest pixel.
+        If inaxes, restrict the points in image area.
+        """
+        l,r,b,t = self.__art.get_extent()
+        if inaxes:
+            x[x < l] = l
+            x[x > r] = r
+            y[y < b] = b
+            y[y > t] = t
+        nx, ny = self.xytopixel(x, y)
+        ux, uy = self.xy_unit
+        if centred:
+            x = l + (nx + 0.5) * ux
+            y = t - (ny + 0.5) * uy
+            if inaxes:
+                x[x > r] -= ux
+                y[y < b] += uy
+        else:
+            x = l + nx * ux
+            y = t - ny * uy
+        return (x, y)
 
 
 class GraphPlot(MatplotPanel):
@@ -1168,18 +1192,7 @@ class GraphPlot(MatplotPanel):
         """Restrict point (x, y) in image area.
         If centred, correct the point to the center of the nearest pixel.
         """
-        l,r,b,t = self.frame.get_extent()
-        nx, ny = self.frame.xytopixel(
-            x = l if x < l else r if x > r else x,
-            y = b if y < b else t if y > t else y,
-        )
-        ux, uy = self.frame.xy_unit
-        x = l + nx[0] * ux
-        y = t - ny[0] * uy
-        if centred:
-            x = x + ux/2 if x < r else x - ux/2
-            y = y - uy/2 if y > b else y + uy/2
-        return (x, y)
+        return self.frame.calc_point(x, y, centred)
     
     def calc_shiftpoint(self, xo, yo, x, y, centred=True):
         """Restrict point (x, y) from (xo, yo) in pi/8 step angles.
