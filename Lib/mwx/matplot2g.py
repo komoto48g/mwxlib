@@ -1553,7 +1553,9 @@ class GraphPlot(MatplotPanel):
     @Markers.setter
     def Markers(self, v):
         x, y = v
-        if len(x) > self.maxnum_markers:
+        if not hasattr(x, '__iter__'):
+            x, y = [x], [y]
+        elif len(x) > self.maxnum_markers:
             self.message("- Got too many markers ({}) to plot".format(len(x)))
             return
         self.marked.set_data(x, y)
