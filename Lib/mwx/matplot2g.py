@@ -2,6 +2,7 @@
 """mwxlib graph plot for images.
 """
 import traceback
+import warnings
 import wx
 
 from matplotlib import cm
@@ -42,14 +43,6 @@ def _to_buffer(img):
         buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
         return buf.reshape(h, w, 3)
     return img
-
-
-def _to_array(x):
-    if isinstance(x, np.ndarray):
-        return x
-    if hasattr(x, '__iter__'):
-        return np.array(x)
-    return np.array([x])
 
 
 def imconvert(src, cutoff=0, threshold=None, binning=1):
@@ -302,7 +295,7 @@ class AxesImagePhantom(object):
     def roi(self):
         """Current buffer ROI (region of interest)."""
         if self.parent.Region.size:
-            nx, ny = self.xytopixel(self.parent.Region)
+            nx, ny = self.xytopixel(*self.parent.Region)
             sx = slice(max(0,nx[0]), nx[1]) # nx slice
             sy = slice(max(0,ny[1]), ny[0]) # ny slice 反転 (降順)
             return self.__buf[sy,sx]
@@ -331,14 +324,18 @@ class AxesImagePhantom(object):
         return ndi.map_coordinates(self.__buf, np.vstack((ny, nx))) # spline value
     
     def xytopixel(self, x, y=None, cast=True):
-        """Convert xydata (x,y) -> [ny,nx] pixel (cast to integer)."""
+        """Convert xydata (x,y) -> [nx,ny] pixel.
+        If cast, convert pixel-based lengths to pixel numbers.
+        """
         def pixel_cast(n):
-            """Convert pixel-based length to pixel number."""
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
+            warnings.warn("Setting xy data with single tuple is deprecated.",
+                          DeprecationWarning, stacklevel=2)
             x, y = x
-        x = _to_array(x)
-        y = _to_array(y)
+        if isinstance(x, (list, tuple)):
+            x = np.array(x)
+            y = np.array(y)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
@@ -350,13 +347,43 @@ class AxesImagePhantom(object):
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
         if ny is None:
+            warnings.warn("Setting xy data with single tuple is deprecated.",
+                          DeprecationWarning, stacklevel=2)
             nx, ny = nx
-        nx = _to_array(nx)
-        ny = _to_array(ny)
+        if isinstance(nx, (list, tuple)):
+            nx = np.array(nx)
+            ny = np.array(ny)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
+        return (x, y)
+    
+    def calc_point(self, x, y, centred=True, inaxes=False):
+        """Computes the nearest pixelated point from a point (x, y).
+        If centred, correct the points to the center of the nearest pixel.
+        If inaxes, restrict the points in image area.
+        """
+        if isinstance(x, (list, tuple)):
+            x = np.array(x)
+            y = np.array(y)
+        l,r,b,t = self.__art.get_extent()
+        if inaxes:
+            x[x < l] = l
+            x[x > r] = r
+            y[y < b] = b
+            y[y > t] = t
+        nx, ny = self.xytopixel(x, y)
+        ux, uy = self.xy_unit
+        if centred:
+            x = l + (nx + 0.5) * ux
+            y = t - (ny + 0.5) * uy
+            if inaxes:
+                x[x > r] -= ux
+                y[y < b] += uy
+        else:
+            x = l + nx * ux
+            y = t - ny * uy
         return (x, y)
 
 
@@ -891,7 +918,7 @@ class GraphPlot(MatplotPanel):
                 z = self.frame.xytoc(x, y)
                 self.message(
                     "[{:-4d},{:-4d}] "
-                    "({:-8.3f},{:-8.3f}) value: {}".format(nx[0], ny[0], x, y, z))
+                    "({:-8.3f},{:-8.3f}) value: {}".format(nx, ny, x, y, z))
                 return
             
             if len(x) == 0: # no selection
@@ -1168,18 +1195,7 @@ class GraphPlot(MatplotPanel):
         """Restrict point (x, y) in image area.
         If centred, correct the point to the center of the nearest pixel.
         """
-        l,r,b,t = self.frame.get_extent()
-        nx, ny = self.frame.xytopixel(
-            x = l if x < l else r if x > r else x,
-            y = b if y < b else t if y > t else y,
-        )
-        ux, uy = self.frame.xy_unit
-        x = l + nx[0] * ux
-        y = t - ny[0] * uy
-        if centred:
-            x = x + ux/2 if x < r else x - ux/2
-            y = y - uy/2 if y > b else y + uy/2
-        return (x, y)
+        return self.frame.calc_point(x, y, centred)
     
     def calc_shiftpoint(self, xo, yo, x, y, centred=True):
         """Restrict point (x, y) from (xo, yo) in pi/8 step angles.
@@ -1537,7 +1553,9 @@ class GraphPlot(MatplotPanel):
     @Markers.setter
     def Markers(self, v):
         x, y = v
-        if len(x) > self.maxnum_markers:
+        if not hasattr(x, '__iter__'):
+            x, y = [x], [y]
+        elif len(x) > self.maxnum_markers:
             self.message("- Got too many markers ({}) to plot".format(len(x)))
             return
         self.marked.set_data(x, y)

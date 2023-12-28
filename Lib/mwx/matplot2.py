@@ -442,8 +442,11 @@ class MatplotPanel(wx.Panel):
     
     @Selector.setter
     def Selector(self, v):
+        x, y = v
+        if not hasattr(x, '__iter__'):
+            x, y = [x], [y]
         self.selected.set_visible(1)
-        self.selected.set_data(*v)
+        self.selected.set_data(x, y)
         self.draw(self.selected)
         self.trace_point(*v)
     
