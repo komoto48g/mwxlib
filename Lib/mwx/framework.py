@@ -1398,27 +1398,27 @@ class ShellFrame(MiniFrame):
     
     def OnShow(self, evt):
         pane = self._mgr.GetPane(self.watcher)
-        if evt.IsShown():
-            if pane.IsShown():
-                self.inspector.watch() # restart
-                self.monitor.watch()
-        else:
-            if pane.IsDocked():
-                self.inspector.unwatch()
-                self.monitor.unwatch()
-                self.ginfo.unwatch()
-                self.linfo.unwatch()
+        def _watch(show):
+            if show:
+                if pane.IsShown():
+                    self.inspector.watch() # restart
+                    self.monitor.watch()
+            else:
+                if pane.IsDocked():
+                    self.inspector.unwatch()
+                    self.monitor.unwatch()
+        wx.CallAfter(_watch, evt.IsShown())
         evt.Skip()
     
     def OnGhostShow(self, evt):
-        if evt.IsShown():
-            self.inspector.watch() # restart
-            self.monitor.watch()
-        else:
-            self.inspector.unwatch()
-            self.monitor.unwatch()
-            self.ginfo.unwatch()
-            self.linfo.unwatch()
+        def _watch(show):
+            if show:
+                self.inspector.watch() # restart
+                self.monitor.watch()
+            else:
+                self.inspector.unwatch()
+                self.monitor.unwatch()
+        wx.CallAfter(_watch, evt.IsShown())
         evt.Skip()
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
