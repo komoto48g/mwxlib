@@ -1046,8 +1046,8 @@ class ShellFrame(MiniFrame):
         self.debugger = Debugger(self,
                                  stdin=self.__shell.interp.stdin,
                                  stdout=self.__shell.interp.stdout,
-                                 skip=[Debugger.__module__,
-                                       EventMonitor.__module__,
+                                 skip=[Debugger.__module__, # Don't enter debugger
+                                       EventMonitor.__module__, # Don't enter event-hook
                                        ## FSM.__module__,
                                        'fnmatch', 'warnings', 'bdb', 'pdb',
                                        'wx.core', 'wx.lib.eventwatcher',
