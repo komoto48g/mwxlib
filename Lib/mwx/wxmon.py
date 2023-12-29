@@ -78,8 +78,6 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnSetFocus(self, evt):
         title = "{} target: {}".format(self.__class__.__name__, self.target)
         self.parent.handler('title_window', title)
-        ## if self.target:
-        ##     self.parent.handler('monitor_begin', self.target)
         evt.Skip()
     
     ## --------------------------------
@@ -272,7 +270,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnContextMenu(self, evt):
         obj = self.target
         wnd = self._target
-        menu = [
+        Menu.Popup(self, [
             (1, "Copy data", Icon('copy'),
                 lambda v: self.copy(),
                 lambda v: v.Enable(self.SelectedItemCount)),
@@ -284,8 +282,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             (12, "Stop watching {}".format(obj.__class__.__name__), Icon('exit'),
                  lambda v: self.unwatch(),
                  lambda v: v.Enable(obj is not None)),
-        ]
-        Menu.Popup(self, menu)
+        ])
 
 
 def monit(widget=None, **kwargs):
