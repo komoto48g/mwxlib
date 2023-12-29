@@ -164,34 +164,31 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.SelectItem(item)
             self.SetFocus()
         obj = self.target
-        valid = (obj is not None)
-        menu = [
+        Menu.Popup(self, [
             (1, "&Dive into the shell", Icon('core'),
                 lambda v: dive(obj),
-                lambda v: v.Enable(valid)),
+                lambda v: v.Enable(obj is not None)),
                 
             (2, "&Watch the event", Icon('ghost'),
                 lambda v: watch(obj),
-                lambda v: v.Enable(valid)),
+                lambda v: v.Enable(obj is not None)),
                 
             (),
             (8, "&Filling View", miniIcon('ShowFilling'),
                 lambda v: filling(obj),
-                lambda v: v.Enable(valid)),
+                lambda v: v.Enable(obj is not None)),
                 
             (10, "&Inspection Tool", Icon('inspect'),
                 lambda v: watchit(obj),
-                lambda v: v.Enable(valid)),
+                lambda v: v.Enable(obj is not None)),
             (),
             (11, "Highlight\tf4", miniIcon('HighlightItem'),
                 lambda v: self.highlighter.HighlightCurrentItem(self),
-                lambda v: v.Enable(valid)),
+                lambda v: v.Enable(obj is not None)),
                 
             (12, "Refresh\tf5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
-        ]
-        Menu.Popup(self, menu)
-        evt.Skip()
+        ])
 
 
 def miniIcon(key, size=(16,16)):

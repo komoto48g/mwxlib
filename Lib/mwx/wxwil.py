@@ -168,9 +168,8 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.Focus(i)
     
     def OnContextMenu(self, evt):
-        menu = [
+        Menu.Popup(self, [
             (1, "Copy data", Icon('copy'),
                 lambda v: self.copy(),
                 lambda v: v.Enable(self.SelectedItemCount)),
-        ]
-        Menu.Popup(self, menu)
+        ])
