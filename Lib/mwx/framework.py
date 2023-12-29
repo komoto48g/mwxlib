@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.91.8"
+__version__ = "0.91.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -815,15 +815,14 @@ class AuiNotebook(aui.AuiNotebook):
         
         self._mgr = self.EventHandler
         
-        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_show_menu)
-    
-    def on_show_menu(self, evt): #<wx._aui.AuiNotebookEvent>
-        obj = evt.EventObject
-        try:
-            win = obj.Pages[evt.Selection].window # GetPage for split notebook
-            Menu.Popup(self, win.menu)
-        except AttributeError:
-            evt.Skip()
+        def tab_menu(evt):
+            tabs = evt.EventObject #<AuiTabCtrl>
+            page = tabs.Pages[evt.Selection] # GetPage for split notebook.
+            try:
+                Menu.Popup(self, page.window.menu)
+            except AttributeError:
+                pass
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, tab_menu)
     
     @property
     def all_pages(self):
@@ -1446,7 +1445,6 @@ class ShellFrame(MiniFrame):
     
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
-        ## win = nb.CurrentPage # NG
         win = nb.all_pages[evt.Selection]
         if win is self.rootshell:
             ## self.message("Don't close the root shell.")
