@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.91.9"
+__version__ = "0.92.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -968,6 +968,43 @@ class AuiNotebook(aui.AuiNotebook):
             self.Parent.Thaw()
 
 
+class FileDropLoader(wx.DropTarget):
+    """DnD loader for files and URL text.
+    """
+    def __init__(self, target):
+        wx.DropTarget.__init__(self)
+        
+        self.editor = target
+        self.textdo = wx.TextDataObject()
+        self.filedo = wx.FileDataObject()
+        self.DataObject = wx.DataObjectComposite()
+        self.DataObject.Add(self.textdo)
+        self.DataObject.Add(self.filedo, True)
+    
+    def OnData(self, x, y, result):
+        self.GetData()
+        if self.textdo.TextLength > 1:
+            f = self.textdo.Text.strip()
+            res = self.editor.load_file(f)
+            if res:
+                self.editor.buffer.SetFocus()
+                result = wx.DragCopy
+            elif res is None:
+                self.editor.post_message("Load canceled.")
+                result = wx.DragCancel
+            else:
+                self.editor.post_message(f"Loading {f!r} failed.")
+                result = wx.DragNone
+            self.textdo.Text = ''
+        else:
+            for f in self.filedo.Filenames:
+                if self.editor.load_file(f):
+                    self.editor.buffer.SetFocus()
+                    self.editor.post_message(f"Loaded {f!r} successfully.")
+            self.filedo.SetData(wx.DF_FILENAME, None)
+        return result
+
+
 class ShellFrame(MiniFrame):
     """MiniFrame of the Shell.
     
@@ -1027,6 +1064,7 @@ class ShellFrame(MiniFrame):
         self.Init()
         
         from .nutshell import Nautilus, EditorBook
+        from .bookshelf import EditorTreeCtrl
         
         self.__shell = Nautilus(self,
                                 target or __import__("__main__"),
@@ -1073,7 +1111,16 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.Name = "ghost"
         
-        ## self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
+        self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
+                                        style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+        self.Bookshelf.watch(self.ghost)
+        
+        self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
+        ## self._mgr.AddPane(self.Bookshelf,
+        ##                   aui.AuiPaneInfo().Name("bookshelf")
+        ##                      .Caption("Bookshelf").Right().Show(1))
+        
+        self.ghost.SetDropTarget(FileDropLoader(self.Scratch))
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
@@ -1156,6 +1203,7 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
+                   'buffer_new' : [ None, ],
                     'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],

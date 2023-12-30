@@ -1715,11 +1715,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
         AuiNotebook.__init__(self, parent, **kwargs)
         CtrlInterface.__init__(self)
         
+        ## The treeview of books will be displayed on the bookshelf.
+        ## So we set the tabs' height to zero to hide them.
+        self.TabCtrlHeight = 0
+        
         self.defaultBufferStyle = dict(
             ReadOnly = False,
         )
-        self.parent = parent  # parent:<ShellFrame>
-                              # Parent:<AuiNotebook>
+        self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower())
         self.default_buffer = self.create_buffer(self.default_name)
@@ -2325,8 +2328,7 @@ class Nautilus(Shell, EditorInterface):
                  **kwargs)
         EditorInterface.__init__(self)
         
-        self.parent = parent  # parent:<ShellFrame>
-                              # Parent:<AuiNotebook>
+        self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.target = target
         self.Name = name
         
