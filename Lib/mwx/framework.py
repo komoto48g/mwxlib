@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.91.9"
+__version__ = "0.92.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1027,6 +1027,7 @@ class ShellFrame(MiniFrame):
         self.Init()
         
         from .nutshell import Nautilus, EditorBook
+        from .bookshelf import EditorTreeCtrl
         
         self.__shell = Nautilus(self,
                                 target or __import__("__main__"),
@@ -1073,7 +1074,14 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Help,    "Help")
         self.ghost.Name = "ghost"
         
-        ## self.ghost.Bind(wx.EVT_SHOW, self.OnGhostShow)
+        self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
+                                        style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+        self.Bookshelf.watch(self.ghost)
+        
+        self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
+        ## self._mgr.AddPane(self.Bookshelf,
+        ##                   aui.AuiPaneInfo().Name("bookshelf")
+        ##                      .Caption("Bookshelf").Right().Show(1))
         
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
@@ -1156,6 +1164,7 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
+                   'buffer_new' : [ None, ],
                     'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
