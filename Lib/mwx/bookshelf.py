@@ -123,9 +123,9 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                 data = rest[0]
                 data._itemId = item
                 self.SetItemData(item, data)
-                if (buf := data.buffer):
-                    self.SetItemText(item, buf.caption_prefix + buf.name)
-            except Exception:
+                buf = data.buffer
+                self.SetItemText(item, buf.caption_prefix + buf.name)
+            except AttributeError:
                 pass
         for branch in branches:
             self._set_item(item, *branch)
