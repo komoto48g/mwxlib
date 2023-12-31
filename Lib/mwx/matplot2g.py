@@ -943,7 +943,7 @@ class GraphPlot(MatplotPanel):
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
                 self.message("[Region] "
-                    "crop={0}:{1}:{2}:{3}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
+                    "crop={}:{}:{}:{}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
             else:
                 return self.trace_point(x[[0,-1]], y[[0,-1]], type)
     
