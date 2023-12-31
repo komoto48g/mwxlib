@@ -852,8 +852,9 @@ class AuiNotebook(aui.AuiNotebook):
             wnd = wx.Window.FindFocus() # original focus
             org = self.CurrentPage
             if j != self.Selection:
-                self.Selection = j # the focus is moved
-            if wnd and wnd is not org: # restore focus other window
+                self.Selection = j      # focus moved if shown
+            self.CurrentPage.SetFocus() # reset focus
+            if wnd and wnd is not org:  # restore focus other window
                 wnd.SetFocus()
     
     def get_caption(self, win):
