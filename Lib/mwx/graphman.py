@@ -274,25 +274,22 @@ class LayerInterface(CtrlInterface):
         self.__artists = []
     
     def attach_artists(self, axes, *artists):
-        """Attach artists (e.g., patches) to the given axes.
-        If axes is None, they will be removed from the axes.
-        """
-        if not artists:
-            artists = self.Arts[:]
-        if axes:
-            for art in artists:
-                if art.axes and art.axes is not axes:
-                    art.remove()
-                    art._transformSet = False
-                axes.add_artist(art)
-                if art not in self.Arts:
-                    self.Arts.append(art)
-        else:
-            for art in artists:
-                if art.axes:
-                    art.remove()
-                    art._transformSet = False
-                self.Arts.remove(art)
+        """Attach artists (e.g., patches) to the given axes."""
+        for art in artists:
+            if art.axes and art.axes is not axes:
+                art.remove()
+                art._transformSet = False
+            axes.add_artist(art)
+            if art not in self.__artists:
+                self.__artists.append(art)
+    
+    def detach_artists(self, *artists):
+        """Detach artists (e.g., patches) from their axes."""
+        for art in artists:
+            if art.axes:
+                art.remove()
+                art._transformSet = False
+            self.__artists.remove(art)
     
     def __init__(self, parent, session=None):
         CtrlInterface.__init__(self)
