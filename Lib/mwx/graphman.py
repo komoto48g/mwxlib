@@ -299,6 +299,7 @@ class LayerInterface(CtrlInterface):
         
         self.parent = parent
         self.__artists = []
+        
         self.parameters = None # => reset
         
         def copy_params(**kwargs):
@@ -1172,7 +1173,7 @@ class Frame(mwx.Frame):
         except (AttributeError, NameError) as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
-                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "{}\n\n".format(e) + traceback.format_exc(),
                          "Error in loading {!r}".format(module.__name__),
                          style=wx.ICON_ERROR)
             return False
@@ -1189,7 +1190,7 @@ class Frame(mwx.Frame):
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
-                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "{}\n\n".format(e) + traceback.format_exc(),
                          "Error in loading {!r}".format(name),
                          style=wx.ICON_ERROR)
             return False
@@ -1302,7 +1303,7 @@ class Frame(mwx.Frame):
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
-                         "{}\n\n{}".format(e, traceback.format_exc()),
+                         "{}\n\n".format(e) + traceback.format_exc(),
                          "Error in unloading {!r}".format(name),
                          style=wx.ICON_ERROR)
             return False
