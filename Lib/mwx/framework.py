@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.0"
+__version__ = "0.92.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1060,7 +1060,7 @@ class ShellFrame(MiniFrame):
         self.__standalone = bool(ensureClose)
         
         ## Initialize self-specific builtins.
-        ## Note: This should be called before creating rootshell.
+        ## Note: This should be called before creating root shell.
         self.Init()
         
         from .nutshell import Nautilus, EditorBook
@@ -1365,10 +1365,7 @@ class ShellFrame(MiniFrame):
     
     def Destroy(self):
         try:
-            self.timer.Stop()
-            self.save_session()
-            
-            ## Remove built-in methods
+            ## Remove built-in self methods
             del builtins.info
             del builtins.help
             del builtins.load
@@ -1378,6 +1375,11 @@ class ShellFrame(MiniFrame):
             del builtins.timeit
             del builtins.profile
             del builtins.highlight
+        except AttributeError:
+            pass
+        try:
+            self.timer.Stop()
+            self.save_session()
         finally:
             self._mgr.UnInit()
             return MiniFrame.Destroy(self)
@@ -1874,9 +1876,14 @@ class ShellFrame(MiniFrame):
         yield from self.ghost.get_pages(type)
     
     @property
+    def all_shells(self):
+        """Yields all books in the notebooks."""
+        yield from self.console.get_pages(type(self.rootshell))
+    
+    @property
     def all_books(self):
         """Yields all books in the notebooks."""
-        yield from self.get_all_pages(type(self.Log))
+        yield from self.ghost.get_pages(type(self.Log))
     
     @property
     def current_shell(self):
