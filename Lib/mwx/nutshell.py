@@ -3358,6 +3358,15 @@ class Nautilus(Shell, EditorInterface):
         except IndexError:
             self.message("No completion words")
     
+    @staticmethod
+    def get_last_hint(cmdl):
+        return re.search(r"[\w.]*$", cmdl).group(0) # or ''
+    
+    @staticmethod
+    def get_words_hint(cmdl):
+        text = next(split_words(cmdl, reverse=1), '')
+        return text.rpartition('.') # -> text, sep, hint
+    
     def call_history_comp(self, evt):
         """Called when history-comp mode."""
         if not self.CanEdit():
@@ -3483,8 +3492,8 @@ class Nautilus(Shell, EditorInterface):
         except SyntaxError as e:
             self.handler('quit', evt)
             self.message("- {} : {!r}".format(e, text))
-        except Exception:
-            raise
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
     
     def call_word_autocomp(self, evt):
         """Called when word-comp mode."""
@@ -3547,12 +3556,3 @@ class Nautilus(Shell, EditorInterface):
             self.message("- {} : {!r}".format(e, text))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
-    
-    @staticmethod
-    def get_last_hint(cmdl):
-        return re.search(r"[\w.]*$", cmdl).group(0) # or ''
-    
-    @staticmethod
-    def get_words_hint(cmdl):
-        text = next(split_words(cmdl, reverse=1), '')
-        return text.rpartition('.') # -> text, sep, hint
