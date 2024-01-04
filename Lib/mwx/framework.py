@@ -1712,6 +1712,8 @@ class ShellFrame(MiniFrame):
     
     def on_debug_begin(self, frame):
         """Called before set_trace."""
+        if not self:
+            return
         shell = self.debugger.interactive_shell
         shell.write("#<-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
@@ -1724,6 +1726,8 @@ class ShellFrame(MiniFrame):
     
     def on_debug_next(self, frame):
         """Called from cmdloop."""
+        if not self:
+            return
         shell = self.debugger.interactive_shell
         shell.globals = gs = frame.f_globals
         shell.locals = ls = frame.f_locals
@@ -1743,6 +1747,8 @@ class ShellFrame(MiniFrame):
     
     def on_debug_end(self, frame):
         """Called after set_quit."""
+        if not self:
+            return
         shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
