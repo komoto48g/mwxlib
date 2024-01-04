@@ -245,7 +245,7 @@ class EditorInterface(CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicator [0,1] for filter_text
+        ## Custom indicator (0,1) for filter_text
         ## if wx.VERSION >= (4,1,0):
         try:
             self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
@@ -260,7 +260,7 @@ class EditorInterface(CtrlInterface):
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
         
-        ## Custom indicator [2] for match_paren
+        ## Custom indicator (2) for URL (buffer_modified)
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
         try:
@@ -268,6 +268,10 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetHoverForeground(2, "light gray")
         except AttributeError:
             pass
+        
+        ## Custom indicator (3) for match_paren
+        self.IndicatorSetStyle(3, stc.STC_INDIC_DOTS)
+        self.IndicatorSetForeground(3, "light gray")
         
         ## Custom annotation
         self.AnnotationSetVisible(stc.STC_ANNOTATION_BOXED)
@@ -815,7 +819,7 @@ class EditorInterface(CtrlInterface):
             if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
-        ## Custom indicator for search-word
+        ## Custom indicator (0,1) for filter_text
         item = _map(spec.pop(stc.STC_P_WORD3, ''))
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
@@ -826,14 +830,14 @@ class EditorInterface(CtrlInterface):
             self.StyleSetSpec(key, value)
     
     def match_paren(self):
-        ## self.SetIndicatorCurrent(2)
-        ## self.IndicatorClearRange(0, self.TextLength)
+        self.SetIndicatorCurrent(3)
+        self.IndicatorClearRange(0, self.TextLength)
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched the preceding char
-                ## self.IndicatorFillRange(q, p-q)
+                self.IndicatorFillRange(q, p-q)
                 return q
             else:
                 self.BraceBadLight(p-1)
@@ -841,7 +845,7 @@ class EditorInterface(CtrlInterface):
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched the following char
-                ## self.IndicatorFillRange(p, q-p+1)
+                self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
@@ -1044,7 +1048,6 @@ class EditorInterface(CtrlInterface):
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
         
         self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
-
     
     def on_itext_exit(self, evt):
         """Called when exiting filter_text mode."""
@@ -3230,12 +3233,6 @@ class Nautilus(Shell, EditorInterface):
                           ]
         Shell.CallTipShow(self, pos, '\n'.join(lines))
     
-    def gen_autocomp(self, offset, words, sep=' '):
-        """Call AutoCompShow for the specified words and sep."""
-        if words:
-            self.AutoCompSetSeparator(ord(sep))
-            self.AutoCompShow(offset, sep.join(words))
-    
     def eval_line(self, evt):
         """Evaluate the selected word or line.
         """
@@ -3358,12 +3355,22 @@ class Nautilus(Shell, EditorInterface):
         except IndexError:
             self.message("No completion words")
     
+    def _gen_autocomp(self, j, hint, words, sep=' '):
+        """Call AutoCompShow for the specified words and sep."""
+        ## Prepare on_completion_forward/backward
+        self.__comp_ind = j
+        self.__comp_hint = hint
+        self.__comp_words = words
+        if words:
+            self.AutoCompSetSeparator(ord(sep))
+            self.AutoCompShow(len(hint), sep.join(words))
+    
     @staticmethod
-    def get_last_hint(cmdl):
+    def _get_last_hint(cmdl):
         return re.search(r"[\w.]*$", cmdl).group(0) # or ''
     
     @staticmethod
-    def get_words_hint(cmdl):
+    def _get_words_hint(cmdl):
         text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
     
@@ -3403,16 +3410,12 @@ class Nautilus(Shell, EditorInterface):
             return
         try:
             cmdl = self.cmdlc
-            hint = self.get_last_hint(cmdl)
+            hint = self._get_last_hint(cmdl)
             
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
             
-            self.__comp_ind = 0 if words else -1
-            self.__comp_hint = hint
-            self.__comp_words = words
-            
-            self.gen_autocomp(len(hint), words)
+            self._gen_autocomp(-1, hint, words)
             self.message("[text] {} candidates matched"
                          " with {!r}".format(len(words), hint))
         except Exception:
@@ -3425,25 +3428,23 @@ class Nautilus(Shell, EditorInterface):
             return
         
         def _continue(hints):
-            if hints.endswith(' ') and not force: # 'x, y |'
-                return
-            h = hints.strip()
-            if (not h or h.endswith(',')) and not force: # 'x, y,|'
-                return
-            lh = h.split(',')[-1]   # 'x, y, z|' last hint after ','
-            if len(lh.split()) > 1: # 'x, y as|' contains a space before 'as'
-                return
-            return lh
-        
+            if not hints.endswith(' '):
+                h = hints.strip()
+                if not h.endswith(','):
+                    lh = h.split(',')[-1].strip() # 'x, y, z|' last hint after ','
+                    if ' ' not in lh:             # 'x, y as|' contains no spaces.
+                        return lh
         try:
             cmdl = self.cmdlc
-            hint = self.get_last_hint(cmdl)
+            hint = self._get_last_hint(cmdl)
             
-            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
-            if m:
+            if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
-                if not _continue(hints):
+                if not _continue(hints) and not force:
                     self.message("[module]>>> waiting for key input...")
+                    return
+                elif hints.endswith('.'):
+                    self.message("[module] invalid import syntax.")
                     return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
@@ -3453,25 +3454,20 @@ class Nautilus(Shell, EditorInterface):
                     self.message("\b failed: {}".format(e))
                     return
                 ## Add unimported module names.
-                keys = [x[len(text)+1:] for x in self.modules if x.startswith(f"{text}.{hint}")]
+                p = "{}.{}".format(text, hint)
+                keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
                 modules.update(k for k in keys if '.' not in k)
+            
+            elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
+                text, hints = m.groups()
+                if not _continue(hints) and not force:
+                    self.message("[module]>>> waiting for key input...")
+                    return
+                modules = self.modules
             else:
-                m = re.match(r"(import|from)\s+(.*)", cmdl)
-                if m:
-                    text, hints = m.groups()
-                    if not _continue(hints):
-                        self.message("[module]>>> waiting for key input...")
-                        return
-                    modules = self.modules
-                else:
-                    text, sep, hint = self.get_words_hint(cmdl)
-                    if not text:
-                        return
-                    obj = self.eval(text)
-                    if not hasattr(obj, '__dict__'):
-                        self.message("[module] primitive object: {}".format(obj))
-                        return
-                    modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
+                text, sep, hint = self._get_words_hint(cmdl)
+                obj = self.eval(text)
+                modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -3480,11 +3476,7 @@ class Nautilus(Shell, EditorInterface):
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
             
-            self.__comp_ind = j
-            self.__comp_hint = hint
-            self.__comp_words = words
-            
-            self.gen_autocomp(len(hint), words)
+            self._gen_autocomp(j, hint, words)
             self.message("[module] {} candidates matched"
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
@@ -3501,7 +3493,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
             return
         try:
-            text, sep, hint = self.get_words_hint(self.cmdlc)
+            text, sep, hint = self._get_words_hint(self.cmdlc)
             obj = self.eval(text)
             
             P = re.compile(hint)
@@ -3511,11 +3503,7 @@ class Nautilus(Shell, EditorInterface):
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
             
-            self.__comp_ind = j
-            self.__comp_hint = hint
-            self.__comp_words = words
-            
-            self.gen_autocomp(len(hint), words)
+            self._gen_autocomp(j, hint, words)
             self.message("[word] {} candidates matched"
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
@@ -3532,7 +3520,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
             return
         try:
-            text, sep, hint = self.get_words_hint(self.cmdlc)
+            text, sep, hint = self._get_words_hint(self.cmdlc)
             obj = self.eval(text)
             
             P = re.compile(hint)
@@ -3542,11 +3530,7 @@ class Nautilus(Shell, EditorInterface):
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
             
-            self.__comp_ind = j
-            self.__comp_hint = hint
-            self.__comp_words = words
-            
-            self.gen_autocomp(len(hint), words)
+            self._gen_autocomp(j, hint, words)
             self.message("[apropos] {} candidates matched"
                          " with {!r} in {}".format(len(words), hint, text))
         except re.error as e:
