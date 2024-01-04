@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.1"
+__version__ = "0.92.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -491,7 +491,7 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
             traceback.print_exc()
             bmp = wx.StaticBitmap(self,
                     bitmap=wx.ArtProvider.GetBitmap(wx.ART_ERROR))
-            bmp.SetToolTip("Pack failure\n{}".format(e))
+            bmp.SetToolTip(str(e))
             sizer.Add(bmp, 0, wx.EXPAND | wx.ALL, 0)
             wx.Bell()
     return sizer
@@ -963,7 +963,7 @@ class AuiNotebook(aui.AuiNotebook):
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
         except Exception as e:
-            print("- Failed to load perspective: {}".format(e))
+            print(f"- Failed to load perspective: {e}")
             pass
         finally:
             self.Parent.Thaw()
@@ -1517,15 +1517,13 @@ class ShellFrame(MiniFrame):
                 "Version: {!s}".format(__version__),
                 self.__class__.__doc__,
                 self.rootshell.__class__.__doc__,
-                
-                # Thanks to wx.py.shell.
+                ## Thanks to wx.py.shell.
                 "#{!r}".format(wx.py),
                 "Author: {!r}".format(wx.py.version.__author__),
                 "Version: {!s}".format(wx.py.version.VERSION),
                 wx.py.shell.Shell.__doc__,
                 textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
-                
-                # Thanks are also due to wxWidgets.
+                ## Thanks are also due to wx.
                 "#{!r}".format(wx),
                 "To show the credit, press C-M-Mbutton.\n",
                 ))

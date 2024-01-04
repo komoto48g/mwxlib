@@ -1607,7 +1607,8 @@ class Frame(mwx.Frame):
                     for j in range(n):
                         self.message("Loading {!r} [{} of {} pages]...".format(fn, j+1, n))
                         buf.seek(j)
-                        frame = view.load(buf, f"{j:0{d}}-{fn}", show=0)
+                        name = "{:0{d}}-{}".format(j, fn, d=d)
+                        frame = view.load(buf, name, show=0)
                 else:
                     frame = view.load(buf, fn, show=0, pathname=path, **info)
                     frames.append(frame)
