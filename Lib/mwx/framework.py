@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.2"
+__version__ = "0.92.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1854,6 +1854,10 @@ class ShellFrame(MiniFrame):
         """Close the current shell."""
         if shell is self.rootshell:
             ## self.message("- Don't close the root shell.")
+            return
+        if self.debugger.busy and shell is self.debugger.interactive_shell:
+            wx.MessageBox("The debugger is running.\n\n"
+                          "Enter [q]uit to exit before closing.")
             return
         j = self.console.GetPageIndex(shell)
         if j != -1:
