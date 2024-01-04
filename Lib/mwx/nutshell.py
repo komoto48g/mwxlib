@@ -245,7 +245,7 @@ class EditorInterface(CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicator [0,1] for filter_text
+        ## Custom indicator (0,1) for filter_text
         ## if wx.VERSION >= (4,1,0):
         try:
             self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
@@ -260,7 +260,7 @@ class EditorInterface(CtrlInterface):
         self.IndicatorSetForeground(0, "red")
         self.IndicatorSetForeground(1, "yellow")
         
-        ## Custom indicator [2] for match_paren
+        ## Custom indicator (2) for URL (buffer_modified)
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
         try:
@@ -268,6 +268,10 @@ class EditorInterface(CtrlInterface):
             self.IndicatorSetHoverForeground(2, "light gray")
         except AttributeError:
             pass
+        
+        ## Custom indicator (3) for match_paren
+        self.IndicatorSetStyle(3, stc.STC_INDIC_DOTS)
+        self.IndicatorSetForeground(3, "light gray")
         
         ## Custom annotation
         self.AnnotationSetVisible(stc.STC_ANNOTATION_BOXED)
@@ -815,7 +819,7 @@ class EditorInterface(CtrlInterface):
             if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
-        ## Custom indicator for search-word
+        ## Custom indicator (0,1) for filter_text
         item = _map(spec.pop(stc.STC_P_WORD3, ''))
         if item:
             self.IndicatorSetForeground(0, item.get('fore') or "red")
@@ -826,14 +830,14 @@ class EditorInterface(CtrlInterface):
             self.StyleSetSpec(key, value)
     
     def match_paren(self):
-        ## self.SetIndicatorCurrent(2)
-        ## self.IndicatorClearRange(0, self.TextLength)
+        self.SetIndicatorCurrent(3)
+        self.IndicatorClearRange(0, self.TextLength)
         p = self.cpos
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
                 self.BraceHighlight(q, p-1) # matched the preceding char
-                ## self.IndicatorFillRange(q, p-q)
+                self.IndicatorFillRange(q, p-q)
                 return q
             else:
                 self.BraceBadLight(p-1)
@@ -841,7 +845,7 @@ class EditorInterface(CtrlInterface):
             q = self.BraceMatch(p)
             if q != -1:
                 self.BraceHighlight(p, q) # matched the following char
-                ## self.IndicatorFillRange(p, q-p+1)
+                self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
