@@ -3429,25 +3429,23 @@ class Nautilus(Shell, EditorInterface):
             return
         
         def _continue(hints):
-            if hints.endswith(' ') and not force: # 'x, y |'
-                return
-            h = hints.strip()
-            if (not h or h.endswith(',')) and not force: # 'x, y,|'
-                return
-            lh = h.split(',')[-1]   # 'x, y, z|' last hint after ','
-            if len(lh.split()) > 1: # 'x, y as|' contains a space before 'as'
-                return
-            return lh
-        
+            if not hints.endswith(' '):
+                h = hints.strip()
+                if not h.endswith(','):
+                    lh = h.split(',')[-1].strip() # 'x, y, z|' last hint after ','
+                    if ' ' not in lh:             # 'x, y as|' contains no spaces.
+                        return lh
         try:
             cmdl = self.cmdlc
             hint = self.get_last_hint(cmdl)
             
-            m = re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)
-            if m:
+            if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
-                if not _continue(hints):
+                if not _continue(hints) and not force:
                     self.message("[module]>>> waiting for key input...")
+                    return
+                elif hints.endswith('.'):
+                    self.message("[module] invalid import syntax.")
                     return
                 if text not in sys.modules:
                     self.message("[module]>>> loading {}...".format(text))
@@ -3457,25 +3455,20 @@ class Nautilus(Shell, EditorInterface):
                     self.message("\b failed: {}".format(e))
                     return
                 ## Add unimported module names.
-                keys = [x[len(text)+1:] for x in self.modules if x.startswith(f"{text}.{hint}")]
+                p = "{}.{}".format(text, hint)
+                keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
                 modules.update(k for k in keys if '.' not in k)
+            
+            elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
+                text, hints = m.groups()
+                if not _continue(hints) and not force:
+                    self.message("[module]>>> waiting for key input...")
+                    return
+                modules = self.modules
             else:
-                m = re.match(r"(import|from)\s+(.*)", cmdl)
-                if m:
-                    text, hints = m.groups()
-                    if not _continue(hints):
-                        self.message("[module]>>> waiting for key input...")
-                        return
-                    modules = self.modules
-                else:
-                    text, sep, hint = self.get_words_hint(cmdl)
-                    if not text:
-                        return
-                    obj = self.eval(text)
-                    if not hasattr(obj, '__dict__'):
-                        self.message("[module] primitive object: {}".format(obj))
-                        return
-                    modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
+                text, sep, hint = self.get_words_hint(cmdl)
+                obj = self.eval(text)
+                modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
