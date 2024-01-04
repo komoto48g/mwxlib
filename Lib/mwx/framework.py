@@ -1685,36 +1685,30 @@ class ShellFrame(MiniFrame):
     ## Note: history に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
-        if isinstance(obj, type(print)):
-            wx.MessageBox("Unable to debug builtin functions.\n\n"
-                          "Target must be callable or wx.Object.",
-                          style=wx.ICON_ERROR)
-        elif callable(obj):
-            try:
-                shell = self.debugger.interactive_shell
-                self.debugger.interactive_shell = self.current_shell
-                self.debugger.editor = self.Log # set default logger
+        shell = self.debugger.interactive_shell
+        self.debugger.interactive_shell = self.current_shell
+        self.debugger.editor = self.Log # set default logger
+        try:
+            if isinstance(obj, type(print)):
+                wx.MessageBox("Unable to debug builtin functions.\n\n"
+                              "Target must be callable or wx.Object.",
+                              style=wx.ICON_ERROR)
+            elif callable(obj):
                 self.debugger.debug(obj, *args, **kwargs)
-            finally:
-                self.debugger.interactive_shell = shell
-        elif isinstance(obj, str):
-            try:
-                shell = self.debugger.interactive_shell
-                self.debugger.interactive_shell = self.current_shell
-                self.debugger.editor = self.Log # set default logger
+            elif isinstance(obj, str):
                 filename = "<string>"
                 buf = self.Log.find_buffer(filename) or self.Log.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
-                self.debugger.run(obj)
-            finally:
-                self.debugger.interactive_shell = shell
-        elif isinstance(obj, wx.Object):
-            self.watch(obj)
-        else:
-            wx.MessageBox("Unable to debug non-callable objects.\n\n"
-                          "Target must be callable or wx.Object.",
-                          style=wx.ICON_ERROR)
+                self.debugger.run(obj, filename)
+            elif isinstance(obj, wx.Object):
+                self.watch(obj)
+            else:
+                wx.MessageBox("Unable to debug non-callable objects.\n\n"
+                              "Target must be callable or wx.Object.",
+                              style=wx.ICON_ERROR)
+        finally:
+            self.debugger.interactive_shell = shell
     
     def on_debug_begin(self, frame):
         """Called before set_trace."""

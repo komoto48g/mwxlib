@@ -246,7 +246,7 @@ class Debugger(Pdb):
             self.set_quit()
             return
     
-    def run(self, cmd):
+    def run(self, cmd, filename="<string>"):
         """Debug a statement executed via the exec() function.
         """
         if self.busy:
@@ -257,10 +257,11 @@ class Debugger(Pdb):
         globals = self.interactive_shell.globals
         locals = self.interactive_shell.locals
         if isinstance(cmd, str):
-            cmd = compile(cmd, "<string>", "exec")
+            cmd = compile(cmd, filename, "exec")
         try:
             frame = inspect.currentframe().f_back
             self.set_trace(frame)
+            self.send_input('s')
             exec(cmd, globals, locals)
         except BdbQuit:
             pass
