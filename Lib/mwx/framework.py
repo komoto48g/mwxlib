@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.3"
+__version__ = "0.92.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1249,12 +1249,9 @@ class ShellFrame(MiniFrame):
         self.Log.set_attributes(ReadOnly=True)
         self.Help.set_attributes(ReadOnly=True)
         
-        msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
-        self.add_log(msg)
-        
         self.load_session(
             os.path.abspath(debrc) if debrc else self.SESSION_FILE)
-    
+        
     SESSION_FILE = get_rootpath(".debrc")
     SCRATCH_FILE = get_rootpath("scratch.py")
     LOGGING_FILE = get_rootpath("deb-logging.log")
@@ -1272,7 +1269,10 @@ class ShellFrame(MiniFrame):
         
         if flush:
             for book in self.all_books:
-                book.delete_all_buffers()
+                book.delete_all_buffers() # Note: *log* is also flushed.
+        
+        msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
+        self.add_log(msg)
         
         def _fload(editor, filename):
             try:
@@ -1318,7 +1318,7 @@ class ShellFrame(MiniFrame):
                 pass
         
         _fsave(self.Scratch, self.SCRATCH_FILE) # save scratch
-        _fsave(self.Log,     self.LOGGING_FILE)
+        _fsave(self.Log,     self.LOGGING_FILE) # save log
         
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
@@ -1833,8 +1833,8 @@ class ShellFrame(MiniFrame):
             return
         
         ## Logging text every step in case of crash.
-        with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
-            o.write(text)
+        ## with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
+        ##     o.write(text)
     
     def add_help(self, text):
         """Add text to the help buffer."""
