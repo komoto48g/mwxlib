@@ -1188,6 +1188,7 @@ class EditorInterface(CtrlInterface):
     
     @contextmanager
     def save_excursion(self):
+        """Save buffer excursion."""
         try:
             p = self.cpos
             q = self.anchor
@@ -1202,6 +1203,7 @@ class EditorInterface(CtrlInterface):
     
     @contextmanager
     def pre_selection(self):
+        """Save buffer cpos and anchor."""
         try:
             p = self.cpos
             q = self.anchor
@@ -1214,12 +1216,25 @@ class EditorInterface(CtrlInterface):
     
     @contextmanager
     def off_readonly(self):
+        """Set buffer to be writable (ReadOnly=False) temporarily."""
+        r = self.ReadOnly
         try:
-            r = self.ReadOnly
             self.ReadOnly = 0
-            yield self
+            yield
         finally:
             self.ReadOnly = r
+    
+    @contextmanager
+    def save_attributes(self, **kwargs):
+        """Save buffer attributes (e.g. ReadOnly=False)."""
+        for k, v in kwargs.items():
+            kwargs[k] = getattr(self, k)
+            setattr(self, k, v)
+        try:
+            yield
+        finally:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
     
     ## --------------------------------
     ## Edit: comment / insert / kill
