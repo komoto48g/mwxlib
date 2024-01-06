@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.2"
+__version__ = "0.92.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1108,8 +1108,8 @@ class ShellFrame(MiniFrame):
         
         self.ghost = AuiNotebook(self, size=(600,400))
         self.ghost.AddPage(self.Scratch, "Scratch")
-        self.ghost.AddPage(self.Log,     "Log")
-        self.ghost.AddPage(self.Help,    "Help")
+        self.ghost.AddPage(self.Log, "Log")
+        self.ghost.AddPage(self.Help, "Help")
         self.ghost.Name = "ghost"
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
@@ -1687,7 +1687,6 @@ class ShellFrame(MiniFrame):
     def debug(self, obj, *args, **kwargs):
         shell = self.debugger.interactive_shell
         self.debugger.interactive_shell = self.current_shell
-        self.debugger.editor = self.Log # set default logger
         try:
             if isinstance(obj, type(print)):
                 wx.MessageBox("Unable to debug builtin functions.\n\n"
@@ -1697,7 +1696,8 @@ class ShellFrame(MiniFrame):
                 self.debugger.debug(obj, *args, **kwargs)
             elif isinstance(obj, str):
                 filename = "<string>"
-                buf = self.Log.find_buffer(filename) or self.Log.create_buffer(filename)
+                buf = self.Scratch.find_buffer(filename)\
+                  or self.Scratch.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj, filename)
@@ -1712,6 +1712,8 @@ class ShellFrame(MiniFrame):
     
     def on_debug_begin(self, frame):
         """Called before set_trace."""
+        if not self:
+            return
         shell = self.debugger.interactive_shell
         shell.write("#<-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
@@ -1724,6 +1726,8 @@ class ShellFrame(MiniFrame):
     
     def on_debug_next(self, frame):
         """Called from cmdloop."""
+        if not self:
+            return
         shell = self.debugger.interactive_shell
         shell.globals = gs = frame.f_globals
         shell.locals = ls = frame.f_locals
@@ -1743,6 +1747,8 @@ class ShellFrame(MiniFrame):
     
     def on_debug_end(self, frame):
         """Called after set_quit."""
+        if not self:
+            return
         shell = self.debugger.interactive_shell
         shell.write("#--> Debugger closed successfully.\n", -1)
         shell.prompt()
@@ -1825,6 +1831,7 @@ class ShellFrame(MiniFrame):
             ## Set a marker on the current line.
             buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
             return
+        
         ## Logging text every step in case of crash.
         with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
             o.write(text)
@@ -1836,7 +1843,6 @@ class ShellFrame(MiniFrame):
             buf.SetText(text)
         ## Overwrite text and popup the window.
         self.popup_window(self.Help, focus=0)
-        self.Help.swap_page(buf)
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
@@ -1854,6 +1860,10 @@ class ShellFrame(MiniFrame):
         """Close the current shell."""
         if shell is self.rootshell:
             ## self.message("- Don't close the root shell.")
+            return
+        if self.debugger.busy and shell is self.debugger.interactive_shell:
+            wx.MessageBox("The debugger is running.\n\n"
+                          "Enter [q]uit to exit before closing.")
             return
         j = self.console.GetPageIndex(shell)
         if j != -1:
