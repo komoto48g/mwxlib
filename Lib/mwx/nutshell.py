@@ -287,6 +287,7 @@ class EditorInterface(CtrlInterface):
         self.IndentationGuides = stc.STC_IV_LOOKFORWARD
         
         self.__mark = -1
+        self.__stylus = {}
     
     ## Custom constants embedded in stc
     stc.STC_P_WORD3 = 20
@@ -772,11 +773,16 @@ class EditorInterface(CtrlInterface):
     ## Preferences / Appearance
     ## --------------------------------
     
-    def set_style(self, spec=None, **kwargs):
+    def get_stylus(self):
+        return self.__stylus
+    
+    def set_stylus(self, spec=None, **kwargs):
         spec = spec and spec.copy() or {}
         spec.update(kwargs)
         if not spec:
             return
+        
+        self.__stylus.update(spec)
         
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(',') if kv)
@@ -1182,6 +1188,7 @@ class EditorInterface(CtrlInterface):
     
     @contextmanager
     def save_excursion(self):
+        """Save buffer excursion."""
         try:
             p = self.cpos
             q = self.anchor
@@ -1196,6 +1203,7 @@ class EditorInterface(CtrlInterface):
     
     @contextmanager
     def pre_selection(self):
+        """Save buffer cpos and anchor."""
         try:
             p = self.cpos
             q = self.anchor
@@ -1208,12 +1216,25 @@ class EditorInterface(CtrlInterface):
     
     @contextmanager
     def off_readonly(self):
+        """Set buffer to be writable (ReadOnly=False) temporarily."""
+        r = self.ReadOnly
         try:
-            r = self.ReadOnly
             self.ReadOnly = 0
-            yield self
+            yield
         finally:
             self.ReadOnly = r
+    
+    @contextmanager
+    def save_attributes(self, **kwargs):
+        """Save buffer attributes (e.g. ReadOnly=False)."""
+        for k, v in kwargs.items():
+            kwargs[k] = getattr(self, k)
+            setattr(self, k, v)
+        try:
+            yield
+        finally:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
     
     ## --------------------------------
     ## Edit: comment / insert / kill
@@ -1504,7 +1525,7 @@ class Buffer(EditWindow, EditorInterface):
         })
         
         self.show_folder()
-        self.set_style(self.STYLE)
+        self.set_stylus(self.STYLE)
     
     def __contains__(self, code):
         if inspect.iscode(code) and self.code:
@@ -1795,7 +1816,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             buf : a buffer to apply (if None, applies to all buffers).
             **kwargs : default style.
             
-                Style           = Buffer.STYLE => set_style
+                Style           = Buffer.STYLE
                 ReadOnly        = False
                 UseTabs         = False
                 ViewEOL         = False
@@ -1809,7 +1830,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         def _setattribute(buf, attr):
             for k, v in attr.items():
                 if k == 'Style':
-                    buf.set_style(v)
+                    buf.set_stylus(v)
                 setattr(buf, k, v)
         if buf:
             _setattribute(buf, kwargs)
@@ -2619,7 +2640,7 @@ class Nautilus(Shell, EditorInterface):
         
         self.wrap(0)
         self.show_folder()
-        self.set_style(self.STYLE)
+        self.set_stylus(self.STYLE)
         
         ## delete unnecessary arrows at startup
         del self.white_arrow
