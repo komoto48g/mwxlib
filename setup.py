@@ -1,42 +1,56 @@
 #! python3
-from setuptools import setup 
-from Lib.mwx import __version__, __author__
+from setuptools import setup
+import os
 
-## __version__ = "0.69.0rc4" #  TestPyPI
+
+def get_version(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    fn = os.path.join(here, rel_path)
+    with open(fn, encoding='utf-8', newline='') as fp:
+        for line in fp:
+            if line.startswith('__version__'):
+                delim = '"' if '"' in line else "'"
+                return line.split(delim)[1]
+        else:
+            raise RuntimeError("Unable to find version string.")
+
+## __version__ = "0.69.0rc4"  # TestPyPI
+## __version__ = "1.0rc"
+__version__ = get_version("Lib/mwx/framework.py")
+
 
 setup(
     name = "mwxlib",
     version = __version__,
-    author = __author__,
+    author = "Kazuya O'moto",
     author_email = "komoto@jeol.co.jp",
     description = "A wrapper of matplotlib and wxPython (phoenix)",
     
     url = "https://github.com/komoto48g/mwxlib",
     
     ## long_description_content_type = "text/markdown",
-    ## long_description = open('README.md').read(),
-    
-    long_description = open('README.rst').read(),
+    ## long_description = open("README.md").read(),
+    long_description = open("README.rst").read(),
     
     ## Description of the package in the distribution
     package_dir = {
-        '' : 'Lib' # root packages is `Lib`, i.e., mwx package is in ./Lib
+        "" : "Lib" # root packages is `Lib`, i.e., mwx package is in ./Lib
     },
     
     ## Packing all modules in mwx package
     packages = [
-        'mwx',
-        'mwx.py',
+        "mwx",
+        "mwx.py",
     ],
     
     ## install_requires = open("requirements.txt").read().splitlines(),
     install_requires = [
-        'wxpython',
-        'numpy',
-        'scipy',
-        'pillow',
-        'matplotlib',
-        'opencv-python',
+        "wxpython",
+        "numpy",
+        "scipy",
+        "pillow",
+        "matplotlib",
+        "opencv-python",
     ],
     
     ## This is necessary for egg distribution to include *.txt files
@@ -48,16 +62,16 @@ setup(
     include_package_data = True,
     
     ## License and classifiers for PyPi distribution
-    license = 'MIT',
+    license = "MIT",
     
     classifiers = [
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Topic :: Scientific/Engineering :: Image Processing',
-        'Topic :: Software Development :: Libraries :: Python Modules',
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Scientific/Engineering :: Image Processing",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )
