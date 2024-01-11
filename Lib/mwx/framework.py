@@ -1591,12 +1591,12 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def _load(self, filename, lineno, book, verbose=False):
+    def _load(self, filename, lineno, editor, verbose=False):
         """Load file in the session (internal use only)."""
-        if isinstance(book, str):
-            book = getattr(self, book, None)
-        if book:
-            return book.load_file(filename, lineno, verbose)
+        if isinstance(editor, str):
+            editor = getattr(self, editor, None)
+        if editor:
+            return editor.load_file(filename, lineno, verbose)
     
     def load(self, filename, lineno=0, show=True, focus=False):
         """Load file @where the object is defined.
@@ -1617,10 +1617,10 @@ class ShellFrame(MiniFrame):
             if m:
                 filename, ln = m.groups()
                 lineno = int(ln)
-        book = self.find_editor(filename) or self.Log
-        ret = self._load(filename, lineno, book, verbose=1)
+        editor = self.find_editor(filename) or self.Log
+        ret = self._load(filename, lineno, editor, verbose=1)
         if ret:
-            self.popup_window(book, show, focus)
+            self.popup_window(editor, show, focus)
         return ret
     
     def info(self, obj):
@@ -1759,23 +1759,23 @@ class ShellFrame(MiniFrame):
         del shell.globals
         self.indicator.Value = 1
     
-    def set_hookable(self, book, traceable=True):
+    def set_hookable(self, editor, traceable=True):
         """Bind pointer to set/unset trace."""
         if traceable:
-            book.handler.bind('pointer_set', _F(self.start_trace, book=book))
-            book.handler.bind('pointer_unset', _F(self.stop_trace, book=book))
+            editor.handler.bind('pointer_set', _F(self.start_trace, editor=editor))
+            editor.handler.bind('pointer_unset', _F(self.stop_trace, editor=editor))
         else:
-            book.handler.unbind('pointer_set')
-            book.handler.unbind('pointer_unset')
+            editor.handler.unbind('pointer_set')
+            editor.handler.unbind('pointer_unset')
     
-    def start_trace(self, line, book):
+    def start_trace(self, line, editor):
         if not self.debugger.busy:
             self.debugger.unwatch()
-            self.debugger.editor = book
-            self.debugger.watch((book.buffer.filename, line+1))
+            self.debugger.editor = editor
+            self.debugger.watch((editor.buffer.filename, line+1))
             self.debugger.send_input('') # clear input
     
-    def stop_trace(self, line, book):
+    def stop_trace(self, line, editor):
         if self.debugger.busy:
             return
         if self.debugger.tracing:
