@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.4"
+__version__ = "0.92.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1884,14 +1884,22 @@ class ShellFrame(MiniFrame):
         yield from self.console.get_pages(type(self.rootshell))
     
     @property
-    def all_books(self):
-        """Yields all books in the notebooks."""
-        yield from self.ghost.get_pages(type(self.Log))
-    
-    @property
     def current_shell(self):
         """Currently selected shell or rootshell."""
         return self.console.CurrentPage
+    
+    @property
+    def all_books(self):
+        """Yields all editors in the notebooks."""
+        yield from self.ghost.get_pages(type(self.Log))
+    
+    def find_editor(self, fn):
+        """Find an editor which has the specified fn:filename or code."""
+        for editor in self.all_books:
+            buf = editor.find_buffer(fn)
+            if buf:
+                editor.swap_page(buf)
+                return editor
     
     ## --------------------------------
     ## Find text dialog

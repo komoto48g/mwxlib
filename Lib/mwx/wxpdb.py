@@ -288,15 +288,6 @@ class Debugger(Pdb):
             else:
                 self.editor.buffer.MarkerDeleteAll(style)
     
-    def find_editor(self, fn):
-        """Find parent editor which has the specified fn:filename or code.
-        """
-        for editor in self.parent.get_all_pages(type(self.editor)):
-            buf = editor.find_buffer(fn)
-            if buf:
-                editor.swap_page(buf)
-                return editor
-    
     def on_debug_begin(self, frame):
         """Called before set_trace.
         Note: self.busy -> False or None
@@ -320,7 +311,8 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        editor = self.find_editor(code) or self.find_editor(filename)
+        editor = self.parent.find_editor(code)\
+              or self.parent.find_editor(filename)
         if not editor:
             editor = self.parent.Log
             ## Note: Need a post-call for a thread debugging.
@@ -470,7 +462,6 @@ class Debugger(Pdb):
         finally:
             if self.parent: # Check if Destroy has begun.
                 self.handler('debug_end', self.curframe)
-            return
     
     ## --------------------------------
     ## Override Pdb methods
