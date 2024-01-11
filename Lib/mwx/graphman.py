@@ -543,16 +543,16 @@ class MyFileDropLoader(wx.FileDropTarget):
     
     Args:
         loader : mainframe
-        target : target window to drop in, e.g. frame, graph, pane, etc.
+        target : target view to drop in, e.g. frame, graph, pane, etc.
     """
     def __init__(self, target, loader):
         wx.FileDropTarget.__init__(self)
         
-        self.target = target
+        self.view = target
         self.loader = loader
     
     def OnDropFiles(self, x, y, filenames):
-        pos = self.target.ScreenPosition + (x,y)
+        pos = self.view.ScreenPosition + (x,y)
         paths = []
         for fn in filenames:
             name, ext = os.path.splitext(fn)
@@ -562,11 +562,11 @@ class MyFileDropLoader(wx.FileDropTarget):
             elif ext == '.jssn':
                 self.loader.load_session(fn)
             elif ext == '.index':
-                self.loader.import_index(fn, self.target)
+                self.loader.import_index(fn, self.view)
             else:
                 paths.append(fn) # image file just stacks to be loaded
         if paths:
-            self.loader.load_frame(paths, self.target)
+            self.loader.load_frame(paths, self.view)
         return True
 
 

@@ -1268,7 +1268,7 @@ class ShellFrame(MiniFrame):
                 filename = dlg.Path
         
         if flush:
-            for book in self.all_books:
+            for book in self.all_editors:
                 book.delete_all_buffers() # Note: *log* is also flushed.
         
         msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
@@ -1323,7 +1323,7 @@ class ShellFrame(MiniFrame):
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
             
-            for book in self.all_books:
+            for book in self.all_editors:
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
                         o.write("self._load({!r}, {!r}, {!r})\n"
@@ -1403,7 +1403,7 @@ class ShellFrame(MiniFrame):
                           "The trace pointer will be cleared.")
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
-        for book in self.all_books:
+        for book in self.all_editors:
             for buf in book.all_buffers:
                 if buf.need_buffer_save:
                     self.popup_window(book)
@@ -1430,7 +1430,7 @@ class ShellFrame(MiniFrame):
         elif evt.GetActivationReason() == evt.Reason_Mouse\
           and self.__autoload:
             ## Check all buffers that need to be loaded.
-            for book in self.all_books:
+            for book in self.all_editors:
                 for buf in book.all_buffers:
                     if buf.need_buffer_load:
                         if wx.MessageBox( # Confirm load.
@@ -1605,7 +1605,7 @@ class ShellFrame(MiniFrame):
             filename : target filename:str or object.
                        It also supports <'filename:lineno'> format.
             lineno   : Set mark to lineno on load.
-            show     : Show the book.
+            show     : Show the page.
             focus    : Focus the window if visible.
         """
         if not isinstance(filename, str):
@@ -1617,8 +1617,7 @@ class ShellFrame(MiniFrame):
             if m:
                 filename, ln = m.groups()
                 lineno = int(ln)
-        book = next((x for x in self.all_books
-                        if x.find_buffer(filename)), self.Log)
+        book = self.find_editor(filename) or self.Log
         ret = self._load(filename, lineno, book, verbose=1)
         if ret:
             self.popup_window(book, show, focus)
@@ -1697,7 +1696,7 @@ class ShellFrame(MiniFrame):
             elif isinstance(obj, str):
                 filename = "<string>"
                 buf = self.Scratch.find_buffer(filename)\
-                  or self.Scratch.create_buffer(filename)
+                   or self.Scratch.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj, filename)
@@ -1889,13 +1888,13 @@ class ShellFrame(MiniFrame):
         return self.console.CurrentPage
     
     @property
-    def all_books(self):
+    def all_editors(self):
         """Yields all editors in the notebooks."""
         yield from self.ghost.get_pages(type(self.Log))
     
     def find_editor(self, fn):
         """Find an editor which has the specified fn:filename or code."""
-        for editor in self.all_books:
+        for editor in self.all_editors:
             buf = editor.find_buffer(fn)
             if buf:
                 editor.swap_page(buf)
