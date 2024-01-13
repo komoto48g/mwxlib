@@ -100,7 +100,7 @@ class Thread(object):
         frame = inspect.currentframe().f_back.f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
-        fname,_ = os.path.splitext(os.path.basename(filename))
+        fname, _ = os.path.splitext(os.path.basename(filename))
         
         ## Other threads are not allowed to enter.
         ct = threading.current_thread()
@@ -394,7 +394,7 @@ class LayerInterface(CtrlInterface):
                 self.layout((bmp, txt), row=2)
     
     def Init(self):
-        """Initialize me safely (to be overridden)."""
+        """Initialize layout before load_session (to be overridden)."""
         pass
     
     def load_session(self, session):
@@ -814,7 +814,7 @@ class Frame(mwx.Frame):
     
     def edit(self, fn):
         if hasattr(fn, '__file__'):
-            name,_ = os.path.splitext(fn.__file__)
+            name, _ = os.path.splitext(fn.__file__)
             fn = name + '.py'
         cmd = '{} "{}"'.format(self.Editor, fn)
         with warnings.catch_warnings():
@@ -824,7 +824,7 @@ class Frame(mwx.Frame):
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
-        ssn,_ = os.path.splitext(ssn)
+        ssn, _ = os.path.splitext(ssn)
         name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
     
@@ -1004,8 +1004,8 @@ class Frame(mwx.Frame):
             name : str or plug object.
         """
         if isinstance(name, str):
-            if name.endswith(".py") or name.endswith(".pyc"):
-                name,_ = os.path.splitext(os.path.basename(name))
+            if name.endswith(".py"):
+                name, _ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
         elif isinstance(name, LayerInterface):
@@ -1099,35 +1099,35 @@ class Frame(mwx.Frame):
                 self.register(cls, module)
         return module
     
-    def load_plug(self, root, show=False,
-                  dock=False, layer=0, pos=0, row=0, prop=10000,
-                  floating_pos=None, floating_size=None,
-                  force=False, session=None, **kwargs):
+    def load_plug(self, root, force=False, session=None,
+                  show=False, dock=False, layer=0, pos=0, row=0, prop=10000,
+                  floating_pos=None, floating_size=None, **kwargs):
         """Load plugin.
         
         Args:
-            root    : Layer module, or name of the module.
+            root    : Plugin <Layer> module, or name of the module.
                       Any wx.Window object can be specified (as dummy-plug).
                       However, do not use this mode in release versions.
-            show    : the pane is shown after loaded
             force   : force loading even if it is already loaded
             session : Conditions for initializing the plug and starting session
+            show    : the pane is shown after loaded
             dock    : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             layer   : dock_layer
             pos     : dock_pos
             row     : dock_row position
             prop    : dock_proportion < 1e6 ?
-            floating_pos : posision of floating window
-            floating_size : size of floating window
+            floating_pos: posision of floating window
+            floating_size: size of floating window
+            
+            **kwargs: keywords for Plugin <Layer>
         
         Returns:
             None if succeeded else False
         
         Note:
-            The root module must have a class `Plugin` <mwx.graphman.Layer>
+            The root module must have a class Plugin <Layer>
         """
-        props = dict(show=show,
-                     dock=dock, layer=layer, pos=pos, row=row, prop=prop,
+        props = dict(show=show, dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
         
         _dirname, name = self._split_paths(root)
@@ -1178,15 +1178,12 @@ class Frame(mwx.Frame):
                          style=wx.ICON_ERROR)
             return False
         
-        ## --------------------------------
         ## Create and register the plugin
-        ## --------------------------------
         if pane.IsOk():
             self.unload_plug(name) # unload once right here
         
         try:
             plug = module.Plugin(self, session, **kwargs)
-            
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
