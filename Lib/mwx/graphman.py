@@ -276,7 +276,7 @@ class LayerInterface(CtrlInterface):
     def attach_artists(self, axes, *artists):
         """Attach artists (e.g., patches) to the given axes."""
         for art in artists:
-            if art.axes and art.axes is not axes:
+            if art.axes:
                 art.remove()
                 art._transformSet = False
             axes.add_artist(art)
