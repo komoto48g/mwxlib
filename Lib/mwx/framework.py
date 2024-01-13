@@ -1164,8 +1164,7 @@ class ShellFrame(MiniFrame):
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
-        self.indicator = Indicator(self.statusbar, value=1, tip='Normal')
-        self.indicator.backgroundColour = None # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
+        self.indicator = Indicator(self.statusbar, value=1)
         self.indicator.SetToolTip("[R] Invalid [Y] Debug/Trace [G] Normal")
         
         self.timer = wx.Timer(self)
