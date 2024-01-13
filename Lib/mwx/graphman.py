@@ -100,7 +100,7 @@ class Thread(object):
         frame = inspect.currentframe().f_back.f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
-        fname,_ = os.path.splitext(os.path.basename(filename))
+        fname, _ = os.path.splitext(os.path.basename(filename))
         
         ## Other threads are not allowed to enter.
         ct = threading.current_thread()
@@ -276,7 +276,7 @@ class LayerInterface(CtrlInterface):
     def attach_artists(self, axes, *artists):
         """Attach artists (e.g., patches) to the given axes."""
         for art in artists:
-            if art.axes and art.axes is not axes:
+            if art.axes:
                 art.remove()
                 art._transformSet = False
             axes.add_artist(art)
@@ -394,7 +394,7 @@ class LayerInterface(CtrlInterface):
                 self.layout((bmp, txt), row=2)
     
     def Init(self):
-        """Initialize me safely (to be overridden)."""
+        """Initialize layout before load_session (to be overridden)."""
         pass
     
     def load_session(self, session):
@@ -814,7 +814,7 @@ class Frame(mwx.Frame):
     
     def edit(self, fn):
         if hasattr(fn, '__file__'):
-            name,_ = os.path.splitext(fn.__file__)
+            name, _ = os.path.splitext(fn.__file__)
             fn = name + '.py'
         cmd = '{} "{}"'.format(self.Editor, fn)
         with warnings.catch_warnings():
@@ -824,7 +824,7 @@ class Frame(mwx.Frame):
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
-        ssn,_ = os.path.splitext(ssn)
+        ssn, _ = os.path.splitext(ssn)
         name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
     
@@ -1004,8 +1004,8 @@ class Frame(mwx.Frame):
             name : str or plug object.
         """
         if isinstance(name, str):
-            if name.endswith(".py") or name.endswith(".pyc"):
-                name,_ = os.path.splitext(os.path.basename(name))
+            if name.endswith(".py"):
+                name, _ = os.path.splitext(os.path.basename(name))
             if name in self.plugins:
                 return self.plugins[name].__plug__
         elif isinstance(name, LayerInterface):
@@ -1045,36 +1045,30 @@ class Frame(mwx.Frame):
         module.Plugin = _Plugin
         return _Plugin
     
-    def load_module(self, root, force, session, **props):
+    @staticmethod
+    def _split_paths(root):
+        if hasattr(root, '__file__'): #<class 'module'>
+            name = root.__file__
+        elif isinstance(root, type):  #<class 'type'>
+            name = inspect.getsourcefile(root)
+        else:
+            name = root
+        dirname = os.path.dirname(name)
+        name = os.path.basename(name)
+        if name.endswith(".py"):
+            name, _ = os.path.splitext(name)
+        return dirname, name
+    
+    def load_module(self, root):
         """Load module of plugin (internal use only).
         
         Note:
             This is called automatically from load_plug,
             and should not be called directly from user.
         """
-        if hasattr(root, '__file__'): #<class 'module'>
-            rootpath = root.__file__
-        elif isinstance(root, type): #<class 'type'>
-            rootpath = inspect.getsourcefile(root)
-        else:
-            rootpath = root
-        
-        assert isinstance(rootpath, str)
-        
-        name = os.path.basename(rootpath)
-        if name.endswith(".py"):
-            name,_ = os.path.splitext(name)
-        
-        plug = self.get_plug(name)
-        if plug: # <plug:name> is already registered
-            if not force:
-                self.update_pane(name, **props)
-                if session:
-                    plug.load_session(session)
-                return None
+        dirname_, name = self._split_paths(root)
         
         ## Update the include-path to load the module correctly.
-        dirname_ = os.path.dirname(rootpath)
         if os.path.isdir(dirname_):
             if dirname_ in sys.path:
                 sys.path.remove(dirname_)
@@ -1082,13 +1076,13 @@ class Frame(mwx.Frame):
         elif dirname_:
             print("- No such directory {!r}".format(dirname_))
             return False
+        
         try:
             if name in sys.modules:
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
         except Exception as e:
-            ## traceback.print_exc()
             print("- Unable to load {!r}: {}".format(root, e))
             return False
         
@@ -1105,40 +1099,49 @@ class Frame(mwx.Frame):
                 self.register(cls, module)
         return module
     
-    def load_plug(self, root, show=False,
-                  dock=False, layer=0, pos=0, row=0, prop=10000,
-                  floating_pos=None, floating_size=None,
-                  force=False, session=None, **kwargs):
+    def load_plug(self, root, force=False, session=None,
+                  show=False, dock=False, layer=0, pos=0, row=0, prop=10000,
+                  floating_pos=None, floating_size=None, **kwargs):
         """Load plugin.
         
         Args:
-            root    : Layer module, or name of the module.
+            root    : Plugin <Layer> module, or name of the module.
                       Any wx.Window object can be specified (as dummy-plug).
                       However, do not use this mode in release versions.
-            show    : the pane is shown after loaded
             force   : force loading even if it is already loaded
             session : Conditions for initializing the plug and starting session
+            show    : the pane is shown after loaded
             dock    : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             layer   : dock_layer
             pos     : dock_pos
             row     : dock_row position
             prop    : dock_proportion < 1e6 ?
-            floating_pos : posision of floating window
-            floating_size : size of floating window
+            floating_pos: posision of floating window
+            floating_size: size of floating window
+            
+            **kwargs: keywords for Plugin <Layer>
         
         Returns:
             None if succeeded else False
         
         Note:
-            The root module must have a class `Plugin` <mwx.graphman.Layer>
+            The root module must have a class Plugin <Layer>
         """
-        props = dict(show=show,
-                     dock=dock, layer=layer, pos=pos, row=row, prop=prop,
+        props = dict(show=show, dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
         
-        module = self.load_module(root, force, session, **props)
+        _dirname, name = self._split_paths(root)
+        
+        plug = self.get_plug(name)
+        if plug and not force: # <plug:name> is already registered.
+            self.update_pane(name, **props)
+            if session:
+                plug.load_session(session)
+            return None
+        
+        module = self.load_module(root)
         if not module:
-            return module # None (if not force) or False (failed to import)
+            return module # False (failed to import)
         
         try:
             name = module.Plugin.__module__
@@ -1175,15 +1178,12 @@ class Frame(mwx.Frame):
                          style=wx.ICON_ERROR)
             return False
         
-        ## --------------------------------
         ## Create and register the plugin
-        ## --------------------------------
         if pane.IsOk():
             self.unload_plug(name) # unload once right here
         
         try:
             plug = module.Plugin(self, session, **kwargs)
-            
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,

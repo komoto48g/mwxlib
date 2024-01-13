@@ -1814,7 +1814,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         Args:
             buf : a buffer to apply (if None, applies to all buffers).
-            **kwargs : default style.
+            **kwargs: default style.
             
                 Style           = Buffer.STYLE
                 ReadOnly        = False
