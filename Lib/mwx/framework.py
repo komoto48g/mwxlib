@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.6"
+__version__ = "0.92.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -453,21 +453,21 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     Args:
         items   : wx objects (with some packing parameters)
         
-                - (obj, 1) -> sized with ratio 1 (parallel to `orient`)
-                - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (perpendicular to `orient`)
-                - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
-                - ((-1,-1), 1, wx.EXPAND) -> stretched space
-                - (-1,-1) -> padding space
-                - None -> phantom
+            - (obj, 1) -> sized with ratio 1 (parallel to `orient`)
+            - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (perpendicular to `orient`)
+            - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
+            - ((-1,-1), 1, wx.EXPAND) -> stretched space
+            - (-1,-1) -> padding space
+            - None -> phantom
         
         orient  : HORIZONTAL or VERTICAL
         label   : StaticBox label
         style   : Sizer option (proportion, flag, border)
         
-                - flag-expansion -> EXPAND, SHAPED
-                - flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
-                - flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
-                                ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
+            - flag-expansion -> EXPAND, SHAPED
+            - flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
+            - flag-align -> ALIGN_CENTER, ALIGN_LEFT, ALIGN_TOP, ALIGN_RIGHT, ALIGN_BOTTOM,
+                            ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     """
     if style is None:
         style = (0, wx.EXPAND | wx.ALL, 0)
@@ -598,37 +598,45 @@ class MenuBar(wx.MenuBar, TreeList):
         """Update items of the menu that has specified key:root/branch.
         Call when the menulist is changed.
         """
-        if self.Parent:
-            menu = self.getmenu(key)
-            if not menu:
-                self.reset()
-                return
-            
-            menu._unbind()
-            for item in menu.MenuItems: # delete all items
-                menu.Delete(item)
-            
-            menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
-            for item in menu2.MenuItems:
-                menu.Append(menu2.Remove(item)) # 重複しないようにいったん切り離して追加する
-            
-            if hasattr(menu, 'Id'):
-                self.Enable(menu.Id, menu.MenuItemCount > 0) # Disable empty submenu.
+        if not self.Parent:
+            warnings.warn(f"No parents bound to {self}.", stacklevel=2)
+            return
+        
+        menu = self.getmenu(key)
+        if not menu:
+            self.reset()
+            return
+        
+        menu._unbind()
+        for item in menu.MenuItems: # delete all items
+            menu.Delete(item)
+        
+        menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
+        for item in menu2.MenuItems:
+            menu.Append(menu2.Remove(item)) # 重複しないようにいったん切り離して追加する
+        
+        if hasattr(menu, 'Id'):
+            self.Enable(menu.Id, menu.MenuItemCount > 0) # Disable empty submenu.
+        
+        for j, (key, values) in enumerate(self):
+            self.EnableTop(j, bool(values)) # Disable empty main menu.
     
     def reset(self):
         """Recreates the menubar if the Parent was attached.
         Call when the menulist is changed.
         """
-        if self.Parent:
-            for j in range(self.GetMenuCount()): # remove and del all top-level menu
-                menu = self.Remove(0)
-                menu.Destroy()
-            
-            for j, (key, values) in enumerate(self):
-                menu = Menu(self.Parent, values)
-                self.Append(menu, key)
-                if not values:
-                    self.EnableTop(j, False) # Disable empty main menu.
+        if not self.Parent:
+            warnings.warn(f"No parents bound to {self}.", stacklevel=2)
+            return
+        
+        for j in range(self.GetMenuCount()): # remove and del all top-level menu
+            menu = self.Remove(0)
+            menu.Destroy()
+        
+        for j, (key, values) in enumerate(self):
+            menu = Menu(self.Parent, values)
+            self.Append(menu, key)
+            self.EnableTop(j, bool(values)) # Disable empty main menu.
 
 
 class StatusBar(wx.StatusBar):
