@@ -1211,8 +1211,8 @@ class Indicator(wx.Control):
         self.Refresh()
     
     tricolour = ('green', 'yellow', 'red')
-    backgroundColour = 'black'
-    foregroundColour = 'gray'
+    backgroundColour = 'dark gray'
+    foregroundColour = 'light gray'
     spacing = 7
     radius = 5
     
@@ -1237,7 +1237,7 @@ class Indicator(wx.Control):
     def DoGetBestSize(self):
         N = len(self.colors)
         s = self.spacing
-        return wx.Size((2*s-1)*N+4, 2*s+1)
+        return wx.Size((2*s-1)*N+3, 2*s+2)
     
     def OnSize(self, evt):
         self.Refresh()
@@ -1250,12 +1250,15 @@ class Indicator(wx.Control):
         s = self.spacing
         ss = 2*s-1
         w, h = self.ClientSize
-        dc.SetPen(wx.Pen(self.backgroundColour, style=wx.PENSTYLE_TRANSPARENT))
-        dc.SetBrush(wx.Brush(self.backgroundColour,
-                    style=wx.BRUSHSTYLE_SOLID if self.backgroundColour else
-                          wx.BRUSHSTYLE_TRANSPARENT))
-        dc.DrawRoundedRectangle(0, h//2-s, ss*N+2, 2*s+1, s)
-        dc.SetPen(wx.Pen(self.backgroundColour))
+        
+        dc.SetPen(wx.Pen(self.backgroundColour, style=wx.PENSTYLE_SOLID))
+        if self.backgroundColour:
+            dc.SetBrush(wx.Brush(self.backgroundColour, style=wx.BRUSHSTYLE_SOLID))
+        else:
+            dc.SetBrush(wx.Brush(self.backgroundColour, style=wx.BRUSHSTYLE_TRANSPARENT))
+        dc.DrawRoundedRectangle(0, h//2-s, ss*N+1, 2*s, s)
+        
+        dc.SetPen(wx.Pen(self.foregroundColour, style=wx.PENSTYLE_TRANSPARENT))
         for j, name in enumerate(self.colors):
             if not self.__value & (1 << j):
                 name = self.foregroundColour
