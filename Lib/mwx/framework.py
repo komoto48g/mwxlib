@@ -260,14 +260,12 @@ class KeyCtrlInterfaceMixin:
         
         map, key, state = self._get_keymap_state(keymap)
         if map not in self.handler:
-            warnings.warn("New map to define_key {!r} in {}."
-                          .format(keymap, self.__class__.__name__), stacklevel=2)
+            warnings.warn(f"New map to define_key {keymap!r} in {self}.", stacklevel=2)
             self.make_keymap(map) # make new keymap
         
         transaction = self.handler[map].get(key, [state])
         if len(transaction) > 1:
-            warnings.warn("Duplicate define_key {!r} in {}."
-                          .format(keymap, self.__class__.__name__), stacklevel=2)
+            warnings.warn(f"Duplicate define_key {keymap!r} in {self}.", stacklevel=2)
         
         if action is None:
             self.handler[map].pop(key, None) # cf. undefine_key
@@ -293,8 +291,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     
     def __init__(self):
         if hasattr(self, 'handler'):
-            warnings.warn("Duplicate iniheritance of CtrlInterface by {!r}."
-                          .format(self.__class__.__name__), stacklevel=2)
+            warnings.warn(f"Duplicate iniheritance of CtrlInterface by {self}.", stacklevel=2)
             return
         self.__key = ''
         self.__button = ''

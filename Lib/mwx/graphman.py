@@ -1019,9 +1019,8 @@ class Frame(mwx.Frame):
             module = inspect.getmodule(cls) # rebase module or __main__
         
         if issubclass(cls, LayerInterface):
-            warnings.warn("Duplicate iniheritance of LayerInterface by {!r}."
-                          .format(cls.__name__), stacklevel=2)
             cls.__module__ = module.__name__ # __main__ to module
+            warnings.warn(f"Duplicate iniheritance of LayerInterface by {cls}.", stacklevel=2)
             module.Plugin = cls
             return cls
         
@@ -1089,7 +1088,7 @@ class Frame(mwx.Frame):
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                warnings.warn("Use dummy plug mode for debugging.", stacklevel=3)
+                warnings.warn(f"Use dummy plug for debugging {name!r}.", stacklevel=3)
                 module.__dummy_plug__ = root
                 self.register(root, module)
         else:
