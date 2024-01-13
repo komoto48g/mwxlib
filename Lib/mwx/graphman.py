@@ -1045,36 +1045,30 @@ class Frame(mwx.Frame):
         module.Plugin = _Plugin
         return _Plugin
     
-    def load_module(self, root, force, session, **props):
+    @staticmethod
+    def _split_paths(root):
+        if hasattr(root, '__file__'): #<class 'module'>
+            name = root.__file__
+        elif isinstance(root, type):  #<class 'type'>
+            name = inspect.getsourcefile(root)
+        else:
+            name = root
+        dirname = os.path.dirname(name)
+        name = os.path.basename(name)
+        if name.endswith(".py"):
+            name, _ = os.path.splitext(name)
+        return dirname, name
+    
+    def load_module(self, root):
         """Load module of plugin (internal use only).
         
         Note:
             This is called automatically from load_plug,
             and should not be called directly from user.
         """
-        if hasattr(root, '__file__'): #<class 'module'>
-            rootpath = root.__file__
-        elif isinstance(root, type): #<class 'type'>
-            rootpath = inspect.getsourcefile(root)
-        else:
-            rootpath = root
-        
-        assert isinstance(rootpath, str)
-        
-        name = os.path.basename(rootpath)
-        if name.endswith(".py"):
-            name,_ = os.path.splitext(name)
-        
-        plug = self.get_plug(name)
-        if plug: # <plug:name> is already registered
-            if not force:
-                self.update_pane(name, **props)
-                if session:
-                    plug.load_session(session)
-                return None
+        dirname_, name = self._split_paths(root)
         
         ## Update the include-path to load the module correctly.
-        dirname_ = os.path.dirname(rootpath)
         if os.path.isdir(dirname_):
             if dirname_ in sys.path:
                 sys.path.remove(dirname_)
@@ -1082,13 +1076,13 @@ class Frame(mwx.Frame):
         elif dirname_:
             print("- No such directory {!r}".format(dirname_))
             return False
+        
         try:
             if name in sys.modules:
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
         except Exception as e:
-            ## traceback.print_exc()
             print("- Unable to load {!r}: {}".format(root, e))
             return False
         
@@ -1136,9 +1130,18 @@ class Frame(mwx.Frame):
                      dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
         
-        module = self.load_module(root, force, session, **props)
+        _dirname, name = self._split_paths(root)
+        
+        plug = self.get_plug(name)
+        if plug and not force: # <plug:name> is already registered.
+            self.update_pane(name, **props)
+            if session:
+                plug.load_session(session)
+            return None
+        
+        module = self.load_module(root)
         if not module:
-            return module # None (if not force) or False (failed to import)
+            return module # False (failed to import)
         
         try:
             name = module.Plugin.__module__
