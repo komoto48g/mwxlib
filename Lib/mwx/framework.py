@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.5"
+__version__ = "0.92.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1256,24 +1256,8 @@ class ShellFrame(MiniFrame):
     SCRATCH_FILE = get_rootpath("scratch.py")
     LOGGING_FILE = get_rootpath("deb-logging.log")
     
-    def load_session(self, filename=None, flush=True):
+    def load_session(self, filename):
         """Load session from file."""
-        if not filename:
-            with wx.FileDialog(self, 'Load session',
-                    wildcard="Session file (*.debrc)|*.debrc",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                    |wx.FD_CHANGE_DIR) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return
-                filename = dlg.Path
-        
-        if flush:
-            for book in self.all_editors:
-                book.delete_all_buffers() # Note: *log* is also flushed.
-        
-        msg = "#! Opened: <{}>\r\n".format(datetime.datetime.now())
-        self.add_log(msg)
-        
         def _fload(editor, filename):
             try:
                 buffer = editor.default_buffer or editor.new_buffer()
@@ -1281,6 +1265,12 @@ class ShellFrame(MiniFrame):
                 buffer.EmptyUndoBuffer()
             except Exception:
                 pass
+        
+        for book in self.all_editors:
+            book.delete_all_buffers() # Note: *log* is also flushed.
+        
+        ## Re-open the *log* file.
+        self.add_log("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
         
         _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
@@ -1295,17 +1285,6 @@ class ShellFrame(MiniFrame):
         ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:
             self.Position = (0, 0)
-    
-    def save_session_as(self):
-        """Save session as a new file."""
-        with wx.FileDialog(self, "Save session as",
-                defaultFile=os.path.basename(self.SESSION_FILE or ''),
-                wildcard="Session file (*.debrc)|*.debrc",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT
-                                |wx.FD_CHANGE_DIR) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.SESSION_FILE = dlg.Path
-                self.save_session()
     
     def save_session(self):
         """Save session to file."""
