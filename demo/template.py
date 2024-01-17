@@ -1,8 +1,5 @@
 #! python3
-"""Template of Layer
-
-Version: 1.0
-Author: Kazuya O'moto <komoto@jeol.co.jp>
+"""Template of Layer.
 """
 import numpy as np
 import cv2
