@@ -1214,7 +1214,7 @@ class Indicator(wx.Control):
     backgroundColour = 'dark gray'
     foregroundColour = 'light gray'
     spacing = 7
-    radius = 5
+    radius = 4
     
     def __init__(self, parent, colors=None, value=0, tip='',
                  style=wx.BORDER_NONE, **kwargs):
@@ -1260,10 +1260,11 @@ class Indicator(wx.Control):
         
         dc.SetPen(wx.Pen(self.foregroundColour, style=wx.PENSTYLE_TRANSPARENT))
         for j, name in enumerate(self.colors):
-            if not self.__value & (1 << j):
-                name = self.foregroundColour
-            dc.SetBrush(wx.Brush(name))
-            dc.DrawCircle(ss*(N-1-j)+s, h//2, r)
+            b = self.__value & (1 << j)
+            x = ss*(N-1-j)+s
+            y = h//2
+            dc.SetBrush(wx.Brush(name if b else self.foregroundColour))
+            dc.DrawCircle(x, y, r)
     
     def blink(self, msec, mask=0):
         """Blinks once for given milliseconds.
