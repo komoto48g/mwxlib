@@ -127,11 +127,12 @@ class Thread(object):
     def check(self, timeout=None):
         """Check the thread event flags."""
         if not self.running:
-            return
+            return None
         if not self.event.wait(timeout): # wait until set in time
             raise KeyboardInterrupt("timeout")
         if not self.active:
             raise KeyboardInterrupt("terminated by user")
+        return True
     
     def pause(self, msg="Pausing..."):
         """Pause the thread.
@@ -143,7 +144,7 @@ class Thread(object):
             does not suspend until check (or event.wait) is called.
         """
         if not self.running:
-            return
+            return None
         try:
             self.event.clear() # suspend
             if wx.MessageBox(msg + "\n\n"
