@@ -1198,7 +1198,6 @@ class Indicator(wx.Control):
     Args:
         colors  : list of colors (default is tricolour) cf. wx.ColourDatabase
         value   : initial value
-        tip     : tip:str displayed on the control
         **kwargs: keywords for wx.Control
     """
     @property
@@ -1216,13 +1215,12 @@ class Indicator(wx.Control):
     spacing = 7
     radius = 4
     
-    def __init__(self, parent, colors=None, value=0, tip='',
+    def __init__(self, parent, colors=None, value=0,
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
         self.colors = list(colors or self.tricolour)
-        self.ToolTip = tip.strip()
         
         ## Sizes the window to fit its best size.
         ## May be needed if sizer is not defined.
@@ -1289,7 +1287,6 @@ class Gauge(wx.Control):
     Args:
         range   : maximum value
         value   : initial value
-        tip     : tip:str displayed on the control
         **kwargs: keywords for wx.Control
     """
     @property
@@ -1310,13 +1307,12 @@ class Gauge(wx.Control):
         self.__range = int(v)
         self.Refresh()
     
-    def __init__(self, parent, range=24, value=0, tip='',
+    def __init__(self, parent, range=24, value=0,
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__range = range
         self.__value = value
-        self.ToolTip = tip.strip()
         
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
         
