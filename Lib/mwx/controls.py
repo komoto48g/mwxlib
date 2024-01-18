@@ -1209,25 +1209,27 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
-    tricolour = ('green', 'yellow', 'red')
+    colors = ('green', 'yellow', 'red') # default tricolor style
     backgroundColour = 'dark gray'
     foregroundColour = 'light gray'
     spacing = 7
     radius = 4
+    glow = 0
     
     def __init__(self, parent, colors=None, value=0,
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
-        self.colors = list(colors or self.tricolour)
+        if colors is not None:
+            self.colors = colors
         
         ## Sizes the window to fit its best size.
         ## May be needed if sizer is not defined.
         self.InvalidateBestSize()
         self.Fit()
         
-        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT) # to avoid flickering
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -1256,11 +1258,24 @@ class Indicator(wx.Control):
             dc.SetBrush(wx.Brush(self.backgroundColour, style=wx.BRUSHSTYLE_TRANSPARENT))
         dc.DrawRoundedRectangle(0, h//2-s, ss*N+1, 2*s, s)
         
+        if self.glow:
+            gc = wx.GraphicsContext.Create(dc)
+            gc.SetPen(gc.CreatePen(wx.TRANSPARENT_PEN))
+            path = gc.CreatePath()
+            stops = wx.GraphicsGradientStops()
+            stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 0.0))
+            stops.Add(wx.GraphicsGradientStop(wx.Colour(255,255,255,128), r/s))
+            stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 1.0))
+        
         dc.SetPen(wx.Pen(self.foregroundColour, style=wx.PENSTYLE_TRANSPARENT))
         for j, name in enumerate(self.colors):
             b = self.__value & (1 << j)
             x = ss*(N-1-j)+s
             y = h//2
+            if b and self.glow:
+                gc.SetBrush(gc.CreateRadialGradientBrush(x, y, x, y, s, stops))
+                path.AddCircle(x, y, s)
+                gc.DrawPath(path)
             dc.SetBrush(wx.Brush(name if b else self.foregroundColour))
             dc.DrawCircle(x, y, r)
     
@@ -1314,7 +1329,7 @@ class Gauge(wx.Control):
         self.__range = range
         self.__value = value
         
-        self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        self.SetBackgroundStyle(wx.BG_STYLE_PAINT) # to avoid flickering
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
