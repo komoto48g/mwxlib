@@ -83,9 +83,11 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
+    @wx.deprecatedMsg("Use `Param.callback.bind` instead.") #<DeprecationWarning>
     def bind(self, action=None, target='control'):
         return self.callback.bind(target, action)
     
+    @wx.deprecatedMsg("Use `Param.callback.unbind` instead.") #<DeprecationWarning>
     def unbind(self, action=None, target='control'):
         return self.callback.unbind(target, action)
     
@@ -136,7 +138,7 @@ class Param(object):
     
     @check.setter
     def check(self, v):
-        self.__check = v
+        self.__check = bool(v)
         self.callback('check', self)
         for knob in self.knobs:
             knob.update_label()
@@ -437,7 +439,7 @@ class Knob(wx.Panel):
     def update_label(self):
         v = self.__par
         if isinstance(self.label, wx.CheckBox):
-            self.label.SetValue(bool(v.check))
+            self.label.SetValue(v.check)
         
         if self.label.IsEnabled():
             t = '  ' if v.std_value is None or v.value == v.std_value else '*'
@@ -542,7 +544,7 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
-        self.__par.check = int(evt.IsChecked())
+        self.__par.check = evt.IsChecked()
         evt.Skip()
     
     def OnPress(self, evt): #<wx._core.CommandEvent>
