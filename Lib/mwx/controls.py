@@ -1209,6 +1209,21 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
+    def udpate_design(self, **kwargs):
+        """Update design attributes.
+        
+        This method is useful for changing colors, spacing, radius, etc.
+        The best size will be automatically invalidated and re-calculated.
+        
+        Args:
+            **kwargs: class attributes, e.g. colors, spacing, radius.
+        
+        Note:
+            This method has no effect on properties such as Value.
+        """
+        self.__dict__.update(kwargs)
+        self.InvalidateBestSize()
+    
     colors = ('green', 'yellow', 'red') # default tricolor style
     backgroundColour = 'dark gray'
     foregroundColour = 'light gray'
@@ -1263,7 +1278,6 @@ class Indicator(wx.Control):
             gc.SetPen(gc.CreatePen(wx.TRANSPARENT_PEN))
             path = gc.CreatePath()
             stops = wx.GraphicsGradientStops()
-            stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 0.0))
             stops.Add(wx.GraphicsGradientStop(wx.Colour(255,255,255,128), r/s))
             stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 1.0))
         
