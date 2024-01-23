@@ -15,6 +15,11 @@ import numpy as np
 from numpy import nan, inf
 
 
+def _Tip(*tips):
+    """Concatenate tips with newline char."""
+    return '\n'.join(filter(None, tips)).strip()
+
+
 class Param(object):
     """Standard Parameter
     
@@ -26,11 +31,9 @@ class Param(object):
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
-        tip     : tooltip:str shown on the associated knobs
     
     Attributes:
         knobs       : knob list
-        tip         : doc:str also shown as a tooltip
         callback    : single state machine that handles following events
         
             - control -> when index changed by knobs or reset (handler)
@@ -62,10 +65,7 @@ class Param(object):
            'overflow' : [],
           'underflow' : [],
         })
-        tip = '\n'.join(filter(None, (tip,
-                                      handler and handler.__doc__,
-                                      updater and updater.__doc__)))
-        self.tip = tip.strip()
+        self._tooltip = _Tip(tip, handler.__doc__, updater.__doc__)
     
     def __str__(self, v=None):
         v = self.value if v is None else v
@@ -83,9 +83,11 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
+    @wx.deprecatedMsg("Use `Param.callback.bind` instead.") #<DeprecationWarning>
     def bind(self, action=None, target='control'):
         return self.callback.bind(target, action)
     
+    @wx.deprecatedMsg("Use `Param.callback.unbind` instead.") #<DeprecationWarning>
     def unbind(self, action=None, target='control'):
         return self.callback.unbind(target, action)
     
@@ -136,7 +138,7 @@ class Param(object):
     
     @check.setter
     def check(self, v):
-        self.__check = v
+        self.__check = bool(v)
         self.callback('check', self)
         for knob in self.knobs:
             knob.update_label()
@@ -227,11 +229,9 @@ class LParam(Param):
                   `hex` specifies hexadecimal format
         handler : called when control changed
         updater : called when check changed
-        tip     : tooltip:str shown on the associated knobs
     
     Attributes:
         knobs       : knob list
-        tip         : doc:str also shown as a tooltip
         callback    : single state machine that handles following events
         
             - control -> when index changed by knobs or reset (handler)
@@ -357,7 +357,7 @@ class Knob(wx.Panel):
         self.label.Enable(lw)
         self.label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
-        self.label.SetToolTip(self.__par.tip)
+        self.label.SetToolTip(self.__par._tooltip)
         
         if editable:
             self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
@@ -437,7 +437,7 @@ class Knob(wx.Panel):
     def update_label(self):
         v = self.__par
         if isinstance(self.label, wx.CheckBox):
-            self.label.SetValue(bool(v.check))
+            self.label.SetValue(v.check)
         
         if self.label.IsEnabled():
             t = '  ' if v.std_value is None or v.value == v.std_value else '*'
@@ -542,7 +542,7 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
-        self.__par.check = int(evt.IsChecked())
+        self.__par.check = evt.IsChecked()
         evt.Skip()
     
     def OnPress(self, evt): #<wx._core.CommandEvent>
@@ -959,7 +959,6 @@ class Button(pb.PlateButton):
         label   : button label
         handler : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
-        tip     : tip:str displayed on the button
         **kwargs: keywords for wx.lib.platebtn.PlateButton
     """
     @property
@@ -981,8 +980,7 @@ class Button(pb.PlateButton):
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
         
-        tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
-        self.ToolTip = tip.strip()
+        self.ToolTip = _Tip(tip, handler.__doc__)
         self.icon = icon
     
     def SetBitmap(self, bmp):
@@ -1002,7 +1000,6 @@ class ToggleButton(wx.ToggleButton):
         label   : button label
         handler : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
-        tip     : tip:str displayed on the button
         **kwargs: keywords for wx.ToggleButton
     
     Note:
@@ -1030,8 +1027,7 @@ class ToggleButton(wx.ToggleButton):
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
-        tip = '\n  '.join(filter(None, (tip, handler.__doc__)))
-        self.ToolTip = tip.strip()
+        self.ToolTip = _Tip(tip, handler.__doc__)
         self.icon = icon
 
 
@@ -1043,7 +1039,6 @@ class TextCtrl(wx.Control):
         handler : event handler when text is entered
         updater : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
-        tip     : tip:str displayed on the button
         readonly: flag:bool (equiv. style=wx.TE_READONLY)
         **kwargs: keywords for wx.TextCtrl
                   e.g., value:str
@@ -1073,12 +1068,10 @@ class TextCtrl(wx.Control):
                             | wx.TE_PROCESS_ENTER
                             | (wx.TE_READONLY if readonly else 0))
         
-        tip = '\n'.join(filter(None, (tip,
-                                      handler and handler.__doc__,
-                                      updater and updater.__doc__)))
+        tooltip = _Tip(tip, handler.__doc__, updater.__doc__)
         
         self._ctrl = wx.TextCtrl(self, **kwargs)
-        self._btn = Button(self, label, None, icon, tip,
+        self._btn = Button(self, label, None, icon, tooltip,
                            size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
@@ -1109,7 +1102,6 @@ class Choice(wx.Control):
         handler : event handler when text is entered or item is selected
         updater : event handler when the button is pressed
         icon    : key:str or bitmap for button icon
-        tip     : tip:str displayed on the button
         readonly: flag:bool (equiv. style=wx.CB_READONLY)
         **kwargs: keywords for wx.ComboBox
                   e.g., choices:list
@@ -1153,12 +1145,10 @@ class Choice(wx.Control):
                             | wx.TE_PROCESS_ENTER
                             | (wx.CB_READONLY if readonly else 0))
         
-        tip = '\n'.join(filter(None, (tip,
-                                      handler and handler.__doc__,
-                                      updater and updater.__doc__)))
+        tooltip = _Tip(tip, handler.__doc__, updater.__doc__)
         
         self._ctrl = wx.ComboBox(self, **kwargs)
-        self._btn = Button(self, label, None, icon, tip,
+        self._btn = Button(self, label, None, icon, tooltip,
                            size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
@@ -1208,6 +1198,21 @@ class Indicator(wx.Control):
     def Value(self, v):
         self.__value = int(v)
         self.Refresh()
+    
+    def udpate_design(self, **kwargs):
+        """Update design attributes.
+        
+        This method is useful for changing colors, spacing, radius, etc.
+        The best size will be automatically invalidated and re-calculated.
+        
+        Args:
+            **kwargs: class attributes, e.g. colors, spacing, radius.
+        
+        Note:
+            This method has no effect on properties such as Value.
+        """
+        self.__dict__.update(kwargs)
+        self.InvalidateBestSize()
     
     colors = ('green', 'yellow', 'red') # default tricolor style
     backgroundColour = 'dark gray'
@@ -1263,7 +1268,6 @@ class Indicator(wx.Control):
             gc.SetPen(gc.CreatePen(wx.TRANSPARENT_PEN))
             path = gc.CreatePath()
             stops = wx.GraphicsGradientStops()
-            stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 0.0))
             stops.Add(wx.GraphicsGradientStop(wx.Colour(255,255,255,128), r/s))
             stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 1.0))
         
