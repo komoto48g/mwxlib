@@ -36,16 +36,14 @@ class Plugin(Layer):
         ##     title="Iconify", row=2, show=0,
         ## )
         
-        def _btn2(back, fore):
-            icon = Icon2(back, fore, (16,16), 0.6)
-            return Button(self, label='', tip=fore, icon=icon)
+        def _btn2(back, fore, r=0.6):
+            return Button(self, label=str(fore),
+                                icon=Icon2(back, fore, (16,16), r))
         
-        a = 'folder'
-        b = 'file'
         ls = 'v w x + - ! !! !!! help tag'.split()
         self.layout([
-                *[_btn2(a, x) for x in ls],
-                *[_btn2(b, x) for x in ls],
+                *[_btn2('folder', x) for x in ls],
+                *[_btn2('file', x) for x in ls],
             ],
             title="Icon2", row=len(ls),
         )
