@@ -3374,6 +3374,8 @@ class Nautilus(Shell, EditorInterface):
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
             p = self.cpos
+            if not self.SelectedText:
+                p, self.anchor, sty = self.get_following_atom(p) # word-right-selection
             self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
             self.cpos = p # backward selection to the point
             self.__comp_ind = j
