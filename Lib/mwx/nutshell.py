@@ -2181,7 +2181,7 @@ class Interpreter(interpreter.Interpreter):
 class Nautilus(Shell, EditorInterface):
     """Nautilus in the Shell.
     
-    Objects in the process can be accessed using,
+    Facade objects for accessing the APIs:
     
     - self : the target of the shell
     - this : the module which includes target
@@ -2484,10 +2484,7 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear),
                          'fork' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
-                   'up pressed' : (0, fork),
-                 'down pressed' : (0, fork),
-                  '*up pressed' : (1, self.on_completion_forward_history),
-                '*down pressed' : (1, self.on_completion_backward_history),
+                   '* released' : (1, ),
                'S-left pressed' : (1, skip),
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
@@ -2512,25 +2509,22 @@ class Nautilus(Shell, EditorInterface):
             2 : { # word auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                   '* released' : (2, self.call_word_autocomp),
                    'up pressed' : (2, skip, self.on_completion_backward),
+                  'up released' : (2, skip),
                  'down pressed' : (2, skip, self.on_completion_forward),
+                'down released' : (2, skip),
                 '*left pressed' : (2, skip),
                '*right pressed' : (2, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
                   'C-. pressed' : (2, ),
-                 'C-. released' : (2, self.call_word_autocomp),
                   'M-. pressed' : (2, ),
-                 'M-. released' : (2, self.call_word_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
-          '[a-z0-9_.] released' : (2, self.call_word_autocomp),
             'S-[a-z\\] pressed' : (2, skip),
-           'S-[a-z\\] released' : (2, self.call_word_autocomp),
-                  '\\ released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, skip_autocomp),
-          '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
                   'M-j pressed' : (2, self.exec_region),
@@ -2541,27 +2535,30 @@ class Nautilus(Shell, EditorInterface):
                '*shift pressed' : (2, ),
              '*[LR]win pressed' : (2, ),
              '*f[0-9]* pressed' : (2, ),
+                '*alt released' : (2, ),
+               '*ctrl released' : (2, ),
+              '*shift released' : (2, ),
+            '*[LR]win released' : (2, ),
+            '*f[0-9]* released' : (2, ),
             },
             3 : { # apropos auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                   '* released' : (3, self.call_apropos_autocomp),
                    'up pressed' : (3, skip, self.on_completion_backward),
+                  'up released' : (3, skip),
                  'down pressed' : (3, skip, self.on_completion_forward),
+                'down released' : (3, skip),
                 '*left pressed' : (3, skip),
                '*right pressed' : (3, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
                   'M-/ pressed' : (3, ),
-                 'M-/ released' : (3, self.call_apropos_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
-          '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
             'S-[a-z\\] pressed' : (3, skip),
-           'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
-                  '\\ released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, skip_autocomp),
-          '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
                   'M-j pressed' : (3, self.exec_region),
@@ -2572,27 +2569,30 @@ class Nautilus(Shell, EditorInterface):
                '*shift pressed' : (3, ),
              '*[LR]win pressed' : (3, ),
              '*f[0-9]* pressed' : (3, ),
+                '*alt released' : (3, ),
+               '*ctrl released' : (3, ),
+              '*shift released' : (3, ),
+            '*[LR]win released' : (3, ),
+            '*f[0-9]* released' : (3, ),
             },
             4 : { # text auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                   '* released' : (4, self.call_text_autocomp),
                    'up pressed' : (4, skip, self.on_completion_backward),
+                  'up released' : (4, skip),
                  'down pressed' : (4, skip, self.on_completion_forward),
+                'down released' : (4, skip),
                 '*left pressed' : (4, skip),
                '*right pressed' : (4, skip),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
                   'M-, pressed' : (4, ),
-                 'M-, released' : (4, self.call_text_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
-          '[a-z0-9_.] released' : (4, self.call_text_autocomp),
             'S-[a-z\\] pressed' : (4, skip),
-           'S-[a-z\\] released' : (4, self.call_text_autocomp),
-                  '\\ released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
            '*backspace pressed' : (4, skip_autocomp),
-          '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
                   'M-j pressed' : (4, self.exec_region),
@@ -2603,12 +2603,20 @@ class Nautilus(Shell, EditorInterface):
                '*shift pressed' : (4, ),
              '*[LR]win pressed' : (4, ),
              '*f[0-9]* pressed' : (4, ),
+                '*alt released' : (4, ),
+               '*ctrl released' : (4, ),
+              '*shift released' : (4, ),
+            '*[LR]win released' : (4, ),
+            '*f[0-9]* released' : (4, ),
             },
             5 : { # module auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                   '* released' : (5, self.call_module_autocomp),
                    'up pressed' : (5, skip, self.on_completion_backward),
+                  'up released' : (5, skip),
                  'down pressed' : (5, skip, self.on_completion_forward),
+                'down released' : (5, skip),
                 '*left pressed' : (5, skip),
                '*right pressed' : (5, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2617,19 +2625,20 @@ class Nautilus(Shell, EditorInterface):
                   'M-m pressed' : (5, ),
                  'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
           '[a-z0-9_.,] pressed' : (5, skip),
-         '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
-           'S-[a-z\\] released' : (5, self.call_module_autocomp),
-                  '\\ released' : (5, self.call_module_autocomp),
               '*delete pressed' : (5, skip),
            '*backspace pressed' : (5, skip_autocomp),
-          '*backspace released' : (5, self.call_module_autocomp),
         'C-S-backspace pressed' : (5, ),
                  '*alt pressed' : (5, ),
                 '*ctrl pressed' : (5, ),
                '*shift pressed' : (5, ),
              '*[LR]win pressed' : (5, ),
              '*f[0-9]* pressed' : (5, ),
+                '*alt released' : (5, ),
+               '*ctrl released' : (5, ),
+              '*shift released' : (5, ),
+            '*[LR]win released' : (5, ),
+            '*f[0-9]* released' : (5, ),
             },
         })
         
@@ -2728,9 +2737,12 @@ class Nautilus(Shell, EditorInterface):
             return
         p = self.cpos
         st = self.get_style(p-1)
+        rst = self.get_style(p)
         if p == self.bolc:
             self.ReplaceSelection('self') # replace [.] --> [self.]
-        elif st not in ('moji', 'word', 'rparen'):
+        elif st in ('nil', 'op', 'sep', 'lparen'):
+            self.ReplaceSelection('self')
+        elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
         self.ReplaceSelection('.') # just write down a dot.
     
@@ -2739,10 +2751,6 @@ class Nautilus(Shell, EditorInterface):
         if not self.CanEdit():
             self.handler('quit', evt)
             return
-        p = self.cpos
-        st = self.get_style(p-1)
-        if st in ('nil', 'space', 'op', 'sep', 'lparen'):
-            self.ReplaceSelection('self.')
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
@@ -3365,7 +3373,9 @@ class Nautilus(Shell, EditorInterface):
             word = self.__comp_words[j]
             n = len(self.__comp_hint)
             p = self.cpos
-            self.ReplaceSelection(word[n:]) # 選択された範囲を変更する(または挿入する)
+            if not self.SelectedText:
+                p, self.anchor, sty = self.get_following_atom(p) # word-right-selection
+            self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
             self.cpos = p # backward selection to the point
             self.__comp_ind = j
         except IndexError:
