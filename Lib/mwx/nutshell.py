@@ -1176,16 +1176,6 @@ class EditorInterface(CtrlInterface):
              or self.goto_char(self.get_left_quotation(p), selection=True)
              or self.WordLeftExtend())
     
-    def selection_forward_atom(self):
-        p, q, sty = self.get_following_atom(self.cpos)
-        self.cpos = q
-        return sty
-    
-    def selection_backward_atom(self):
-        p, q, sty = self.get_preceding_atom(self.cpos)
-        self.cpos = p
-        return sty
-    
     @contextmanager
     def save_excursion(self):
         """Save buffer excursion."""
