@@ -2737,9 +2737,12 @@ class Nautilus(Shell, EditorInterface):
             return
         p = self.cpos
         st = self.get_style(p-1)
+        rst = self.get_style(p)
         if p == self.bolc:
             self.ReplaceSelection('self') # replace [.] --> [self.]
-        elif st not in ('moji', 'word', 'rparen'):
+        elif st in ('nil', 'op', 'sep', 'lparen'):
+            self.ReplaceSelection('self')
+        elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
         self.ReplaceSelection('.') # just write down a dot.
     
@@ -2748,10 +2751,6 @@ class Nautilus(Shell, EditorInterface):
         if not self.CanEdit():
             self.handler('quit', evt)
             return
-        p = self.cpos
-        st = self.get_style(p-1)
-        if st in ('nil', 'space', 'op', 'sep', 'lparen'):
-            self.ReplaceSelection('self.')
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
