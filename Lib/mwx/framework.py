@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.92.9"
+__version__ = "0.93.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -125,14 +125,14 @@ _speckeys = {
     wx.WXK_WINDOWS_RIGHT        : 'Rwin',
 }
 
-def speckey_state(key):
-    """Returns `KeyState` for abbreviation key:str."""
+_speckeys_wxkmap = dict((v, k) for k, v in _speckeys.items())
+
+def keyspec(key):
+    """Returns state of speckey (cf. wx.GetKeyState)."""
     try:
         return wx.GetKeyState(_speckeys_wxkmap[key])
     except KeyError:
         pass
-
-_speckeys_wxkmap = dict((v, k) for k, v in _speckeys.items())
 
 
 def hotkey(evt):
@@ -142,12 +142,12 @@ def hotkey(evt):
     """
     key = evt.GetKeyCode()
     mod = ""
-    for k,v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
-                (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                ## (wx.WXK_CONTROL, 'C-'),
-                ## (wx.WXK_ALT,     'M-'),
-                ## (wx.WXK_SHIFT,   'S-')
-                ):
+    for k, v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
+                 (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
+                 ## (wx.WXK_CONTROL, 'C-'),
+                 ## (wx.WXK_ALT,     'M-'),
+                 ## (wx.WXK_SHIFT,   'S-')
+                 ):
         if key != k and wx.GetKeyState(k): # Note: lazy-eval state
             mod += v
     
@@ -235,17 +235,6 @@ class KeyCtrlInterfaceMixin:
             self.message(evt.key)
         evt.Skip()
     
-    def _get_keymap_state(self, keymap, mode='pressed'):
-        map, sep, key = regulate_key(keymap).rpartition(' ')
-        map = map.strip()
-        event = key + ' ' + mode
-        state = self.handler.default_state
-        if not map:
-            map = state
-        elif map == '*':
-            map = state = None
-        return map, event, state
-    
     def define_key(self, keymap, action=None, *args, **kwargs):
         """Define [map key (pressed)] action.
         
@@ -258,7 +247,14 @@ class KeyCtrlInterfaceMixin:
         assert isinstance(keymap, str)
         assert callable(action) or action is None
         
-        map, key, state = self._get_keymap_state(keymap)
+        state = self.handler.default_state
+        map, sep, key = regulate_key(keymap).rpartition(' ')
+        if not map:
+            map = state
+        elif map == '*':
+            map = state = None
+        key += ' pressed'
+        
         if map not in self.handler:
             warnings.warn(f"New map to define_key {keymap!r} in {self}.", stacklevel=2)
             self.make_keymap(map) # make new keymap
