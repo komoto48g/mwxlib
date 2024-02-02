@@ -479,7 +479,7 @@ class EditorInterface(CtrlInterface):
             if c in '.':
                 if '...' in self.get_text(pos-2, pos+3):
                     return 'ellipsis'
-                return 'word'
+                return 'dot'
             if c in ",:;": return 'sep'
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
@@ -541,9 +541,9 @@ class EditorInterface(CtrlInterface):
             return ''
         elif lsty == 'suji' or rsty == 'suji':
             styles = {'suji'}
-        elif lsty in ('word', 'moji', 'rparen')\
-          or rsty in ('word', 'moji', 'lparen'):
-            styles = {'word', 'moji', 'paren'}
+        elif lsty in ('word', 'dot', 'moji', 'rparen')\
+          or rsty in ('word', 'dot', 'moji', 'lparen'):
+            styles = {'word', 'dot', 'moji', 'paren'}
         else:
             return ''
         while 1:
