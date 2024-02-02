@@ -2522,8 +2522,8 @@ class Nautilus(Shell, EditorInterface):
             2 : { # word auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
-                   'up pressed' : (2, self.on_completion_backward, skip),
-                 'down pressed' : (2, self.on_completion_forward, skip),
+                   'up pressed' : (2, skip, self.on_completion_backward),
+                 'down pressed' : (2, skip, self.on_completion_forward),
                 '*left pressed' : (2, skip),
                '*right pressed' : (2, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2555,8 +2555,8 @@ class Nautilus(Shell, EditorInterface):
             3 : { # apropos auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
-                   'up pressed' : (3, self.on_completion_backward, skip),
-                 'down pressed' : (3, self.on_completion_forward, skip),
+                   'up pressed' : (3, skip, self.on_completion_backward),
+                 'down pressed' : (3, skip, self.on_completion_forward),
                 '*left pressed' : (3, skip),
                '*right pressed' : (3, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2586,8 +2586,8 @@ class Nautilus(Shell, EditorInterface):
             4 : { # text auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
-                   'up pressed' : (4, self.on_completion_backward, skip),
-                 'down pressed' : (4, self.on_completion_forward, skip),
+                   'up pressed' : (4, skip, self.on_completion_backward),
+                 'down pressed' : (4, skip, self.on_completion_forward),
                 '*left pressed' : (4, skip),
                '*right pressed' : (4, skip),
                   'tab pressed' : (0, clear, skip),
@@ -2617,8 +2617,8 @@ class Nautilus(Shell, EditorInterface):
             5 : { # module auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
-                   'up pressed' : (5, self.on_completion_backward, skip),
-                 'down pressed' : (5, self.on_completion_forward, skip),
+                   'up pressed' : (5, skip, self.on_completion_backward),
+                 'down pressed' : (5, skip, self.on_completion_forward),
                 '*left pressed' : (5, skip),
                '*right pressed' : (5, skip),
                   'tab pressed' : (0, clear, skip),
