@@ -1546,6 +1546,7 @@ class Buffer(EditWindow, EditorInterface):
             self.message("URL {!r}".format(text))
             ## Note: Need a post-call of the confirmation dialog.
             wx.CallAfter(self.parent.load_url, text)
+        self.anchor = pos # Clear selection
     
     def on_modified(self, buf):
         """Called when the buffer is modified."""
@@ -2003,7 +2004,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
         finally:
             self.Thaw()
     
-    load_url = load_file #: for backward compatibility
+    def load_url(self, url):
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            self.load_file(url)
+        else:
+            import webbrowser
+            webbrowser.open(url)
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
