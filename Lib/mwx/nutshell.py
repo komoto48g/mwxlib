@@ -109,9 +109,10 @@ class EditorInterface(CtrlInterface):
                                        _F(self.recenter)),
                   'M-f pressed' : (10, _F(self.filter_text), self.on_itext_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
+                'C-S-c pressed' : (0, _F(self.Copy)),
+                'C-S-v pressed' : (0, _F(self.Paste)),
                   'C-l pressed' : (0, _F(self.recenter)),
                 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
-                  'C-t pressed' : (0, ),                  # overrides transpose-line
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
             'C-S-space pressed' : (0, _F(self.set_pointer)),
@@ -1978,8 +1979,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.swap_buffer(buf, lineno)
             return True
         try:
-            ## busy = wx.BusyInfo("One moment please.\n"
-            ##                    "Loading {!r}...".format(filename))
             self.Freeze()
             org = self.buffer
             if re.match(url_re, filename):
