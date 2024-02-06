@@ -42,12 +42,3 @@ class Plugin(Layer):
             return
         dst = cv2.GaussianBlur(src, (k, k), 0.)
         self.output.load(dst, name="*gauss*")
-
-
-if __name__ == "__main__":
-    app = wx.App()
-    frm = Frame(None)
-    frm.load_plug(Plugin, show=1, dock=4)
-    frm.load_buffer("./sample.bmp")
-    frm.Show()
-    app.MainLoop()
