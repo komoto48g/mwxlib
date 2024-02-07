@@ -2471,7 +2471,6 @@ class Nautilus(Shell, EditorInterface):
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpTip2),
                     '. pressed' : (2, self.OnEnterDot),
-                  'C-. pressed' : (2, self.OnExtraDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
@@ -2515,10 +2514,6 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
-                  'C-. pressed' : (2, ),
-                 'C-. released' : (2, self.call_word_autocomp),
-                  'M-. pressed' : (2, ),
-                 'M-. released' : (2, self.call_word_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
             'S-[a-z\\] pressed' : (2, skip),
@@ -2548,8 +2543,6 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
-                  'M-/ pressed' : (3, ),
-                 'M-/ released' : (3, self.call_apropos_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
           '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
             'S-[a-z\\] pressed' : (3, skip),
@@ -2579,8 +2572,6 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
-                  'M-, pressed' : (4, ),
-                 'M-, released' : (4, self.call_text_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
           '[a-z0-9_.] released' : (4, self.call_text_autocomp),
             'S-[a-z\\] pressed' : (4, skip),
@@ -2610,7 +2601,6 @@ class Nautilus(Shell, EditorInterface):
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, fork),
                'escape pressed' : (0, clear_autocomp),
-                  'M-m pressed' : (5, ),
                  'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
           '[a-z0-9_.,] pressed' : (5, skip),
          '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
@@ -2732,12 +2722,6 @@ class Nautilus(Shell, EditorInterface):
         elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
         self.ReplaceSelection('.') # just write down a dot.
-    
-    def OnExtraDot(self, evt):
-        """Called when ex-dot [C-.] pressed."""
-        if not self.CanEdit():
-            self.handler('quit', evt)
-            return
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
