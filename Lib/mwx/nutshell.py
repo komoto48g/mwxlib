@@ -2483,6 +2483,8 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear),
                          'fork' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
+                'enter pressed' : (0, lambda v: self.goto_char(self.eolc)),
+               'escape pressed' : (0, clear),
                'S-left pressed' : (1, skip),
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
@@ -2491,8 +2493,6 @@ class Nautilus(Shell, EditorInterface):
                 'S-tab pressed' : (1, self.on_completion_backward_history),
                   'M-p pressed' : (1, self.on_completion_forward_history),
                   'M-n pressed' : (1, self.on_completion_backward_history),
-                'enter pressed' : (0, lambda v: self.goto_char(self.eolc)),
-               'escape pressed' : (0, clear),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
             'S-[a-z\\] pressed' : (1, skip),
@@ -2507,15 +2507,15 @@ class Nautilus(Shell, EditorInterface):
             2 : { # word auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
+               'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (2, skip, self.on_completion_backward),
                  'down pressed' : (2, skip, self.on_completion_forward),
                 '*left pressed' : (2, skip),
                '*left released' : (2, self.call_word_autocomp),
                '*right pressed' : (2, skip),
               '*right released' : (2, self.call_word_autocomp),
-                  'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, clear_autocomp),
            '[a-z0-9_.] pressed' : (2, skip),
           '[a-z0-9_.] released' : (2, self.call_word_autocomp),
             'S-[a-z\\] pressed' : (2, skip),
@@ -2538,15 +2538,15 @@ class Nautilus(Shell, EditorInterface):
             3 : { # apropos auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
+               'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (3, skip, self.on_completion_backward),
                  'down pressed' : (3, skip, self.on_completion_forward),
                 '*left pressed' : (3, skip),
                '*left released' : (3, self.call_apropos_autocomp),
                '*right pressed' : (3, skip),
               '*right released' : (3, self.call_apropos_autocomp),
-                  'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, clear_autocomp),
            '[a-z0-9_.] pressed' : (3, skip),
           '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
             'S-[a-z\\] pressed' : (3, skip),
@@ -2569,15 +2569,15 @@ class Nautilus(Shell, EditorInterface):
             4 : { # text auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
+               'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (4, skip, self.on_completion_backward),
                  'down pressed' : (4, skip, self.on_completion_forward),
                 '*left pressed' : (4, skip),
                '*left released' : (4, self.call_text_autocomp),
                '*right pressed' : (4, skip),
               '*right released' : (4, self.call_text_autocomp),
-                  'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, clear_autocomp),
            '[a-z0-9_.] pressed' : (4, skip),
           '[a-z0-9_.] released' : (4, self.call_text_autocomp),
             'S-[a-z\\] pressed' : (4, skip),
@@ -2600,21 +2600,21 @@ class Nautilus(Shell, EditorInterface):
             5 : { # module auto completion AS-mode
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, fork),
+               'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (5, skip, self.on_completion_backward),
                  'down pressed' : (5, skip, self.on_completion_forward),
                 '*left pressed' : (5, skip),
                '*left released' : (5, self.call_module_autocomp),
                '*right pressed' : (5, skip),
               '*right released' : (5, self.call_module_autocomp),
-                  'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
-               'escape pressed' : (0, clear_autocomp),
-                 'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
           '[a-z0-9_.,] pressed' : (5, skip),
          '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
                   '\\ released' : (5, self.call_module_autocomp),
+                 'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
            '*backspace pressed' : (5, skip_autocomp),
           '*backspace released' : (5, self.call_module_autocomp),
@@ -2927,7 +2927,7 @@ class Nautilus(Shell, EditorInterface):
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-autocomp
+    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp
     
     ## shell.history is an instance variable of the Shell.
     ## If del shell.history, the history of the class variable is used
@@ -3420,7 +3420,7 @@ class Nautilus(Shell, EditorInterface):
             ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
             words = sorted(ls, key=lambda s:s.upper())
             
-            self._gen_autocomp(-1, hint, words)
+            self._gen_autocomp(0, hint, words)
             self.message("[text] {} candidates matched"
                          " with {!r}".format(len(words), hint))
         except Exception:
