@@ -1599,6 +1599,9 @@ class Frame(mwx.Frame):
                     if retvals and any(retvals):
                         continue
                     raise # no context or no handlers or cannot identify image file
+                except FileNotFoundError as e:
+                    print(e)
+                    continue
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
                     n = buf.n_frames
