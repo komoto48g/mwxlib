@@ -146,8 +146,8 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
                     word = repr(value)
                     word = ' '.join(s.strip() for s in word.splitlines())
                     n += 1
-                except (TypeError, ValueError):
-                    continue
+                ## except (TypeError, ValueError):
+                ##     continue
                 except Exception as e:
                     word = f"#<{e!r}>"
                 if len(word) > 80:
