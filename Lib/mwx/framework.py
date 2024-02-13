@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.93.1"
+__version__ = "0.93.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -963,9 +963,8 @@ class AuiNotebook(aui.AuiNotebook):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
-        except Exception as e:
-            print(f"- Failed to load perspective: {e}")
-            pass
+        except Exception:
+            print("- Failed to load perspective:", e)
         finally:
             self.Parent.Thaw()
 

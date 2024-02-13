@@ -992,7 +992,7 @@ class GraphPlot(MatplotPanel):
             bins, vlim, img = imconvert(data, self.frame.vlim)
             Clipboard.imwrite(img)
         except Exception as e:
-            self.message("- Failure in clipboard: {}".format(e))
+            self.message("- Failure in clipboard:", e)
             traceback.print_exc()
     
     def read_buffer_from_clipboard(self):
@@ -1009,7 +1009,7 @@ class GraphPlot(MatplotPanel):
                 self.message("Read image from clipboard.")
                 self.load(Clipboard.imread())
         except Exception as e:
-            self.message("- No data in clipboard: {}".format(e))
+            self.message("- No data in clipboard:", e)
             traceback.print_exc()
     
     def destroy_colorbar(self):

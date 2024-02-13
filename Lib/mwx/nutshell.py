@@ -1682,7 +1682,7 @@ class Buffer(EditWindow, EditorInterface):
                 self.EnsureCaretVisible()
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
-            self.message("- {}".format(e))
+            self.message(e)
             ## print(msg, file=sys.__stderr__)
         else:
             self.code = code
@@ -2299,7 +2299,7 @@ class Nautilus(Shell, EditorInterface):
             obj.this = inspect.getmodule(obj)
             obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
-            ## print("- cannot overwrite target vars: {}".format(e))
+            ## print("- cannot overwrite target vars:", e)
             pass
         self.parent.handler('title_window', obj)
     
@@ -3292,7 +3292,7 @@ class Nautilus(Shell, EditorInterface):
                 if lines:
                     region = self.get_region(self.cline)
                     self.pointer = region[0] + lines[-1] - 1
-                self.message("- {}".format(e))
+                self.message(e)
                 ## print(msg, file=sys.__stderr__)
             else:
                 del self.pointer
@@ -3461,7 +3461,7 @@ class Nautilus(Shell, EditorInterface):
                 try:
                     modules = set(dir(import_module(text)))
                 except ImportError as e:
-                    self.message("\b failed: {}".format(e))
+                    self.message("\b failed:", e)
                     return
                 ## Add unimported module names.
                 p = "{}.{}".format(text, hint)

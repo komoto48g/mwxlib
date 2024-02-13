@@ -13,7 +13,7 @@ def _repr(value):
     try:
         return repr(value)
     except Exception as e:
-        return "- {!r}".format(e)
+        return f"- {e!r}"
 
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):

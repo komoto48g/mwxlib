@@ -167,12 +167,12 @@ class Thread(object):
             except BdbQuit:
                 pass
             except KeyboardInterrupt as e:
-                print("- Thread:execution stopped: {}".format(e))
+                print("- Thread:execution stopped:", e)
             except AssertionError as e:
-                print("- Thread:execution failed: {}".format(e))
+                print("- Thread:execution failed:", e)
             except Exception as e:
                 traceback.print_exc()
-                print("- Thread:exception: {}".format(e))
+                print("- Thread:exception:", e)
                 self.handler('thread_error', self)
             finally:
                 self.active = 0
@@ -393,14 +393,14 @@ class LayerInterface(CtrlInterface):
             if parent:
                 bmp = wx.StaticBitmap(self, bitmap=Icon('!!!'))
                 txt = wx.StaticText(self, label="Exception")
-                txt.SetToolTip(repr(e))
+                txt.SetToolTip(str(e))
                 self.layout((bmp, txt), row=2)
         try:
             if session:
                 self.load_session(session)
         except Exception as e:
             traceback.print_exc()
-            print("- Failed to load session of {}".format(self))
+            print("- Failed to load session of", self)
     
     def Init(self):
         """Initialize layout before load_session (to be overridden)."""
@@ -453,7 +453,7 @@ class LayerInterface(CtrlInterface):
             if canvas:
                 canvas.draw_idle()
         except Exception as e:
-            print("- Failed to draw Arts of {!r}: {}".format(self.__module__, e))
+            print("- Failed to draw Arts of {}: {}".format(self.__module__, e))
             del self.Arts
 
 
@@ -1148,7 +1148,7 @@ class Frame(mwx.Frame):
                     plug.load_session(session)
             except Exception as e:
                 traceback.print_exc()
-                print("- Failed to load session of {}".format(plug))
+                print("- Failed to load session of", plug)
             return None
         
         module = self.load_module(root)
@@ -1185,8 +1185,8 @@ class Frame(mwx.Frame):
         except (AttributeError, NameError) as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
-                         "{}\n\n".format(e) + traceback.format_exc(),
-                         "Error in loading {!r}".format(module.__name__),
+                         f"{e}\n\n" + traceback.format_exc(),
+                         f"Error in loading {module.__name__!r}",
                          style=wx.ICON_ERROR)
             return False
         
@@ -1199,8 +1199,8 @@ class Frame(mwx.Frame):
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
-                         "{}\n\n".format(e) + traceback.format_exc(),
-                         "Error in loading {!r}".format(name),
+                         f"{e}\n\n" + traceback.format_exc(),
+                         f"Error in loading {name!r}",
                          style=wx.ICON_ERROR)
             return False
         
@@ -1312,8 +1312,8 @@ class Frame(mwx.Frame):
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,
-                         "{}\n\n".format(e) + traceback.format_exc(),
-                         "Error in unloading {!r}".format(name),
+                         f"{e}\n\n" + traceback.format_exc(),
+                         f"Error in unloading {name!r}",
                          style=wx.ICON_ERROR)
             return False
     
@@ -1328,7 +1328,7 @@ class Frame(mwx.Frame):
                 plug.save_session(session)
             except Exception:
                 traceback.print_exc()
-                print("- Failed to save session of {}".format(plug))
+                print("- Failed to save session of", plug)
             return self.load_plug(plug.__module__, force=1, session=session)
         return False
     
@@ -1488,7 +1488,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print("- Failed to read attributes: {}".format(e))
+            print("- Failed to read attributes:", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return res, mis # finally raises no exception
@@ -1511,7 +1511,7 @@ class Frame(mwx.Frame):
                 pprint(tuple(new.items()), stream=o)
             
         except Exception as e:
-            print("- Failed to write attributes: {}".format(e))
+            print("- Failed to write attributes:", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return new, mis # finally raises no exception
@@ -1629,7 +1629,7 @@ class Frame(mwx.Frame):
             self.message("\b done.")
         except Exception as e:
             self.message("\b failed.")
-            wx.MessageBox(repr(e), style=wx.ICON_ERROR)
+            wx.MessageBox(str(e), style=wx.ICON_ERROR)
         
         if frame:
             view.select(frame)
@@ -1790,7 +1790,7 @@ class Frame(mwx.Frame):
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()
-                    print("- Failed to save session of {}".format(plug))
+                    print("- Failed to save session of", plug)
                 o.write("self.load_plug({!r}, session={})\n".format(path, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             

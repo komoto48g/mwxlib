@@ -134,7 +134,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
         except re.error as e:
-            print("- re:miss compilation {!r} : {!r}".format(e, rexpr))
+            print("- re:miss compilation:", e)
         else:
             keys = sorted(filter(p.search, dir(obj)), key=lambda s:s.upper())
             n = 0
@@ -149,7 +149,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
                 except (TypeError, ValueError):
                     continue
                 except Exception as e:
-                    word = '#<{!r}>'.format(e)
+                    word = f"#<{e!r}>"
                 if len(word) > 80:
                     word = word[:80] + '...' # truncate words +3 ellipsis
                 print("    {}.{:<36s} {}".format(name, key, word))
@@ -399,8 +399,7 @@ def find_modules(force=False, verbose=True):
     
     def _error(modname):
         if verbose:
-            print("- failed: {}".format(modname),
-                  file=sys.__stderr__)
+            print("- Failed: {}".format(modname), file=sys.__stderr__)
     
     if not force and os.path.exists(fn):
         with open(fn, 'r') as o:
@@ -658,11 +657,11 @@ class FSM(dict):
                     pass
                 except Exception as e:
                     self.dump("- FSM:exception: {!r}".format(e),
-                              "   event : {}".format(event),
-                              "    from : {}".format(self.__prev_state),
-                              "      to : {}".format(self.__state),
+                              "  event  : {}".format(event),
+                              "  from   : {}".format(self.__prev_state),
+                              "  to     : {}".format(self.__state),
                               "  action : {}".format(typename(act)),
-                              "    args : {}".format(args),
+                              "  args   : {}".format(args),
                               "  kwargs : {}".format(kwargs))
                     traceback.print_exc()
             self.__matched_pattern = None
