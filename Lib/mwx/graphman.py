@@ -298,7 +298,11 @@ class LayerInterface(CtrlInterface):
         self.parent = parent
         self.__artists = []
         
-        self.parameters = None # => reset
+        try:
+            ## Check if parameters exists without triggering dynamic lookup.
+            inspect.getattr_static(self, "parameters")
+        except AttributeError:
+            self.parameters = None
         
         def copy_params(**kwargs):
             if self.parameters:
