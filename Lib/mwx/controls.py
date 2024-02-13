@@ -714,7 +714,7 @@ class ControlPanel(scrolled.ScrolledPanel):
     ## --------------------------------
     @property
     def parameters(self):
-        return [p.value for p in chain(*self.__params)]
+        return [p.value for p in self.get_params()]
     
     @parameters.setter
     def parameters(self, v):
