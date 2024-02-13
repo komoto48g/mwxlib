@@ -383,6 +383,22 @@ def _extract_paren_from_tokens(tokens, reverse=False):
     return [] # error("unclosed-paren")
 
 
+def walk_packages_no_import(path=None, prefix=''):
+    """Yields module info recursively for all submodules on path.
+    If path is None, yields all top-level modules on sys.path.
+    """
+    for info in pkgutil.iter_modules(path, prefix):
+        yield info
+        if info.ispkg:
+            name = info.name.rpartition('.')[2]
+            try:
+                path = [os.path.join(info.module_finder.path, name)]
+            except AttributeError:
+                ## Actually, it doesn't get here.
+                path = [os.path.join(info.module_finder.archive, name)]
+            yield from walk_packages_no_import(path, info.name+'.')
+
+
 def find_modules(force=False, verbose=True):
     """Find all modules available and write to log file.
     
@@ -393,32 +409,21 @@ def find_modules(force=False, verbose=True):
     
     def _callback(path, modname, desc=''):
         if verbose:
-            print("Scanning {:70s}".format(modname[:70]), end='\r',
-                  file=sys.__stdout__)
+            print("Scanning {:70s}".format(modname[:70]), end='\r')
         lm.append(modname)
     
     def _error(modname):
         if verbose:
-            print("- Failed: {}".format(modname), file=sys.__stderr__)
+            print("- Failed: {}".format(modname))
     
     if not force and os.path.exists(fn):
         with open(fn, 'r') as o:
             lm = eval(o.read()) # read and evaluate module list
         
-        ## Check additional packages/modules
+        ## Check additional packages and modules
         verbose = False
-        for root in pkgutil.iter_modules():
-            if root.name not in lm:
-                _callback(None, root.name)
-                if root.ispkg:
-                    try:
-                        #<FileFinder object>
-                        path = [os.path.join(root.module_finder.path, root.name)]
-                    except AttributeError:
-                        #<zipimporter object> e.g. egg
-                        path = [os.path.join(root.module_finder.archive, root.name)]
-                    for info in pkgutil.walk_packages(path, root.name+'.', onerror=_error):
-                        _callback(None, info.name)
+        for info in walk_packages_no_import(['.']):
+            _callback('.', info.name)
     else:
         print("Please wait a moment "
               "while Py{} gathers a list of all available modules... "
@@ -427,6 +432,9 @@ def find_modules(force=False, verbose=True):
         lm = list(sys.builtin_module_names)
         
         ## pydoc.ModuleScanner().run(_callback, key='', onerror=_error)
+        
+        ## Note: pkgutil.walk_packages must import all packages (not all modules!)
+        ##       on the given path, in order to access the __path__ attribute.
         for info in pkgutil.walk_packages(onerror=_error):
             _callback(None, info.name)
         
