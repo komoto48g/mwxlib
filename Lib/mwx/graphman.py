@@ -388,8 +388,6 @@ class LayerInterface(CtrlInterface):
         
         try:
             self.Init()
-            if session:
-                self.load_session(session)
         except Exception as e:
             traceback.print_exc()
             if parent:
@@ -397,6 +395,12 @@ class LayerInterface(CtrlInterface):
                 txt = wx.StaticText(self, label="Exception")
                 txt.SetToolTip(repr(e))
                 self.layout((bmp, txt), row=2)
+        try:
+            if session:
+                self.load_session(session)
+        except Exception as e:
+            traceback.print_exc()
+            print("- Failed to load session of {}".format(self))
     
     def Init(self):
         """Initialize layout before load_session (to be overridden)."""
@@ -1139,8 +1143,12 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if plug and not force: # <plug:name> is already registered.
             self.update_pane(name, **props)
-            if session:
-                plug.load_session(session)
+            try:
+                if session:
+                    plug.load_session(session)
+            except Exception as e:
+                traceback.print_exc()
+                print("- Failed to load session of {}".format(plug))
             return None
         
         module = self.load_module(root)
@@ -1320,7 +1328,7 @@ class Frame(mwx.Frame):
                 plug.save_session(session)
             except Exception:
                 traceback.print_exc()
-                print("- Failed to save session: {}".format(plug))
+                print("- Failed to save session of {}".format(plug))
             return self.load_plug(plug.__module__, force=1, session=session)
         return False
     
@@ -1782,7 +1790,7 @@ class Frame(mwx.Frame):
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()
-                    print("- Failed to save session: {}".format(plug))
+                    print("- Failed to save session of {}".format(plug))
                 o.write("self.load_plug({!r}, session={})\n".format(path, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
