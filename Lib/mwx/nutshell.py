@@ -2354,7 +2354,7 @@ class Nautilus(Shell, EditorInterface):
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
         
-        ## cf. sys.modules (shell.modules
+        ## cf. sys.modules
         if not self.modules:
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
