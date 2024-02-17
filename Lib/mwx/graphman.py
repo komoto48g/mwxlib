@@ -423,7 +423,13 @@ class LayerInterface(CtrlInterface):
         lambda self,v: self.Show(v))
     
     def IsShown(self):
-        return self.parent.get_pane(self).IsShown()
+        """Returns True if the window is physically visible on the screen.
+        
+        Note: This method is overridden to be equivalent to IsShownOnScreen,
+              as the object may be a page within a notebook.
+        """
+        ## return self.pane.IsShown()
+        return self.IsShownOnScreen()
     
     def Show(self, show=True, interactive=False):
         """Show associated pane (override) window."""
@@ -449,7 +455,6 @@ class LayerInterface(CtrlInterface):
             ## Arts may be belonging to graph, output, and any other windows.
             for art in self.Arts:
                 art.set_visible(show)
-            ## EVT_SHOW [page_hidden] is called when the page is destroyed.
             ## To avoid RuntimeError, check if canvas object has been deleted.
             canvas = art.axes.figure.canvas
             if canvas:
@@ -915,23 +920,32 @@ class Frame(mwx.Frame):
                 pane.Float()
                 show = True
         
+        ## Fork page shown/closed events to emulatie EVT_SHOW => plug.on_show.
+        ## cf. >>> win.EventHandler.ProcessEvent(wx.ShowEvent(win.Id, show))
+        ## 
+        ## Note: We need to distinguish cases whether:
+        ##       - pane.window is AuiNotebook or normal Panel,
+        ##       - pane.window is floating (win.Parent is AuiFloatingFrame) or docked.
         plug = self.get_plug(name) # -> None if pane.window is a Graph
         win = pane.window # -> Window (plug / notebook / Graph)
-        if show:
+        try:
+            shown = plug.IsShown()
+        except AttributeError:
+            shown = pane.IsShown()
+        if show and not shown:
             if isinstance(win, aui.AuiNotebook):
                 j = win.GetPageIndex(plug)
                 if j != win.Selection:
-                    win.Selection = j # the focus is moved => [page_shown]
+                    win.Selection = j # the focus is moved => EVT_SHOW
                 else:
                     plug.handler('page_shown', plug)
-            elif not pane.IsShown():
-                if not plug or win.Parent is not self: # otherwise Layer.on_show
-                    win.handler('page_shown', win)
-        else:
+            else:
+                win.handler('page_shown', win)
+        elif not show and shown:
             if isinstance(win, aui.AuiNotebook):
-                for plug in win.all_pages: # => [page_closed] to all pages
+                for plug in win.all_pages:
                     plug.handler('page_closed', plug)
-            elif pane.IsShown():
+            else:
                 win.handler('page_closed', win)
         
         ## Modify the floating position of the pane when displayed.
@@ -939,8 +953,10 @@ class Frame(mwx.Frame):
         ##       and will be fixed in wxPython 4.2.1.
         if wx.Display.GetFromWindow(pane.window) == -1:
             pane.floating_pos = wx.GetMousePosition()
+        
         pane.Show(show)
         self._mgr.Update()
+        return (show != shown)
     
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane.
@@ -974,8 +990,7 @@ class Frame(mwx.Frame):
             pane.Dock()
         else:
             pane.Float()
-        self.show_pane(name, show)
-        self._mgr.Update()
+        return self.show_pane(name, show)
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
