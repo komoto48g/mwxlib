@@ -985,9 +985,6 @@ class Frame(mwx.Frame):
                 plug.handler('page_closed', plug)
         else:
             win.handler('page_closed', win)
-        pane.Show(0)
-        self._mgr.Update()
-        evt.Veto() # Don't skip. Just hide it.
     
     ## --------------------------------
     ## Plugin (Layer) interface
