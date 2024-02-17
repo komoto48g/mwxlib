@@ -379,10 +379,12 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def on_show(v):
+            if not self:
+                return
             if v.IsShown():
                 self.handler('page_shown', self)
-            elif self and isinstance(self.Parent, aui.AuiNotebook):
-                self.handler('page_hidden', self) # -> notebook
+            elif isinstance(self.Parent, aui.AuiNotebook):
+                self.handler('page_hidden', self)
             v.Skip()
         self.Bind(wx.EVT_SHOW, on_show)
         
