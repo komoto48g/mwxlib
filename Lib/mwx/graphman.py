@@ -702,11 +702,11 @@ class Frame(mwx.Frame):
             (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("graph", v.IsChecked()),
-                lambda v: v.Check(self.get_pane("graph").IsShown())),
+                lambda v: v.Check(self.graph.IsShown())),
                 
             (mwx.ID_(14), "&Output window\tF10", "Show Output window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("output", v.IsChecked()),
-                lambda v: v.Check(self.get_pane("output").IsShown())),
+                lambda v: v.Check(self.output.IsShown())),
             (),
         ]
         self.menubar["Edit"] = [
@@ -732,7 +732,7 @@ class Frame(mwx.Frame):
             (),
             (mwx.ID_(24), "&Histogram\tCtrl-h", "Show Histogram window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("histogram", v.IsChecked()),
-                lambda v: v.Check(self.get_pane("histogram").IsShown())),
+                lambda v: v.Check(self.histogram.IsShown())),
                 
             (mwx.ID_(25), "&Invert Color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.__view.invert_cmap(),
@@ -1057,9 +1057,6 @@ class Frame(mwx.Frame):
             IsShown = LayerInterface.IsShown
             Shown = LayerInterface.Shown
             Show = LayerInterface.Show
-            
-            ## Implicit (override) precedence
-            ## cls.Init / cls.save_session / cls.load_session
         
         _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
@@ -1278,7 +1275,7 @@ class Frame(mwx.Frame):
             plug.__Menu_item = (
                 module.ID_, text, hint, wx.ITEM_CHECK,
                 lambda v: self.show_pane(name, v.IsChecked(), interactive=1),
-                lambda v: v.Check(self.get_pane(name).IsShown()),
+                lambda v: v.Check(plug.IsShown()),
             )
             if menu not in self.menubar:
                 self.menubar[menu] = []
