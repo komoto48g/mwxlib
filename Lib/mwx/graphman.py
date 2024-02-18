@@ -379,10 +379,12 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
         
         def on_show(v):
+            if not self:
+                return
             if v.IsShown():
                 self.handler('page_shown', self)
-            elif self and isinstance(self.Parent, aui.AuiNotebook):
-                self.handler('page_hidden', self) # -> notebook
+            elif isinstance(self.Parent, aui.AuiNotebook):
+                self.handler('page_hidden', self)
             v.Skip()
         self.Bind(wx.EVT_SHOW, on_show)
         
@@ -421,7 +423,13 @@ class LayerInterface(CtrlInterface):
         lambda self,v: self.Show(v))
     
     def IsShown(self):
-        return self.parent.get_pane(self).IsShown()
+        """Returns True if the window is physically visible on the screen.
+        
+        Note: This method is overridden to be equivalent to IsShownOnScreen,
+              as the object may be a page within a notebook.
+        """
+        ## return self.pane.IsShown()
+        return self.IsShownOnScreen()
     
     def Show(self, show=True, interactive=False):
         """Show associated pane (override) window."""
@@ -447,7 +455,6 @@ class LayerInterface(CtrlInterface):
             ## Arts may be belonging to graph, output, and any other windows.
             for art in self.Arts:
                 art.set_visible(show)
-            ## EVT_SHOW [page_hidden] is called when the page is destroyed.
             ## To avoid RuntimeError, check if canvas object has been deleted.
             canvas = art.axes.figure.canvas
             if canvas:
@@ -695,11 +702,11 @@ class Frame(mwx.Frame):
             (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("graph", v.IsChecked()),
-                lambda v: v.Check(self.get_pane("graph").IsShown())),
+                lambda v: v.Check(self.graph.IsShown())),
                 
             (mwx.ID_(14), "&Output window\tF10", "Show Output window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("output", v.IsChecked()),
-                lambda v: v.Check(self.get_pane("output").IsShown())),
+                lambda v: v.Check(self.output.IsShown())),
             (),
         ]
         self.menubar["Edit"] = [
@@ -725,7 +732,7 @@ class Frame(mwx.Frame):
             (),
             (mwx.ID_(24), "&Histogram\tCtrl-h", "Show Histogram window", wx.ITEM_CHECK,
                 lambda v: self.show_pane("histogram", v.IsChecked()),
-                lambda v: v.Check(self.get_pane("histogram").IsShown())),
+                lambda v: v.Check(self.histogram.IsShown())),
                 
             (mwx.ID_(25), "&Invert Color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.__view.invert_cmap(),
@@ -913,23 +920,32 @@ class Frame(mwx.Frame):
                 pane.Float()
                 show = True
         
+        ## Fork page shown/closed events to emulatie EVT_SHOW => plug.on_show.
+        ## cf. >>> win.EventHandler.ProcessEvent(wx.ShowEvent(win.Id, show))
+        ## 
+        ## Note: We need to distinguish cases whether:
+        ##       - pane.window is AuiNotebook or normal Panel,
+        ##       - pane.window is floating (win.Parent is AuiFloatingFrame) or docked.
         plug = self.get_plug(name) # -> None if pane.window is a Graph
         win = pane.window # -> Window (plug / notebook / Graph)
-        if show:
+        try:
+            shown = plug.IsShown()
+        except AttributeError:
+            shown = pane.IsShown()
+        if show and not shown:
             if isinstance(win, aui.AuiNotebook):
                 j = win.GetPageIndex(plug)
                 if j != win.Selection:
-                    win.Selection = j # the focus is moved => [page_shown]
+                    win.Selection = j # the focus is moved => EVT_SHOW
                 else:
                     plug.handler('page_shown', plug)
-            elif not pane.IsShown():
-                if not plug or win.Parent is not self: # otherwise Layer.on_show
-                    win.handler('page_shown', win)
-        else:
+            else:
+                win.handler('page_shown', win)
+        elif not show and shown:
             if isinstance(win, aui.AuiNotebook):
-                for plug in win.all_pages: # => [page_closed] to all pages
+                for plug in win.all_pages:
                     plug.handler('page_closed', plug)
-            elif pane.IsShown():
+            else:
                 win.handler('page_closed', win)
         
         ## Modify the floating position of the pane when displayed.
@@ -937,8 +953,10 @@ class Frame(mwx.Frame):
         ##       and will be fixed in wxPython 4.2.1.
         if wx.Display.GetFromWindow(pane.window) == -1:
             pane.floating_pos = wx.GetMousePosition()
+        
         pane.Show(show)
         self._mgr.Update()
+        return (show != shown)
     
     def update_pane(self, name, show=False, **kwargs):
         """Update the layout of the pane.
@@ -972,8 +990,7 @@ class Frame(mwx.Frame):
             pane.Dock()
         else:
             pane.Float()
-        self.show_pane(name, show)
-        self._mgr.Update()
+        return self.show_pane(name, show)
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
@@ -983,9 +1000,6 @@ class Frame(mwx.Frame):
                 plug.handler('page_closed', plug)
         else:
             win.handler('page_closed', win)
-        pane.Show(0)
-        self._mgr.Update()
-        evt.Veto() # Don't skip. Just hide it.
     
     ## --------------------------------
     ## Plugin (Layer) interface
@@ -1043,9 +1057,6 @@ class Frame(mwx.Frame):
             IsShown = LayerInterface.IsShown
             Shown = LayerInterface.Shown
             Show = LayerInterface.Show
-            
-            ## Implicit (override) precedence
-            ## cls.Init / cls.save_session / cls.load_session
         
         _Plugin.__module__ = cls.__module__ = module.__name__
         _Plugin.__name__ = cls.__name__ + str("~")
@@ -1264,7 +1275,7 @@ class Frame(mwx.Frame):
             plug.__Menu_item = (
                 module.ID_, text, hint, wx.ITEM_CHECK,
                 lambda v: self.show_pane(name, v.IsChecked(), interactive=1),
-                lambda v: v.Check(self.get_pane(name).IsShown()),
+                lambda v: v.Check(plug.IsShown()),
             )
             if menu not in self.menubar:
                 self.menubar[menu] = []
