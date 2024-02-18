@@ -703,7 +703,7 @@ class GraphPlot(MatplotPanel):
         
         self.draw()
         self.writeln()
-        self.trace_point(*self.Selector, type=NORMAL)
+        self.trace_point(*self.Selector)
         
         return self.frame
     
@@ -887,6 +887,7 @@ class GraphPlot(MatplotPanel):
         MatplotPanel.on_focus_set(self, evt)
         if self.frame:
             self.handler('frame_selected', self.frame)
+        self.trace_point(*self.Selector)
     
     def on_focus_kill(self, evt):
         """Called when focus is killed (override)."""
@@ -1137,8 +1138,8 @@ class GraphPlot(MatplotPanel):
     
     def OnMotion(self, evt):
         """Called when mouse moves in axes (overridden)."""
-        if self.frame and self.Selector.shape[1] < 2:
-            self.trace_point(evt.xdata, evt.ydata, type=NORMAL)
+        if self.Selector.shape[1] < 2:
+            self.trace_point(evt.xdata, evt.ydata)
     
     def OnPageDown(self, evt):
         """Next page."""

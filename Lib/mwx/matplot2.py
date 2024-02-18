@@ -428,8 +428,7 @@ class MatplotPanel(wx.Panel):
         self.message("({:g}, {:g})".format(x, y))
     
     def on_figure_enter(self, evt): #<matplotlib.backend_bases.MouseEvent>
-        if self.Selector.size:
-            self.trace_point(*self.Selector)
+        pass
     
     def on_figure_leave(self, evt): #<matplotlib.backend_bases.MouseEvent>
         self.cursor.clear(evt)
