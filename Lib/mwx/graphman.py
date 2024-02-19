@@ -472,7 +472,6 @@ class Layer(ControlPanel, LayerInterface):
         LayerInterface.__init__(self, parent, session)
     
     ## Explicit (override) precedence
-    message = LayerInterface.message
     IsShown = LayerInterface.IsShown
     Shown = LayerInterface.Shown
     Show = LayerInterface.Show
@@ -1053,7 +1052,6 @@ class Frame(mwx.Frame):
                 LayerInterface.__init__(self, parent, session)
             
             ## Explicit (override) precedence
-            message = LayerInterface.message
             IsShown = LayerInterface.IsShown
             Shown = LayerInterface.Shown
             Show = LayerInterface.Show
