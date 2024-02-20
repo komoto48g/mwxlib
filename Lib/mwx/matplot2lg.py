@@ -676,7 +676,7 @@ class LineProfile(LinePlot):
             else:
                 self.region = x[[0,-1]] # all y > yc
             
-            self.__hline.set_ydata(yc)
+            self.__hline.set_ydata([yc])
             self.__hline.set_visible(1)
             self.message("y = {:g}, xr = {}".format(yc, self.region))
             self.draw()
