@@ -282,7 +282,8 @@ class Histogram(LinePlot):
             self.xlim = x.min(), x.max()
             self.ylim = 0, y.max()
             self.region = None
-            self.update_position()
+            self.toolbar.update()
+            self.toolbar.push_current()
             self.draw()
     
     def hreplot(self, frame):
@@ -308,7 +309,8 @@ class Histogram(LinePlot):
             self.__plot.set_data([], [])
             self.region = None
         
-        self.update_position()
+        self.toolbar.update()
+        self.toolbar.push_current()
         self.draw()
     
     def writeln(self):
@@ -572,7 +574,8 @@ class LineProfile(LinePlot):
                 self.xlim = ls[0], ls[-1]
                 self.ylim = ly[0], max(ly[1], max(zs))
             
-        self.update_position()
+        self.toolbar.update()
+        self.toolbar.push_current()
         self.draw()
     
     def writeln(self):

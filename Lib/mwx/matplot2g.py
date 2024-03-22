@@ -863,7 +863,8 @@ class GraphPlot(MatplotPanel):
         """Reset display range (xylim's), update home position."""
         if self.frame:
             self.axes.axis(self.frame.get_extent()) # reset xlim and ylim
-            self.update_position()
+            self.toolbar.update()
+            self.toolbar.push_current()
             self.draw()
     
     def fit_to_canvas(self):

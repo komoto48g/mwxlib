@@ -604,10 +604,6 @@ class MatplotPanel(wx.Panel):
     
     ZOOM_RATIO = 10**0.2
     
-    def update_position(self):
-        self.toolbar.update()
-        self.toolbar.push_current()
-    
     def OnDraw(self, evt):
         """Called before canvas.draw."""
         pass
@@ -630,12 +626,14 @@ class MatplotPanel(wx.Panel):
     def OnHomePosition(self, evt):
         """Go back to home position."""
         self.toolbar.home()
-        self.update_position()
+        self.toolbar.update()
+        self.toolbar.push_current()
         self.draw()
     
     def OnEscapeSelection(self, evt):
         """Escape from selection."""
         del self.Selector
+        self.canvas.draw_idle()
     
     ## def OnShiftLimit(self, evt, r=0.1):
     ##     w = self.xlim[1] - self.xlim[0]
@@ -686,7 +684,6 @@ class MatplotPanel(wx.Panel):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
-        ## self.draw()
         self.handler.current_state = self.__prev  # --> previous state of PAN
         del self.__prev
     
@@ -701,7 +698,6 @@ class MatplotPanel(wx.Panel):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
-        ## self.draw()
         self.handler.current_state = self.__prev  # --> previous state of ZOOM
         del self.__prev
     
