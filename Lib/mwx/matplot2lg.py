@@ -31,7 +31,7 @@ class LinePlot(MatplotPanel):
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
                   'M-a pressed' : (NORMAL, self.OnHomePosition),
                   'C-a pressed' : (NORMAL, self.OnHomePosition),
-             'Lbutton dblclick' : (NORMAL, self.OnEscapeSelection),
+             'Lbutton dblclick' : (NORMAL, self.OnEscapeSelection, self.OnDragLock),
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },
@@ -394,7 +394,7 @@ class LineProfile(LinePlot):
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },
             REGION : {
-                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
+                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock, self.OnDragLineBegin),
                  'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
                   '*Ldrag move' : (REGION, self.OnDragMove, self.OnDragTrace),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
