@@ -404,15 +404,15 @@ class MatplotPanel(wx.Panel):
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
         self.message("Copy image to clipboard.")
+        ## b = self.selected.get_visible()
+        c = self.cursor.visible
         try:
-            b = self.selected.get_visible()
-            c = self.cursor.visible
-            self.selected.set_visible(0)
+            ## self.selected.set_visible(0)
             self.cursor.visible = 0
             self.canvas.draw()
             self.canvas.Copy_to_Clipboard()
         finally:
-            self.selected.set_visible(b)
+            ## self.selected.set_visible(b)
             self.cursor.visible = c
             self.canvas.draw()
     
