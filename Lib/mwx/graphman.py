@@ -557,8 +557,8 @@ class MyFileDropLoader(wx.FileDropTarget):
     """File Drop interface
     
     Args:
-        loader : mainframe
         target : target view to drop in, e.g. frame, graph, pane, etc.
+        loader : mainframe
     """
     def __init__(self, target, loader):
         wx.FileDropTarget.__init__(self)
@@ -810,7 +810,7 @@ class Frame(mwx.Frame):
             self.handler('C-g pressed', v)
         
         ## Accepts DnD
-        self.SetDropTarget(MyFileDropLoader(self, self))
+        self.SetDropTarget(MyFileDropLoader(self.graph, self))
     
     sync_switch = True
     
