@@ -396,7 +396,7 @@ class LineProfile(LinePlot):
             REGION : {
                  'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
                  'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
-                  '*Ldrag move' : (REGION, self.OnDragMove),
+                  '*Ldrag move' : (REGION, self.OnDragMove, self.OnDragTrace),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             LINE: {
@@ -518,6 +518,14 @@ class LineProfile(LinePlot):
         """Plotted (xdata, ydata) in single plot."""
         return self.__plot.get_data(orig=0)
     
+    def calc_average(self):
+        X, Y = self.plotdata
+        if self.region is not None:
+            a, b = self.region
+            Y = Y[(a <= X) & (X <= b)]
+        if Y.size:
+            return Y.mean()
+    
     def linplot(self, frame, fit=True, force=True):
         if not force:
             if frame is self.__frame:
@@ -632,7 +640,7 @@ class LineProfile(LinePlot):
         if x.size:
             self.__fil.set_xy(list(chain([(x[0],0)], zip(x,y), [(x[-1],0)])))
         self.writeln()
-        
+    
     def OnLineWidth(self, evt):
         n = -2 if evt.key[-1] == '-' else 2
         self.set_linewidth(self.__linewidth + n)
@@ -651,7 +659,17 @@ class LineProfile(LinePlot):
     def OnDragLineBegin(self, evt):
         self.set_wxcursor(wx.CURSOR_SIZENS)
     
+    def OnDragTrace(self, evt):
+        """Show average value."""
+        y = self.calc_average()
+        if y is not None:
+            ## self.__hline.set_ydata([y])
+            ## self.__hline.set_visible(1)
+            ## self.canvas.draw_idle()
+            self.message(f"ya = {y:g}")
+    
     def OnRegionLock(self, evt):
+        """Show FWHM region."""
         x, y = self.plotdata
         if x.size:
             xc, yc = evt.xdata, evt.ydata
@@ -681,10 +699,11 @@ class LineProfile(LinePlot):
             
             self.__hline.set_ydata([yc])
             self.__hline.set_visible(1)
-            self.message("y = {:g}, xr = {}".format(yc, self.region))
             self.draw()
+            self.message(f"yc = {yc:g}")
     
     def OnMarkPeaks(self, evt):
+        """Set markers on peaks."""
         x, y = self.plotdata
         if x.size:
             lw = 5
@@ -702,7 +721,9 @@ class LineProfile(LinePlot):
                 self.Selector = x[peaks], y[peaks]
     
     def OnMarkErase(self, evt):
-        del self.Selector
+        """Erase markers on peaks."""
+        ## del self.Selector
+        self.OnEscapeSelection(evt)
     
     def OnMarkSelectionBegin(self, evt):
         org = self.p_event
