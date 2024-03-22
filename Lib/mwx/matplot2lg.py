@@ -433,7 +433,7 @@ class LineProfile(LinePlot):
         
         self.menu += [
             (mwx.ID_(510), "&Copy data", "Copy data to clipboard",
-                lambda v: self.copy_data_to_clipboard()),
+                lambda v: self.write_data_to_clipboard()),
             (),
             (mwx.ID_(511), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),
@@ -597,14 +597,14 @@ class LineProfile(LinePlot):
         else:
             self.modeline.write("")
     
-    def copy_data_to_clipboard(self):
-        """Copy plotdata to clipboard."""
-        self.message("Copy data to clipboard.")
+    def write_data_to_clipboard(self):
+        """Write plot data to clipboard."""
         X, Y = self.plotdata
         with io.StringIO() as o:
             for x, y in zip(X, Y):
                 o.write("{:g}\t{:g}\n".format(x, y))
             Clipboard.write(o.getvalue(), verbose=0)
+            self.message("Write data to clipboard.")
     
     ## --------------------------------
     ## Motion/Drag actions (override)

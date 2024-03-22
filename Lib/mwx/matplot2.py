@@ -297,8 +297,8 @@ class MatplotPanel(wx.Panel):
         self.cursor.visible = 1
     
     def draw(self, art=None):
-        """Draw the plot.
-        Called every time the drawing is updated.
+        """Draw plots.
+        Call each time the drawing should be updated.
         """
         if isinstance(art, matplotlib.artist.Artist):
             self.axes.draw_artist(art)
@@ -403,7 +403,6 @@ class MatplotPanel(wx.Panel):
     
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
-        self.message("Copy image to clipboard.")
         ## b = self.selected.get_visible()
         c = self.cursor.visible
         try:
@@ -411,6 +410,7 @@ class MatplotPanel(wx.Panel):
             self.cursor.visible = 0
             self.canvas.draw()
             self.canvas.Copy_to_Clipboard()
+            self.message("Copy image to clipboard.")
         finally:
             ## self.selected.set_visible(b)
             self.cursor.visible = c
