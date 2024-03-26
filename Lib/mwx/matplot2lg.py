@@ -166,7 +166,7 @@ class LinePlot(MatplotPanel):
             if   x < l: x = l
             elif x > r: x = r
             self.region = (self.__lastpoint, x)
-        else:
+        elif self.region is not None:
             a, b = self.region
             d = x - self.__lastpoint
             if self.boundary is not None:
@@ -181,6 +181,8 @@ class LinePlot(MatplotPanel):
             else:
                 self.region = (a+d, b+d)
                 self.__lastpoint = x
+        else:
+            self.message("- No region.") #<FSM logic-error>
         self.draw()
     
     def OnDragEnd(self, evt):
