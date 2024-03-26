@@ -570,7 +570,7 @@ class FSM(dict):
         self.update(contexts)
     
     def __missing__(self, key):
-        raise Exception("FSM:logic-error: undefined state {!r}".format(key))
+        raise Exception("FSM logic-error: undefined state {!r}".format(key))
     
     def __repr__(self):
         return "<{} object at 0x{:X}>".format(self.__class__.__name__, id(self))
@@ -662,7 +662,7 @@ class FSM(dict):
                 except BdbQuit:
                     pass
                 except Exception as e:
-                    self.dump("- FSM:exception: {!r}".format(e),
+                    self.dump("- FSM exception: {!r}".format(e),
                               "  event  : {}".format(event),
                               "  from   : {}".format(self.__prev_state),
                               "  to     : {}".format(self.__state),
@@ -799,7 +799,7 @@ class FSM(dict):
             warnings.warn(msg, stacklevel=3)
         
         if state not in self:
-            warn("- FSM:warning: [{!r}] context newly created.".format(state))
+            warn("- FSM warning: [{!r}] context newly created.".format(state))
             self[state] = SSM() # new context
         
         context = self[state]
@@ -808,14 +808,14 @@ class FSM(dict):
         
         if event in context:
             if state2 != context[event][0]:
-                warn("- FSM:warning: transaction may conflict.\n"
+                warn("- FSM warning: transaction may conflict.\n"
                      "  The state {2!r} and the original state is not the same."
                      "  {0!r} : {1!r} --> {2!r}".format(event, state, state2))
                 pass
                 context[event][0] = state2 # update transition
         else:
             ## if state2 not in self:
-            ##     warn("- FSM:warning: transaction may contradict\n"
+            ##     warn("- FSM warning: transaction may contradict\n"
             ##          "  The state {2!r} is not found in the contexts."
             ##          "  {0!r} : {1!r} --> {2!r}".format(event, state, state2))
             ##     pass
@@ -829,7 +829,7 @@ class FSM(dict):
             try:
                 transaction.append(action)
             except AttributeError:
-                warn("- FSM:warning: cannot append new transaction ({!r} : {!r})\n"
+                warn("- FSM warning: cannot append new transaction ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
         return action
     
@@ -847,12 +847,12 @@ class FSM(dict):
             warnings.warn(msg, stacklevel=3)
         
         if state not in self:
-            warn("- FSM:warning: [{!r}] context does not exist.".format(state))
+            warn("- FSM warning: [{!r}] context does not exist.".format(state))
             return
         
         context = self[state]
         if event not in context:
-            warn("- FSM:warning: No such transaction ({!r} : {!r})".format(state, event))
+            warn("- FSM warning: No such transaction ({!r} : {!r})".format(state, event))
             return
         
         transaction = context[event]
@@ -866,7 +866,7 @@ class FSM(dict):
                 transaction.remove(action)
                 return True
             except AttributeError:
-                warn("- FSM:warning: removing action from context ({!r} : {!r})\n"
+                warn("- FSM warning: removing action from context ({!r} : {!r})\n"
                      "  The transaction must be a list, not a tuple".format(state, event))
         return False
 
