@@ -863,7 +863,8 @@ class GraphPlot(MatplotPanel):
         """Reset display range (xylim's), update home position."""
         if self.frame:
             self.axes.axis(self.frame.get_extent()) # reset xlim and ylim
-            self.update_position()
+            self.toolbar.update()
+            self.toolbar.push_current()
             self.draw()
     
     def fit_to_canvas(self):
@@ -980,24 +981,24 @@ class GraphPlot(MatplotPanel):
     clipboard_data = None
     
     def write_buffer_to_clipboard(self):
-        """Copy - Write buffer data to clipboard."""
+        """Write buffer data to clipboard."""
         if not self.frame:
             self.message("No frame")
             return
         try:
-            self.message("Write buffer to clipboard.")
             name = self.frame.name
             data = self.frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
             bins, vlim, img = imconvert(data, self.frame.vlim)
             Clipboard.imwrite(img)
+            self.message("Write buffer to clipboard.")
         except Exception as e:
-            self.message("- Failure in clipboard:", e)
             traceback.print_exc()
+            self.message("- Failed to write to clipboard:", e)
     
     def read_buffer_from_clipboard(self):
-        """Paste - Read buffer data from clipboard."""
+        """Read buffer data from clipboard."""
         try:
             name = GraphPlot.clipboard_name
             data = GraphPlot.clipboard_data
@@ -1010,8 +1011,8 @@ class GraphPlot(MatplotPanel):
                 self.message("Read image from clipboard.")
                 self.load(Clipboard.imread())
         except Exception as e:
-            self.message("- No data in clipboard:", e)
             traceback.print_exc()
+            self.message("- No data in clipboard:", e)
     
     def destroy_colorbar(self):
         if self.cbar:

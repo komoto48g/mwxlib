@@ -297,8 +297,8 @@ class MatplotPanel(wx.Panel):
         self.cursor.visible = 1
     
     def draw(self, art=None):
-        """Draw the plot.
-        Called every time the drawing is updated.
+        """Draw plots.
+        Call each time the drawing should be updated.
         """
         if isinstance(art, matplotlib.artist.Artist):
             self.axes.draw_artist(art)
@@ -403,16 +403,16 @@ class MatplotPanel(wx.Panel):
     
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
-        self.message("Copy image to clipboard.")
+        ## b = self.selected.get_visible()
+        c = self.cursor.visible
         try:
-            b = self.selected.get_visible()
-            c = self.cursor.visible
-            self.selected.set_visible(0)
+            ## self.selected.set_visible(0)
             self.cursor.visible = 0
             self.canvas.draw()
             self.canvas.Copy_to_Clipboard()
+            self.message("Copy image to clipboard.")
         finally:
-            self.selected.set_visible(b)
+            ## self.selected.set_visible(b)
             self.cursor.visible = c
             self.canvas.draw()
     
@@ -604,10 +604,6 @@ class MatplotPanel(wx.Panel):
     
     ZOOM_RATIO = 10**0.2
     
-    def update_position(self):
-        self.toolbar.update()
-        self.toolbar.push_current()
-    
     def OnDraw(self, evt):
         """Called before canvas.draw."""
         pass
@@ -630,12 +626,14 @@ class MatplotPanel(wx.Panel):
     def OnHomePosition(self, evt):
         """Go back to home position."""
         self.toolbar.home()
-        self.update_position()
+        self.toolbar.update()
+        self.toolbar.push_current()
         self.draw()
     
     def OnEscapeSelection(self, evt):
         """Escape from selection."""
         del self.Selector
+        self.canvas.draw_idle()
     
     ## def OnShiftLimit(self, evt, r=0.1):
     ##     w = self.xlim[1] - self.xlim[0]
@@ -686,7 +684,6 @@ class MatplotPanel(wx.Panel):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
-        ## self.draw()
         self.handler.current_state = self.__prev  # --> previous state of PAN
         del self.__prev
     
@@ -701,7 +698,6 @@ class MatplotPanel(wx.Panel):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
-        ## self.draw()
         self.handler.current_state = self.__prev  # --> previous state of ZOOM
         del self.__prev
     

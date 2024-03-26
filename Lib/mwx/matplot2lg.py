@@ -31,7 +31,7 @@ class LinePlot(MatplotPanel):
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
                   'M-a pressed' : (NORMAL, self.OnHomePosition),
                   'C-a pressed' : (NORMAL, self.OnHomePosition),
-             'Lbutton dblclick' : (NORMAL, self.OnEscapeSelection),
+             'Lbutton dblclick' : (NORMAL, self.OnEscapeSelection, self.OnDragLock),
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },
@@ -282,7 +282,8 @@ class Histogram(LinePlot):
             self.xlim = x.min(), x.max()
             self.ylim = 0, y.max()
             self.region = None
-            self.update_position()
+            self.toolbar.update()
+            self.toolbar.push_current()
             self.draw()
     
     def hreplot(self, frame):
@@ -308,7 +309,8 @@ class Histogram(LinePlot):
             self.__plot.set_data([], [])
             self.region = None
         
-        self.update_position()
+        self.toolbar.update()
+        self.toolbar.push_current()
         self.draw()
     
     def writeln(self):
@@ -392,9 +394,9 @@ class LineProfile(LinePlot):
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
             },
             REGION : {
-                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
+                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock, self.OnDragLineBegin),
                  'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
-                  '*Ldrag move' : (REGION, self.OnDragMove),
+                  '*Ldrag move' : (REGION, self.OnDragMove, self.OnDragTrace),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             LINE: {
@@ -431,7 +433,7 @@ class LineProfile(LinePlot):
         
         self.menu += [
             (mwx.ID_(510), "&Copy data", "Copy data to clipboard",
-                lambda v: self.copy_data_to_clipboard()),
+                lambda v: self.write_data_to_clipboard()),
             (),
             (mwx.ID_(511), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),
@@ -516,6 +518,14 @@ class LineProfile(LinePlot):
         """Plotted (xdata, ydata) in single plot."""
         return self.__plot.get_data(orig=0)
     
+    def calc_average(self):
+        X, Y = self.plotdata
+        if self.region is not None:
+            a, b = self.region
+            Y = Y[(a <= X) & (X <= b)]
+        if Y.size:
+            return Y.mean()
+    
     def linplot(self, frame, fit=True, force=True):
         if not force:
             if frame is self.__frame:
@@ -572,7 +582,8 @@ class LineProfile(LinePlot):
                 self.xlim = ls[0], ls[-1]
                 self.ylim = ly[0], max(ly[1], max(zs))
             
-        self.update_position()
+        self.toolbar.update()
+        self.toolbar.push_current()
         self.draw()
     
     def writeln(self):
@@ -594,14 +605,14 @@ class LineProfile(LinePlot):
         else:
             self.modeline.write("")
     
-    def copy_data_to_clipboard(self):
-        """Copy plotdata to clipboard."""
-        self.message("Copy data to clipboard.")
+    def write_data_to_clipboard(self):
+        """Write plot data to clipboard."""
         X, Y = self.plotdata
         with io.StringIO() as o:
             for x, y in zip(X, Y):
                 o.write("{:g}\t{:g}\n".format(x, y))
             Clipboard.write(o.getvalue(), verbose=0)
+            self.message("Write data to clipboard.")
     
     ## --------------------------------
     ## Motion/Drag actions (override)
@@ -629,7 +640,7 @@ class LineProfile(LinePlot):
         if x.size:
             self.__fil.set_xy(list(chain([(x[0],0)], zip(x,y), [(x[-1],0)])))
         self.writeln()
-        
+    
     def OnLineWidth(self, evt):
         n = -2 if evt.key[-1] == '-' else 2
         self.set_linewidth(self.__linewidth + n)
@@ -648,7 +659,17 @@ class LineProfile(LinePlot):
     def OnDragLineBegin(self, evt):
         self.set_wxcursor(wx.CURSOR_SIZENS)
     
+    def OnDragTrace(self, evt):
+        """Show average value."""
+        y = self.calc_average()
+        if y is not None:
+            ## self.__hline.set_ydata([y])
+            ## self.__hline.set_visible(1)
+            ## self.canvas.draw_idle()
+            self.message(f"ya = {y:g}")
+    
     def OnRegionLock(self, evt):
+        """Show FWHM region."""
         x, y = self.plotdata
         if x.size:
             xc, yc = evt.xdata, evt.ydata
@@ -678,10 +699,11 @@ class LineProfile(LinePlot):
             
             self.__hline.set_ydata([yc])
             self.__hline.set_visible(1)
-            self.message("y = {:g}, xr = {}".format(yc, self.region))
             self.draw()
+            self.message(f"yc = {yc:g}")
     
     def OnMarkPeaks(self, evt):
+        """Set markers on peaks."""
         x, y = self.plotdata
         if x.size:
             lw = 5
@@ -699,7 +721,9 @@ class LineProfile(LinePlot):
                 self.Selector = x[peaks], y[peaks]
     
     def OnMarkErase(self, evt):
-        del self.Selector
+        """Erase markers on peaks."""
+        ## del self.Selector
+        self.OnEscapeSelection(evt)
     
     def OnMarkSelectionBegin(self, evt):
         org = self.p_event
