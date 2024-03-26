@@ -33,6 +33,19 @@ from .matplot2g import GraphPlot
 from .matplot2lg import Histogram
 
 
+def split_paths(obj):
+    """Split obj path into dirname and basename.
+    The object can be module name:str, module, or class.
+    """
+    if hasattr(obj, '__file__'): #<class 'module'>
+        obj = obj.__file__
+    elif isinstance(obj, type):  #<class 'type'>
+        obj = inspect.getsourcefile(obj)
+    if obj.endswith(".py"):
+        obj, _ = os.path.splitext(obj)
+    return os.path.split(obj)
+
+
 class Thread(object):
     """Thread manager for graphman.Layer
     
@@ -1062,20 +1075,6 @@ class Frame(mwx.Frame):
         module.Plugin = _Plugin
         return _Plugin
     
-    @staticmethod
-    def _split_paths(root):
-        if hasattr(root, '__file__'): #<class 'module'>
-            name = root.__file__
-        elif isinstance(root, type):  #<class 'type'>
-            name = inspect.getsourcefile(root)
-        else:
-            name = root
-        dirname = os.path.dirname(name)
-        name = os.path.basename(name)
-        if name.endswith(".py"):
-            name, _ = os.path.splitext(name)
-        return dirname, name
-    
     def load_module(self, root):
         """Load module of plugin (internal use only).
         
@@ -1083,7 +1082,7 @@ class Frame(mwx.Frame):
             This is called automatically from load_plug,
             and should not be called directly from user.
         """
-        dirname_, name = self._split_paths(root)
+        dirname_, name = split_paths(root)
         
         ## Update the include-path to load the module correctly.
         if os.path.isdir(dirname_):
@@ -1147,10 +1146,10 @@ class Frame(mwx.Frame):
         props = dict(show=show, dock=dock, layer=layer, pos=pos, row=row, prop=prop,
                      floating_pos=floating_pos, floating_size=floating_size)
         
-        _dirname, name = self._split_paths(root)
+        _dirname, name = split_paths(root)
         
         plug = self.get_plug(name)
-        if plug and not force: # <plug:name> is already registered.
+        if plug and not force:
             self.update_pane(name, **props)
             try:
                 if session:
