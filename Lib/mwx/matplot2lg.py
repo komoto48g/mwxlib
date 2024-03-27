@@ -26,6 +26,10 @@ class LinePlot(MatplotPanel):
         MatplotPanel.__init__(self, *args, **kwargs)
         
         self.handler.update({ # DNA<LinePlot>
+            None : {
+                   'region_set' : [ None ],
+                 'region_unset' : [ None ],
+            },
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
@@ -78,10 +82,12 @@ class LinePlot(MatplotPanel):
             v = np.array((a, b))
             self.__vspan.set_visible(1)
             self.__vspan.set_xy(((a,0), (a,1), (b,1), (b,0)))
+            self.handler('region_set', self.frame)
         else:
             self.__vspan.set_visible(0)
+            self.handler('region_unset', self.frame)
         self.__region = v
-        
+    
     @region.deleter
     def region(self):
         self.region = None
@@ -184,9 +190,11 @@ class LinePlot(MatplotPanel):
         else:
             self.message("- No region.") #<FSM logic-error>
         self.draw()
+        ## self.handler('region_draw', self.frame)
     
     def OnDragEnd(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
+        ## self.handler('region_drawn', self.frame)
     
     def OnEscapeSelection(self, evt):
         MatplotPanel.OnEscapeSelection(self, evt)
@@ -194,6 +202,7 @@ class LinePlot(MatplotPanel):
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.region = None
         self.draw()
+        ## self.handler('region_removed', self.frame)
 
 
 class Histogram(LinePlot):
