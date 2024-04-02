@@ -190,11 +190,9 @@ class LinePlot(MatplotPanel):
         else:
             self.message("- No region.") #<FSM logic-error>
         self.draw()
-        ## self.handler('region_draw', self.frame)
     
     def OnDragEnd(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
-        ## self.handler('region_drawn', self.frame)
     
     def OnEscapeSelection(self, evt):
         MatplotPanel.OnEscapeSelection(self, evt)
@@ -202,7 +200,6 @@ class LinePlot(MatplotPanel):
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.region = None
         self.draw()
-        ## self.handler('region_removed', self.frame)
 
 
 class Histogram(LinePlot):
@@ -674,9 +671,6 @@ class LineProfile(LinePlot):
         """Show average value."""
         y = self.calc_average()
         if y is not None:
-            ## self.__hline.set_ydata([y])
-            ## self.__hline.set_visible(1)
-            ## self.canvas.draw_idle()
             self.message(f"ya = {y:g}")
     
     def OnRegionLock(self, evt):
