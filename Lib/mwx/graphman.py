@@ -1802,16 +1802,12 @@ class Frame(mwx.Frame):
                 o.write("self.load_plug({!r}, session={})\n".format(path, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
-            ## set-global-unit
-            o.write("self.graph.unit = {:g}\n".format(self.graph.unit))
-            o.write("self.output.unit = {:g}\n".format(self.output.unit))
-            
             ## stack-frame
             paths = [x.pathname for x in self.graph.all_frames if x.pathname]
             if paths:
                 o.write("self.load_frame(\n{}, self.graph)\n".format(
                         pformat(paths, width=160)))
-            if len(paths) > 1:
+                
                 frame = self.graph.frame # restore currently selected frame
                 if frame and frame.pathname:
                     o.write("self.graph.select({!r})\n".format(frame.name))
