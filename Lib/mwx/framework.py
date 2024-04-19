@@ -975,7 +975,7 @@ class FileDropLoader(wx.DropTarget):
     def __init__(self, target):
         wx.DropTarget.__init__(self)
         
-        self.editor = target
+        self.book = target
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.DataObject = wx.DataObjectComposite()
@@ -983,25 +983,26 @@ class FileDropLoader(wx.DropTarget):
         self.DataObject.Add(self.filedo, True)
     
     def OnData(self, x, y, result):
+        editor = self.book
         self.GetData()
         if self.textdo.TextLength > 1:
             f = self.textdo.Text.strip()
-            res = self.editor.load_file(f)
+            res = editor.load_file(f)
             if res:
-                self.editor.buffer.SetFocus()
+                editor.buffer.SetFocus()
                 result = wx.DragCopy
             elif res is None:
-                self.editor.post_message("Load canceled.")
+                editor.post_message("Load canceled.")
                 result = wx.DragCancel
             else:
-                self.editor.post_message(f"Loading {f!r} failed.")
+                editor.post_message(f"Loading {f!r} failed.")
                 result = wx.DragNone
             self.textdo.Text = ''
         else:
             for f in self.filedo.Filenames:
-                if self.editor.load_file(f):
-                    self.editor.buffer.SetFocus()
-                    self.editor.post_message(f"Loaded {f!r} successfully.")
+                if editor.load_file(f):
+                    editor.buffer.SetFocus()
+                    editor.post_message(f"Loaded {f!r} successfully.")
             self.filedo.SetData(wx.DF_FILENAME, None)
         return result
 
