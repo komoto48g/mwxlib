@@ -713,12 +713,12 @@ class Frame(mwx.Frame):
             ("Options", []), # reserved for optional app settings
             (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
-                lambda v: self.show_pane("graph", v.IsChecked()),
-                lambda v: v.Check(self.graph.IsShown())),
+                lambda v: self.show_pane(self.graph, v.IsChecked()),
+                lambda v: v.Check(self.graph.IsShownOnScreen())),
                 
             (mwx.ID_(14), "&Output window\tF10", "Show Output window", wx.ITEM_CHECK,
-                lambda v: self.show_pane("output", v.IsChecked()),
-                lambda v: v.Check(self.output.IsShown())),
+                lambda v: self.show_pane(self.output, v.IsChecked()),
+                lambda v: v.Check(self.output.IsShownOnScreen())),
             (),
         ]
         self.menubar["Edit"] = [
@@ -743,8 +743,8 @@ class Frame(mwx.Frame):
                 lambda v: self.__view.hide_layers()),
             (),
             (mwx.ID_(24), "&Histogram\tCtrl-h", "Show Histogram window", wx.ITEM_CHECK,
-                lambda v: self.show_pane("histogram", v.IsChecked()),
-                lambda v: v.Check(self.histogram.IsShown())),
+                lambda v: self.show_pane(self.histogram, v.IsChecked()),
+                lambda v: v.Check(self.histogram.IsShownOnScreen())),
                 
             (mwx.ID_(25), "&Invert Color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.__view.invert_cmap(),
@@ -783,14 +783,14 @@ class Frame(mwx.Frame):
         ]
         self.menubar.reset()
         
-        def show_graph(frame):
+        def show_frameview(frame):
             wx.CallAfter(self.show_pane, frame.parent) # Show graph / output
         
         self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, show_graph ],
-               'frame_modified' : [ None, show_graph ],
+                 'frame_loaded' : [ None, show_frameview ],
+               'frame_modified' : [ None, show_frameview ],
                'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
             },
@@ -798,8 +798,8 @@ class Frame(mwx.Frame):
         self.output.handler.append({ # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, show_graph ],
-               'frame_modified' : [ None, show_graph ],
+                 'frame_loaded' : [ None, show_frameview ],
+               'frame_modified' : [ None, show_frameview ],
                'frame_selected' : [ None, self.set_title ],
                   'canvas_draw' : [ None, lambda v: self.sync(self.output, self.graph) ],
             },

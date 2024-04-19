@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.93.9"
+__version__ = "0.94.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
