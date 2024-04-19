@@ -2730,7 +2730,7 @@ class Nautilus(Shell, EditorInterface):
         rst = self.get_style(p)
         if p == self.bolc:
             self.ReplaceSelection('self') # replace [.] --> [self.]
-        elif st in ('nil', 'op', 'sep', 'lparen'):
+        elif st in ('nil', 'space', 'op', 'sep', 'lparen'):
             self.ReplaceSelection('self')
         elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
