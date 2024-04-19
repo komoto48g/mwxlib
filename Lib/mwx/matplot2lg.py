@@ -98,13 +98,14 @@ class LinePlot(MatplotPanel):
         self.__annotations = []
         
         #<matplotlib.text.Annotation>
-        def annotation(v, xy, xytext,
-            xycoords='data', textcoords='offset points', **arrowprops):
-            return self.axes.annotate('' if v is None else '{:g}'.format(v),
+        def annotation(v, xy, xytext, xycoords='data',
+                textcoords='offset points', **arrowprops):
+            return self.axes.annotate(
+                    '' if v is None else '{:g}'.format(v),
                     xy, xytext, xycoords, textcoords, arrowprops, size='small')
         
-        if self.__region is not None:
-            a, b = self.__region
+        if self.region is not None:
+            a, b = self.region
             x = (b + a) / 2
             y = self.ylim[0] + 20/self.ddpu[1]
             if (b - a) > 60/self.ddpu[0]:
@@ -190,11 +191,9 @@ class LinePlot(MatplotPanel):
         else:
             self.message("- No region.") #<FSM logic-error>
         self.draw()
-        ## self.handler('region_draw', self.frame)
     
     def OnDragEnd(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
-        ## self.handler('region_drawn', self.frame)
     
     def OnEscapeSelection(self, evt):
         MatplotPanel.OnEscapeSelection(self, evt)
@@ -202,7 +201,6 @@ class LinePlot(MatplotPanel):
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.region = None
         self.draw()
-        ## self.handler('region_removed', self.frame)
 
 
 class Histogram(LinePlot):
@@ -344,10 +342,7 @@ class Histogram(LinePlot):
     ## Motion/Drag actions (override)
     ## --------------------------------
     
-    def OnDraw(self, evt):
-        """Called before canvas.draw."""
-        ## LinePlot.OnDraw(self, evt) ---> do not annotate
-        
+    def annotate(self):
         if self.__frame:
             x, y = self.__frame.__data
             if len(x) > 1:
@@ -625,6 +620,14 @@ class LineProfile(LinePlot):
             Clipboard.write(o.getvalue(), verbose=0)
             self.message("Write data to clipboard.")
     
+    def annotate(self):
+        LinePlot.annotate(self)
+        
+        x, y = self.plotdata
+        if x.size:
+            self.__fil.set_xy(list(chain([(x[0],0)], zip(x,y), [(x[-1],0)])))
+        self.writeln()
+    
     ## --------------------------------
     ## Motion/Drag actions (override)
     ## --------------------------------
@@ -642,15 +645,6 @@ class LineProfile(LinePlot):
             self.ylim = 0, y.max()
             self.toolbar.push_current()
             self.draw()
-    
-    def OnDraw(self, evt):
-        """Called before canvas.draw."""
-        LinePlot.OnDraw(self, evt)
-        
-        x, y = self.plotdata
-        if x.size:
-            self.__fil.set_xy(list(chain([(x[0],0)], zip(x,y), [(x[-1],0)])))
-        self.writeln()
     
     def OnLineWidth(self, evt):
         n = -2 if evt.key[-1] == '-' else 2
@@ -674,9 +668,6 @@ class LineProfile(LinePlot):
         """Show average value."""
         y = self.calc_average()
         if y is not None:
-            ## self.__hline.set_ydata([y])
-            ## self.__hline.set_visible(1)
-            ## self.canvas.draw_idle()
             self.message(f"ya = {y:g}")
     
     def OnRegionLock(self, evt):
