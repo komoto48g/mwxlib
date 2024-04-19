@@ -1487,26 +1487,26 @@ class ShellFrame(MiniFrame):
             evt.Skip()
     
     def About(self, evt=None):
-        buf = self.Help.buffer
-        with buf.off_readonly():
-            buf.SetText('\n\n'.join((
+        self.add_help(
+            '\n\n'.join((
                 "#<module 'mwx' from {!r}>".format(__file__),
                 "Author: {!r}".format(__author__),
                 "Version: {!s}".format(__version__),
                 self.__class__.__doc__,
                 self.rootshell.__class__.__doc__,
+                
                 ## Thanks to wx.py.shell.
                 "#{!r}".format(wx.py),
                 "Author: {!r}".format(wx.py.version.__author__),
                 "Version: {!s}".format(wx.py.version.VERSION),
                 wx.py.shell.Shell.__doc__,
                 textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
+                
                 ## Thanks are also due to wx.
                 "#{!r}".format(wx),
                 "To show the credit, press C-M-Mbutton.\n",
                 ))
             )
-        self.popup_window(self.Help, focus=0)
     
     def toggle_window(self, win, focus=False):
         self.popup_window(win, show=None, focus=focus)
