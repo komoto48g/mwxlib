@@ -41,6 +41,7 @@ setup(
     packages = [
         "mwx",
         "mwx.py",
+        "mwx.plugins",
     ],
     
     ## install_requires = open("requirements.txt").read().splitlines(),
