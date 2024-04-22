@@ -1119,7 +1119,7 @@ class Choice(wx.Control):
     
     Selection = property(
         lambda self: self._ctrl.GetSelection(),
-        lambda self,v: self._ctrl.SetSelection(v),
+        lambda self,v: self._ctrl.SetSelection(v), # int or NOT_FOUND(-1)
         doc="combobox selection:int")
     
     Items = property(
@@ -1199,7 +1199,7 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
-    def udpate_design(self, **kwargs):
+    def update_design(self, **kwargs):
         """Update design attributes.
         
         This method is useful for changing colors, spacing, radius, etc.
