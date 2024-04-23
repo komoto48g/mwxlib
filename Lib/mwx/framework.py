@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.0"
+__version__ = "0.94.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1237,9 +1237,9 @@ class ShellFrame(MiniFrame):
             shell = self.current_shell
             self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
         
-        @self.Scratch.define_key('M-j')
+        @self.Scratch.define_key('C-S-j')
         @postcall
-        def exec_buffer():
+        def eval_buffer():
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
         
