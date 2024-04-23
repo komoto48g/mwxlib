@@ -2220,8 +2220,8 @@ class Nautilus(Shell, EditorInterface):
     
         C-up        : [0] retrieve previous history
         C-down      : [0] retrieve next history
-        C-j, M-j    : [0] call tooltip of eval (for the word selected or focused)
-        C-h, M-h    : [0] call tooltip of help (for the func selected or focused)
+        C-j, C-S-j  : [0] call tooltip of eval (for the word selected or focused)
+        C-h, C-S-h  : [0] call tooltip of help (for the func selected or focused)
         TAB         : [1] history-comp-mode
         M-p         : [1] retrieve previous history in comp-mode
         M-n         : [1] retrieve next history in comp-mode
@@ -2472,9 +2472,9 @@ class Nautilus(Shell, EditorInterface):
              'S-insert pressed' : (0, _F(self.Paste)),
            'C-S-insert pressed' : (0, _F(self.Paste, rectangle=1)),
                   'C-j pressed' : (0, self.eval_line),
-                  'M-j pressed' : (0, self.exec_region),
+                'C-S-j pressed' : (0, self.exec_region),
                   'C-h pressed' : (0, self.call_helpTip),
-                  'M-h pressed' : (0, self.call_helpTip2),
+                'C-S-h pressed' : (0, self.call_helpTip2),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
@@ -2531,9 +2531,9 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
-                  'M-j pressed' : (2, self.exec_region),
+                'C-S-j pressed' : (2, self.exec_region),
                   'C-h pressed' : (2, self.call_helpTip),
-                  'M-h pressed' : (2, self.call_helpTip2),
+                'C-S-h pressed' : (2, self.call_helpTip2),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -2562,9 +2562,9 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
-                  'M-j pressed' : (3, self.exec_region),
+                'C-S-j pressed' : (3, self.exec_region),
                   'C-h pressed' : (3, self.call_helpTip),
-                  'M-h pressed' : (3, self.call_helpTip2),
+                'C-S-h pressed' : (3, self.call_helpTip2),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -2593,9 +2593,9 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
-                  'M-j pressed' : (4, self.exec_region),
+                'C-S-j pressed' : (4, self.exec_region),
                   'C-h pressed' : (4, self.call_helpTip),
-                  'M-h pressed' : (4, self.call_helpTip2),
+                'C-S-h pressed' : (4, self.call_helpTip2),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
                '*shift pressed' : (4, ),
