@@ -3307,13 +3307,12 @@ class Nautilus(Shell, EditorInterface):
         
         text = self.SelectedText or self.Command or self.expr_at_caret
         if text:
+            text = introspect.getRoot(text, terminator='(')
             try:
-                text = introspect.getRoot(text, terminator='(')
                 obj = self.eval(text)
+                self.help(obj)
             except Exception as e:
                 self.message("- {} : {!r}".format(e, text))
-            else:
-                self.help(obj)
     
     def call_helpTip(self, evt):
         """Show tooltips for the selected topic."""
