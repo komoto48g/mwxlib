@@ -3,6 +3,7 @@
 """
 from functools import wraps
 from bdb import BdbQuit
+from contextlib import contextmanager
 import traceback
 import warnings
 import time
@@ -20,6 +21,20 @@ from inspect import (isclass, ismodule, ismethod, isbuiltin,
 from pprint import pprint
 
 
+@contextmanager
+def ignore(*category):
+    """Ignore warnings.
+    
+    It can be used as decorators as well as in with statements.
+    cf. contextlib.suppress
+    
+    Note:
+        ignore() does not ignore warnings.
+        ignore(Warning) ignores all warnings.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category)
+        yield
 def atom(v):
     return not hasattr(v, '__name__')
 
@@ -126,9 +141,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
         except (TypeError, ValueError):
             pass
     
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
-        
+    with ignore(DeprecationWarning):
         print("matching to {!r} in {} {} :{}".format(
               rexpr, name, type(obj), pred and pred.__name__))
         try:
