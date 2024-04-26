@@ -1965,7 +1965,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """
         buf = self.find_buffer(filename)
         if not buf:
-            buf = self.create_buffer(filename)
+            buf = self.create_buffer("*temp file*")
         elif buf.need_buffer_save and verbose:
             if wx.MessageBox( # Confirm load.
                     "You are leaving unsaved content.\n\n"
