@@ -290,7 +290,7 @@ class EditorInterface(CtrlInterface):
         self.__mark = -1
         self.__stylus = {}
     
-    ## Custom constants embedded in stc
+    ## Custom constants embedded in wx.stc
     stc.STC_P_WORD3 = 20
     stc.STC_STYLE_CARETLINE = 40
     stc.STC_STYLE_ANNOTATION = 41

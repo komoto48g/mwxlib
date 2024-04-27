@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.2"
+__version__ = "0.94.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1016,7 +1016,7 @@ class FileDropLoader(wx.DropTarget):
     def __init__(self, target):
         wx.DropTarget.__init__(self)
         
-        self.book = target
+        self.editor = target
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.DataObject = wx.DataObjectComposite()
@@ -1024,7 +1024,7 @@ class FileDropLoader(wx.DropTarget):
         self.DataObject.Add(self.filedo, True)
     
     def OnData(self, x, y, result):
-        editor = self.book
+        editor = self.editor
         self.GetData()
         if self.textdo.TextLength > 1:
             f = self.textdo.Text.strip()
@@ -1159,9 +1159,6 @@ class ShellFrame(MiniFrame):
         self.Bookshelf.watch(self.ghost)
         
         self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
-        ## self._mgr.AddPane(self.Bookshelf,
-        ##                   aui.AuiPaneInfo().Name("bookshelf")
-        ##                      .Caption("Bookshelf").Right().Show(1))
         
         self.ghost.SetDropTarget(FileDropLoader(self.Scratch))
         
@@ -1638,7 +1635,7 @@ class ShellFrame(MiniFrame):
                 filename, ln = m.groups()
                 lineno = int(ln)
         editor = self.find_editor(filename) or self.Log
-        ret = self._load(filename, lineno, editor, verbose=1)
+        ret = editor.load_file(filename, lineno, verbose=1)
         if ret:
             self.popup_window(editor, show, focus)
         return ret
@@ -1912,13 +1909,21 @@ class ShellFrame(MiniFrame):
         """Yields all editors in the notebooks."""
         yield from self.ghost.get_pages(type(self.Log))
     
+    @property
+    def current_editor(self):
+        """Currently selected editor or scratch."""
+        editor = self.ghost.CurrentPage
+        if isinstance(editor, type(self.Log)):
+            return editor
+        return next((x for x in self.all_editors if x.IsShown()), self.Scratch)
+    
     def find_editor(self, fn):
         """Find an editor which has the specified fn:filename or code."""
-        for editor in self.all_editors:
-            buf = editor.find_buffer(fn)
+        for book in self.all_editors:
+            buf = book.find_buffer(fn)
             if buf:
-                editor.swap_page(buf)
-                return editor
+                book.swap_page(buf)
+                return book
     
     ## --------------------------------
     ## Find text dialog
