@@ -946,8 +946,6 @@ class GraphPlot(MatplotPanel):
                 xr, yr = max(nx), max(ny) # bottom-right
                 self.message("[Region] "
                     "crop={}:{}:{}:{}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
-            else:
-                return self.trace_point(x[[0,-1]], y[[0,-1]], type)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
