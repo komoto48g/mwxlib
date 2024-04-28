@@ -3,7 +3,6 @@ import re
 import wx
 
 from .utilus import TreeList
-from .nutshell import EditorBook
 from .framework import CtrlInterface
 
 
@@ -56,7 +55,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
         
         @self.handler.bind('f5 pressed')
         def refresh(v):
-            self.reset(clear=0)
+            self.reset()
         
         @self.handler.bind('delete pressed')
         def delete(v):
@@ -75,8 +74,31 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
-            self.unwatch()
+            self.detach()
         evt.Skip()
+    
+    def reset_tree(self, editor):
+        """Reset a branch for Editor/Buffer."""
+        self[editor.Name] = [
+            [buf.name, ItemData(self, buf)] for buf in editor.all_buffers
+        ]
+    
+    def attach(self, target):
+        self.detach()
+        self.target = target
+        if self.target:
+            for editor in self.target.all_editors:
+                editor.handler.append(self.context)
+                self.reset_tree(editor)
+            self.reset()
+    
+    def detach(self):
+        if self.target:
+            for editor in self.target.all_editors:
+                editor.handler.remove(self.context)
+            self[:] = [] # clear tree
+            self.reset()
+        self.target = None
     
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface 
@@ -133,29 +155,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
     ## --------------------------------
     ## Actions for bookshelf interfaces
     ## --------------------------------
-    
-    def reset_tree(self, editor):
-        """Reset a branch for EditorBook/Buffer."""
-        self[editor.Name] = [
-            [buf.name, ItemData(self, buf)] for buf in editor.all_buffers
-        ]
-    
-    def watch(self, target):
-        self.unwatch()
-        self.target = target
-        if self.target:
-            for editor in self.target.get_pages(EditorBook):
-                editor.handler.append(self.context)
-                self.reset_tree(editor)
-            self.reset()
-    
-    def unwatch(self):
-        if self.target:
-            for editor in self.target.get_pages(EditorBook):
-                editor.handler.remove(self.context)
-            self[:] = [] # clear tree
-            self.reset()
-        self.target = None
     
     def on_buffer_new(self, buf):
         self[f"{buf.parent.Name}/{buf.name}"] = ItemData(self, buf)
