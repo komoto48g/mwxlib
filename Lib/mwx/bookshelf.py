@@ -2,12 +2,11 @@
 import re
 import wx
 
-from .utilus import TreeList
 from .framework import CtrlInterface
 
 
 class ItemData:
-    """Item data for TreeListCtrl
+    """Item data for TreeList/Ctrl
     """
     def __init__(self, tree, buffer):
         self.tree = tree
@@ -15,20 +14,20 @@ class ItemData:
         self._itemId = None #: reference <TreeItemId>
 
 
-class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
-    """TreeList control
+class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
+    """TreeList/Ctrl
     
     Construct treectrl in the order of tree:list.
     """
     def __init__(self, parent, *args, **kwargs):
         wx.TreeCtrl.__init__(self, parent, *args, **kwargs)
         CtrlInterface.__init__(self)
-        TreeList.__init__(self)
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.parent = parent
         self.target = None
+        self.__items = {}
         
         self.context = { # DNA<EditorTreeCtrl>
             None : {
@@ -79,9 +78,9 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
     
     def reset_tree(self, editor):
         """Reset a branch for Editor/Buffer."""
-        self[editor.Name] = [
-            [buf.name, ItemData(self, buf)] for buf in editor.all_buffers
-        ]
+        self.__items[editor.Name] = {
+            buf.name : ItemData(self, buf) for buf in editor.all_buffers
+        }
     
     def attach(self, target):
         self.detach()
@@ -93,10 +92,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
             self.reset()
     
     def detach(self):
+        self.__items.clear()
         if self.target:
             for editor in self.target.all_editors:
                 editor.handler.remove(self.context)
-            self[:] = [] # clear tree
             self.reset()
         self.target = None
     
@@ -114,8 +113,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
             if clear:
                 self.DeleteAllItems()
                 self.AddRoot(self.Name)
-            for branch in self:
-                self._set_item(self.RootItem, *branch)
+            for key, values in self.__items.items():
+                self._set_item(self.RootItem, key, values)
         finally:
             if wnd:
                 wnd.SetFocus() # restore focus
@@ -132,44 +131,37 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface, TreeList):
                 return item
             item, cookie = self.GetNextChild(root, cookie)
     
-    def _set_item(self, root, key, *values):
-        """Set the item [root/key] with values recursively.
+    def _set_item(self, root, key, data):
+        """Set the item [root/key] with data recursively.
         """
         item = self._get_item(root, key) or self.AppendItem(root, key)
-        branches = next((x for x in values if isinstance(x, (tuple, list))), [])
-        rest = [x for x in values if x not in branches]
-        if rest:
-            ## Take the first element assuming it's client data.
-            ## Set the item client data. (override as needed)
-            try:
-                data = rest[0]
-                data._itemId = item
-                self.SetItemData(item, data)
-                buf = data.buffer
-                self.SetItemText(item, buf.caption_prefix + buf.name)
-            except AttributeError:
-                pass
-        for branch in branches:
-            self._set_item(item, *branch)
+        if isinstance(data, dict):
+            for k, v in data.items():
+                self._set_item(item, k, v)
+        else:
+            data._itemId = item
+            self.SetItemData(item, data)
+            buf = data.buffer
+            self.SetItemText(item, buf.caption_prefix + buf.name)
     
     ## --------------------------------
     ## Actions for bookshelf interfaces
     ## --------------------------------
     
     def on_buffer_new(self, buf):
-        self[f"{buf.parent.Name}/{buf.name}"] = ItemData(self, buf)
+        self.__items[buf.parent.Name][buf.name] = ItemData(self, buf)
         self.reset(clear=0)
     
     def on_buffer_deleted(self, buf):
-        del self[f"{buf.parent.Name}/{buf.name}"]
+        del self.__items[buf.parent.Name][buf.name]
         self.reset()
     
     def on_buffer_selected(self, buf):
-        data = self[f"{buf.parent.Name}/{buf.name}"]
+        data = self.__items[buf.parent.Name][buf.name]
         self.SelectItem(data._itemId)
     
     def on_buffer_caption(self, buf):
-        data = self[f"{buf.parent.Name}/{buf.name}"]
+        data = self.__items[buf.parent.Name][buf.name]
         self.SetItemText(data._itemId, buf.caption_prefix + buf.name)
     
     def on_buffer_filename(self, buf):
