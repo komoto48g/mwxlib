@@ -44,7 +44,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         
         @self.handler.bind('f5 pressed')
         def refresh(v):
-            self.reset()
+            self.update(clear=0)
+            if self.target:
+                self.target.current_editor.SetFocus()
+                wx.CallAfter(self.SetFocus)
         
         @self.handler.bind('delete pressed')
         def delete(v):
@@ -70,7 +73,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.target = target
         for editor in self.target.all_editors:
             editor.handler.append(self.context)
-        self.reset()
+        self.update()
     
     def detach(self):
         if not self.target:
@@ -78,15 +81,15 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         for editor in self.target.all_editors:
             editor.handler.remove(self.context)
         self.target = None
-        self.reset()
+        self.update()
     
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface 
     ## --------------------------------
     
-    def reset(self, clear=True):
+    def update(self, clear=True):
         """Build tree control.
-        All items will be reset after clear if specified.
+        All items will be cleared if specified.
         """
         try:
             self.Freeze()
@@ -128,7 +131,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     
     @postcall
     def on_buffer_new(self, buf):
-        self.reset(clear=0)
+        self.update(clear=0)
     
     @postcall
     def on_buffer_deleted(self, buf):
