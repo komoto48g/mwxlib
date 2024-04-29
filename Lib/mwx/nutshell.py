@@ -986,7 +986,7 @@ class EditorInterface(CtrlInterface):
             self.EnsureVisible(self.cline)
             yield err
     
-    def grep_barckward(self, pattern, flags=re.M):
+    def grep_backward(self, pattern, flags=re.M):
         text = self.GetTextRange(0, self.cpos)
         errs = re.finditer(pattern, text, flags)
         for err in reversed(list(errs)):
@@ -3141,10 +3141,6 @@ class Nautilus(Shell, EditorInterface):
     
     def help(self, obj):
         """Full description."""
-        ## if obj is None:
-        ##     self.message("Currently redirected to stdin/stdout.")
-        ##     wx.CallAfter(pydoc.help)
-        ##     return
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
         self.parent.handler('add_help', doc) or print(doc)
