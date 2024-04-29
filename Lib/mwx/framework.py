@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.3"
+__version__ = "0.94.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1156,7 +1156,7 @@ class ShellFrame(MiniFrame):
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
                                         style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
-        self.Bookshelf.watch(self.ghost)
+        self.Bookshelf.attach(self)
         
         self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
         
