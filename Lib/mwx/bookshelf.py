@@ -67,17 +67,18 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     
     def attach(self, target):
         self.detach()
-        for editor in target.all_editors:
-            editor.handler.append(self.context)
         self.target = target
+        for editor in self.target.all_editors:
+            editor.handler.append(self.context)
         self.reset()
     
     def detach(self):
-        if self.target:
-            for editor in self.target.all_editors:
-                editor.handler.remove(self.context)
-            self.target = None
-            self.reset()
+        if not self.target:
+            return
+        for editor in self.target.all_editors:
+            editor.handler.remove(self.context)
+        self.target = None
+        self.reset()
     
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface 
@@ -89,7 +90,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         """
         try:
             self.Freeze()
-            wnd = wx.Window.FindFocus() # original focus
             if clear:
                 self.DeleteAllItems()
                 self.AddRoot(self.Name)
@@ -97,8 +97,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 for editor in self.target.all_editors:
                     self._set_item(self.RootItem, editor.Name, editor.all_buffers)
         finally:
-            if wnd:
-                wnd.SetFocus() # restore focus
             self.Thaw()
     
     def _get_item(self, root, key):
