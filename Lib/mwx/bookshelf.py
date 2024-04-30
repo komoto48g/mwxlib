@@ -27,7 +27,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                'buffer_deleted' : [ None, self.on_buffer_deleted ],
              'buffer_activated' : [ None, self.on_buffer_selected ],
            'buffer_inactivated' : [ None, ],
-         'buffer_caption_reset' : [ None, self.on_buffer_caption ],
+         'buffer_caption_reset' : [ None, self.on_buffer_filename ],
         'buffer_filename_reset' : [ None, self.on_buffer_filename ],
             },
         }
@@ -44,7 +44,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         
         @self.handler.bind('f5 pressed')
         def refresh(v):
-            self.update(clear=0)
+            self.build_tree(clear=0)
             if self.target:
                 self.target.current_editor.SetFocus()
                 wx.CallAfter(self.SetFocus)
@@ -73,7 +73,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.target = target
         for editor in self.target.all_editors:
             editor.handler.append(self.context)
-        self.update()
+        self.build_tree()
     
     def detach(self):
         if not self.target:
@@ -81,26 +81,23 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         for editor in self.target.all_editors:
             editor.handler.remove(self.context)
         self.target = None
-        self.update()
+        self.build_tree()
     
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface 
     ## --------------------------------
     
-    def update(self, clear=True):
+    def build_tree(self, clear=True):
         """Build tree control.
         All items will be cleared if specified.
         """
-        try:
-            self.Freeze()
-            if clear:
-                self.DeleteAllItems()
-                self.AddRoot(self.Name)
-            if self.target:
-                for editor in self.target.all_editors:
-                    self._set_item(self.RootItem, editor.Name, editor.all_buffers)
-        finally:
-            self.Thaw()
+        if clear:
+            self.DeleteAllItems()
+            self.AddRoot(self.Name)
+        if self.target:
+            for editor in self.target.all_editors:
+                self._set_item(self.RootItem, editor.Name, editor.all_buffers)
+        self.Refresh()
     
     def _get_item(self, root, key):
         """Returns the first item [root/key] found.
@@ -129,21 +126,17 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     ## Actions for bookshelf interfaces
     ## --------------------------------
     
-    @postcall
+    ## @postcall
     def on_buffer_new(self, buf):
-        self.update(clear=0)
+        self.build_tree(clear=0)
     
-    @postcall
+    ## @postcall
     def on_buffer_deleted(self, buf):
         self.Delete(buf.__itemId)
     
     @postcall
     def on_buffer_selected(self, buf):
         self.SelectItem(buf.__itemId)
-    
-    @postcall
-    def on_buffer_caption(self, buf):
-        self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
     
     @postcall
     def on_buffer_filename(self, buf):
