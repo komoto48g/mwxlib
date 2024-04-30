@@ -27,7 +27,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                'buffer_deleted' : [ None, self.on_buffer_deleted ],
              'buffer_activated' : [ None, self.on_buffer_selected ],
            'buffer_inactivated' : [ None, ],
-         'buffer_caption_reset' : [ None, self.on_buffer_caption ],
+         'buffer_caption_reset' : [ None, self.on_buffer_filename ],
         'buffer_filename_reset' : [ None, self.on_buffer_filename ],
             },
         }
@@ -126,21 +126,17 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     ## Actions for bookshelf interfaces
     ## --------------------------------
     
-    @postcall
+    ## @postcall
     def on_buffer_new(self, buf):
         self.build_tree(clear=0)
     
-    @postcall
+    ## @postcall
     def on_buffer_deleted(self, buf):
         self.Delete(buf.__itemId)
     
     @postcall
     def on_buffer_selected(self, buf):
         self.SelectItem(buf.__itemId)
-    
-    @postcall
-    def on_buffer_caption(self, buf):
-        self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
     
     @postcall
     def on_buffer_filename(self, buf):
