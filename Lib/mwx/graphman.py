@@ -413,7 +413,7 @@ class LayerInterface(CtrlInterface):
         try:
             if session:
                 self.load_session(session)
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             print("- Failed to load session of", self)
     
@@ -1154,7 +1154,7 @@ class Frame(mwx.Frame):
             try:
                 if session:
                     plug.load_session(session)
-            except Exception as e:
+            except Exception:
                 traceback.print_exc()
                 print("- Failed to load session of", plug)
             return None

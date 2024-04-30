@@ -35,6 +35,8 @@ def ignore(*category):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category)
         yield
+
+
 def atom(v):
     return not hasattr(v, '__name__')
 

@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.4"
+__version__ = "0.94.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -13,7 +13,6 @@ import builtins
 import datetime
 import textwrap
 import time
-import sys
 import os
 import re
 import wx
@@ -47,8 +46,6 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     Note:
         This will execute the startup script $(PYTHONSTARTUP).
     """
-    import wx
-    
     quote_unqoute = """
         Anything one man can imagine, other man can make real.
         --- Jules Verne (1828--1905)
@@ -1004,7 +1001,7 @@ class AuiNotebook(aui.AuiNotebook):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
-        except Exception:
+        except Exception as e:
             print("- Failed to load perspective:", e)
         finally:
             self.Parent.Thaw()
