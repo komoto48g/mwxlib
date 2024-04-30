@@ -473,7 +473,7 @@ class LayerInterface(CtrlInterface):
             if canvas:
                 canvas.draw_idle()
         except Exception as e:
-            print("- Failed to draw Arts of {}: {}".format(self.__module__, e))
+            print(f"- Failed to draw Arts of {self.__module__}:", e)
             del self.Arts
 
 
@@ -1055,7 +1055,8 @@ class Frame(mwx.Frame):
         
         if issubclass(cls, LayerInterface):
             cls.__module__ = module.__name__ # __main__ to module
-            warnings.warn(f"Duplicate iniheritance of LayerInterface by {cls}.", stacklevel=2)
+            warnings.warn(f"Duplicate iniheritance of LayerInterface by {cls}.",
+                          stacklevel=2)
             module.Plugin = cls
             return cls
         
@@ -1099,13 +1100,14 @@ class Frame(mwx.Frame):
             else:
                 module = import_module(name)
         except Exception as e:
-            print("- Unable to load {!r}: {}".format(root, e))
+            print(f"- Unable to load {root!r}:", e)
             return False
         
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                warnings.warn(f"Use dummy plug for debugging {name!r}.", stacklevel=3)
+                warnings.warn(f"Use dummy plug for debugging {name!r}.",
+                              stacklevel=3)
                 module.__dummy_plug__ = root
                 self.register(root, module)
         else:

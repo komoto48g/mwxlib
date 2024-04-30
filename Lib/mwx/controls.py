@@ -741,7 +741,7 @@ class ControlPanel(scrolled.ScrolledPanel):
                 except AttributeError:
                     p.value = v
                 except Exception as e: # failed to eval
-                    print("- Failed to reset {!r}: {}".format(p, e))
+                    print(f"- Failed to reset {p!r}:", e)
                     pass
     
     reset_params = set_params #: for backward compatibility

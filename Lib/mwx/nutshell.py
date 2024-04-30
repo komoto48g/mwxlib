@@ -1995,7 +1995,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     return True
                 return False
         except Exception as e:
-            self.post_message("Failed to load {!r}: {}".format(buf.name, e))
+            self.post_message(f"Failed to load {filename!r}:", e)
             self.delete_buffer(buf)
             if org:
                 self.swap_buffer(org)
@@ -2031,7 +2031,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return True
             return False
         except Exception as e:
-            self.post_message("Failed to save {!r}: {}".format(buf.name, e))
+            self.post_message(f"Failed to save {filename!r}:", e)
             return False
     
     def load_buffer(self, buf=None):
