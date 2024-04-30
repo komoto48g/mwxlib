@@ -1891,10 +1891,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.Freeze()
             buf = Buffer(self, filename, style=wx.BORDER_DEFAULT)
             self.set_attributes(buf, **self.defaultBufferStyle)
-            self.handler('buffer_new', buf)
             if index is None:
                 index = self.PageCount
             self.InsertPage(index, buf, buf.name)
+            self.handler('buffer_new', buf)
             return buf
         finally:
             self.Thaw()
