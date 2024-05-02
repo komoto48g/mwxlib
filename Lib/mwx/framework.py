@@ -1306,13 +1306,10 @@ class ShellFrame(MiniFrame):
             except Exception:
                 pass
         
-        for book in self.all_editors:
-            book.delete_all_buffers() # Note: *log* is also flushed.
+        _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
         ## Re-open the *log* file.
         self.add_log("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
-        
-        _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
         
         fn = os.path.abspath(filename)
         try:
