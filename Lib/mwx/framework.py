@@ -1178,15 +1178,18 @@ class ShellFrame(MiniFrame):
         self._mgr.SetDockSizeConstraint(0.5, 0.5) # (w, h)/N
         
         self._mgr.AddPane(self.console,
-                          aui.AuiPaneInfo().Name("console").CenterPane().Show(1))
+                          aui.AuiPaneInfo().Name("console").CenterPane()
+                             .MaximizeButton().Show(1))
         
         self._mgr.AddPane(self.ghost,
                           aui.AuiPaneInfo().Name("ghost")
-                             .Caption("Ghost in the Shell").Right().Show(0))
+                             .Caption("Ghost in the Shell").Right()
+                             .MaximizeButton().Show(0))
         
         self._mgr.AddPane(self.watcher,
                           aui.AuiPaneInfo().Name("watcher")
-                             .Caption("Watchdog in the Shell").Right().Position(1).Show(0))
+                             .Caption("Watchdog in the Shell").Right().Position(1)
+                             .MaximizeButton().Show(0))
         
         self._mgr.Update()
         
