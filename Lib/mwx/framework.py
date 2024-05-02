@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.6"
+__version__ = "0.94.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1605,12 +1605,12 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def _load(self, filename, lineno, editor, verbose=False):
+    def _load(self, filename, lineno, editor):
         """Load file in the session (internal use only)."""
         if isinstance(editor, str):
             editor = getattr(self, editor, None)
         if editor:
-            return editor.load_file(filename, lineno, verbose)
+            return editor.load_file(filename, lineno, verbose=0)
     
     def load(self, filename, lineno=0, show=True, focus=False):
         """Load file @where the object is defined.
