@@ -1269,10 +1269,12 @@ class ShellFrame(MiniFrame):
             },
         })
         
-        ## py-mode
         self.Scratch.set_attributes(Style=Nautilus.STYLE)
+        self.Log.set_attributes(ReadOnly=True)
+        self.Help.set_attributes(ReadOnly=True)
         
         self.set_hookable(self.Scratch)
+        self.set_hookable(self.Log)
         
         @self.Scratch.define_key('C-j')
         @postcall
@@ -1286,18 +1288,13 @@ class ShellFrame(MiniFrame):
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
         
-        ## text-mode
-        self.set_hookable(self.Log)
-        
-        self.Log.set_attributes(ReadOnly=True)
-        self.Help.set_attributes(ReadOnly=True)
+        ## Session
+        self.SESSION_FILE = get_rootpath(".debrc")
+        self.SCRATCH_FILE = get_rootpath("scratch.py")
+        self.LOGGING_FILE = get_rootpath("deb-logging.log")
         
         self.load_session(
             os.path.abspath(debrc) if debrc else self.SESSION_FILE)
-        
-    SESSION_FILE = get_rootpath(".debrc")
-    SCRATCH_FILE = get_rootpath("scratch.py")
-    LOGGING_FILE = get_rootpath("deb-logging.log")
     
     def load_session(self, filename):
         """Load session from file."""
