@@ -1277,13 +1277,11 @@ class ShellFrame(MiniFrame):
         self.set_hookable(self.Log)
         
         @self.Scratch.define_key('C-j')
-        @postcall
         def eval_line():
             shell = self.current_shell
             self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
         
         @self.Scratch.define_key('C-S-j')
-        @postcall
         def eval_buffer():
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
