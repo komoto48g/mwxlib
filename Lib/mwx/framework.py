@@ -1291,8 +1291,8 @@ class ShellFrame(MiniFrame):
         self.SCRATCH_FILE = get_rootpath("scratch.py")
         self.LOGGING_FILE = get_rootpath("deb-logging.log")
         
-        wx.CallAfter(self.load_session,
-                     os.path.abspath(debrc) if debrc else self.SESSION_FILE)
+        self.load_session(
+            os.path.abspath(debrc) if debrc else self.SESSION_FILE)
     
     def load_session(self, filename):
         """Load session from file."""
@@ -1348,9 +1348,9 @@ class ShellFrame(MiniFrame):
                 "self.ghost.SetSelection({})".format(self.ghost.Selection),
                 "self.watcher.SetSelection({})".format(self.watcher.Selection),
                 ## Note: Perspectives should be called after all pages have been added.
-                "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
-                "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
-                "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
+                "wx.CallAfter(self._mgr.LoadPerspective, {!r})".format(self._mgr.SavePerspective()),
+                "wx.CallAfter(self.ghost.loadPerspective, {!r})".format(self.ghost.savePerspective()),
+                "wx.CallAfter(self.watcher.loadPerspective, {!r})".format(self.watcher.savePerspective()),
                 "self._mgr.Update()\n",
             )))
     
