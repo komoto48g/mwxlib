@@ -1544,17 +1544,12 @@ class ShellFrame(MiniFrame):
                 ))
             )
     
-    def toggle_window(self, win, focus=False):
-        self.popup_window(win, show=None, focus=focus)
+    def toggle_window(self, win):
+        pane = self._mgr.GetPane(win)
+        self.popup_window(win, not pane.IsShown())
     
-    def popup_window(self, win, show=True, focus=True):
-        """Show the notebook page and move the focus.
-        
-        Args:
-            win  : window to popup
-            show : True, False, otherwise None:toggle
-                   The pane window will be hidden if no show.
-        """
+    def popup_window(self, win, show=True):
+        """Show the notebook page and keep the focus."""
         wnd = wx.Window.FindFocus() # original focus
         
         for pane in self._mgr.GetAllPanes():
@@ -1569,12 +1564,7 @@ class ShellFrame(MiniFrame):
         else:
             return # no such pane.window
         
-        if show is None:
-            show = not pane.IsShown() # toggle show
-        
-        if focus and win.IsShown():
-            win.SetFocus() # move focus
-        elif wnd:
+        if wnd:
             wnd.SetFocus() # restore focus
         
         ## Modify the floating position of the pane when displayed.
@@ -1612,7 +1602,7 @@ class ShellFrame(MiniFrame):
         if editor:
             return editor.load_file(filename, lineno, verbose=0)
     
-    def load(self, filename, lineno=0, show=True, focus=False):
+    def load(self, filename, lineno=0, show=True):
         """Load file @where the object is defined.
         
         Args:
@@ -1620,7 +1610,6 @@ class ShellFrame(MiniFrame):
                        It also supports <'filename:lineno'> format.
             lineno   : Set mark to lineno on load.
             show     : Show the page.
-            focus    : Focus the window if visible.
         """
         if not isinstance(filename, str):
             filename = where(filename)
@@ -1634,7 +1623,7 @@ class ShellFrame(MiniFrame):
         editor = self.find_editor(filename) or self.Log
         ret = editor.load_file(filename, lineno, verbose=1)
         if ret:
-            self.popup_window(editor, show, focus)
+            self.popup_window(editor, show)
         return ret
     
     def info(self, obj):
@@ -1646,11 +1635,11 @@ class ShellFrame(MiniFrame):
     def watch(self, obj):
         if isinstance(obj, wx.Object):
             self.monitor.watch(obj)
-            self.popup_window(self.monitor, focus=0)
+            self.popup_window(self.monitor)
         elif hasattr(obj, '__dict__'):
             self.linfo.watch(obj.__dict__)
             self.ginfo.watch({})
-            self.popup_window(self.linfo, focus=0)
+            self.popup_window(self.linfo)
     
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)
@@ -1732,8 +1721,8 @@ class ShellFrame(MiniFrame):
         shell.prompt()
         shell.SetFocus()
         self.Show()
-        self.popup_window(self.ghost, focus=0)
-        self.popup_window(self.linfo, focus=0)
+        self.popup_window(self.ghost)
+        self.popup_window(self.linfo)
         self.add_log("<-- Beginning of debugger\r\n")
         self.indicator.Value = 2
     
@@ -1749,7 +1738,7 @@ class ShellFrame(MiniFrame):
         if self.linfo.target is not ls:
             self.linfo.watch(ls)
         self.on_title_window(frame)
-        self.popup_window(self.debugger.editor, focus=0)
+        self.popup_window(self.debugger.editor)
         dispatcher.send(signal='Interpreter.push',
                         sender=shell, command=None, more=False)
         command = shell.cmdline
@@ -1855,7 +1844,7 @@ class ShellFrame(MiniFrame):
         with buf.off_readonly():
             buf.SetText(text)
         ## Overwrite text and popup the window.
-        self.popup_window(self.Help, focus=0)
+        self.popup_window(self.Help)
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
@@ -1865,8 +1854,8 @@ class ShellFrame(MiniFrame):
                     style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
         self.handler('shell_new', shell)
         self.console.AddPage(shell, typename(shell.target))
-        self.Show()
-        self.popup_window(shell, focus=1)
+        self.popup_window(shell)
+        shell.SetFocus()
         return shell
     
     def delete_shell(self, shell):
