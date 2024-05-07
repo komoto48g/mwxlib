@@ -1590,15 +1590,15 @@ class Buffer(EditWindow, EditorInterface):
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.filename = filename
-            self.handler('buffer_loaded', self)
+        self.filename = filename
+        self.handler('buffer_loaded', self)
     
     def _load_file(self, filename):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
+            self.filename = filename
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.filename = filename
             self.handler('buffer_loaded', self)
             return True
         return False
@@ -1606,8 +1606,8 @@ class Buffer(EditWindow, EditorInterface):
     def _save_file(self, filename):
         """Wrapped method of SaveFile."""
         if self.SaveFile(filename):
-            self.SetSavePoint()
             self.filename = filename
+            self.SetSavePoint()
             self.handler('buffer_saved', self)
             return True
         return False
