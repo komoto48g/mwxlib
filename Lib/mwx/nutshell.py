@@ -1386,15 +1386,13 @@ class Buffer(EditWindow, EditorInterface):
     def filename(self):
         return self.__filename
     
-    @filename.setter
-    def filename(self, fn):
+    def update_filestamp(self, fn):
         if fn and os.path.isfile(fn):
-            self.__mtime = os.path.getmtime(fn)
+            self.__mtime = os.path.getmtime(fn) # update timestamp (modified time)
         else:
             self.__mtime = None
         if self.__filename != fn:
             self.__filename = fn
-            self.parent.handler('buffer_filename_reset', self)
             self.update_caption()
     
     @property
@@ -1408,10 +1406,12 @@ class Buffer(EditWindow, EditorInterface):
             < 0  : a url file
         """
         fn = self.filename
-        if fn and os.path.isfile(fn):
-            return os.path.getmtime(fn) - self.__mtime
-        if fn and re.match(url_re, fn):
-            return -1
+        if fn:
+            if os.path.isfile(fn):
+                return os.path.getmtime(fn) - self.__mtime
+            if re.match(url_re, fn):
+                return -1
+        return None
     
     @property
     def caption_prefix(self):
@@ -1429,9 +1429,10 @@ class Buffer(EditWindow, EditorInterface):
         return prefix
     
     def update_caption(self):
+        caption = self.caption_prefix + self.name
         try:
-            if self.parent.set_caption(self, self.caption_prefix + self.name):
-                self.parent.handler('buffer_caption_reset', self)
+            if self.parent.set_caption(self, caption):
+                self.parent.handler('buffer_caption_updated', self)
         except AttributeError:
             pass
     
@@ -1465,7 +1466,7 @@ class Buffer(EditWindow, EditorInterface):
         
         self.parent = parent
         self.__filename = filename
-        self.filename = filename
+        self.update_filestamp(filename)
         self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1590,15 +1591,15 @@ class Buffer(EditWindow, EditorInterface):
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.filename = filename
-            self.handler('buffer_loaded', self)
+        self.update_filestamp(filename)
+        self.handler('buffer_loaded', self)
     
     def _load_file(self, filename):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
+            self.update_filestamp(filename)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.filename = filename
             self.handler('buffer_loaded', self)
             return True
         return False
@@ -1606,8 +1607,8 @@ class Buffer(EditWindow, EditorInterface):
     def _save_file(self, filename):
         """Wrapped method of SaveFile."""
         if self.SaveFile(filename):
+            self.update_filestamp(filename)
             self.SetSavePoint()
-            self.filename = filename
             self.handler('buffer_saved', self)
             return True
         return False
@@ -1769,8 +1770,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
               'buffer_modified' : [ None, dispatch ],
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
-         'buffer_caption_reset' : [ None, dispatch ],
-        'buffer_filename_reset' : [ None, dispatch ],
+       'buffer_caption_updated' : [ None, dispatch ],
              '*button* pressed' : [ None, dispatch, skip ],
             '*button* released' : [ None, dispatch, skip ],
             },
@@ -2884,7 +2884,7 @@ class Nautilus(Shell, EditorInterface):
         wx.CallAfter(_del)
     
     def on_activated(self, shell):
-        """Called when shell:self is activated.
+        """Called when the shell:self is activated.
         Reset localvars assigned for the shell target.
         """
         self.trace_position()
