@@ -1252,7 +1252,7 @@ class ShellFrame(MiniFrame):
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
                  'title_window' : [ None, self.on_title_window ],
-         'buffer_caption_reset' : [ None, self.on_buffer_caption ], # => self.OnActivate
+       'buffer_caption_updated' : [ None, self.on_buffer_caption ], # => self.OnActivate
             },
             0 : {
                     '* pressed' : (0, fork_debugger),

@@ -27,8 +27,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                'buffer_deleted' : [ None, self.on_buffer_deleted ],
              'buffer_activated' : [ None, self.on_buffer_selected ],
            'buffer_inactivated' : [ None, ],
-         'buffer_caption_reset' : [ None, self.on_buffer_filename ],
-        'buffer_filename_reset' : [ None, self.on_buffer_filename ],
+       'buffer_caption_updated' : [ None, self.on_buffer_filename ],
             },
         }
         
