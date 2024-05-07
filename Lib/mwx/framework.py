@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.7"
+__version__ = "0.94.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1262,9 +1262,9 @@ class ShellFrame(MiniFrame):
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.toggle_window, self.ghost, doc="Toggle ghost")),
-                'S-f11 pressed' : (0, _F(self.toggle_window, self.watcher, doc="Toggle watcher")),
-                  'f12 pressed' : (0, _F(self.Close, alias="close", doc="Close the window")),
+                  'f11 pressed' : (0, _F(self.toggle_window, self.ghost, alias='toggle_ghost')),
+                'S-f11 pressed' : (0, _F(self.toggle_window, self.watcher, alias='toggle_watcher')),
+                  'f12 pressed' : (0, _F(self.Close, alias="close")),
              '*f[0-9]* pressed' : (0, ),
             },
         })
@@ -1546,6 +1546,11 @@ class ShellFrame(MiniFrame):
     
     def toggle_window(self, win):
         pane = self._mgr.GetPane(win)
+        if pane.IsDocked():
+            if not self.console.IsShown():
+                self._mgr.RestoreMaximizedPane()
+                self._mgr.Update()
+                return
         self.popup_window(win, not pane.IsShown())
     
     def popup_window(self, win, show=True):
