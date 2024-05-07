@@ -1386,10 +1386,9 @@ class Buffer(EditWindow, EditorInterface):
     def filename(self):
         return self.__filename
     
-    @filename.setter
-    def filename(self, fn):
+    def update_filestamp(self, fn):
         if fn and os.path.isfile(fn):
-            self.__mtime = os.path.getmtime(fn)
+            self.__mtime = os.path.getmtime(fn) # update timestamp (modified time)
         else:
             self.__mtime = None
         if self.__filename != fn:
@@ -1465,7 +1464,7 @@ class Buffer(EditWindow, EditorInterface):
         
         self.parent = parent
         self.__filename = filename
-        self.filename = filename
+        self.update_filestamp(filename)
         self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
@@ -1590,13 +1589,13 @@ class Buffer(EditWindow, EditorInterface):
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.filename = filename
+        self.update_filestamp(filename)
         self.handler('buffer_loaded', self)
     
     def _load_file(self, filename):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
-            self.filename = filename
+            self.update_filestamp(filename)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.handler('buffer_loaded', self)
@@ -1606,7 +1605,7 @@ class Buffer(EditWindow, EditorInterface):
     def _save_file(self, filename):
         """Wrapped method of SaveFile."""
         if self.SaveFile(filename):
-            self.filename = filename
+            self.update_filestamp(filename)
             self.SetSavePoint()
             self.handler('buffer_saved', self)
             return True
