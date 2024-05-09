@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.94.8"
+__version__ = "0.94.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1703,8 +1703,9 @@ class ShellFrame(MiniFrame):
                 self.debugger.debug(obj, *args, **kwargs)
             elif isinstance(obj, str):
                 filename = "<string>"
-                buf = self.Scratch.find_buffer(filename)\
-                   or self.Scratch.create_buffer(filename)
+                editor = self.Scratch
+                buf = editor.find_buffer(filename)\
+                   or editor.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj, filename)
@@ -1850,6 +1851,7 @@ class ShellFrame(MiniFrame):
             buf.SetText(text)
         ## Overwrite text and popup the window.
         self.popup_window(self.Help)
+        self.Help.swap_page(buf)
     
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
@@ -1909,7 +1911,9 @@ class ShellFrame(MiniFrame):
         return next((x for x in self.all_editors if x.IsShown()), self.Scratch)
     
     def find_editor(self, fn):
-        """Find an editor which has the specified fn:filename or code."""
+        """Find an editor with the specified fn:filename or code.
+        If found, switch to the buffer page.
+        """
         for book in self.all_editors:
             buf = book.find_buffer(fn)
             if buf:
