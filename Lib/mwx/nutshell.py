@@ -2004,6 +2004,22 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     load_url = load_file # for backward compatibility
     
+    def find_file(self, filename=None):
+        """Open the specified file."""
+        if not filename:
+            with wx.FileDialog(self, "Open buffer",
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
+                if dlg.ShowModal() == wx.ID_OK:
+                    for fn in dlg.Paths:
+                        self.find_file(fn)
+            return
+        if not self.load_file(filename):
+            buf = self.create_buffer(filename)
+            self.swap_buffer(buf)
+    
+    open_buffer = find_file # for backward compatibility
+    
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
         """
@@ -2068,16 +2084,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
         for buf in self.all_buffers:
             if buf.need_buffer_save:
                 self.save_buffer(buf)
-    
-    def open_buffer(self):
-        """Confirm the open with the dialog."""
-        with wx.FileDialog(self, "Open buffer",
-                wildcard='|'.join(self.wildcards),
-                style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                for filename in dlg.Paths:
-                    if not self.load_file(filename):
-                        self.create_buffer(filename)
     
     def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
