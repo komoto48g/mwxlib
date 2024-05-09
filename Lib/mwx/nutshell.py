@@ -2073,11 +2073,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Confirm the open with the dialog."""
         with wx.FileDialog(self, "Open buffer",
                 wildcard='|'.join(self.wildcards),
-                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                |wx.FD_MULTIPLE) as dlg:
+                style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
-                for fn in dlg.Paths:
-                    self.load_file(fn)
+                for filename in dlg.Paths:
+                    if not self.load_file(filename):
+                        self.create_buffer(filename)
     
     def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
