@@ -1544,10 +1544,14 @@ class Buffer(EditWindow, EditorInterface):
         if self.IndicatorValueAt(2, pos):
             p = self.IndicatorStart(2, pos)
             q = self.IndicatorEnd(2, pos)
-            text = self.GetTextRange(p, q).strip()
-            self.message("URL {!r}".format(text))
-            ## Note: Need a post-call of the confirmation dialog.
-            wx.CallAfter(self.parent.load_url, text)
+            url = self.GetTextRange(p, q).strip()
+            self.message("URL {!r}".format(url))
+            if wx.GetKeyState(wx.WXK_SHIFT):
+                ## Note: post-call for the confirmation dialog.
+                wx.CallAfter(self.parent.load_file, url)
+            else:
+                import webbrowser
+                return webbrowser.open(url)
         self.anchor = pos # Clear selection
     
     def on_modified(self, buf):
@@ -1962,6 +1966,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def load_file(self, filename, lineno=0, verbose=True):
         """Load a file into an existing or new buffer.
+        The requests module is required to use URL extension.
         """
         buf = self.find_buffer(filename)
         if not buf:
@@ -1979,8 +1984,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.swap_buffer(buf, lineno)
             return True
         try:
-            self.Freeze()
-            org = self.buffer
             if re.match(url_re, filename):
                 import requests
                 res = requests.get(filename, timeout=3.0)
@@ -1988,27 +1991,34 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     buf._load_textfile(res.text, filename)
                     self.swap_buffer(buf, lineno)
                     return True
-                return False
-            else:
-                if buf._load_file(filename):
-                    self.swap_buffer(buf, lineno)
-                    return True
-                return False
+                ## return False
+                raise Exception("The requested URL was not found.")
+            if buf._load_file(filename):
+                self.swap_buffer(buf, lineno)
+                return True
+            return False
         except Exception as e:
             self.post_message(f"Failed to load {filename!r}:", e)
             self.delete_buffer(buf)
-            if org:
-                self.swap_buffer(org)
             return False
-        finally:
-            self.Thaw()
     
-    def load_url(self, url):
-        if wx.GetKeyState(wx.WXK_SHIFT):
-            self.load_file(url)
-        else:
-            import webbrowser
-            webbrowser.open(url)
+    load_url = load_file # for backward compatibility
+    
+    def find_file(self, filename=None):
+        """Open the specified file."""
+        if not filename:
+            with wx.FileDialog(self, "Open buffer",
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
+                if dlg.ShowModal() == wx.ID_OK:
+                    for fn in dlg.Paths:
+                        self.find_file(fn)
+            return
+        if not self.load_file(filename):
+            buf = self.create_buffer(filename)
+            self.swap_buffer(buf)
+    
+    open_buffer = find_file # for backward compatibility
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
@@ -2074,16 +2084,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
         for buf in self.all_buffers:
             if buf.need_buffer_save:
                 self.save_buffer(buf)
-    
-    def open_buffer(self):
-        """Confirm the open with the dialog."""
-        with wx.FileDialog(self, "Open buffer",
-                wildcard='|'.join(self.wildcards),
-                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                |wx.FD_MULTIPLE) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                for fn in dlg.Paths:
-                    self.load_file(fn)
     
     def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
