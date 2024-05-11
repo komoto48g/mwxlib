@@ -55,21 +55,17 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
     
-    with App(loop):
+    app = wx.GetApp() or wx.App()
+    try:
         frame = ShellFrame(None, target, **kwargs)
         frame.Show()
         frame.rootshell.SetFocus()
         if locals:
             frame.rootshell.locals.update(locals)
         return frame
-
-
-@contextmanager
-def App(loop=True):
-    app = wx.GetApp() or wx.App()
-    yield app
-    if loop and not app.GetMainLoop():
-        app.MainLoop()
+    finally:
+        if loop and not app.GetMainLoop():
+            app.MainLoop()
 
 
 def postcall(f):

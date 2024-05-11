@@ -4,7 +4,7 @@
 from .framework import __version__, __author__
 from .framework import FSM
 from .framework import Menu, MenuBar, StatusBar
-from .framework import deb, App, Frame, MiniFrame, ShellFrame
+from .framework import Frame, MiniFrame, ShellFrame, deb
 
 ## Controls
 ## from . import controls
