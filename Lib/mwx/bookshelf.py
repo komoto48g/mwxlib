@@ -42,11 +42,13 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 data.SetFocus()
         
         @self.handler.bind('f5 pressed')
-        def refresh(v):
-            self.build_tree(clear=0)
+        def refresh(v, clear=False):
+            self.build_tree(clear)
             if self.target:
                 self.target.current_editor.SetFocus()
                 wx.CallAfter(self.SetFocus)
+        
+        self.handler.bind('S-f5 pressed', partial(refresh, clear=1))
         
         @self.handler.bind('delete pressed')
         def delete(v):
