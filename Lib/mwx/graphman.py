@@ -1804,14 +1804,18 @@ class Frame(mwx.Frame):
                 o.write("self.load_plug({!r}, session={})\n".format(path, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
-            ## stack-frame
-            paths = [x.pathname for x in self.graph.all_frames if x.pathname]
-            if paths:
-                o.write("self.load_frame(\n{}, self.graph)\n".format(
-                        pformat(paths, width=160)))
-                
-                frame = self.graph.frame # restore currently selected frame
-                if frame and frame.pathname:
-                    o.write("self.graph.select({!r})\n".format(frame.name))
+            def _save(view):
+                name = view.Name
+                paths = [x.pathname for x in view.all_frames if x.pathname]
+                o.write(f"self.{name}.unit = {view.unit:g}\n")
+                o.write(f"self.load_frame({paths!r}, self.{name})\n")
+                try:
+                    index = paths.index(view.frame.pathname)
+                    o.write(f"self.{name}.select({index})\n")
+                except Exception:
+                    pass
+            
+            _save(self.graph)
+            _save(self.output)
         
         self.message("\b done.")
