@@ -17,6 +17,9 @@ import sys
 import wx
 
 sys.path.append("../Lib")
+import mwx.controls
+reload(mwx.controls)
+
 from mwx.controls import Button, Icon, Icon2, Iconify
 from mwx.graphman import Layer, Frame
 

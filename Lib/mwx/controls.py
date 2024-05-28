@@ -877,12 +877,23 @@ if 1:
             if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
     }
 
-def Icon(key, size=None):
-    """Returns an iconic bitmap with the specified size (w,h).
+class Icon(wx.Bitmap):
+    """Returns an iconic bitmap with the specified size (w, h).
     
     The key is either Icon.provided_arts or Icon.custom_images key.
     If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
+    
+    Note:
+        A null (0-shaped) bitmap fails with AssertionError from 4.1.1
     """
+    provided_arts = _provided_arts
+    custom_images = _custom_images
+    
+    def __init__(self, key, size=None):
+        wx.Bitmap.__init__(self, _getBitmap1(key, size))
+
+
+def _getBitmap1(key, size=None):
     if key:
         try:
             art = _custom_images.get(key) # None => AttributeError
@@ -907,11 +918,7 @@ def Icon(key, size=None):
             del dc
         bmp.SetMaskColour('black') # return dummy-sized blank bitmap
         return bmp
-    
     return wx.NullBitmap # The standard wx controls accept this,
-
-Icon.provided_arts = _provided_arts
-Icon.custom_images = _custom_images
 
 
 def Icon2(back, fore, size=None, subsize=0.6):
