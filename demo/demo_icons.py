@@ -20,7 +20,7 @@ sys.path.append("../Lib")
 import mwx.controls
 reload(mwx.controls)
 
-from mwx.controls import Button, Icon, Icon2, Iconify
+from mwx.controls import Button, Icon, Iconify
 from mwx.graphman import Layer, Frame
 
 
@@ -39,9 +39,9 @@ class Plugin(Layer):
         ##     title="Iconify", row=2, show=0,
         ## )
         
-        def _btn2(back, fore, r=0.6):
+        def _btn2(back, fore, r=3/4):
             return Button(self, label=str(fore),
-                                icon=Icon2(back, fore, (16,16), r))
+                                icon=Icon(back, fore, (16,16), r))
         
         ls = 'v w x + - ! !! !!! help tag'.split()
         self.layout([

@@ -7,7 +7,7 @@ from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from mwx.framework import CtrlInterface, Menu, StatusBar
-from mwx.controls import Icon, Icon2, Clipboard
+from mwx.controls import Icon, Clipboard
 from mwx.graphman import Layer
 
 
@@ -115,7 +115,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 lambda v: copy(0),
                 lambda v: v.Enable(len(list(self.selected_items)))),
                 
-            (103, "Copy ALL data", Icon2('copy', '+'),
+            (103, "Copy ALL data", Icon('copy', '+'),
                 lambda v: copy(),
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]

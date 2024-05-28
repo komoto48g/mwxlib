@@ -889,8 +889,14 @@ class Icon(wx.Bitmap):
     provided_arts = _provided_arts
     custom_images = _custom_images
     
-    def __init__(self, key, size=None):
-        wx.Bitmap.__init__(self, _getBitmap1(key, size))
+    def __init__(self, *args, **kwargs):
+        try:
+            bmp = _getBitmap1(*args, **kwargs)
+        except TypeError:
+            bmp = _getBitmap2(*args, **kwargs)
+        wx.Bitmap.__init__(self, bmp)
+
+Icon2 = Icon # for backward compatibility
 
 
 def _getBitmap1(key, size=None):
@@ -921,13 +927,13 @@ def _getBitmap1(key, size=None):
     return wx.NullBitmap # The standard wx controls accept this,
 
 
-def Icon2(back, fore, size=None, subsize=0.6):
+def _getBitmap2(back, fore, size=None, subsize=3/4):
     if not size:
         size = (16,16)
     if isinstance(subsize, float):
         subsize = wx.Size(size) * subsize
-    back = Icon(back, size)
-    fore = Icon(fore, subsize)
+    back = _getBitmap1(back, size)
+    fore = _getBitmap1(fore, subsize)
     x = size[0] - subsize[0]
     y = size[1] - subsize[1]
     dc = wx.MemoryDC(back)
