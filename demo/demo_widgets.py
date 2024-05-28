@@ -6,7 +6,7 @@ from numpy import inf
 sys.path.append("../Lib")
 import mwx
 from mwx.controls import Param, LParam
-from mwx.controls import Button, ToggleButton, TextCtrl, Choice, Icon, Iconify
+from mwx.controls import Button, ToggleButton, TextCtrl, Choice, Icon
 from mwx.graphman import Layer, Frame
 
 
@@ -22,7 +22,7 @@ class Plugin(Layer):
                         handler=on_press,
                         tip="this is a button",
                         ## icon='v',
-                        icon=Iconify("openmoji:annoyed-face-with-tongue", 32, 32),
+                        icon=Icon.iconify("openmoji:annoyed-face-with-tongue", 32, 32),
                         size=(80,-1),
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",

@@ -20,7 +20,7 @@ sys.path.append("../Lib")
 import mwx.controls
 reload(mwx.controls)
 
-from mwx.controls import Button, Icon, Iconify
+from mwx.controls import Button, Icon
 from mwx.graphman import Layer, Frame
 
 
@@ -29,15 +29,15 @@ class Plugin(Layer):
     
     def Init(self):
         def _btn(k):
-            return Button(self, label=k, icon=Iconify(k, 22, 22))
+            return Button(self, label=k, icon=Icon.iconify(k, 22, 22))
         
         #> https://icon-sets.iconify.design/openmoji/
-        ## self.layout([
-        ##         _btn("openmoji:annoyed-face-with-tongue"),
-        ##         _btn("openmoji:frog"),
-        ##     ],
-        ##     title="Iconify", row=2, show=0,
-        ## )
+        self.layout([
+                _btn("openmoji:annoyed-face-with-tongue"),
+                _btn("openmoji:frog"),
+            ],
+            title="Iconify", row=2, show=0,
+        )
         
         def _btn2(back, fore, r=3/4):
             return Button(self, label=str(fore),

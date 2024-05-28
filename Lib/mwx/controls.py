@@ -896,6 +896,21 @@ class Icon(wx.Bitmap):
             bmp = _getBitmap2(*args, **kwargs)
         wx.Bitmap.__init__(self, bmp)
 
+    @staticmethod
+    def iconify(icon, w, h):
+        ## if wx.VERSION >= (4,1,0):
+        try:
+            import wx.svg
+            import requests
+            url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
+            res = requests.get(url, timeout=3.0)
+            img = wx.svg.SVGimage.CreateFromBytes(res.content)
+            bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
+        except Exception:
+            print("- Failed to load iconify.design/{}".format(icon))
+            bmp = wx.NullBitmap
+        return bmp
+
 Icon2 = Icon # for backward compatibility
 
 
@@ -940,21 +955,6 @@ def _getBitmap2(back, fore, size=None, subsize=3/4):
     dc.DrawBitmap(fore, x, y, useMask=True)
     del dc
     return back
-
-
-def Iconify(icon, w, h):
-    ## if wx.VERSION >= (4,1,0):
-    try:
-        import wx.svg
-        import requests
-        url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
-        res = requests.get(url, timeout=3.0)
-        img = wx.svg.SVGimage.CreateFromBytes(res.content)
-        bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
-        return bmp
-    except Exception:
-        print("- Failed to load iconify.design/{}".format(icon))
-        pass
 
 
 def _Icon(v):
