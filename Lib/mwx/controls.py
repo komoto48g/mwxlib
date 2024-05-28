@@ -877,12 +877,44 @@ if 1:
             if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
     }
 
-def Icon(key, size=None):
-    """Returns an iconic bitmap with the specified size (w,h).
+class Icon(wx.Bitmap):
+    """Returns an iconic bitmap with the specified size (w, h).
     
     The key is either Icon.provided_arts or Icon.custom_images key.
     If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
+    
+    Note:
+        A null (0-shaped) bitmap fails with AssertionError from 4.1.1
     """
+    provided_arts = _provided_arts
+    custom_images = _custom_images
+    
+    def __init__(self, *args, **kwargs):
+        try:
+            bmp = _getBitmap1(*args, **kwargs)
+        except TypeError:
+            bmp = _getBitmap2(*args, **kwargs)
+        wx.Bitmap.__init__(self, bmp)
+
+    @staticmethod
+    def iconify(icon, w, h):
+        ## if wx.VERSION >= (4,1,0):
+        try:
+            import wx.svg
+            import requests
+            url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
+            res = requests.get(url, timeout=3.0)
+            img = wx.svg.SVGimage.CreateFromBytes(res.content)
+            bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
+        except Exception:
+            print("- Failed to load iconify.design/{}".format(icon))
+            bmp = wx.NullBitmap
+        return bmp
+
+Icon2 = Icon # for backward compatibility
+
+
+def _getBitmap1(key, size=None):
     if key:
         try:
             art = _custom_images.get(key) # None => AttributeError
@@ -907,41 +939,22 @@ def Icon(key, size=None):
             del dc
         bmp.SetMaskColour('black') # return dummy-sized blank bitmap
         return bmp
-    
     return wx.NullBitmap # The standard wx controls accept this,
 
-Icon.provided_arts = _provided_arts
-Icon.custom_images = _custom_images
 
-
-def Icon2(back, fore, size=None, subsize=0.6):
+def _getBitmap2(back, fore, size=None, subsize=3/4):
     if not size:
         size = (16,16)
     if isinstance(subsize, float):
         subsize = wx.Size(size) * subsize
-    back = Icon(back, size)
-    fore = Icon(fore, subsize)
+    back = _getBitmap1(back, size)
+    fore = _getBitmap1(fore, subsize)
     x = size[0] - subsize[0]
     y = size[1] - subsize[1]
     dc = wx.MemoryDC(back)
     dc.DrawBitmap(fore, x, y, useMask=True)
     del dc
     return back
-
-
-def Iconify(icon, w, h):
-    ## if wx.VERSION >= (4,1,0):
-    try:
-        import wx.svg
-        import requests
-        url = "https://api.iconify.design/{}.svg".format(icon.replace(':', '/'))
-        res = requests.get(url, timeout=3.0)
-        img = wx.svg.SVGimage.CreateFromBytes(res.content)
-        bmp = img.ConvertToScaledBitmap(wx.Size(w, h))
-        return bmp
-    except Exception:
-        print("- Failed to load iconify.design/{}".format(icon))
-        pass
 
 
 def _Icon(v):
