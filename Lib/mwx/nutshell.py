@@ -2363,20 +2363,9 @@ class Nautilus(Shell, EditorInterface):
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
-        
-        def on_drag(v): #<wx._core.StyledTextEvent>
-            EditorInterface.dnd_flag = (v.Position < self.bolc) # copy
-            v.Skip()
-        self.Bind(stc.EVT_STC_START_DRAG, on_drag)
-        
-        def on_dragging(v): #<wx._core.StyledTextEvent>
-            if v.Position < self.bolc:
-                v.DragResult = wx.DragNone # Don't drop (as readonly)
-            elif EditorInterface.dnd_flag:
-                v.DragResult = wx.DragCopy # Don't move
-            v.Skip()
-        self.Bind(stc.EVT_STC_DRAG_OVER, on_dragging)
-        self.Bind(stc.EVT_STC_DO_DROP, on_dragging)
+        self.Bind(stc.EVT_STC_START_DRAG, self.OnDrag)
+        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragging)
+        self.Bind(stc.EVT_STC_DO_DROP, self.OnDragging)
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -2667,6 +2656,17 @@ class Nautilus(Shell, EditorInterface):
         self.parent.handler('add_help', self.__calltip)
         if self.CallTipActive():
             self.CallTipCancel()
+        evt.Skip()
+    
+    def OnDrag(self, evt): #<wx._core.StyledTextEvent>
+        EditorInterface.dnd_flag = (evt.Position < self.bolc) # copy
+        evt.Skip()
+    
+    def OnDragging(self, evt): #<wx._core.StyledTextEvent>
+        if evt.Position < self.bolc:
+            evt.DragResult = wx.DragNone # Don't drop (as readonly)
+        elif EditorInterface.dnd_flag:
+            evt.DragResult = wx.DragCopy # Don't move
         evt.Skip()
     
     def OnSpace(self, evt):
