@@ -382,24 +382,8 @@ class LayerInterface(CtrlInterface):
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: mwx.Menu.Popup(self, self.menu))
         
-        def destroy(v):
-            if v.EventObject is self:
-                if self.thread and self.thread.active:
-                    self.thread.active = 0
-                    self.thread.Stop()
-                del self.Arts
-            v.Skip()
-        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
-        
-        def on_show(v):
-            if not self:
-                return
-            if v.IsShown():
-                self.handler('page_shown', self)
-            elif isinstance(self.Parent, aui.AuiNotebook):
-                self.handler('page_hidden', self)
-            v.Skip()
-        self.Bind(wx.EVT_SHOW, on_show)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        self.Bind(wx.EVT_SHOW, self.OnShow)
         
         try:
             self.Init()
@@ -430,6 +414,23 @@ class LayerInterface(CtrlInterface):
         """Save settings in a session file (to be overridden)."""
         if self.parameters:
             session['params'] = self.parameters
+    
+    def OnDestroy(self, evt):
+        if evt.EventObject is self:
+            if self.thread and self.thread.active:
+                self.thread.active = 0
+                self.thread.Stop()
+            del self.Arts
+        evt.Skip()
+    
+    def OnShow(self, evt):
+        if not self:
+            return
+        if evt.IsShown():
+            self.handler('page_shown', self)
+        elif isinstance(self.Parent, aui.AuiNotebook):
+            self.handler('page_hidden', self)
+        evt.Skip()
     
     Shown = property(
         lambda self: self.IsShown(),
@@ -1314,7 +1315,7 @@ class Frame(mwx.Frame):
                 nb = plug.Parent
                 j = nb.GetPageIndex(plug)
                 nb.RemovePage(j) # just remove page
-                ## nb.DeletePage(j) # cf. destroy plug object too
+                ## nb.DeletePage(j) # Destroys plug object too.
             else:
                 nb = None
                 self._mgr.DetachPane(plug)

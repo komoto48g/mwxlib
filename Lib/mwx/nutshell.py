@@ -1751,12 +1751,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.OnPageClosed)
         
-        def destroy(v):
-            obj = v.EventObject
-            if isinstance(obj, Buffer):
-                self.handler('buffer_deleted', obj)
-            v.Skip()
-        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         def dispatch(v):
             """Fork events to the parent."""
@@ -1783,6 +1778,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
         })
+    
+    def OnDestroy(self, evt):
+        obj = evt.EventObject
+        if isinstance(obj, Buffer):
+            self.handler('buffer_deleted', obj)
+        evt.Skip()
     
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
@@ -2377,11 +2378,7 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(stc.EVT_STC_DRAG_OVER, on_dragging)
         self.Bind(stc.EVT_STC_DO_DROP, on_dragging)
         
-        def destroy(v):
-            if v.EventObject is self:
-                self.handler('shell_deleted', self)
-            v.Skip()
-        self.Bind(wx.EVT_WINDOW_DESTROY, destroy)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         def activate(v):
             self.handler('shell_activated', self)
@@ -2645,6 +2642,11 @@ class Nautilus(Shell, EditorInterface):
     def trace_position(self):
         _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
+    
+    def OnDestroy(self, evt):
+        if evt.EventObject is self:
+            self.handler('shell_deleted', self)
+        evt.Skip()
     
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
