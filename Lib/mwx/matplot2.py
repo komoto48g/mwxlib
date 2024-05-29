@@ -446,6 +446,7 @@ class MatplotPanel(wx.Panel):
             x, y = [x], [y]
         self.selected.set_visible(1)
         self.selected.set_data(x, y)
+        self.handler('selector_drawn', self.frame)
         self.draw(self.selected)
         self.trace_point(*v)
     
@@ -453,6 +454,7 @@ class MatplotPanel(wx.Panel):
     def Selector(self):
         self.selected.set_visible(0)
         self.selected.set_data([], [])
+        self.handler('selector_removed', self.frame)
         self.draw(self.selected)
     
     ## --------------------------------
