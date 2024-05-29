@@ -540,8 +540,11 @@ class Graph(GraphPlot):
     
     def set_frame_visible(self, v):
         if self.frame:
-            self.frame.set_visible(v)
-            self.draw()
+            if self.frame.get_visible() != v:
+                self.frame.set_visible(v)
+                return True
+            return False
+        return None
     
     def get_markups_visible(self):
         return self.marked.get_visible()
@@ -813,6 +816,16 @@ class Frame(mwx.Frame):
         
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+        
+        def on_move(v, show):
+            self.graph.set_frame_visible(show)
+            self.output.set_frame_visible(show)
+            if show:
+                self.graph.draw()
+                self.output.draw()
+            v.Skip()
+        self.Bind(wx.EVT_MOVE_START, lambda v :on_move(v, show=0))
+        self.Bind(wx.EVT_MOVE_END, lambda v :on_move(v, show=1))
         
         ## Custom Key Bindings
         self.define_key('* C-g', self.Quit)
