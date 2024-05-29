@@ -49,13 +49,13 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
-        def dispatch(v):
+        def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
-            v.Skip()
+            self.parent.handler(self.handler.current_event, evt)
+            evt.Skip()
         
         @self.handler.bind('C-c pressed')
-        def copy(v):
+        def copy(evt):
             self.copy()
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')

@@ -43,18 +43,18 @@ class Inspector(it.InspectionTree, CtrlInterface):
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
-        def dispatch(v):
+        def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
-            v.Skip()
+            self.parent.handler(self.handler.current_event, evt)
+            evt.Skip()
         
         @self.handler.bind('f4 pressed')
-        def highlight(v):
+        def highlight(evt):
             if self.target:
                 self.highlighter.HighlightCurrentItem(self)
         
         @self.handler.bind('f5 pressed')
-        def refresh(v):
+        def refresh(evt):
             self.BuildTree(self.target)
     
     def OnDestroy(self, evt):

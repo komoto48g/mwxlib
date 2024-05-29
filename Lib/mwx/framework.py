@@ -225,8 +225,8 @@ class KeyCtrlInterfaceMixin:
         """
         assert isinstance(keymap, str)
         
-        def _Pass(v):
-            self.message("{} {}".format(keymap, v.key))
+        def _Pass(evt):
+            self.message("{} {}".format(keymap, evt.key))
         _Pass.__name__ = str('pass')
         
         state = self.handler.default_state
@@ -758,7 +758,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
-        def close(v):
+        def close(evt):
             """Close the window."""
             self.Close()
         
@@ -824,7 +824,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         ## To default close >>> self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
-        def close(v):
+        def close(evt):
             """Close the window."""
             self.Close()
         
@@ -1222,16 +1222,16 @@ class ShellFrame(MiniFrame):
             evt.Skip()
         self.Bind(wx.EVT_SIZE, on_size)
         
-        def fork_debugger(v):
+        def fork_debugger(evt):
             """Fork key events to the debugger."""
-            self.debugger.handler(self.handler.current_event, v)
+            self.debugger.handler(self.handler.current_event, evt)
             if self.debugger.handler.current_state:
                 if self.debugger.tracing:
                     self.message("Current status is tracing. Press [C-g] to quit.")
                 elif not self.debugger.busy:
                     self.message("Current status is inconsistent. Press [C-g] to quit.")
                     self.indicator.Value = 7
-            v.Skip()
+            evt.Skip()
         
         self.handler.update({ # DNA<ShellFrame>
             None : {

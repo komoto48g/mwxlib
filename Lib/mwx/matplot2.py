@@ -143,9 +143,9 @@ class MatplotPanel(wx.Panel):
         ## The context menus is disabled and never skip to the next handler.
         self.canvas.Bind(wx.EVT_CONTEXT_MENU, lambda v: self.handler('context_menu', v))
         
-        def fork(v):
-            if self.handler.fork(self.handler.current_event, v) is None:
-                v.Skip()
+        def fork(evt):
+            if self.handler.fork(self.handler.current_event, evt) is None:
+                evt.Skip()
         
         self.__handler = mwx.FSM({ # DNA<MatplotPanel>
                 None : {

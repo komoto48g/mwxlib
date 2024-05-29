@@ -36,13 +36,13 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         @self.handler.bind('enter pressed')
-        def enter(v):
+        def enter(evt):
             data = self.GetItemData(self.Selection)
             if data:
                 data.SetFocus()
         
         @self.handler.bind('f5 pressed')
-        def refresh(v, clear=False):
+        def refresh(evt, clear=False):
             self.build_tree(clear)
             if self.target:
                 self.target.current_editor.SetFocus()
@@ -51,7 +51,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.handler.bind('S-f5 pressed', partial(refresh, clear=1))
         
         @self.handler.bind('delete pressed')
-        def delete(v):
+        def delete(evt):
             data = self.GetItemData(self.Selection)
             if data:
                 data.parent.kill_buffer(data) # -> focus moves
@@ -59,10 +59,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         
         @self.handler.bind('*button* pressed')
         @self.handler.bind('*button* released')
-        def dispatch(v):
+        def dispatch(evt):
             """Fork mouse events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
-            v.Skip()
+            self.parent.handler(self.handler.current_event, evt)
+            evt.Skip()
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:

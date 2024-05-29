@@ -18,10 +18,10 @@ class Plugin(Layer):
         self.layout((self.plot,), expand=2, border=0)
         
         @self.handler.bind('page_shown')
-        def activate(v):
+        def activate(evt):
             self.plot.attach(*self.parent.graphic_windows)
             self.plot.linplot(self.parent.selected_view.frame)
         
         @self.handler.bind('page_closed')
-        def deactivate(v):
+        def deactivate(evt):
             self.plot.detach(*self.parent.graphic_windows)

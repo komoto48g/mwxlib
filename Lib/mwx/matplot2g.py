@@ -393,7 +393,7 @@ class GraphPlot(MatplotPanel):
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        def _draw(v):
+        def _draw(evt):
             self.canvas.draw_idle()
         
         self.handler.update({ # DNA<GraphPlot>

@@ -79,9 +79,9 @@ class EditorInterface(CtrlInterface):
     def __init__(self):
         CtrlInterface.__init__(self)
         
-        def dispatch(v):
+        def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
+            self.parent.handler(self.handler.current_event, evt)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -1476,19 +1476,19 @@ class Buffer(EditWindow, EditorInterface):
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         
-        def activate(v):
+        def activate(evt):
             self.handler('buffer_activated', self)
-            v.Skip()
+            evt.Skip()
         self.Bind(wx.EVT_SET_FOCUS, activate)
         
-        def inactivate(v):
+        def inactivate(evt):
             self.handler('buffer_inactivated', self)
-            v.Skip()
+            evt.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
-        def dispatch(v):
+        def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
+            self.parent.handler(self.handler.current_event, evt)
         
         ## Note: Key events are not propagated from Buffer to EditorBook.
         ## They are explicitly dispatched from buffer.handler to editor.handler.
@@ -1753,9 +1753,9 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def dispatch(v):
+        def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
+            self.parent.handler(self.handler.current_event, evt)
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -2369,17 +2369,17 @@ class Nautilus(Shell, EditorInterface):
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def activate(v):
+        def activate(evt):
             self.handler('shell_activated', self)
-            v.Skip()
+            evt.Skip()
         self.Bind(wx.EVT_SET_FOCUS, activate)
         
-        def inactivate(v):
+        def inactivate(evt):
             self.handler('shell_inactivated', self)
-            v.Skip()
+            evt.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
-        def clear(v):
+        def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
             ## if self.AutoCompActive():
@@ -2388,7 +2388,7 @@ class Nautilus(Shell, EditorInterface):
                 self.ReplaceSelection("")
             self.message("")
         
-        def clear_autocomp(v):
+        def clear_autocomp(evt):
             ## """Clear Autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
@@ -2396,20 +2396,20 @@ class Nautilus(Shell, EditorInterface):
                 self.ReplaceSelection("")
             self.message("")
         
-        def skip_autocomp(v):
+        def skip_autocomp(evt):
             ## """Don't eat backward prompt whitespace."""
             ## Prevent autocomp from eating prompts.
             ## Quit to avoid backspace over the last non-continuation prompt.
             if self.cpos == self.bolc:
-                self.handler('quit', v)
-            v.Skip()
+                self.handler('quit', evt)
+            evt.Skip()
         
-        def fork(v):
-            self.handler.fork(self.handler.current_event, v)
+        def fork(evt):
+            self.handler.fork(self.handler.current_event, evt)
         
-        def dispatch(v):
+        def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, v)
+            self.parent.handler(self.handler.current_event, evt)
         
         self.handler.update({ # DNA<Nautilus>
             None : {

@@ -266,10 +266,9 @@ class Plugin(Layer):
             expand=2, border=0, vspacing=0,
         )
         
-        def on_focus_set(v):
+        def on_focus_set(evt):
             self.parent.select_view(self.nb.CurrentPage.Target)
-            v.Skip()
-        
+            evt.Skip()
         self.nb.Bind(wx.EVT_CHILD_FOCUS, on_focus_set)
     
     def attach(self, target, caption):

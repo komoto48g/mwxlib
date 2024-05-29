@@ -814,13 +814,13 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
-        def on_move(v, show):
+        def on_move(evt, show):
             self.graph.set_frame_visible(show)
             self.output.set_frame_visible(show)
             if show:
                 self.graph.draw()
                 self.output.draw()
-            v.Skip()
+            evt.Skip()
         self.Bind(wx.EVT_MOVE_START, lambda v :on_move(v, show=0))
         self.Bind(wx.EVT_MOVE_END, lambda v :on_move(v, show=1))
         
@@ -828,9 +828,9 @@ class Frame(mwx.Frame):
         self.define_key('* C-g', self.Quit)
         
         @self.shellframe.define_key('* C-g')
-        def quit(v):
+        def quit(evt):
             """Dispatch quit to the main Frame."""
-            self.handler('C-g pressed', v)
+            self.handler('C-g pressed', evt)
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
