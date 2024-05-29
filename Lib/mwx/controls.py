@@ -688,21 +688,21 @@ class ControlPanel(scrolled.ScrolledPanel):
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
         ## Register object and parameter groups
-        def flatiter(a):
+        def _flatiter(a):
             for c in a:
                 if isinstance(c, tuple):
-                    yield from flatiter(c)
+                    yield from _flatiter(c)
                 elif isinstance(c, wx.Object):
                     yield c
-        self.__groups.append(list(flatiter(objs)))
+        self.__groups.append(list(_flatiter(objs)))
         
-        def variter(a):
+        def _variter(a):
             for c in a:
                 if isinstance(c, Knob):
                     yield c.param
                 elif hasattr(c, 'value'):
                     yield c
-        self.__params.append(list(variter(objs)))
+        self.__params.append(list(_variter(objs)))
         
         ## Set appearance of the layout group
         self.show(-1, visible)

@@ -97,7 +97,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         }
         self.Target.handler.append(self.context)
         
-        def copy(all=True):
+        def copy_info(all=True):
             frames = self.Target.all_frames
             if frames:
                 frame = frames[self.focused_item]
@@ -112,11 +112,11 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.OnEditAnnotation),
             (),
             (102, "Copy info", Icon('copy'),
-                lambda v: copy(0),
+                lambda v: copy_info(0),
                 lambda v: v.Enable(len(list(self.selected_items)))),
                 
             (103, "Copy ALL data", Icon('copy', '+'),
-                lambda v: copy(),
+                lambda v: copy_info(1),
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,

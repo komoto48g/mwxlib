@@ -327,7 +327,7 @@ class AxesImagePhantom(object):
         """Convert xydata (x,y) -> [nx,ny] pixel.
         If cast, convert pixel-based lengths to pixel numbers.
         """
-        def pixel_cast(n):
+        def _cast(n):
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
             warnings.warn("Setting xy data with single tuple is deprecated.",
@@ -341,7 +341,7 @@ class AxesImagePhantom(object):
         nx = (x - l) / ux
         ny = (t - y) / uy # Y ピクセルインデクスは座標と逆
         if cast:
-            return (pixel_cast(nx), pixel_cast(ny))
+            return (_cast(nx), _cast(ny))
         return (nx-0.5, ny-0.5)
     
     def xyfrompixel(self, nx, ny=None):

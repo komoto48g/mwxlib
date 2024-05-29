@@ -98,8 +98,7 @@ class LinePlot(MatplotPanel):
         self.__annotations = []
         
         #<matplotlib.text.Annotation>
-        def annotation(v, xy, xytext, xycoords='data',
-                textcoords='offset points', **arrowprops):
+        def _A(v, xy, xytext, xycoords='data', textcoords='offset points', **arrowprops):
             return self.axes.annotate(
                     '' if v is None else '{:g}'.format(v),
                     xy, xytext, xycoords, textcoords, arrowprops, size='small')
@@ -109,14 +108,14 @@ class LinePlot(MatplotPanel):
             x = (b + a) / 2
             y = self.ylim[0] + 20/self.ddpu[1]
             if (b - a) > 60/self.ddpu[0]:
-                p = annotation(b-a, (x,y), (-20,8), arrowstyle='-') # wide space
+                p = _A(b-a, (x,y), (-20,8), arrowstyle='-') # wide space
             else:
-                p = annotation(b-a, (x,y), (16,16), arrowstyle='-', # narrow space
+                p = _A(b-a, (x,y), (16,16), arrowstyle='-', # narrow space
                         connectionstyle="angle,angleA=0,angleB=90,rad=8")
             self.__annotations = [
-                annotation(a, (a,y), (-54,-3), arrowstyle='->'),
-                annotation(b, (b,y), ( 16,-3), arrowstyle='->'),
-                annotation(None, (a,y), (b,y), textcoords='data', arrowstyle='<->'),
+                _A(a, (a,y), (-54,-3), arrowstyle='->'),
+                _A(b, (b,y), ( 16,-3), arrowstyle='->'),
+                _A(None, (a,y), (b,y), textcoords='data', arrowstyle='<->'),
                 p,
             ]
     
