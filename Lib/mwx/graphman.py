@@ -540,8 +540,11 @@ class Graph(GraphPlot):
     
     def set_frame_visible(self, v):
         if self.frame:
-            self.frame.set_visible(v)
-            self.draw()
+            if self.frame.get_visible() != v:
+                self.frame.set_visible(v)
+                return True
+            return False
+        return None
     
     def get_markups_visible(self):
         return self.marked.get_visible()
@@ -728,10 +731,6 @@ class Frame(mwx.Frame):
             (wx.ID_PASTE, "&Paste\t(C-v)", "Paste buffer from clipboard", Icon('paste'),
                 lambda v: self.__view.read_buffer_from_clipboard()),
             (),
-            (mwx.ID_(20), "Show &Image", "Show/Hide image", wx.ITEM_CHECK, Icon('image'),
-                lambda v: self.__view.set_frame_visible(v.IsChecked()),
-                lambda v: v.Check(self.__view.get_frame_visible())),
-                
             (mwx.ID_(21), "Toggle &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
                 lambda v: self.__view.set_markups_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_markups_visible())),
@@ -806,13 +805,23 @@ class Frame(mwx.Frame):
         })
         
         ## Add main-menu to context-menu
-        self.graph.menu += self.menubar["Edit"][2:8]
-        self.output.menu += self.menubar["Edit"][2:8]
+        self.graph.menu += self.menubar["Edit"][2:7]
+        self.output.menu += self.menubar["Edit"][2:7]
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+        
+        def on_move(v, show):
+            self.graph.set_frame_visible(show)
+            self.output.set_frame_visible(show)
+            if show:
+                self.graph.draw()
+                self.output.draw()
+            v.Skip()
+        self.Bind(wx.EVT_MOVE_START, lambda v :on_move(v, show=0))
+        self.Bind(wx.EVT_MOVE_END, lambda v :on_move(v, show=1))
         
         ## Custom Key Bindings
         self.define_key('* C-g', self.Quit)
