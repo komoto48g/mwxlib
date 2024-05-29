@@ -731,10 +731,6 @@ class Frame(mwx.Frame):
             (wx.ID_PASTE, "&Paste\t(C-v)", "Paste buffer from clipboard", Icon('paste'),
                 lambda v: self.__view.read_buffer_from_clipboard()),
             (),
-            (mwx.ID_(20), "Show &Image", "Show/Hide image", wx.ITEM_CHECK, Icon('image'),
-                lambda v: self.__view.set_frame_visible(v.IsChecked()),
-                lambda v: v.Check(self.__view.get_frame_visible())),
-                
             (mwx.ID_(21), "Toggle &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
                 lambda v: self.__view.set_markups_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_markups_visible())),
@@ -809,8 +805,8 @@ class Frame(mwx.Frame):
         })
         
         ## Add main-menu to context-menu
-        self.graph.menu += self.menubar["Edit"][2:8]
-        self.output.menu += self.menubar["Edit"][2:8]
+        self.graph.menu += self.menubar["Edit"][2:7]
+        self.output.menu += self.menubar["Edit"][2:7]
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
