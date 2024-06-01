@@ -13,7 +13,7 @@ from .controls import Button, ToggleButton, TextCtrl, Choice, Gauge, Indicator
 
 ## Plugman
 ## from . import graphman
-## from .graphman import Frame as GraphFrame, Layer, Thread, Graph
+## from .graphman import Frame as ViewFrame, Layer, Thread, Graph
 
 ## Matplot
 ## from .matplot2 import MatplotPanel

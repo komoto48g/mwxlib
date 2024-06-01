@@ -1082,9 +1082,6 @@ class EditorInterface(CtrlInterface):
         """Goto char position with selection."""
         if pos is None or pos < 0:
             return
-        ## if pos < 0:
-        ##     pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
-        ##     return
         org = self.cpos
         if org == pos:
             return
@@ -1095,7 +1092,7 @@ class EditorInterface(CtrlInterface):
             
             if interactive:
                 ## Update the caret position/status manually.
-                ## To update caret status, shake L/R w/o modifier #TODO: better idea?
+                ## To update caret status, shake L/R w/o modifier
                 ## Don't do this if selection is active.
                 vk = wx.UIActionSimulator()
                 modkeys = [k for k in (wx.WXK_CONTROL, wx.WXK_ALT, wx.WXK_SHIFT)
