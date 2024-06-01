@@ -2436,6 +2436,8 @@ class Nautilus(Shell, EditorInterface):
                'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
+          'C-backspace pressed' : (0, _F(self.backward_kill_word)),
+          'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
@@ -2687,6 +2689,30 @@ class Nautilus(Shell, EditorInterface):
             ## so not to backspace over the latest non-continuation prompt
             return
         evt.Skip()
+    
+    @can_edit
+    def backward_kill_line(self):
+        p = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
+        text, lp = self.CurLine
+        if text[:lp] == sys.ps2:
+            self.Replace(p - lp, p, '') # eats ps2:prompt
+            return
+        if p == self.cpos > 0: # caret at beginning of line
+            if self.get_char(p-1) == '\n': p -= 1
+            if self.get_char(p-1) == '\r': p -= 1
+        self.Replace(p, self.cpos, '')
+    
+    @can_edit
+    def backward_kill_word(self):
+        p = self.cpos
+        text, lp = self.CurLine
+        if text[:lp] == sys.ps2:
+            self.goto_char(p - lp) # skips ps2:prompt
+        self.WordLeft()
+        q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
+        if self.cpos < q:
+            self.goto_char(q) # Don't skip back prompt
+        self.Replace(self.cpos, p, '')
     
     def OnEnter(self, evt):
         """Called when enter pressed."""
