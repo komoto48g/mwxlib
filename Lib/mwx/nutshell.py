@@ -1296,7 +1296,7 @@ class EditorInterface(CtrlInterface):
     @can_edit
     def kill_line(self):
         p = self.eol
-        if p == self.cpos:
+        if p == self.cpos: # caret at end of line
             if self.get_char(p) == '\r': p += 1
             if self.get_char(p) == '\n': p += 1
         self.Replace(self.cpos, p, '')
@@ -1304,11 +1304,7 @@ class EditorInterface(CtrlInterface):
     @can_edit
     def backward_kill_line(self):
         p = self.bol
-        text, lp = self.CurLine
-        if text[:lp] == sys.ps2: # caret at the prompt head
-            p -= len(sys.ps2)
-            lp -= len(sys.ps2)
-        if text[:lp] == '' and p: # caret at the beginning of the line
+        if p == self.cpos > 0: # caret at beginning of line
             if self.get_char(p-1) == '\n': p -= 1
             if self.get_char(p-1) == '\r': p -= 1
         self.Replace(p, self.cpos, '')
