@@ -40,7 +40,7 @@ class Plugin(Layer):
         self.parent.define_key('C-S-f', None)
         return Layer.Destroy(self)
     
-    def newfft(self, evt):
+    def newfft(self):
         """New FFT of graph to output."""
         frame = self.graph.frame
         if frame:
@@ -58,7 +58,7 @@ class Plugin(Layer):
                                   localunit=u)
             self.message("\b done")
     
-    def newifft(self, evt):
+    def newifft(self):
         """New inverse FFT of output to graph."""
         frame = self.output.frame
         if frame:

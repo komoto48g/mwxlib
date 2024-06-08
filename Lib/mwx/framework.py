@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.95.3"
+__version__ = "0.95.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1273,14 +1273,16 @@ class ShellFrame(MiniFrame):
         self.set_hookable(self.Log)
         
         @self.Scratch.define_key('C-j')
-        def eval_line():
+        def eval_line(evt):
             shell = self.current_shell
             self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
+            evt.Skip(False)
         
         @self.Scratch.define_key('C-S-j')
-        def eval_buffer():
+        def eval_buffer(evt):
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
+            evt.Skip(False)
         
         ## Session
         self.SESSION_FILE = get_rootpath(".debrc")

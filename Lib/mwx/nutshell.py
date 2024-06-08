@@ -48,8 +48,8 @@ py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
 py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 
 
-def skip(v):
-    v.Skip()
+def skip(evt):
+    evt.Skip()
 
 
 def can_edit(f):
