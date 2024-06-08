@@ -1279,6 +1279,7 @@ class ShellFrame(MiniFrame):
             evt.Skip(False)
         
         @self.Scratch.define_key('C-S-j')
+        @self.Scratch.define_key('M-j')
         def eval_buffer(evt):
             shell = self.current_shell
             self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
