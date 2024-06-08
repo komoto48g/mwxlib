@@ -1147,7 +1147,7 @@ class ShellFrame(MiniFrame):
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
         self.ghost = AuiNotebook(self, size=(600,400))
-        self.ghost.AddPage(self.Scratch, "Scratch")
+        self.ghost.AddPage(self.Scratch, "Scratch", bitmap=Icon('ghost'))
         self.ghost.AddPage(self.Log, "Log")
         self.ghost.AddPage(self.Help, "Help")
         self.ghost.Name = "ghost"
@@ -1163,7 +1163,7 @@ class ShellFrame(MiniFrame):
         self.watcher = AuiNotebook(self, size=(300,200))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
-        self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('ghost'))
+        self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('tv'))
         self.watcher.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
         self.watcher.Name = "watcher"
         

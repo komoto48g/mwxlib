@@ -157,19 +157,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.SetFocus()
         obj = self.target
         Menu.Popup(self, [
-            (1, "&Dive into the shell", Icon('core'),
-                lambda v: dive(obj),
-                lambda v: v.Enable(obj is not None)),
-                
-            (2, "&Watch the event", Icon('ghost'),
-                lambda v: watch(obj),
-                lambda v: v.Enable(obj is not None)),
-                
-            (),
             (8, "&Filling View", miniIcon('ShowFilling'),
                 lambda v: filling(obj),
                 lambda v: v.Enable(obj is not None)),
-                
+            
             (10, "&Inspection Tool", Icon('inspect'),
                 lambda v: watchit(obj),
                 lambda v: v.Enable(obj is not None)),
@@ -180,6 +171,14 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 
             (12, "Refresh\tf5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
+            (),
+            (2, "&Watch event", Icon('tv'),
+                lambda v: watch(obj),
+                lambda v: v.Enable(obj is not None)),
+                
+            (1, "&Dive into {!r}".format(obj), Icon('core'),
+                lambda v: dive(obj),
+                lambda v: v.Enable(obj is not None)),
         ])
 
 

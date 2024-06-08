@@ -43,7 +43,7 @@ class Plugin(Layer):
             return Button(self, label=str(fore),
                                 icon=Icon(back, fore, (16,16), r))
         
-        ls = 'v w x + - ! !! !!! help tag'.split()
+        ls = 'v w x + - ! !! !!! help tag pencil'.split()
         self.layout([
                 *[_btn2('folder', x) for x in ls],
                 *[_btn2('file', x) for x in ls],
