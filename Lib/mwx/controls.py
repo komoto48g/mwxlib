@@ -897,6 +897,20 @@ class Icon(wx.Bitmap):
         wx.Bitmap.__init__(self, bmp)
 
     @staticmethod
+    def bullet(colour, ec=None, size=None, radius=4):
+        if not size:
+            size = (16,16)
+        bmp = wx.Bitmap(size)
+        with wx.MemoryDC(bmp) as dc:
+            dc.SetBackground(wx.Brush('black'))
+            dc.Clear()
+            dc.SetPen(wx.Pen(ec, style=wx.PENSTYLE_SOLID))
+            dc.SetBrush(wx.Brush(colour, style=wx.BRUSHSTYLE_SOLID))
+            dc.DrawCircle(size[0]//2, size[0]//2, radius)
+        bmp.SetMaskColour('black')
+        return bmp
+
+    @staticmethod
     def iconify(icon, w, h):
         ## if wx.VERSION >= (4,1,0):
         try:
@@ -930,15 +944,14 @@ def _getBitmap1(key, size=None):
         return bmp
     
     ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.1
-    if key == '':
+    elif key == '':
         bmp = wx.Bitmap(size or (16,16))
-        if 1:
-            dc = wx.MemoryDC(bmp)
+        with wx.MemoryDC(bmp) as dc:
             dc.SetBackground(wx.Brush('black'))
             dc.Clear()
-            del dc
         bmp.SetMaskColour('black') # return dummy-sized blank bitmap
         return bmp
+    
     return wx.NullBitmap # The standard wx controls accept this,
 
 
@@ -951,9 +964,8 @@ def _getBitmap2(back, fore, size=None, subsize=3/4):
     fore = _getBitmap1(fore, subsize)
     x = size[0] - subsize[0]
     y = size[1] - subsize[1]
-    dc = wx.MemoryDC(back)
-    dc.DrawBitmap(fore, x, y, useMask=True)
-    del dc
+    with wx.MemoryDC(back) as dc:
+        dc.DrawBitmap(fore, x, y, useMask=True)
     return back
 
 

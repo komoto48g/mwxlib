@@ -17,9 +17,6 @@ import sys
 import wx
 
 sys.path.append("../Lib")
-import mwx.controls
-reload(mwx.controls)
-
 from mwx.controls import Button, Icon
 from mwx.graphman import Layer, Frame
 
@@ -28,15 +25,27 @@ class Plugin(Layer):
     menukey = "Plugins/&Demo/"
     
     def Init(self):
-        def _btn(k):
+        def _icon(k):
             return Button(self, label=k, icon=Icon.iconify(k, 22, 22))
         
-        #> https://icon-sets.iconify.design/openmoji/
+        ## #> https://icon-sets.iconify.design/openmoji/
+        ## self.layout([
+        ##         _icon("openmoji:annoyed-face-with-tongue"),
+        ##         _icon("openmoji:frog"),
+        ##     ],
+        ##     title="Iconify", row=2, show=0,
+        ## )
+        
+        def _bullet(*v, **kw):
+            return Button(self, icon=Icon.bullet(*v, **kw))
+        
         self.layout([
-                _btn("openmoji:annoyed-face-with-tongue"),
-                _btn("openmoji:frog"),
+                _bullet('red', ec='gray'),
+                _bullet('yellow', ec='red'),
+                _bullet('green', ec='dark green'),
+                _bullet('cyan', ec='blue'),
             ],
-            title="Iconify", row=2, show=0,
+            title="Bullets", row=10, show=1,
         )
         
         def _btn2(back, fore, r=3/4):
