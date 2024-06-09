@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.95.4"
+__version__ = "0.95.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1116,6 +1116,10 @@ class ShellFrame(MiniFrame):
         self.Log = EditorBook(self, name="Log")
         self.Help = EditorBook(self, name="Help")
         
+        self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
+                                        style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+        wx.CallAfter(self.Bookshelf.attach, self)
+        
         from .wxpdb import Debugger
         from .wxwit import Inspector
         from .wxmon import EventMonitor
@@ -1151,10 +1155,6 @@ class ShellFrame(MiniFrame):
         self.ghost.AddPage(self.Log, "Log")
         self.ghost.AddPage(self.Help, "Help")
         self.ghost.Name = "ghost"
-        
-        self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
-                                        style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
-        self.Bookshelf.attach(self)
         
         self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
         
