@@ -594,7 +594,7 @@ class MyFileDropLoader(wx.FileDropTarget):
             elif ext == '.jssn':
                 self.loader.load_session(fn)
             elif ext == '.index':
-                self.loader.import_index(fn, self.view)
+                self.loader.load_index(fn, self.view)
             else:
                 paths.append(fn) # image file just stacks to be loaded
         if paths:
@@ -697,10 +697,10 @@ class Frame(mwx.Frame):
             (),
             ## ("Index", (
             ##     (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
-            ##         lambda v: self.import_index()),
+            ##         lambda v: self.load_index()),
             ##         
             ##     (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
-            ##         lambda v: self.export_index(),
+            ##         lambda v: self.save_index(),
             ##         lambda v: v.Enable(self.__view.frame is not None)),
             ##     )),
             ("Session", (
@@ -1401,7 +1401,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ATTRIBUTESFILE = "results.index"
     
-    def import_index(self, filename=None, view=None):
+    def load_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
         """
         if not view:
@@ -1433,7 +1433,7 @@ class Frame(mwx.Frame):
         print(self.message.read())
         return frames
     
-    def export_index(self, filename=None, frames=None):
+    def save_index(self, filename=None, frames=None):
         """Save frames :ref to the Index file.
         """
         if not frames:
@@ -1480,6 +1480,9 @@ class Frame(mwx.Frame):
             "{} files are missing.".format(n, len(res)-n, len(mis)))
         print(self.message.read())
         return frames
+    
+    import_index = load_index # for backward compatibility
+    export_index = save_index # for backward compatibility
     
     ## --------------------------------
     ## load/save frames and attributes 

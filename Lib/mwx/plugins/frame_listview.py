@@ -180,14 +180,14 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.Select(j)
     
     def OnLoadItems(self, evt):
-        self.parent.parent.import_index(view=self.Target)
+        self.parent.parent.load_index(view=self.Target)
     
     def OnSaveItems(self, evt):
         frames = self.Target.all_frames
         selected_frames = [frames[j] for j in self.selected_items]
         if selected_frames:
             self.parent.message("Exporting {} frames.".format(len(selected_frames)))
-            self.parent.parent.export_index(frames=selected_frames)
+            self.parent.parent.save_index(frames=selected_frames)
         else:
             self.parent.message("No frame selected.")
     
