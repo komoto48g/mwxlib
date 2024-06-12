@@ -897,16 +897,14 @@ class Icon(wx.Bitmap):
         wx.Bitmap.__init__(self, bmp)
 
     @staticmethod
-    def bullet(colour, ec=None, size=None, radius=4):
-        if not size:
-            size = (16,16)
+    def bullet(colour, ec=None, size=(16,16), radius=4):
         bmp = wx.Bitmap(size)
         with wx.MemoryDC(bmp) as dc:
             dc.SetBackground(wx.Brush('black'))
             dc.Clear()
             dc.SetPen(wx.Pen(ec, style=wx.PENSTYLE_SOLID))
             dc.SetBrush(wx.Brush(colour, style=wx.BRUSHSTYLE_SOLID))
-            dc.DrawCircle(size[0]//2, size[0]//2, radius)
+            dc.DrawCircle(size[0]//2, size[1]//2, radius)
         bmp.SetMaskColour('black')
         return bmp
 
@@ -928,24 +926,27 @@ class Icon(wx.Bitmap):
 Icon2 = Icon # for backward compatibility
 
 
-def _getBitmap1(key, size=None):
+def _getBitmap1(key, size=(16,16)):
+    if isinstance(key, wx.Bitmap):
+        if key.Size != size:
+            key = (key.ConvertToImage()
+                      .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
+                      .ConvertToBitmap())
+        return key
     if key:
         try:
-            art = _custom_images.get(key) # None => AttributeError
-            if not size:
-                bmp = art.GetBitmap()
-            else:
-                bmp = (art.GetImage()
-                          .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
-                          .ConvertToBitmap())
+            art = _custom_images.get(key)
+            bmp = (art.GetImage()
+                      .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
+                      .ConvertToBitmap())
         except Exception:
-            art = _provided_arts.get(key) or key
-            bmp = wx.ArtProvider.GetBitmap(art, wx.ART_OTHER, size or (16,16))
+            art = _provided_arts.get(key)
+            bmp = wx.ArtProvider.GetBitmap(art or key, wx.ART_OTHER, size)
         return bmp
     
     ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.1
     elif key == '':
-        bmp = wx.Bitmap(size or (16,16))
+        bmp = wx.Bitmap(size)
         with wx.MemoryDC(bmp) as dc:
             dc.SetBackground(wx.Brush('black'))
             dc.Clear()
@@ -955,9 +956,7 @@ def _getBitmap1(key, size=None):
     return wx.NullBitmap # The standard wx controls accept this,
 
 
-def _getBitmap2(back, fore, size=None, subsize=3/4):
-    if not size:
-        size = (16,16)
+def _getBitmap2(back, fore, size=(16,16), subsize=3/4):
     if isinstance(subsize, float):
         subsize = wx.Size(size) * subsize
     back = _getBitmap1(back, size)
@@ -965,7 +964,10 @@ def _getBitmap2(back, fore, size=None, subsize=3/4):
     x = size[0] - subsize[0]
     y = size[1] - subsize[1]
     with wx.MemoryDC(back) as dc:
-        dc.DrawBitmap(fore, x, y, useMask=True)
+        ## dc = wx.GCDC(dc)
+        ## dc.DrawBitmap(fore, x, y, useMask=True)
+        gc = wx.GraphicsContext.Create(dc)
+        gc.DrawBitmap(fore, x, y, *subsize)
     return back
 
 

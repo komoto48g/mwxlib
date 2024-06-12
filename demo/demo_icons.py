@@ -17,7 +17,7 @@ import sys
 import wx
 
 sys.path.append("../Lib")
-from mwx.controls import Button, Icon
+from mwx.controls import Button, Icon, Indicator, Gauge
 from mwx.graphman import Layer, Frame
 
 
@@ -40,10 +40,13 @@ class Plugin(Layer):
             return Button(self, icon=Icon.bullet(*v, **kw))
         
         self.layout([
-                _bullet('red', ec='gray'),
-                _bullet('yellow', ec='red'),
-                _bullet('green', ec='dark green'),
-                _bullet('cyan', ec='blue'),
+                _bullet('red'),
+                _bullet('yellow'),
+                _bullet('green'),
+                _bullet('cyan'),
+                Button(self, icon=Icon('file', Icon.bullet('cyan'))),
+                Gauge(self, value=24, size=(-1,14)),
+                Indicator(self, value=0b111),
             ],
             title="Bullets", row=10, show=1,
         )
