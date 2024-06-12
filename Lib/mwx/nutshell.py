@@ -539,6 +539,7 @@ class EditorInterface(CtrlInterface):
         lsty = self.get_style(p-1)
         rsty = self.get_style(p)
         if lsty == rsty == 'moji': # inside string
+            ## styles = {'moji'}
             return ''
         elif lsty == 'suji' or rsty == 'suji':
             styles = {'suji'}
