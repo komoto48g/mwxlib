@@ -152,8 +152,8 @@ class MatplotPanel(wx.Panel):
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
                 #'canvas_drawn' : [ None, ],             # after canvas.draw
               #'canvas_resized' : [ None, ],
-                    'focus_set' : [ None, self.on_focus_set, self.escape ],
-                   'focus_kill' : [ None, self.on_focus_kill, self.escape ],
+                    'focus_set' : [ None, self.on_focus_set ],
+                   'focus_kill' : [ None, self.on_focus_kill ],
                  'figure_enter' : [ None, self.on_figure_enter ],
                  'figure_leave' : [ None, self.on_figure_leave ],
                    'axes_enter' : [ None, ],
