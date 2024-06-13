@@ -936,9 +936,7 @@ def _getBitmap1(key, size=(16,16)):
     if key:
         try:
             art = _custom_images.get(key)
-            bmp = (art.GetImage()
-                      .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
-                      .ConvertToBitmap())
+            bmp = art.GetBitmap()
         except Exception:
             art = _provided_arts.get(key)
             bmp = wx.ArtProvider.GetBitmap(art or key, wx.ART_OTHER, size)
