@@ -4,7 +4,7 @@
 from functools import wraps
 from importlib import reload, import_module
 from contextlib import contextmanager
-from pprint import pprint, pformat
+from pprint import pformat
 from bdb import BdbQuit
 import subprocess
 import threading
@@ -29,7 +29,11 @@ from . import framework as mwx
 from .utilus import funcall as _F
 from .controls import ControlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook
+
+from .matplot2 import MatplotPanel # noqa
 from .matplot2g import GraphPlot
+from .matplot2lg import LinePlot # noqa
+from .matplot2lg import LineProfile # noqa
 from .matplot2lg import Histogram
 
 
@@ -1531,8 +1535,7 @@ class Frame(mwx.Frame):
             new.update(res) # copy res back keeping new order.
             
             with open(filename, 'w') as o:
-                ## pprint(new, stream=o, sort_dicts=False) # write new <dict> PY38
-                pprint(tuple(new.items()), stream=o)
+                print(pformat(tuple(new.items())), file=o)
             
         except Exception as e:
             print("- Failed to write attributes:", e)
