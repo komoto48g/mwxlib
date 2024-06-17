@@ -57,6 +57,9 @@ class LinePlot(MatplotPanel):
         self.__region = None
         self.__annotations = []
         
+        ## Note for matplotlib >= 3.9.0:
+        ## axhspan and axvspan now return Rectangles, not Polygons.
+        #<matplotlib.patches.Rectangle>
         #<matplotlib.patches.Polygon>
         self.__vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
@@ -81,7 +84,11 @@ class LinePlot(MatplotPanel):
                 elif b > r: b = r
             v = np.array((a, b))
             self.__vspan.set_visible(1)
-            self.__vspan.set_xy(((a,0), (a,1), (b,1), (b,0)))
+            try:
+                self.__vspan.set_x(a)
+                self.__vspan.set_width(b-a)
+            except AttributeError:
+                self.__vspan.set_xy(((a,0), (a,1), (b,1), (b,0)))
             self.handler('region_set', self.frame)
         else:
             self.__vspan.set_visible(0)
