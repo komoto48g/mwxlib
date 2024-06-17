@@ -38,17 +38,32 @@ if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
 if 1:
     class Cursor(Cursor):
         def onmove(self, event):
-            if self.ignore(event)\
-              or not self.canvas.widgetlock.available(self):
+            """Internal event handler to draw the cursor when the mouse moves.
+            (override) If the cursor is off the axes, the xdata and ydata will
+                       be None, and will simply be cleared rather than drawn.
+            """
+            if self.ignore(event):
                 return
+            if not self.canvas.widgetlock.available(self):
+                return
+            
             ## xdata, ydata = self._get_data_coords(event) # >= 3.8 only
             xdata, ydata = event.xdata, event.ydata
             self.linev.set_xdata((xdata, xdata))
             self.linev.set_visible(self.visible and self.vertOn)
             self.lineh.set_ydata((ydata, ydata))
             self.lineh.set_visible(self.visible and self.horizOn)
-            if self.visible and (self.vertOn or self.horizOn):
-                self._update()
+            if not (self.visible and (self.vertOn or self.horizOn)):
+                return
+            ## Redraw.
+            if self.useblit:
+                if self.background is not None:
+                    self.canvas.restore_region(self.background)
+                self.ax.draw_artist(self.linev)
+                self.ax.draw_artist(self.lineh)
+                self.canvas.blit(self.ax.bbox)
+            else:
+                self.canvas.draw_idle()
 
 
 class MatplotPanel(wx.Panel):
