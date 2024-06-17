@@ -867,7 +867,7 @@ class EditorInterface(CtrlInterface):
         self.Overtype = mode if mode is not None else not self.Overtype
     
     def wrap(self, mode=1):
-        """Sets whether text is word wrapped.
+        """Set whether text is word wrapped.
         
         (override) mode in {0:no-wrap, 1:word-wrap, 2:char-wrap,
                             3:whitespace-wrap, None:toggle}
@@ -1800,8 +1800,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         evt.Skip()
     
     def set_attributes(self, buf=None, **kwargs):
-        """Sets attributes and defaultBufferStyle
-        that apply to all buffers contained in the EditorBook.
+        """Set multiple properties at once to the buffer(s).
         
         Args:
             buf : a buffer to apply (if None, applies to all buffers).

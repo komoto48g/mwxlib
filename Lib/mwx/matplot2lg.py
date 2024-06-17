@@ -306,11 +306,9 @@ class Histogram(LinePlot):
         self.__frame = frame # update reference of the frame
         if frame:
             try:
-                image = self.frmae.image
-                h, w = image.shape
-                x, y = frame.__data # reuse the data unless,
+                x, y = frame.__data # reuse cached data
             except Exception:
-                x, y = frame.__data = self.calc(frame) # histogram_data buffer
+                x, y = frame.__data = self.calc(frame) # new histogram_data buffer
             
             self.__plot.set_data(x, y)
             self.xlim = x.min(), x.max()
