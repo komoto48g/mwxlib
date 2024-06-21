@@ -397,6 +397,7 @@ class MatplotPanel(wx.Panel):
             self.modeline.SetBackgroundColour(self.selectedModeLineBg)
             self.modeline.SetForegroundColour(self.selectedModeLineFg)
             self.modeline.Refresh()
+        self.escape()
         evt.Skip()
     
     def on_focus_kill(self, evt): #<wx._core.FocusEvent>
@@ -404,6 +405,7 @@ class MatplotPanel(wx.Panel):
             self.modeline.SetBackgroundColour(self.unselectedModeLineBg)
             self.modeline.SetForegroundColour(self.unselectedModeLineFg)
             self.modeline.Refresh()
+        self.escape()
         evt.Skip()
     
     def escape(self, evt=None):
