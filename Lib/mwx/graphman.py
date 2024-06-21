@@ -699,14 +699,15 @@ class Frame(mwx.Frame):
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
-            ## ("Index", (
-            ##     (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
-            ##         lambda v: self.load_index()),
-            ##         
-            ##     (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
-            ##         lambda v: self.save_index(),
-            ##         lambda v: v.Enable(self.__view.frame is not None)),
-            ##     )),
+            ("Index", (
+                (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
+                    lambda v: self.load_index()),
+                    
+                (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
+                    lambda v: self.save_index(),
+                    lambda v: v.Enable(self.__view.frame is not None)),
+                )),
+            (),
             ("Session", (
                 (mwx.ID_(15), "&Open session", "Open session file",
                     lambda v: self.load_session()),
@@ -1380,7 +1381,8 @@ class Frame(mwx.Frame):
             plug = _plug
         init(shell)
         self.shellframe.Show()
-        self.shellframe.load(plug)
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            self.shellframe.load(plug)
     
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
