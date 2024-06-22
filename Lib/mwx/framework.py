@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.95.9"
+__version__ = "0.96.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1131,7 +1131,7 @@ class ShellFrame(MiniFrame):
                                  stdout=self.__shell.interp.stdout,
                                  skip=[Debugger.__module__, # Don't enter debugger
                                        EventMonitor.__module__, # Don't enter event-hook
-                                       ## FSM.__module__,
+                                       FSM.__module__,
                                        'fnmatch', 'warnings', 'bdb', 'pdb',
                                        'wx.core', 'wx.lib.eventwatcher',
                                        ],
