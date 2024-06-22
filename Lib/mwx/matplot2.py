@@ -12,6 +12,7 @@ from matplotlib import cm
 import numpy as np
 
 from . import framework as mwx
+from .framework import hotkey, regulate_key, pack, Menu, FSM
 
 
 ## state constants
@@ -111,7 +112,7 @@ class MatplotPanel(wx.Panel):
         self.infobar.Size = (0, 0) # workaround for incorrect wrap sizing
         
         self.SetSizer(
-            mwx.pack(self, (
+            pack(self, (
                 (self.canvas,   1, wx.EXPAND | wx.ALL, 0),
                 (self.infobar,  0, wx.EXPAND | wx.ALL, 0),
                 (self.modeline, 0, wx.EXPAND | wx.ALL, 2),
@@ -162,7 +163,7 @@ class MatplotPanel(wx.Panel):
             if self.handler.fork(self.handler.current_event, evt) is None:
                 evt.Skip()
         
-        self.__handler = mwx.FSM({ # DNA<MatplotPanel>
+        self.__handler = FSM({ # DNA<MatplotPanel>
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
                 #'canvas_drawn' : [ None, ],             # after canvas.draw
@@ -493,7 +494,7 @@ class MatplotPanel(wx.Panel):
     def on_menu(self, evt): #<matplotlib.backend_bases.MouseEvent>
         if self.__isMenu:
             self.canvas.SetFocus()
-            mwx.Menu.Popup(self, self.menu)
+            Menu.Popup(self, self.menu)
         self.__isMenu = 0
     
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
@@ -529,8 +530,8 @@ class MatplotPanel(wx.Panel):
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed."""
-        key = mwx.hotkey(evt)
-        self.__key = mwx.regulate_key(key + '+')
+        key = hotkey(evt)
+        self.__key = regulate_key(key + '+')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
@@ -545,7 +546,7 @@ class MatplotPanel(wx.Panel):
     
     def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
         """Called when a key is released."""
-        key = mwx.hotkey(evt)
+        key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()

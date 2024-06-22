@@ -14,6 +14,7 @@ from numpy import pi, nan
 from scipy import ndimage as ndi
 
 from . import framework as mwx
+from .framework import Menu
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -583,7 +584,7 @@ class GraphPlot(MatplotPanel):
                 lambda v: v.Check(self.frame is not None and self.frame.name == s))
         
         self.modeline.Bind(wx.EVT_CONTEXT_MENU, lambda v:
-            mwx.Menu.Popup(self,
+            Menu.Popup(self,
                 (_menu(j, art.name) for j, art in enumerate(self.__Arts))))
         
         self.modeline.Show(1)

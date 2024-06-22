@@ -28,7 +28,7 @@ from PIL.TiffImagePlugin import TiffImageFile
 from . import framework as mwx
 from .utilus import funcall as _F
 from .controls import ControlPanel, Icon
-from .framework import CtrlInterface, AuiNotebook
+from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
 from .matplot2 import MatplotPanel # noqa
 from .matplot2g import GraphPlot
@@ -96,7 +96,7 @@ class Thread(object):
         try:
             self.handler = self.owner.handler
         except AttributeError:
-            self.handler = mwx.FSM({ # DNA<Thread>
+            self.handler = FSM({ # DNA<Thread>
                 None : {
                  'thread_begin' : [ None ], # begin processing
                    'thread_end' : [ None ], # end processing
@@ -263,10 +263,10 @@ class LayerInterface(CtrlInterface):
     ## thread_type = Thread
     thread = None
     
-    ## layout helper function
+    ## layout helper function (deprecated: internal use only)
     pack = mwx.pack
     
-    ## funcall = interactive_call
+    ## funcall = interactive_call (deprecated: internal use only)
     funcall = staticmethod(_F)
     
     ## for debug (internal use only)
@@ -384,7 +384,7 @@ class LayerInterface(CtrlInterface):
                 lambda v: self.parent.inspect_plug(self.__module__)),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
-                  lambda v: mwx.Menu.Popup(self, self.menu))
+                  lambda v: Menu.Popup(self, self.menu))
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.Bind(wx.EVT_SHOW, self.OnShow)
