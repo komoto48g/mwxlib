@@ -10,7 +10,7 @@ from matplotlib import patches
 from PIL import Image
 import cv2
 import numpy as np
-from numpy import pi, nan
+from numpy import pi
 from scipy import ndimage as ndi
 
 from . import framework as mwx
@@ -229,11 +229,13 @@ class AxesImagePhantom(object):
     @unit.setter
     def unit(self, v):
         u = self.unit
-        if v in (None, nan):
+        if v is None:
             v = self.parent.globalunit
             self.__localunit = None
+        elif np.isnan(v) or np.isinf(v):
+            raise ValueError("The unit value cannot be NaN or Inf")
         elif v <= 0:
-            raise Exception("The unit value must be greater than zero.")
+            raise ValueError("The unit value must be greater than zero")
         else:
             if v == self.__localunit: # no effect when v is localunit
                 return
@@ -828,10 +830,12 @@ class GraphPlot(MatplotPanel):
     
     @unit.setter
     def unit(self, v):
-        if v in (None, nan):
-            raise Exception("The globalunit must be non-nil value.")
+        if v is None:
+            raise ValueError("The globalunit must be non-nil value")
+        elif np.isnan(v) or np.isinf(v):
+            raise ValueError("Axis limits cannot be NaN or Inf")
         elif v <= 0:
-            raise Exception("The unit value must be greater than zero.")
+            raise ValueError("The unit value must be greater than zero")
         else:
             if v == self.__unit:  # no effect unless unit changes
                 return

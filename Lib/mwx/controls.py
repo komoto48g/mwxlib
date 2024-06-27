@@ -12,7 +12,7 @@ from .utilus import funcall as _F
 from .framework import pack, Menu
 
 import numpy as np
-from numpy import nan, inf
+from numpy import nan, inf  # noqa: necessary to eval
 
 
 def _Tip(*tips):
@@ -97,10 +97,8 @@ class Param(object):
             v = self.std_value
             if v is None:
                 return
-        elif v == 'nan': v = nan
-        elif v == 'inf': v = inf
-        elif isinstance(v, str):
-            v = self.__eval(v.replace(',', '')) # eliminates commas
+        if isinstance(v, str):
+            v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
         self._set_value(v)
         if backcall:
             self.callback('control', self)
@@ -111,7 +109,8 @@ class Param(object):
         """
         if v is None:
             v = nan
-        if v in (nan, inf):
+        
+        if np.isnan(v) or np.isinf(v):
             self.__value = v
             for knob in self.knobs:
                 knob.update_ctrl(None, notify=False)
@@ -185,7 +184,7 @@ class Param(object):
     @offset.setter
     def offset(self, v):
         if self.std_value is not None:
-            if v is not nan: # Note: nan +x is not nan
+            if not np.isnan(v):
                 v += self.std_value
         self._set_value(v)
     
@@ -253,6 +252,7 @@ class LParam(Param):
     
     @range.setter
     def range(self, v):
+        assert v is None or len(v) <= 3, "The range must be of length <= 3 or None"
         if v is None:
             v = (0, 0)
         self.__min = v[0]
@@ -266,7 +266,8 @@ class LParam(Param):
         """A knob index -> value
         Returns -1 if the value is nan or inf.
         """
-        if self.value in (nan, inf):
+        v = self.value
+        if np.isnan(v) or np.isinf(v):
             return -1
         return int(round((self.value - self.min) / self.step))
     
@@ -319,7 +320,7 @@ class Knob(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
         
         assert isinstance(param, Param),\
-          "Argument `param` must be an instance of Param class."
+          "Argument `param` must be an instance of Param"
         
         self.__bit = 1
         self.__par = param
