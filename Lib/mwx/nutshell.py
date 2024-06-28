@@ -1986,7 +1986,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     self.swap_buffer(buf, lineno)
                     return True
                 ## return False
-                raise Exception("The requested URL was not found.")
+                raise Exception("The requested URL was not found")
             if buf._load_file(filename):
                 self.swap_buffer(buf, lineno)
                 return True

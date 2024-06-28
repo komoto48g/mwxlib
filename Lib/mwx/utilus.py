@@ -438,9 +438,8 @@ def find_modules(force=False, verbose=True):
         for info in walk_packages_no_import(['.']):
             _callback('.', info.name)
     else:
-        print("Please wait a moment "
-              "while Py{} gathers a list of all available modules... "
-              "(This is executed once)".format(sys.winver))
+        print(f"Please wait a moment while Py{sys.winver} gathers a list of "
+               "all available modules... (This is executed once)")
         
         lm = list(sys.builtin_module_names)
         
@@ -684,7 +683,6 @@ class FSM(dict):
                               "  action : {}".format(typename(act)),
                               "  args   : {}".format(args),
                               "  kwargs : {}".format(kwargs))
-                    traceback.print_exc()
             self.__matched_pattern = None
             return retvals
         
@@ -728,12 +726,11 @@ class FSM(dict):
     
     @staticmethod
     def dump(*args):
-        print(*args, sep='\n', file=sys.__stderr__)
         fn = get_rootpath("deb-dump.log")
         with open(fn, 'a') as o:
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
-            print(*args, sep='\n', end='\n', file=o)
-            print(traceback.format_exc(), file=o)
+            print(*args, traceback.format_exc(), sep='\n', file=o)
+        print(*args, traceback.format_exc(), sep='\n', file=sys.__stderr__)
     
     @staticmethod
     def duplicate(context):

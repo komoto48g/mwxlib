@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.0"
+__version__ = "0.96.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -232,7 +232,7 @@ class KeyCtrlInterfaceMixin:
         state = self.handler.default_state
         event = keymap + ' pressed'
         
-        assert state is not None, "Don't make keymap for None:state."
+        assert state is not None, "Don't make keymap for None:state"
         
         self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
             state : {

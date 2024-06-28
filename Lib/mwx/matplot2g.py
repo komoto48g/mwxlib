@@ -224,13 +224,13 @@ class AxesImagePhantom(object):
     @property
     def unit(self):
         """Logical length per pixel arb.unit [u/pixel]."""
-        return self.__localunit or self.parent.globalunit
+        return self.__localunit or self.parent.unit
     
     @unit.setter
     def unit(self, v):
         u = self.unit
         if v is None:
-            v = self.parent.globalunit
+            v = self.parent.unit
             self.__localunit = None
         elif np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value cannot be NaN or Inf")
@@ -251,7 +251,7 @@ class AxesImagePhantom(object):
     
     @property
     def xy_unit(self):
-        u = self.__localunit or self.parent.globalunit
+        u = self.__localunit or self.parent.unit
         return (u, u * self.__aspect_ratio)
     
     @property
@@ -848,7 +848,7 @@ class GraphPlot(MatplotPanel):
             for art in self.__Arts:
                 self.handler('frame_updated', art)
     
-    globalunit = unit
+    globalunit = unit # for backward compatibility
     
     def update_markup_ratio(self, r):
         """Modify markup objects position."""
