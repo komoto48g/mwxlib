@@ -1437,7 +1437,7 @@ class Frame(mwx.Frame):
                              "ALL files (*.*)|*.*",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return
+                    return None
                 filename = dlg.Path
         
         res, mis = self.read_attributes(filename)
@@ -1462,7 +1462,7 @@ class Frame(mwx.Frame):
         if not frames:
             frames = self.selected_view.all_frames
             if not frames:
-                return
+                return None
         
         if not filename:
             fn = next((x.pathname for x in frames if x.pathname), '')
@@ -1472,7 +1472,7 @@ class Frame(mwx.Frame):
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return
+                    return None
                 filename = dlg.Path
         
         savedir = os.path.dirname(filename)
@@ -1643,11 +1643,11 @@ class Frame(mwx.Frame):
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return
+                    return None
                 paths = dlg.Paths
+        frames = []
+        frame = None
         try:
-            frames = []
-            frame = None
             for i, path in enumerate(paths):
                 fn = os.path.basename(path)
                 self.message("Loading {!r} ({} of {})...".format(fn, i+1, len(paths)))
@@ -1690,7 +1690,7 @@ class Frame(mwx.Frame):
         if not frame:
             frame = self.selected_view.frame
             if not frame:
-                return
+                return None
         
         if not path:
             with wx.FileDialog(self, "Save buffer as",
@@ -1698,7 +1698,7 @@ class Frame(mwx.Frame):
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return
+                    return None
                 path = dlg.Path
         try:
             name = os.path.basename(path)
@@ -1718,13 +1718,14 @@ class Frame(mwx.Frame):
         except Exception as e:
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            return None
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
         """Export buffers to a file as a multi-page tiff."""
         if not frames:
             frames = self.selected_view.all_frames
             if not frames:
-                return
+                return None
         
         if not path:
             with wx.FileDialog(self, "Save frames as stack-tiff",
@@ -1732,7 +1733,7 @@ class Frame(mwx.Frame):
                     wildcard="TIF file (*.tif)|*.tif",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
-                    return
+                    return None
                 path = dlg.Path
         try:
             name = os.path.basename(path)
@@ -1751,6 +1752,7 @@ class Frame(mwx.Frame):
         except Exception as e:
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            return False
         finally:
             del busy
     
