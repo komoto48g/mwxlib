@@ -242,8 +242,8 @@ class AxesImagePhantom(object):
             self.__localunit = v
         self.__attributes['localunit'] = self.__localunit
         self.update_extent()
-        self.parent.update_markup_ratio(v/u)
         self.parent.handler('frame_updated', self)
+        self.parent.canvas.draw_idle()
     
     @unit.deleter
     def unit(self):
@@ -660,8 +660,8 @@ class GraphPlot(MatplotPanel):
             j = names.index(name) # existing frame
         if j != -1:
             art = self.__Arts[j]
-            art.update_buffer(buf) # => frame_modified
-            art.update_attributes(kwargs) # => frame_updated
+            art.update_buffer(buf)        # => [frame_modified]
+            art.update_attributes(kwargs) # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
             if show:
                 self.select(j)
@@ -843,19 +843,10 @@ class GraphPlot(MatplotPanel):
             self.__unit = v
             for art in self.__Arts:
                 art.update_extent()
-            else:
-                self.update_markup_ratio(v/u)
-            for art in self.__Arts:
                 self.handler('frame_updated', art)
+            self.canvas.draw_idle()
     
     globalunit = unit # for backward compatibility
-    
-    def update_markup_ratio(self, r):
-        """Modify markup objects position."""
-        if self.Selector.size: self.Selector *= r
-        if self.Markers.size: self.Markers *= r
-        if self.Region.size: self.Region *= r
-        self.draw()
     
     def kill_buffer(self):
         if self.buffer is not None:
