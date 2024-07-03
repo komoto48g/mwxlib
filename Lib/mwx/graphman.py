@@ -887,6 +887,20 @@ class Frame(mwx.Frame):
             elif ret == wx.ID_CANCEL:
                 evt.Veto()
                 return
+        for name in self.plugins:
+            plug = self.get_plug(name)
+            if plug.thread and plug.thread.active:
+                if wx.MessageBox( # Confirm thread close.
+                        "The thread is running.\n\n"
+                        "Enter [q]uit to exit before closing.\n"
+                        "Continue closing?",
+                        "Close {!r}".format(plug.Name),
+                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    self.message("The close has been canceled.")
+                    evt.Veto()
+                    return
+                self.Quit()
+                break
         for frame in self.graph.all_frames:
             if frame.pathname is None:
                 if wx.MessageBox( # Confirm close.
@@ -914,11 +928,9 @@ class Frame(mwx.Frame):
         Args:
             name : str or plug object.
         """
-        if name in self.plugins:
-            plug = self.plugins[name].__plug__
-            name = plug.category or name
-        elif isinstance(name, LayerInterface):
-            name = name.category or name
+        plug = self.get_plug(name)
+        if plug:
+            name = plug.category or plug
         if name:
             return self._mgr.GetPane(name)
     
@@ -953,6 +965,7 @@ class Frame(mwx.Frame):
         ## Note: We need to distinguish cases whether:
         ##       - pane.window is AuiNotebook or normal Panel,
         ##       - pane.window is floating (win.Parent is AuiFloatingFrame) or docked.
+        
         plug = self.get_plug(name) # -> None if pane.window is a Graph
         win = pane.window # -> Window (plug / notebook / Graph)
         try:
@@ -1029,7 +1042,7 @@ class Frame(mwx.Frame):
             win.handler('page_closed', win)
     
     ## --------------------------------
-    ## Plugin (Layer) interface
+    ## Plugin <Layer> interface
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
     
@@ -1063,7 +1076,7 @@ class Frame(mwx.Frame):
     
     @staticmethod
     def register(cls, module=None):
-        """Register dummy plug; Add module.Plugin(Layer).
+        """Register dummy plug; Add module.Plugin <Layer>.
         """
         if not module:
             module = inspect.getmodule(cls) # rebase module or __main__
