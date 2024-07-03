@@ -961,13 +961,25 @@ class TreeList(object):
             else:
                 ls.append([key, value]) # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
-            print(f"- TreeList:warning {e!r}: {key=!r}")
+            warnings.warn(f"- TreeList:warning {e!r}: {key=!r}",
+                          stacklevel=get_stacklevel())
     
     def _delf(self, ls, key):
         if '/' in key:
             p, key = key.rsplit('/', 1)
             ls = self._getf(ls, p)
         ls.remove(next(x for x in ls if x and x[0] == key))
+
+
+def get_stacklevel(skip=None):
+    frame = inspect.currentframe().f_back # previous call stack frame
+    if not skip:
+        skip = [frame.f_code.co_filename]
+    stack = 1
+    while frame.f_code.co_filename in skip:
+        frame = frame.f_back
+        stack += 1
+    return stack
 
 
 def get_fullargspec(f):

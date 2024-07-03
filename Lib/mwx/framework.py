@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.1"
+__version__ = "0.96.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -290,14 +290,12 @@ class KeyCtrlInterfaceMixin:
         key += ' pressed'
         
         if map not in self.handler:
-            warnings.warn(f"New map to define_key {keymap!r} in {self}.",
-                          stacklevel=2)
+            warnings.warn(f"New map to define_key {keymap!r} in {self}.", stacklevel=2)
             self.make_keymap(map) # make new keymap
         
         transaction = self.handler[map].get(key, [state])
         if len(transaction) > 1:
-            warnings.warn(f"Duplicate define_key {keymap!r} in {self}.",
-                          stacklevel=2)
+            warnings.warn(f"Duplicate define_key {keymap!r} in {self}.", stacklevel=2)
         
         if action is None:
             self.handler[map].pop(key, None) # cf. undefine_key
@@ -322,10 +320,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     handler = property(lambda self: self.__handler)
     
     def __init__(self):
-        if hasattr(self, 'handler'):
-            warnings.warn(f"Duplicate iniheritance of CtrlInterface by {self}.",
-                          stacklevel=2)
-            return
         self.__key = ''
         self.__button = ''
         self.__isDragging = False
@@ -629,8 +623,7 @@ class MenuBar(wx.MenuBar, TreeList):
         Call when the menulist is changed.
         """
         if not self.Parent:
-            warnings.warn(f"No parents bound to {self}.",
-                          stacklevel=2)
+            warnings.warn(f"No parents bound to {self}.", stacklevel=2)
             return
         
         menu = self.getmenu(key)
@@ -657,8 +650,7 @@ class MenuBar(wx.MenuBar, TreeList):
         Call when the menulist is changed.
         """
         if not self.Parent:
-            warnings.warn(f"No parents bound to {self}.",
-                          stacklevel=2)
+            warnings.warn(f"No parents bound to {self}.", stacklevel=2)
             return
         
         for j in range(self.GetMenuCount()): # remove and del all top-level menu

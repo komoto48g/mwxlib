@@ -27,6 +27,7 @@ from PIL.TiffImagePlugin import TiffImageFile
 
 from . import framework as mwx
 from .utilus import funcall as _F
+from .utilus import get_stacklevel
 from .controls import ControlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
@@ -310,7 +311,11 @@ class LayerInterface(CtrlInterface):
             self.__artists.remove(art)
     
     def __init__(self, parent, session=None):
-        CtrlInterface.__init__(self)
+        if hasattr(self, 'handler'):
+            warnings.warn(f"Duplicate iniheritance of CtrlInterface by {self}.",
+                          stacklevel=get_stacklevel())
+        else:
+            CtrlInterface.__init__(self)
         
         self.parent = parent
         self.__artists = []
