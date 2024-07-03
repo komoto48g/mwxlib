@@ -27,7 +27,7 @@ from PIL.TiffImagePlugin import TiffImageFile
 
 from . import framework as mwx
 from .utilus import funcall as _F
-from .utilus import get_stacklevel
+from .utilus import get_stacklevel, ignore
 from .controls import ControlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
@@ -860,15 +860,14 @@ class Frame(mwx.Frame):
     
     Editor = "notepad"
     
+    @ignore(ResourceWarning)
     def edit(self, fn):
         if hasattr(fn, '__file__'):
             name, _ = os.path.splitext(fn.__file__)
             fn = name + '.py'
         cmd = '{} "{}"'.format(self.Editor, fn)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ResourceWarning)
-            subprocess.Popen(cmd)
-            self.message(cmd)
+        subprocess.Popen(cmd)
+        self.message(cmd)
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
@@ -1626,6 +1625,7 @@ class Frame(mwx.Frame):
                 os.remove(path)
             raise
     
+    @ignore(ResourceWarning)
     def load_buffer(self, paths=None, view=None):
         """Load buffers from paths to the view window.
         
