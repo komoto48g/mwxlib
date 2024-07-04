@@ -72,7 +72,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
              'Lbutton dblclick' : (0, self.OnShowItems), # -> frame_shown
                 'enter pressed' : (0, self.OnShowItems), # -> frame_shown
                'delete pressed' : (0, self.OnRemoveItems), # -> frame_removed/shown
-                   'f2 pressed' : (0, self.OnEditAnnotation),
                   'C-a pressed' : (0, self.OnSelectAllItems),
                   'C-o pressed' : (0, self.OnLoadItems),
                   'C-s pressed' : (0, self.OnSaveItems),
@@ -97,26 +96,17 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         }
         self.Target.handler.append(self.context)
         
-        def copy_info(all=True):
-            frames = self.Target.all_frames
-            if frames:
-                frame = frames[self.focused_item]
-                if all:
-                    text = pformat(frame.attributes, sort_dicts=0)
-                else:
-                    text = "{}\n{}".format(frame.name, frame.annotation)
-                Clipboard.write(text)
-        
         self.menu = [
-            (101, "&Edit annotation", "Edit annotation", Icon('pencil'),
-                self.OnEditAnnotation),
+            (100, "Edit localunit", Icon('image'),
+                self.OnEditUnit,
+                lambda v: v.Enable(self.focused_item != -1)),
+                
+            (101, "Edit annotation", Icon('pencil'),
+                self.OnEditAnnotation,
+                lambda v: v.Enable(self.focused_item != -1)),
             (),
             (102, "Copy info", Icon('copy'),
-                lambda v: copy_info(0),
-                lambda v: v.Enable(len(list(self.selected_items)))),
-                
-            (103, "Copy ALL data", Icon('copy', '+'),
-                lambda v: copy_info(1),
+                self.OnCopyInfo,
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
@@ -183,26 +173,40 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.parent.parent.load_index(view=self.Target)
     
     def OnSaveItems(self, evt):
-        frames = self.Target.all_frames
-        selected_frames = [frames[j] for j in self.selected_items]
+        selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
         if selected_frames:
             self.parent.message("Exporting {} frames.".format(len(selected_frames)))
             self.parent.parent.save_index(frames=selected_frames)
         else:
             self.parent.message("No frame selected.")
     
+    def OnCopyInfo(self, evt):
+        selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
+        if selected_frames:
+            text = ''
+            for frame in selected_frames:
+                text += pformat(frame.attributes, sort_dicts=0) # ALL attributes
+                ## text += '{}\n{}\n'.format(frame.name, frame.annotation)
+            Clipboard.write(text)
+        else:
+            self.parent.message("No frame selected.")
+    
+    def OnEditUnit(self, evt):
+        frame = self.Target.all_frames[self.focused_item]
+        with wx.TextEntryDialog(self, frame.name,
+                'Enter localunit', repr(frame.localunit)) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                frame.unit = eval(dlg.Value or 'None')
+    
     def OnEditAnnotation(self, evt):
-        frames = self.Target.all_frames
-        if frames:
-            frame = frames[self.focused_item]
-            with wx.TextEntryDialog(self, frame.name,
-                    'Enter an annotation', frame.annotation) as dlg:
-                if dlg.ShowModal() == wx.ID_OK:
-                    frame.annotation = dlg.Value
+        frame = self.Target.all_frames[self.focused_item]
+        with wx.TextEntryDialog(self, frame.name,
+                'Enter an annotation', frame.annotation) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                frame.annotation = dlg.Value
     
     def OnItemSelected(self, evt):
-        frames = self.Target.all_frames
-        frame = frames[evt.Index]
+        frame = self.Target.all_frames[evt.Index]
         self.parent.message(frame.pathname)
         evt.Skip()
     
