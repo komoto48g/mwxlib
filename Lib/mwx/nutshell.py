@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from pprint import pformat
 from bdb import BdbQuit
 import traceback
-import warnings
 import inspect
 import builtins
 import dis
@@ -26,6 +25,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
+from .utilus import ignore
 from .utilus import split_words, split_paren, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
@@ -2161,6 +2161,7 @@ class Interpreter(interpreter.Interpreter):
         except AttributeError:
             pass
     
+    @ignore(DeprecationWarning)
     def getCallTip(self, command='', *args, **kwargs):
         """Return call tip text for a command.
         
@@ -2169,12 +2170,10 @@ class Interpreter(interpreter.Interpreter):
         (override) Ignore ValueError: no signature found for builtin
                    if the unwrapped function is a builtin function.
         """
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            try:
-                return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
-            except ValueError:
-                return interpreter.Interpreter.getCallTip(self) # dummy
+        try:
+            return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
+        except ValueError:
+            return interpreter.Interpreter.getCallTip(self) # dummy
 
 
 class Nautilus(Shell, EditorInterface):

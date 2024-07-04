@@ -2,15 +2,14 @@
 """mwxlib param controller and wx custom controls.
 """
 from itertools import chain
-import warnings
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
 from . import images
 from .utilus import SSM
+from .utilus import warn
 from .utilus import funcall as _F
-from .utilus import get_stacklevel
 from .framework import pack, Menu
 
 import numpy as np
@@ -85,12 +84,12 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
-    @wx.deprecatedMsg("Use `Param.callback.bind` instead.") #<DeprecationWarning>
     def bind(self, action=None, target='control'):
+        warn("Use `Param.callback.bind` instead.", DeprecationWarning)
         return self.callback.bind(target, action)
     
-    @wx.deprecatedMsg("Use `Param.callback.unbind` instead.") #<DeprecationWarning>
     def unbind(self, action=None, target='control'):
+        warn("Use `Param.callback.unbind` instead.", DeprecationWarning)
         return self.callback.unbind(target, action)
     
     def reset(self, v=None, backcall=True):
@@ -361,8 +360,7 @@ class Knob(wx.Panel):
         self.label.Enable(lw) # skip focus
         
         if not editable:
-            warnings.warn("Knob text control option `editable` is deprecated.",
-                          DeprecationWarning, stacklevel=get_stacklevel())
+            warn("Knob option `editable` is deprecated.", DeprecationWarning)
         
         self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)

@@ -2,7 +2,6 @@
 """mwxlib graph plot for images.
 """
 import traceback
-import warnings
 import wx
 
 from matplotlib import cm
@@ -15,6 +14,7 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
+from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -333,8 +333,7 @@ class AxesImagePhantom(object):
         def _cast(n):
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
-            warnings.warn("Setting xy data with single tuple is deprecated.",
-                          DeprecationWarning, stacklevel=2)
+            warn("Setting xy data with single tuple.", DeprecationWarning)
             x, y = x
         if isinstance(x, (list, tuple)):
             x = np.array(x)
@@ -350,8 +349,7 @@ class AxesImagePhantom(object):
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
         if ny is None:
-            warnings.warn("Setting xy data with single tuple is deprecated.",
-                          DeprecationWarning, stacklevel=2)
+            warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
         if isinstance(nx, (list, tuple)):
             nx = np.array(nx)

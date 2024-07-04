@@ -1,14 +1,12 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.3"
+__version__ = "0.96.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
 from importlib import reload
-from contextlib import contextmanager
 import traceback
-import warnings
 import builtins
 import datetime
 import textwrap
@@ -21,8 +19,8 @@ from wx import stc
 from wx.py import dispatcher
 
 from .utilus import funcall as _F
+from .utilus import get_rootpath, ignore, warn # noqa
 from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
-from .utilus import get_rootpath
 
 
 def deb(target=None, loop=True, locals=None, **kwargs):
@@ -290,12 +288,12 @@ class KeyCtrlInterfaceMixin:
         key += ' pressed'
         
         if map not in self.handler:
-            warnings.warn(f"New map to define_key {keymap!r} in {self}.", stacklevel=2)
+            warn(f"New map to define_key {keymap!r} in {self}.")
             self.make_keymap(map) # make new keymap
         
         transaction = self.handler[map].get(key, [state])
         if len(transaction) > 1:
-            warnings.warn(f"Duplicate define_key {keymap!r} in {self}.", stacklevel=2)
+            warn(f"Duplicate define_key {keymap!r} in {self}.")
         
         if action is None:
             self.handler[map].pop(key, None) # cf. undefine_key
@@ -623,7 +621,7 @@ class MenuBar(wx.MenuBar, TreeList):
         Call when the menulist is changed.
         """
         if not self.Parent:
-            warnings.warn(f"No parents bound to {self}.", stacklevel=2)
+            warn(f"No parents bound to {self}.")
             return
         
         menu = self.getmenu(key)
@@ -650,7 +648,7 @@ class MenuBar(wx.MenuBar, TreeList):
         Call when the menulist is changed.
         """
         if not self.Parent:
-            warnings.warn(f"No parents bound to {self}.", stacklevel=2)
+            warn(f"No parents bound to {self}.")
             return
         
         for j in range(self.GetMenuCount()): # remove and del all top-level menu

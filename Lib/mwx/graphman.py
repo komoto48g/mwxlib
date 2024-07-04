@@ -9,7 +9,6 @@ from bdb import BdbQuit
 import subprocess
 import threading
 import traceback
-import warnings
 import inspect
 import sys
 import os
@@ -26,8 +25,8 @@ from PIL import Image
 from PIL.TiffImagePlugin import TiffImageFile
 
 from . import framework as mwx
+from .utilus import ignore, warn
 from .utilus import funcall as _F
-from .utilus import get_stacklevel, ignore
 from .controls import ControlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
@@ -312,8 +311,7 @@ class LayerInterface(CtrlInterface):
     
     def __init__(self, parent, session=None):
         if hasattr(self, 'handler'):
-            warnings.warn(f"Duplicate iniheritance of CtrlInterface by {self}.",
-                          stacklevel=get_stacklevel())
+            warn(f"Duplicate iniheritance of CtrlInterface by {self}.")
         else:
             CtrlInterface.__init__(self)
         
@@ -1087,8 +1085,7 @@ class Frame(mwx.Frame):
         
         if issubclass(cls, LayerInterface):
             cls.__module__ = module.__name__ # __main__ to module
-            warnings.warn(f"Duplicate iniheritance of LayerInterface by {cls}.",
-                          stacklevel=2)
+            warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
             module.Plugin = cls
             return cls
         
@@ -1138,8 +1135,7 @@ class Frame(mwx.Frame):
         ## the module must have a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
-                warnings.warn(f"Use dummy plug for debugging {name!r}.",
-                              stacklevel=3)
+                warn(f"Use dummy plug for debugging {name!r}.")
                 module.__dummy_plug__ = root
                 self.register(root, module)
         else:

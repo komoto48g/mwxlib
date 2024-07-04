@@ -37,6 +37,16 @@ def ignore(*category):
         yield
 
 
+def warn(message, category=None):
+    frame = inspect.currentframe().f_back # previous call stack frame
+    skip = [frame.f_code.co_filename]
+    stacklevel = 1
+    while frame.f_code.co_filename in skip:
+        frame = frame.f_back
+        stacklevel += 1
+    return warnings.warn(message, category, stacklevel+1)
+
+
 def atom(v):
     return not hasattr(v, '__name__')
 
@@ -807,9 +817,6 @@ class FSM(dict):
         assert isinstance(event, str)
         assert callable(action) or action is None
         
-        def warn(msg):
-            warnings.warn(msg, stacklevel=3)
-        
         if state not in self:
             warn("- FSM warning: [{!r}] context newly created.".format(state))
             self[state] = SSM() # new context
@@ -854,9 +861,6 @@ class FSM(dict):
         If no action, it will remove the transaction from the context.
         """
         assert callable(action) or action is None
-        
-        def warn(msg):
-            warnings.warn(msg, stacklevel=3)
         
         if state not in self:
             warn("- FSM warning: [{!r}] context does not exist.".format(state))
@@ -961,25 +965,13 @@ class TreeList(object):
             else:
                 ls.append([key, value]) # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
-            warnings.warn(f"- TreeList:warning {e!r}: {key=!r}",
-                          stacklevel=get_stacklevel())
+            warn(f"- TreeList:warning {e!r}: {key=!r}")
     
     def _delf(self, ls, key):
         if '/' in key:
             p, key = key.rsplit('/', 1)
             ls = self._getf(ls, p)
         ls.remove(next(x for x in ls if x and x[0] == key))
-
-
-def get_stacklevel(skip=None):
-    frame = inspect.currentframe().f_back # previous call stack frame
-    if not skip:
-        skip = [frame.f_code.co_filename]
-    stack = 1
-    while frame.f_code.co_filename in skip:
-        frame = frame.f_back
-        stack += 1
-    return stack
 
 
 def get_fullargspec(f):

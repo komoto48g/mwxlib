@@ -1,4 +1,5 @@
 #! python3
+from functools import partial
 import re
 import wx
 
