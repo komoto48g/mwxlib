@@ -818,7 +818,7 @@ class FSM(dict):
         assert callable(action) or action is None
         
         if state not in self:
-            warn("- FSM warning: [{!r}] context newly created.".format(state))
+            warn(f"- FSM [{state!r}] context newly created.")
             self[state] = SSM() # new context
         
         context = self[state]
@@ -827,16 +827,16 @@ class FSM(dict):
         
         if event in context:
             if state2 != context[event][0]:
-                warn("- FSM warning: transaction may conflict.\n"
-                     "  The state {2!r} and the original state is not the same."
-                     "  {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+                warn(f"- FSM transaction may conflict.\n"
+                     f"  The state {state2!r} is different from the original state."
+                     f"  {event!r} : {state!r} --> {state2!r}")
                 pass
                 context[event][0] = state2 # update transition
         else:
             ## if state2 not in self:
-            ##     warn("- FSM warning: transaction may contradict\n"
-            ##          "  The state {2!r} is not found in the contexts."
-            ##          "  {0!r} : {1!r} --> {2!r}".format(event, state, state2))
+            ##     warn(f"- FSM transaction may contradict\n"
+            ##          f"  The state {state2!r} is not found in the contexts."
+            ##          f"  {event!r} : {state!r} --> {state2!r}")
             ##     pass
             context[event] = [state2] # new event:transaction
         
@@ -848,8 +848,8 @@ class FSM(dict):
             try:
                 transaction.append(action)
             except AttributeError:
-                warn("- FSM warning: cannot append new transaction ({!r} : {!r})\n"
-                     "  The transaction must be a list, not a tuple".format(state, event))
+                warn(f"- FSM cannot append new transaction ({state!r} : {event!r})\n"
+                     f"  The transaction must be a list, not a tuple")
         return action
     
     def unbind(self, event, action=None, state=None):
@@ -863,12 +863,12 @@ class FSM(dict):
         assert callable(action) or action is None
         
         if state not in self:
-            warn("- FSM warning: [{!r}] context does not exist.".format(state))
+            warn(f"- FSM [{state!r}] context does not exist.")
             return
         
         context = self[state]
         if event not in context:
-            warn("- FSM warning: No such transaction ({!r} : {!r})".format(state, event))
+            warn(f"- FSM has no such transaction ({state!r} : {event!r})")
             return
         
         transaction = context[event]
@@ -882,8 +882,8 @@ class FSM(dict):
                 transaction.remove(action)
                 return True
             except AttributeError:
-                warn("- FSM warning: removing action from context ({!r} : {!r})\n"
-                     "  The transaction must be a list, not a tuple".format(state, event))
+                warn(f"- FSM removing action from context ({state!r} : {event!r})\n"
+                     f"  The transaction must be a list, not a tuple")
         return False
 
 
