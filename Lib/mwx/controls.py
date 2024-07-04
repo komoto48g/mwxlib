@@ -766,32 +766,32 @@ class Clipboard:
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
     @staticmethod
-    def read(verbose=True):
+    def read(verbose=False):
         do = wx.TextDataObject()
         if wx.TheClipboard.Open():
             wx.TheClipboard.GetData(do)
             wx.TheClipboard.Close()
             text = do.GetText()
             if verbose:
-                print("From clipboard: {}".format(text))
+                print(f"From clipboard:\n{text}")
             return text
         else:
             print("- Unable to open clipboard.")
     
     @staticmethod
-    def write(text, verbose=True):
+    def write(text, verbose=False):
         do = wx.TextDataObject(str(text))
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
             if verbose:
-                print("To clipboard: {}".format(text))
+                print(f"To clipboard:\n{text}")
         else:
             print("- Unable to open clipboard.")
     
     @staticmethod
-    def imread(verbose=True):
+    def imread(verbose=False):
         do = wx.BitmapDataObject()
         if wx.TheClipboard.Open():
             wx.TheClipboard.GetData(do)
@@ -805,14 +805,14 @@ class Clipboard:
             img = bmp.ConvertToImage()
             buf = np.array(img.GetDataBuffer()) # do copy, don't ref
             if verbose:
-                print("From clipboard {:.1f} Mb data".format(buf.nbytes/1e6))
+                print("From clipboard: {:.1f} Mb data read.".format(buf.nbytes/1e6))
             w, h = img.GetSize()
             return buf.reshape(h, w, 3)
         except Exception:
             print("- The contents of the clipboard are not images.")
     
     @staticmethod
-    def imwrite(buf, verbose=True):
+    def imwrite(buf, verbose=False):
         try:
             ## Convert buf --> bmp
             h, w = buf.shape[:2]
@@ -830,7 +830,7 @@ class Clipboard:
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
             if verbose:
-                print("To clipboard: {:.1f} Mb data".format(buf.nbytes/1e6))
+                print("To clipboard: {:.1f} Mb data written.".format(buf.nbytes/1e6))
         else:
             print("- Unable to open clipboard.")
 

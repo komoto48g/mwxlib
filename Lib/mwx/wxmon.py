@@ -232,7 +232,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if self.IsSelected(i):
                 event, name, *_, attribs = self.__items[i]
                 text += "{}\t{}\n{}\n\n".format(event, name, attribs)
-        Clipboard.write(text.strip('\n'))
+        Clipboard.write(text[:-1])
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount

@@ -434,7 +434,7 @@ def find_modules(force=False, verbose=True):
             lm = eval(o.read()) # read and evaluate module list
         
         ## Check additional packages and modules
-        verbose = False
+        ## verbose = False
         for info in walk_packages_no_import(['.']):
             _callback('.', info.name)
     else:

@@ -623,7 +623,7 @@ class LineProfile(LinePlot):
         with io.StringIO() as o:
             for x, y in zip(X, Y):
                 o.write("{:g}\t{:g}\n".format(x, y))
-            Clipboard.write(o.getvalue(), verbose=0)
+            Clipboard.write(o.getvalue())
             self.message("Write data to clipboard.")
     
     def annotate(self):

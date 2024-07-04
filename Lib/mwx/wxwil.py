@@ -145,7 +145,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if self.IsSelected(i):
                 key, vstr = self.__items[i]
                 text += "{} = {}\n".format(key, vstr)
-        Clipboard.write(text.strip('\n'))
+        Clipboard.write(text)
     
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
