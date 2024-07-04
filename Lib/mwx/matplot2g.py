@@ -242,8 +242,8 @@ class AxesImagePhantom(object):
             self.__localunit = v
         self.__attributes['localunit'] = self.__localunit
         self.update_extent()
-        self.parent.update_markup_ratio(v/u)
         self.parent.handler('frame_updated', self)
+        self.parent.canvas.draw_idle()
     
     @unit.deleter
     def unit(self):
@@ -660,8 +660,8 @@ class GraphPlot(MatplotPanel):
             j = names.index(name) # existing frame
         if j != -1:
             art = self.__Arts[j]
-            art.update_buffer(buf) # => frame_modified
-            art.update_attributes(kwargs) # => frame_updated
+            art.update_buffer(buf)        # => [frame_modified]
+            art.update_attributes(kwargs) # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
             if show:
                 self.select(j)
@@ -676,7 +676,11 @@ class GraphPlot(MatplotPanel):
         self.__Arts.insert(j, art)
         self.handler('frame_loaded', art)
         if show:
+            u = self.frame and self.frame.unit # current frame unit
             self.select(j)
+            ## Update view if the unit length is different from before selection
+            if u != art.unit:
+                self.axes.axis(art.get_extent())
         return art
     
     def select(self, j):
@@ -690,17 +694,10 @@ class GraphPlot(MatplotPanel):
             self.handler('frame_hidden', self.frame)
         
         if j is not None:
-            u = self.frame and self.frame.unit # current frame unit
-            
             art = self.__Arts[j]
             art.set_visible(1)
             self.__index = j % len(self)
             self.handler('frame_shown', art)
-            
-            ## Update view if the unit length is different than before
-            if u != art.unit:
-                ## self.update_axis()
-                self.axes.axis(art.get_extent())
         else:
             self.__index = None
         
@@ -843,19 +840,10 @@ class GraphPlot(MatplotPanel):
             self.__unit = v
             for art in self.__Arts:
                 art.update_extent()
-            else:
-                self.update_markup_ratio(v/u)
-            for art in self.__Arts:
                 self.handler('frame_updated', art)
+            self.canvas.draw_idle()
     
     globalunit = unit # for backward compatibility
-    
-    def update_markup_ratio(self, r):
-        """Modify markup objects position."""
-        if self.Selector.size: self.Selector *= r
-        if self.Markers.size: self.Markers *= r
-        if self.Region.size: self.Region *= r
-        self.draw()
     
     def kill_buffer(self):
         if self.buffer is not None:
