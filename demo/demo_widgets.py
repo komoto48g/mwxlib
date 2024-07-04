@@ -57,8 +57,7 @@ class Plugin(Layer):
                 self.text, None,
                 self.choice, None,
             ),
-            title="Custom controls",
-            row=2, expand=1,
+            title="Custom controls", row=2, expand=1,
         )
         
         def trace(v):
@@ -78,8 +77,7 @@ class Plugin(Layer):
                 self.L,
                 self.U,
             ),
-            title="Custom param controls",
-            expand=1, show=1,
+            title="Custom param controls", expand=1, show=1,
             type='slider', style='chkbox', cw=100, lw=20, tw=40, h=22,
         )
         

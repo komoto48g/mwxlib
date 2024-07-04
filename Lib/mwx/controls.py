@@ -2,6 +2,7 @@
 """mwxlib param controller and wx custom controls.
 """
 from itertools import chain
+import warnings
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -9,6 +10,7 @@ import wx.lib.scrolledpanel as scrolled
 from . import images
 from .utilus import SSM
 from .utilus import funcall as _F
+from .utilus import get_stacklevel
 from .framework import pack, Menu
 
 import numpy as np
@@ -295,7 +297,6 @@ class Knob(wx.Panel):
                   None -> static text (default)
                   chkbox -> label with check box
                   button -> label with flat button
-        editable: textctrl is editable or readonly
         cw      : width of ctrl
         lw      : width of label
         tw      : width of textbox
@@ -355,23 +356,23 @@ class Knob(wx.Panel):
         else:
             raise Exception("unknown style: {!r}".format(style))
         
-        self.label.Enable(lw)
         self.label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
-        
         self.label.SetToolTip(self.__par._tooltip)
+        self.label.Enable(lw) # skip focus
         
-        if editable:
-            self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
-            self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
-            self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextExit)
-            self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
-            self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
-            self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
-            self.text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
-        else:
-            self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_READONLY)
+        if not editable:
+            warnings.warn("Knob text control option `editable` is deprecated.",
+                          DeprecationWarning, stacklevel=get_stacklevel())
         
-        self.text.Enable(tw)
+        self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
+        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
+        self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextExit)
+        self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
+        self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
+        self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+        self.text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        
+        self.text.Enable(tw) # skip focus
         
         if type == 'slider':
             self.ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
@@ -405,8 +406,8 @@ class Knob(wx.Panel):
         else:
             raise Exception("unknown type: {!r}".format(type))
         
-        self.ctrl.Enable(cw != 0)
         self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        self.ctrl.Enable(cw) # skip focus
         
         c = (cw and type != 'vspin')
         self.SetSizer(
@@ -426,6 +427,7 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def update_range(self):
+        """Called when range is being changed (internal use only)."""
         v = self.__par
         if isinstance(self.ctrl, wx.Choice): #<wx.Choice>
             items = [v.__str__(x) for x in v.range]
@@ -436,6 +438,7 @@ class Knob(wx.Panel):
             self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> <wx.SpinButton>
     
     def update_label(self):
+        """Called when label is being changed (internal use only)."""
         v = self.__par
         if isinstance(self.label, wx.CheckBox):
             self.label.SetValue(v.check)
@@ -446,6 +449,7 @@ class Knob(wx.Panel):
             self.label.Refresh()
     
     def update_ctrl(self, valid=True, notify=False):
+        """Called when value is being changed (internal use only)."""
         v = self.__par
         try:
             j = v.index
