@@ -179,6 +179,23 @@ colour_grey = PyEmbeddedImage(
     b'YII=')
 
 #----------------------------------------------------------------------
+connect = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
+    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJ+SURBVBgZlcFLSBRhAAfw/858'
+    b's860aygiptIp9NChoDzkxYNUYIcO0TUIOghFUNElvEad6lBkdEqCIugi3QQfLR2yQumBaPh+'
+    b'7Li7o/uanfmes1972IOEQv5+Ma01DuPRh+U+StlEhSsZUnElprXGQd6kdomUsoOJaiflojXk'
+    b'4mIM+pZjaXCp8GslTwkOMDLlOVyoCamiXhkpVCOJRDyGpG2CCYlsgSPvh4TgACGVt21L97Y0'
+    b'meBCg0kNyiW28wHiJrC8VYAo0wsE+3g1vtRdquYeHyXHUfAldkohKJcIuUSjbWI5XYKXLQ5/'
+    b'fnk1RbDHyJTnSKHeCbF6SbVMGCteH5pxAk7cQLbAQZmAGbOQccuQZTqGGoK615M5woX6aRPd'
+    b'ZTkn4a+7kehMmdOzMmptaDOTNkEuzxE3gaAcQITMQ42BugpVHUzIrqRjwCJVOA3nzPLvMzKS'
+    b'cujPxnK04RbRdIQgYBxhIYSs0DRqDNSFnHUKIUG5xKZXQTweg5Potmyde9hz/quZ9RbgukWs'
+    b'LWQQlvxFFQkXNQbqKgFvDRhHyCRCKrC27cOxYmhrPksyP5rQMzAPd3FJZVdzoyrip+cn7yvU'
+    b'ENSVQnajvclCSAUqlIMyCa8oYVsmoPsxM/pJRVVxam7ywTz2IKi5+WLmXqNjXI4TA5lCgIRt'
+    b'wjI1GqwYhJBY39hFLt0+NPtxcB7/IIPPvt9N2MaTRNwAZQKWqbGeLmFnxwf1GZhPwXz+RXH2'
+    b'HPsgPuVP25qT0DrCZtbHpltEwQuGlRBjEedexFVaCenOjd9R2Acp+RQb2xFMaKS3iiju+v3T'
+    b'b69N4T8RGtBjK/lSRoWKKsYGvr2/nsIh/AUG0IfiieuuUQAAAABJRU5ErkJggg==')
+
+#----------------------------------------------------------------------
 copy = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QAAAAAAAD5Q7t/AAAA'
     b'CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1QoaFAgvgxQ0mwAAAX9JREFUOMuVk0tLAlEY'
@@ -208,6 +225,24 @@ core = PyEmbeddedImage(
     b'vHkzSrQDBBALzH8gRSBDWltbGWxtbRmuXr0KVgCy2dramsHGxobh3LlzDOHh4WBxUCKKiIjg'
     b'AQgglIQEcp6GhgaDtrY22JmgAAT5HRQOnz9/BqsB5Y2dO3eCNHOAYh8ggOAGgJyKbhgygAUa'
     b'VDMjTBwggMAGTJ48+flvIJCWlpYjlH2RNYMAQIABANLKHICUilYLAAAAAElFTkSuQmCC')
+
+#----------------------------------------------------------------------
+disconnect = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0'
+    b'RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAKuSURBVDjLlZLLS5RRGMbf7zrz'
+    b'ebdw8FaSqJAbF0GgRBvptinoPxDKRdDKQjBw2TKClgVJCwmUyMBKydDKS9TCME2tRhs1cZwZ'
+    b'57ud853bfB0HiiAVOvBuDuf5ve/7nEcJwxAOOgPTtk4Fr6ZU1OCAVyBCm2Td9jEdcxG5pBwE'
+    b'eDyZtaRwjAvWSpkAxjkITsGKqJBIuvB903upH9QdE3rd1MLW0gIVCMsBoYq8U8H2CUQNBdJZ'
+    b'p33fCe6PbJo+4XZVmRHFhEDKCXaB4Accii0NFlfT8GNt56a6X/er56qog/Cd1aQjRRQictas'
+    b'R8B2EXgIQyblAbX95X9WeDSRPiriz3oZY1pvZ2dH590Z7GB+q7LcjBZHVdhMBaCpEfBsCXDR'
+    b'9p8V+t9lLGlUP7PXLxyJbkUMw4DZ2dm+rq6ujjPdz09xTEZrY8VWYZEh/WAwNxWHwEV1eYDs'
+    b'qsuOCxFDaYRQwGZ8ljeUE31+fr4PY3xFVulM5mQzC4LRypoSy037kEykvuZytDnvAQ5oNSa8'
+    b'scAE0JQcGIeb9LcrJl02Tj+U4gcIoanG8MU35qKzK58SaCux9ZSLoGVxvJvnPfAQrQEQEhTC'
+    b'RhpBYVQB61CNyZY+v6qvrzdisRgMDg6O1+kjbUt+23EpTPz2LA9wMa7QFJBuhxIWQHKHQWmB'
+    b'DrXHGozJuTfQ4sWBEDI9NDSUkc8zf5ueB9gubiqyVJBacBDZXQm2MhSiugZW7QkYfj/NuGi5'
+    b'ttd3a9uxi6bM9FhFmak5fgCmHEXqQFcVEDkBiZVt+edhz8fh7om9AHrWxV5JgWoImXMfE1jb'
+    b'sMHd8QF7AQQyONjxp4UQ9/YLnJ710JgaGucXUi6sr2cY84MeQfmyCOg2p3RD5PjPL69v8H0B'
+    b'yEWXnSR7IoPSzjEt+jDQQeE/zi9kq6pv7shelwAAAABJRU5ErkJggg==')
 
 #----------------------------------------------------------------------
 exit = PyEmbeddedImage(

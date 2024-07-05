@@ -106,7 +106,7 @@ class Plugin(Layer):
                         updater=self.get_crop,
                         )
         
-        self.snp = Button(self, handler=self.snapshot, icon='clock')
+        self.snp = Button(self, handler=self.snapshot, icon='clip')
         self.exp = Button(self, handler=self.export, icon='save')
         
         self.rw = Button(self, handler=lambda v: self.seekdelta(-100), icon='|<-')
