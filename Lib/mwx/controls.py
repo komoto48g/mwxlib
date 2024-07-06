@@ -16,6 +16,11 @@ import numpy as np
 from numpy import nan, inf  # noqa: necessary to eval
 
 
+def _Tip(*tips):
+    """Concatenate tips with newline char."""
+    return '\n'.join(filter(None, tips)).strip()
+
+
 class Param(object):
     """Standard Parameter
     
@@ -61,9 +66,7 @@ class Param(object):
            'overflow' : [],
           'underflow' : [],
         })
-        ## Concatenate tips with newline char.
-        tips = (handler.__doc__, updater.__doc__)
-        self._tooltip = '\n'.join(filter(None, tips)).strip()
+        self._tooltip = _Tip(handler.__doc__, updater.__doc__)
     
     def __str__(self, v=None):
         v = self.value if v is None else v
@@ -1004,7 +1007,7 @@ class Button(pb.PlateButton):
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
         
-        self.ToolTip = handler.__doc__
+        self.ToolTip = _Tip(handler.__doc__)
         self.icon = icon
     
     def SetBitmap(self, bmp):
@@ -1050,7 +1053,7 @@ class ToggleButton(wx.ToggleButton):
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
-        self.ToolTip = handler.__doc__
+        self.ToolTip = _Tip(handler.__doc__)
         self.icon = icon
 
 
@@ -1093,8 +1096,8 @@ class TextCtrl(wx.Control):
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.ToolTip = handler.__doc__
-        self._btn.ToolTip = updater.__doc__
+        self._ctrl.ToolTip = _Tip(handler.__doc__)
+        self._btn.ToolTip = _Tip(updater.__doc__)
         
         self.SetSizer(
             pack(self, (
@@ -1170,8 +1173,8 @@ class Choice(wx.Control):
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.ToolTip = handler.__doc__
-        self._btn.ToolTip = updater.__doc__
+        self._ctrl.ToolTip = _Tip(handler.__doc__)
+        self._btn.ToolTip = _Tip(updater.__doc__)
         
         self.SetSizer(
             pack(self, (
