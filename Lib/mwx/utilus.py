@@ -692,7 +692,8 @@ class FSM(dict):
                               "  to     : {}".format(self.__state),
                               "  action : {}".format(typename(act)),
                               "  args   : {}".format(args),
-                              "  kwargs : {}".format(kwargs))
+                              "  kwargs : {}".format(kwargs),
+                              "")
             self.__matched_pattern = None
             return retvals
         

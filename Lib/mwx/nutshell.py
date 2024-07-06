@@ -9,6 +9,7 @@ from bdb import BdbQuit
 import traceback
 import inspect
 import builtins
+import operator
 import dis
 import pydoc
 import keyword
@@ -163,10 +164,19 @@ class EditorInterface(CtrlInterface):
         ## This avoids sending the `EVT_STC_NEEDSHOWN` notification.
         self.SetAutomaticFold(stc.STC_AUTOMATICFOLD_SHOW)
         
+        def _dunders(*objects):
+            ss = set()
+            for obj in objects:
+                ss |= set(x for x in dir(obj) if x.startswith('__'))
+            return ss
+        
         ## Keyword(2) setting
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
-        self.SetKeyWords(1, ' '.join(builtins.__dict__) + ' self this')
+        self.SetKeyWords(1, ' '.join(builtins.__dict__)
+                          + ' '.join(_dunders(type, int, float, str, bytes,
+                                              tuple, list, range, operator,))
+                          + ' self this')
         
         ## AutoComp setting
         self.AutoCompSetAutoHide(False)
