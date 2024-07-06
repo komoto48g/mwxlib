@@ -63,7 +63,7 @@ class Plugin(Layer):
             title="Icon2", row=len(ls),
         )
         self.layout(
-            (Button(self, k, icon=v, size=(80,-1), tip=str(v))
+            (Button(self, k, icon=v, size=(80,-1))
                     for k, v in Icon.provided_arts.items()),
             title="Provided art images",
             row=6, show=0

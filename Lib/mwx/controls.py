@@ -16,11 +16,6 @@ import numpy as np
 from numpy import nan, inf  # noqa: necessary to eval
 
 
-def _Tip(*tips):
-    """Concatenate tips with newline char."""
-    return '\n'.join(filter(None, tips)).strip()
-
-
 class Param(object):
     """Standard Parameter
     
@@ -44,7 +39,7 @@ class Param(object):
             - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
-                 handler=None, updater=None, tip=None):
+                 handler=None, updater=None):
         self.knobs = []
         self.name = name
         self.range = range
@@ -66,7 +61,9 @@ class Param(object):
            'overflow' : [],
           'underflow' : [],
         })
-        self._tooltip = _Tip(tip, handler.__doc__, updater.__doc__)
+        ## Concatenate tips with newline char.
+        tips = (handler.__doc__, updater.__doc__)
+        self._tooltip = '\n'.join(filter(None, tips)).strip()
     
     def __str__(self, v=None):
         v = self.value if v is None else v
@@ -1000,15 +997,14 @@ class Button(pb.PlateButton):
         self.SetBitmap(_Icon(v))
         self.Refresh()
     
-    def __init__(self, parent, label='',
-                 handler=None, icon=None, tip='', **kwargs):
+    def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
         kwargs.setdefault('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
         
-        self.ToolTip = _Tip(tip, handler.__doc__)
+        self.ToolTip = handler.__doc__
         self.icon = icon
     
     def SetBitmap(self, bmp):
@@ -1048,14 +1044,13 @@ class ToggleButton(wx.ToggleButton):
             self.SetBitmap(_Icon(v))
         self.Refresh()
     
-    def __init__(self, parent, label='',
-                 handler=None, icon=None, tip='', **kwargs):
+    def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
-        self.ToolTip = _Tip(tip, handler.__doc__)
+        self.ToolTip = handler.__doc__
         self.icon = icon
 
 
@@ -1087,20 +1082,20 @@ class TextCtrl(wx.Control):
     def icon(self, v):
         self._btn.icon = v
     
-    def __init__(self, parent, label='',
-                 handler=None, updater=None, size=(-1,-1),
-                 icon=None, tip='', readonly=False, **kwargs):
+    def __init__(self, parent, label='', handler=None, updater=None,
+                 icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
                             | (wx.TE_READONLY if readonly else 0))
         
-        tooltip = _Tip(tip, handler.__doc__, updater.__doc__)
-        
         self._ctrl = wx.TextCtrl(self, **kwargs)
-        self._btn = Button(self, label, None, icon, tooltip,
+        self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
+        self._ctrl.ToolTip = handler.__doc__
+        self._btn.ToolTip = updater.__doc__
+        
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1164,20 +1159,20 @@ class Choice(wx.Control):
     def icon(self, v):
         self._btn.icon = v
     
-    def __init__(self, parent, label='',
-                 handler=None, updater=None, size=(-1,-1),
-                 icon=None, tip='', readonly=False, **kwargs):
+    def __init__(self, parent, label='', handler=None, updater=None,
+                 icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
                             | wx.TE_PROCESS_ENTER
                             | (wx.CB_READONLY if readonly else 0))
         
-        tooltip = _Tip(tip, handler.__doc__, updater.__doc__)
-        
         self._ctrl = wx.ComboBox(self, **kwargs)
-        self._btn = Button(self, label, None, icon, tooltip,
+        self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
+        self._ctrl.ToolTip = handler.__doc__
+        self._btn.ToolTip = updater.__doc__
+        
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),

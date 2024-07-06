@@ -1268,8 +1268,8 @@ class Frame(mwx.Frame):
                                          .Name(title).Caption(title)
                                          .FloatingSize(size).MinSize(size).Show(0))
             j = nb.GetPageIndex(plug)
-            tip = "[{}]\n{}".format(plug.__module__, plug.__doc__)
-            nb.SetPageToolTip(j, tip.strip())
+            tips = "[{}]\n{}".format(plug.__module__, plug.__doc__)
+            nb.SetPageToolTip(j, tips.strip())
         else:
             nb = None
             size = plug.GetSize()
