@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.4"
+__version__ = "0.96.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1594,7 +1594,7 @@ class ShellFrame(MiniFrame):
         if isinstance(editor, str):
             editor = getattr(self, editor, None)
         if editor:
-            return editor.load_file(filename, lineno, verbose=0)
+            return editor.load_file(filename, lineno)
     
     def load(self, filename, lineno=0, show=True):
         """Load file @where the object is defined.
@@ -1615,7 +1615,7 @@ class ShellFrame(MiniFrame):
                 filename, ln = m.groups()
                 lineno = int(ln)
         editor = self.find_editor(filename) or self.Log
-        ret = editor.load_file(filename, lineno, verbose=1)
+        ret = editor.load_file(filename, lineno)
         if ret:
             self.popup_window(editor, show)
         return ret

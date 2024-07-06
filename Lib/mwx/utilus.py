@@ -444,7 +444,7 @@ def find_modules(force=False, verbose=True):
             lm = eval(o.read()) # read and evaluate module list
         
         ## Check additional packages and modules
-        ## verbose = False
+        verbose = False
         for info in walk_packages_no_import(['.']):
             _callback('.', info.name)
     else:
@@ -827,17 +827,15 @@ class FSM(dict):
         
         if event in context:
             if state2 != context[event][0]:
-                warn(f"- FSM transaction may conflict.\n"
-                     f"  The state {state2!r} is different from the original state."
-                     f"  {event!r} : {state!r} --> {state2!r}")
+                warn(f"- FSM transaction may conflict ({event!r} : {state!r} --> {state2!r}).\n"
+                     f"  The state {state2!r} is different from the original state.")
                 pass
                 context[event][0] = state2 # update transition
         else:
-            ## if state2 not in self:
-            ##     warn(f"- FSM transaction may contradict\n"
-            ##          f"  The state {state2!r} is not found in the contexts."
-            ##          f"  {event!r} : {state!r} --> {state2!r}")
-            ##     pass
+            if state2 not in self:
+                warn(f"- FSM transaction may contradict ({event!r} : {state!r} --> {state2!r}).\n"
+                     f"  The state {state2!r} is not found in the contexts.")
+                pass
             context[event] = [state2] # new event:transaction
         
         transaction = context[event]
@@ -848,8 +846,8 @@ class FSM(dict):
             try:
                 transaction.append(action)
             except AttributeError:
-                warn(f"- FSM cannot append new transaction ({state!r} : {event!r})\n"
-                     f"  The transaction must be a list, not a tuple")
+                warn(f"- FSM cannot append new transaction ({state!r} : {event!r}).\n"
+                     f"  The transaction must be a list, not a tuple.")
         return action
     
     def unbind(self, event, action=None, state=None):
@@ -868,7 +866,7 @@ class FSM(dict):
         
         context = self[state]
         if event not in context:
-            warn(f"- FSM has no such transaction ({state!r} : {event!r})")
+            warn(f"- FSM has no such transaction ({state!r} : {event!r}).")
             return
         
         transaction = context[event]
@@ -882,7 +880,7 @@ class FSM(dict):
                 transaction.remove(action)
                 return True
             except AttributeError:
-                warn(f"- FSM removing action from context ({state!r} : {event!r})\n"
+                warn(f"- FSM removing action from context ({state!r} : {event!r}).\n"
                      f"  The transaction must be a list, not a tuple")
         return False
 
@@ -965,7 +963,7 @@ class TreeList(object):
             else:
                 ls.append([key, value]) # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
-            warn(f"- TreeList:warning {e!r}: {key=!r}")
+            warn(f"- TreeList {e!r}: {key=!r}")
     
     def _delf(self, ls, key):
         if '/' in key:
