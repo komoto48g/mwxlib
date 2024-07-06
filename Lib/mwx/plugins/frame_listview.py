@@ -233,10 +233,11 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Select(j, False)
     
     def on_frames_removed(self, indices):
-        for j in reversed(indices):
-            self.DeleteItem(j)
-        for k in range(self.ItemCount): # id(0) を更新する
-            self.SetItem(k, 0, str(k))
+        with wx.FrozenWindow(self):
+            for j in reversed(indices):
+                self.DeleteItem(j)
+            for k in range(self.ItemCount): # id(0) を更新する
+                self.SetItem(k, 0, str(k))
 
 
 class Plugin(Layer):
