@@ -100,10 +100,7 @@ class MatplotPanel(wx.Panel):
         self.toolbar.Show(0)
         
         ## modeline bar
-        self.modeline = wx.StaticText(self, label="", style=wx.ST_NO_AUTORESIZE)
-        self.modeline.write = self.modeline.SetLabel
-        self.modeline.read = self.modeline.GetLabel
-        self.modeline.SetToolTip("")
+        self.modeline = wx.StaticText(self, style=wx.ST_NO_AUTORESIZE)
         
         self.modeline.Bind(wx.EVT_MOTION, self.on_modeline_tip)
         self.modeline.Bind(wx.EVT_LEFT_DOWN, lambda v: self.canvas.SetFocus())
@@ -390,7 +387,7 @@ class MatplotPanel(wx.Panel):
     def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
         flag = self.modeline.HitTest(evt.Position)
         if flag == wx.HT_WINDOW_INSIDE:
-            self.modeline.SetToolTip(self.modeline.read())
+            self.modeline.ToolTip = self.modeline.Label
         evt.Skip()
     
     def on_focus_set(self, evt): #<wx._core.FocusEvent>

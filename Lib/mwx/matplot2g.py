@@ -944,22 +944,23 @@ class GraphPlot(MatplotPanel):
         """Puts (override) attributes of current frame to the modeline."""
         if not self.modeline.IsShown():
             return
-        if self.frame:
-            self.modeline.write(
-            "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
-            "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pixel]".format(
+        frame = self.frame
+        if frame:
+            self.modeline.SetLabel(
+                "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
+                "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pixel]".format(
                 page = self.__index,
              maxpage = len(self),
-                name = self.frame.name,
-                data = self.frame.buffer,
-                cmap = self.frame.get_cmap().name,
-                bins = ' bin{}'.format(self.frame.binning) if self.frame.binning > 1 else '',
-                unit = self.frame.unit,
-                   x = '**' if self.frame.localunit else '--',
-                   a = '%%' if not self.frame.buffer.flags.writeable else '--'))
+                name = frame.name,
+                data = frame.buffer,
+                cmap = frame.get_cmap().name,
+                bins = ' bin{}'.format(frame.binning) if frame.binning > 1 else '',
+                unit = frame.unit,
+                   x = '**' if frame.localunit else '--',
+                   a = '%%' if not frame.buffer.flags.writeable else '--'))
         else:
-            self.modeline.write(
-            "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pixel]".format(
+            self.modeline.SetLabel(
+                "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pixel]".format(
                 page = '-',
              maxpage = len(self),
                 unit = self.__unit))
