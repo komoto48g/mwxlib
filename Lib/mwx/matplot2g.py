@@ -970,15 +970,16 @@ class GraphPlot(MatplotPanel):
     
     def write_buffer_to_clipboard(self):
         """Write buffer data to clipboard."""
-        if not self.frame:
+        frame = self.frame
+        if not frame:
             self.message("No frame")
             return
         try:
-            name = self.frame.name
-            data = self.frame.roi
+            name = frame.name
+            data = frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = imconvert(data, self.frame.vlim)
+            bins, vlim, img = imconvert(data, frame.vlim)
             Clipboard.imwrite(img)
             self.message("Write buffer to clipboard.")
         except Exception as e:
@@ -1115,15 +1116,16 @@ class GraphPlot(MatplotPanel):
         """Called before canvas.draw (overridden)."""
         if not self.interpolation_mode:
             return
-        if self.frame:
+        frame = self.frame
+        if frame:
             ## [dots/pixel] = [dots/u] * [u/pixel]
-            dots = self.ddpu[0] * self.frame.unit * self.frame.binning
+            dots = self.ddpu[0] * frame.unit * frame.binning
             
-            if self.frame.get_interpolation() == 'nearest' and dots < 1:
-                self.frame.set_interpolation(self.interpolation_mode)
+            if frame.get_interpolation() == 'nearest' and dots < 1:
+                frame.set_interpolation(self.interpolation_mode)
                 
-            elif self.frame.get_interpolation() != 'nearest' and dots > 1:
-                self.frame.set_interpolation('nearest')
+            elif frame.get_interpolation() != 'nearest' and dots > 1:
+                frame.set_interpolation('nearest')
     
     def OnMotion(self, evt):
         """Called when mouse moves in axes (overridden)."""
@@ -1132,13 +1134,15 @@ class GraphPlot(MatplotPanel):
     
     def OnPageDown(self, evt):
         """Next page."""
-        if self.frame and self.__index < len(self)-1:
-            self.select(self.__index + 1)
+        i = self.__index
+        if i is not None and i < len(self)-1:
+            self.select(i + 1)
     
     def OnPageUp(self, evt):
         """Previous page."""
-        if self.frame and self.__index > 0:
-            self.select(self.__index - 1)
+        i = self.__index
+        if i is not None and i > 0:
+            self.select(i - 1)
     
     def OnHomePosition(self, evt):
         self.update_axis()
