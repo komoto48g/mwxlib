@@ -652,17 +652,6 @@ class MatplotPanel(wx.Panel):
         del self.Selector
         self.canvas.draw_idle()
     
-    ## def OnShiftLimit(self, evt, r=0.1):
-    ##     w = self.xlim[1] - self.xlim[0]
-    ##     h = self.ylim[1] - self.ylim[0]
-    ##     if 'up' in evt.key: self.ylim += h * r
-    ##     elif 'down' in evt.key: self.ylim -= h * r
-    ##     elif 'left' in evt.key: self.xlim -= w * r
-    ##     elif 'right' in evt.key: self.xlim += w * r
-    ##     if 1:
-    ##         self.toolbar.push_current()
-    ##         self.draw()
-    
     def zoomlim(self, lim, M, c=None):
         ## The limitation of zoom is necessary; If the axes is enlarged too much,
         ## the processing speed will significantly slow down.

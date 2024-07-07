@@ -59,8 +59,9 @@ class LinePlot(MatplotPanel):
         
         ## Note for matplotlib >= 3.9.0:
         ## axhspan and axvspan now return Rectangles, not Polygons.
-        #<matplotlib.patches.Rectangle>
+        
         #<matplotlib.patches.Polygon>
+        #<matplotlib.patches.Rectangle>
         self.__vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
     

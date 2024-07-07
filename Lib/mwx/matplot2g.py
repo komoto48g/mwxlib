@@ -562,6 +562,8 @@ class GraphPlot(MatplotPanel):
         
         self.modeline.Show(1)
         self.Layout()
+        
+        self.writeln()
     
     def clear(self):
         MatplotPanel.clear(self)
@@ -1005,10 +1007,6 @@ class GraphPlot(MatplotPanel):
             self.handler.bind('frame_shown', self.update_colorbar)
         else:
             self.message("- A frame must exist to create a colorbar.")
-            ## self['*dummy*'] = np.random.rand(2,2) # dummy
-            ## self.create_colorbar()
-            ## del self['*dummy*']
-            pass
     
     ## --------------------------------
     ## matplotlib interfaces
@@ -1018,9 +1016,9 @@ class GraphPlot(MatplotPanel):
         """Pickup image and other arts.
         Called (maybe) after mouse buttons are pressed.
         """
-        ## canvas 全体に有効だが，分割された axes (colorbar 領域など) は無効
-        ## image と plot が重なっている場合，plot -> image の順に呼び出される
-        ##  多重呼び出しが起きないように isPicked フラグで排他制御する
+        ## canvas 全体に有効だが，分割された axes (colorbar 領域など) は無効．
+        ## image - plot が重なっている場合，plot -> image の順に呼び出される．
+        ## 多重呼び出しが起きないように __isPicked フラグで排他制御する．
         
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
             return
@@ -1125,14 +1123,6 @@ class GraphPlot(MatplotPanel):
         del self.Selector
         if len(xs) > 1:
             self.handler('line_removed', self.frame)
-    
-    ## def zoomlim(self, lim, M, c=None): # virtual call from OnZoom, OnScrollZoom
-    ##     if c is None:
-    ##         c = (lim[1] + lim[0]) / 2
-    ##     y = c - M * (c - lim)
-    ##     if self.frame:
-    ##         if abs(y[1] - y[0]) > self.frame.unit or M > 1:
-    ##             return y
     
     def OnXAxisPanZoom(self, evt, c=None):
         org = self.p_event
