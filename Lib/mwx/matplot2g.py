@@ -907,13 +907,12 @@ class GraphPlot(MatplotPanel):
     
     def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
-        if self.frame:
+        frame = self.frame
+        if frame:
             if not hasattr(x, '__iter__'): # called from OnMotion
-                nx, ny = self.frame.xytopixel(x, y)
-                z = self.frame.xytoc(x, y)
-                self.message(
-                    "[{:-4d},{:-4d}] "
-                    "({:-8.3f},{:-8.3f}) value: {}".format(nx, ny, x, y, z))
+                nx, ny = frame.xytopixel(x, y)
+                z = frame.xytoc(x, y)
+                self.message(f"[{nx:-4d},{ny:-4d}] ({x:-8.3f},{y:-8.3f}) value: {z}")
                 return
             
             if len(x) == 0: # no selection
@@ -923,22 +922,19 @@ class GraphPlot(MatplotPanel):
                 return self.trace_point(x[0], y[0], type)
             
             if len(x) == 2: # 2-Selector trace line (called from Selector:setter)
-                nx, ny = self.frame.xytopixel(x, y)
+                nx, ny = frame.xytopixel(x, y)
                 dx = x[1] - x[0]
                 dy = y[1] - y[0]
                 a = np.arctan2(dy, dx) * 180/pi
                 lu = np.hypot(dy, dx)
                 li = np.hypot(nx[1]-nx[0], ny[1]-ny[0])
-                self.message("[Line] "
-                    "Length: {:.1f} pixel ({:g}u) "
-                    "Angle: {:.1f} deg".format(li, lu, a))
+                self.message(f"[Line] Length: {li:.1f} pixel ({lu:g}u) Angle: {a:.1f} deg")
             
             elif type == REGION: # N-Selector trace polygon (called from Region:setter)
-                nx, ny = self.frame.xytopixel(x, y)
+                nx, ny = frame.xytopixel(x, y)
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
-                self.message("[Region] "
-                    "crop={}:{}:{}:{}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
+                self.message(f"[Region] crop={xr-xo}:{yr-yo}:{xo}:{yo}") # (W:H:left:top)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
