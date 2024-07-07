@@ -4,12 +4,18 @@
 import wx
 import numpy as np
 from numpy.fft import fft2,ifft2,fftshift,ifftshift
-## from scipy.fftpack import fft,ifft,fft2,ifft2 Memory Leak? <scipy 0.16.1>
-## import cv2
 
 from mwx.graphman import Layer
 from mwx.controls import Param
-import editor as edi
+
+
+def fftcrop(src):
+    """Crop src image in 2**N square ROI centered at (x, y)."""
+    h, w = src.shape
+    m = min(h, w)
+    n = 1 if m < 2 else 2 ** int(np.log2(m) - 1) # +-m/2
+    x, y = w//2, h//2
+    return src[y-n:y+n, x-n:x+n]
 
 
 class Plugin(Layer):
@@ -45,7 +51,7 @@ class Plugin(Layer):
         frame = self.graph.frame
         if frame:
             self.message("FFT execution...")
-            src = edi.fftcrop(frame.roi)
+            src = fftcrop(frame.roi)
             h, w = src.shape
             
             dst = fftshift(fft2(src))
