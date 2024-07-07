@@ -275,19 +275,17 @@ class Histogram(LinePlot):
         return [0,255]
     
     def calc(self, frame):
+        BINS = 256
         img = frame.image
         if img.dtype == np.uint8:
             ## 整数ビット画像は，高速なビンづめ法で計算する
-            ## bins = np.arange(0, img.max()+1)
-            hist = np.bincount(img.ravel(), minlength=256)
-            bins = np.arange(256)
+            hist = np.bincount(img.ravel(), minlength=BINS)
+            bins = np.arange(BINS)
         else:
-            BINS = 256
-            ## hist は [min:max] 段階 (BINS=256 コ) で保持されている
+            ## hist は [min:max] 段階 (256 BINS) で保持されている
             ## bins は 端数含め [0:BINS] (257 コ) あるので１個減す
             hist, bins = np.histogram(img, BINS)
             bins = np.linspace(img.min(), img.max(), BINS)
-            
         return bins, hist
     
     def hplot(self, frame):
@@ -339,7 +337,7 @@ class Histogram(LinePlot):
                 name = frame.name,
                 type = frame.buffer.dtype,
                 mode = "bincount",
-                bins = (i, j % len(x))))
+                bins = (i, j)))
         else:
             self.modeline.write("")
     
