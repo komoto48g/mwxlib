@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.7"
+__version__ = "0.96.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1630,9 +1630,9 @@ class ShellFrame(MiniFrame):
         if isinstance(obj, wx.Object):
             self.monitor.watch(obj)
             self.popup_window(self.monitor)
-        elif hasattr(obj, '__dict__'):
+        if hasattr(obj, '__dict__'):
             self.linfo.watch(obj.__dict__)
-            self.ginfo.watch({})
+            self.ginfo.watch(None)
             self.popup_window(self.linfo)
     
     def highlight(self, obj, *args, **kwargs):

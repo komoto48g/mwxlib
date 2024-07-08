@@ -69,11 +69,8 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def watch(self, locals):
         self.clear()
         if not isinstance(locals, dict):
-            ## wx.MessageBox("Cannot watch the locals.\n\n"
-            ##               "- {!r} is not a dict object.".format(locals))
             self.unwatch()
             return
-        busy = wx.BusyCursor()
         self.target = locals
         try:
             self.Freeze()
