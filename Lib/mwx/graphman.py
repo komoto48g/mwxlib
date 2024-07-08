@@ -831,6 +831,9 @@ class Frame(mwx.Frame):
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
+        
+        ## Script editor for plugins (external call)
+        Editor = "notepad"
     
     sync_switch = True
     
@@ -844,17 +847,6 @@ class Frame(mwx.Frame):
                 b.ylim = a.ylim
                 b.OnDraw(None)
                 b.canvas.draw_idle()
-    
-    Editor = "notepad"
-    
-    @ignore(ResourceWarning)
-    def edit(self, fn):
-        if hasattr(fn, '__file__'):
-            name, _ = os.path.splitext(fn.__file__)
-            fn = name + '.py'
-        cmd = '{} "{}"'.format(self.Editor, fn)
-        subprocess.Popen(cmd)
-        self.message(cmd)
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
@@ -1360,11 +1352,16 @@ class Frame(mwx.Frame):
             return self.load_plug(plug.__module__, force=1, session=session)
         return False
     
+    @ignore(ResourceWarning)
     def edit_plug(self, name):
         plug = self.get_plug(name)
         if not plug:
             return
-        self.edit(self.plugins[plug.__module__])
+        ## this = inspect.getmodule(plug)
+        this = self.plugins[plug.__module__]
+        cmd = '{} "{}"'.format(self.Editor, this.__file__)
+        subprocess.Popen(cmd)
+        self.message(cmd)
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.
