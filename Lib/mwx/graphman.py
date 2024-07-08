@@ -541,19 +541,6 @@ class Graph(GraphPlot):
         if self.infobar.IsShown():
             self.infobar.ShowMessage(frame.annotation)
     
-    def get_frame_visible(self):
-        if self.frame:
-            return self.frame.get_visible()
-        return False
-    
-    def set_frame_visible(self, v):
-        if self.frame:
-            if self.frame.get_visible() != v:
-                self.frame.set_visible(v)
-                return True
-            return False
-        return None
-    
     def get_markups_visible(self):
         return self.marked.get_visible()
     
@@ -823,11 +810,13 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
         def on_move(evt, show):
-            self.graph.set_frame_visible(show)
-            self.output.set_frame_visible(show)
-            if show:
-                self.graph.draw()
-                self.output.draw()
+            def _display(view, show):
+                if view.frame:
+                    view.frame.set_visible(show)
+                    if show:
+                        view.draw()
+            _display(self.graph, show)
+            _display(self.output, show)
             evt.Skip()
         self.Bind(wx.EVT_MOVE_START, lambda v :on_move(v, show=0))
         self.Bind(wx.EVT_MOVE_END, lambda v :on_move(v, show=1))
@@ -943,9 +932,10 @@ class Frame(mwx.Frame):
             return
         
         ## Set the graph and output window sizes to half & half.
+        ## ドッキング時に再計算される
         if name == "output" or name is self.output:
             w, h = self.graph.GetClientSize()
-            pane.best_size = (w//2, h) # ドッキング時に再計算される
+            pane.best_size = (w//2 - 3, h) # 分割線幅補正 -12pix (Windows only ?)
         
         ## Force Layer windows to show.
         if interactive:
