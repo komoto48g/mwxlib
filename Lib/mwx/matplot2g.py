@@ -359,33 +359,6 @@ class AxesImagePhantom(object):
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
         return (x, y)
-    
-    def calc_point(self, x, y, centred=True, inaxes=False):
-        """Computes the nearest pixelated point from a point (x, y).
-        If centred, correct the points to the center of the nearest pixel.
-        If inaxes, restrict the points in image area.
-        """
-        if isinstance(x, (list, tuple)):
-            x = np.array(x)
-            y = np.array(y)
-        l,r,b,t = self.__art.get_extent()
-        if inaxes:
-            x[x < l] = l
-            x[x > r] = r
-            y[y < b] = b
-            y[y > t] = t
-        nx, ny = self.xytopixel(x, y)
-        ux, uy = self.xy_unit
-        if centred:
-            x = l + (nx + 0.5) * ux
-            y = t - (ny + 0.5) * uy
-            if inaxes:
-                x[x > r] -= ux
-                y[y < b] += uy
-        else:
-            x = l + nx * ux
-            y = t - ny * uy
-        return (x, y)
 
 
 class GraphPlot(MatplotPanel):
@@ -589,6 +562,8 @@ class GraphPlot(MatplotPanel):
         
         self.modeline.Show(1)
         self.Layout()
+        
+        self.writeln()
     
     def clear(self):
         MatplotPanel.clear(self)
@@ -907,13 +882,12 @@ class GraphPlot(MatplotPanel):
     
     def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
-        if self.frame:
+        frame = self.frame
+        if frame:
             if not hasattr(x, '__iter__'): # called from OnMotion
-                nx, ny = self.frame.xytopixel(x, y)
-                z = self.frame.xytoc(x, y)
-                self.message(
-                    "[{:-4d},{:-4d}] "
-                    "({:-8.3f},{:-8.3f}) value: {}".format(nx, ny, x, y, z))
+                nx, ny = frame.xytopixel(x, y)
+                z = frame.xytoc(x, y)
+                self.message(f"[{nx:-4d},{ny:-4d}] ({x:-8.3f},{y:-8.3f}) value: {z}")
                 return
             
             if len(x) == 0: # no selection
@@ -923,43 +897,41 @@ class GraphPlot(MatplotPanel):
                 return self.trace_point(x[0], y[0], type)
             
             if len(x) == 2: # 2-Selector trace line (called from Selector:setter)
-                nx, ny = self.frame.xytopixel(x, y)
+                nx, ny = frame.xytopixel(x, y)
                 dx = x[1] - x[0]
                 dy = y[1] - y[0]
                 a = np.arctan2(dy, dx) * 180/pi
                 lu = np.hypot(dy, dx)
                 li = np.hypot(nx[1]-nx[0], ny[1]-ny[0])
-                self.message("[Line] "
-                    "Length: {:.1f} pixel ({:g}u) "
-                    "Angle: {:.1f} deg".format(li, lu, a))
+                self.message(f"[Line] Length: {li:.1f} pixel ({lu:g}u) Angle: {a:.1f} deg")
             
             elif type == REGION: # N-Selector trace polygon (called from Region:setter)
-                nx, ny = self.frame.xytopixel(x, y)
+                nx, ny = frame.xytopixel(x, y)
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
-                self.message("[Region] "
-                    "crop={}:{}:{}:{}".format(xr-xo, yr-yo, xo, yo)) # (W:H:left:top)
+                self.message(f"[Region] crop={xr-xo}:{yr-yo}:{xo}:{yo}") # (W:H:left:top)
     
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
         if not self.modeline.IsShown():
             return
-        if self.frame:
-            self.modeline.write(
-            "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
-            "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pixel]".format(
+        frame = self.frame
+        if frame:
+            self.modeline.SetLabel(
+                "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
+                "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pixel]".format(
                 page = self.__index,
              maxpage = len(self),
-                name = self.frame.name,
-                data = self.frame.buffer,
-                cmap = self.frame.get_cmap().name,
-                bins = ' bin{}'.format(self.frame.binning) if self.frame.binning > 1 else '',
-                unit = self.frame.unit,
-                   x = '**' if self.frame.localunit else '--',
-                   a = '%%' if not self.frame.buffer.flags.writeable else '--'))
+                name = frame.name,
+                data = frame.buffer,
+                cmap = frame.get_cmap().name,
+                bins = ' bin{}'.format(frame.binning) if frame.binning > 1 else '',
+                unit = frame.unit,
+                   x = '**' if frame.localunit else '--',
+                   a = '%%' if not frame.buffer.flags.writeable else '--'))
         else:
-            self.modeline.write(
-            "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pixel]".format(
+            self.modeline.SetLabel(
+                "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pixel]".format(
                 page = '-',
              maxpage = len(self),
                 unit = self.__unit))
@@ -973,15 +945,16 @@ class GraphPlot(MatplotPanel):
     
     def write_buffer_to_clipboard(self):
         """Write buffer data to clipboard."""
-        if not self.frame:
+        frame = self.frame
+        if not frame:
             self.message("No frame")
             return
         try:
-            name = self.frame.name
-            data = self.frame.roi
+            name = frame.name
+            data = frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = imconvert(data, self.frame.vlim)
+            bins, vlim, img = imconvert(data, frame.vlim)
             Clipboard.imwrite(img)
             self.message("Write buffer to clipboard.")
         except Exception as e:
@@ -1034,10 +1007,6 @@ class GraphPlot(MatplotPanel):
             self.handler.bind('frame_shown', self.update_colorbar)
         else:
             self.message("- A frame must exist to create a colorbar.")
-            ## self['*dummy*'] = np.random.rand(2,2) # dummy
-            ## self.create_colorbar()
-            ## del self['*dummy*']
-            pass
     
     ## --------------------------------
     ## matplotlib interfaces
@@ -1047,9 +1016,9 @@ class GraphPlot(MatplotPanel):
         """Pickup image and other arts.
         Called (maybe) after mouse buttons are pressed.
         """
-        ## canvas 全体に有効だが，分割された axes (colorbar 領域など) は無効
-        ## image と plot が重なっている場合，plot -> image の順に呼び出される
-        ##  多重呼び出しが起きないように isPicked フラグで排他制御する
+        ## canvas 全体に有効だが，分割された axes (colorbar 領域など) は無効．
+        ## image - plot が重なっている場合，plot -> image の順に呼び出される．
+        ## 多重呼び出しが起きないように __isPicked フラグで排他制御する．
         
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
             return
@@ -1118,15 +1087,16 @@ class GraphPlot(MatplotPanel):
         """Called before canvas.draw (overridden)."""
         if not self.interpolation_mode:
             return
-        if self.frame:
+        frame = self.frame
+        if frame:
             ## [dots/pixel] = [dots/u] * [u/pixel]
-            dots = self.ddpu[0] * self.frame.unit * self.frame.binning
+            dots = self.ddpu[0] * frame.unit * frame.binning
             
-            if self.frame.get_interpolation() == 'nearest' and dots < 1:
-                self.frame.set_interpolation(self.interpolation_mode)
+            if frame.get_interpolation() == 'nearest' and dots < 1:
+                frame.set_interpolation(self.interpolation_mode)
                 
-            elif self.frame.get_interpolation() != 'nearest' and dots > 1:
-                self.frame.set_interpolation('nearest')
+            elif frame.get_interpolation() != 'nearest' and dots > 1:
+                frame.set_interpolation('nearest')
     
     def OnMotion(self, evt):
         """Called when mouse moves in axes (overridden)."""
@@ -1135,13 +1105,15 @@ class GraphPlot(MatplotPanel):
     
     def OnPageDown(self, evt):
         """Next page."""
-        if self.frame and self.__index < len(self)-1:
-            self.select(self.__index + 1)
+        i = self.__index
+        if i is not None and i < len(self)-1:
+            self.select(i + 1)
     
     def OnPageUp(self, evt):
         """Previous page."""
-        if self.frame and self.__index > 0:
-            self.select(self.__index - 1)
+        i = self.__index
+        if i is not None and i > 0:
+            self.select(i - 1)
     
     def OnHomePosition(self, evt):
         self.update_axis()
@@ -1151,14 +1123,6 @@ class GraphPlot(MatplotPanel):
         del self.Selector
         if len(xs) > 1:
             self.handler('line_removed', self.frame)
-    
-    ## def zoomlim(self, lim, M, c=None): # virtual call from OnZoom, OnScrollZoom
-    ##     if c is None:
-    ##         c = (lim[1] + lim[0]) / 2
-    ##     y = c - M * (c - lim)
-    ##     if self.frame:
-    ##         if abs(y[1] - y[0]) > self.frame.unit or M > 1:
-    ##             return y
     
     def OnXAxisPanZoom(self, evt, c=None):
         org = self.p_event
@@ -1184,11 +1148,33 @@ class GraphPlot(MatplotPanel):
     ## Selector interface
     ## --------------------------------
     
-    def calc_point(self, x, y, centred=True):
-        """Restrict point (x, y) in image area.
-        If centred, correct the point to the center of the nearest pixel.
+    def calc_point(self, x, y, centred=True, inaxes=False):
+        """Computes the nearest pixelated point from a point (x, y).
+        If centred, correct the points to the center of the nearest pixel.
+        If inaxes, restrict the points in image area.
         """
-        return self.frame.calc_point(x, y, centred)
+        frame = self.frame
+        if isinstance(x, (list, tuple)):
+            x = np.array(x)
+            y = np.array(y)
+        l,r,b,t = frame.get_extent()
+        if inaxes:
+            x[x < l] = l
+            x[x > r] = r
+            y[y < b] = b
+            y[y > t] = t
+        nx, ny = frame.xytopixel(x, y)
+        ux, uy = frame.xy_unit
+        if centred:
+            x = l + (nx + 0.5) * ux
+            y = t - (ny + 0.5) * uy
+            if inaxes:
+                x[x > r] -= ux
+                y[y < b] += uy
+        else:
+            x = l + nx * ux
+            y = t - ny * uy
+        return (x, y)
     
     def calc_shiftpoint(self, xo, yo, x, y, centred=True):
         """Restrict point (x, y) from (xo, yo) in pi/8 step angles.

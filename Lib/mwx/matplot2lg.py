@@ -59,8 +59,9 @@ class LinePlot(MatplotPanel):
         
         ## Note for matplotlib >= 3.9.0:
         ## axhspan and axvspan now return Rectangles, not Polygons.
-        #<matplotlib.patches.Rectangle>
+        
         #<matplotlib.patches.Polygon>
+        #<matplotlib.patches.Rectangle>
         self.__vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
     
@@ -331,15 +332,17 @@ class Histogram(LinePlot):
         frame = self.__frame
         if frame:
             x, y = frame.__data
-            i, j = x.searchsorted(self.region) if self.region is not None else np.uint8(self.xlim)
-            self.modeline.write(
-            "[--] ---- {name} ({type}:{mode}) [{bins[0]}:{bins[1]}]".format(
+            if self.region is not None:
+                i, j = x.searchsorted(self.region)
+            else:
+                i, j = np.uint8(self.xlim)
+            self.modeline.SetLabel(
+                "[--] ---- {name} ({type}:) [{}:{}]".format(i, j,
                 name = frame.name,
                 type = frame.buffer.dtype,
-                mode = "bincount",
-                bins = (i, j)))
+                ))
         else:
-            self.modeline.write("")
+            self.modeline.SetLabel("")
     
     ## --------------------------------
     ## Motion/Drag actions (override)
@@ -349,7 +352,10 @@ class Histogram(LinePlot):
         if self.__frame:
             x, y = self.__frame.__data
             if len(x) > 1:
-                i, j = x.searchsorted(self.region) if self.region is not None else (0,-1)
+                if self.region is not None:
+                    i, j = x.searchsorted(self.region)
+                else:
+                    i, j = (0, -1)
                 self.__fil.set_xy(list(chain([(x[i],0)], zip(x[i:j],y[i:j]), [(x[j-1],0)])))
             else:
                 self.__fil.set_xy([(0,0)])
@@ -601,19 +607,19 @@ class LineProfile(LinePlot):
             return
         frame = self.__frame
         if frame:
-            self.modeline.write(
-            "[--] -{a}- {name} ({type}:{mode}) "
-            "[{length}:{width}] {x} [{unit:g}/pixel]".format(
+            self.modeline.SetLabel(
+                "[--] -{a}- {name} ({type}:{mode}) "
+                "[{length}:{width}] {x} [{unit:g}/pixel]".format(
                 name = frame.name,
                 type = frame.buffer.dtype,
-                mode = "nearest",
+                mode = "logic" if self.__logicp else "pixel",
                width = self.__linewidth,
               length = len(self.plotdata[0]),
-                unit = frame.unit if self.__logicp else 1,
-                   x = '++' if self.__logicp else '--',
+                unit = frame.unit,
+                   x = '**' if frame.localunit else '--',
                    a = '%%' if not frame.buffer.flags.writeable else '--'))
         else:
-            self.modeline.write("")
+            self.modeline.SetLabel("")
     
     def write_data_to_clipboard(self):
         """Write plot data to clipboard."""

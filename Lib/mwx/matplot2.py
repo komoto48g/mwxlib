@@ -100,10 +100,7 @@ class MatplotPanel(wx.Panel):
         self.toolbar.Show(0)
         
         ## modeline bar
-        self.modeline = wx.StaticText(self, label="", style=wx.ST_NO_AUTORESIZE)
-        self.modeline.write = self.modeline.SetLabel
-        self.modeline.read = self.modeline.GetLabel
-        self.modeline.SetToolTip("")
+        self.modeline = wx.StaticText(self, style=wx.ST_NO_AUTORESIZE)
         
         self.modeline.Bind(wx.EVT_MOTION, self.on_modeline_tip)
         self.modeline.Bind(wx.EVT_LEFT_DOWN, lambda v: self.canvas.SetFocus())
@@ -390,7 +387,7 @@ class MatplotPanel(wx.Panel):
     def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
         flag = self.modeline.HitTest(evt.Position)
         if flag == wx.HT_WINDOW_INSIDE:
-            self.modeline.SetToolTip(self.modeline.read())
+            self.modeline.ToolTip = self.modeline.Label
         evt.Skip()
     
     def on_focus_set(self, evt): #<wx._core.FocusEvent>
@@ -654,17 +651,6 @@ class MatplotPanel(wx.Panel):
         """Escape from selection."""
         del self.Selector
         self.canvas.draw_idle()
-    
-    ## def OnShiftLimit(self, evt, r=0.1):
-    ##     w = self.xlim[1] - self.xlim[0]
-    ##     h = self.ylim[1] - self.ylim[0]
-    ##     if 'up' in evt.key: self.ylim += h * r
-    ##     elif 'down' in evt.key: self.ylim -= h * r
-    ##     elif 'left' in evt.key: self.xlim -= w * r
-    ##     elif 'right' in evt.key: self.xlim += w * r
-    ##     if 1:
-    ##         self.toolbar.push_current()
-    ##         self.draw()
     
     def zoomlim(self, lim, M, c=None):
         ## The limitation of zoom is necessary; If the axes is enlarged too much,
