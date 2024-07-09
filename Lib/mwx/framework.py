@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.8"
+__version__ = "0.96.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -193,10 +193,9 @@ def hotkey(evt):
 
 
 def regulate_key(key):
-    return (key.replace("ctrl+",  "C-") # modifier keys abbreviation
-               .replace("alt+",   "M-")
-               .replace("shift+", "S-")
-               .replace("win+", "win-")
+    return (key.replace("ctrl-",  "C-") # modifier keys abbreviation
+               .replace("alt-",   "M-")
+               .replace("shift-", "S-")
                .replace("M-C-", "C-M-") # modifier key regulation C-M-S-
                .replace("S-M-", "M-S-")
                .replace("S-C-", "C-S-"))
@@ -376,7 +375,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             evt.Skip()
             return
         key = hotkey(evt)
-        self.__key = regulate_key(key + '+')
+        self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     

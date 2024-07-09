@@ -528,7 +528,7 @@ class MatplotPanel(wx.Panel):
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed."""
         key = hotkey(evt)
-        self.__key = regulate_key(key + '+')
+        self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
