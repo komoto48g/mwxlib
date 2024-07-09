@@ -1,13 +1,15 @@
 #! python3
 """FFmpeg wrapper.
 """
+from functools import partial
 from subprocess import Popen, PIPE
 import numpy as np
 import os
 import wx
 import wx.media
 
-from mwx.graphman import Layer, Frame
+from mwx.framework import _F, hotkey
+from mwx.graphman import Layer
 from mwx.controls import LParam, Icon, Button, TextCtrl
 
 
@@ -87,7 +89,6 @@ class Plugin(Layer):
         )
         self.mc.ShowPlayerControls()
         self.mc.Bind(wx.media.EVT_MEDIA_LOADED, self.OnMediaLoaded)
-        self.mc.Bind(wx.media.EVT_MEDIA_PAUSE, self.OnMediaPause)
         
         self.mc.SetDropTarget(MyFileDropLoader(self))
         
@@ -128,6 +129,27 @@ class Plugin(Layer):
         ]
         
         self.parent.handler.bind("unknown_format", self.load_media)
+        
+        self.handler.update({ # DNA<ffmpeg_viewer>
+            0 : {
+                         'play' : (1, ),
+                'space pressed' : (1, _F(self.mc.Play)),
+            },
+            1 : {
+                         'stop' : (0, ),
+                        'pause' : (0, ),
+                'space pressed' : (1, _F(self.mc.Pause)),
+            },
+        })
+        
+        self.mc.Bind(wx.media.EVT_MEDIA_PAUSE, partial(self.handler, 'pause'))
+        self.mc.Bind(wx.media.EVT_MEDIA_PLAY, partial(self.handler, 'play'))
+        self.mc.Bind(wx.media.EVT_MEDIA_STOP, partial(self.handler, 'stop'))
+        
+        ## self.mc.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
+        ## self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
+        self.mc.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.mc.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
     
     def Destroy(self):
         try:
@@ -136,13 +158,18 @@ class Plugin(Layer):
         finally:
             return Layer.Destroy(self)
     
+    def OnKeyDown(self, evt):
+        if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
+            evt.Skip()
+    
+    def OnKeyUp(self, evt):
+        if self.handler('{} released'.format(hotkey(evt)), evt) is None:
+            evt.Skip()
+    
     def OnMediaLoaded(self, evt):
         self.ss.range = (0, self.video_dur, 0.01)
         self.to.range = (0, self.video_dur, 0.01)
         self.Show()
-        evt.Skip()
-    
-    def OnMediaPause(self, evt):
         evt.Skip()
     
     def load_media(self, path=None):
