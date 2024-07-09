@@ -141,8 +141,8 @@ class MatplotPanel(wx.Panel):
         ## self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
-        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_dndrag)
-        self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
+        self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
+        self.canvas.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
         
         self.canvas.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: self.handler('Xbutton1 pressed', v))
         self.canvas.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: self.handler('Xbutton2 pressed', v))
@@ -532,7 +532,7 @@ class MatplotPanel(wx.Panel):
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
-    def on_hotkey_dndrag(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_down(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
         """
@@ -541,7 +541,7 @@ class MatplotPanel(wx.Panel):
         else:
             evt.Skip()
     
-    def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_up(self, evt): #<wx._core.KeyEvent>
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''

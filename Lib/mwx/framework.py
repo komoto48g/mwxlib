@@ -342,8 +342,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_dndrag)
-        self.Bind(wx.EVT_KEY_UP, self.on_hotkey_release)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
+        self.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
         
         self.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
         
@@ -379,16 +379,16 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
     
-    def on_hotkey_dndrag(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_down(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
         """
         if self.__isDragging:
             self.on_hotkey_press(evt)
         else:
-            evt.Skip() # for TextCtrl
+            evt.Skip()
     
-    def on_hotkey_release(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_up(self, evt): #<wx._core.KeyEvent>
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
@@ -407,7 +407,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler('{} pressed'.format(evt.key), evt) is None:
             evt.Skip()
     
-    def on_motion(self, evt):
+    def on_motion(self, evt): #<wx._core.MouseEvent>
         """Called on mouse motion events.
         Trigger event: 'key+[LMR]drag begin/motion/end'
         """
