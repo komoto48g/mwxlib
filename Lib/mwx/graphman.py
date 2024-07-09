@@ -214,13 +214,10 @@ class Thread(object):
         Use ``check`` method where you want to quit.
         """
         def _stop():
-            try:
-                busy = wx.BusyInfo("One moment please, "
-                                   "waiting for threads to die...")
+            with wx.BusyInfo("One moment please, "
+                             "waiting for threads to die..."):
                 self.handler('thread_quit', self)
                 self.worker.join(1)
-            finally:
-                del busy
         if self.running:
             self.active = 0
             wx.CallAfter(_stop) # main-thread で終了させる
@@ -685,7 +682,7 @@ class Frame(mwx.Frame):
                 lambda v: self.save_frame(),
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
-            (wx.ID_SAVEAS, "&Save as TIFFs", "Save buffers as a statck-tiff", Icon('saveall'),
+            (wx.ID_SAVEAS, "&Save as TIFFs", "Save buffers as a multi-page tiff", Icon('saveall'),
                 lambda v: self.save_buffers_as_tiffs(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
@@ -831,6 +828,9 @@ class Frame(mwx.Frame):
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
+        
+        ## Script editor for plugins (external call)
+        Editor = "notepad"
     
     sync_switch = True
     
@@ -844,17 +844,6 @@ class Frame(mwx.Frame):
                 b.ylim = a.ylim
                 b.OnDraw(None)
                 b.canvas.draw_idle()
-    
-    Editor = "notepad"
-    
-    @ignore(ResourceWarning)
-    def edit(self, fn):
-        if hasattr(fn, '__file__'):
-            name, _ = os.path.splitext(fn.__file__)
-            fn = name + '.py'
-        cmd = '{} "{}"'.format(self.Editor, fn)
-        subprocess.Popen(cmd)
-        self.message(cmd)
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
@@ -1360,11 +1349,16 @@ class Frame(mwx.Frame):
             return self.load_plug(plug.__module__, force=1, session=session)
         return False
     
+    @ignore(ResourceWarning)
     def edit_plug(self, name):
         plug = self.get_plug(name)
         if not plug:
             return
-        self.edit(self.plugins[plug.__module__])
+        ## this = inspect.getmodule(plug)
+        this = self.plugins[plug.__module__]
+        cmd = '{} "{}"'.format(self.Editor, this.__file__)
+        subprocess.Popen(cmd)
+        self.message(cmd)
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.
@@ -1707,14 +1701,14 @@ class Frame(mwx.Frame):
             return None
     
     def save_buffers_as_tiffs(self, path=None, frames=None):
-        """Export buffers to a file as a multi-page tiff."""
+        """Save buffers to a file as a multi-page tiff."""
         if not frames:
             frames = self.selected_view.all_frames
             if not frames:
                 return None
         
         if not path:
-            with wx.FileDialog(self, "Save frames as stack-tiff",
+            with wx.FileDialog(self, "Save buffers as a multi-page tiff",
                     defaultFile="Stack-image",
                     wildcard="TIF file (*.tif)|*.tif",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1724,23 +1718,20 @@ class Frame(mwx.Frame):
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
-            busy = wx.BusyInfo("One moment please, "
-                               "now saving {!r}...".format(name))
-            
-            stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
-            stack[0].save(path,
-                          save_all=True,
-                          compression="tiff_deflate", # cf. tiff_lzw
-                          append_images=stack[1:])
-            
+            with wx.BusyInfo("One moment please, "
+                             "now saving {!r}...".format(name)):
+                stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
+                stack[0].save(path,
+                              save_all=True,
+                              compression="tiff_deflate", # cf. tiff_lzw
+                              append_images=stack[1:])
             self.message("\b done.")
+            wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
             return True
         except Exception as e:
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
             return False
-        finally:
-            del busy
     
     ## --------------------------------
     ## load/save session
