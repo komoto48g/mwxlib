@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.96.9"
+__version__ = "0.97.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -19,7 +19,7 @@ from wx import stc
 from wx.py import dispatcher
 
 from .utilus import funcall as _F
-from .utilus import get_rootpath, ignore, warn # noqa
+from .utilus import get_rootpath, ignore, warn
 from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
 
 
@@ -309,6 +309,11 @@ class KeyCtrlInterfaceMixin:
         else:
             self.handler.update({map: {key: [state, f]}})
         return action
+    
+    @ignore(UserWarning)
+    def undefine_key(self, keymap):
+        """Delete [map key (pressed)] context."""
+        self.define_key(keymap, None)
 
 
 class CtrlInterface(KeyCtrlInterfaceMixin):

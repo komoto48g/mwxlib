@@ -42,8 +42,8 @@ class Plugin(Layer):
         self.parent.define_key('C-S-f', self.newifft)
     
     def Destroy(self):
-        self.parent.define_key('C-f', None)
-        self.parent.define_key('C-S-f', None)
+        self.parent.undefine_key('C-f')
+        self.parent.undefine_key('C-S-f')
         return Layer.Destroy(self)
     
     def newfft(self):
