@@ -67,7 +67,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.InsertItem(j, str(j))
             self.UpdateInfo(frame) # update all --> 計算が入ると時間がかかる
         
-        self.handler.update({
+        self.handler.update({ # DNA<frame_listview>
             0 : {
              'Lbutton dblclick' : (0, self.OnShowItems), # -> frame_shown
                 'enter pressed' : (0, self.OnShowItems), # -> frame_shown
@@ -84,7 +84,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         
-        self.context = { # bound to the target
+        self.context = { # DNA<GraphPlot>
             None: {
                   'frame_shown' : [ None, self.on_frame_shown ],
                  'frame_hidden' : [ None, self.on_frame_hidden ],

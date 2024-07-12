@@ -7,6 +7,7 @@ import wx
 import wx.lib.inspection as it
 
 from .controls import Icon
+from .utilus import typename
 from .framework import CtrlInterface, Menu, filling
 
 
@@ -176,7 +177,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 lambda v: watch(obj),
                 lambda v: v.Enable(obj is not None)),
                 
-            (1, "&Dive into {!r}".format(obj), Icon('core'),
+            (1, "&Dive into {!r}".format(typename(obj)), Icon('core'),
                 lambda v: dive(obj),
                 lambda v: v.Enable(obj is not None)),
         ])

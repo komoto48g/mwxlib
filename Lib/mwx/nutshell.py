@@ -1749,7 +1749,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         )
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.Name = name
-        self.default_name = "*{}*".format(name.lower())
+        self.default_name = "*{}*".format(name.lower()) # e.g. '*scratch*'
         self.default_buffer = self.create_buffer(self.default_name)
         
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)

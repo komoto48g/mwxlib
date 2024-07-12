@@ -1,8 +1,8 @@
 #! python3
-from functools import partial
 import re
 import wx
 
+from .utilus import funcall as _F
 from .framework import CtrlInterface, postcall
 
 
@@ -20,7 +20,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.parent = parent
         self.target = None
         
-        self.context = { # DNA<EditorTreeCtrl>
+        self.context = { # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, self.on_buffer_new ],
                  'buffer_saved' : [ None, ],
@@ -36,34 +36,41 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        @self.handler.bind('enter pressed')
         def enter(evt):
             data = self.GetItemData(self.Selection)
             if data:
                 data.SetFocus()
         
-        @self.handler.bind('f5 pressed')
         def refresh(evt, clear=False):
             self.build_tree(clear)
             if self.target:
                 self.target.current_editor.SetFocus()
                 wx.CallAfter(self.SetFocus)
         
-        self.handler.bind('S-f5 pressed', partial(refresh, clear=1))
-        
-        @self.handler.bind('delete pressed')
         def delete(evt):
             data = self.GetItemData(self.Selection)
             if data:
-                data.parent.kill_buffer(data) # -> focus moves
+                if data.mtdelta or data.Text:
+                    data.parent.kill_buffer(data) # -> focus moves
                 wx.CallAfter(self.SetFocus)
         
-        @self.handler.bind('*button* pressed')
-        @self.handler.bind('*button* released')
         def dispatch(evt):
-            """Fork mouse events to the parent."""
+            """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, evt)
             evt.Skip()
+        
+        self.handler.update({ # DNA<EditorTreeCtrl>
+            None : {
+             '*button* pressed' : [ None, dispatch ],
+            '*button* released' : [ None, dispatch ],
+            },
+            0 : {
+                'enter pressed' : (0, enter),
+               'delete pressed' : (0, delete),
+                   'f5 pressed' : (0, refresh),
+                 'S-f5 pressed' : (0, _F(refresh, clear=1)),
+            },
+        })
     
     def OnDestroy(self, evt):
         if evt.EventObject is self:
