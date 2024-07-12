@@ -895,6 +895,8 @@ class Frame(mwx.Frame):
         evt.Skip()
     
     def Destroy(self):
+        for name in list(self.plugins):
+            self.unload_plug(name) # => plug.Destroy
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
     
@@ -1291,48 +1293,39 @@ class Frame(mwx.Frame):
     
     def unload_plug(self, name):
         """Unload plugin and detach the pane from UI manager."""
-        try:
-            plug = self.get_plug(name)
-            if not plug:
-                return False
-            
-            name = plug.__module__
-            if name not in self.plugins:
-                return False
-            
-            del self.plugins[name]
-            
-            if plug.__Menu_item:
-                menu, sep, tail = plug.menukey.rpartition('/')
-                menu = menu or Layer.MENU
-                self.menubar[menu].remove(plug.__Menu_item)
-                self.menubar.update(menu)
-            
-            if isinstance(plug.Parent, aui.AuiNotebook):
-                nb = plug.Parent
-                j = nb.GetPageIndex(plug)
-                nb.RemovePage(j) # just remove page
-                ## nb.DeletePage(j) # Destroys plug object too.
-            else:
-                nb = None
-                self._mgr.DetachPane(plug)
-                self._mgr.Update()
-            
-            plug.handler('page_closed', plug) # (even if not shown)
-            plug.Destroy()
-            
-            if nb and not nb.PageCount:
-                self._mgr.DetachPane(nb) # detach notebook pane
-                self._mgr.Update()
-                nb.Destroy()
-            
-        except Exception as e:
-            traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,
-                         f"{e}\n\n" + traceback.format_exc(),
-                         f"Error in unloading {name!r}",
-                         style=wx.ICON_ERROR)
-            return False
+        plug = self.get_plug(name)
+        if not plug:
+            return
+        
+        name = plug.__module__
+        if name not in self.plugins:
+            return
+        
+        del self.plugins[name]
+        
+        if plug.__Menu_item:
+            menu, sep, tail = plug.menukey.rpartition('/')
+            menu = menu or Layer.MENU
+            self.menubar[menu].remove(plug.__Menu_item)
+            self.menubar.update(menu)
+        
+        if isinstance(plug.Parent, aui.AuiNotebook):
+            nb = plug.Parent
+            j = nb.GetPageIndex(plug)
+            nb.RemovePage(j) # just remove page
+            ## nb.DeletePage(j) # Destroys plug object too.
+        else:
+            nb = None
+            self._mgr.DetachPane(plug)
+            self._mgr.Update()
+        
+        plug.handler('page_closed', plug) # (even if not shown)
+        plug.Destroy()
+        
+        if nb and not nb.PageCount:
+            self._mgr.DetachPane(nb) # detach notebook pane
+            self._mgr.Update()
+            nb.Destroy()
     
     def reload_plug(self, name):
         plug = self.get_plug(name)
