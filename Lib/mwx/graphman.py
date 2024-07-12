@@ -830,7 +830,7 @@ class Frame(mwx.Frame):
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
         
         ## Script editor for plugins (external call)
-        Editor = "notepad"
+        self.Editor = "notepad"
     
     sync_switch = True
     

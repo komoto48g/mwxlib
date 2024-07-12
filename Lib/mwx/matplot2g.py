@@ -228,7 +228,6 @@ class AxesImagePhantom(object):
     
     @unit.setter
     def unit(self, v):
-        u = self.unit
         if v is None:
             v = self.parent.unit
             self.__localunit = None
@@ -809,7 +808,6 @@ class GraphPlot(MatplotPanel):
         else:
             if v == self.__unit:  # no effect unless unit changes
                 return
-            u = self.__unit
             self.__unit = v
             for art in self.__Arts:
                 art.update_extent()
