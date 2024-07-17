@@ -1225,7 +1225,7 @@ class Indicator(wx.Control):
         self.__value = int(v)
         self.Refresh()
     
-    def update_design(self, **kwargs):
+    def redesign(self, **kwargs):
         """Update multiple design properties at once.
         
         This method is useful for changing colors, spacing, radius, etc.

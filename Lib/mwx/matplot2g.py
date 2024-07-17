@@ -272,7 +272,7 @@ class AxesImagePhantom(object):
         return self.parent.index(self)
     
     def update_buffer(self, buf=None):
-        """Update buffer and the image."""
+        """Update buffer and the image (internal use only)."""
         if buf is not None:
             self.__buf = _to_buffer(buf)
         
@@ -286,7 +286,7 @@ class AxesImagePhantom(object):
         self.parent.handler('frame_modified', self)
     
     def update_extent(self):
-        """Update logical extent of the image."""
+        """Update logical extent of the image (internal use only)."""
         h, w = self.__buf.shape[:2]
         ux, uy = self.xy_unit
         w *= ux/2
@@ -396,7 +396,7 @@ class GraphPlot(MatplotPanel):
                'pageup pressed' : [ None, self.OnPageUp ],
              'pagedown pressed' : [ None, self.OnPageDown ],
                   'M-a pressed' : [ None, _F(self.fit_to_canvas) ],
-                  'C-a pressed' : [ None, _F(self.update_axis) ],
+                  'C-a pressed' : [ None, _F(self.fit_to_axes) ],
                   'C-i pressed' : [ None, _F(self.invert_cmap) ],
                   'C-k pressed' : [ None, _F(self.kill_buffer) ],
                 'C-S-k pressed' : [ None, _F(self.kill_buffer_all) ],
@@ -823,8 +823,8 @@ class GraphPlot(MatplotPanel):
     def kill_buffer_all(self):
         del self[:]
     
-    def update_axis(self):
-        """Reset display range (xylim's), update home position."""
+    def fit_to_axes(self):
+        """Reset the view limits to the current frame extent."""
         if self.frame:
             self.axes.axis(self.frame.get_extent()) # reset xlim and ylim
             self.toolbar.update()
@@ -832,7 +832,7 @@ class GraphPlot(MatplotPanel):
             self.draw()
     
     def fit_to_canvas(self):
-        """fit display range (xylim's) to canvas."""
+        """Reset the view limits to the canvas range."""
         x, y = self.xlim, self.ylim
         w, h = self.canvas.GetSize()
         r = h/w
@@ -1114,7 +1114,7 @@ class GraphPlot(MatplotPanel):
             self.select(i - 1)
     
     def OnHomePosition(self, evt):
-        self.update_axis()
+        self.fit_to_axes()
     
     def OnEscapeSelection(self, evt):
         xs, ys = self.Selector
