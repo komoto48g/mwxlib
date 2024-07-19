@@ -895,8 +895,8 @@ class Frame(mwx.Frame):
         evt.Skip()
     
     def Destroy(self):
-        for name in list(self.plugins):
-            self.unload_plug(name) # => plug.Destroy
+        ## for name in list(self.plugins):
+        ##     self.unload_plug(name) # => plug.Destroy
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
     
