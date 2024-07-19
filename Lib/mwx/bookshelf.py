@@ -50,8 +50,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         def delete(evt):
             data = self.GetItemData(self.Selection)
             if data:
-                if data.mtdelta or data.Text:
-                    data.parent.kill_buffer(data) # -> focus moves
+                data.parent.kill_buffer(data) # -> focus moves
                 wx.CallAfter(self.SetFocus)
         
         def dispatch(evt):
