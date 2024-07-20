@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.97.1"
+__version__ = "0.97.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from functools import wraps, partial
@@ -1111,7 +1111,6 @@ class ShellFrame(MiniFrame):
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
                                         style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
-        wx.CallAfter(self.Bookshelf.attach, self)
         
         from .wxpdb import Debugger
         from .wxwit import Inspector

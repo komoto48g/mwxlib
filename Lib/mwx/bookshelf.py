@@ -31,21 +31,13 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
        'buffer_caption_updated' : [ None, self.on_buffer_filename ],
             },
         }
+        wx.CallAfter(self.attach, target=parent)
         
         ## self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def enter():
-            data = self.GetItemData(self.Selection)
-            if data:
-                data.SetFocus()
-        
-        def refresh(clear=False):
-            self.build_tree(clear)
-            wx.CallAfter(self.SetFocus)
-        
-        def delete():
+        def delete_item():
             data = self.GetItemData(self.Selection)
             if data:
                 data.parent.kill_buffer(data) # -> focus moves
@@ -62,10 +54,9 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             '*button* released' : [ None, dispatch ],
             },
             0 : {
-                'enter pressed' : (0, _F(enter)),
-               'delete pressed' : (0, _F(delete)),
-                   'f5 pressed' : (0, _F(refresh, clear=0)),
-                 'S-f5 pressed' : (0, _F(refresh, clear=1)),
+               'delete pressed' : (0, _F(delete_item)),
+                   'f5 pressed' : (0, _F(self.build_tree, clear=0)),
+                 'S-f5 pressed' : (0, _F(self.build_tree, clear=1)),
             },
         })
     
@@ -75,6 +66,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         evt.Skip()
     
     def attach(self, target):
+        if not self:
+            return
         self.detach()
         self.target = target
         for editor in self.target.all_editors:
@@ -82,7 +75,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.build_tree()
     
     def detach(self):
-        if not self.target:
+        if not self or not self.target:
             return
         for editor in self.target.all_editors:
             editor.handler.remove(self.context)
