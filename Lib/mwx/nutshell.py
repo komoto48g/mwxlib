@@ -2006,8 +2006,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.delete_buffer(buf)
             return False
     
-    load_url = load_file # for backward compatibility
-    
     def find_file(self, filename=None):
         """Open the specified file."""
         if not filename:

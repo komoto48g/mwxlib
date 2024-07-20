@@ -926,8 +926,6 @@ class Icon(wx.Bitmap):
             bmp = wx.NullBitmap
         return bmp
 
-Icon2 = Icon # for backward compatibility
-
 
 def _getBitmap1(key, size=(16,16)):
     if isinstance(key, wx.Bitmap):

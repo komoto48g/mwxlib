@@ -1477,9 +1477,6 @@ class Frame(mwx.Frame):
         print(self.message.read())
         return frames
     
-    import_index = load_index # for backward compatibility
-    export_index = save_index # for backward compatibility
-    
     ## --------------------------------
     ## load/save frames and attributes 
     ## --------------------------------

@@ -814,8 +814,6 @@ class GraphPlot(MatplotPanel):
                 self.handler('frame_updated', art)
             self.canvas.draw_idle()
     
-    globalunit = unit # for backward compatibility
-    
     def kill_buffer(self):
         if self.buffer is not None:
             del self.buffer
