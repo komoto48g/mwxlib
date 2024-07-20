@@ -36,22 +36,19 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def enter(evt):
+        def enter():
             data = self.GetItemData(self.Selection)
             if data:
                 data.SetFocus()
         
-        def refresh(evt, clear=False):
+        def refresh(clear=False):
             self.build_tree(clear)
-            if self.target:
-                self.target.current_editor.SetFocus()
-                wx.CallAfter(self.SetFocus)
+            wx.CallAfter(self.SetFocus)
         
-        def delete(evt):
+        def delete():
             data = self.GetItemData(self.Selection)
             if data:
-                if data.mtdelta or data.Text:
-                    data.parent.kill_buffer(data) # -> focus moves
+                data.parent.kill_buffer(data) # -> focus moves
                 wx.CallAfter(self.SetFocus)
         
         def dispatch(evt):
@@ -65,9 +62,9 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             '*button* released' : [ None, dispatch ],
             },
             0 : {
-                'enter pressed' : (0, enter),
-               'delete pressed' : (0, delete),
-                   'f5 pressed' : (0, refresh),
+                'enter pressed' : (0, _F(enter)),
+               'delete pressed' : (0, _F(delete)),
+                   'f5 pressed' : (0, _F(refresh, clear=0)),
                  'S-f5 pressed' : (0, _F(refresh, clear=1)),
             },
         })
@@ -135,19 +132,18 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     ## Actions for bookshelf interfaces
     ## --------------------------------
     
-    ## @postcall
     def on_buffer_new(self, buf):
         self.build_tree(clear=0)
     
-    ## @postcall
     def on_buffer_deleted(self, buf):
         self.Delete(buf.__itemId)
     
+    ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる
+    ##       buf.__itemId がない場合がある (delete_buffer 直後など)
     @postcall
     def on_buffer_selected(self, buf):
         self.SelectItem(buf.__itemId)
     
-    @postcall
     def on_buffer_filename(self, buf):
         self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
     
