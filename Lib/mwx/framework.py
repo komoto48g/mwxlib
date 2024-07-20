@@ -54,16 +54,15 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     kwargs.setdefault("ensureClose", True)
     
     app = wx.GetApp() or wx.App()
-    try:
-        frame = ShellFrame(None, target, **kwargs)
-        frame.Show()
-        frame.rootshell.SetFocus()
-        if locals:
-            frame.rootshell.locals.update(locals)
+    frame = ShellFrame(None, target, **kwargs)
+    frame.Show()
+    frame.rootshell.SetFocus()
+    if locals:
+        frame.rootshell.locals.update(locals)
+    if not loop:
         return frame
-    finally:
-        if loop and not app.GetMainLoop():
-            app.MainLoop()
+    if not app.GetMainLoop():
+        return app.MainLoop()
 
 
 def postcall(f):
