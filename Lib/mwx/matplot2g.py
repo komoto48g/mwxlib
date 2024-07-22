@@ -325,15 +325,12 @@ class AxesImagePhantom(object):
             return self.__buf[ny, nx] # nearest value
         return ndi.map_coordinates(self.__buf, np.vstack((ny, nx))) # spline value
     
-    def xytopixel(self, x, y=None, cast=True):
+    def xytopixel(self, x, y, cast=True):
         """Convert xydata (x,y) -> [nx,ny] pixel.
         If cast, convert pixel-based lengths to pixel numbers.
         """
         def _cast(n):
             return np.int32(np.floor(np.round(n, 1)))
-        if y is None:
-            warn("Setting xy data with single tuple.", DeprecationWarning)
-            x, y = x
         if isinstance(x, (list, tuple)):
             x = np.array(x)
             y = np.array(y)
@@ -345,11 +342,8 @@ class AxesImagePhantom(object):
             return (_cast(nx), _cast(ny))
         return (nx-0.5, ny-0.5)
     
-    def xyfrompixel(self, nx, ny=None):
+    def xyfrompixel(self, nx, ny):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
-        if ny is None:
-            warn("Setting xy data with single tuple.", DeprecationWarning)
-            nx, ny = nx
         if isinstance(nx, (list, tuple)):
             nx = np.array(nx)
             ny = np.array(ny)

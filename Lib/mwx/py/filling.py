@@ -1,8 +1,9 @@
 #! python3
 """Filling is the gui tree control through which a user can navigate
-the local namespace or any object."""
-
+the local namespace or any object.
+"""
 __author__ = "Patrick K. O'Brien <pobrien@orbtech.com>"
+__author__ += "Kazuya O'moto <komoto@jeol.co.jp>"
 # Tags: py3-port
 
 import wx

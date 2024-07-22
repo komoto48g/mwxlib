@@ -84,14 +84,6 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
-    def bind(self, action=None, target='control'):
-        warn("Use `Param.callback.bind` instead.", DeprecationWarning)
-        return self.callback.bind(target, action)
-    
-    def unbind(self, action=None, target='control'):
-        warn("Use `Param.callback.unbind` instead.", DeprecationWarning)
-        return self.callback.unbind(target, action)
-    
     def reset(self, v=None, backcall=True):
         """Reset value when indexed (by knobs) with callback."""
         if v is None or v == '':
@@ -315,8 +307,7 @@ class Knob(wx.Panel):
         self.update_ctrl()
     
     def __init__(self, parent, param, type=None,
-                 style=None, editable=1, cw=-1, lw=-1, tw=-1, h=22,
-                 **kwargs):
+                 style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
         assert isinstance(param, Param),\
@@ -358,9 +349,6 @@ class Knob(wx.Panel):
         self.label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         self.label.SetToolTip(self.__par._tooltip)
         self.label.Enable(lw) # skip focus
-        
-        if not editable:
-            warn("Knob option `editable` is deprecated.", DeprecationWarning)
         
         self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
