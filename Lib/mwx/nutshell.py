@@ -1415,7 +1415,7 @@ class Buffer(EditWindow, EditorInterface):
                 return os.path.getmtime(fn) - self.__mtime
             if re.match(url_re, fn):
                 return -1
-        return None
+        return self.__mtime # None or specified value
     
     @property
     def caption_prefix(self):
@@ -2018,6 +2018,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return
         if not self.load_file(filename):
             buf = self.create_buffer(filename)
+            buf._Buffer__mtime = 0 # => need_buffer_save
             self.swap_buffer(buf)
     
     open_buffer = find_file # for backward compatibility
