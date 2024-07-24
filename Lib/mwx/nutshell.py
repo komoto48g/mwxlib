@@ -1481,12 +1481,14 @@ class Buffer(EditWindow, EditorInterface):
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         
         def activate(evt):
-            self.handler('buffer_activated', self)
+            if self:
+                self.handler('buffer_activated', self)
             evt.Skip()
         self.Bind(wx.EVT_SET_FOCUS, activate)
         
         def inactivate(evt):
-            self.handler('buffer_inactivated', self)
+            if self:
+                self.handler('buffer_inactivated', self)
             evt.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
@@ -2371,12 +2373,14 @@ class Nautilus(Shell, EditorInterface):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
         def activate(evt):
-            self.handler('shell_activated', self)
+            if self:
+                self.handler('shell_activated', self)
             evt.Skip()
         self.Bind(wx.EVT_SET_FOCUS, activate)
         
         def inactivate(evt):
-            self.handler('shell_inactivated', self)
+            if self:
+                self.handler('shell_inactivated', self)
             evt.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         
