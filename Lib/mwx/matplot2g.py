@@ -46,6 +46,12 @@ def _to_buffer(img):
     return img
 
 
+def _to_array(x):
+    if isinstance(x, (list, tuple)):
+        x = np.array(x)
+    return x
+
+
 def imconvert(src, cutoff=0, threshold=None, binning=1):
     """Convert buffer to image<uint8>
     
@@ -334,9 +340,7 @@ class AxesImagePhantom(object):
         if y is None:
             ## warn("Setting xy data with single tuple.", DeprecationWarning)
             x, y = x
-        if isinstance(x, (list, tuple)):
-            x = np.array(x)
-            y = np.array(y)
+        x, y = _to_array(x), _to_array(y)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
@@ -350,9 +354,7 @@ class AxesImagePhantom(object):
         if ny is None:
             ## warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
-        if isinstance(nx, (list, tuple)):
-            nx = np.array(nx)
-            ny = np.array(ny)
+        nx, ny = _to_array(nx), _to_array(ny)
         l,r,b,t = self.__art.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
