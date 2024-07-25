@@ -987,11 +987,12 @@ class EditorInterface(CtrlInterface):
         return p, q, st
     
     def grep_forward(self, pattern, flags=re.M):
-        text = self.GetTextRange(self.eol, self.TextLength)
+        orig = self.eol if (self.markline == self.cline) else self.cpos
+        text = self.GetTextRange(orig, self.TextLength)
         errs = re.finditer(pattern, text, flags)
         for err in errs:
             p, q = err.span()
-            self.goto_char(q + self.eol)
+            self.goto_char(q + orig)
             self.goto_char(self.bol)
             self.mark = self.cpos
             self.EnsureVisible(self.cline)
