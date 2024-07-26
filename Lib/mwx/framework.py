@@ -1,9 +1,10 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.97.3"
+__version__ = "0.97.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
+from contextlib import contextmanager
 from functools import wraps, partial
 from importlib import reload
 import traceback
@@ -73,6 +74,16 @@ def postcall(f):
     def _f(*v, **kw):
         wx.CallAfter(f, *v, **kw)
     return _f
+
+
+@contextmanager
+def save_focus_excursion():
+    wnd = wx.Window.FindFocus() # original focus
+    try:
+        yield wnd
+    finally:
+        if wnd:
+            wnd.SetFocus() # restore focus
 
 
 _speckeys = {
@@ -1544,10 +1555,9 @@ class ShellFrame(MiniFrame):
                 return
         self.popup_window(win, not pane.IsShown())
     
+    @save_focus_excursion()
     def popup_window(self, win, show=True):
         """Show the notebook page and keep the focus."""
-        wnd = wx.Window.FindFocus() # original focus
-        
         for pane in self._mgr.GetAllPanes():
             nb = pane.window
             if nb is win:
@@ -1559,9 +1569,6 @@ class ShellFrame(MiniFrame):
                 break
         else:
             return # no such pane.window
-        
-        if wnd:
-            wnd.SetFocus() # restore focus
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
@@ -1598,6 +1605,7 @@ class ShellFrame(MiniFrame):
         if editor:
             return editor.load_file(filename, lineno)
     
+    @save_focus_excursion()
     def load(self, filename, lineno=0, show=True):
         """Load file @where the object is defined.
         

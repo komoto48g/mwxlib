@@ -1,9 +1,9 @@
 #! python3
 """mwxlib core utilities.
 """
+from contextlib import contextmanager
 from functools import wraps
 from bdb import BdbQuit
-from contextlib import contextmanager
 import traceback
 import warnings
 import time
