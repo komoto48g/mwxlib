@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.97.4"
+__version__ = "0.97.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -849,7 +849,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 class AuiNotebook(aui.AuiNotebook):
     """AuiNotebook extension class.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, name=None, **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
             ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
@@ -858,6 +858,8 @@ class AuiNotebook(aui.AuiNotebook):
         aui.AuiNotebook.__init__(self, *args, **kwargs)
         
         self._mgr = self.EventHandler
+        if name:
+            self.Name = name
         
         def tab_menu(evt):
             tabs = evt.EventObject #<AuiTabCtrl>
@@ -1144,31 +1146,29 @@ class ShellFrame(MiniFrame):
         self.ginfo = LocalsWatcher(self, name="globals")
         self.linfo = LocalsWatcher(self, name="locals")
         
-        self.console = AuiNotebook(self, size=(600,400))
+        self.console = AuiNotebook(self, size=(600,400), name='console')
         self.console.AddPage(self.__shell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
-        self.console.Name = "console"
+        ## self.console.Name = "console"
         
         ## self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleCloseBtn)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnConsolePageClose)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
-        self.ghost = AuiNotebook(self, size=(600,400))
+        self.ghost = AuiNotebook(self, size=(600,400), name="ghost")
         self.ghost.AddPage(self.Scratch, "Scratch", bitmap=Icon('ghost'))
         self.ghost.AddPage(self.Log, "Log")
         self.ghost.AddPage(self.Help, "Help")
-        self.ghost.Name = "ghost"
         
         self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
         
         self.ghost.SetDropTarget(FileDropLoader(self.Scratch))
         
-        self.watcher = AuiNotebook(self, size=(600,400))
+        self.watcher = AuiNotebook(self, size=(600,400), name="watcher")
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
         self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('tv'))
         self.watcher.AddPage(self.inspector, "Inspector", bitmap=Icon('inspect'))
-        self.watcher.Name = "watcher"
         
         self.watcher.Bind(wx.EVT_SHOW, self.OnGhostShow)
         
