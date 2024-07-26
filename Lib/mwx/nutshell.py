@@ -1928,7 +1928,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             buf = self.buffer
         j = self.GetPageIndex(buf)
         if j != -1:
-            self.DeletePage(j)  # the focus is moved
+            self.DeletePage(j)  # the focus moves
             if not self.buffer: # no buffers
                 self.new_buffer()
     

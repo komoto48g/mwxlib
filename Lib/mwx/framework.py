@@ -896,7 +896,7 @@ class AuiNotebook(aui.AuiNotebook):
             wnd = wx.Window.FindFocus() # original focus
             org = self.CurrentPage
             if j != self.Selection:
-                self.Selection = j      # focus moved if shown
+                self.Selection = j      # the focus moves if shown
             self.CurrentPage.SetFocus() # reset focus
             if wnd and wnd is not org:  # restore focus other window
                 wnd.SetFocus()
@@ -1163,7 +1163,7 @@ class ShellFrame(MiniFrame):
         
         self.ghost.SetDropTarget(FileDropLoader(self.Scratch))
         
-        self.watcher = AuiNotebook(self, size=(300,200))
+        self.watcher = AuiNotebook(self, size=(600,400))
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
         self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('tv'))
@@ -1565,7 +1565,7 @@ class ShellFrame(MiniFrame):
             j = nb.GetPageIndex(win) # find and select page
             if j != -1:
                 if j != nb.Selection:
-                    nb.Selection = j # the focus is moved
+                    nb.Selection = j # the focus moves
                 break
         else:
             return # no such pane.window

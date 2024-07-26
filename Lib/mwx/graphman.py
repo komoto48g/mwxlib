@@ -959,7 +959,7 @@ class Frame(mwx.Frame):
             if isinstance(win, aui.AuiNotebook):
                 j = win.GetPageIndex(plug)
                 if j != win.Selection:
-                    win.Selection = j # the focus is moved => EVT_SHOW
+                    win.Selection = j # the focus moves => EVT_SHOW
                 else:
                     plug.handler('page_shown', plug)
             else:

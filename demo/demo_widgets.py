@@ -74,7 +74,6 @@ class Plugin(Layer):
             ),
             title="Custom param controls", expand=1, show=1,
             type='slider', style='chkbox', cw=100, lw=20, tw=40, h=22,
-            editable=0, # depreacted
         )
         
         ## Regular wx.TextCtrl is not handled by Clipboard copy and paste.

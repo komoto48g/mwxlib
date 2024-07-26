@@ -319,7 +319,8 @@ class Knob(wx.Panel):
         
         if type is None:
             type = 'slider'
-            cw = 0
+            if cw < 0:
+                cw = 0
         elif type == 'choice':
             if cw < 0:
                 cw = 20
