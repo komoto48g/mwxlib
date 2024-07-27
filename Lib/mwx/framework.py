@@ -1174,7 +1174,7 @@ class ShellFrame(MiniFrame):
         
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
-        self._mgr.SetDockSizeConstraint(0.5, 0.5) # (w, h)/N
+        self._mgr.SetDockSizeConstraint(1, 1)
         
         self._mgr.AddPane(self.console,
                           aui.AuiPaneInfo().Name("console").CenterPane()
@@ -1549,6 +1549,8 @@ class ShellFrame(MiniFrame):
                 self._mgr.RestoreMaximizedPane()
                 self._mgr.Update()
                 return
+        if pane.IsShown():
+            pane.best_size = win.Size
         self.popup_window(win, not pane.IsShown())
     
     @save_focus_excursion()
