@@ -84,7 +84,7 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
-    def reset(self, v=None, backcall=True):
+    def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""
         if v is None or v == '':
             v = self.std_value
@@ -93,7 +93,7 @@ class Param(object):
         if isinstance(v, str):
             v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
         self._set_value(v)
-        if backcall:
+        if internal_callback:
             self.callback('control', self)
     
     def _set_value(self, v):
@@ -515,7 +515,7 @@ class Knob(wx.Panel):
         if key == wx.WXK_DOWN: return self.shift(evt, -1)
         if key == wx.WXK_UP: return self.shift(evt, 1)
         if key == wx.WXK_ESCAPE:
-            self.__par.reset(self.__par.value, backcall=None) # restore value
+            self.__par.reset(self.__par.value, internal_callback=None) # restore value
         evt.Skip()
     
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
@@ -530,7 +530,7 @@ class Knob(wx.Panel):
                 self.__par.reset(x) # reset value if focus out
             except Exception:
                 self.text.SetValue(str(self.__par))
-                self.__par.reset(self.__par.value, backcall=None) # restore value
+                self.__par.reset(self.__par.value, internal_callback=None) # restore value
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
