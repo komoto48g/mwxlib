@@ -48,7 +48,7 @@ class Param(object):
         self.knobs = []
         self.name = name
         self.range = range
-        self.__std_value = value
+        self.__std_value = value if value is not None else nan
         self.__value = value if value is not None else self.min
         self.__check = False
         if fmt is hex:
@@ -88,7 +88,7 @@ class Param(object):
         """Reset value when indexed (by knobs) with callback."""
         if v is None or v == '':
             v = self.std_value
-            if v is None:
+            if np.isnan(v):
                 return
         if isinstance(v, str):
             v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
@@ -161,6 +161,8 @@ class Param(object):
     
     @std_value.setter
     def std_value(self, v):
+        if v is None:
+            v = nan
         self.__std_value = v
         for knob in self.knobs:
             knob.update_label()
@@ -168,21 +170,20 @@ class Param(object):
     @property
     def offset(self):
         """Offset value
-        If std_value is None, this is the same as value.
+        If std_value is nan, this is the same as value.
         """
-        if self.std_value is not None:
+        if not np.isnan(self.std_value):
             return self.value - self.std_value
         return self.value
     
     @offset.setter
     def offset(self, v):
-        if self.std_value is not None:
-            if not np.isnan(v):
-                v += self.std_value
+        if not np.isnan(self.std_value):
+            v += self.std_value
         self._set_value(v)
     
-    min = property(lambda self: self.__range[0])
-    max = property(lambda self: self.__range[-1])
+    min = property(lambda self: self.__range[0] if self else nan)
+    max = property(lambda self: self.__range[-1] if self else nan)
     
     @property
     def range(self):
@@ -192,7 +193,7 @@ class Param(object):
     @range.setter
     def range(self, v):
         if v is None:
-            self.__range = [nan] # dummy data
+            self.__range = [] # dummy data
         else:
             self.__range = sorted(v)
         for knob in self.knobs:
@@ -200,14 +201,17 @@ class Param(object):
     
     @property
     def index(self):
-        """A knob index -> value."""
-        return int(np.searchsorted(self.range, self.value))
+        """A knob index -> value.
+        Returns -1 if the value is not defined."""
+        if self:
+            return int(np.searchsorted(self.range, self.value))
+        return -1
     
     @index.setter
     def index(self, j):
-        n = len(self)
-        i = (0 if j<0 else j if j<n else -1)
-        self._set_value(self.range[i])
+        if self:
+            i = (0 if j < 0 else j if j < len(self) else -1)
+            self._set_value(self.range[i])
 
 
 class LParam(Param):
@@ -430,22 +434,14 @@ class Knob(wx.Panel):
         if isinstance(self.label, wx.CheckBox):
             self.label.SetValue(v.check)
         
-        if self.label.IsEnabled():
-            t = '  ' if v.std_value is None or v.value == v.std_value else '*'
-            self.label.SetLabel(v.name + t)
-            self.label.Refresh()
+        t = '  ' if np.isnan(v.std_value) or v.value == v.std_value else '*'
+        self.label.SetLabel(v.name + t)
+        self.label.Refresh()
     
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
         v = self.__par
-        try:
-            j = v.index
-        except (OverflowError, ValueError):
-            ## OverflowError: cannot convert float infinity to integer
-            ## ValueError: cannot convert float NaN to integer
-            j = -1
-        
-        self.ctrl.SetValue(j)
+        self.ctrl.SetValue(v.index)
         self.text.SetValue(str(v))
         if valid:
             if notify:
