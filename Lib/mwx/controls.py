@@ -453,7 +453,7 @@ class Knob(wx.Panel):
             if notify:
                 if self.text.BackgroundColour != '#ffff80':
                     wx.CallAfter(wx.CallLater, 1000,
-                        self.set_textcolour, '#ffffff')
+                                 self.set_textcolour, '#ffffff')
                     self.set_textcolour('#ffff80') # light-yellow
                 else:
                     self.set_textcolour('#ffffff') # True: white
@@ -467,8 +467,7 @@ class Knob(wx.Panel):
     
     def set_textcolour(self, c):
         if self:
-            if self.text.IsEditable():
-                self.text.BackgroundColour = c
+            self.text.BackgroundColour = c
             self.text.Refresh()
     
     def shift(self, evt, bit):
@@ -499,15 +498,15 @@ class Knob(wx.Panel):
         if key == wx.WXK_LEFT: return self.shift(evt, -1)
         if key == wx.WXK_RIGHT: return self.shift(evt, 1)
         
-        def focus(c):
+        def _focus(c):
             if isinstance(c, Knob) and c.ctrl.IsEnabled():
                 c.ctrl.SetFocus()
                 return True
         
         ls = next(x for x in self.Parent.layout_groups if self in x)
         i = ls.index(self)
-        if key == wx.WXK_DOWN: return any(focus(c) for c in ls[i+1:])
-        if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
+        if key == wx.WXK_DOWN: return any(_focus(c) for c in ls[i+1:])
+        if key == wx.WXK_UP: return any(_focus(c) for c in ls[i-1::-1])
     
     def OnTextKeyUp(self, evt): #<wx._core.KeyEvent>
         evt.Skip()
@@ -1357,7 +1356,7 @@ class Gauge(wx.Control):
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
-        def gradients(x):
+        def _gradients(x):
             y = 4 * x
             if   y < 1: rgb = (0, y, 1)
             elif y < 2: rgb = (0, 1, 2-y)
@@ -1371,7 +1370,7 @@ class Gauge(wx.Control):
         for i in range(N):
             x = int(i * w / N)
             if i < self.__value:
-                dc.SetBrush(wx.Brush(gradients(i/N)))
+                dc.SetBrush(wx.Brush(_gradients(i/N)))
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(x, 0, d, h)

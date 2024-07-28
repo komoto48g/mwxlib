@@ -65,7 +65,7 @@ class Plugin(Layer):
             title="Custom controls", row=2, expand=1,
         )
         
-        self.L =  LParam('L', (-1, 1, 0.01), 0, handler=self.trace)
+        self.L = LParam('L', (-1, 1, 0.01), 0, handler=self.trace)
         self.U = Param('U', (1,2,3,inf), handler=print)
         
         self.layout((
