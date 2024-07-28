@@ -97,37 +97,9 @@ class Param(object):
             except Exception:
                 v = self.value
                 internal_callback = False
-        self._set_value(v)
+        self.value = v
         if internal_callback:
             self.callback('control', self)
-    
-    def _set_value(self, v):
-        """Set value and check the limit.
-        If the value is out of range, modify the value.
-        """
-        if v is None:
-            v = nan
-        if np.isnan(v) or np.isinf(v):
-            self.__value = v
-            for knob in self.knobs:
-                knob.update_ctrl(None, notify=False)
-            return
-        elif v == self.__value:
-            for knob in self.knobs:
-                knob.update_ctrl(True, notify=False)
-            return
-        
-        valid = (self.min <= v <= self.max)
-        if valid:
-            self.__value = v
-        elif v < self.min:
-            self.__value = self.min
-            self.callback('underflow', self)
-        else:
-            self.__value = self.max
-            self.callback('overflow', self)
-        for knob in self.knobs:
-            knob.update_ctrl(valid, notify=True)
     
     @property
     def check(self):
@@ -158,7 +130,30 @@ class Param(object):
     
     @value.setter
     def value(self, v):
-        self._set_value(v)
+        if v is None:
+            v = nan
+        if np.isnan(v) or np.isinf(v):
+            self.__value = v
+            for knob in self.knobs:
+                knob.update_ctrl(None, notify=False)
+            return
+        elif v == self.__value:
+            for knob in self.knobs:
+                knob.update_ctrl(True, notify=False)
+            return
+        
+        ## If the value is out of range, it will be modified.
+        valid = (self.min <= v <= self.max)
+        if valid:
+            self.__value = v
+        elif v < self.min:
+            self.__value = self.min
+            self.callback('underflow', self)
+        else:
+            self.__value = self.max
+            self.callback('overflow', self)
+        for knob in self.knobs:
+            knob.update_ctrl(valid, notify=True)
     
     @property
     def std_value(self):
@@ -186,7 +181,7 @@ class Param(object):
     def offset(self, v):
         if not np.isnan(self.std_value):
             v += self.std_value
-        self._set_value(v)
+        self.value = v
     
     min = property(lambda self: self.__range[0] if self else nan)
     max = property(lambda self: self.__range[-1] if self else nan)
@@ -217,7 +212,7 @@ class Param(object):
     def index(self, j):
         if self:
             i = (0 if j < 0 else j if j < len(self) else -1)
-            self._set_value(self.range[i])
+            self.value = self.range[i]
 
 
 class LParam(Param):
@@ -276,7 +271,7 @@ class LParam(Param):
     
     @index.setter
     def index(self, j):
-        return self._set_value(self.min + j * self.step)
+        self.value = self.min + j * self.step
 
 
 ## --------------------------------
