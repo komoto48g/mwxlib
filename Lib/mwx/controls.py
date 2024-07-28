@@ -69,7 +69,8 @@ class Param(object):
         self._tooltip = _Tip(handler.__doc__, updater.__doc__)
     
     def __str__(self, v=None):
-        v = self.value if v is None else v
+        if v is None:
+            v = self.value
         try:
             return self.__format(v)
         except ValueError:
@@ -86,12 +87,16 @@ class Param(object):
     
     def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""
-        if v is None or v == '':
+        if v is None:
             v = self.std_value
             if np.isnan(v):
                 return
-        if isinstance(v, str):
-            v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
+        elif isinstance(v, str):
+            try:
+                v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
+            except Exception:
+                v = self.value
+                internal_callback = False
         self._set_value(v)
         if internal_callback:
             self.callback('control', self)
@@ -102,13 +107,14 @@ class Param(object):
         """
         if v is None:
             v = nan
-        
         if np.isnan(v) or np.isinf(v):
             self.__value = v
             for knob in self.knobs:
                 knob.update_ctrl(None, notify=False)
             return
         elif v == self.__value:
+            for knob in self.knobs:
+                knob.update_ctrl(True, notify=False)
             return
         
         valid = (self.min <= v <= self.max)
@@ -522,11 +528,7 @@ class Knob(wx.Panel):
     def OnTextExit(self, evt): #<wx._core.FocusEvent>
         x = self.text.Value.strip()
         if x != str(self.__par):
-            try:
-                self.__par.reset(x) # reset value if focus out
-            except Exception:
-                self.text.SetValue(str(self.__par))
-                self.__par.reset(self.__par.value, internal_callback=None) # restore value
+            self.__par.reset(x)
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
