@@ -48,7 +48,7 @@ class Param(object):
         self.knobs = []
         self.name = name
         self.range = range
-        self.__std_value = value
+        self.__std_value = value if value is not None else nan
         self.__value = value if value is not None else self.min
         self.__check = False
         if fmt is hex:
@@ -69,7 +69,8 @@ class Param(object):
         self._tooltip = _Tip(handler.__doc__, updater.__doc__)
     
     def __str__(self, v=None):
-        v = self.value if v is None else v
+        if v is None:
+            v = self.value
         try:
             return self.__format(v)
         except ValueError:
@@ -84,44 +85,21 @@ class Param(object):
     def __len__(self):
         return len(self.range)
     
-    def reset(self, v=None, backcall=True):
+    def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""
-        if v is None or v == '':
-            v = self.std_value
-            if v is None:
-                return
-        if isinstance(v, str):
-            v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
-        self._set_value(v)
-        if backcall:
-            self.callback('control', self)
-    
-    def _set_value(self, v):
-        """Set value and check the limit.
-        If the value is out of range, modify the value.
-        """
         if v is None:
-            v = nan
-        
-        if np.isnan(v) or np.isinf(v):
-            self.__value = v
-            for knob in self.knobs:
-                knob.update_ctrl(None, notify=False)
-            return
-        elif v == self.__value:
-            return
-        
-        valid = (self.min <= v <= self.max)
-        if valid:
-            self.__value = v
-        elif v < self.min:
-            self.__value = self.min
-            self.callback('underflow', self)
-        else:
-            self.__value = self.max
-            self.callback('overflow', self)
-        for knob in self.knobs:
-            knob.update_ctrl(valid, notify=True)
+            v = self.std_value
+            if np.isnan(v):
+                return
+        elif isinstance(v, str):
+            try:
+                v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
+            except Exception:
+                v = self.value
+                internal_callback = False
+        self.value = v
+        if internal_callback:
+            self.callback('control', self)
     
     @property
     def check(self):
@@ -152,7 +130,30 @@ class Param(object):
     
     @value.setter
     def value(self, v):
-        self._set_value(v)
+        if v is None:
+            v = nan
+        if np.isnan(v) or np.isinf(v):
+            self.__value = v
+            for knob in self.knobs:
+                knob.update_ctrl(None, notify=False)
+            return
+        elif v == self.__value:
+            for knob in self.knobs:
+                knob.update_ctrl(True, notify=False)
+            return
+        
+        ## If the value is out of range, it will be modified.
+        valid = (self.min <= v <= self.max)
+        if valid:
+            self.__value = v
+        elif v < self.min:
+            self.__value = self.min
+            self.callback('underflow', self)
+        else:
+            self.__value = self.max
+            self.callback('overflow', self)
+        for knob in self.knobs:
+            knob.update_ctrl(valid, notify=True)
     
     @property
     def std_value(self):
@@ -161,6 +162,8 @@ class Param(object):
     
     @std_value.setter
     def std_value(self, v):
+        if v is None:
+            v = nan
         self.__std_value = v
         for knob in self.knobs:
             knob.update_label()
@@ -168,21 +171,20 @@ class Param(object):
     @property
     def offset(self):
         """Offset value
-        If std_value is None, this is the same as value.
+        If std_value is nan, this is the same as value.
         """
-        if self.std_value is not None:
+        if not np.isnan(self.std_value):
             return self.value - self.std_value
         return self.value
     
     @offset.setter
     def offset(self, v):
-        if self.std_value is not None:
-            if not np.isnan(v):
-                v += self.std_value
-        self._set_value(v)
+        if not np.isnan(self.std_value):
+            v += self.std_value
+        self.value = v
     
-    min = property(lambda self: self.__range[0])
-    max = property(lambda self: self.__range[-1])
+    min = property(lambda self: self.__range[0] if self else nan)
+    max = property(lambda self: self.__range[-1] if self else nan)
     
     @property
     def range(self):
@@ -192,7 +194,7 @@ class Param(object):
     @range.setter
     def range(self, v):
         if v is None:
-            self.__range = [nan] # dummy data
+            self.__range = [] # dummy data
         else:
             self.__range = sorted(v)
         for knob in self.knobs:
@@ -200,14 +202,17 @@ class Param(object):
     
     @property
     def index(self):
-        """A knob index -> value."""
-        return int(np.searchsorted(self.range, self.value))
+        """A knob index -> value.
+        Returns -1 if the value is not defined."""
+        if self:
+            return int(np.searchsorted(self.range, self.value))
+        return -1
     
     @index.setter
     def index(self, j):
-        n = len(self)
-        i = (0 if j<0 else j if j<n else -1)
-        self._set_value(self.range[i])
+        if self:
+            i = (0 if j < 0 else j if j < len(self) else -1)
+            self.value = self.range[i]
 
 
 class LParam(Param):
@@ -266,7 +271,7 @@ class LParam(Param):
     
     @index.setter
     def index(self, j):
-        return self._set_value(self.min + j * self.step)
+        self.value = self.min + j * self.step
 
 
 ## --------------------------------
@@ -430,28 +435,20 @@ class Knob(wx.Panel):
         if isinstance(self.label, wx.CheckBox):
             self.label.SetValue(v.check)
         
-        if self.label.IsEnabled():
-            t = '  ' if v.std_value is None or v.value == v.std_value else '*'
-            self.label.SetLabel(v.name + t)
-            self.label.Refresh()
+        t = '  ' if np.isnan(v.std_value) or v.value == v.std_value else '*'
+        self.label.SetLabel(v.name + t)
+        self.label.Refresh()
     
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
         v = self.__par
-        try:
-            j = v.index
-        except (OverflowError, ValueError):
-            ## OverflowError: cannot convert float infinity to integer
-            ## ValueError: cannot convert float NaN to integer
-            j = -1
-        
-        self.ctrl.SetValue(j)
+        self.ctrl.SetValue(v.index)
         self.text.SetValue(str(v))
         if valid:
             if notify:
                 if self.text.BackgroundColour != '#ffff80':
                     wx.CallAfter(wx.CallLater, 1000,
-                        self.set_textcolour, '#ffffff')
+                                 self.set_textcolour, '#ffffff')
                     self.set_textcolour('#ffff80') # light-yellow
                 else:
                     self.set_textcolour('#ffffff') # True: white
@@ -465,8 +462,7 @@ class Knob(wx.Panel):
     
     def set_textcolour(self, c):
         if self:
-            if self.text.IsEditable():
-                self.text.BackgroundColour = c
+            self.text.BackgroundColour = c
             self.text.Refresh()
     
     def shift(self, evt, bit):
@@ -497,15 +493,15 @@ class Knob(wx.Panel):
         if key == wx.WXK_LEFT: return self.shift(evt, -1)
         if key == wx.WXK_RIGHT: return self.shift(evt, 1)
         
-        def focus(c):
+        def _focus(c):
             if isinstance(c, Knob) and c.ctrl.IsEnabled():
                 c.ctrl.SetFocus()
                 return True
         
         ls = next(x for x in self.Parent.layout_groups if self in x)
         i = ls.index(self)
-        if key == wx.WXK_DOWN: return any(focus(c) for c in ls[i+1:])
-        if key == wx.WXK_UP: return any(focus(c) for c in ls[i-1::-1])
+        if key == wx.WXK_DOWN: return any(_focus(c) for c in ls[i+1:])
+        if key == wx.WXK_UP: return any(_focus(c) for c in ls[i-1::-1])
     
     def OnTextKeyUp(self, evt): #<wx._core.KeyEvent>
         evt.Skip()
@@ -515,7 +511,7 @@ class Knob(wx.Panel):
         if key == wx.WXK_DOWN: return self.shift(evt, -1)
         if key == wx.WXK_UP: return self.shift(evt, 1)
         if key == wx.WXK_ESCAPE:
-            self.__par.reset(self.__par.value, backcall=None) # restore value
+            self.__par.reset(self.__par.value, internal_callback=None) # restore value
         evt.Skip()
     
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
@@ -526,11 +522,7 @@ class Knob(wx.Panel):
     def OnTextExit(self, evt): #<wx._core.FocusEvent>
         x = self.text.Value.strip()
         if x != str(self.__par):
-            try:
-                self.__par.reset(x) # reset value if focus out
-            except Exception:
-                self.text.SetValue(str(self.__par))
-                self.__par.reset(self.__par.value, backcall=None) # restore value
+            self.__par.reset(x)
         evt.Skip()
     
     def OnCheck(self, evt): #<wx._core.CommandEvent>
@@ -1359,7 +1351,7 @@ class Gauge(wx.Control):
         dc.Clear()
         dc.SetPen(wx.TRANSPARENT_PEN)
         
-        def gradients(x):
+        def _gradients(x):
             y = 4 * x
             if   y < 1: rgb = (0, y, 1)
             elif y < 2: rgb = (0, 1, 2-y)
@@ -1373,7 +1365,7 @@ class Gauge(wx.Control):
         for i in range(N):
             x = int(i * w / N)
             if i < self.__value:
-                dc.SetBrush(wx.Brush(gradients(i/N)))
+                dc.SetBrush(wx.Brush(_gradients(i/N)))
             else:
                 dc.SetBrush(wx.Brush('white'))
             dc.DrawRectangle(x, 0, d, h)
