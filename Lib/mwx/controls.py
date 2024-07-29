@@ -8,7 +8,6 @@ import wx.lib.scrolledpanel as scrolled
 
 from . import images
 from .utilus import SSM
-from .utilus import warn
 from .utilus import funcall as _F
 from .framework import pack, Menu
 

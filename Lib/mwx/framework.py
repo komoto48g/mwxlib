@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.97.5"
+__version__ = "0.97.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -506,18 +506,19 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
                             ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     """
     if style is None:
-        style = (0, wx.EXPAND | wx.ALL, 0)
-    if label is not None:
+        style = (0, wx.EXPAND | wx.ALL, 0) # DEFALT_STYLE (prop, flag, border)
+    if label is None:
+        sizer = wx.BoxSizer(orient)
+    else:
         box = wx.StaticBox(self, -1, label)
         sizer = wx.StaticBoxSizer(box, orient)
-    else:
-        sizer = wx.BoxSizer(orient)
     for item in items:
-        if not item:
-            if item is None:
-                item = (0,0), 0,0,0, # null space
-            else:
-                item = (0,0) # padding space
+        if not isinstance(item, (wx.Object, list, tuple, type(None))):
+            warn(f"pack items must be a wx.Object, tuple or None, not {type(item)}")
+        if item is None:
+            item = (0, 0), 0, 0, 0 # null space
+        elif not item:
+            item = (0, 0) # padding space
         try:
             try:
                 sizer.Add(item, *style)
@@ -525,8 +526,7 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
                 sizer.Add(*item) # using item-specific style
         except TypeError as e:
             traceback.print_exc()
-            bmp = wx.StaticBitmap(self,
-                    bitmap=wx.ArtProvider.GetBitmap(wx.ART_ERROR))
+            bmp = wx.StaticBitmap(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_ERROR))
             bmp.SetToolTip(str(e))
             sizer.Add(bmp, 0, wx.EXPAND | wx.ALL, 0)
             wx.Bell()
