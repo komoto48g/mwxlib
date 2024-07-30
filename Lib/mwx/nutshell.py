@@ -538,7 +538,7 @@ class EditorInterface(CtrlInterface):
         return (self.cpos - lp + len(text.encode()))
     
     @property
-    def caretline(self):
+    def line_at_caret(self):
         """Text of the range (bol, eol) at the caret-line."""
         return self.GetTextRange(self.bol, self.eol)
     
@@ -604,9 +604,9 @@ class EditorInterface(CtrlInterface):
     @can_edit
     def py_indent_line(self):
         """Indent the current line."""
-        text = self.caretline  # w/ no-prompt
-        lstr = text.lstrip()   # w/ no-indent
-        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        text = self.line_at_caret # w/ no-prompt
+        lstr = text.lstrip()      # w/ no-indent
+        p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = self.py_current_indent() # check current/previous line
         self.Replace(self.bol, p, ' '*indent)
@@ -615,9 +615,9 @@ class EditorInterface(CtrlInterface):
     @can_edit
     def py_outdent_line(self):
         """Outdent the current line."""
-        text = self.caretline  # w/ no-prompt
-        lstr = text.lstrip()   # w/ no-indent
-        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        text = self.line_at_caret # w/ no-prompt
+        lstr = text.lstrip()      # w/ no-indent
+        p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = len(text) - len(lstr) - 4
         self.Replace(self.bol, p, ' '*indent)
@@ -1146,9 +1146,9 @@ class EditorInterface(CtrlInterface):
         self.goto_char(p)
     
     def back_to_indentation(self):
-        text = self.caretline # w/ no-prompt
-        lstr = text.lstrip()  # w/ no-indent
-        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        text = self.line_at_caret # w/ no-prompt
+        lstr = text.lstrip()      # w/ no-indent
+        p = self.bol + len(text) - len(lstr)
         self.goto_char(p, interactive=True)
         self.ScrollToColumn(0)
     
@@ -1656,7 +1656,7 @@ class Buffer(EditWindow, EditorInterface):
             if text:
                 yield text
             else:
-                yield self.caretline
+                yield self.line_at_caret
                 yield self.expr_at_caret
         
         status = "No words"
@@ -3286,7 +3286,7 @@ class Nautilus(Shell, EditorInterface):
             if text:
                 yield text
             else:
-                yield self.caretline
+                yield self.line_at_caret
                 yield self.expr_at_caret
         
         status = "No words"
@@ -3338,7 +3338,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.caretline or self.expr_at_caret
+        text = self.SelectedText or self.line_at_caret or self.expr_at_caret
         if text:
             text = introspect.getRoot(text, terminator='(')
             try:
@@ -3352,7 +3352,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.caretline or self.expr_at_caret
+        text = self.SelectedText or self.line_at_caret or self.expr_at_caret
         if text:
             try:
                 p = self.cpos
