@@ -2182,6 +2182,8 @@ class Interpreter(interpreter.Interpreter):
         (override) Ignore ValueError: no signature found for builtin
                    if the unwrapped function is a builtin function.
         """
+        ## In 4.2.1, DeprecationWarning was fixed.
+        ## In 4.2.2, ValueError was fixed.
         try:
             return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
         except ValueError:
@@ -3369,23 +3371,23 @@ class Nautilus(Shell, EditorInterface):
     
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
-            self.on_completion(evt, 1)
+            self._on_completion(1)
         else:
             self.handler('quit', evt)
     
     def on_completion_backward(self, evt):
         if self.AutoCompActive():
-            self.on_completion(evt, -1)
+            self._on_completion(-1)
         else:
             self.handler('quit', evt)
     
     def on_completion_forward_history(self, evt):
-        self.on_completion(evt, 1) # 古いヒストリへ進む
+        self._on_completion(1) # 古いヒストリへ進む
     
     def on_completion_backward_history(self, evt):
-        self.on_completion(evt, -1) # 新しいヒストリへ戻る
+        self._on_completion(-1) # 新しいヒストリへ戻る
     
-    def on_completion(self, evt, step=0):
+    def _on_completion(self, step=0):
         """Show completion with selection."""
         try:
             N = len(self.__comp_words)
@@ -3402,13 +3404,15 @@ class Nautilus(Shell, EditorInterface):
         except IndexError:
             self.message("No completion words")
     
-    def _gen_autocomp(self, j, hint, words, sep=' '):
-        """Call AutoCompShow for the specified words and sep."""
+    def _gen_autocomp(self, j, hint, words, sep=' ', mode=True):
         ## Prepare on_completion_forward/backward
         self.__comp_ind = j
         self.__comp_hint = hint
         self.__comp_words = words
-        if words:
+        if not mode:
+            self.anchor = self.eolc  # selection to eol
+            self._on_completion()    # show completion always
+        elif words:
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(len(hint), sep.join(words))
     
@@ -3426,47 +3430,37 @@ class Nautilus(Shell, EditorInterface):
         if not self.CanEdit():
             self.handler('quit', evt)
             return
-        try:
-            cmdl = self.cmdlc
-            if cmdl.isspace() or self.bol != self.bolc:
-                self.handler('fork', evt) # fork [tab pressed] => on_indent_line
-                return
-            
-            hint = cmdl.strip()
-            ls = [x.replace('\n', os.linesep + sys.ps2)
-                    for x in self.history if x.startswith(hint)] # case-sensitive match
-            words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
-            
-            self.__comp_ind = 0
-            self.__comp_hint = hint
-            self.__comp_words = words
-            
-            self.anchor = self.eolc # selection to eol
-            self.on_completion(evt) # show completion always
-            
-            ## the latest history stacks in the head of the list (time-descending)
-            self.message("[history] {} candidates matched"
-                         " with {!r}".format(len(words), hint))
-        except Exception:
-            raise
+        
+        cmdl = self.cmdlc
+        if cmdl.isspace() or self.bol != self.bolc:
+            self.handler('fork', evt) # fork [tab pressed] => on_indent_line
+            return
+        
+        hint = cmdl.strip()
+        ls = [x.replace('\n', os.linesep + sys.ps2)
+                for x in self.history if x.startswith(hint)] # case-sensitive match
+        words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
+        
+        ## the latest history stacks in the head of the list (time-descending)
+        self._gen_autocomp(0, hint, words, mode=False)
+        self.message("[history] {} candidates matched"
+                     " with {!r}".format(len(words), hint))
     
     def call_text_autocomp(self, evt):
         """Called when text-comp mode."""
         if not self.CanEdit():
             self.handler('quit', evt)
             return
-        try:
-            cmdl = self.cmdlc
-            hint = self._get_last_hint(cmdl)
-            
-            ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
-            words = sorted(ls, key=lambda s:s.upper())
-            
-            self._gen_autocomp(0, hint, words)
-            self.message("[text] {} candidates matched"
-                         " with {!r}".format(len(words), hint))
-        except Exception:
-            raise
+        
+        cmdl = self.cmdlc
+        hint = self._get_last_hint(cmdl)
+        
+        ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
+        words = sorted(ls, key=lambda s:s.upper())
+        
+        self._gen_autocomp(0, hint, words)
+        self.message("[text] {} candidates matched"
+                     " with {!r}".format(len(words), hint))
     
     def call_module_autocomp(self, evt, force=False):
         """Called when module-comp mode."""
