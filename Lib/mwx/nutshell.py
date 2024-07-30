@@ -586,6 +586,19 @@ class EditorInterface(CtrlInterface):
                 q = self.cpos
             return self.GetTextRange(p, q)
     
+    def gen_text_at_caret(self):
+        """Generates the selected text,
+        otherwise the line or expression at the caret.
+        """
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        return filter(None, _gen_text())
+    
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
@@ -1651,20 +1664,12 @@ class Buffer(EditWindow, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.line_at_caret
-                yield self.expr_at_caret
-        
         status = "No words"
-        for text in filter(None, _gen_text()):
+        for text in self.gen_text_at_caret():
             try:
                 obj = eval(text, globals, locals)
             except Exception as e:
-                status = "- {}: {!r}".format(e, text)
+                status = "- {} : {!r}".format(e, text)
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(text)
@@ -3281,23 +3286,15 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.line_at_caret
-                yield self.expr_at_caret
-        
         status = "No words"
-        for text in filter(None, _gen_text()):
+        for text in self.gen_text_at_caret():
             tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 obj = self.eval(cmd)
             except Exception as e:
-                status = "- {}: {!r}".format(e, text)
+                status = "- {} : {!r}".format(e, text)
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(cmd)
@@ -3338,7 +3335,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.line_at_caret or self.expr_at_caret
+        text = next(self.gen_text_at_caret(), None)
         if text:
             text = introspect.getRoot(text, terminator='(')
             try:
@@ -3352,7 +3349,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.line_at_caret or self.expr_at_caret
+        text = next(self.gen_text_at_caret(), None)
         if text:
             try:
                 p = self.cpos
