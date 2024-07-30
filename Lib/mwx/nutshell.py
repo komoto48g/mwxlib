@@ -2489,7 +2489,7 @@ class Nautilus(Shell, EditorInterface):
             },
             1 : { # history auto completion S-mode
                          'quit' : (0, clear),
-                         'fork' : (0, self.on_indent_line),
+                         'skip' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
                 'enter pressed' : (0, lambda v: self.goto_char(self.eolc)),
                'escape pressed' : (0, clear),
@@ -2696,7 +2696,7 @@ class Nautilus(Shell, EditorInterface):
         """Called when space pressed."""
         if not self.CanEdit():
             return
-        cmdl = self.cmdlc
+        cmdl = self.GetTextRange(self.bol, self.cpos)
         if re.match(r"import\s*", cmdl)\
           or re.match(r"from\s*$", cmdl)\
           or re.match(r"from\s+([\w.]+)\s+import\s*", cmdl):
@@ -2970,13 +2970,14 @@ class Nautilus(Shell, EditorInterface):
         Note:
             Argument `text` is raw output:str with no magic cast.
         """
-        ln = self.cmdline_region[0]
+        ln = self.LineFromPosition(self.bolc)
         err = re.findall(py_error_re, text, re.M)
         self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
     def on_interp_error(self, e):
-        self.pointer = self.cmdline_region[0] + e.lineno - 1
+        ln = self.LineFromPosition(self.bolc)
+        self.pointer = ln + e.lineno - 1
     
     ## --------------------------------
     ## Attributes of the shell
@@ -3008,20 +3009,9 @@ class Nautilus(Shell, EditorInterface):
         return self.cpos - lp
     
     @property
-    def cmdlc(self):
-        """Cull command-line (excluding ps1:prompt)."""
-        return self.GetTextRange(self.bol, self.cpos)
-    
-    @property
     def cmdline(self):
-        """Full command-(multi-)line (excluding ps1:prompt)."""
+        """Full multi-line command in the current prompt."""
         return self.GetTextRange(self.bolc, self.eolc)
-    
-    @property
-    def cmdline_region(self):
-        lc = self.LineFromPosition(self.bolc)
-        le = self.LineCount
-        return lc, le
     
     ## cf. getCommand() -> caret-line that starts with a prompt
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
@@ -3406,12 +3396,12 @@ class Nautilus(Shell, EditorInterface):
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(len(hint), sep.join(words))
     
-    @staticmethod
-    def _get_last_hint(cmdl):
+    def _get_last_hint(self):
+        cmdl = self.GetTextRange(self.bol, self.cpos)
         return re.search(r"[\w.]*$", cmdl).group(0) # or ''
     
-    @staticmethod
-    def _get_words_hint(cmdl):
+    def _get_words_hint(self):
+        cmdl = self.GetTextRange(self.bol, self.cpos)
         text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
     
@@ -3421,9 +3411,9 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
             return
         
-        cmdl = self.cmdlc
+        cmdl = self.GetTextRange(self.bol, self.cpos)
         if cmdl.isspace() or self.bol != self.bolc:
-            self.handler('fork', evt) # fork [tab pressed] => on_indent_line
+            self.handler('skip', evt) # [tab pressed] => on_indent_line
             return
         
         hint = cmdl.strip()
@@ -3442,8 +3432,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
             return
         
-        cmdl = self.cmdlc
-        hint = self._get_last_hint(cmdl)
+        hint = self._get_last_hint()
         
         ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
         words = sorted(ls, key=lambda s:s.upper())
@@ -3466,8 +3455,8 @@ class Nautilus(Shell, EditorInterface):
                     if ' ' not in lh:             # 'x, y as|' contains no spaces.
                         return lh
         try:
-            cmdl = self.cmdlc
-            hint = self._get_last_hint(cmdl)
+            cmdl = self.GetTextRange(self.bol, self.cpos)
+            hint = self._get_last_hint()
             
             if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
@@ -3496,7 +3485,7 @@ class Nautilus(Shell, EditorInterface):
                     return
                 modules = self.modules
             else:
-                text, sep, hint = self._get_words_hint(cmdl)
+                text, sep, hint = self._get_words_hint()
                 obj = self.eval(text)
                 modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
             
@@ -3524,7 +3513,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
             return
         try:
-            text, sep, hint = self._get_words_hint(self.cmdlc)
+            text, sep, hint = self._get_words_hint()
             obj = self.eval(text)
             
             P = re.compile(hint)
@@ -3551,7 +3540,7 @@ class Nautilus(Shell, EditorInterface):
             self.handler('quit', evt)
             return
         try:
-            text, sep, hint = self._get_words_hint(self.cmdlc)
+            text, sep, hint = self._get_words_hint()
             obj = self.eval(text)
             
             P = re.compile(hint)
