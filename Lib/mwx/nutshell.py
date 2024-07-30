@@ -3022,17 +3022,11 @@ class Nautilus(Shell, EditorInterface):
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
     ##     [BUG 4.1.1] Don't use for current prompt --> Fixed in 4.2.0.
     
-    @property
-    def Command(self):
-        """Extract a command from the editor."""
-        return self.getCommand(rstrip=False)
-    
-    @property
-    def MultilineCommand(self):
-        """Extract a multi-line command from the editor.
+    def getMultilineCommand(self):
+        """Extract a multi-line command which starts with a prompt.
         
-        Similar to getMultilineCommand(), but does not exclude
-        a trailing ps2 + blank command.
+        (override) Don't remove trailing ps2 + spaces.
+                   Don't invoke ``GotoLine``.
         """
         region = self.get_region(self.cline)
         if region:
@@ -3292,9 +3286,8 @@ class Nautilus(Shell, EditorInterface):
             if text:
                 yield text
             else:
-                yield self.Command
+                yield self.caretline
                 yield self.expr_at_caret
-                yield self.MultilineCommand
         
         status = "No words"
         for text in filter(None, _gen_text()):
@@ -3317,7 +3310,7 @@ class Nautilus(Shell, EditorInterface):
             self.CallTipCancel()
         
         filename = "<input>"
-        text = self.MultilineCommand
+        text = self.getMultilineCommand()
         if text:
             tokens = split_words(text)
             try:
@@ -3345,7 +3338,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.Command or self.expr_at_caret
+        text = self.SelectedText or self.caretline or self.expr_at_caret
         if text:
             text = introspect.getRoot(text, terminator='(')
             try:
@@ -3359,7 +3352,7 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.Command or self.expr_at_caret
+        text = self.SelectedText or self.caretline or self.expr_at_caret
         if text:
             try:
                 p = self.cpos
