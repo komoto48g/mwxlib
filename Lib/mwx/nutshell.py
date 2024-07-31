@@ -622,8 +622,9 @@ class EditorInterface(CtrlInterface):
         p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = self.py_current_indent() # check current/previous line
-        self.Replace(self.bol, p, ' '*indent)
-        self.goto_char(self.bol + indent + offset)
+        if indent >= 0:
+            self.Replace(self.bol, p, ' '*indent)
+            self.goto_char(self.bol + indent + offset)
     
     @can_edit
     def py_outdent_line(self):
@@ -633,8 +634,9 @@ class EditorInterface(CtrlInterface):
         p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = len(text) - len(lstr) - 4
-        self.Replace(self.bol, p, ' '*indent)
-        self.goto_char(self.bol + indent + offset)
+        if indent >= 0:
+            self.Replace(self.bol, p, ' '*indent)
+            self.goto_char(self.bol + indent + offset)
     
     def py_current_indent(self):
         """Calculate indent spaces from previous line."""
@@ -2476,8 +2478,8 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (0, self.exec_region),
                 'C-S-j pressed' : (0, self.exec_region),
                   'C-h pressed' : (0, self.call_helpTip),
-                  'M-h pressed' : (0, self.call_helpTip2),
-                'C-S-h pressed' : (0, self.call_helpTip2),
+                  'M-h pressed' : (0, self.call_helpDoc),
+                'C-S-h pressed' : (0, self.call_helpDoc),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
@@ -2537,8 +2539,8 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (2, self.exec_region),
                 'C-S-j pressed' : (2, self.exec_region),
                   'C-h pressed' : (2, self.call_helpTip),
-                  'M-h pressed' : (2, self.call_helpTip2),
-                'C-S-h pressed' : (2, self.call_helpTip2),
+                  'M-h pressed' : (2, self.call_helpDoc),
+                'C-S-h pressed' : (2, self.call_helpDoc),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -2570,8 +2572,8 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (3, self.exec_region),
                 'C-S-j pressed' : (3, self.exec_region),
                   'C-h pressed' : (3, self.call_helpTip),
-                  'M-h pressed' : (3, self.call_helpTip2),
-                'C-S-h pressed' : (3, self.call_helpTip2),
+                  'M-h pressed' : (3, self.call_helpDoc),
+                'C-S-h pressed' : (3, self.call_helpDoc),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -2603,8 +2605,8 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (4, self.exec_region),
                 'C-S-j pressed' : (4, self.exec_region),
                   'C-h pressed' : (4, self.call_helpTip),
-                  'M-h pressed' : (4, self.call_helpTip2),
-                'C-S-h pressed' : (4, self.call_helpTip2),
+                  'M-h pressed' : (4, self.call_helpDoc),
+                'C-S-h pressed' : (4, self.call_helpDoc),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
                '*shift pressed' : (4, ),
@@ -3320,7 +3322,7 @@ class Nautilus(Shell, EditorInterface):
         else:
             self.message("No region")
     
-    def call_helpTip2(self, evt):
+    def call_helpDoc(self, evt):
         """Show help:str for the selected topic."""
         if self.CallTipActive():
             self.CallTipCancel()
