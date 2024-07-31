@@ -1206,13 +1206,11 @@ class EditorInterface(CtrlInterface):
         """Save buffer excursion."""
         try:
             p = self.cpos
-            q = self.anchor
             vpos = self.GetScrollPos(wx.VERTICAL)
             hpos = self.GetScrollPos(wx.HORIZONTAL)
             yield
         finally:
             self.GotoPos(p)
-            self.SetAnchor(q)
             self.ScrollToLine(vpos)
             self.SetXOffset(hpos)
     
@@ -1351,7 +1349,7 @@ class EditorInterface(CtrlInterface):
         _text, lp = self.CurLine
         for i in range(lp % 4 or 4):
             p = self.cpos
-            if self.get_char(p-1) != ' ' or p == self.bol:
+            if p == self.bol or self.get_char(p-1) != ' ':
                 break
             self.cpos = p-1
         self.ReplaceSelection('')
@@ -3247,16 +3245,11 @@ class Nautilus(Shell, EditorInterface):
     def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
         """Display argument spec and docstring in a popup window.
         
-        (override) Swap anchors to not scroll to the end of the line,
-                   and display a long hint at the insertion position.
+        (override) Swap anchors to not scroll to the end of the line.
         """
-        vpos = self.GetScrollPos(wx.VERTICAL)
-        hpos = self.GetScrollPos(wx.HORIZONTAL)
         Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
         self.cpos, self.anchor = self.anchor, self.cpos
-        ## self.EnsureCaretVisible()
-        self.ScrollToLine(vpos)
-        self.SetXOffset(hpos)
+        self.EnsureCaretVisible()
     
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
@@ -3343,13 +3336,9 @@ class Nautilus(Shell, EditorInterface):
         
         text = next(self.gen_text_at_caret(), None)
         if text:
-            try:
-                p = self.cpos
-                c = self.get_char(p-1)
-                self.autoCallTipShow(text,
-                    c == '(' and p == self.eol) # => CallTipShow
-            except Exception as e:
-                self.message("- {} : {!r}".format(e, text))
+            p = self.cpos
+            self.autoCallTipShow(text,
+                p == self.eol and self.get_char(p-1) == '(') # => CallTipShow
     
     def on_completion_forward(self, evt):
         if self.AutoCompActive():
