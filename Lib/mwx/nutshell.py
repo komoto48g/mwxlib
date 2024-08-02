@@ -2534,11 +2534,6 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
-                  'M-j pressed' : (2, self.exec_region),
-                'C-S-j pressed' : (2, self.exec_region),
-                  'C-h pressed' : (2, self.call_helpTip),
-                  'M-h pressed' : (2, self.call_helpDoc),
-                'C-S-h pressed' : (2, self.call_helpDoc),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -2567,11 +2562,6 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
-                  'M-j pressed' : (3, self.exec_region),
-                'C-S-j pressed' : (3, self.exec_region),
-                  'C-h pressed' : (3, self.call_helpTip),
-                  'M-h pressed' : (3, self.call_helpDoc),
-                'C-S-h pressed' : (3, self.call_helpDoc),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -2600,11 +2590,6 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
-                  'M-j pressed' : (4, self.exec_region),
-                'C-S-j pressed' : (4, self.exec_region),
-                  'C-h pressed' : (4, self.call_helpTip),
-                  'M-h pressed' : (4, self.call_helpDoc),
-                'C-S-h pressed' : (4, self.call_helpDoc),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
                '*shift pressed' : (4, ),
@@ -2628,7 +2613,7 @@ class Nautilus(Shell, EditorInterface):
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
                   '\\ released' : (5, self.call_module_autocomp),
-                 'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
+                  'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
            '*backspace pressed' : (5, skip_autocomp),
           '*backspace released' : (5, self.call_module_autocomp),
@@ -2676,9 +2661,9 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip()
     
     def OnCallTipClick(self, evt):
-        self.parent.handler('add_help', self.__calltip)
         if self.CallTipActive():
             self.CallTipCancel()
+        self.parent.handler('add_help', self._calltip)
         evt.Skip()
     
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
