@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.97.7"
+__version__ = "0.98.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -78,11 +78,12 @@ def postcall(f):
 
 @contextmanager
 def save_focus_excursion():
+    """Save window focus excursion."""
     wnd = wx.Window.FindFocus() # original focus
     try:
         yield wnd
     finally:
-        if wnd:
+        if wnd and wnd.IsShownOnScreen():
             wnd.SetFocus() # restore focus
 
 
