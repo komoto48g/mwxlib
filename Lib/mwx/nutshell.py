@@ -131,16 +131,16 @@ class AutoCompInterfaceMixin:
                 p == self.eol and self.get_char(p-1) == '(') # => CallTipShow
     
     def on_completion_forward(self, evt):
-        if self.AutoCompActive():
-            self._on_completion(1)
-        else:
+        if not self.AutoCompActive():
             self.handler('quit', evt)
+            return
+        self._on_completion(1)
     
     def on_completion_backward(self, evt):
-        if self.AutoCompActive():
-            self._on_completion(-1)
-        else:
+        if not self.AutoCompActive():
             self.handler('quit', evt)
+            return
+        self._on_completion(-1)
     
     def on_completion_forward_history(self, evt):
         self._on_completion(1) # 古いヒストリへ進む
@@ -177,10 +177,6 @@ class AutoCompInterfaceMixin:
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(len(hint), sep.join(words))
     
-    def _get_last_hint(self):
-        cmdl = self.GetTextRange(self.bol, self.cpos)
-        return re.search(r"[\w.]*$", cmdl).group(0) # or ''
-    
     def _get_words_hint(self):
         cmdl = self.GetTextRange(self.bol, self.cpos)
         text = next(split_words(cmdl, reverse=1), '')
@@ -213,7 +209,8 @@ class AutoCompInterfaceMixin:
             self.handler('quit', evt)
             return
         
-        hint = self._get_last_hint()
+        cmdl = self.GetTextRange(self.bol, self.cpos)
+        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
         
         ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
         words = sorted(ls, key=lambda s:s.upper())
@@ -235,29 +232,29 @@ class AutoCompInterfaceMixin:
                     lh = h.split(',')[-1].strip() # 'x, y, z|' last hint after ','
                     if ' ' not in lh:             # 'x, y as|' contains no spaces.
                         return lh
+        
+        cmdl = self.GetTextRange(self.bol, self.cpos)
+        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
         try:
-            cmdl = self.GetTextRange(self.bol, self.cpos)
-            hint = self._get_last_hint()
-            
             if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
                 if not _continue(hints) and not force:
                     self.message("[module]>>> waiting for key input...")
                     return
-                elif hints.endswith('.'):
-                    self.message("[module] invalid import syntax.")
+                elif '.' in hints:
+                    self.message("[module] invalid syntax.")
                     return
-                if text not in sys.modules:
-                    self.message("[module]>>> loading {}...".format(text))
                 try:
+                    self.message("[module]>>> loading {}...".format(text))
                     modules = set(dir(import_module(text)))
                 except ImportError as e:
                     self.message("\b failed:", e)
                     return
-                ## Add unimported module names.
-                p = "{}.{}".format(text, hint)
-                keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
-                modules.update(k for k in keys if '.' not in k)
+                else:
+                    ## Add unimported module names.
+                    p = "{}.{}".format(text, hint)
+                    keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
+                    modules.update(k for k in keys if '.' not in k)
             
             elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
                 text, hints = m.groups()
