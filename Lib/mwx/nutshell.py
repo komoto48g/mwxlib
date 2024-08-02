@@ -73,6 +73,21 @@ def ask(f, prompt="Enter value", type=str):
 
 class AutoCompInterfaceMixin:
 
+    def CallTipShow(self, pos, tip, N=11):
+        """Show a call tip containing a definition near position pos.
+        
+        (override) Snip the tip of max N lines if it is too long.
+                   Keep the tip for calltip-click event.
+        """
+        self._calltip_pos = pos
+        self._calltip = tip
+        lines = tip.splitlines()
+        if len(lines) > N > 0:
+            lines[N+1:] = ["\n...(snip) This tips are too long... "
+                           "Click to show more details."]
+            tip = '\n'.join(lines)
+        super().CallTipShow(pos, tip)
+
     def autoCallTipShow(self, command, insertcalltip=True):
         """Display argument spec and docstring in a popup window."""
         if self.CallTipActive():
@@ -1745,7 +1760,7 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
         self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
-        
+        self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         self.Bind(stc.EVT_STC_INDICATOR_CLICK, self.OnIndicatorClick)
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -1860,6 +1875,12 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
             self.trace_position()
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('buffer_modified', self)
+        evt.Skip()
+    
+    def OnCallTipClick(self, evt):
+        if self.CallTipActive():
+            self.CallTipCancel()
+        self.CallTipShow(self._calltip_pos, self._calltip, N=-1)
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
@@ -3564,20 +3585,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
         self.cpos, self.anchor = self.anchor, self.cpos
         self.EnsureCaretVisible()
-    
-    def CallTipShow(self, pos, tip, N=11):
-        """Show a call tip containing a definition near position pos.
-        
-        (override) Snip the tip of max N lines if it is too long.
-                   Keep the tip for calltip-click event.
-        """
-        self.__calltip = tip
-        lines = tip.splitlines()
-        if len(lines) > N:
-            lines[N+1:] = ["\n...(snip) This tips are too long... "
-                           "Click to show more details."
-                          ]
-        Shell.CallTipShow(self, pos, '\n'.join(lines))
     
     def eval_line(self, evt):
         """Evaluate the selected word or line.
