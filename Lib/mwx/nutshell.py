@@ -72,7 +72,22 @@ def ask(f, prompt="Enter value", type=str):
 
 
 class AutoCompInterfaceMixin:
-
+    """Auto completion interface.
+    
+    Note:
+        This class is mixed-in ``wx.py.editwindow.EditWindow``.
+    """
+    modules = set() # to be used in module-comp mode
+    
+    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp mode
+    
+    def __init__(self):
+        ## cf. sys.modules
+        if not self.modules:
+            force = wx.GetKeyState(wx.WXK_CONTROL)\
+                  & wx.GetKeyState(wx.WXK_SHIFT)
+            AutoCompInterfaceMixin.modules = set(find_modules(force))
+    
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
         
@@ -87,7 +102,7 @@ class AutoCompInterfaceMixin:
                            "Click to show more details."]
             tip = '\n'.join(lines)
         super().CallTipShow(pos, tip)
-
+    
     def autoCallTipShow(self, command, insertcalltip=True):
         """Display argument spec and docstring in a popup window."""
         if self.CallTipActive():
@@ -338,7 +353,7 @@ class EditorInterface(CtrlInterface):
     """Interface of Python code editor.
     
     Note:
-        This class should be mixed-in `wx.stc.StyledTextCtrl`
+        This class is mixed-in ``wx.stc.StyledTextCtrl``.
     """
     def __init__(self):
         CtrlInterface.__init__(self)
@@ -1744,6 +1759,7 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
+        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent
         self.__filename = filename
@@ -2737,8 +2753,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
     
-    modules = None
-    
     ## (override)
     wrap = EditorInterface.wrap
     
@@ -2756,6 +2770,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
                  execStartupScript=execStartupScript, # if True, executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
+        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.target = target
@@ -2763,12 +2778,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
-        
-        ## cf. sys.modules
-        if not self.modules:
-            force = wx.GetKeyState(wx.WXK_CONTROL)\
-                  & wx.GetKeyState(wx.WXK_SHIFT)
-            Nautilus.modules = set(find_modules(force))
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
@@ -3365,7 +3374,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp
     
     @property
     def bolc(self):
