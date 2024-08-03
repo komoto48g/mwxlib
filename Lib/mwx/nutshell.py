@@ -142,12 +142,6 @@ class AutoCompInterfaceMixin:
             return
         self._on_completion(-1)
     
-    def on_completion_forward_history(self, evt):
-        self._on_completion(1) # 古いヒストリへ進む
-    
-    def on_completion_backward_history(self, evt):
-        self._on_completion(-1) # 新しいヒストリへ戻る
-    
     def _on_completion(self, step=0):
         """Show completion with selection."""
         try:
@@ -2901,10 +2895,10 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
              'S-right released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, self.on_completion_forward_history),
-                'S-tab pressed' : (1, self.on_completion_backward_history),
-                  'M-p pressed' : (1, self.on_completion_forward_history),
-                  'M-n pressed' : (1, self.on_completion_backward_history),
+                  'tab pressed' : (1, _F(self._on_completion,  1)), # 古いヒストリへ進む
+                'S-tab pressed' : (1, _F(self._on_completion, -1)), # 新しいヒストリへ戻る
+                  'M-p pressed' : (1, _F(self._on_completion,  1)),
+                  'M-n pressed' : (1, _F(self._on_completion, -1)),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
             'S-[a-z\\] pressed' : (1, skip),
@@ -3373,10 +3367,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     ## --------------------------------
     fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp
     
-    ## shell.history is an instance variable of the Shell.
-    ## If del shell.history, the history of the class variable is used
-    history = []
-    
     @property
     def bolc(self):
         "Beginning of command-line."
@@ -3466,13 +3456,13 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
             output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
             input = self.regulate_cmd(input)
-            Shell.addHistory(self, input)
+            Shell.addHistory(self, input) # => self.history
             
             noerr = self.on_text_output(output)
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
-                command = self.fixLineEndings(command)
+            command = self.fixLineEndings(command)
             self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
