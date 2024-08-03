@@ -71,11 +71,289 @@ def ask(f, prompt="Enter value", type=str):
     return _f
 
 
+class AutoCompInterfaceMixin:
+    """Auto completion interface.
+    
+    Note:
+        This class is mixed-in ``wx.py.editwindow.EditWindow``.
+    """
+    modules = set() # to be used in module-comp mode
+    
+    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp mode
+    
+    def __init__(self):
+        ## cf. sys.modules
+        if not self.modules:
+            force = wx.GetKeyState(wx.WXK_CONTROL)\
+                  & wx.GetKeyState(wx.WXK_SHIFT)
+            AutoCompInterfaceMixin.modules = set(find_modules(force))
+    
+    def CallTipShow(self, pos, tip, N=11):
+        """Show a call tip containing a definition near position pos.
+        
+        (override) Snip the tip of max N lines if it is too long.
+                   Keep the tip for calltip-click event.
+        """
+        self._calltip_pos = pos
+        self._calltip = tip
+        lines = tip.splitlines()
+        if len(lines) > N > 0:
+            lines[N+1:] = ["\n...(snip) This tips are too long... "
+                           "Click to show more details."]
+            tip = '\n'.join(lines)
+        super().CallTipShow(pos, tip)
+    
+    def autoCallTipShow(self, command, insertcalltip=True):
+        """Display argument spec and docstring in a popup window."""
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
+        name, argspec, tip = introspect.getCallTip(command, locals=self.locals)
+        if tip:
+            dispatcher.send(signal='Shell.calltip', sender=self, calltip=tip)
+        p = self.cpos
+        if argspec and insertcalltip:
+            self.AddText(argspec + ')')     # 挿入後のカーソル位置は変化しない
+            self.SetSelection(self.cpos, p) # selection back
+        if tip:
+            ## In case there isn't enough room, only go back to bol fallback.
+            tippos = max(self.bol, p - len(name) - 1)
+            self.CallTipShow(tippos, tip)
+    
+    def call_helpDoc(self, evt):
+        """Show help:str for the selected topic."""
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
+        text = next(self.gen_text_at_caret(), None)
+        if text:
+            text = introspect.getRoot(text, terminator='(')
+            try:
+                obj = self.eval(text)
+                self.help(obj)
+            except Exception as e:
+                self.message("- {} : {!r}".format(e, text))
+    
+    def call_helpTip(self, evt):
+        """Show tooltips for the selected topic."""
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
+        text = next(self.gen_text_at_caret(), None)
+        if text:
+            p = self.cpos
+            self.autoCallTipShow(text,
+                p == self.eol and self.get_char(p-1) == '(') # => CallTipShow
+    
+    def on_completion_forward(self, evt):
+        if not self.AutoCompActive():
+            self.handler('quit', evt)
+            return
+        self._on_completion(1)
+    
+    def on_completion_backward(self, evt):
+        if not self.AutoCompActive():
+            self.handler('quit', evt)
+            return
+        self._on_completion(-1)
+    
+    def _on_completion(self, step=0):
+        """Show completion with selection."""
+        try:
+            N = len(self.__comp_words)
+            j = self.__comp_ind + step
+            j = 0 if j < 0 else j if j < N else N-1
+            word = self.__comp_words[j]
+            n = len(self.__comp_hint)
+            p = self.cpos
+            if not self.SelectedText:
+                p, self.anchor, sty = self.get_following_atom(p) # word-right-selection
+            self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
+            self.cpos = p # backward selection to the point
+            self.__comp_ind = j
+        except IndexError:
+            self.message("No completion words")
+    
+    def _gen_autocomp(self, j, hint, words, sep=' ', mode=True):
+        ## Prepare on_completion_forward/backward
+        self.__comp_ind = j
+        self.__comp_hint = hint
+        self.__comp_words = words
+        if not mode:
+            self.anchor = self.eolc  # selection to eol
+            self._on_completion()    # show completion always
+        elif words:
+            self.AutoCompSetSeparator(ord(sep))
+            self.AutoCompShow(len(hint), sep.join(words))
+    
+    def _get_words_hint(self):
+        cmdl = self.GetTextRange(self.bol, self.cpos)
+        text = next(split_words(cmdl, reverse=1), '')
+        return text.rpartition('.') # -> text, sep, hint
+    
+    def call_history_comp(self, evt):
+        """Called when history-comp mode."""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        
+        cmdl = self.GetTextRange(self.bol, self.cpos)
+        if cmdl.isspace() or self.bol != self.bolc:
+            self.handler('skip', evt) # [tab pressed] => on_indent_line
+            return
+        
+        hint = cmdl.strip()
+        ls = [x.replace('\n', os.linesep + sys.ps2)
+                for x in self.history if x.startswith(hint)] # case-sensitive match
+        words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
+        
+        ## the latest history stacks in the head of the list (time-descending)
+        self._gen_autocomp(0, hint, words, mode=False)
+        self.message("[history] {} candidates matched"
+                     " with {!r}".format(len(words), hint))
+    
+    def call_text_autocomp(self, evt):
+        """Called when text-comp mode."""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        
+        cmdl = self.GetTextRange(self.bol, self.cpos)
+        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
+        
+        ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
+        words = sorted(ls, key=lambda s:s.upper())
+        
+        self._gen_autocomp(0, hint, words)
+        self.message("[text] {} candidates matched"
+                     " with {!r}".format(len(words), hint))
+    
+    def call_module_autocomp(self, evt, force=False):
+        """Called when module-comp mode."""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        
+        def _continue(hints):
+            if not hints.endswith(' '):
+                h = hints.strip()
+                if not h.endswith(','):
+                    lh = h.split(',')[-1].strip() # 'x, y, z|' last hint after ','
+                    if ' ' not in lh:             # 'x, y as|' contains no spaces.
+                        return lh
+        
+        cmdl = self.GetTextRange(self.bol, self.cpos)
+        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
+        try:
+            if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
+                text, hints = m.groups()
+                if not _continue(hints) and not force:
+                    self.message("[module]>>> waiting for key input...")
+                    return
+                elif '.' in hints:
+                    self.message("[module] invalid syntax.")
+                    return
+                try:
+                    self.message("[module]>>> loading {}...".format(text))
+                    modules = set(dir(import_module(text)))
+                except ImportError as e:
+                    self.message("\b failed:", e)
+                    return
+                else:
+                    ## Add unimported module names.
+                    p = "{}.{}".format(text, hint)
+                    keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
+                    modules.update(k for k in keys if '.' not in k)
+            
+            elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
+                text, hints = m.groups()
+                if not _continue(hints) and not force:
+                    self.message("[module]>>> waiting for key input...")
+                    return
+                modules = self.modules
+            else:
+                text, sep, hint = self._get_words_hint()
+                obj = self.eval(text)
+                modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
+            
+            P = re.compile(hint)
+            p = re.compile(hint, re.I)
+            words = sorted([x for x in modules if p.match(x)], key=lambda s:s.upper())
+            
+            j = next((k for k, w in enumerate(words) if P.match(w)),
+                next((k for k, w in enumerate(words) if p.match(w)), -1))
+            
+            self._gen_autocomp(j, hint, words)
+            self.message("[module] {} candidates matched"
+                         " with {!r} in {}".format(len(words), hint, text))
+        except re.error as e:
+            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
+        except SyntaxError as e:
+            self.handler('quit', evt)
+            self.message("- {} : {!r}".format(e, text))
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
+    
+    def call_word_autocomp(self, evt):
+        """Called when word-comp mode."""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        try:
+            text, sep, hint = self._get_words_hint()
+            obj = self.eval(text)
+            
+            P = re.compile(hint)
+            p = re.compile(hint, re.I)
+            words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
+            
+            j = next((k for k, w in enumerate(words) if P.match(w)),
+                next((k for k, w in enumerate(words) if p.match(w)), -1))
+            
+            self._gen_autocomp(j, hint, words)
+            self.message("[word] {} candidates matched"
+                         " with {!r} in {}".format(len(words), hint, text))
+        except re.error as e:
+            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
+        except SyntaxError as e:
+            self.handler('quit', evt)
+            self.message("- {} : {!r}".format(e, text))
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
+    
+    def call_apropos_autocomp(self, evt):
+        """Called when apropos mode."""
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        try:
+            text, sep, hint = self._get_words_hint()
+            obj = self.eval(text)
+            
+            P = re.compile(hint)
+            p = re.compile(hint, re.I)
+            words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
+            
+            j = next((k for k, w in enumerate(words) if P.match(w)),
+                next((k for k, w in enumerate(words) if p.match(w)), -1))
+            
+            self._gen_autocomp(j, hint, words)
+            self.message("[apropos] {} candidates matched"
+                         " with {!r} in {}".format(len(words), hint, text))
+        except re.error as e:
+            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
+        except SyntaxError as e:
+            self.handler('quit', evt)
+            self.message("- {} : {!r}".format(e, text))
+        except Exception as e:
+            self.message("- {} : {!r}".format(e, text))
+
+
 class EditorInterface(CtrlInterface):
     """Interface of Python code editor.
     
     Note:
-        This class should be mixed-in `wx.stc.StyledTextCtrl`
+        This class is mixed-in ``wx.stc.StyledTextCtrl``.
     """
     def __init__(self):
         CtrlInterface.__init__(self)
@@ -538,7 +816,7 @@ class EditorInterface(CtrlInterface):
         return (self.cpos - lp + len(text.encode()))
     
     @property
-    def caretline(self):
+    def line_at_caret(self):
         """Text of the range (bol, eol) at the caret-line."""
         return self.GetTextRange(self.bol, self.eol)
     
@@ -586,6 +864,19 @@ class EditorInterface(CtrlInterface):
                 q = self.cpos
             return self.GetTextRange(p, q)
     
+    def gen_text_at_caret(self):
+        """Generates the selected text,
+        otherwise the line or expression at the caret.
+        """
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        return filter(None, _gen_text())
+    
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
@@ -604,24 +895,26 @@ class EditorInterface(CtrlInterface):
     @can_edit
     def py_indent_line(self):
         """Indent the current line."""
-        text = self.caretline  # w/ no-prompt
-        lstr = text.lstrip()   # w/ no-indent
-        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        text = self.line_at_caret # w/ no-prompt
+        lstr = text.lstrip()      # w/ no-indent
+        p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = self.py_current_indent() # check current/previous line
-        self.Replace(self.bol, p, ' '*indent)
-        self.goto_char(self.bol + indent + offset)
+        if indent >= 0:
+            self.Replace(self.bol, p, ' '*indent)
+            self.goto_char(self.bol + indent + offset)
     
     @can_edit
     def py_outdent_line(self):
         """Outdent the current line."""
-        text = self.caretline  # w/ no-prompt
-        lstr = text.lstrip()   # w/ no-indent
-        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        text = self.line_at_caret # w/ no-prompt
+        lstr = text.lstrip()      # w/ no-indent
+        p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = len(text) - len(lstr) - 4
-        self.Replace(self.bol, p, ' '*indent)
-        self.goto_char(self.bol + indent + offset)
+        if indent >= 0:
+            self.Replace(self.bol, p, ' '*indent)
+            self.goto_char(self.bol + indent + offset)
     
     def py_current_indent(self):
         """Calculate indent spaces from previous line."""
@@ -1146,9 +1439,9 @@ class EditorInterface(CtrlInterface):
         self.goto_char(p)
     
     def back_to_indentation(self):
-        text = self.caretline # w/ no-prompt
-        lstr = text.lstrip()  # w/ no-indent
-        p = self.bol + len(text) - len(lstr) # for multi-byte string
+        text = self.line_at_caret # w/ no-prompt
+        lstr = text.lstrip()      # w/ no-indent
+        p = self.bol + len(text) - len(lstr)
         self.goto_char(p, interactive=True)
         self.ScrollToColumn(0)
     
@@ -1191,13 +1484,11 @@ class EditorInterface(CtrlInterface):
         """Save buffer excursion."""
         try:
             p = self.cpos
-            q = self.anchor
             vpos = self.GetScrollPos(wx.VERTICAL)
             hpos = self.GetScrollPos(wx.HORIZONTAL)
             yield
         finally:
             self.GotoPos(p)
-            self.SetAnchor(q)
             self.ScrollToLine(vpos)
             self.SetXOffset(hpos)
     
@@ -1336,13 +1627,13 @@ class EditorInterface(CtrlInterface):
         _text, lp = self.CurLine
         for i in range(lp % 4 or 4):
             p = self.cpos
-            if self.get_char(p-1) != ' ' or p == self.bol:
+            if p == self.bol or self.get_char(p-1) != ' ':
                 break
             self.cpos = p-1
         self.ReplaceSelection('')
 
 
-class Buffer(EditWindow, EditorInterface):
+class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     """Python code buffer.
     
     Attributes:
@@ -1468,6 +1759,7 @@ class Buffer(EditWindow, EditorInterface):
     def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
+        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent
         self.__filename = filename
@@ -1475,7 +1767,7 @@ class Buffer(EditWindow, EditorInterface):
         self.code = None
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
-        
+        self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         self.Bind(stc.EVT_STC_INDICATOR_CLICK, self.OnIndicatorClick)
         
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -1492,6 +1784,26 @@ class Buffer(EditWindow, EditorInterface):
                 self.handler('buffer_inactivated', self)
             evt.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
+        
+        def clear(evt):
+            ## """Clear selection and message, no skip."""
+            ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
+            ## if self.AutoCompActive():
+            ##     self.AutoCompCancel() # may delete selection
+            if self.CanEdit():
+                self.ReplaceSelection("")
+            self.message("")
+        
+        def clear_autocomp(evt):
+            ## """Clear Autocomp, selection, and message."""
+            if self.AutoCompActive():
+                self.AutoCompCancel()
+            if self.CanEdit():
+                self.ReplaceSelection("")
+            self.message("")
+        
+        def fork(evt):
+            self.handler.fork(self.handler.current_event, evt)
         
         def dispatch(evt):
             """Fork events to the parent."""
@@ -1520,6 +1832,93 @@ class Buffer(EditWindow, EditorInterface):
                     '* pressed' : (0, skip, dispatch),
                    '* released' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
+                  'C-h pressed' : (0, self.call_helpTip),
+                    '. pressed' : (2, skip),
+                  'M-. pressed' : (2, self.call_word_autocomp),
+                  'M-/ pressed' : (3, self.call_apropos_autocomp),
+                  'M-m pressed' : (5, self.call_module_autocomp),
+            },
+            2 : { # word auto completion AS-mode
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, skip),
+               'escape pressed' : (0, clear_autocomp),
+                   'up pressed' : (2, skip, self.on_completion_backward),
+                 'down pressed' : (2, skip, self.on_completion_forward),
+                '*left pressed' : (2, skip),
+               '*left released' : (2, self.call_word_autocomp),
+               '*right pressed' : (2, skip),
+              '*right released' : (2, self.call_word_autocomp),
+           '[a-z0-9_.] pressed' : (2, skip),
+          '[a-z0-9_.] released' : (2, self.call_word_autocomp),
+            'S-[a-z\\] pressed' : (2, skip),
+           'S-[a-z\\] released' : (2, self.call_word_autocomp),
+                  '\\ released' : (2, self.call_word_autocomp),
+              '*delete pressed' : (2, skip),
+           '*backspace pressed' : (2, skip),
+          '*backspace released' : (2, self.call_word_autocomp),
+        'C-S-backspace pressed' : (2, ),
+                 '*alt pressed' : (2, ),
+                '*ctrl pressed' : (2, ),
+               '*shift pressed' : (2, ),
+             '*[LR]win pressed' : (2, ),
+             '*f[0-9]* pressed' : (2, ),
+            },
+            3 : { # apropos auto completion AS-mode
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, skip),
+               'escape pressed' : (0, clear_autocomp),
+                   'up pressed' : (3, skip, self.on_completion_backward),
+                 'down pressed' : (3, skip, self.on_completion_forward),
+                '*left pressed' : (3, skip),
+               '*left released' : (3, self.call_apropos_autocomp),
+               '*right pressed' : (3, skip),
+              '*right released' : (3, self.call_apropos_autocomp),
+           '[a-z0-9_.] pressed' : (3, skip),
+          '[a-z0-9_.] released' : (3, self.call_apropos_autocomp),
+            'S-[a-z\\] pressed' : (3, skip),
+           'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
+                  '\\ released' : (3, self.call_apropos_autocomp),
+              '*delete pressed' : (3, skip),
+           '*backspace pressed' : (3, skip),
+          '*backspace released' : (3, self.call_apropos_autocomp),
+        'C-S-backspace pressed' : (3, ),
+                 '*alt pressed' : (3, ),
+                '*ctrl pressed' : (3, ),
+               '*shift pressed' : (3, ),
+             '*[LR]win pressed' : (3, ),
+             '*f[0-9]* pressed' : (3, ),
+            },
+            5 : { # module auto completion AS-mode
+                         'quit' : (0, clear_autocomp),
+                    '* pressed' : (0, clear_autocomp, fork),
+                  'tab pressed' : (0, clear, skip),
+                'enter pressed' : (0, clear, skip),
+               'escape pressed' : (0, clear_autocomp),
+                   'up pressed' : (5, skip, self.on_completion_backward),
+                 'down pressed' : (5, skip, self.on_completion_forward),
+                '*left pressed' : (5, skip),
+               '*left released' : (5, self.call_module_autocomp),
+               '*right pressed' : (5, skip),
+              '*right released' : (5, self.call_module_autocomp),
+          '[a-z0-9_.,] pressed' : (5, skip),
+         '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
+            'S-[a-z\\] pressed' : (5, skip),
+           'S-[a-z\\] released' : (5, self.call_module_autocomp),
+                  '\\ released' : (5, self.call_module_autocomp),
+                  'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
+              '*delete pressed' : (5, skip),
+           '*backspace pressed' : (5, skip),
+          '*backspace released' : (5, self.call_module_autocomp),
+        'C-S-backspace pressed' : (5, ),
+                 '*alt pressed' : (5, ),
+                '*ctrl pressed' : (5, ),
+               '*shift pressed' : (5, ),
+             '*[LR]win pressed' : (5, ),
+             '*f[0-9]* pressed' : (5, ),
             },
         })
         
@@ -1540,6 +1939,12 @@ class Buffer(EditWindow, EditorInterface):
             self.trace_position()
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('buffer_modified', self)
+        evt.Skip()
+    
+    def OnCallTipClick(self, evt):
+        if self.CallTipActive():
+            self.CallTipCancel()
+        self.CallTipShow(self._calltip_pos, self._calltip, N=-1)
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
@@ -1647,24 +2052,38 @@ class Buffer(EditWindow, EditorInterface):
     ## Python eval / exec
     ## --------------------------------
     
+    @property
+    def locals(self): # internal use only
+        try:
+            return self.parent.parent.current_shell.locals
+        except AttributeError:
+            return None
+    
+    @property
+    def globals(self): # internal use only
+        try:
+            return self.parent.parent.current_shell.globals
+        except AttributeError:
+            return None
+    
+    def eval(self, text):
+        return eval(text, self.globals, self.locals) # using current shell namespace
+    
+    def exec(self, text):
+        exec(text, self.globals, self.locals) # using current shell namespace
+        dispatcher.send(signal='Interpreter.push',
+                        sender=self, command=None, more=False)
+    
     def py_eval_line(self, globals=None, locals=None):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.caretline
-                yield self.expr_at_caret
-        
         status = "No words"
-        for text in filter(None, _gen_text()):
+        for text in self.gen_text_at_caret():
             try:
                 obj = eval(text, globals, locals)
             except Exception as e:
-                status = "- {}: {!r}".format(e, text)
+                status = "- {} : {!r}".format(e, text)
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(text)
@@ -2182,13 +2601,15 @@ class Interpreter(interpreter.Interpreter):
         (override) Ignore ValueError: no signature found for builtin
                    if the unwrapped function is a builtin function.
         """
+        ## In 4.2.1, DeprecationWarning was fixed.
+        ## In 4.2.2, ValueError was fixed.
         try:
             return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
         except ValueError:
             return interpreter.Interpreter.getCallTip(self) # dummy
 
 
-class Nautilus(Shell, EditorInterface):
+class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     """Nautilus in the Shell.
     
     Facade objects for accessing the APIs:
@@ -2332,8 +2753,6 @@ class Nautilus(Shell, EditorInterface):
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
     
-    modules = None
-    
     ## (override)
     wrap = EditorInterface.wrap
     
@@ -2351,6 +2770,7 @@ class Nautilus(Shell, EditorInterface):
                  execStartupScript=execStartupScript, # if True, executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
+        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.target = target
@@ -2358,12 +2778,6 @@ class Nautilus(Shell, EditorInterface):
         
         wx.py.shell.USE_MAGIC = True
         wx.py.shell.magic = self.magic # called when USE_MAGIC
-        
-        ## cf. sys.modules
-        if not self.modules:
-            force = wx.GetKeyState(wx.WXK_CONTROL)\
-                  & wx.GetKeyState(wx.WXK_SHIFT)
-            Nautilus.modules = set(find_modules(force))
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
@@ -2469,8 +2883,8 @@ class Nautilus(Shell, EditorInterface):
                   'M-j pressed' : (0, self.exec_region),
                 'C-S-j pressed' : (0, self.exec_region),
                   'C-h pressed' : (0, self.call_helpTip),
-                  'M-h pressed' : (0, self.call_helpTip2),
-                'C-S-h pressed' : (0, self.call_helpTip2),
+                  'M-h pressed' : (0, self.call_helpDoc),
+                'C-S-h pressed' : (0, self.call_helpDoc),
                     '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
@@ -2482,7 +2896,7 @@ class Nautilus(Shell, EditorInterface):
             },
             1 : { # history auto completion S-mode
                          'quit' : (0, clear),
-                         'fork' : (0, self.on_indent_line),
+                         'skip' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
                 'enter pressed' : (0, lambda v: self.goto_char(self.eolc)),
                'escape pressed' : (0, clear),
@@ -2490,10 +2904,10 @@ class Nautilus(Shell, EditorInterface):
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
              'S-right released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, self.on_completion_forward_history),
-                'S-tab pressed' : (1, self.on_completion_backward_history),
-                  'M-p pressed' : (1, self.on_completion_forward_history),
-                  'M-n pressed' : (1, self.on_completion_backward_history),
+                  'tab pressed' : (1, _F(self._on_completion,  1)), # 古いヒストリへ進む
+                'S-tab pressed' : (1, _F(self._on_completion, -1)), # 新しいヒストリへ戻る
+                  'M-p pressed' : (1, _F(self._on_completion,  1)),
+                  'M-n pressed' : (1, _F(self._on_completion, -1)),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
             'S-[a-z\\] pressed' : (1, skip),
@@ -2509,7 +2923,7 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
+                'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (2, skip, self.on_completion_backward),
                  'down pressed' : (2, skip, self.on_completion_forward),
@@ -2527,11 +2941,6 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
-                  'M-j pressed' : (2, self.exec_region),
-                'C-S-j pressed' : (2, self.exec_region),
-                  'C-h pressed' : (2, self.call_helpTip),
-                  'M-h pressed' : (2, self.call_helpTip2),
-                'C-S-h pressed' : (2, self.call_helpTip2),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -2542,7 +2951,7 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
+                'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (3, skip, self.on_completion_backward),
                  'down pressed' : (3, skip, self.on_completion_forward),
@@ -2560,11 +2969,6 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
-                  'M-j pressed' : (3, self.exec_region),
-                'C-S-j pressed' : (3, self.exec_region),
-                  'C-h pressed' : (3, self.call_helpTip),
-                  'M-h pressed' : (3, self.call_helpTip2),
-                'C-S-h pressed' : (3, self.call_helpTip2),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -2575,7 +2979,7 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
+                'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (4, skip, self.on_completion_backward),
                  'down pressed' : (4, skip, self.on_completion_forward),
@@ -2593,11 +2997,6 @@ class Nautilus(Shell, EditorInterface):
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
-                  'M-j pressed' : (4, self.exec_region),
-                'C-S-j pressed' : (4, self.exec_region),
-                  'C-h pressed' : (4, self.call_helpTip),
-                  'M-h pressed' : (4, self.call_helpTip2),
-                'C-S-h pressed' : (4, self.call_helpTip2),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
                '*shift pressed' : (4, ),
@@ -2608,7 +3007,7 @@ class Nautilus(Shell, EditorInterface):
                          'quit' : (0, clear_autocomp),
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, fork),
+                'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear_autocomp),
                    'up pressed' : (5, skip, self.on_completion_backward),
                  'down pressed' : (5, skip, self.on_completion_forward),
@@ -2621,7 +3020,7 @@ class Nautilus(Shell, EditorInterface):
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
                   '\\ released' : (5, self.call_module_autocomp),
-                 'M-m released' : (5, _F(self.call_module_autocomp, force=1)),
+                  'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
            '*backspace pressed' : (5, skip_autocomp),
           '*backspace released' : (5, self.call_module_autocomp),
@@ -2669,9 +3068,9 @@ class Nautilus(Shell, EditorInterface):
         evt.Skip()
     
     def OnCallTipClick(self, evt):
-        self.parent.handler('add_help', self.__calltip)
         if self.CallTipActive():
             self.CallTipCancel()
+        self.parent.handler('add_help', self._calltip)
         evt.Skip()
     
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
@@ -2689,7 +3088,7 @@ class Nautilus(Shell, EditorInterface):
         """Called when space pressed."""
         if not self.CanEdit():
             return
-        cmdl = self.cmdlc
+        cmdl = self.GetTextRange(self.bol, self.cpos)
         if re.match(r"import\s*", cmdl)\
           or re.match(r"from\s*$", cmdl)\
           or re.match(r"from\s+([\w.]+)\s+import\s*", cmdl):
@@ -2963,22 +3362,18 @@ class Nautilus(Shell, EditorInterface):
         Note:
             Argument `text` is raw output:str with no magic cast.
         """
-        ln = self.cmdline_region[0]
+        ln = self.LineFromPosition(self.bolc)
         err = re.findall(py_error_re, text, re.M)
         self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
     
     def on_interp_error(self, e):
-        self.pointer = self.cmdline_region[0] + e.lineno - 1
+        ln = self.LineFromPosition(self.bolc)
+        self.pointer = ln + e.lineno - 1
     
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp
-    
-    ## shell.history is an instance variable of the Shell.
-    ## If del shell.history, the history of the class variable is used
-    history = []
     
     @property
     def bolc(self):
@@ -3001,36 +3396,19 @@ class Nautilus(Shell, EditorInterface):
         return self.cpos - lp
     
     @property
-    def cmdlc(self):
-        """Cull command-line (excluding ps1:prompt)."""
-        return self.GetTextRange(self.bol, self.cpos)
-    
-    @property
     def cmdline(self):
-        """Full command-(multi-)line (excluding ps1:prompt)."""
+        """Full multi-line command in the current prompt."""
         return self.GetTextRange(self.bolc, self.eolc)
-    
-    @property
-    def cmdline_region(self):
-        lc = self.LineFromPosition(self.bolc)
-        le = self.LineCount
-        return lc, le
     
     ## cf. getCommand() -> caret-line that starts with a prompt
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
     ##     [BUG 4.1.1] Don't use for current prompt --> Fixed in 4.2.0.
     
-    @property
-    def Command(self):
-        """Extract a command from the editor."""
-        return self.getCommand(rstrip=False)
-    
-    @property
-    def MultilineCommand(self):
-        """Extract a multi-line command from the editor.
+    def getMultilineCommand(self):
+        """Extract a multi-line command which starts with a prompt.
         
-        Similar to getMultilineCommand(), but does not exclude
-        a trailing ps2 + blank command.
+        (override) Don't remove trailing ps2 + spaces.
+                   Don't invoke ``GotoLine``.
         """
         region = self.get_region(self.cline)
         if region:
@@ -3086,13 +3464,13 @@ class Nautilus(Shell, EditorInterface):
             output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
             input = self.regulate_cmd(input)
-            Shell.addHistory(self, input)
+            Shell.addHistory(self, input) # => self.history
             
             noerr = self.on_text_output(output)
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
                 self.fragmwords |= set(words)
-                command = self.fixLineEndings(command)
+            command = self.fixLineEndings(command)
             self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:
             ## execStartupScript 実行時は出力先 (owner) が存在しない
@@ -3254,30 +3632,11 @@ class Nautilus(Shell, EditorInterface):
     def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
         """Display argument spec and docstring in a popup window.
         
-        (override) Swap anchors to not scroll to the end of the line,
-                   and display a long hint at the insertion position.
+        (override) Swap anchors to not scroll to the end of the line.
         """
-        vpos = self.GetScrollPos(wx.VERTICAL)
-        hpos = self.GetScrollPos(wx.HORIZONTAL)
         Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
         self.cpos, self.anchor = self.anchor, self.cpos
-        ## self.EnsureCaretVisible()
-        self.ScrollToLine(vpos)
-        self.SetXOffset(hpos)
-    
-    def CallTipShow(self, pos, tip, N=11):
-        """Show a call tip containing a definition near position pos.
-        
-        (override) Snip the tip of max N lines if it is too long.
-                   Keep the tip for calltip-click event.
-        """
-        self.__calltip = tip
-        lines = tip.splitlines()
-        if len(lines) > N:
-            lines[N+1:] = ["\n...(snip) This tips are too long... "
-                           "Click to show more details."
-                          ]
-        Shell.CallTipShow(self, pos, '\n'.join(lines))
+        self.EnsureCaretVisible()
     
     def eval_line(self, evt):
         """Evaluate the selected word or line.
@@ -3285,24 +3644,15 @@ class Nautilus(Shell, EditorInterface):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.Command
-                yield self.expr_at_caret
-                yield self.MultilineCommand
-        
         status = "No words"
-        for text in filter(None, _gen_text()):
+        for text in self.gen_text_at_caret():
             tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 obj = self.eval(cmd)
             except Exception as e:
-                status = "- {}: {!r}".format(e, text)
+                status = "- {} : {!r}".format(e, text)
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(cmd)
@@ -3315,7 +3665,7 @@ class Nautilus(Shell, EditorInterface):
             self.CallTipCancel()
         
         filename = "<input>"
-        text = self.MultilineCommand
+        text = self.getMultilineCommand()
         if text:
             tokens = split_words(text)
             try:
@@ -3337,253 +3687,3 @@ class Nautilus(Shell, EditorInterface):
                 self.message("Evaluated {!r} successfully.".format(filename))
         else:
             self.message("No region")
-    
-    def call_helpTip2(self, evt):
-        """Show help:str for the selected topic."""
-        if self.CallTipActive():
-            self.CallTipCancel()
-        
-        text = self.SelectedText or self.Command or self.expr_at_caret
-        if text:
-            text = introspect.getRoot(text, terminator='(')
-            try:
-                obj = self.eval(text)
-                self.help(obj)
-            except Exception as e:
-                self.message("- {} : {!r}".format(e, text))
-    
-    def call_helpTip(self, evt):
-        """Show tooltips for the selected topic."""
-        if self.CallTipActive():
-            self.CallTipCancel()
-        
-        text = self.SelectedText or self.Command or self.expr_at_caret
-        if text:
-            try:
-                p = self.cpos
-                c = self.get_char(p-1)
-                self.autoCallTipShow(text,
-                    c == '(' and p == self.eol) # => CallTipShow
-            except Exception as e:
-                self.message("- {} : {!r}".format(e, text))
-    
-    def on_completion_forward(self, evt):
-        if self.AutoCompActive():
-            self.on_completion(evt, 1)
-        else:
-            self.handler('quit', evt)
-    
-    def on_completion_backward(self, evt):
-        if self.AutoCompActive():
-            self.on_completion(evt, -1)
-        else:
-            self.handler('quit', evt)
-    
-    def on_completion_forward_history(self, evt):
-        self.on_completion(evt, 1) # 古いヒストリへ進む
-    
-    def on_completion_backward_history(self, evt):
-        self.on_completion(evt, -1) # 新しいヒストリへ戻る
-    
-    def on_completion(self, evt, step=0):
-        """Show completion with selection."""
-        try:
-            N = len(self.__comp_words)
-            j = self.__comp_ind + step
-            j = 0 if j < 0 else j if j < N else N-1
-            word = self.__comp_words[j]
-            n = len(self.__comp_hint)
-            p = self.cpos
-            if not self.SelectedText:
-                p, self.anchor, sty = self.get_following_atom(p) # word-right-selection
-            self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
-            self.cpos = p # backward selection to the point
-            self.__comp_ind = j
-        except IndexError:
-            self.message("No completion words")
-    
-    def _gen_autocomp(self, j, hint, words, sep=' '):
-        """Call AutoCompShow for the specified words and sep."""
-        ## Prepare on_completion_forward/backward
-        self.__comp_ind = j
-        self.__comp_hint = hint
-        self.__comp_words = words
-        if words:
-            self.AutoCompSetSeparator(ord(sep))
-            self.AutoCompShow(len(hint), sep.join(words))
-    
-    @staticmethod
-    def _get_last_hint(cmdl):
-        return re.search(r"[\w.]*$", cmdl).group(0) # or ''
-    
-    @staticmethod
-    def _get_words_hint(cmdl):
-        text = next(split_words(cmdl, reverse=1), '')
-        return text.rpartition('.') # -> text, sep, hint
-    
-    def call_history_comp(self, evt):
-        """Called when history-comp mode."""
-        if not self.CanEdit():
-            self.handler('quit', evt)
-            return
-        try:
-            cmdl = self.cmdlc
-            if cmdl.isspace() or self.bol != self.bolc:
-                self.handler('fork', evt) # fork [tab pressed] => on_indent_line
-                return
-            
-            hint = cmdl.strip()
-            ls = [x.replace('\n', os.linesep + sys.ps2)
-                    for x in self.history if x.startswith(hint)] # case-sensitive match
-            words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
-            
-            self.__comp_ind = 0
-            self.__comp_hint = hint
-            self.__comp_words = words
-            
-            self.anchor = self.eolc # selection to eol
-            self.on_completion(evt) # show completion always
-            
-            ## the latest history stacks in the head of the list (time-descending)
-            self.message("[history] {} candidates matched"
-                         " with {!r}".format(len(words), hint))
-        except Exception:
-            raise
-    
-    def call_text_autocomp(self, evt):
-        """Called when text-comp mode."""
-        if not self.CanEdit():
-            self.handler('quit', evt)
-            return
-        try:
-            cmdl = self.cmdlc
-            hint = self._get_last_hint(cmdl)
-            
-            ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
-            words = sorted(ls, key=lambda s:s.upper())
-            
-            self._gen_autocomp(0, hint, words)
-            self.message("[text] {} candidates matched"
-                         " with {!r}".format(len(words), hint))
-        except Exception:
-            raise
-    
-    def call_module_autocomp(self, evt, force=False):
-        """Called when module-comp mode."""
-        if not self.CanEdit():
-            self.handler('quit', evt)
-            return
-        
-        def _continue(hints):
-            if not hints.endswith(' '):
-                h = hints.strip()
-                if not h.endswith(','):
-                    lh = h.split(',')[-1].strip() # 'x, y, z|' last hint after ','
-                    if ' ' not in lh:             # 'x, y as|' contains no spaces.
-                        return lh
-        try:
-            cmdl = self.cmdlc
-            hint = self._get_last_hint(cmdl)
-            
-            if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
-                text, hints = m.groups()
-                if not _continue(hints) and not force:
-                    self.message("[module]>>> waiting for key input...")
-                    return
-                elif hints.endswith('.'):
-                    self.message("[module] invalid import syntax.")
-                    return
-                if text not in sys.modules:
-                    self.message("[module]>>> loading {}...".format(text))
-                try:
-                    modules = set(dir(import_module(text)))
-                except ImportError as e:
-                    self.message("\b failed:", e)
-                    return
-                ## Add unimported module names.
-                p = "{}.{}".format(text, hint)
-                keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
-                modules.update(k for k in keys if '.' not in k)
-            
-            elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
-                text, hints = m.groups()
-                if not _continue(hints) and not force:
-                    self.message("[module]>>> waiting for key input...")
-                    return
-                modules = self.modules
-            else:
-                text, sep, hint = self._get_words_hint(cmdl)
-                obj = self.eval(text)
-                modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
-            
-            P = re.compile(hint)
-            p = re.compile(hint, re.I)
-            words = sorted([x for x in modules if p.match(x)], key=lambda s:s.upper())
-            
-            j = next((k for k, w in enumerate(words) if P.match(w)),
-                next((k for k, w in enumerate(words) if p.match(w)), -1))
-            
-            self._gen_autocomp(j, hint, words)
-            self.message("[module] {} candidates matched"
-                         " with {!r} in {}".format(len(words), hint, text))
-        except re.error as e:
-            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-        except SyntaxError as e:
-            self.handler('quit', evt)
-            self.message("- {} : {!r}".format(e, text))
-        except Exception as e:
-            self.message("- {} : {!r}".format(e, text))
-    
-    def call_word_autocomp(self, evt):
-        """Called when word-comp mode."""
-        if not self.CanEdit():
-            self.handler('quit', evt)
-            return
-        try:
-            text, sep, hint = self._get_words_hint(self.cmdlc)
-            obj = self.eval(text)
-            
-            P = re.compile(hint)
-            p = re.compile(hint, re.I)
-            words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
-            
-            j = next((k for k, w in enumerate(words) if P.match(w)),
-                next((k for k, w in enumerate(words) if p.match(w)), -1))
-            
-            self._gen_autocomp(j, hint, words)
-            self.message("[word] {} candidates matched"
-                         " with {!r} in {}".format(len(words), hint, text))
-        except re.error as e:
-            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-        except SyntaxError as e:
-            self.handler('quit', evt)
-            self.message("- {} : {!r}".format(e, text))
-        except Exception as e:
-            self.message("- {} : {!r}".format(e, text))
-    
-    def call_apropos_autocomp(self, evt):
-        """Called when apropos mode."""
-        if not self.CanEdit():
-            self.handler('quit', evt)
-            return
-        try:
-            text, sep, hint = self._get_words_hint(self.cmdlc)
-            obj = self.eval(text)
-            
-            P = re.compile(hint)
-            p = re.compile(hint, re.I)
-            words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
-            
-            j = next((k for k, w in enumerate(words) if P.match(w)),
-                next((k for k, w in enumerate(words) if p.match(w)), -1))
-            
-            self._gen_autocomp(j, hint, words)
-            self.message("[apropos] {} candidates matched"
-                         " with {!r} in {}".format(len(words), hint, text))
-        except re.error as e:
-            self.message("- re:miss compilation {!r} : {!r}".format(e, hint))
-        except SyntaxError as e:
-            self.handler('quit', evt)
-            self.message("- {} : {!r}".format(e, text))
-        except Exception as e:
-            self.message("- {} : {!r}".format(e, text))
