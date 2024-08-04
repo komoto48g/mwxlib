@@ -72,14 +72,22 @@ def ask(f, prompt="Enter value", type=str):
 
 
 class AutoCompInterfaceMixin:
-    """Auto completion interface.
+    """Auto-complete mode interface.
+    
+    Mode name           Mode vars.
+    --------------------------------
+    [1] history-comp    history (an instance variable of the Shell)
+    [2] word-comp       -
+    [3] apropos-comp    -
+    [4] text-comp       fragmwords
+    [5] module-comp     modules
     
     Note:
         This class is mixed-in ``wx.py.editwindow.EditWindow``.
     """
-    modules = set() # to be used in module-comp mode
-    
-    fragmwords = set(keyword.kwlist + dir(builtins)) # to be used in text-comp mode
+    history = []     # used in history-comp mode
+    modules = set()  # used in module-comp mode
+    fragmwords = set(keyword.kwlist + dir(builtins)) # used in text-comp mode
     
     def __init__(self):
         ## cf. sys.modules
@@ -94,10 +102,9 @@ class AutoCompInterfaceMixin:
         (override) Snip the tip of max N lines if it is too long.
                    Keep the tip for calltip-click event.
         """
-        self._calltip_pos = pos
-        self._calltip = tip
+        self._calltips = (pos, tip)
         lines = tip.splitlines()
-        if len(lines) > N > 0:
+        if N and len(lines) > N > 0:
             lines[N+1:] = ["\n...(snip) This tips are too long... "
                            "Click to show more details."]
             tip = '\n'.join(lines)
@@ -1836,7 +1843,6 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
                     '. pressed' : (2, skip),
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
-                  'M-m pressed' : (5, self.call_module_autocomp),
             },
             2 : { # word auto completion AS-mode
                          'quit' : (0, clear_autocomp),
@@ -1892,34 +1898,6 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
              '*[LR]win pressed' : (3, ),
              '*f[0-9]* pressed' : (3, ),
             },
-            5 : { # module auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
-                  'tab pressed' : (0, clear, skip),
-                'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
-                   'up pressed' : (5, skip, self.on_completion_backward),
-                 'down pressed' : (5, skip, self.on_completion_forward),
-                '*left pressed' : (5, skip),
-               '*left released' : (5, self.call_module_autocomp),
-               '*right pressed' : (5, skip),
-              '*right released' : (5, self.call_module_autocomp),
-          '[a-z0-9_.,] pressed' : (5, skip),
-         '[a-z0-9_.,] released' : (5, self.call_module_autocomp),
-            'S-[a-z\\] pressed' : (5, skip),
-           'S-[a-z\\] released' : (5, self.call_module_autocomp),
-                  '\\ released' : (5, self.call_module_autocomp),
-                  'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
-              '*delete pressed' : (5, skip),
-           '*backspace pressed' : (5, skip),
-          '*backspace released' : (5, self.call_module_autocomp),
-        'C-S-backspace pressed' : (5, ),
-                 '*alt pressed' : (5, ),
-                '*ctrl pressed' : (5, ),
-               '*shift pressed' : (5, ),
-             '*[LR]win pressed' : (5, ),
-             '*f[0-9]* pressed' : (5, ),
-            },
         })
         
         self.show_folder()
@@ -1944,7 +1922,7 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     def OnCallTipClick(self, evt):
         if self.CallTipActive():
             self.CallTipCancel()
-        self.CallTipShow(self._calltip_pos, self._calltip, N=-1)
+        self.CallTipShow(*self._calltips, N=None)
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
@@ -2642,24 +2620,24 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         ``*`` denotes the original syntax defined in wx.py.shell,
         for which, at present version, enabled with USE_MAGIC switch being on.
     
-    Autocomp-key bindings::
+    Auto-complete key bindings::
     
         C-up        : [0] retrieve previous history
         C-down      : [0] retrieve next history
-        C-j(J), M-j : [0] call tooltip of eval (for the word selected or focused)
-        C-h(H), M-h : [0] call tooltip of help (for the func selected or focused)
-        TAB         : [1] history-comp-mode
-        M-p         : [1] retrieve previous history in comp-mode
-        M-n         : [1] retrieve next history in comp-mode
-        M-.         : [2] word-comp-mode
-        M-/         : [3] apropos-comp-mode
-        M-,         : [4] text-comp-mode
-        M-m         : [5] module-comp-mode
+        C-j, M-j    : [0] call tooltip of eval (for the word selected or focused)
+        C-h, M-h    : [0] call tooltip of help (for the func selected or focused)
+        TAB         : [1] history-comp
+        M-p         : [1] retrieve previous history in history-comp mode
+        M-n         : [1] retrieve next history in history-comp mode
+        M-.         : [2] word-comp
+        M-/         : [3] apropos-comp
+        M-,         : [4] text-comp
+        M-m         : [5] module-comp
         
         Autocomps are incremental when pressed any alnums,
                   and decremental when backspace.
     
-    Enter-key bindings::
+    Enter key bindings::
     
         C-enter     : insert-line-break
         M-enter     : duplicate-command
@@ -3070,7 +3048,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     def OnCallTipClick(self, evt):
         if self.CallTipActive():
             self.CallTipCancel()
-        self.parent.handler('add_help', self._calltip)
+        self.parent.handler('add_help', self._calltips[1])
         evt.Skip()
     
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
