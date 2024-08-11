@@ -414,8 +414,8 @@ class EditorInterface(CtrlInterface):
                 'C-S-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                 'C-S-: pressed' : (0, _F(self.uncomment_line)),
-                  'select_line' : (100, self.on_linesel_begin),
-                 'select_lines' : (100, self.on_linesel_next),
+                  'select_line' : (11, self.on_linesel_begin),
+                 'select_lines' : (11, self.on_linesel_next),
             },
             10 : {
                          'quit' : (0, self.on_itext_exit),
@@ -424,8 +424,8 @@ class EditorInterface(CtrlInterface):
                  'down pressed' : (10, skip),
                 'enter pressed' : (0, self.on_itext_selection),
             },
-            100 : {
-                  '*Ldrag move' : (100, self.on_linesel_motion),
+            11 : {
+                  '*Ldrag move' : (11, self.on_linesel_motion),
                  'capture_lost' : (0, self.on_linesel_end),
              'Lbutton released' : (0, self.on_linesel_end),
             },
@@ -887,6 +887,7 @@ class EditorInterface(CtrlInterface):
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
+    
     def on_indent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
@@ -3617,8 +3618,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         self.EnsureCaretVisible()
     
     def eval_line(self, evt):
-        """Evaluate the selected word or line.
-        """
+        """Evaluate the selected word or line."""
         if self.CallTipActive():
             self.CallTipCancel()
         

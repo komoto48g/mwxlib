@@ -222,8 +222,6 @@ class KeyCtrlInterfaceMixin:
         spec-map    : 'C-c'
         esc-map     : 'escape'
     """
-    message = print # override this in subclass
-    
     @postcall
     def post_message(self, *args, **kwargs):
         return self.message(*args, **kwargs)
@@ -332,17 +330,22 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     """
     handler = property(lambda self: self.__handler)
     
+    message = print # override this in subclass
+    
     def __init__(self):
         self.__key = ''
         self.__button = ''
         self.__isDragging = False
-        self.__handler = FSM({None:{}, 0:{}})
+        self.__handler = FSM({ # DNA<CtrlInterface>
+                None : {
+                },
+                0 : {
+                },
+            },
+        )
         
         _M = self._mouse_handler
-        
-        def _N(event, evt):
-            if self.handler(event, evt) is None:
-                evt.Skip()
+        _N = self._normal_handler
         
         def activate(evt):
             self.handler('focus_set', evt)
@@ -383,7 +386,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dblclick', v))
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _N('capture_lost', v))
-        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_lost', v))
+        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_changed', v))
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed."""
@@ -461,6 +464,10 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
+    
+    def _normal_handler(self, event, evt): #<wx._core.Event>
+        if self.handler(event, evt) is None:
+            evt.Skip()
 
 
 ## --------------------------------
