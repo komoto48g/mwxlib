@@ -763,15 +763,10 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
-        def close(evt):
-            """Close the window."""
-            self.Close()
-        
         self.__handler = FSM({ # DNA<Frame>
                 None : {
                 },
                 0 : {
-                  'M-q pressed' : (0, close),
                 },
             },
         )
@@ -829,15 +824,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         ## To default close >>> self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
-        def close(evt):
-            """Close the window."""
-            self.Close()
-        
         self.__handler = FSM({ # DNA<MiniFrame>
                 None : {
                 },
                 0 : {
-                  'M-q pressed' : (0, close),
                 },
             },
         )
