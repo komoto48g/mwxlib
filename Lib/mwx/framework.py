@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.98.1"
+__version__ = "0.98.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1547,9 +1547,8 @@ class ShellFrame(MiniFrame):
         pane = self._mgr.GetPane(win)
         if pane.IsDocked():
             if not self.console.IsShown():
-                self._mgr.RestoreMaximizedPane()
-                self._mgr.Update()
-                return
+                self._mgr.RestoreMaximizedPane() # いったん表示切替
+                self._mgr.Update()               # 更新後に best_size 取得
         if pane.IsShown():
             pane.best_size = win.Size
         self.popup_window(win, not pane.IsShown())
