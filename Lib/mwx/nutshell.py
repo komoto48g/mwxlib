@@ -10,7 +10,6 @@ import traceback
 import inspect
 import builtins
 import operator
-import dis
 import pydoc
 import keyword
 import linecache
@@ -1192,10 +1191,10 @@ class EditorInterface(CtrlInterface):
         """
         n = self.LinesOnScreen() # lines completely visible
         m = n//2 if ln is None else ln % n if ln < n else n # ln[0:n]
-        vl = self.calc_vline(self.cline)
+        vl = self._calc_vline(self.cline)
         self.ScrollToLine(vl - m)
     
-    def calc_vline(self, line):
+    def _calc_vline(self, line):
         """Virtual line numberin the buffer window."""
         pos = self.PositionFromLine(line)
         w, h = self.PointFromPosition(pos)
@@ -1207,7 +1206,7 @@ class EditorInterface(CtrlInterface):
         """
         n = self.LinesOnScreen() # lines completely visible
         hl = self.FirstVisibleLine
-        vl = self.calc_vline(line)
+        vl = self._calc_vline(line)
         if vl < hl:
             self.ScrollToLine(vl)
         elif vl > hl + n - 1:
@@ -1220,7 +1219,7 @@ class EditorInterface(CtrlInterface):
         """
         n = self.LinesOnScreen() # lines completely visible
         hl = self.FirstVisibleLine
-        vl = self.calc_vline(line)
+        vl = self._calc_vline(line)
         if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
     
@@ -2053,6 +2052,9 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
+    def eval_line(self):
+        self.py_eval_line(self.globals, self.locals)
+    
     def py_eval_line(self, globals=None, locals=None):
         if self.CallTipActive():
             self.CallTipCancel()
@@ -2068,6 +2070,9 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
                 self.message(text)
                 return
         self.message(status)
+    
+    def exec_region(self):
+        self.py_exec_region(self.globals, self.locals)
     
     def py_exec_region(self, globals=None, locals=None, filename=None):
         if not filename:
@@ -2101,23 +2106,6 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
             self.handler('buffer_region_executed', self)
             self.message("Evaluated {!r} successfully.".format(filename))
             self.AnnotationClearAll()
-    
-    def py_get_region(self, line):
-        """Line numbers of code head and tail containing the line.
-        
-        Requires a code object.
-        If the code doesn't exist, return the folding region.
-        """
-        if not self.code:
-            return self.get_region(line)
-        lc, le = 0, self.LineCount
-        linestarts = list(dis.findlinestarts(self.code))
-        for i, ln in reversed(linestarts):
-            if line >= ln-1:
-                lc = ln-1
-                break
-            le = ln-1
-        return lc, le
 
 
 class EditorBook(AuiNotebook, CtrlInterface):

@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.98.2"
+__version__ = "0.98.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1275,16 +1275,14 @@ class ShellFrame(MiniFrame):
         
         @self.Scratch.define_key('C-j')
         def eval_line(evt):
-            shell = self.current_shell
-            self.Scratch.buffer.py_eval_line(shell.globals, shell.locals)
-            evt.Skip(False)
+            self.Scratch.buffer.eval_line()
+            evt.Skip(False) # Don't skip explicitly.
         
         @self.Scratch.define_key('C-S-j')
         @self.Scratch.define_key('M-j')
         def eval_buffer(evt):
-            shell = self.current_shell
-            self.Scratch.buffer.py_exec_region(shell.globals, shell.locals)
-            evt.Skip(False)
+            self.Scratch.buffer.exec_region()
+            evt.Skip(False) # Don't skip explicitly.
         
         ## Session
         self.SESSION_FILE = get_rootpath(".debrc")
