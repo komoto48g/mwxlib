@@ -174,8 +174,11 @@ class AutoCompInterfaceMixin:
             n = len(self.__comp_hint)
             p = self.cpos
             if not self.SelectedText:
-                p, self.anchor, sty = self.get_following_atom(p) # word-right-selection
-            self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
+                p, q, sty = self.get_following_atom(p) # word-right-selection
+                if sty == 'word':
+                    self.anchor = q
+            with self.off_undocollection():
+                self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
             self.cpos = p # backward selection to the point
             self.__comp_ind = j
         except IndexError:
@@ -1514,16 +1517,6 @@ class EditorInterface(CtrlInterface):
                 self.anchor = q
     
     @contextmanager
-    def off_readonly(self):
-        """Set buffer to be writable (ReadOnly=False) temporarily."""
-        r = self.ReadOnly
-        try:
-            self.ReadOnly = 0
-            yield
-        finally:
-            self.ReadOnly = r
-    
-    @contextmanager
     def save_attributes(self, **kwargs):
         """Save buffer attributes (e.g. ReadOnly=False)."""
         for k, v in kwargs.items():
@@ -1534,6 +1527,14 @@ class EditorInterface(CtrlInterface):
         finally:
             for k, v in kwargs.items():
                 setattr(self, k, v)
+    
+    def off_readonly(self):
+        """Disables buffer read-only lock temporarily."""
+        return self.save_attributes(ReadOnly=False)
+    
+    def off_undocollection(self):
+        """Disables buffer undo stack temporarily."""
+        return self.save_attributes(UndoCollection=False)
     
     ## --------------------------------
     ## Edit: comment / insert / kill
@@ -1799,7 +1800,8 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
             ## if self.AutoCompActive():
             ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def clear_autocomp(evt):
@@ -1807,7 +1809,8 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
             if self.AutoCompActive():
                 self.AutoCompCancel()
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def fork(evt):
@@ -1841,7 +1844,7 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
                    '* released' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
-                    '. pressed' : (2, skip),
+                    '. pressed' : (2, self.OnEnterDot),
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
             },
@@ -1961,6 +1964,14 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     
     def OnSavePointReached(self, evt):
         self.update_caption()
+        evt.Skip()
+    
+    def OnEnterDot(self, evt):
+        p = self.cpos
+        st = self.get_style(p-1)
+        rst = self.get_style(p)
+        if st not in ('moji', 'word', 'rparen') or rst == 'word':
+            self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
     def on_activated(self, buf):
@@ -2775,7 +2786,8 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
             ## if self.AutoCompActive():
             ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def clear_autocomp(evt):
@@ -2783,7 +2795,8 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
             if self.AutoCompActive():
                 self.AutoCompCancel()
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def skip_autocomp(evt):
@@ -3145,7 +3158,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
             self.ReplaceSelection('self')
         elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
-        self.ReplaceSelection('.') # just write down a dot.
+        evt.Skip()
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
