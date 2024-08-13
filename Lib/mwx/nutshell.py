@@ -101,12 +101,13 @@ class AutoCompInterfaceMixin:
         (override) Snip the tip of max N lines if it is too long.
                    Keep the tip for calltip-click event.
         """
-        self._calltips = (pos, tip)
+        self._calltips = [pos, tip, False]
         lines = tip.splitlines()
         if N and len(lines) > N > 0:
             lines[N+1:] = ["\n...(snip) This tips are too long... "
                            "Click to show more details."]
             tip = '\n'.join(lines)
+            self._calltips[-1] = True # snipped (needs to be shown)
         super().CallTipShow(pos, tip)
     
     def autoCallTipShow(self, command, insertcalltip=True):
@@ -1922,7 +1923,9 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     def OnCallTipClick(self, evt):
         if self.CallTipActive():
             self.CallTipCancel()
-        self.CallTipShow(*self._calltips, N=None)
+        pos, tip, more = self._calltips
+        if more:
+            self.CallTipShow(pos, tip, N=None)
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
