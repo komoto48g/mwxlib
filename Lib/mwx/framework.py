@@ -1293,7 +1293,9 @@ class ShellFrame(MiniFrame):
             os.path.abspath(debrc) if debrc else self.SESSION_FILE)
     
     def load_session(self, filename):
-        """Load session from file."""
+        """Load session from file.
+        Buffers, pointers, and the entire layout are loaded.
+        """
         def _fload(editor, filename):
             try:
                 buffer = editor.default_buffer or editor.new_buffer()
@@ -1320,7 +1322,9 @@ class ShellFrame(MiniFrame):
             self.Position = (0, 0)
     
     def save_session(self):
-        """Save session to file."""
+        """Save session to file.
+        Buffers, pointers, and the entire layout are saved.
+        """
         def _fsave(editor, filename):
             try:
                 buffer = editor.default_buffer
@@ -1335,20 +1339,20 @@ class ShellFrame(MiniFrame):
         with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
             o.write("#! Session file (This file is generated automatically)\n")
             
-            for book in self.all_editors:
+            for book in (self.Scratch, self.Log):
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
-                        o.write("self._load({!r}, {!r}, {!r})\n"
-                                .format(buf.filename, buf.markline+1, book.Name))
+                        o.write("self.{}.load_file({!r}, {})\n"
+                                .format(book.Name, buf.filename, buf.markline+1))
             o.write('\n'.join((
                 "self.SetSize({})".format(self.Size),
                 "self.SetPosition({})".format(self.Position),
-                "self.ghost.SetSelection({})".format(self.ghost.Selection),
-                "self.watcher.SetSelection({})".format(self.watcher.Selection),
+                "self.Scratch.loadPerspective({!r})".format(self.Scratch.savePerspective()),
+                "self.Log.loadPerspective({!r})".format(self.Log.savePerspective()),
                 ## Note: Perspectives should be called after all pages have been added.
-                "wx.CallAfter(self._mgr.LoadPerspective, {!r})".format(self._mgr.SavePerspective()),
-                "wx.CallAfter(self.ghost.loadPerspective, {!r})".format(self.ghost.savePerspective()),
-                "wx.CallAfter(self.watcher.loadPerspective, {!r})".format(self.watcher.savePerspective()),
+                "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
+                "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
+                "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                 "self._mgr.Update()\n",
             )))
     
@@ -1591,7 +1595,7 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         self.message("Quit")
     
-    def _load(self, filename, lineno, editor):
+    def _load(self, filename, lineno, editor): # for backward compatibility
         """Load file in the session (internal use only)."""
         if isinstance(editor, str):
             editor = getattr(self, editor, None)
