@@ -142,7 +142,7 @@ class AutoCompInterfaceMixin:
                 self.message("- {} : {!r}".format(e, text))
     
     def call_helpTip(self, evt):
-        """Show tooltips for the selected topic."""
+        """Show a calltip for the selected function."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -1797,15 +1797,13 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
         def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
-            ## if self.AutoCompActive():
-            ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
                 with self.off_undocollection():
                     self.ReplaceSelection("")
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear Autocomp, selection, and message."""
+            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
             if self.CanEdit():
@@ -2627,8 +2625,8 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     
         C-up        : [0] retrieve previous history
         C-down      : [0] retrieve next history
-        C-j, M-j    : [0] call tooltip of eval (for the word selected or focused)
-        C-h, M-h    : [0] call tooltip of help (for the func selected or focused)
+        C-j, M-j    : [0] tooltip of eval (for the selected or focused word)
+        C-h, M-h    : [0] calltip of help (for the selected or focused func)
         TAB         : [1] history-comp
         M-p         : [1] retrieve previous history in history-comp mode
         M-n         : [1] retrieve next history in history-comp mode
@@ -2783,29 +2781,19 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
-            ## if self.AutoCompActive():
-            ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
                 with self.off_undocollection():
                     self.ReplaceSelection("")
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear Autocomp, selection, and message."""
+            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
             if self.CanEdit():
                 with self.off_undocollection():
                     self.ReplaceSelection("")
             self.message("")
-        
-        def skip_autocomp(evt):
-            ## """Don't eat backward prompt whitespace."""
-            ## Prevent autocomp from eating prompts.
-            ## Quit to avoid backspace over the last non-continuation prompt.
-            if self.cpos == self.bolc:
-                self.handler('quit', evt)
-            evt.Skip()
         
         def fork(evt):
             self.handler.fork(self.handler.current_event, evt)
@@ -2849,7 +2837,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
-                 'left pressed' : (0, self.OnBackspace),
                   'C-[ pressed' : (0, _F(self.goto_previous_mark_arrow)),
                 'C-S-[ pressed' : (0, _F(self.goto_previous_mark_arrow, selection=1)),
                   'C-] pressed' : (0, _F(self.goto_next_mark_arrow)),
@@ -2920,7 +2907,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
            'S-[a-z\\] released' : (2, self.call_word_autocomp),
                   '\\ released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
-           '*backspace pressed' : (2, skip_autocomp),
+           '*backspace pressed' : (2, self.OnBackspace),
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
@@ -2948,7 +2935,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
            'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
                   '\\ released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
-           '*backspace pressed' : (3, skip_autocomp),
+           '*backspace pressed' : (3, self.OnBackspace),
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
@@ -2976,7 +2963,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
            'S-[a-z\\] released' : (4, self.call_text_autocomp),
                   '\\ released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
-           '*backspace pressed' : (4, skip_autocomp),
+           '*backspace pressed' : (4, self.OnBackspace),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
@@ -3005,7 +2992,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
                   '\\ released' : (5, self.call_module_autocomp),
                   'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
-           '*backspace pressed' : (5, skip_autocomp),
+           '*backspace pressed' : (5, self.OnBackspace),
           '*backspace released' : (5, self.call_module_autocomp),
         'C-S-backspace pressed' : (5, ),
                  '*alt pressed' : (5, ),
@@ -3081,12 +3068,11 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         evt.Skip()
     
     def OnBackspace(self, evt):
-        """Called when backspace (or left key) pressed.
-        Backspace-guard from Autocomp eating over a prompt whitespace
+        """Called when backspace pressed.
+        Backspace-guard from autocomp eating over a prompt whitespace.
         """
         if self.cpos == self.bolc:
-            ## do not skip to prevent autocomp eats prompt,
-            ## so not to backspace over the latest non-continuation prompt
+            self.handler('quit', evt) # don't eat backward prompt
             return
         evt.Skip()
     
