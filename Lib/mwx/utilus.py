@@ -886,7 +886,7 @@ class FSM(dict):
         return False
 
 
-class TreeList(object):
+class TreeList:
     """Interface class for tree list control.
     
     >>> list[item:(key,value)]

@@ -12,7 +12,7 @@ from . import framework as mwx
 from .controls import ControlPanel
 
 
-class Gnuplot(object):
+class Gnuplot:
     """Gnuplot - gnuplot:pipe wrapper
     """
     debug = 0

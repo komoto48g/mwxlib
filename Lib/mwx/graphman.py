@@ -50,7 +50,7 @@ def split_paths(obj):
     return os.path.split(obj)
 
 
-class Thread(object):
+class Thread:
     """Thread manager for graphman.Layer
     
     The worker:thread runs the given target.
@@ -443,15 +443,18 @@ class LayerInterface(CtrlInterface):
     def IsShown(self):
         """Returns True if the window is physically visible on the screen.
         
-        Note: This method is overridden to be equivalent to IsShownOnScreen,
-              as the object may be a page within a notebook.
+        (override) Equivalent to ``IsShownOnScreen``.
+                   Note: The instance could be a page within a notebook.
         """
         ## return self.pane.IsShown()
         return self.IsShownOnScreen()
     
     def Show(self, show=True, interactive=False):
-        """Show associated pane (override) window."""
-        ## Note: This might be called from a thread.
+        """Shows or hides the window.
+        
+        (override) Show associated pane window.
+                   Note: This might be called from a thread.
+        """
         wx.CallAfter(self.parent.show_pane, self, show, interactive)
     
     Drawn = property(

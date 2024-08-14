@@ -110,7 +110,7 @@ def _Property(name):
         lambda self:   delattr(self.parent, name))
 
 
-class AxesImagePhantom(object):
+class AxesImagePhantom:
     """Phantom of frame facade
     
     Args:

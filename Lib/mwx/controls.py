@@ -20,7 +20,7 @@ def _Tip(*tips):
     return '\n'.join(filter(None, tips)).strip()
 
 
-class Param(object):
+class Param:
     """Standard Parameter
     
     Args:
