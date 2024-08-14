@@ -101,12 +101,13 @@ class AutoCompInterfaceMixin:
         (override) Snip the tip of max N lines if it is too long.
                    Keep the tip for calltip-click event.
         """
-        self._calltips = (pos, tip)
+        self._calltips = [pos, tip, False]
         lines = tip.splitlines()
         if N and len(lines) > N > 0:
             lines[N+1:] = ["\n...(snip) This tips are too long... "
                            "Click to show more details."]
             tip = '\n'.join(lines)
+            self._calltips[-1] = True # snipped (needs to be shown)
         super().CallTipShow(pos, tip)
     
     def autoCallTipShow(self, command, insertcalltip=True):
@@ -141,7 +142,7 @@ class AutoCompInterfaceMixin:
                 self.message("- {} : {!r}".format(e, text))
     
     def call_helpTip(self, evt):
-        """Show tooltips for the selected topic."""
+        """Show a calltip for the selected function."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -173,8 +174,11 @@ class AutoCompInterfaceMixin:
             n = len(self.__comp_hint)
             p = self.cpos
             if not self.SelectedText:
-                p, self.anchor, sty = self.get_following_atom(p) # word-right-selection
-            self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
+                p, q, sty = self.get_following_atom(p) # word-right-selection
+                if sty == 'word':
+                    self.anchor = q
+            with self.off_undocollection():
+                self.ReplaceSelection(word[n:])
             self.cpos = p # backward selection to the point
             self.__comp_ind = j
         except IndexError:
@@ -355,7 +359,7 @@ class AutoCompInterfaceMixin:
             self.message("- {} : {!r}".format(e, text))
 
 
-class EditorInterface(CtrlInterface):
+class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     """Interface of Python code editor.
     
     Note:
@@ -363,6 +367,7 @@ class EditorInterface(CtrlInterface):
     """
     def __init__(self):
         CtrlInterface.__init__(self)
+        AutoCompInterfaceMixin.__init__(self)
         
         def dispatch(evt):
             """Fork events to the parent."""
@@ -1513,16 +1518,6 @@ class EditorInterface(CtrlInterface):
                 self.anchor = q
     
     @contextmanager
-    def off_readonly(self):
-        """Set buffer to be writable (ReadOnly=False) temporarily."""
-        r = self.ReadOnly
-        try:
-            self.ReadOnly = 0
-            yield
-        finally:
-            self.ReadOnly = r
-    
-    @contextmanager
     def save_attributes(self, **kwargs):
         """Save buffer attributes (e.g. ReadOnly=False)."""
         for k, v in kwargs.items():
@@ -1533,6 +1528,14 @@ class EditorInterface(CtrlInterface):
         finally:
             for k, v in kwargs.items():
                 setattr(self, k, v)
+    
+    def off_readonly(self):
+        """Disables buffer read-only lock temporarily."""
+        return self.save_attributes(ReadOnly=False)
+    
+    def off_undocollection(self):
+        """Disables buffer undo stack temporarily."""
+        return self.save_attributes(UndoCollection=False)
     
     ## --------------------------------
     ## Edit: comment / insert / kill
@@ -1640,7 +1643,7 @@ class EditorInterface(CtrlInterface):
         self.ReplaceSelection('')
 
 
-class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
+class Buffer(EditorInterface, EditWindow):
     """Python code buffer.
     
     Attributes:
@@ -1766,7 +1769,6 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
-        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent
         self.__filename = filename
@@ -1795,18 +1797,18 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
         def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
-            ## if self.AutoCompActive():
-            ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear Autocomp, selection, and message."""
+            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def fork(evt):
@@ -1840,7 +1842,7 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
                    '* released' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
-                    '. pressed' : (2, skip),
+                    '. pressed' : (2, self.OnEnterDot),
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
             },
@@ -1922,7 +1924,9 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     def OnCallTipClick(self, evt):
         if self.CallTipActive():
             self.CallTipCancel()
-        self.CallTipShow(*self._calltips, N=None)
+        pos, tip, more = self._calltips
+        if more:
+            self.CallTipShow(pos, tip, N=None)
         evt.Skip()
     
     def OnIndicatorClick(self, evt):
@@ -1958,6 +1962,14 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     
     def OnSavePointReached(self, evt):
         self.update_caption()
+        evt.Skip()
+    
+    def OnEnterDot(self, evt):
+        p = self.cpos
+        st = self.get_style(p-1)
+        rst = self.get_style(p)
+        if st not in ('moji', 'word', 'rparen') or rst == 'word':
+            self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
     def on_activated(self, buf):
@@ -2576,7 +2588,7 @@ class Interpreter(interpreter.Interpreter):
             return interpreter.Interpreter.getCallTip(self) # dummy
 
 
-class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
+class Nautilus(EditorInterface, Shell):
     """Nautilus in the Shell.
     
     Facade objects for accessing the APIs:
@@ -2613,8 +2625,8 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     
         C-up        : [0] retrieve previous history
         C-down      : [0] retrieve next history
-        C-j, M-j    : [0] call tooltip of eval (for the word selected or focused)
-        C-h, M-h    : [0] call tooltip of help (for the func selected or focused)
+        C-j, M-j    : [0] tooltip of eval (for the selected or focused word)
+        C-h, M-h    : [0] calltip of help (for the selected or focused func)
         TAB         : [1] history-comp
         M-p         : [1] retrieve previous history in history-comp mode
         M-n         : [1] retrieve next history in history-comp mode
@@ -2720,9 +2732,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
     
-    ## (override)
-    wrap = EditorInterface.wrap
-    
     def __init__(self, parent, target, name="root",
                  introText=None,
                  startupScript=None,
@@ -2737,7 +2746,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
                  execStartupScript=execStartupScript, # if True, executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
-        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.target = target
@@ -2769,27 +2777,19 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
-            ## if self.AutoCompActive():
-            ##     self.AutoCompCancel() # may delete selection
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear Autocomp, selection, and message."""
+            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
             if self.CanEdit():
-                self.ReplaceSelection("")
+                with self.off_undocollection():
+                    self.ReplaceSelection("")
             self.message("")
-        
-        def skip_autocomp(evt):
-            ## """Don't eat backward prompt whitespace."""
-            ## Prevent autocomp from eating prompts.
-            ## Quit to avoid backspace over the last non-continuation prompt.
-            if self.cpos == self.bolc:
-                self.handler('quit', evt)
-            evt.Skip()
         
         def fork(evt):
             self.handler.fork(self.handler.current_event, evt)
@@ -2833,7 +2833,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
                '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
-                 'left pressed' : (0, self.OnBackspace),
                   'C-[ pressed' : (0, _F(self.goto_previous_mark_arrow)),
                 'C-S-[ pressed' : (0, _F(self.goto_previous_mark_arrow, selection=1)),
                   'C-] pressed' : (0, _F(self.goto_next_mark_arrow)),
@@ -2904,7 +2903,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
            'S-[a-z\\] released' : (2, self.call_word_autocomp),
                   '\\ released' : (2, self.call_word_autocomp),
               '*delete pressed' : (2, skip),
-           '*backspace pressed' : (2, skip_autocomp),
+           '*backspace pressed' : (2, self.OnBackspace),
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
                   'C-j pressed' : (2, self.eval_line),
@@ -2932,7 +2931,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
            'S-[a-z\\] released' : (3, self.call_apropos_autocomp),
                   '\\ released' : (3, self.call_apropos_autocomp),
               '*delete pressed' : (3, skip),
-           '*backspace pressed' : (3, skip_autocomp),
+           '*backspace pressed' : (3, self.OnBackspace),
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
                   'C-j pressed' : (3, self.eval_line),
@@ -2960,7 +2959,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
            'S-[a-z\\] released' : (4, self.call_text_autocomp),
                   '\\ released' : (4, self.call_text_autocomp),
               '*delete pressed' : (4, skip),
-           '*backspace pressed' : (4, skip_autocomp),
+           '*backspace pressed' : (4, self.OnBackspace),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
                   'C-j pressed' : (4, self.eval_line),
@@ -2989,7 +2988,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
                   '\\ released' : (5, self.call_module_autocomp),
                   'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
-           '*backspace pressed' : (5, skip_autocomp),
+           '*backspace pressed' : (5, self.OnBackspace),
           '*backspace released' : (5, self.call_module_autocomp),
         'C-S-backspace pressed' : (5, ),
                  '*alt pressed' : (5, ),
@@ -3065,12 +3064,11 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
         evt.Skip()
     
     def OnBackspace(self, evt):
-        """Called when backspace (or left key) pressed.
-        Backspace-guard from Autocomp eating over a prompt whitespace
+        """Called when backspace pressed.
+        Backspace-guard from autocomp eating over a prompt whitespace.
         """
         if self.cpos == self.bolc:
-            ## do not skip to prevent autocomp eats prompt,
-            ## so not to backspace over the latest non-continuation prompt
+            self.handler('quit', evt) # don't eat backward prompt
             return
         evt.Skip()
     
@@ -3142,7 +3140,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
             self.ReplaceSelection('self')
         elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
-        self.ReplaceSelection('.') # just write down a dot.
+        evt.Skip()
     
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
@@ -3192,7 +3190,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     def magic(self, cmd):
         """Called before command pushed.
         
-        (override) disable old magic: `f x --> f(x)`
+        (override) Disable old magic: `f x --> f(x)`.
         """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
