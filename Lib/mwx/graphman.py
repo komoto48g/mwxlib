@@ -449,13 +449,13 @@ class LayerInterface(CtrlInterface):
         ## return self.pane.IsShown()
         return self.IsShownOnScreen()
     
-    def Show(self, show=True, interactive=False):
+    def Show(self, show=True):
         """Shows or hides the window.
         
         (override) Show associated pane window.
                    Note: This might be called from a thread.
         """
-        wx.CallAfter(self.parent.show_pane, self, show, interactive)
+        wx.CallAfter(self.parent.show_pane, self, show)
     
     Drawn = property(
         lambda self: self.IsDrawn(),
@@ -1165,7 +1165,7 @@ class Frame(mwx.Frame):
         
         module = self.load_module(root)
         if not module:
-            return module # False (failed to import)
+            return False # failed to import
         
         try:
             name = module.Plugin.__module__
@@ -1321,18 +1321,21 @@ class Frame(mwx.Frame):
     
     def reload_plug(self, name):
         plug = self.get_plug(name)
-        if not plug:
+        if not plug or not plug.reloadable:
             return
-        if plug.reloadable:
-            session = {}
-            try:
-                print("Reloading {}...".format(plug))
-                plug.save_session(session)
-            except Exception:
-                traceback.print_exc()
-                print("- Failed to save session of", plug)
-            return self.load_plug(plug.__module__, force=1, session=session)
-        return False
+        session = {}
+        try:
+            print("Reloading {}...".format(plug))
+            plug.save_session(session)
+        except Exception:
+            traceback.print_exc()
+            print("- Failed to save session of", plug)
+        self.load_plug(plug.__module__, force=1, session=session)
+        
+        ## Update shell.target --> new plug
+        for shell in self.shellframe.all_shells:
+            if shell.target is plug:
+                shell.handler('shell_activated', shell)
     
     @ignore(ResourceWarning)
     def edit_plug(self, name):
