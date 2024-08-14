@@ -178,7 +178,7 @@ class AutoCompInterfaceMixin:
                 if sty == 'word':
                     self.anchor = q
             with self.off_undocollection():
-                self.ReplaceSelection(word[n:]) # Modify (or insert) the selected range
+                self.ReplaceSelection(word[n:])
             self.cpos = p # backward selection to the point
             self.__comp_ind = j
         except IndexError:
@@ -359,7 +359,7 @@ class AutoCompInterfaceMixin:
             self.message("- {} : {!r}".format(e, text))
 
 
-class EditorInterface(CtrlInterface):
+class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     """Interface of Python code editor.
     
     Note:
@@ -367,6 +367,7 @@ class EditorInterface(CtrlInterface):
     """
     def __init__(self):
         CtrlInterface.__init__(self)
+        AutoCompInterfaceMixin.__init__(self)
         
         def dispatch(evt):
             """Fork events to the parent."""
@@ -1642,7 +1643,7 @@ class EditorInterface(CtrlInterface):
         self.ReplaceSelection('')
 
 
-class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
+class Buffer(EditorInterface, EditWindow):
     """Python code buffer.
     
     Attributes:
@@ -1768,7 +1769,6 @@ class Buffer(AutoCompInterfaceMixin, EditorInterface, EditWindow):
     def __init__(self, parent, filename=None, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
-        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent
         self.__filename = filename
@@ -2588,7 +2588,7 @@ class Interpreter(interpreter.Interpreter):
             return interpreter.Interpreter.getCallTip(self) # dummy
 
 
-class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
+class Nautilus(EditorInterface, Shell):
     """Nautilus in the Shell.
     
     Facade objects for accessing the APIs:
@@ -2732,9 +2732,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
     
-    ## (override)
-    wrap = EditorInterface.wrap
-    
     def __init__(self, parent, target, name="root",
                  introText=None,
                  startupScript=None,
@@ -2749,7 +2746,6 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
                  execStartupScript=execStartupScript, # if True, executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
-        AutoCompInterfaceMixin.__init__(self)
         
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.target = target
@@ -3194,7 +3190,7 @@ class Nautilus(AutoCompInterfaceMixin, EditorInterface, Shell):
     def magic(self, cmd):
         """Called before command pushed.
         
-        (override) disable old magic: `f x --> f(x)`
+        (override) Disable old magic: `f x --> f(x)`.
         """
         if cmd:
             if cmd[0:2] == '??': cmd = 'help({})'.format(cmd[2:])
