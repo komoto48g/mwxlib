@@ -9,7 +9,7 @@ import wx.lib.scrolledpanel as scrolled
 from . import images
 from .utilus import SSM
 from .utilus import funcall as _F
-from .framework import pack, Menu
+from .framework import pack, Menu, postcall
 
 import numpy as np
 from numpy import nan, inf  # noqa: necessary to eval
@@ -438,6 +438,8 @@ class Knob(wx.Panel):
         self.label.SetLabel(v.name + t)
         self.label.Refresh()
     
+    ## Note: wxAssertionError in text.SetValue
+    @postcall
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
         v = self.__par
