@@ -2520,11 +2520,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
 class Interpreter(interpreter.Interpreter):
     """Interpreter based on code.InteractiveInterpreter.
     """
-    def __init__(self, *args, **kwargs):
-        parent = kwargs.pop('interpShell')
+    def __init__(self, interpShell, *args, **kwargs):
         interpreter.Interpreter.__init__(self, *args, **kwargs)
         
-        self.parent = parent
+        self.parent = interpShell
         self.globals = self.locals
     
     def runcode(self, code):
@@ -2698,7 +2697,9 @@ class Nautilus(EditorInterface, Shell):
             raise TypeError("primitive objects cannot be targeted")
         
         self.__target = obj
-        self.interp.locals = obj.__dict__
+        self.locals = obj.__dict__
+        self.globals = obj.__dict__
+        self.globals.update(self.__globals)
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
@@ -2731,6 +2732,9 @@ class Nautilus(EditorInterface, Shell):
     @globals.deleter
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
+        self.interp.globals.update(self.__globals)
+    
+    __globals = {}
     
     def __init__(self, parent, target, name="root",
                  introText=None,
@@ -2739,11 +2743,11 @@ class Nautilus(EditorInterface, Shell):
                  **kwargs):
         Shell.__init__(self, parent,
                  locals=target.__dict__,
-                 interpShell=self,
+                 interpShell=self, # **kwds of InterpClass
                  InterpClass=Interpreter,
                  introText=introText,
                  startupScript=startupScript,
-                 execStartupScript=execStartupScript, # if True, executes ~/.py
+                 execStartupScript=execStartupScript, # executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
         
@@ -3448,7 +3452,7 @@ class Nautilus(EditorInterface, Shell):
         (override) Add globals when executing su:startupScript.
                    Fix history point.
         """
-        ## self.globals = self.locals
+        keys = set(self.locals.keys()) # check for locals map changes
         self.promptPosEnd = self.TextLength # fix history point
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
@@ -3458,6 +3462,7 @@ class Nautilus(EditorInterface, Shell):
         else:
             self.push("")
             self.interp.startupScript = None
+        self.__globals = {k: self.locals[k] for k in (self.locals.keys() - keys)}
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
