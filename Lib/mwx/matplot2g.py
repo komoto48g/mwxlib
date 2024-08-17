@@ -957,7 +957,7 @@ class GraphPlot(MatplotPanel):
             self.message("Write buffer to clipboard.")
         except Exception as e:
             traceback.print_exc()
-            self.message("- Failed to write to clipboard:", e)
+            self.message("- Failed to write to clipboard.", e)
     
     def read_buffer_from_clipboard(self):
         """Read buffer data from clipboard."""
@@ -974,7 +974,7 @@ class GraphPlot(MatplotPanel):
                 self.load(Clipboard.imread())
         except Exception as e:
             traceback.print_exc()
-            self.message("- No data in clipboard:", e)
+            self.message("- No data in clipboard.", e)
     
     def destroy_colorbar(self):
         if self.cbar:

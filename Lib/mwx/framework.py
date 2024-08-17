@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.98.3"
+__version__ = "0.98.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1007,7 +1007,7 @@ class AuiNotebook(aui.AuiNotebook):
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
         except Exception as e:
-            print("- Failed to load perspective:", e)
+            print("- Failed to load perspective.", e)
         finally:
             self.Parent.Thaw()
 

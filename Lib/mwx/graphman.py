@@ -481,7 +481,7 @@ class LayerInterface(CtrlInterface):
             if canvas:
                 canvas.draw_idle()
         except Exception as e:
-            print(f"- Failed to draw Arts of {self.__module__}:", e)
+            print(f"- Failed to draw Arts of {self.__module__}.", e)
             del self.Arts
 
 
@@ -1103,7 +1103,7 @@ class Frame(mwx.Frame):
             else:
                 module = import_module(name)
         except Exception as e:
-            print(f"- Unable to load {root!r}:", e)
+            print(f"- Unable to load {root!r}.", e)
             return False
         
         ## the module must have a class `Plugin`.
@@ -1459,8 +1459,8 @@ class Frame(mwx.Frame):
                     frame.name = os.path.basename(fn) # new name and pathname
                 output_frames.append(frame)
                 print(' ', self.message("\b done."))
-            except (PermissionError, OSError):
-                print('-', self.message("\b failed."))
+            except (PermissionError, OSError) as e:
+                print('-', self.message("\b failed.", e))
         
         frames = output_frames
         res, mis = self.write_attributes(filename, frames)
@@ -1500,7 +1500,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print("- Failed to read attributes:", e)
+            print("- Failed to read attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return res, mis # finally raises no exception
@@ -1522,7 +1522,7 @@ class Frame(mwx.Frame):
                 print(pformat(tuple(new.items())), file=o)
             
         except Exception as e:
-            print("- Failed to write attributes:", e)
+            print("- Failed to write attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         finally:
             return new, mis # finally raises no exception

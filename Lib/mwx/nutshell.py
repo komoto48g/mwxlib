@@ -267,7 +267,7 @@ class AutoCompInterfaceMixin:
                     self.message("[module]>>> loading {}...".format(text))
                     modules = set(dir(import_module(text)))
                 except ImportError as e:
-                    self.message("\b failed:", e)
+                    self.message("\b failed.", e)
                     return
                 else:
                     ## Add unimported module names.
@@ -2403,7 +2403,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return True
             return False
         except Exception as e:
-            self.post_message(f"Failed to load {filename!r}:", e)
+            self.post_message(f"Failed to load {filename!r}.", e)
             self.delete_buffer(buf)
             return False
     
@@ -2445,7 +2445,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return True
             return False
         except Exception as e:
-            self.post_message(f"Failed to save {filename!r}:", e)
+            self.post_message(f"Failed to save {filename!r}.", e)
             return False
     
     def load_buffer(self, buf=None):
