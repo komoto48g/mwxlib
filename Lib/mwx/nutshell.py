@@ -2411,6 +2411,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Open the specified file."""
         if not filename:
             with wx.FileDialog(self, "Open buffer",
+                    defaultDir=os.path.dirname(self.buffer.filename),
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -2478,6 +2479,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Confirm the saveas with the dialog."""
         buf = buf or self.buffer
         with wx.FileDialog(self, "Save buffer as",
+                defaultDir=os.path.dirname(self.buffer.filename),
                 defaultFile=re.sub(r'[\/:*?"<>|]', '_', buf.name),
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:

@@ -122,7 +122,7 @@ class Plugin(Layer):
             (1, "&Load file", Icon('open'),
                 lambda v: self.load_media()),
                 
-            (2, "&Snapshot", Icon('clock'),
+            (2, "&Snapshot", Icon('clip'),
                 lambda v: self.snapshot(),
                 lambda v: v.Enable(self._path is not None)),
             (),
@@ -175,7 +175,7 @@ class Plugin(Layer):
     def load_media(self, path=None):
         if path is None:
             with wx.FileDialog(self, "Choose a media file",
-                style=wx.FD_OPEN|wx.FD_CHANGE_DIR|wx.FD_FILE_MUST_EXIST) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 path = dlg.Path
