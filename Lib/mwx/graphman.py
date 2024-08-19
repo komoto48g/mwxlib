@@ -1394,12 +1394,16 @@ class Frame(mwx.Frame):
     
     def load_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
+        
+        If no view given, the currently selected view is chosen.
         """
         if not view:
             view = self.selected_view
         
         if not filename:
+            fn = view.frame.pathname if view.frame else ''
             with wx.FileDialog(self, "Select index file to import",
+                    defaultDir=os.path.dirname(fn or ''),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
                              "ALL files (*.*)|*.*",
@@ -1427,15 +1431,16 @@ class Frame(mwx.Frame):
     def save_index(self, filename=None, frames=None):
         """Save frames :ref to the Index file.
         """
+        view = self.selected_view
         if not frames:
-            frames = self.selected_view.all_frames
+            frames = view.all_frames
             if not frames:
                 return None
         
         if not filename:
-            fn = next((x.pathname for x in frames if x.pathname), '')
+            fn = view.frame.pathname if view.frame else ''
             with wx.FileDialog(self, "Select index file to export",
-                    defaultDir=os.path.dirname(fn),
+                    defaultDir=os.path.dirname(fn or ''),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1603,7 +1608,10 @@ class Frame(mwx.Frame):
             paths = [paths]
         
         if paths is None:
+            fn = view.frame.pathname if view.frame else ''
             with wx.FileDialog(self, "Open image files",
+                    defaultDir=os.path.dirname(fn or ''),
+                    defaultFile='',
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_MULTIPLE) as dlg:
@@ -1649,16 +1657,17 @@ class Frame(mwx.Frame):
     
     def save_buffer(self, path=None, frame=None):
         """Save buffer of the frame to a file.
-        
-        If no view given, the currently selected view is chosen.
         """
+        view = self.selected_view
         if not frame:
-            frame = self.selected_view.frame
+            frame = view.frame
             if not frame:
                 return None
         
         if not path:
+            fn = view.frame.pathname if view.frame else ''
             with wx.FileDialog(self, "Save buffer as",
+                    defaultDir=os.path.dirname(fn or ''),
                     defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
