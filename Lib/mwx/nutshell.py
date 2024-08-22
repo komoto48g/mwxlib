@@ -875,19 +875,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 q = self.cpos
             return self.GetTextRange(p, q)
     
-    def gen_text_at_caret(self):
-        """Generates the selected text,
-        otherwise the line or expression at the caret.
-        """
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.line_at_caret
-                yield self.expr_at_caret
-        return filter(None, _gen_text())
-    
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
@@ -2063,6 +2050,19 @@ class Buffer(EditorInterface, EditWindow):
         exec(text, self.globals, self.locals) # using current shell namespace
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
+    
+    def gen_text_at_caret(self):
+        """Generates the selected text,
+        otherwise the line or expression at the caret.
+        """
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        return filter(None, _gen_text())
     
     def eval_line(self):
         self.py_eval_line(self.globals, self.locals)
@@ -3609,6 +3609,20 @@ class Nautilus(EditorInterface, Shell):
         Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
         self.cpos, self.anchor = self.anchor, self.cpos
         self.EnsureCaretVisible()
+    
+    def gen_text_at_caret(self):
+        """Generates the selected text,
+        otherwise the line or expression at the caret.
+        (override) Generates command line (that starts with a prompt).
+        """
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.getCommand() # self.line_at_caret
+                yield self.expr_at_caret
+        return filter(None, _gen_text())
     
     def eval_line(self, evt):
         """Evaluate the selected word or line."""
