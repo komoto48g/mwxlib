@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.98.5"
+__version__ = "0.98.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1278,7 +1278,6 @@ class ShellFrame(MiniFrame):
             self.Scratch.buffer.eval_line()
             evt.Skip(False) # Don't skip explicitly.
         
-        @self.Scratch.define_key('C-S-j')
         @self.Scratch.define_key('M-j')
         def eval_buffer(evt):
             self.Scratch.buffer.exec_region()
