@@ -1,4 +1,4 @@
-wxpython
+wxpython>=4.2.0
 matplotlib
 opencv-python
 scipy

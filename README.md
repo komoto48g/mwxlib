@@ -1,5 +1,6 @@
 # mwxlib
 
+Welcome to mwxlib project!
 Python package based on matplotlib/wx and wxPython shell extension library
 
 See [Demo Script and Gallery](./demo/readme.md).
@@ -45,6 +46,7 @@ pip install git+https://github.com/komoto48g/mwxlib.git
 
 ### How to use
 
+mwx.deb is wx.py.shell-base inspector used for debugging in the target process.
 ```
 >>> import mwx; mwx.deb()
 ```
@@ -55,6 +57,10 @@ This includes history, logs, dump files used to check when an error occurs.
 :memo: At the first startup, it takes some time to collect module information and create a dictionary file.
 The collected module name is used for completion at the time of input in the shell.
 (If you start the shell while pressing [C-S-], the dictionary file will be recreated)
+
+As you are diving into the python process, you can watch, inspect, and debug the target.
+
+Enjoy diving!
 
 ### Uninstalling
 ```
@@ -82,32 +88,32 @@ which has the following features:
     - [3] apropos-comp-mode
     - [4] text-comp-mode
     - [5] module-comp-mode
-2. Objective magic syntax is implemented.
+2. Magic syntax.
     - [ ` ] quoteback
     - [@] pullback
-3. Powerful inspectoin utilities are compiled.
+3. Powerful inspectoin utilities.
     - Filling
     - InspectionTool
     - Ghost in the shell
 
-**All objects in the process can be accessed using,**
+**All objects in the process can be accessed using:**
 ```
     self : the target of the shell,
     this : the module which includes target.
 ```
 
-**It is very easy to include the shell in your wxPython application.**
+**To include the shell in your wxPython application:**
 ```
 >>> self.inspector = mwx.ShellFrame(self, target=self)
 ```
 
 
-## Autocomp key bindings:
+## Autocomp key bindings
 
         C-up : [0] retrieve previous history
       C-down : [0] retrieve next history
-    M-j, C-j : [0] call tooltip of eval (for the word selected or focused)
-    M-h, C-h : [0] call tooltip of help (for the func selected or focused)
+    C-j, M-j : [0] tooltip of eval (for the selected or focused word)
+    C-h, M-h : [0] calltip of help (for the selected or focused func)
          TAB : [1] history-comp-mode
          M-p : [1] retrieve previous history in comp-mode
          M-n : [1] retrieve next history in comp-mode
@@ -119,7 +125,7 @@ which has the following features:
 See [key bindings](key-bindings.md) for more information.
 
 
-## Magic syntax:
+## Magic syntax
 
   - quoteback : ```x`y --> y=x  | x`y`z --> z=y=x```
 
@@ -141,7 +147,7 @@ See [key bindings](key-bindings.md) for more information.
     at present version, enabled with USE_MAGIC switch being on
 
 
-## built-in utility:
+## built-in utilities
 
     @p          : Synonym of print.
     @pp         : Synonym of pprint.
@@ -161,7 +167,7 @@ See [key bindings](key-bindings.md) for more information.
 
 ## Ghost in the shell
 
-The Ghost in the shell (g.i.t.s) is the help system for divers,
+Ghost in the shell is the help system for divers,
 which is a notebook-style window consists of four editors:
 - scratch buffer
     + a temporary buffer
@@ -171,14 +177,14 @@ which is a notebook-style window consists of four editors:
     + logging debug process and the input-history
 
 
-## Authors
+# Authors
 
 * Kazuya O'moto - *Initial work* -
 
 See also the list of who participated in this project.
 
 
-## Attribution
+# Attribution
 
 Default icons are provided by `wx.ArtProvider`.
 Optional icons are provided by:
@@ -193,6 +199,6 @@ Note:
     If I missed an author credit or attribution, please let me know.
 
 
-## License
+# License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

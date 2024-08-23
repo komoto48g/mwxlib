@@ -14,8 +14,7 @@ def get_version(rel_path):
         else:
             raise RuntimeError("Unable to find version string.")
 
-## __version__ = "0.69.0rc4"  # TestPyPI
-## __version__ = "1.0rc"
+## __version__ = "1.0rc"  # TestPyPI
 __version__ = get_version("Lib/mwx/framework.py")
 
 
@@ -28,9 +27,8 @@ setup(
     
     url = "https://github.com/komoto48g/mwxlib",
     
-    ## long_description_content_type = "text/markdown",
-    ## long_description = open("README.md").read(),
-    long_description = open("README.rst").read(),
+    long_description = open("README.md").read(),
+    long_description_content_type = "text/markdown",
     
     ## Description of the package in the distribution
     package_dir = {
@@ -64,6 +62,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Image Processing",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
