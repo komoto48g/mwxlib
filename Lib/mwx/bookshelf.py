@@ -98,28 +98,35 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 self._set_item(self.RootItem, editor.Name, editor.all_buffers)
         self.Refresh()
     
-    def _get_item(self, root, key):
-        """Returns the first item [root/key] found.
-        Note: Items with the same name are not supported.
-        """
+    def _gen_item(self, root, key):
+        """Generates the [root/key] items."""
         item, cookie = self.GetFirstChild(root)
         while item:
             caption = self.GetItemText(item)
             if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
-                return item
+                yield item
             item, cookie = self.GetNextChild(root, cookie)
     
+    def _get_item(self, root, key):
+        """Get the first [root/key] item found."""
+        return next(self._gen_item(root, key), None)
+    
     def _set_item(self, root, key, data):
-        """Set the item [root/key] with data recursively.
-        """
-        item = self._get_item(root, key) or self.AppendItem(root, key)
-        if isinstance(data, list):
+        """Set the [root/key] item with data recursively."""
+        for item in self._gen_item(root, key):
+            buf = self.GetItemData(item)
+            if not buf or buf is data:
+                break
+        else:
+            item = self.AppendItem(root, key)
+        try:
             for buf in data:
                 self._set_item(item, buf.name, buf)
-        else:
+        except Exception:
             data.__itemId = item
             self.SetItemData(item, data)
             self.SetItemText(item, data.caption_prefix + data.name)
+        return item
     
     ## --------------------------------
     ## Actions for bookshelf interfaces
@@ -135,10 +142,12 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     ##       buf.__itemId がない場合がある (delete_buffer 直後など)
     @postcall
     def on_buffer_selected(self, buf):
-        self.SelectItem(buf.__itemId)
+        if self and buf:
+            self.SelectItem(buf.__itemId)
     
     def on_buffer_filename(self, buf):
-        self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
+        if self and buf:
+            self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
     
     def OnSelChanged(self, evt):
         if self and self.HasFocus():
