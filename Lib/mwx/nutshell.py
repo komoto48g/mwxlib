@@ -1693,18 +1693,17 @@ class Buffer(EditorInterface, EditWindow):
         """Timestamp delta (for checking external mod).
         
         Returns:
-            None : No file
+            None : no file
             = 0  : a file
             > 0  : a file edited externally
             < 0  : a url file
         """
         fn = self.filename
-        if fn:
-            if os.path.isfile(fn):
-                return os.path.getmtime(fn) - self.__mtime
-            if re.match(url_re, fn):
-                return -1
-        return self.__mtime # None or specified value
+        if os.path.isfile(fn):
+            return os.path.getmtime(fn) - self.__mtime
+        if re.match(url_re, fn):
+            return -1
+        return None
     
     @property
     def caption_prefix(self):
@@ -1753,7 +1752,7 @@ class Buffer(EditorInterface, EditWindow):
         return EditorInterface.post_command_hook(self, evt)
     post_command_hook.__name__ = str('post_command_dispatch') # alias
     
-    def __init__(self, parent, filename=None, **kwargs):
+    def __init__(self, parent, filename, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         

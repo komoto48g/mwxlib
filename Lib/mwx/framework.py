@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.98.7"
+__version__ = "0.98.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1699,8 +1699,7 @@ class ShellFrame(MiniFrame):
             elif isinstance(obj, str):
                 filename = "<string>"
                 editor = self.Scratch
-                buf = editor.find_buffer(filename)\
-                   or editor.create_buffer(filename)
+                buf = editor.find_buffer(filename) or editor.create_buffer(filename)
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj, filename)
