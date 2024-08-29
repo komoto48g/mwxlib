@@ -17,20 +17,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.parent = parent
-        self.target = None
-        
-        self.context = { # DNA<EditorBook>
-            None : {
-                   'buffer_new' : [ None, self.on_buffer_new ],
-                 'buffer_saved' : [ None, ],
-                'buffer_loaded' : [ None, ],
-               'buffer_deleted' : [ None, self.on_buffer_deleted ],
-             'buffer_activated' : [ None, self.on_buffer_selected ],
-           'buffer_inactivated' : [ None, ],
-       'buffer_caption_updated' : [ None, self.on_buffer_filename ],
-            },
-        }
-        wx.CallAfter(self.attach, target=parent)
         
         ## self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
@@ -51,36 +37,36 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                    'f5 pressed' : (0, self._refresh),
             },
         })
+        self.context = { # DNA<EditorBook>
+            None : {
+                   'buffer_new' : [ None, self.on_buffer_new ],
+                 'buffer_saved' : [ None, ],
+                'buffer_loaded' : [ None, ],
+               'buffer_deleted' : [ None, self.on_buffer_deleted ],
+             'buffer_activated' : [ None, self.on_buffer_selected ],
+           'buffer_inactivated' : [ None, ],
+       'buffer_caption_updated' : [ None, self.on_buffer_filename ],
+            },
+        }
+        def _attach():
+            if self and self.parent:
+                for editor in self.parent.all_editors:
+                    editor.handler.append(self.context)
+                self.build_tree()
+        wx.CallAfter(_attach)
     
     def OnDestroy(self, evt):
-        if evt.EventObject is self:
-            self.detach()
+        if self and self.parent:
+            for editor in self.parent.all_editors:
+                editor.handler.remove(self.context)
         evt.Skip()
     
-    def attach(self, target):
-        if not self:
-            return
-        self.detach()
-        self.target = target
-        for editor in self.target.all_editors:
-            editor.handler.append(self.context)
-        self.build_tree()
-    
-    def detach(self):
-        if not self or not self.target:
-            return
-        for editor in self.target.all_editors:
-            editor.handler.remove(self.context)
-        self.target = None
-        self.build_tree()
-    
     def _refresh(self, evt):
-        if not self.target:
-            return
+        def _item(editor):
+            return self._get_item(self.RootItem, editor.Name)
         ls = []
-        for editor in self.target.all_editors:
-            item = self._get_item(self.RootItem, editor.Name)
-            if self.IsExpanded(item):
+        for editor in self.parent.all_editors:
+            if self.IsExpanded(_item(editor)):
                 ls.append(editor)
         data = None
         if self.Selection.IsOk():
@@ -90,8 +76,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 wx.CallAfter(self.SetFocus)
         self.build_tree()
         for editor in ls:
-            item = self._get_item(self.RootItem, editor.Name)
-            self.Expand(item)
+            self.Expand(_item(editor))
     
     def _delete(self, evt):
         if self.Selection.IsOk():
@@ -111,9 +96,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         if clear:
             self.DeleteAllItems()
             self.AddRoot(self.Name)
-        if self.target:
-            for editor in self.target.all_editors:
-                self._set_item(self.RootItem, editor.Name, editor.all_buffers)
+        for editor in self.parent.all_editors:
+            self._set_item(self.RootItem, editor.Name, editor.all_buffers)
         self.Refresh()
     
     def _gen_item(self, root, key):
