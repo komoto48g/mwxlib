@@ -2,7 +2,6 @@
 import re
 import wx
 
-from .utilus import funcall as _F
 from .framework import CtrlInterface, postcall
 
 
@@ -37,12 +36,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def delete_item():
-            data = self.GetItemData(self.Selection)
-            if data:
-                data.parent.kill_buffer(data) # the focus moves
-                wx.CallAfter(self.SetFocus)
-        
         def dispatch(evt):
             """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, evt)
@@ -54,9 +47,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             '*button* released' : [ None, dispatch ],
             },
             0 : {
-               'delete pressed' : (0, _F(delete_item)),
-                   'f5 pressed' : (0, _F(self.build_tree, clear=0)),
-                 'S-f5 pressed' : (0, _F(self.build_tree, clear=1)),
+               'delete pressed' : (0, self._delete),
+                   'f5 pressed' : (0, self._refresh),
             },
         })
     
@@ -81,6 +73,32 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             editor.handler.remove(self.context)
         self.target = None
         self.build_tree()
+    
+    def _refresh(self, evt):
+        if not self.target:
+            return
+        ls = []
+        for editor in self.target.all_editors:
+            item = self._get_item(self.RootItem, editor.Name)
+            if self.IsExpanded(item):
+                ls.append(editor)
+        data = None
+        if self.Selection.IsOk():
+            data = self.GetItemData(self.Selection)
+            if data:
+                wx.CallAfter(data.SetFocus)
+                wx.CallAfter(self.SetFocus)
+        self.build_tree()
+        for editor in ls:
+            item = self._get_item(self.RootItem, editor.Name)
+            self.Expand(item)
+    
+    def _delete(self, evt):
+        if self.Selection.IsOk():
+            data = self.GetItemData(self.Selection)
+            if data:
+                data.parent.kill_buffer(data) # the focus moves
+                wx.CallAfter(self.SetFocus)
     
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface 
