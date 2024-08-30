@@ -1187,7 +1187,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.ScrollToLine(vl - m)
     
     def _calc_vline(self, line):
-        """Virtual line numberin the buffer window."""
+        """Virtual line number in the buffer window."""
         pos = self.PositionFromLine(line)
         w, h = self.PointFromPosition(pos)
         return self.FirstVisibleLine + h//self.TextHeight(0)

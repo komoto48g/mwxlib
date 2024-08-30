@@ -124,7 +124,6 @@ class AxesImagePhantom:
     Note:
         Due to the problem of performance,
         the image pixel size could be reduced by binning.
-        ( ･ω･)? Current verision of wxagg limits < 24M bytes?
     """
     def __init__(self, parent, buf, name, show=True,
                  localunit=None, aspect=1.0, **attributes):
@@ -766,7 +765,7 @@ class GraphPlot(MatplotPanel):
     ## Property of frame / drawer
     ## --------------------------------
     
-    #: image bytes max for loading matplotlib wxagg backend
+    #: image bytes max for loading matplotlib (with wxAgg backend)
     nbytes_threshold = 24e6
     
     #: image cutoff score percentiles

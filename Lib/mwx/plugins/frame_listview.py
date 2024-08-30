@@ -241,7 +241,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
 
 class Plugin(Layer):
-    """Property list of Grpah buffers.
+    """Property list of Graph buffers.
     """
     menukey = "Plugins/Extensions/&Buffer listbox\tCtrl+b"
     caption = "Property list"
