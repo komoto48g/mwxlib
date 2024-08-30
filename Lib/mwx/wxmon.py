@@ -7,7 +7,7 @@ import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from .utilus import where, ignore
+from .utilus import where
 from .controls import Icon, Clipboard
 from .framework import CtrlInterface, Menu
 
@@ -174,10 +174,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         name = self.get_name(event)
         source = ew._makeSourceString(obj) + " id=0x{:X}".format(id(evt))
         stamp = 1
-        
-        with ignore(DeprecationWarning):
-            attribs = ew._makeAttribString(evt)
-        
+        attribs = ew._makeAttribString(evt)
         data = self.__items
         for i, item in enumerate(data):
             if item[0] == event:
