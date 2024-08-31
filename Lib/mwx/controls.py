@@ -95,8 +95,8 @@ class Param:
     def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""
         if v is None:
-            v = self.std_value
-            if np.isnan(v): # do nothing if std_value is nan
+            v = self.std_value  # reset to std_value
+            if np.isnan(v):     # do nothing if std_value is nan
                 return
         elif isinstance(v, str):
             try:
@@ -112,24 +112,19 @@ class Param:
             for knob in self.knobs:
                 knob.update_ctrl(None, notify=False)
             return
-        elif v == self.__value:
+        if v != self.__value:
+            ## If the value is out of range, it will be modified.
+            valid = (self.min <= v <= self.max)
+            if valid:
+                self.__value = v
+            elif v < self.min:
+                self.__value = self.min
+                self.callback('underflow', self)
+            else:
+                self.__value = self.max
+                self.callback('overflow', self)
             for knob in self.knobs:
-                knob.update_ctrl(True, notify=False)
-            return
-        
-        ## If the value is out of range, it will be modified.
-        valid = (self.min <= v <= self.max)
-        if valid:
-            self.__value = v
-        elif v < self.min:
-            self.__value = self.min
-            self.callback('underflow', self)
-        else:
-            self.__value = self.max
-            self.callback('overflow', self)
-        for knob in self.knobs:
-            knob.update_ctrl(valid, notify=True)
-        
+                knob.update_ctrl(valid, notify=True)
         if internal_callback:
             self.callback('control', self)
     
