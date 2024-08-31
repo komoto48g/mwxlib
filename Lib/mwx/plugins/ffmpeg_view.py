@@ -150,11 +150,12 @@ class Plugin(Layer):
         ## self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
         self.mc.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.mc.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        
+        self.Bind(wx.EVT_SHOW, self.OnShow)
     
     def Destroy(self):
         try:
             self.parent.handler.unbind("unknown_format", self.load_media)
-            self.mc.Stop()
         finally:
             return Layer.Destroy(self)
     
@@ -165,6 +166,12 @@ class Plugin(Layer):
     def OnKeyUp(self, evt):
         if self.handler('{} released'.format(hotkey(evt)), evt) is None:
             evt.Skip()
+    
+    def OnShow(self, evt):
+        if not evt.IsShown():
+            if self.mc:
+                self.mc.Stop()
+        evt.Skip()
     
     def OnMediaLoaded(self, evt):
         self.ss.range = (0, self.video_dur, 0.01)
@@ -187,8 +194,11 @@ class Plugin(Layer):
             self.video_fps = eval(v['avg_frame_rate'])  # averaged frame rate
             self.video_dur = eval(v['duration'])        # duration [s]
             w, h = v['width'], v['height']
-            if v['tags'].get('rotate') in ('90', '270'):
-                w, h = h, w  # transpose
+            try:
+                if v['tags']['rotate'] in ('90', '270'):
+                    w, h = h, w  # transpose
+            except KeyError:
+                pass
             self.video_size = w, h
             self._path = path
             self.message(f"Loaded {path!r} successfully.")
@@ -272,6 +282,7 @@ class Plugin(Layer):
             return
         fout = "{}_clip".format(os.path.splitext(self._path)[0])
         with wx.FileDialog(self, "Save as",
+                defaultDir=os.path.dirname(fout),
                 defaultFile=os.path.basename(fout),
                 wildcard="Media file (*.mp4)|*.mp4|"
                          "Animiation (*.gif)|*.gif",
