@@ -695,7 +695,8 @@ class StatusBar(wx.StatusBar):
     
     def __call__(self, *args, **kwargs):
         text = ' '.join(str(v) for v in args)
-        return self.write(text, **kwargs)
+        if self:
+            return self.write(text, **kwargs)
     
     def resize(self, field):
         self.SetFieldsCount(len(field))
@@ -1854,6 +1855,7 @@ class ShellFrame(MiniFrame):
         shell = self.rootshell.__class__(self, target, name="clone",
                     style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
         self.handler('shell_new', shell)
+        self.Show()
         self.console.AddPage(shell, typename(shell.target))
         self.popup_window(shell)
         shell.SetFocus()
