@@ -27,7 +27,7 @@ from PIL.TiffImagePlugin import TiffImageFile
 from . import framework as mwx
 from .utilus import ignore, warn
 from .utilus import funcall as _F
-from .controls import ControlPanel, Icon
+from .controls import KnobCtrlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
 from .matplot2 import MatplotPanel # noqa
@@ -260,12 +260,6 @@ class LayerInterface(CtrlInterface):
     ## thread_type = Thread
     thread = None
     
-    ## layout helper function (deprecated: internal use only)
-    pack = mwx.pack
-    
-    ## funcall = interactive_call (deprecated: internal use only)
-    funcall = staticmethod(_F)
-    
     ## for debug (internal use only)
     pane = property(lambda self: self.parent.get_pane(self))
     
@@ -474,11 +468,11 @@ class LayerInterface(CtrlInterface):
             del self.Arts
 
 
-class Layer(LayerInterface, ControlPanel):
+class Layer(LayerInterface, KnobCtrlPanel):
     """Graphman.Layer
     """
     def __init__(self, parent, session=None, **kwargs):
-        ControlPanel.__init__(self, parent, **kwargs)
+        KnobCtrlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
 
 

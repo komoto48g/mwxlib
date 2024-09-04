@@ -9,7 +9,7 @@ import wx.lib.scrolledpanel as scrolled
 from . import images
 from .utilus import SSM, warn
 from .utilus import funcall as _F
-from .framework import pack, Menu, postcall
+from .framework import pack, Menu, CtrlInterface
 
 import numpy as np
 from numpy import nan, inf  # noqa: necessary to eval
@@ -443,13 +443,11 @@ class Knob(wx.Panel):
         self.label.SetLabel(v.name + t)
         self.label.Refresh()
     
-    ## Note: wxAssertionError in text.SetValue
-    @postcall
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
         v = self.__par
         self.ctrl.SetValue(v.index)
-        self.text.SetValue(str(v))
+        wx.CallAfter(self.text.SetValue, str(v)) # for wxAssertionError
         if valid:
             if notify:
                 if self.text.BackgroundColour != '#ffff80':
@@ -543,7 +541,7 @@ class Knob(wx.Panel):
         self.text.Enable(p)
 
 
-class ControlPanel(scrolled.ScrolledPanel):
+class KnobCtrlPanel(scrolled.ScrolledPanel):
     """Scrollable Control Panel
     """
     def __init__(self, *args, **kwargs):
@@ -743,6 +741,14 @@ class ControlPanel(scrolled.ScrolledPanel):
         text = Clipboard.read()
         if text:
             self.set_params(text.split('\t'), checked_only)
+
+
+class ControlPanel(CtrlInterface, KnobCtrlPanel):
+    """Gnuplot control panel.
+    """
+    def __init__(self, *args, **kwargs):
+        KnobCtrlPanel.__init__(self, *args, **kwargs)
+        CtrlInterface.__init__(self)
 
 
 class Clipboard:
