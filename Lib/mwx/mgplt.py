@@ -13,7 +13,7 @@ from .controls import ControlPanel
 
 
 class Gnuplot:
-    """Gnuplot - gnuplot:pipe wrapper
+    """Gnuplot backend - gnuplot pipe wrapper.
     """
     debug = 0
     
@@ -123,15 +123,13 @@ class Gnuplot:
 
 
 class GnuplotFrame(mwx.Frame):
-    """Gnuplot Frame
+    """Gnuplot frontend frame.
     """
-    gnuplot = property(lambda self: self.__gplot) #: single class object
-    
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
-        self.__gplot = Gnuplot()
-        self.panel = ControlPanel(self)
+        self.gnuplot = Gnuplot()
+        self.panel = GnuplotPanel(self)
         
         self.menubar["Edit"] = [
             (wx.ID_COPY, "&Copy params\tCtrl-c", "Copy params to clipboard",
@@ -157,6 +155,6 @@ class GnuplotFrame(mwx.Frame):
     
     def Destroy(self):
         try:
-            del self.__gplot
+            del self.gnuplot
         finally:
             return mwx.Frame.Destroy(self)
