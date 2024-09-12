@@ -545,22 +545,19 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicator (0,1) for filter_text
-        ## if wx.VERSION >= (4,1,0):
-        try:
-            self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
-            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
-        except AttributeError:
-            self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
-            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+        ## Custom indicators ([BUG] indicator=1 is reset when the buffer is udpated.)
+        ## [10-11] filter_text
+        ## [2] URL for load_file
+        ## [3] match_paren
+        self.IndicatorSetStyle(10, stc.STC_INDIC_TEXTFORE)
+        self.IndicatorSetForeground(10, "red")
         
-        self.IndicatorSetUnder(1, True)
-        self.IndicatorSetAlpha(1, 60)
-        self.IndicatorSetOutlineAlpha(1, 120)
-        self.IndicatorSetForeground(0, "red")
-        self.IndicatorSetForeground(1, "yellow")
+        self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
+        self.IndicatorSetUnder(11, True)
+        self.IndicatorSetAlpha(11, 255)
+        self.IndicatorSetOutlineAlpha(11, 255)
+        self.IndicatorSetForeground(11, "yellow")
         
-        ## Custom indicator (2) for URL (buffer_modified)
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
         try:
@@ -569,7 +566,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         except AttributeError:
             pass
         
-        ## Custom indicator (3) for match_paren
         self.IndicatorSetStyle(3, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(3, "light gray")
         
@@ -590,34 +586,36 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.__stylus = {}
     
     ## Custom constants embedded in wx.stc
-    stc.STC_P_WORD3 = 20
+    stc.STC_P_WORD3 = 20 # deprecated
     stc.STC_STYLE_CARETLINE = 40
     stc.STC_STYLE_ANNOTATION = 41
     
-    ## Common DnD target and flags
-    dnd = None
-    dnd_flag = 0 # 1:copy 2:ctrl-pressed
-    
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.dnd = evt.EventObject
+        EditorInterface.__dnd_from = evt.EventObject
+        try:
+            EditorInterface.__dnd_flag = (evt.Position < self.bolc) # force copy
+        except AttributeError:
+            EditorInterface.__dnd_flag = 0
         evt.Skip()
     
     def OnDragging(self, evt): #<wx._core.StyledTextEvent>
-        if isinstance(self.dnd, Shell):
-            if EditorInterface.dnd is not evt.EventObject\
-              and EditorInterface.dnd_flag == 1:
-                vk = wx.UIActionSimulator()
-                vk.KeyDown(wx.WXK_CONTROL) # force [C-Ldrag]
-                EditorInterface.dnd_flag += 1
-                def _release():
-                    vk.KeyUp(wx.WXK_CONTROL)
-                    EditorInterface.dnd_flag -= 1
-                wx.CallLater(1000, _release)
+        _from = EditorInterface.__dnd_from
+        _to = evt.EventObject
+        if isinstance(_from, Shell) and _from is not _to:  # from shell to buffer
+            wx.UIActionSimulator().KeyDown(wx.WXK_CONTROL) # force copy
+        try:
+            if evt.Position < self.bolc:
+                evt.DragResult = wx.DragNone # Don't drop (as readonly)
+            elif EditorInterface.__dnd_flag:
+                evt.DragResult = wx.DragCopy # Don't move
+        except AttributeError:
+            pass
         evt.Skip()
     
     def OnDragged(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.dnd = None
-        EditorInterface.dnd_flag = 0
+        EditorInterface.__dnd_from = None
+        EditorInterface.__dnd_flag = 0
+        wx.UIActionSimulator().KeyUp(wx.WXK_CONTROL)
         evt.Skip()
     
     ## --------------------------------
@@ -1129,12 +1127,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
-        ## Custom indicator (0,1) for filter_text
-        item = _map(spec.pop(stc.STC_P_WORD3, ''))
-        if item:
-            self.IndicatorSetForeground(0, item.get('fore') or "red")
-            self.IndicatorSetForeground(1, item.get('back') or "yellow")
-        
         ## Apply the rest of the style
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
@@ -1318,7 +1310,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def filter_text(self, text=None):
         """Show indicators for the selected text."""
         self.__itextlines = []
-        for i in range(2):
+        for i in (10, 11,):
             self.SetIndicatorCurrent(i)
             self.IndicatorClearRange(0, self.TextLength)
         if text is None:
@@ -1331,7 +1323,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         lines = []
         for p in self.search_text(text):
             lines.append(self.LineFromPosition(p))
-            for i in range(2):
+            for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
         self.__itextlines = sorted(set(lines)) # keep order, no duplication
@@ -1661,7 +1653,6 @@ class Buffer(EditorInterface, EditWindow):
         stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
         stc.STC_P_WORD2           : "fore:#b8007f",
-        stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
         stc.STC_P_DECORATOR       : "fore:#e08040",
     }
     
@@ -1907,7 +1898,7 @@ class Buffer(EditorInterface, EditWindow):
                 self.handler('buffer_modified', self)
         evt.Skip()
     
-    def OnCallTipClick(self, evt):
+    def OnCallTipClick(self, evt): #<wx._stc.StyledTextEvent>
         if self.CallTipActive():
             self.CallTipCancel()
         pos, tip, more = self._calltips
@@ -1915,23 +1906,24 @@ class Buffer(EditorInterface, EditWindow):
             self.CallTipShow(pos, tip, N=None)
         evt.Skip()
     
-    def OnIndicatorClick(self, evt):
+    def OnIndicatorClick(self, evt): #<wx._stc.StyledTextEvent>
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
             ## Processing text selection, dragging, or dragging+
             evt.Skip()
             return
         pos = evt.Position
-        if self.IndicatorValueAt(2, pos):
-            p = self.IndicatorStart(2, pos)
-            q = self.IndicatorEnd(2, pos)
+        i = 2
+        if self.IndicatorValueAt(i, pos): # [C-indic click]
+            p = self.IndicatorStart(i, pos)
+            q = self.IndicatorEnd(i, pos)
             url = self.GetTextRange(p, q).strip()
             self.message("URL {!r}".format(url))
-            if wx.GetKeyState(wx.WXK_SHIFT):
-                ## Note: post-call for the confirmation dialog.
-                wx.CallAfter(self.parent.load_file, url)
-            else:
+            if wx.GetKeyState(wx.WXK_SHIFT): # [C-S-indic click]
                 import webbrowser
                 return webbrowser.open(url)
+            else:
+                ## Note: post-call for the confirmation dialog.
+                wx.CallAfter(self.parent.load_file, url)
         self.anchor = pos # Clear selection
     
     def on_modified(self, buf):
@@ -2676,7 +2668,6 @@ class Nautilus(EditorInterface, Shell):
         stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
         stc.STC_P_WORD            : "fore:#80c0ff",
         stc.STC_P_WORD2           : "fore:#ff80ff",
-        stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
         stc.STC_P_DECORATOR       : "fore:#ff8040",
     }
     
@@ -2759,9 +2750,6 @@ class Nautilus(EditorInterface, Shell):
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
-        self.Bind(stc.EVT_STC_START_DRAG, self.OnDrag)
-        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragging)
-        self.Bind(stc.EVT_STC_DO_DROP, self.OnDragging)
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -3038,17 +3026,6 @@ class Nautilus(EditorInterface, Shell):
         if self.CallTipActive():
             self.CallTipCancel()
         self.parent.handler('add_help', self._calltips[1])
-        evt.Skip()
-    
-    def OnDrag(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.dnd_flag = (evt.Position < self.bolc) # copy
-        evt.Skip()
-    
-    def OnDragging(self, evt): #<wx._core.StyledTextEvent>
-        if evt.Position < self.bolc:
-            evt.DragResult = wx.DragNone # Don't drop (as readonly)
-        elif EditorInterface.dnd_flag:
-            evt.DragResult = wx.DragCopy # Don't move
         evt.Skip()
     
     def OnSpace(self, evt):
