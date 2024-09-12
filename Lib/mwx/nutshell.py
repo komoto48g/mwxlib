@@ -2422,8 +2422,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             buf._Buffer__mtime = 0 # => need_buffer_save
             self.swap_buffer(buf)
     
-    open_buffer = find_file # for backward compatibility
-    
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
         """

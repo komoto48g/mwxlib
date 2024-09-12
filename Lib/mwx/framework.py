@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.98.9"
+__version__ = "0.99.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1269,7 +1269,7 @@ class ShellFrame(MiniFrame):
         
         self.Scratch.set_attributes(Style=Nautilus.STYLE)
         self.Log.set_attributes(ReadOnly=True)
-        self.Help.set_attributes(ReadOnly=True)
+        self.Help.set_attributes(ReadOnly=False)
         
         self.set_hookable(self.Scratch)
         self.set_hookable(self.Log)
@@ -1336,20 +1336,19 @@ class ShellFrame(MiniFrame):
         _fsave(self.Scratch, self.SCRATCH_FILE) # save scratch
         _fsave(self.Log,     self.LOGGING_FILE) # save log
         
-        with open(self.SESSION_FILE, 'w', encoding='utf-8', newline='') as o:
+        with open(self.SESSION_FILE, 'w') as o:
             o.write("#! Session file (This file is generated automatically)\n")
+            o.write("self.SetSize({})\n".format(self.Size))
+            o.write("self.SetPosition({})\n".format(self.Position))
             
-            for book in (self.Scratch, self.Log):
+            for book in self.all_editors:
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
                         o.write("self.{}.load_file({!r}, {})\n"
                                 .format(book.Name, buf.filename, buf.markline+1))
+                o.write("self.{}.loadPerspective({!r})\n"
+                        .format(book.Name, book.savePerspective()))
             o.write('\n'.join((
-                "self.SetSize({})".format(self.Size),
-                "self.SetPosition({})".format(self.Position),
-                "self.Scratch.loadPerspective({!r})".format(self.Scratch.savePerspective()),
-                "self.Log.loadPerspective({!r})".format(self.Log.savePerspective()),
-                ## Note: Perspectives should be called after all pages have been added.
                 "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
                 "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
                 "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),

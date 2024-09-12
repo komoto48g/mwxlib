@@ -729,7 +729,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                 except Exception as e: # failed to eval
                     print(f"- Failed to reset {p!r}.", e)
     
-    reset_params = set_params #: for backward compatibility
+    reset_params = set_params
     
     def copy_to_clipboard(self, checked_only=False):
         params = self.get_params(checked_only)
