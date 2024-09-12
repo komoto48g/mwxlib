@@ -590,30 +590,32 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     stc.STC_STYLE_CARETLINE = 40
     stc.STC_STYLE_ANNOTATION = 41
     
-    ## Common DnD target and flags
-    dnd = None
-    dnd_flag = 0 # 1:copy 2:ctrl-pressed
-    
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.dnd = evt.EventObject
+        EditorInterface.__dnd_from = evt.EventObject
+        try:
+            EditorInterface.__dnd_flag = (evt.Position < self.bolc) # force copy
+        except AttributeError:
+            EditorInterface.__dnd_flag = 0
         evt.Skip()
     
     def OnDragging(self, evt): #<wx._core.StyledTextEvent>
-        if isinstance(self.dnd, Shell):
-            if EditorInterface.dnd is not evt.EventObject\
-              and EditorInterface.dnd_flag == 1:
-                vk = wx.UIActionSimulator()
-                vk.KeyDown(wx.WXK_CONTROL) # force [C-Ldrag]
-                EditorInterface.dnd_flag += 1
-                def _release():
-                    vk.KeyUp(wx.WXK_CONTROL)
-                    EditorInterface.dnd_flag -= 1
-                wx.CallLater(1000, _release)
+        _from = EditorInterface.__dnd_from
+        _to = evt.EventObject
+        if isinstance(_from, Shell) and _from is not _to:  # from shell to buffer
+            wx.UIActionSimulator().KeyDown(wx.WXK_CONTROL) # force copy
+        try:
+            if evt.Position < self.bolc:
+                evt.DragResult = wx.DragNone # Don't drop (as readonly)
+            elif EditorInterface.__dnd_flag:
+                evt.DragResult = wx.DragCopy # Don't move
+        except AttributeError:
+            pass
         evt.Skip()
     
     def OnDragged(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.dnd = None
-        EditorInterface.dnd_flag = 0
+        EditorInterface.__dnd_from = None
+        EditorInterface.__dnd_flag = 0
+        wx.UIActionSimulator().KeyUp(wx.WXK_CONTROL)
         evt.Skip()
     
     ## --------------------------------
@@ -2750,9 +2752,6 @@ class Nautilus(EditorInterface, Shell):
         
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
-        self.Bind(stc.EVT_STC_START_DRAG, self.OnDrag)
-        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragging)
-        self.Bind(stc.EVT_STC_DO_DROP, self.OnDragging)
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -3029,17 +3028,6 @@ class Nautilus(EditorInterface, Shell):
         if self.CallTipActive():
             self.CallTipCancel()
         self.parent.handler('add_help', self._calltips[1])
-        evt.Skip()
-    
-    def OnDrag(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.dnd_flag = (evt.Position < self.bolc) # copy
-        evt.Skip()
-    
-    def OnDragging(self, evt): #<wx._core.StyledTextEvent>
-        if evt.Position < self.bolc:
-            evt.DragResult = wx.DragNone # Don't drop (as readonly)
-        elif EditorInterface.dnd_flag:
-            evt.DragResult = wx.DragCopy # Don't move
         evt.Skip()
     
     def OnSpace(self, evt):
