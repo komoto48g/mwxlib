@@ -1896,7 +1896,7 @@ class Buffer(EditorInterface, EditWindow):
                 self.handler('buffer_modified', self)
         evt.Skip()
     
-    def OnCallTipClick(self, evt):
+    def OnCallTipClick(self, evt): #<wx._stc.StyledTextEvent>
         if self.CallTipActive():
             self.CallTipCancel()
         pos, tip, more = self._calltips
@@ -1904,23 +1904,24 @@ class Buffer(EditorInterface, EditWindow):
             self.CallTipShow(pos, tip, N=None)
         evt.Skip()
     
-    def OnIndicatorClick(self, evt):
+    def OnIndicatorClick(self, evt): #<wx._stc.StyledTextEvent>
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
             ## Processing text selection, dragging, or dragging+
             evt.Skip()
             return
         pos = evt.Position
-        if self.IndicatorValueAt(2, pos):
-            p = self.IndicatorStart(2, pos)
-            q = self.IndicatorEnd(2, pos)
+        i = 2
+        if self.IndicatorValueAt(i, pos): # [C-indic click]
+            p = self.IndicatorStart(i, pos)
+            q = self.IndicatorEnd(i, pos)
             url = self.GetTextRange(p, q).strip()
             self.message("URL {!r}".format(url))
-            if wx.GetKeyState(wx.WXK_SHIFT):
-                ## Note: post-call for the confirmation dialog.
-                wx.CallAfter(self.parent.load_file, url)
-            else:
+            if wx.GetKeyState(wx.WXK_SHIFT): # [C-S-indic click]
                 import webbrowser
                 return webbrowser.open(url)
+            else:
+                ## Note: post-call for the confirmation dialog.
+                wx.CallAfter(self.parent.load_file, url)
         self.anchor = pos # Clear selection
     
     def on_modified(self, buf):
