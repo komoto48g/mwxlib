@@ -545,22 +545,19 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicator (0,1) for filter_text
-        ## if wx.VERSION >= (4,1,0):
-        try:
-            self.IndicatorSetStyle(0, stc.STC_INDIC_TEXTFORE)
-            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
-        except AttributeError:
-            self.IndicatorSetStyle(0, stc.STC_INDIC_PLAIN)
-            self.IndicatorSetStyle(1, stc.STC_INDIC_ROUNDBOX)
+        ## Custom indicators ([BUG] indicator=1 is reset when the buffer is udpated.)
+        ## [10-11] filter_text
+        ## [2] URL for load_file
+        ## [3] match_paren
+        self.IndicatorSetStyle(10, stc.STC_INDIC_TEXTFORE)
+        self.IndicatorSetForeground(10, "red")
         
-        self.IndicatorSetUnder(1, True)
-        self.IndicatorSetAlpha(1, 60)
-        self.IndicatorSetOutlineAlpha(1, 120)
-        self.IndicatorSetForeground(0, "red")
-        self.IndicatorSetForeground(1, "yellow")
+        self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
+        self.IndicatorSetUnder(11, True)
+        self.IndicatorSetAlpha(11, 255)
+        self.IndicatorSetOutlineAlpha(11, 255)
+        self.IndicatorSetForeground(11, "yellow")
         
-        ## Custom indicator (2) for URL (buffer_modified)
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
         try:
@@ -569,7 +566,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         except AttributeError:
             pass
         
-        ## Custom indicator (3) for match_paren
         self.IndicatorSetStyle(3, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(3, "light gray")
         
@@ -590,7 +586,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.__stylus = {}
     
     ## Custom constants embedded in wx.stc
-    stc.STC_P_WORD3 = 20
+    stc.STC_P_WORD3 = 20 # deprecated
     stc.STC_STYLE_CARETLINE = 40
     stc.STC_STYLE_ANNOTATION = 41
     
@@ -1129,12 +1125,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
-        ## Custom indicator (0,1) for filter_text
-        item = _map(spec.pop(stc.STC_P_WORD3, ''))
-        if item:
-            self.IndicatorSetForeground(0, item.get('fore') or "red")
-            self.IndicatorSetForeground(1, item.get('back') or "yellow")
-        
         ## Apply the rest of the style
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
@@ -1318,7 +1308,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def filter_text(self, text=None):
         """Show indicators for the selected text."""
         self.__itextlines = []
-        for i in range(2):
+        for i in (10, 11,):
             self.SetIndicatorCurrent(i)
             self.IndicatorClearRange(0, self.TextLength)
         if text is None:
@@ -1331,7 +1321,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         lines = []
         for p in self.search_text(text):
             lines.append(self.LineFromPosition(p))
-            for i in range(2):
+            for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
         self.__itextlines = sorted(set(lines)) # keep order, no duplication
@@ -1661,7 +1651,6 @@ class Buffer(EditorInterface, EditWindow):
         stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
         stc.STC_P_WORD2           : "fore:#b8007f",
-        stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
         stc.STC_P_DECORATOR       : "fore:#e08040",
     }
     
@@ -2678,7 +2667,6 @@ class Nautilus(EditorInterface, Shell):
         stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
         stc.STC_P_WORD            : "fore:#80c0ff",
         stc.STC_P_WORD2           : "fore:#ff80ff",
-        stc.STC_P_WORD3           : "fore:#ff0000,back:#ffff00", # optional for search word
         stc.STC_P_DECORATOR       : "fore:#ff8040",
     }
     
