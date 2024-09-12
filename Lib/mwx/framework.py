@@ -178,6 +178,15 @@ def getKeyState(key):
         pass
 
 
+def setKeyState(key, state):
+    """Makes you feel like having pressed/released speckey."""
+    vk = wx.UIActionSimulator()
+    if state:
+        vk.KeyDown(_speckeys_wxkmap[key])
+    else:
+        vk.KeyUp(_speckeys_wxkmap[key])
+
+
 def hotkey(evt):
     """Interpret evt.KeyCode as hotkey:str and overwrite evt.key.
     The modifiers are arranged in the same order as matplotlib as
