@@ -26,7 +26,7 @@ class Param:
     Args:
         name    : label
         range   : range
-        value   : std_value (default is nan)
+        value   : std_value (default is None)
         fmt     : text formatter or format:str (default is '%g')
                   `hex` specifies hexadecimal format
         handler : called when control changed
@@ -95,8 +95,8 @@ class Param:
     def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""
         if v is None:
-            v = self.std_value  # reset to std_value
-            if np.isnan(v):     # do nothing if std_value is nan
+            v = self.std_value
+            if np.isnan(v):
                 return
         elif isinstance(v, str):
             try:
@@ -104,27 +104,7 @@ class Param:
             except Exception:
                 v = self.value
                 internal_callback = False
-        
-        if v is None:
-            v = nan
-        if np.isnan(v) or np.isinf(v):
-            self.__value = v
-            for knob in self.knobs:
-                knob.update_ctrl(None, notify=False)
-            return
-        if v != self.__value:
-            ## If the value is out of range, it will be modified.
-            valid = (self.min <= v <= self.max)
-            if valid:
-                self.__value = v
-            elif v < self.min:
-                self.__value = self.min
-                self.callback('underflow', self)
-            else:
-                self.__value = self.max
-                self.callback('overflow', self)
-            for knob in self.knobs:
-                knob.update_ctrl(valid, notify=True)
+        self.value = v
         if internal_callback:
             self.callback('control', self)
     
@@ -157,7 +137,30 @@ class Param:
     
     @value.setter
     def value(self, v):
-        self.reset(v)
+        if v is None:
+            v = nan
+        if np.isnan(v) or np.isinf(v):
+            self.__value = v
+            for knob in self.knobs:
+                knob.update_ctrl(None, notify=False)
+            return
+        elif v == self.__value:
+            for knob in self.knobs:
+                knob.update_ctrl(True, notify=False)
+            return
+        
+        ## If the value is out of range, it will be modified.
+        valid = (self.min <= v <= self.max)
+        if valid:
+            self.__value = v
+        elif v < self.min:
+            self.__value = self.min
+            self.callback('underflow', self)
+        else:
+            self.__value = self.max
+            self.callback('overflow', self)
+        for knob in self.knobs:
+            knob.update_ctrl(valid, notify=True)
     
     @property
     def std_value(self):
@@ -478,12 +481,14 @@ class Knob(wx.Panel):
         j = self.ctrl.GetValue() + bit
         if j != v.index:
             v.index = j
+            v.reset(v.value)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
         v = self.__par
         j = self.ctrl.GetValue()
         if j != v.index:
             v.index = j
+            v.reset(v.value)
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
