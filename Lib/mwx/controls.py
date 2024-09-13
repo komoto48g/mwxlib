@@ -117,8 +117,6 @@ class Param:
     def check(self, v):
         self.__check = bool(v)
         self.callback('check', self)
-        for knob in self.knobs:
-            knob.update_label()
     
     @property
     def name(self):
@@ -329,7 +327,7 @@ class Knob(wx.Panel):
         self.__par = param
         self.__par.knobs.append(self) # パラメータの関連付けを行う
         
-        if type is None:
+        if not type:
             type = 'slider'
             if cw < 0:
                 cw = 0
@@ -445,6 +443,7 @@ class Knob(wx.Panel):
         t = '  ' if np.isnan(v.std_value) or v.value == v.std_value else '*'
         self.label.SetLabel(v.name + t)
         self.label.Refresh()
+        self.Refresh()
     
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
@@ -595,7 +594,6 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                         for cc in obj.Children: # child of child <wx._core.SizerItem>
                             cc.Show(not cc.IsShown())
                         self.Layout()
-                        self.SendSizeEvent()
                         break
         evt.Skip()
     
@@ -623,9 +621,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         ## child = self.Sizer.Children[groupid]
         ## child.Show(p)
         self.Sizer.Show(groupid % len(self.__groups), p)
-        ## self.Sizer.Fit(self) # do Fit(self.Parent) if needed
         self.Layout()
-        self.Parent.SendSizeEvent() # let parent redraw the child panel
     
     def is_folded(self, groupid):
         child = self.Sizer.Children[groupid]
@@ -637,9 +633,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         if isinstance(child.Sizer, wx.StaticBoxSizer) and child.IsShown():
             for cc in child.Sizer.Children: # child of child <wx._core.SizerItem>
                 cc.Show(not p)
-            ## self.Sizer.Fit(self) # do Fit(self.Parent) if needed
             self.Layout()
-            self.Parent.SendSizeEvent() # let parent redraw the child panel
     
     def layout(self, items, title=None,
                row=0, expand=0, border=2, hspacing=1, vspacing=1,
