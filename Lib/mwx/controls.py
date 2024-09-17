@@ -25,25 +25,26 @@ class Param:
     
     Args:
         name    : label
-        range   : range
+        range   : list of values
         value   : std_value (default is None)
         fmt     : text formatter or format:str (default is '%g')
                   `hex` specifies hexadecimal format
-        handler : called when control changed
-        updater : called when check changed
+        handler : called when knob is handled.
+        updater : called when button is pressed.
+        checker : called when tick turns on/off.
     
     Attributes:
         knobs       : knob list
         callback    : single state machine that handles following events
         
-            - control -> when index changed by knobs or reset (handler)
-            - update  -> when button pressed (updater)
-            - check   -> when check marked (updater)
+            - control -> when index is changed by knobs or reset (handler)
+            - updated -> when button is pressed (updater)
+            - checked -> when tick turns on/off (checker)
             - overflow -> when value overflows
             - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
-                 handler=None, updater=None):
+                 handler=None, updater=None, checker=None):
         self.knobs = []
         self.name = name
         self.range = range
@@ -60,8 +61,8 @@ class Param:
                 self.__format = lambda v: fmt % v
         self.callback = SSM({
             'control' : [ _F(handler) ] if handler else [],
-             'update' : [ _F(updater) ] if updater else [],
-              'check' : [ _F(updater) ] if updater else [],
+            'updated' : [ _F(updater) ] if updater else [],
+            'checked' : [ _F(checker) ] if checker else [],
            'overflow' : [],
           'underflow' : [],
         })
@@ -110,13 +111,13 @@ class Param:
     
     @property
     def check(self):
-        """A knob check property (user defined)."""
+        """A knob check-flag (user defined)."""
         return self.__check
     
     @check.setter
     def check(self, v):
         self.__check = bool(v)
-        self.callback('check', self)
+        self.callback('checked', self)
     
     @property
     def name(self):
@@ -225,19 +226,21 @@ class LParam(Param):
     
     Args:
         name    : label
-        range   : range [min:max:step]
+        range   : range params [min:max:step]
         value   : std_value (default is None)
         fmt     : text formatter or format:str (default is '%g')
                   `hex` specifies hexadecimal format
-        handler : called when control changed
-        updater : called when check changed
+        handler : called when knob is handled.
+        updater : called when button is pressed.
+        checker : called when tick turns on/off.
     
     Attributes:
         knobs       : knob list
         callback    : single state machine that handles following events
         
-            - control -> when index changed by knobs or reset (handler)
-            - check   -> when check ticks on/off (updater)
+            - control -> when index is changed by knobs or reset (handler)
+            - updated -> when button is pressed (updater)
+            - checked -> when tick turns on/off (checker)
             - overflow -> when value overflows
             - underflow -> when value underflows
     """
@@ -296,8 +299,9 @@ class Knob(wx.Panel):
         type    : ctrl type (slider[*], [hv]spin, choice, None)
         style   : style of label
                   None -> static text (default)
-                  chkbox -> label with check box
                   button -> label with flat button
+                  chkbox -> label with checkbox
+                  checkbox -> label with checkbox
         cw      : width of ctrl
         lw      : width of label
         tw      : width of textbox
@@ -339,19 +343,17 @@ class Knob(wx.Panel):
         
         label = self.__par.name + '  '
         
-        if style == 'chkbox':
+        if style == 'chkbox' or style == 'checkbox':
             if lw >= 0:
                 lw += 16
             self.label = wx.CheckBox(self, label=label, size=(lw,-1))
             self.label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
-            
         elif style == 'button':
             if lw >= 0:
                 lw += 16
             self.label = pb.PlateButton(self, label=label, size=(lw,-1),
                             style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
             self.label.Bind(wx.EVT_BUTTON, self.OnPress)
-            
         elif not style:
             self.label = wx.StaticText(self, label=label, size=(lw,-1))
         else:
@@ -536,7 +538,7 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnPress(self, evt): #<wx._core.CommandEvent>
-        self.__par.callback('update', self.__par)
+        self.__par.callback('updated', self.__par)
         evt.Skip()
     
     def Enable(self, p=True):
