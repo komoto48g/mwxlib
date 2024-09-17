@@ -336,6 +336,7 @@ class LayerInterface(CtrlInterface):
                  'thread_error' : [ None ], # failed in error
                    'page_shown' : [ None, _F(self.Draw, True)  ],
                   'page_closed' : [ None, _F(self.Draw, False) ],
+                  'page_hidden' : [ None, _F(self.Draw, False) ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -380,6 +381,7 @@ class LayerInterface(CtrlInterface):
                   lambda v: Menu.Popup(self, self.menu))
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        self.Bind(wx.EVT_SHOW, self.OnShow)
         
         try:
             self.Init()
@@ -417,6 +419,16 @@ class LayerInterface(CtrlInterface):
                 self.thread.active = 0
                 self.thread.Stop()
             del self.Arts
+        evt.Skip()
+    
+    def OnShow(self, evt):
+        if not self:
+            return
+        if isinstance(self.Parent, aui.AuiNotebook):
+            if evt.IsShown():
+                self.handler('page_shown', self)
+            else:
+                self.handler('page_hidden', self)
         evt.Skip()
     
     Shown = property(
@@ -1001,7 +1013,7 @@ class Frame(mwx.Frame):
                 plug.handler('page_closed', plug)
         else:
             win.handler('page_closed', win)
-        evt.Skip()
+        evt.Skip(False) # Don't skip to avoid being called twice.
     
     ## --------------------------------
     ## Plugin <Layer> interface
