@@ -4,9 +4,9 @@
 from functools import wraps
 from importlib import reload, import_module
 from contextlib import contextmanager
-from pprint import pformat
 from bdb import BdbQuit
-import subprocess
+from pprint import pformat
+from subprocess import Popen
 import threading
 import traceback
 import inspect
@@ -1335,11 +1335,9 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if not plug:
             return
-        ## this = inspect.getmodule(plug)
-        this = self.plugins[plug.__module__]
-        cmd = '{} "{}"'.format(self.Editor, this.__file__)
-        subprocess.Popen(cmd)
-        self.message(cmd)
+        
+        Popen([self.Editor,
+               inspect.getmodule(plug).__file__])
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.

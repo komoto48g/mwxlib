@@ -7,7 +7,7 @@ import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
 
 from . import images
-from .utilus import SSM, warn
+from .utilus import SSM
 from .utilus import funcall as _F
 from .framework import pack, Menu, CtrlInterface
 
@@ -84,14 +84,6 @@ class Param:
     
     def __len__(self):
         return len(self.range)
-    
-    def bind(self, action=None, target='control'):
-        warn("Use `Param.callback.bind('control')` instead.", DeprecationWarning)
-        return self.callback.bind(target, action)
-    
-    def unbind(self, action=None, target='control'):
-        warn("Use `Param.callback.unbind('control')` instead.", DeprecationWarning)
-        return self.callback.unbind(target, action)
     
     def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""

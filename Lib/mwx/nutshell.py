@@ -520,12 +520,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.SetProperty('fold', '1') # Enable folder property
         
-        ## if wx.VERSION >= (4,1,0):
-        try:
-            self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
-            self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
-        except AttributeError:
-            pass
+        self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+        self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
         ## Custom markers
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o mark

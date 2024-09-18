@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.99.2"
+__version__ = "0.99.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1602,13 +1602,6 @@ class ShellFrame(MiniFrame):
         del shell.globals
         self.indicator.Value = 1
         self.message("Quit")
-    
-    def _load(self, filename, lineno, editor): # for backward compatibility
-        """Load file in the session (internal use only)."""
-        if isinstance(editor, str):
-            editor = getattr(self, editor, None)
-        if editor:
-            return editor.load_file(filename, lineno)
     
     @save_focus_excursion()
     def load(self, filename, lineno=0, show=True):
