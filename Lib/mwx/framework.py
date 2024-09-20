@@ -1276,7 +1276,8 @@ class ShellFrame(MiniFrame):
             },
         })
         
-        self.Scratch.set_attributes(Style=Nautilus.STYLE)
+        self.Scratch.set_attributes(Style=self.rootshell.get_stylus())
+        
         self.Log.set_attributes(ReadOnly=True)
         self.Help.set_attributes(ReadOnly=False)
         

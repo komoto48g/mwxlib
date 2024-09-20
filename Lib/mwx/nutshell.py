@@ -47,6 +47,90 @@ py_frame_re = r" +file '(.*?)', line ([0-9]+)"
 py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
 py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 
+## Custom constants in wx.stc
+stc.STC_P_WORD3 = 20 # deprecated
+stc.STC_STYLE_CARETLINE = 40
+stc.STC_STYLE_ANNOTATION = 41
+
+class Stylus:
+    py_buffer_mode = {
+        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
+        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
+        stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
+        stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
+        stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
+        stc.STC_P_DEFAULT         : "fore:#000000",
+        stc.STC_P_OPERATOR        : "fore:#000000",
+        stc.STC_P_IDENTIFIER      : "fore:#000000",
+        stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
+        stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
+        stc.STC_P_NUMBER          : "fore:#7f0000",
+        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf",
+        stc.STC_P_CHARACTER       : "fore:#7f7f7f",
+        stc.STC_P_STRING          : "fore:#7f7f7f",
+        stc.STC_P_TRIPLE          : "fore:#7f7f7f",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
+        stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
+        stc.STC_P_WORD            : "fore:#0000ff",
+        stc.STC_P_WORD2           : "fore:#b8007f",
+        stc.STC_P_DECORATOR       : "fore:#e08040",
+    }
+
+    py_text_mode = {
+        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#fffff8,size:9,face:MS Gothic",
+        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#fffff8,size:9",
+        stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#cccccc,bold",
+        stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
+        stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#f0f0ff,size:2", # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
+        stc.STC_P_DEFAULT         : "fore:#000000",
+        stc.STC_P_OPERATOR        : "fore:#000000",
+        stc.STC_P_IDENTIFIER      : "fore:#000000",
+        stc.STC_P_COMMENTLINE     : "fore:#007f00,back:#f0fff0",
+        stc.STC_P_COMMENTBLOCK    : "fore:#007f00,back:#f0fff0,eol",
+        stc.STC_P_NUMBER          : "fore:#e02000",
+        stc.STC_P_STRINGEOL       : "fore:#7f7f7f,back:#ffc0c0,eol",
+        stc.STC_P_CHARACTER       : "fore:#7f7f7f",
+        stc.STC_P_STRING          : "fore:#7f7f7f",
+        stc.STC_P_TRIPLE          : "fore:#7f7f7f",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
+        stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
+        stc.STC_P_WORD            : "fore:#0000ff",
+        stc.STC_P_WORD2           : "fore:#7f007f",
+        stc.STC_P_DECORATOR       : "fore:#c04040,bold",
+    }
+
+    py_shell_mode = {
+        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#202020,size:9,face:MS Gothic",
+        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
+        stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
+        stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
+        stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
+        stc.STC_P_DEFAULT         : "fore:#cccccc",
+        stc.STC_P_OPERATOR        : "fore:#cccccc",
+        stc.STC_P_IDENTIFIER      : "fore:#cccccc",
+        stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
+        stc.STC_P_COMMENTBLOCK    : "fore:#42c18c,back:#004040,eol",
+        stc.STC_P_NUMBER          : "fore:#ffc080",
+        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#004040,eol",
+        stc.STC_P_CHARACTER       : "fore:#a0a0a0",
+        stc.STC_P_STRING          : "fore:#a0a0a0",
+        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040",
+        stc.STC_P_CLASSNAME       : "fore:#61d6d6,bold",
+        stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
+        stc.STC_P_WORD            : "fore:#80c0ff",
+        stc.STC_P_WORD2           : "fore:#ff80ff",
+        stc.STC_P_DECORATOR       : "fore:#ff8040",
+    }
+
 
 def skip(evt):
     evt.Skip()
@@ -581,11 +665,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.__mark = -1
         self.__stylus = {}
     
-    ## Custom constants embedded in wx.stc
-    stc.STC_P_WORD3 = 20 # deprecated
-    stc.STC_STYLE_CARETLINE = 40
-    stc.STC_STYLE_ANNOTATION = 41
-    
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
         EditorInterface.__dnd_from = evt.EventObject
         try:
@@ -1075,6 +1154,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         return self.__stylus
     
     def set_stylus(self, spec=None, **kwargs):
+        """Set style spec for wx.stc.StyleSetSpec."""
         spec = spec and spec.copy() or {}
         spec.update(kwargs)
         if not spec:
@@ -1626,32 +1706,6 @@ class Buffer(EditorInterface, EditWindow):
         filename : buffer-file-name
         code     : code object
     """
-    STYLE = {
-        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
-        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
-        stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
-        stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
-        stc.STC_STYLE_CONTROLCHAR : "size:6",
-        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
-        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
-        stc.STC_P_DEFAULT         : "fore:#000000",
-        stc.STC_P_OPERATOR        : "fore:#000000",
-        stc.STC_P_IDENTIFIER      : "fore:#000000",
-        stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
-        stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
-        stc.STC_P_NUMBER          : "fore:#7f0000",
-        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf",
-        stc.STC_P_CHARACTER       : "fore:#7f7f7f",
-        stc.STC_P_STRING          : "fore:#7f7f7f",
-        stc.STC_P_TRIPLE          : "fore:#7f7f7f",
-        stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
-        stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
-        stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
-        stc.STC_P_WORD            : "fore:#0000ff",
-        stc.STC_P_WORD2           : "fore:#b8007f",
-        stc.STC_P_DECORATOR       : "fore:#e08040",
-    }
-    
     @property
     def message(self):
         return self.parent.message
@@ -1876,7 +1930,7 @@ class Buffer(EditorInterface, EditWindow):
         })
         
         self.show_folder()
-        self.set_stylus(self.STYLE)
+        self.set_stylus(Stylus.py_buffer_mode)
     
     def __contains__(self, code):
         if inspect.iscode(code) and self.code:
@@ -2204,7 +2258,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             buf : a buffer to apply (if None, applies to all buffers).
             **kwargs: default style.
             
-                Style           = Buffer.STYLE
                 ReadOnly        = False
                 UseTabs         = False
                 ViewEOL         = False
@@ -2641,32 +2694,6 @@ class Nautilus(EditorInterface, Shell):
         Half-baked by Patrik K. O'Brien,
         and this other half by K. O'moto.
     """
-    STYLE = {
-        stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#202020,size:9,face:MS Gothic",
-        stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#f0f0f0,size:9",
-        stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
-        stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
-        stc.STC_STYLE_CONTROLCHAR : "size:6",
-        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
-        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
-        stc.STC_P_DEFAULT         : "fore:#cccccc",
-        stc.STC_P_OPERATOR        : "fore:#cccccc",
-        stc.STC_P_IDENTIFIER      : "fore:#cccccc",
-        stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
-        stc.STC_P_COMMENTBLOCK    : "fore:#42c18c,back:#004040,eol",
-        stc.STC_P_NUMBER          : "fore:#ffc080",
-        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#004040,eol",
-        stc.STC_P_CHARACTER       : "fore:#a0a0a0",
-        stc.STC_P_STRING          : "fore:#a0a0a0",
-        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040",
-        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040",
-        stc.STC_P_CLASSNAME       : "fore:#61d6d6,bold",
-        stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
-        stc.STC_P_WORD            : "fore:#80c0ff",
-        stc.STC_P_WORD2           : "fore:#ff80ff",
-        stc.STC_P_DECORATOR       : "fore:#ff8040",
-    }
-    
     @property
     def message(self):
         return self.parent.message
@@ -2986,7 +3013,7 @@ class Nautilus(EditorInterface, Shell):
         
         self.wrap(0)
         self.show_folder()
-        self.set_stylus(self.STYLE)
+        self.set_stylus(Stylus.py_shell_mode)
         
         ## delete unnecessary arrows at startup
         del self.white_arrow
