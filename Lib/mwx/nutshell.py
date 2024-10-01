@@ -53,7 +53,7 @@ stc.STC_STYLE_CARETLINE = 40
 stc.STC_STYLE_ANNOTATION = 41
 
 class Stylus:
-    py_buffer_mode = {
+    py_log_mode = {
         stc.STC_STYLE_DEFAULT     : "fore:#7f7f7f,back:#ffffb8,size:9,face:MS Gothic",
         stc.STC_STYLE_LINENUMBER  : "fore:#000000,back:#ffffb8,size:9",
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
@@ -1930,7 +1930,7 @@ class Buffer(EditorInterface, EditWindow):
         })
         
         self.show_folder()
-        self.set_stylus(Stylus.py_buffer_mode)
+        self.set_stylus(Stylus.py_text_mode)
     
     def __contains__(self, code):
         if inspect.iscode(code) and self.code:
