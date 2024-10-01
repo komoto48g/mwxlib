@@ -1058,10 +1058,9 @@ class ShellFrame(MiniFrame):
     
     Args:
         target  : target object of the rootshell.
-                  If None, it will be `__main__`.
-        debrc   : session file for deb run command.
-                  SESSION_FILE will be overwritten.
-        ensureClose : A flag for the shell standalone.
+                  If None, it will be __main__.
+        debrc   : file name of the session.
+        ensureClose : flag for the shell standalone.
                       If True, EVT_CLOSE will close the window.
                       Otherwise it will be only hidden.
         **kwargs    : Nautilus arguments
@@ -1293,8 +1292,7 @@ class ShellFrame(MiniFrame):
         self.SCRATCH_FILE = get_rootpath("scratch.py")
         self.LOGGING_FILE = get_rootpath("deb-logging.log")
         
-        self.load_session(
-            os.path.abspath(debrc) if debrc else self.SESSION_FILE)
+        self.load_session(debrc or self.SESSION_FILE)
     
     def load_session(self, filename):
         """Load session from file.

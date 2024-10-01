@@ -625,8 +625,8 @@ class Frame(mwx.Frame):
         
         self.__plugins = {} # modules in the order of load/save
         
-        self.__graph = Graph(self, log=self.message, margin=None, size=(600,600))
-        self.__output = Graph(self, log=self.message, margin=None, size=(600,600))
+        self.__graph = Graph(self, log=self.message, margin=None)
+        self.__output = Graph(self, log=self.message, margin=None)
         
         self.__histgrm = Histogram(self, log=self.message, margin=None, size=(130,65))
         self.__histgrm.attach(self.graph)

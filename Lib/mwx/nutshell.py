@@ -17,7 +17,8 @@ import sys
 import os
 import re
 import wx
-from wx import stc, aui
+from wx import aui
+from wx import stc
 from wx.py import dispatcher
 from wx.py import introspect
 from wx.py import interpreter
