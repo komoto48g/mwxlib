@@ -31,10 +31,9 @@ def deb(target=None, loop=True, locals=None, **kwargs):
         target  : Object or module (default None).
                   If None, the target is set to `__main__`.
         loop    : If True, the app and the mainloop will be created.
-                  Otherwise, neither the app nor the mainloop will be created.
         locals  : Additional context of the shell
         
-        **kwargs: Nautilus arguments
+        **kwargs: Nautilus ShellFrame arguments
         
             - introText         : introductory of the shell
             - startupScript     : startup script file (default None)
@@ -45,25 +44,19 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     Note:
         This will execute the startup script $(PYTHONSTARTUP).
     """
-    quote_unqoute = """
-        Anything one man can imagine, other man can make real.
-        --- Jules Verne (1828--1905)
-        """
-    kwargs.setdefault("introText",
-                      "mwx {}".format(__version__) + quote_unqoute)
+    kwargs.setdefault("introText", f"mwx {__version__}\n")
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
-    
+
     app = wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
     frame.Show()
     frame.rootshell.SetFocus()
     if locals:
         frame.rootshell.locals.update(locals)
-    if not loop:
-        return frame
-    if not app.GetMainLoop():
-        return app.MainLoop()
+    if loop and not app.GetMainLoop():
+        app.MainLoop()
+    return frame
 
 
 def postcall(f):
@@ -1104,10 +1097,8 @@ class ShellFrame(MiniFrame):
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
-    def __init__(self, parent, target=None, debrc=None, ensureClose=False,
-                 title=None, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE,
-                 **kwargs):
-        MiniFrame.__init__(self, parent, size=size, style=style)
+    def __init__(self, parent, target=None, debrc=None, ensureClose=False,**kwargs):
+        MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
