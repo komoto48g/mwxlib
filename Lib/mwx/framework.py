@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.99.5"
+__version__ = "0.99.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1023,7 +1023,7 @@ class FileDropLoader(wx.DropTarget):
     def __init__(self, target):
         wx.DropTarget.__init__(self)
         
-        self.editor = target
+        self.target = target
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.DataObject = wx.DataObjectComposite()
@@ -1031,7 +1031,7 @@ class FileDropLoader(wx.DropTarget):
         self.DataObject.Add(self.filedo, True)
     
     def OnData(self, x, y, result):
-        editor = self.editor
+        editor = self.target.current_editor
         self.GetData()
         if self.textdo.TextLength > 1:
             f = self.textdo.Text.strip()
@@ -1161,7 +1161,7 @@ class ShellFrame(MiniFrame):
         
         self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
         
-        self.ghost.SetDropTarget(FileDropLoader(self.Scratch))
+        self.ghost.SetDropTarget(FileDropLoader(self))
         
         self.watcher = AuiNotebook(self, size=(600,400), name="watcher")
         self.watcher.AddPage(self.ginfo, "globals")
