@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.99.4"
+__version__ = "0.99.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1104,11 +1104,9 @@ class ShellFrame(MiniFrame):
         
         self.__standalone = bool(ensureClose)
         
-        ## Initialize self-specific builtins.
-        ## Note: This should be called before creating root shell.
         self.Init()
         
-        from .nutshell import Nautilus, EditorBook, Stylus
+        from .nutshell import Nautilus, EditorBook
         from .bookshelf import EditorTreeCtrl
         
         self.__shell = Nautilus(self,
@@ -1266,33 +1264,14 @@ class ShellFrame(MiniFrame):
             },
         })
         
-        self.Scratch.set_attributes(Style=Stylus.py_shell_mode)
-        
-        self.Log.set_attributes(ReadOnly=True,
-                                Style=Stylus.py_log_mode)
-        
-        self.Help.set_attributes(ReadOnly=False,
-                                 Style=Stylus.py_text_mode)
-        
-        self.set_hookable(self.Scratch)
-        self.set_hookable(self.Log)
-        
-        @self.Scratch.define_key('C-j')
-        def eval_line(evt):
-            self.Scratch.buffer.eval_line()
-            evt.Skip(False) # Don't skip explicitly.
-        
-        @self.Scratch.define_key('M-j')
-        def eval_buffer(evt):
-            self.Scratch.buffer.exec_region()
-            evt.Skip(False) # Don't skip explicitly.
-        
         ## Session
         self.SESSION_FILE = get_rootpath(".debrc")
         self.SCRATCH_FILE = get_rootpath("scratch.py")
         self.LOGGING_FILE = get_rootpath("deb-logging.log")
         
         self.load_session(debrc or self.SESSION_FILE)
+        
+        self.postInit()
     
     def load_session(self, filename):
         """Load session from file.
@@ -1357,7 +1336,39 @@ class ShellFrame(MiniFrame):
                 "self._mgr.Update()\n",
             )))
     
+    def postInit(self):
+        """Set shell and editor styles.
+        Note:
+            This is called after loading session.
+        """
+        from .nutshell import Stylus
+        
+        self.Scratch.set_attributes(Style=Stylus.py_shell_mode)
+        
+        self.Log.set_attributes(ReadOnly=True,
+                                Style=Stylus.py_log_mode)
+        
+        self.Help.set_attributes(ReadOnly=False,
+                                 Style=Stylus.py_text_mode)
+        
+        self.set_hookable(self.Scratch)
+        self.set_hookable(self.Log)
+        
+        @self.Scratch.define_key('C-j')
+        def eval_line(evt):
+            self.Scratch.buffer.eval_line()
+            evt.Skip(False) # Don't skip explicitly.
+        
+        @self.Scratch.define_key('M-j')
+        def eval_buffer(evt):
+            self.Scratch.buffer.exec_region()
+            evt.Skip(False) # Don't skip explicitly.
+    
     def Init(self):
+        """Initialize self-specific builtins.
+        Note:
+            This should be called before creating root shell.
+        """
         try:
             builtins.dive
         except AttributeError:
