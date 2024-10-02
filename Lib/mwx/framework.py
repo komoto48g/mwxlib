@@ -32,8 +32,8 @@ def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
                   If None, the target is set to `__main__`.
         loop    : If True, the app and the mainloop will be created.
         locals  : Additional context of the shell
-        debrc   : file name of the session.
-                  If None, the session will not be saved.
+        debrc   : file name of the session; defaults to None.
+                  If None, no session will be created or saved.
         
         **kwargs: Nautilus ShellFrame arguments
         
@@ -1061,9 +1061,11 @@ class ShellFrame(MiniFrame):
     Args:
         target  : target object of the rootshell.
                   If None, it will be __main__.
+        session : file name of the session; defaults to None.
+                  If None, no session will be created or saved.
         ensureClose : flag for the shell standalone.
                       If True, EVT_CLOSE will close the window.
-                      Otherwise it will be only hidden.
+                      Otherwise the window will be only hidden.
         **kwargs    : Nautilus arguments
     
     Attributes:
