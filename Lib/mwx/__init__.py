@@ -2,7 +2,7 @@
 """mwxlib framework (based on matplotlib/wx)
 """
 from .framework import __version__, __author__
-from .framework import FSM
+from .framework import FSM, TreeList
 from .framework import Menu, MenuBar, StatusBar
 from .framework import Frame, MiniFrame, ShellFrame, deb
 

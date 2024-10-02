@@ -822,14 +822,14 @@ class Frame(mwx.Frame):
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
         
-        ## Script editor for plugins (external call)
-        self.Editor = "notepad"
+    ## Script editor for plugins (external call)
+    EDITOR = "notepad"
     
-    sync_switch = True
+    SYNC_SWITCH = True
     
     def sync(self, a, b):
         """Synchronize b to a."""
-        if (self.sync_switch
+        if (self.SYNC_SWITCH
             and a.frame and b.frame
             and a.frame.unit == b.frame.unit
             and a.buffer.shape == b.buffer.shape):
@@ -1336,8 +1336,7 @@ class Frame(mwx.Frame):
         if not plug:
             return
         
-        Popen([self.Editor,
-               inspect.getmodule(plug).__file__])
+        Popen([self.EDITOR, inspect.getmodule(plug).__file__])
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.
