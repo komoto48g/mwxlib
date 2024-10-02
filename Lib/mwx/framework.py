@@ -24,7 +24,7 @@ from .utilus import get_rootpath, ignore, warn
 from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
 
 
-def deb(target=None, loop=True, locals=None, **kwargs):
+def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
     """Dive into the process.
     
     Args:
@@ -32,6 +32,8 @@ def deb(target=None, loop=True, locals=None, **kwargs):
                   If None, the target is set to `__main__`.
         loop    : If True, the app and the mainloop will be created.
         locals  : Additional context of the shell
+        debrc   : file name of the session.
+                  If None, the session will not be saved.
         
         **kwargs: Nautilus ShellFrame arguments
         
@@ -49,7 +51,7 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     kwargs.setdefault("ensureClose", True)
 
     app = wx.GetApp() or wx.App()
-    frame = ShellFrame(None, target, **kwargs)
+    frame = ShellFrame(None, target, session=debrc, **kwargs)
     frame.Show()
     frame.rootshell.SetFocus()
     if locals:
@@ -734,7 +736,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
-        self.shellframe = ShellFrame(None, target=self)
+        self.shellframe = ShellFrame(None, target=self, session='')
         
         self.menubar = MenuBar()
         self.menubar["File"] = [
@@ -1059,7 +1061,6 @@ class ShellFrame(MiniFrame):
     Args:
         target  : target object of the rootshell.
                   If None, it will be __main__.
-        debrc   : file name of the session.
         ensureClose : flag for the shell standalone.
                       If True, EVT_CLOSE will close the window.
                       Otherwise it will be only hidden.
@@ -1096,7 +1097,7 @@ class ShellFrame(MiniFrame):
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
-    def __init__(self, parent, target=None, debrc=None, ensureClose=False,**kwargs):
+    def __init__(self, parent, target=None, session=None, ensureClose=False, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
         self.statusbar.resize((-1,120))
@@ -1264,12 +1265,15 @@ class ShellFrame(MiniFrame):
             },
         })
         
-        ## Session
+        ## Session files
         self.SESSION_FILE = get_rootpath(".debrc")
         self.SCRATCH_FILE = get_rootpath("scratch.py")
         self.LOGGING_FILE = get_rootpath("deb-logging.log")
         
-        self.load_session(debrc or self.SESSION_FILE)
+        if session is not None:
+            self.load_session(session or self.SESSION_FILE)
+        else:
+            self.SESSION_FILE = None
         
         self.postInit()
     
@@ -1290,13 +1294,13 @@ class ShellFrame(MiniFrame):
         ## Re-open the *log* file.
         self.add_log("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
         
-        fn = os.path.abspath(filename)
+        session = os.path.abspath(filename)
         try:
-            with open(fn, encoding='utf-8', newline='') as i:
+            with open(session) as i:
                 exec(i.read())
         except FileNotFoundError:
             pass
-        self.SESSION_FILE = fn
+        self.SESSION_FILE = session
         
         ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:
@@ -1316,6 +1320,9 @@ class ShellFrame(MiniFrame):
         
         _fsave(self.Scratch, self.SCRATCH_FILE) # save scratch
         _fsave(self.Log,     self.LOGGING_FILE) # save log
+        
+        if not self.SESSION_FILE:
+            return
         
         with open(self.SESSION_FILE, 'w') as o:
             o.write("#! Session file (This file is generated automatically)\n")
