@@ -129,7 +129,7 @@ class GnuplotFrame(mwx.Frame):
         mwx.Frame.__init__(self, *args, **kwargs)
         
         self.gnuplot = Gnuplot()
-        self.panel = GnuplotPanel(self)
+        self.panel = ControlPanel(self)
         
         self.menubar["Edit"] = [
             (wx.ID_COPY, "&Copy params\tCtrl-c", "Copy params to clipboard",
