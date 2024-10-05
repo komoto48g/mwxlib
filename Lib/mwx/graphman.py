@@ -162,12 +162,13 @@ class Thread:
         """
         if not self.running:
             return None
+        if '\n\n' not in msg:
+            msg += '\n\n'
         try:
             self.event.clear() # suspend
-            if wx.MessageBox(msg + "\n\n"
-                    "Press [OK] to continue.\n"
-                    "Press [CANCEL] to terminate the process.",
-                    style=wx.OK|wx.CANCEL|wx.ICON_WARNING) != wx.OK:
+            if wx.MessageBox(msg +
+                    "Do you want to terminate the process?",
+                    style=wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
                 self.Stop()
                 return False
             return True
