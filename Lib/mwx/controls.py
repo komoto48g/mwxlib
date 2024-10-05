@@ -581,8 +581,8 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         x, y = evt.Position
         for child in self.Sizer.Children: # child <wx._core.SizerItem>
             if child.IsShown():
-                obj = child.Sizer or child.Window
-                if isinstance(obj, (wx.StaticBoxSizer, wx.StaticBox)):
+                obj = child.Sizer
+                if isinstance(obj, wx.StaticBoxSizer):
                     cx, cy = obj.Position
                     if cx < x < cx + obj.Size[0] and cy < y < cy+22:
                         for cc in obj.Children: # child of child <wx._core.SizerItem>
@@ -737,7 +737,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
 
 
 class ControlPanel(CtrlInterface, KnobCtrlPanel):
-    """Gnuplot control panel.
+    """Control panel with mouse/key event interface.
     """
     def __init__(self, *args, **kwargs):
         KnobCtrlPanel.__init__(self, *args, **kwargs)
