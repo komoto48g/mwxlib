@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.99.6"
+__version__ = "0.99.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1358,7 +1358,7 @@ class ShellFrame(MiniFrame):
                                 Style=Stylus.py_log_mode)
         
         self.Help.set_attributes(ReadOnly=False,
-                                 Style=Stylus.py_text_mode)
+                                 Style=Stylus.py_log_mode)
         
         self.set_hookable(self.Scratch)
         self.set_hookable(self.Log)
