@@ -49,13 +49,17 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.parent.handler(self.handler.current_event, evt)
             evt.Skip()
         
-        @self.handler.bind('f4 pressed')
-        def highlight(evt):
+        @self.handler.bind('f3 pressed')
+        def _watchit(evt):
             if self.target:
-                self.highlighter.HighlightCurrentItem(self)
+                watchit(self.target)
+        
+        @self.handler.bind('f4 pressed')
+        def _highlight(evt):
+            self.highlighter.HighlightCurrentItem(self)
         
         @self.handler.bind('f5 pressed')
-        def refresh(evt):
+        def _refresh(evt):
             self.BuildTree(self.target)
     
     def OnDestroy(self, evt):
@@ -73,7 +77,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
     ## --------------------------------
     
     def SetObj(self, obj):
-        """Called from tree.toolFrame -> SetObj."""
+        """Called from tree.toolFrame -> SetObj.
+        
+        (override) Set target object.
+        """
         if self.target is obj:
             return
         self.target = obj
@@ -86,7 +93,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
     
     def GetTextForWidget(self, obj):
         """Returns the string to be used in the tree for a widget.
-        (override) make better object name and Id
+        
+        (override) Make better object name and Id.
         """
         clsname = obj.__class__.__name__
         if hasattr(obj, 'Name'):
@@ -103,7 +111,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.highlighter.HighlightSizer(obj.Sizer)
     
     def set_colour(self, obj, col):
-        self.SetObj(obj)
         item = self.FindWidgetItem(obj)
         if item:
             self.SetItemTextColour(item, col)
@@ -158,11 +165,15 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.SetFocus()
         obj = self.target
         Menu.Popup(self, [
-            (8, "&Filling View", miniIcon('ShowFilling'),
-                lambda v: filling(obj),
+            (1, "&Dive into {!r}".format(typename(obj)), Icon('core'),
+                lambda v: dive(obj),
                 lambda v: v.Enable(obj is not None)),
-            
-            (10, "&Inspection Tool", Icon('inspect'),
+                
+            (2, "&Watch event", Icon('tv'),
+                lambda v: watch(obj),
+                lambda v: v.Enable(obj is not None)),
+            (),
+            (10, "&Inspection Tool\tf3", Icon('inspect'),
                 lambda v: watchit(obj),
                 lambda v: v.Enable(obj is not None)),
             (),
@@ -172,14 +183,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 
             (12, "Refresh\tf5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
-            (),
-            (2, "&Watch event", Icon('tv'),
-                lambda v: watch(obj),
-                lambda v: v.Enable(obj is not None)),
-                
-            (1, "&Dive into {!r}".format(typename(obj)), Icon('core'),
-                lambda v: dive(obj),
-                lambda v: v.Enable(obj is not None)),
         ])
 
 
