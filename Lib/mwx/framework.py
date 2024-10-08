@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "0.99.7"
+__version__ = "0.99.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1137,7 +1137,7 @@ class ShellFrame(MiniFrame):
                                        EventMonitor.__module__, # Don't enter event-hook
                                        FSM.__module__,
                                        'wx.core', 'wx.lib.eventwatcher',
-                                       'fnmatch', 'warnings', 'bdb', 'pdb', #'contextlib',
+                                       'fnmatch', 'warnings', 'bdb', 'pdb', 'contextlib',
                                        ],
                                  )
         self.inspector = Inspector(self, name="Inspector")
