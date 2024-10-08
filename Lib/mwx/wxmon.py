@@ -7,7 +7,7 @@ import wx
 import wx.lib.eventwatcher as ew
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from .utilus import where
+from .utilus import where, ignore
 from .controls import Icon, Clipboard
 from .framework import CtrlInterface, Menu
 
@@ -99,8 +99,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     
     def watch(self, widget=None):
         """Begin watching the widget."""
-        self.clear()
         self.unwatch()
+        self.clear()
         if widget is None:
             widget = self._target # Resume watching the previous target.
         if not widget:
@@ -174,7 +174,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         name = self.get_name(event)
         source = ew._makeSourceString(obj) + " id=0x{:X}".format(id(evt))
         stamp = 1
-        attribs = ew._makeAttribString(evt)
+        with ignore(DeprecationWarning):
+            attribs = ew._makeAttribString(evt)
         data = self.__items
         for i, item in enumerate(data):
             if item[0] == event:
