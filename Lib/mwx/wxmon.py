@@ -174,8 +174,11 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         name = self.get_name(event)
         source = ew._makeSourceString(obj) + " id=0x{:X}".format(id(evt))
         stamp = 1
-        with ignore(DeprecationWarning):
-            attribs = ew._makeAttribString(evt)
+        try:
+            with ignore(DeprecationWarning):
+                attribs = ew._makeAttribString(evt)
+        except Exception:
+            attribs = '' # Failed to get event attributes; possibly <BdbQuit>.
         data = self.__items
         for i, item in enumerate(data):
             if item[0] == event:
