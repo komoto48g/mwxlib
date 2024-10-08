@@ -1255,7 +1255,7 @@ class ShellFrame(MiniFrame):
             0 : {
                     '* pressed' : (0, fork_debugger),
                    '* released' : (0, fork_debugger),
-                  'C-g pressed' : (0, self.quit, fork_debugger),
+                  'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
@@ -1433,7 +1433,7 @@ class ShellFrame(MiniFrame):
                 evt.Veto()
                 return
             #? RuntimeError('wrapped C/C++ object ... has been deleted')
-            self.quit()
+            self.Quit()
         
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
@@ -1602,12 +1602,8 @@ class ShellFrame(MiniFrame):
     ## Actions for handler
     ## --------------------------------
     
-    def quit(self, evt=None):
+    def Quit(self, evt=None):
         """Stop debugger and monitor."""
-        ## self.inspector.unwatch()
-        self.monitor.unwatch()
-        self.ginfo.unwatch()
-        self.linfo.unwatch()
         self.debugger.unwatch()
         self.debugger.send_input('\n') # terminates the reader of threading pdb
         shell = self.debugger.interactive_shell # reset interp locals
