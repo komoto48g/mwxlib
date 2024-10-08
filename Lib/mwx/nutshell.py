@@ -2107,16 +2107,13 @@ class Buffer(EditorInterface, EditWindow):
         return filter(None, _gen_text())
     
     def eval_line(self):
-        self.py_eval_line(self.globals, self.locals)
-    
-    def py_eval_line(self, globals=None, locals=None):
         if self.CallTipActive():
             self.CallTipCancel()
         
         status = "No words"
         for text in self.gen_text_at_caret():
             try:
-                obj = eval(text, globals, locals)
+                obj = eval(text, self.globals, self.locals)
             except Exception as e:
                 status = "- {} : {!r}".format(e, text)
             else:
@@ -2126,14 +2123,9 @@ class Buffer(EditorInterface, EditWindow):
         self.message(status)
     
     def exec_region(self):
-        self.py_exec_region(self.globals, self.locals)
-    
-    def py_exec_region(self, globals=None, locals=None, filename=None):
-        if not filename:
-            filename = self.filename
         try:
-            code = compile(self.Text, filename, "exec")
-            exec(code, globals, locals)
+            code = compile(self.Text, self.filename, "exec")
+            exec(code, self.globals, self.locals)
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except BdbQuit:
@@ -2142,7 +2134,7 @@ class Buffer(EditorInterface, EditWindow):
         except Exception as e:
             msg = traceback.format_exc()
             err = re.findall(py_error_re, msg, re.M)
-            lines = [int(ln) for fn, ln in err if fn == filename]
+            lines = [int(ln) for fn, ln in err if fn == self.filename]
             if lines:
                 lx = lines[-1] - 1
                 self.red_arrow = lx
@@ -2158,7 +2150,7 @@ class Buffer(EditorInterface, EditWindow):
             del self.pointer # Reset pointer (debugger hook point).
             del self.red_arrow
             self.handler('buffer_region_executed', self)
-            self.message("Evaluated {!r} successfully.".format(filename))
+            self.message("Evaluated {!r} successfully.".format(self.filename))
             self.AnnotationClearAll()
 
 
