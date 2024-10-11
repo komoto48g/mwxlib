@@ -823,8 +823,17 @@ class Clipboard:
 ## --------------------------------
 ## Wx custom controls and bitmaps 
 ## --------------------------------
-if 1:
-    _provided_arts = {
+
+class Icon(wx.Bitmap):
+    """Returns an iconic bitmap with the specified size (w, h).
+    
+    The key is either Icon.provided_arts or Icon.custom_images key.
+    If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
+    
+    Note:
+        A null (0-shaped) bitmap fails with AssertionError from 4.1.1
+    """
+    provided_arts = {
             'cut' : wx.ART_CUT,
            'copy' : wx.ART_COPY,
           'paste' : wx.ART_PASTE,
@@ -858,32 +867,69 @@ if 1:
             '|<-' : wx.ART_GOTO_FIRST,
             '->|' : wx.ART_GOTO_LAST,
     }
-    _custom_images = {
+    custom_images = {
         k:v for k, v in vars(images).items()
             if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
     }
-
-class Icon(wx.Bitmap):
-    """Returns an iconic bitmap with the specified size (w, h).
-    
-    The key is either Icon.provided_arts or Icon.custom_images key.
-    If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
-    
-    Note:
-        A null (0-shaped) bitmap fails with AssertionError from 4.1.1
-    """
-    provided_arts = _provided_arts
-    custom_images = _custom_images
     
     def __init__(self, *args, **kwargs):
         try:
-            bmp = _getBitmap1(*args, **kwargs)
+            bmp = Icon._getBitmap1(*args, **kwargs)
         except TypeError:
-            bmp = _getBitmap2(*args, **kwargs)
+            bmp = Icon._getBitmap2(*args, **kwargs)
         wx.Bitmap.__init__(self, bmp)
 
     @staticmethod
-    def bullet(colour, ec=None, size=(16,16), radius=4):
+    def _getBitmap1(key, size=None):
+        if isinstance(key, wx.Bitmap):
+            if size and key.Size != size:
+                key = (key.ConvertToImage()
+                          .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
+                          .ConvertToBitmap())
+            return key #<wx.Bitmap>
+        if not size:
+            size = (16, 16)
+        if key:
+            try:
+                art = Icon.custom_images.get(key)
+                bmp = art.GetBitmap()
+            except Exception:
+                art = Icon.provided_arts.get(key)
+                bmp = wx.ArtProvider.GetBitmap(art or key, wx.ART_OTHER, size)
+            return bmp
+        
+        ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.1
+        elif key == '':
+            bmp = wx.Bitmap(size)
+            with wx.MemoryDC(bmp) as dc:
+                dc.SetBackground(wx.Brush('black'))
+                dc.Clear()
+            bmp.SetMaskColour('black') # return dummy-sized blank bitmap
+            return bmp
+        
+        return wx.NullBitmap # The standard wx controls accept this,
+
+    @staticmethod
+    def _getBitmap2(back, fore, size=None, subsize=3/4):
+        if not size:
+            size = (16, 16)
+        if isinstance(subsize, float):
+            subsize = wx.Size(size) * subsize
+        back = Icon._getBitmap1(back, size)
+        fore = Icon._getBitmap1(fore, subsize)
+        x = size[0] - subsize[0]
+        y = size[1] - subsize[1]
+        with wx.MemoryDC(back) as dc:
+            ## dc = wx.GCDC(dc)
+            ## dc.DrawBitmap(fore, x, y, useMask=True)
+            gc = wx.GraphicsContext.Create(dc)
+            gc.DrawBitmap(fore, x, y, *subsize)
+        return back
+
+    @staticmethod
+    def bullet(colour, ec=None, size=None, radius=4):
+        if not size:
+            size = (16, 16)
         bmp = wx.Bitmap(size)
         with wx.MemoryDC(bmp) as dc:
             dc.SetBackground(wx.Brush('black'))
@@ -910,57 +956,6 @@ class Icon(wx.Bitmap):
         return bmp
 
 
-def _getBitmap1(key, size=(16,16)):
-    if isinstance(key, wx.Bitmap):
-        if key.Size != size:
-            key = (key.ConvertToImage()
-                      .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
-                      .ConvertToBitmap())
-        return key
-    if key:
-        try:
-            art = _custom_images.get(key)
-            bmp = art.GetBitmap()
-        except Exception:
-            art = _provided_arts.get(key)
-            bmp = wx.ArtProvider.GetBitmap(art or key, wx.ART_OTHER, size)
-        return bmp
-    
-    ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.1
-    elif key == '':
-        bmp = wx.Bitmap(size)
-        with wx.MemoryDC(bmp) as dc:
-            dc.SetBackground(wx.Brush('black'))
-            dc.Clear()
-        bmp.SetMaskColour('black') # return dummy-sized blank bitmap
-        return bmp
-    
-    return wx.NullBitmap # The standard wx controls accept this,
-
-
-def _getBitmap2(back, fore, size=(16,16), subsize=3/4):
-    if isinstance(subsize, float):
-        subsize = wx.Size(size) * subsize
-    back = _getBitmap1(back, size)
-    fore = _getBitmap1(fore, subsize)
-    x = size[0] - subsize[0]
-    y = size[1] - subsize[1]
-    with wx.MemoryDC(back) as dc:
-        ## dc = wx.GCDC(dc)
-        ## dc.DrawBitmap(fore, x, y, useMask=True)
-        gc = wx.GraphicsContext.Create(dc)
-        gc.DrawBitmap(fore, x, y, *subsize)
-    return back
-
-
-def _Icon(v):
-    if isinstance(v, (str, bytes)):
-        return Icon(v)
-    if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage):
-        return v.GetBitmap()
-    return v
-
-
 class Button(pb.PlateButton):
     """Flat button
     
@@ -970,17 +965,6 @@ class Button(pb.PlateButton):
         icon    : key:str or bitmap for button icon
         **kwargs: keywords for wx.lib.platebtn.PlateButton
     """
-    @property
-    def icon(self):
-        """Icon key:str or bitmap."""
-        return self.__icon
-    
-    @icon.setter
-    def icon(self, v):
-        self.__icon = v
-        self.SetBitmap(_Icon(v))
-        self.Refresh()
-    
     def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
         kwargs.setdefault('style', pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
         pb.PlateButton.__init__(self, parent, -1, label, **kwargs)
@@ -988,8 +972,9 @@ class Button(pb.PlateButton):
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
         
-        self.ToolTip = _Tip(handler.__doc__)
-        self.icon = icon
+        self.SetToolTip(_Tip(handler.__doc__))
+        if icon:
+            self.SetBitmap(Icon(icon))
     
     def SetBitmap(self, bmp):
         """Set the bitmap displayed in the button.
@@ -998,7 +983,8 @@ class Button(pb.PlateButton):
         try:
             pb.PlateButton.SetBitmap(self, bmp)
         except Exception:
-            self._bmp = dict(enable=None, disable=None)
+            self._bmp['enable'] = None
+            self._bmp['disable'] = None
 
 
 class ToggleButton(wx.ToggleButton):
@@ -1013,29 +999,19 @@ class ToggleButton(wx.ToggleButton):
     Note:
         To get the status, check Value or event.GetInt or event.IsChecked.
     """
-    @property
-    def icon(self):
-        """Icon key:str or bitmap."""
-        return self.__icon
-    
-    @icon.setter
-    def icon(self, v):
-        self.__icon = v
-        if isinstance(v, tuple):
-            self.SetBitmap(_Icon(v[0]))
-            self.SetBitmapPressed(_Icon(v[1]))
-        elif v:
-            self.SetBitmap(_Icon(v))
-        self.Refresh()
-    
     def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
         wx.ToggleButton.__init__(self, parent, -1, label, **kwargs)
         
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
         
-        self.ToolTip = _Tip(handler.__doc__)
-        self.icon = icon
+        self.SetToolTip(_Tip(handler.__doc__))
+        if icon:
+            try:
+                self.SetBitmap(Icon(icon[0]))
+                self.SetBitmapPressed(Icon(icon[1]))
+            except Exception:
+                self.SetBitmap(Icon(icon))
 
 
 class TextCtrl(wx.Control):
@@ -1057,15 +1033,6 @@ class TextCtrl(wx.Control):
     
     value = Value #: internal use only
     
-    @property
-    def icon(self):
-        """Icon key:str or bitmap."""
-        return self._btn.icon
-    
-    @icon.setter
-    def icon(self, v):
-        self._btn.icon = v
-    
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
@@ -1077,8 +1044,8 @@ class TextCtrl(wx.Control):
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.ToolTip = _Tip(handler.__doc__)
-        self._btn.ToolTip = _Tip(updater.__doc__)
+        self._ctrl.SetToolTip(_Tip(handler.__doc__))
+        self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.SetSizer(
             pack(self, (
@@ -1134,15 +1101,6 @@ class Choice(wx.Control):
         lambda self,v: self._ctrl.SetItems(v),
         doc="combobox items:list")
     
-    @property
-    def icon(self):
-        """Icon key:str or bitmap."""
-        return self._btn.icon
-    
-    @icon.setter
-    def icon(self, v):
-        self._btn.icon = v
-    
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
@@ -1154,8 +1112,8 @@ class Choice(wx.Control):
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.ToolTip = _Tip(handler.__doc__)
-        self._btn.ToolTip = _Tip(updater.__doc__)
+        self._ctrl.SetToolTip(_Tip(handler.__doc__))
+        self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.SetSizer(
             pack(self, (
