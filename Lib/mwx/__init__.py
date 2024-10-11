@@ -8,7 +8,7 @@ from .framework import Frame, MiniFrame, ShellFrame, deb
 
 ## Controls
 from .controls import Param, LParam, Knob, ControlPanel, Clipboard, Icon
-from .controls import Button, ToggleButton, TextCtrl, Choice, Gauge, Indicator
+from .controls import Button, ToggleButton, ClassicButton, TextCtrl, Choice, Gauge, Indicator
 
 ## Plugman
 ## from .graphman import Frame as GraphmanFrame, Layer, Thread, Graph

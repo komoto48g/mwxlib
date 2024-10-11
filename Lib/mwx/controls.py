@@ -956,6 +956,26 @@ class Icon(wx.Bitmap):
         return bmp
 
 
+class ClassicButton(wx.Button):
+    """Flat button
+    
+    Args:
+        label   : button label
+        handler : event handler when the button is pressed
+        icon    : key:str or bitmap for button icon
+        **kwargs: keywords for wx.lib.platebtn.PlateButton
+    """
+    def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
+        wx.Button.__init__(self, parent, -1, label, **kwargs)
+        
+        if handler:
+            self.Bind(wx.EVT_BUTTON, _F(handler))
+        
+        self.SetToolTip(_Tip(handler.__doc__))
+        if icon:
+            self.SetBitmap(Icon(icon))
+
+
 class Button(pb.PlateButton):
     """Flat button
     
