@@ -43,6 +43,8 @@ def warn(message, category=None):
     stacklevel = 1
     while frame.f_code.co_filename in skip:
         frame = frame.f_back
+        if not frame:
+            break
         stacklevel += 1
     return warnings.warn(message, category, stacklevel+1)
 
