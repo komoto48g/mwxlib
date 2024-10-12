@@ -2583,19 +2583,21 @@ class Interpreter(interpreter.Interpreter):
         interpreter.Interpreter.showtraceback(self)
         
         t, v, tb = sys.exc_info()
-        v.lineno = tb.tb_next.tb_lineno
-        v.filename = tb.tb_next.tb_frame.f_code.co_filename
+        while tb.tb_next:
+            tb = tb.tb_next
+        v.lineno = tb.tb_lineno
+        v.filename = tb.tb_frame.f_code.co_filename
         try:
             self.parent.handler('interp_error', v)
         except AttributeError:
             pass
     
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
         
         (override) Pass the syntax error info to the parent:shell.
         """
-        interpreter.Interpreter.showsyntaxerror(self, filename)
+        interpreter.Interpreter.showsyntaxerror(self, filename, **kwargs)
         
         t, v, tb = sys.exc_info()
         try:
@@ -3328,7 +3330,7 @@ class Nautilus(EditorInterface, Shell):
     
     def on_interp_error(self, e):
         ln = self.LineFromPosition(self.bolc)
-        self.pointer = ln + e.lineno - 1
+        self.red_pointer = ln + e.lineno - 1
     
     ## --------------------------------
     ## Attributes of the shell
