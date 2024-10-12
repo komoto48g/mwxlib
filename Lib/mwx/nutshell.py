@@ -804,11 +804,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.mark = self.cpos
     
     def set_pointer(self):
-        if self.pointer == self.cline:
+        if self.pointer == self.cline: # toggle
             self.pointer = -1
         else:
-            self.pointer = self.cline
-            self.red_pointer = -1
+            self.pointer = self.cline  # reset
+        self.red_pointer = -1
     
     def exchange_point_and_mark(self):
         p = self.cpos
@@ -2144,7 +2144,6 @@ class Buffer(EditorInterface, EditWindow):
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
             self.message(e)
-            ## print(msg, file=sys.__stderr__)
         else:
             self.code = code
             del self.pointer # Reset pointer (debugger hook point).
@@ -3654,11 +3653,11 @@ class Nautilus(EditorInterface, Shell):
                 lines = [int(ln) for fn, ln in err if fn == filename]
                 if lines:
                     region = self.get_region(self.cline)
-                    self.pointer = region[0] + lines[-1] - 1
+                    lx = region[0] + lines[-1] - 1
+                    self.red_pointer = lx
                 self.message(e)
-                ## print(msg, file=sys.__stderr__)
             else:
-                del self.pointer
+                del self.red_pointer
                 self.message("Evaluated {!r} successfully.".format(filename))
         else:
             self.message("No region")
