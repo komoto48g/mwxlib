@@ -635,8 +635,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
         self.IndicatorSetUnder(11, True)
-        self.IndicatorSetAlpha(11, 255)
-        self.IndicatorSetOutlineAlpha(11, 255)
+        self.IndicatorSetAlpha(11, 50)
+        self.IndicatorSetOutlineAlpha(11, 50)
         self.IndicatorSetForeground(11, "yellow")
         
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
@@ -804,11 +804,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.mark = self.cpos
     
     def set_pointer(self):
-        if self.pointer == self.cline:
+        if self.pointer == self.cline: # toggle
             self.pointer = -1
         else:
-            self.pointer = self.cline
-            self.red_pointer = -1
+            self.pointer = self.cline  # reset
+        self.red_pointer = -1
     
     def exchange_point_and_mark(self):
         p = self.cpos
@@ -2144,7 +2144,6 @@ class Buffer(EditorInterface, EditWindow):
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
             self.message(e)
-            ## print(msg, file=sys.__stderr__)
         else:
             self.code = code
             del self.pointer # Reset pointer (debugger hook point).
@@ -2583,19 +2582,21 @@ class Interpreter(interpreter.Interpreter):
         interpreter.Interpreter.showtraceback(self)
         
         t, v, tb = sys.exc_info()
-        v.lineno = tb.tb_next.tb_lineno
-        v.filename = tb.tb_next.tb_frame.f_code.co_filename
+        while tb.tb_next:
+            tb = tb.tb_next
+        v.lineno = tb.tb_lineno
+        v.filename = tb.tb_frame.f_code.co_filename
         try:
             self.parent.handler('interp_error', v)
         except AttributeError:
             pass
     
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
         
         (override) Pass the syntax error info to the parent:shell.
         """
-        interpreter.Interpreter.showsyntaxerror(self, filename)
+        interpreter.Interpreter.showsyntaxerror(self, filename, **kwargs)
         
         t, v, tb = sys.exc_info()
         try:
@@ -3328,7 +3329,7 @@ class Nautilus(EditorInterface, Shell):
     
     def on_interp_error(self, e):
         ln = self.LineFromPosition(self.bolc)
-        self.pointer = ln + e.lineno - 1
+        self.red_pointer = ln + e.lineno - 1
     
     ## --------------------------------
     ## Attributes of the shell
@@ -3652,11 +3653,11 @@ class Nautilus(EditorInterface, Shell):
                 lines = [int(ln) for fn, ln in err if fn == filename]
                 if lines:
                     region = self.get_region(self.cline)
-                    self.pointer = region[0] + lines[-1] - 1
+                    lx = region[0] + lines[-1] - 1
+                    self.red_pointer = lx
                 self.message(e)
-                ## print(msg, file=sys.__stderr__)
             else:
-                del self.pointer
+                del self.red_pointer
                 self.message("Evaluated {!r} successfully.".format(filename))
         else:
             self.message("No region")
