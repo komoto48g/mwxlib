@@ -4,7 +4,7 @@
 from .framework import __version__, __author__
 from .framework import FSM, TreeList
 from .framework import Menu, MenuBar, StatusBar
-from .framework import Frame, MiniFrame, ShellFrame, deb
+from .framework import Frame, MiniFrame, ShellFrame, deb, TestSuite
 
 ## Controls
 from .controls import Param, LParam, Knob, ControlPanel, Clipboard, Icon
