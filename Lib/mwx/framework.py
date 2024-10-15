@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.0rc"
+__version__ = "1.0rc1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -25,9 +25,9 @@ from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
 
 
 class TestSuite:
-    """Test suite class for App, Frame, and Control Panel.
+    """Test suite class with App, Frame, and ControlPanel.
     
-    Get the wx.App instance and start the main-loop if needed.
+    Get the wx.App or wx.Frame instance and start the main-loop if needed.
     
     Usage:
         with TestSuite.App() as app:
@@ -58,12 +58,14 @@ class TestSuite:
 
     @staticmethod
     @contextmanager
-    def Panel(**kwargs):
-        from .controls import ControlPanel
-        with TestSuite.Frame() as frm:
-            panel = ControlPanel(frm, **kwargs)
+    def ControlPanel(**kwargs):
+        from .controls import ControlPanel as Panel
+        with TestSuite.App():
+            frm = Frame(None)
+            panel = Panel(frm, **kwargs)
             yield panel
             panel.Sizer.Fit(frm)
+            frm.Show()
 
 
 def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
