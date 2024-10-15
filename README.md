@@ -15,22 +15,17 @@ These instructions will get you a copy of the project up and running on your loc
 - ~~Python 2.7~~ (PY2 support has ended since 0.50)
 - ~~Python 3.5~~ (PY35 support has ended since 0.70)
 - ~~Python 3.7~~ (PY37 support has ended since 0.80)
-- Python 3.8 -- 3.9 (deprecated since 0.90)
-    - wxpython >= 4.1.1
+- ~~Python 3.8 -- 3.9~~ (Deprecated since 0.90)
+- Python 3.10 -- 3.12
+    - wxpython >= 4.2.2 (recommended)
     - numpy
     - pillow
     - matplotlib
     - opencv-python
-- Python 3.10 -- 3.11
-    - wxpython >= 4.2.1
-    - numpy
-    - pillow
-    - matplotlib
-    - opencv-python
-- Python 3.12
-    - A version of wxpython for PY312 has not yet released on PyPi.
-        * You can download the snapshot from https://wxpython.org/Phoenix/snapshot-builds/,
-        * or the latest snapshot from Azure Pipelines https://alldunn.visualstudio.com/wxPython-CI/_build?definitionId=2&_a=summary
+- Python 3.13
+    - There are some bugs in mwxlib that remain unfixed.
+    - A version of wxpython for PY313 has released on PyPi.
+        * You can also download the snapshot from https://wxpython.org/Phoenix/snapshot-builds/,
 
 
 ### Installing
