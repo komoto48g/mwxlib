@@ -1780,6 +1780,8 @@ class ShellFrame(MiniFrame):
         self.popup_window(self.linfo)
         self.add_log("<-- Beginning of debugger\r\n")
         self.indicator.Value = 2
+        if wx.IsBusy():
+            wx.EndBusyCursor()
     
     def on_debug_next(self, frame):
         """Called from cmdloop."""
@@ -1816,6 +1818,8 @@ class ShellFrame(MiniFrame):
         del shell.locals
         del shell.globals
         self.indicator.Value = 1
+        if wx.IsBusy():
+            wx.EndBusyCursor()
     
     def set_hookable(self, editor, traceable=True):
         """Bind pointer to set/unset trace."""
