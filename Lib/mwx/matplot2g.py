@@ -31,7 +31,7 @@ def _imcv(src):
     return src
 
 
-def _to_buffer(img):
+def _to_buffer(img, grayscale=True):
     if isinstance(img, Image.Image):
         ## return np.asarray(img) # ref
         return np.array(img) # copy
@@ -43,6 +43,9 @@ def _to_buffer(img):
         w, h = img.GetSize()
         buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
         return buf.reshape(h, w, 3)
+    
+    if img.ndim > 2 and grayscale:
+        return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
 
 
@@ -965,12 +968,12 @@ class GraphPlot(MatplotPanel):
             data = GraphPlot.clipboard_data
             if name:
                 self.message("Read buffer from clipboard.")
-                self.load(data)
                 GraphPlot.clipboard_name = None
                 GraphPlot.clipboard_data = None
             else:
                 self.message("Read image from clipboard.")
-                self.load(Clipboard.imread())
+                data = Clipboard.imread()
+            self.load(data)
         except Exception as e:
             traceback.print_exc()
             self.message("- No data in clipboard.", e)
