@@ -295,10 +295,6 @@ class Debugger(Pdb):
         self.__hookpoint = None
         self.indents = ' ' * 2
         self.stdin.input = '' # clear stdin buffer
-        def _continue():
-            if wx.IsBusy():
-                wx.EndBusyCursor()
-        wx.CallAfter(_continue)
     
     def on_debug_mark(self, frame):
         """Called when interaction."""
@@ -365,11 +361,6 @@ class Debugger(Pdb):
         
         ## Note: Required to terminate the reader of threading pdb.
         self.send_input('\n')
-        
-        def _continue():
-            if wx.IsBusy():
-                wx.EndBusyCursor()
-        wx.CallAfter(_continue)
     
     def on_trace_hook(self, frame):
         """Called when a breakppoint is reached."""
