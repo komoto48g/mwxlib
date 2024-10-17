@@ -49,7 +49,6 @@ py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
 py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 
 ## Custom constants in wx.stc
-stc.STC_P_WORD3 = 20 # deprecated
 stc.STC_STYLE_CARETLINE = 40
 stc.STC_STYLE_ANNOTATION = 41
 
@@ -635,9 +634,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
         self.IndicatorSetUnder(11, True)
-        self.IndicatorSetAlpha(11, 50)
-        self.IndicatorSetOutlineAlpha(11, 50)
-        self.IndicatorSetForeground(11, "yellow")
+        self.IndicatorSetAlpha(11, 60)
+        self.IndicatorSetOutlineAlpha(11, 60)
+        self.IndicatorSetForeground(11, "light gray")
         
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
@@ -1419,15 +1418,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         def _format(ln):
             return "{:4d} {}".format(ln+1, self.GetLine(ln).strip())
         
-        pts = self.StyleGetSize(stc.STC_STYLE_DEFAULT)
-        self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts-1)
+        ## pts = self.StyleGetSize(stc.STC_STYLE_DEFAULT)
+        ## self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts-1)
         
         self.AutoCompSetSeparator(ord('\n'))
         self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines)))
         self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
         
-        self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
+        ## self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
     
     def on_itext_exit(self, evt):
         """Called when exiting filter_text mode."""
