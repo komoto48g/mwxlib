@@ -574,8 +574,9 @@ class MyFileDropLoader(wx.FileDropTarget):
         for fn in filenames:
             name, ext = os.path.splitext(fn)
             if ext == '.py' or os.path.isdir(fn):
-                self.loader.load_plug(fn, show=1, floating_pos=pos,
-                                      force=wx.GetKeyState(wx.WXK_ALT))
+                self.loader.load_plug(fn, show=1,
+                                          floating_pos=pos,
+                                          force=wx.GetKeyState(wx.WXK_ALT))
             elif ext == '.jssn':
                 self.loader.load_session(fn)
             elif ext == '.index':
@@ -972,7 +973,7 @@ class Frame(mwx.Frame):
         self._mgr.Update()
         return (show != shown)
     
-    def update_pane(self, name, show=False, **kwargs):
+    def update_pane(self, name, show=False, **props):
         """Update the layout of the pane (internal use only).
         
         Note:
@@ -980,27 +981,24 @@ class Frame(mwx.Frame):
             and should not be called directly from user.
         """
         pane = self.get_pane(name)
+        if not pane.IsOk():
+            return
         
-        pane.dock_layer = kwargs.get('layer', 0)
-        pane.dock_pos = kwargs.get('pos', 0)
-        pane.dock_row = kwargs.get('row', 0)
-        pane.dock_proportion = kwargs.get('prop') or pane.dock_proportion
-        pane.floating_pos = kwargs.get('floating_pos') or pane.floating_pos
-        pane.floating_size = kwargs.get('floating_size') or pane.floating_size
+        for k, v in props.items():
+            if v is not None:
+                setattr(pane, k, v)
         
         plug = self.get_plug(name)
         if plug:
             dock = plug.dockable
-            if not isinstance(dock, bool): # prior to kwargs
-                kwargs.update(dock=dock)
+            if not isinstance(dock, bool):
+                pane.dock_direction = dock
             if not plug.caption:
                 pane.CaptionVisible(False)       # no caption bar
                 pane.Gripper(dock not in (0, 5)) # show a grip when docked
             pane.Dockable(dock)
         
-        dock = kwargs.get('dock')
-        pane.dock_direction = dock or 0
-        if dock:
+        if pane.dock_direction:
             pane.Dock()
         else:
             pane.Float()
@@ -1113,9 +1111,9 @@ class Frame(mwx.Frame):
                 self.register(cls, module)
         return module
     
-    def load_plug(self, root, force=False, session=None,
-                  show=False, dock=False, layer=0, pos=0, row=0, prop=10000,
-                  floating_pos=None, floating_size=None, **kwargs):
+    def load_plug(self, root, force=False, session=None, show=False,
+                        dock=0, floating_pos=None, floating_size=None,
+                        **kwargs):
         """Load plugin.
         
         Args:
@@ -1126,10 +1124,6 @@ class Frame(mwx.Frame):
             session : Conditions for initializing the plug and starting session
             show    : the pane is shown after loaded
             dock    : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
-            layer   : dock_layer
-            pos     : dock_pos
-            row     : dock_row position
-            prop    : dock_proportion < 1e6 ?
             floating_pos: posision of floating window
             floating_size: size of floating window
             
@@ -1141,8 +1135,10 @@ class Frame(mwx.Frame):
         Note:
             The root module must have a class Plugin <Layer>
         """
-        props = dict(show=show, dock=dock, layer=layer, pos=pos, row=row, prop=prop,
-                     floating_pos=floating_pos, floating_size=floating_size)
+        props = dict(show=show,
+                     dock_direction=dock,
+                     floating_pos=floating_pos,
+                     floating_size=floating_size)
         
         _dirname, name = split_paths(root)
         
@@ -1180,13 +1176,9 @@ class Frame(mwx.Frame):
                 
                 props.update(
                     show = show or pane.IsShown(),
-                    dock = pane.IsDocked() and pane.dock_direction,
-                    layer = pane.dock_layer,
-                    pos = pane.dock_pos,
-                    row = pane.dock_row,
-                    prop = pane.dock_proportion,
-                    floating_pos = floating_pos or pane.floating_pos[:], # copy (pane unloaded)
-                    floating_size = floating_size or pane.floating_size[:], # copy
+                    dock_direction = pane.IsDocked() and pane.dock_direction,
+                    floating_pos = floating_pos or pane.floating_pos[:], # copy unloading pane
+                    floating_size = floating_size or pane.floating_size[:], # copy unloading pane
                 )
         except (AttributeError, NameError) as e:
             traceback.print_exc()
