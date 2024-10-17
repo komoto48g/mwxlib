@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.0rc1"
+__version__ = "1.0rc2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -209,22 +209,6 @@ _speckeys = {
 
 _speckeys_wxkmap = dict((v, k) for k, v in _speckeys.items())
 
-def getKeyState(key):
-    """Returns state of speckey (cf. wx.GetKeyState)."""
-    try:
-        return wx.GetKeyState(_speckeys_wxkmap[key])
-    except KeyError:
-        pass
-
-
-def setKeyState(key, state):
-    """Makes you feel like having pressed/released speckey."""
-    vk = wx.UIActionSimulator()
-    if state:
-        vk.KeyDown(_speckeys_wxkmap[key])
-    else:
-        vk.KeyUp(_speckeys_wxkmap[key])
-
 
 def hotkey(evt):
     """Interpret evt.KeyCode as hotkey:str and overwrite evt.key.
@@ -270,9 +254,28 @@ class KeyCtrlInterfaceMixin:
         spec-map    : 'C-c'
         esc-map     : 'escape'
     """
+    message = print # override this in subclass
+    
     @postcall
     def post_message(self, *args, **kwargs):
         return self.message(*args, **kwargs)
+    
+    @staticmethod
+    def getKeyState(key):
+        """Returns state of speckey (cf. wx.GetKeyState)."""
+        try:
+            return wx.GetKeyState(_speckeys_wxkmap[key])
+        except KeyError:
+            pass
+    
+    @staticmethod
+    def setKeyState(key, state):
+        """Makes you feel like having pressed/released speckey."""
+        vk = wx.UIActionSimulator()
+        if state:
+            vk.KeyDown(_speckeys_wxkmap[key])
+        else:
+            vk.KeyUp(_speckeys_wxkmap[key])
     
     def make_keymap(self, keymap):
         """Make a basis of extension map in the handler.
@@ -303,9 +306,8 @@ class KeyCtrlInterfaceMixin:
         })
     
     def pre_command_hook(self, evt):
-        """Enter extension mode.
-        Check text selection for [C-c/C-x].
-        """
+        """Called when entering extension mode (internal use only)."""
+        ## Check text selection for [C-c/C-x].
         wnd = wx.Window.FindFocus()
         if isinstance(wnd, wx.TextEntry) and wnd.StringSelection\
         or isinstance(wnd, stc.StyledTextCtrl) and wnd.SelectedText:
@@ -316,6 +318,7 @@ class KeyCtrlInterfaceMixin:
         evt.Skip()
     
     def post_command_hook(self, evt):
+        """Called when exiting extension mode (internal use only)."""
         keymap = self.handler.previous_state
         if keymap:
             self.message("{} {}".format(keymap, evt.key))
@@ -377,8 +380,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     """Mouse/Key event interface mixin.
     """
     handler = property(lambda self: self.__handler)
-    
-    message = print # override this in subclass
     
     def __init__(self):
         self.__key = ''

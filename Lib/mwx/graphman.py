@@ -973,7 +973,7 @@ class Frame(mwx.Frame):
         return (show != shown)
     
     def update_pane(self, name, show=False, **kwargs):
-        """Update the layout of the pane.
+        """Update the layout of the pane (internal use only).
         
         Note:
             This is called automatically from load_plug,
