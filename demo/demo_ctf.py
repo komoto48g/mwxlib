@@ -53,6 +53,6 @@ class Plugin(Layer):
 if __name__ == "__main__":
     app = wx.App()
     frm = Frame(None)
-    frm.load_plug(Plugin, show=1, dock=4)
+    frm.load_plug(Plugin, show=1)
     frm.Show()
     app.MainLoop()
