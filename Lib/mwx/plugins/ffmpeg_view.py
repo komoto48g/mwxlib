@@ -77,7 +77,6 @@ class Plugin(Layer):
     """Media loader using FFMpeg (installation required).
     """
     menukey = "Plugins/Extensions/FFMpeg viewer"
-    ## menukey = "FFMpeg/"
     dockable = False
     
     def Init(self):

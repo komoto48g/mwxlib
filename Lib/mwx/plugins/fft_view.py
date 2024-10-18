@@ -26,7 +26,7 @@ class Plugin(Layer):
         Rectangular regions will result in distorted patterns.
         長方形のリージョンは歪んだパターンになるので要注意
     """
-    menukey = "Plugins/Extensions/&FFT view"
+    menukey = "Plugins/Extensions/&FFT view\tAlt+f"
     caption = "FFT view"
     
     def Init(self):
