@@ -166,8 +166,8 @@ class Thread:
             msg += '\n\n'
         try:
             self.event.clear() # suspend
-            if wx.MessageBox(msg +
-                    "Do you want to terminate the process?",
+            if wx.MessageBox(  # Confirm terminatation.
+                    msg + "Do you want to terminate the process?",
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
                 self.Stop()
                 return False
@@ -947,6 +947,7 @@ class Frame(mwx.Frame):
             shown = plug.IsShown()
         except AttributeError:
             shown = pane.IsShown()
+        
         if show and not shown:
             if isinstance(win, aui.AuiNotebook):
                 j = win.GetPageIndex(plug)
@@ -963,6 +964,11 @@ class Frame(mwx.Frame):
             else:
                 win.handler('page_closed', win)
         
+        if pane.dock_direction:
+            pane.Dock()
+        else:
+            pane.Float()
+        
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
         ##       and will be fixed in wxPython 4.2.1.
@@ -973,7 +979,7 @@ class Frame(mwx.Frame):
         self._mgr.Update()
         return (show != shown)
     
-    def update_pane(self, name, show=False, **props):
+    def update_pane(self, name, **props):
         """Update the layout of the pane (internal use only).
         
         Note:
@@ -981,9 +987,6 @@ class Frame(mwx.Frame):
             and should not be called directly from user.
         """
         pane = self.get_pane(name)
-        if not pane.IsOk():
-            return
-        
         for k, v in props.items():
             if v is not None:
                 setattr(pane, k, v)
@@ -997,12 +1000,6 @@ class Frame(mwx.Frame):
                 pane.CaptionVisible(False)       # no caption bar
                 pane.Gripper(dock not in (0, 5)) # show a grip when docked
             pane.Dockable(dock)
-        
-        if pane.dock_direction:
-            pane.Dock()
-        else:
-            pane.Float()
-        return self.show_pane(name, show)
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
@@ -1135,8 +1132,7 @@ class Frame(mwx.Frame):
         Note:
             The root module must have a class Plugin <Layer>
         """
-        props = dict(show=show,
-                     dock_direction=dock,
+        props = dict(dock_direction=dock,
                      floating_pos=floating_pos,
                      floating_size=floating_size)
         
@@ -1145,6 +1141,7 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if plug and not force:
             self.update_pane(name, **props)
+            self.show_pane(name, show)
             try:
                 if session:
                     plug.load_session(session)
@@ -1174,8 +1171,8 @@ class Frame(mwx.Frame):
                 if name not in self.plugins:
                     raise NameError("Plugin name must not be the same as any other panes")
                 
+                show = show or pane.IsShown()
                 props.update(
-                    show = show or pane.IsShown(),
                     dock_direction = pane.IsDocked() and pane.dock_direction,
                     floating_pos = floating_pos or pane.floating_pos[:], # copy unloading pane
                     floating_size = floating_size or pane.floating_size[:], # copy unloading pane
@@ -1240,6 +1237,7 @@ class Frame(mwx.Frame):
         plug.Name = name
         
         self.update_pane(name, **props)
+        self.show_pane(name, show)
         
         ## Create a menu
         plug.__Menu_item = None
