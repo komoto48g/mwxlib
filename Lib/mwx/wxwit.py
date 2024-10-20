@@ -217,8 +217,6 @@ def dump(widget=None):
 def watchit(widget=None, **kwargs):
     """Wx.py tool for watching widget tree structure and events."""
     from wx.lib.inspection import InspectionTool
-    if widget:
-        kwargs.update(locals=widget.__dict__)
     it = InspectionTool()
     it.Init(**kwargs)
     it.Show(widget)
