@@ -55,12 +55,12 @@ def _to_array(x):
     return x
 
 
-def imconvert(src, cutoff=0, threshold=None, binning=1):
-    """Convert buffer to image<uint8>
+def _to_image(src, cutoff=0, threshold=None, binning=1):
+    """Convert buffer to image <uint8>
     
     >>> dst = (src-a) * 255 / (b-a)
     
-    cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst<uint8>
+    cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst <uint8>
     
         >>> dst = |src * alpha + beta|
             alpha = 255 / (b-a)
@@ -86,10 +86,10 @@ def imconvert(src, cutoff=0, threshold=None, binning=1):
         src = _imcv(src)
         src = cv2.resize(src, None, fx=1/bins, fy=1/bins, interpolation=cv2.INTER_AREA)
     
-    if src.dtype == np.uint8:
-        return bins, (0,255), src
+    if src.dtype == np.uint8: # RGB or gray image <uint8>
+        return bins, (0, 255), src
     
-    if hasattr(cutoff, '__iter__'):
+    if hasattr(cutoff, '__iter__'): # cutoff vlim:list is specified.
         a, b = cutoff
     elif cutoff > 0:
         a = np.percentile(src, cutoff)
@@ -137,7 +137,7 @@ class AxesImagePhantom:
         self.__attributes = attributes
         self.__attributes['localunit'] = self.__localunit
         self.__buf = _to_buffer(buf)
-        bins, vlim, img = imconvert(self.__buf,
+        bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
         )
@@ -284,7 +284,7 @@ class AxesImagePhantom:
         if buf is not None:
             self.__buf = _to_buffer(buf)
         
-        bins, vlim, img = imconvert(self.__buf,
+        bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
         )
@@ -954,7 +954,7 @@ class GraphPlot(MatplotPanel):
             data = frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = imconvert(data, frame.vlim)
+            bins, vlim, img = _to_image(data, frame.vlim)
             Clipboard.imwrite(img)
             self.message("Write buffer to clipboard.")
         except Exception as e:
