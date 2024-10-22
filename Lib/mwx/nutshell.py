@@ -2711,7 +2711,6 @@ class Nautilus(EditorInterface, Shell):
             obj.this = inspect.getmodule(obj)
             obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
-            ## print("- cannot overwrite target vars:", e)
             pass
         self.parent.handler('title_window', obj)
     
@@ -3276,9 +3275,10 @@ class Nautilus(EditorInterface, Shell):
         Delete target shell to prevent referencing the dead shell.
         """
         def _del():
+            obj = self.target
             try:
-                if not self.target.shell:
-                    del self.target.shell # delete the facade <wx.py.shell.ShellFacade>
+                if not obj.shell:
+                    del obj.shell # delete the facade <wx.py.shell.ShellFacade>
             except AttributeError:
                 pass
         wx.CallAfter(_del)
@@ -3288,11 +3288,14 @@ class Nautilus(EditorInterface, Shell):
         Reset localvars assigned for the shell target.
         """
         self.trace_position()
-        self.parent.handler('title_window', self.target)
+        obj = self.target
         try:
-            self.target.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+            obj.self = obj
+            obj.this = inspect.getmodule(obj)
+            obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
             pass
+        self.parent.handler('title_window', obj)
     
     def on_inactivated(self, shell):
         """Called when shell:self is inactivated.

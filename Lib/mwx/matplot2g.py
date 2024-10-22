@@ -21,7 +21,7 @@ from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 
 
-def _imcv(src):
+def _to_cvtype(src):
     """Convert the image to a type that can be applied to the cv2 function.
     Note:
         CV2 normally accepts uint8/16 and float32/64.
@@ -31,36 +31,18 @@ def _imcv(src):
     return src
 
 
-def _to_buffer(img, grayscale=True):
-    if isinstance(img, Image.Image):
-        ## return np.asarray(img) # ref
-        return np.array(img) # copy
-    
-    if isinstance(img, wx.Bitmap):
-        img = img.ConvertToImage()
-    
-    if isinstance(img, wx.Image):
-        w, h = img.GetSize()
-        buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
-        return buf.reshape(h, w, 3)
-    
-    if img.ndim > 2 and grayscale:
-        return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    return img
-
-
 def _to_array(x):
     if isinstance(x, (list, tuple)):
         x = np.array(x)
     return x
 
 
-def imconvert(src, cutoff=0, threshold=None, binning=1):
-    """Convert buffer to image<uint8>
+def _to_image(src, cutoff=0, threshold=None, binning=1):
+    """Convert buffer to image <uint8>
     
     >>> dst = (src-a) * 255 / (b-a)
     
-    cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst<uint8>
+    cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst <uint8>
     
         >>> dst = |src * alpha + beta|
             alpha = 255 / (b-a)
@@ -83,13 +65,13 @@ def imconvert(src, cutoff=0, threshold=None, binning=1):
     
     if bins > 1:
         ## src = src[::bins,::bins]
-        src = _imcv(src)
+        src = _to_cvtype(src)
         src = cv2.resize(src, None, fx=1/bins, fy=1/bins, interpolation=cv2.INTER_AREA)
     
-    if src.dtype == np.uint8:
-        return bins, (0,255), src
+    if src.dtype == np.uint8: # RGB or gray image <uint8>
+        return bins, (0, 255), src
     
-    if hasattr(cutoff, '__iter__'):
+    if hasattr(cutoff, '__iter__'): # cutoff vlim:list is specified.
         a, b = cutoff
     elif cutoff > 0:
         a = np.percentile(src, cutoff)
@@ -136,8 +118,17 @@ class AxesImagePhantom:
         self.__aspect_ratio = aspect
         self.__attributes = attributes
         self.__attributes['localunit'] = self.__localunit
-        self.__buf = _to_buffer(buf)
-        bins, vlim, img = imconvert(self.__buf,
+        if isinstance(buf, Image.Image):
+            buf = np.array(buf)         # copy buffer to array
+        if isinstance(buf, wx.Bitmap):
+            buf = buf.ConvertToImage()  # bitmap to image
+        if isinstance(buf, wx.Image):   # image to RGB array
+            w, h = buf.GetSize()
+            buf = np.frombuffer(buf.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
+        if buf.ndim > 2:
+            buf = cv2.cvtColor(buf, cv2.COLOR_RGB2GRAY) # RGB to grayscale
+        self.__buf = buf
+        bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
         )
@@ -282,9 +273,8 @@ class AxesImagePhantom:
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
         if buf is not None:
-            self.__buf = _to_buffer(buf)
-        
-        bins, vlim, img = imconvert(self.__buf,
+            self.__buf = buf
+        bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
         )
@@ -954,7 +944,7 @@ class GraphPlot(MatplotPanel):
             data = frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = imconvert(data, frame.vlim)
+            bins, vlim, img = _to_image(data, frame.vlim)
             Clipboard.imwrite(img)
             self.message("Write buffer to clipboard.")
         except Exception as e:
