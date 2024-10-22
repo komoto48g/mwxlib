@@ -21,7 +21,7 @@ from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 
 
-def _imcv(src):
+def _to_cvtype(src):
     """Convert the image to a type that can be applied to the cv2 function.
     Note:
         CV2 normally accepts uint8/16 and float32/64.
@@ -83,7 +83,7 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     
     if bins > 1:
         ## src = src[::bins,::bins]
-        src = _imcv(src)
+        src = _to_cvtype(src)
         src = cv2.resize(src, None, fx=1/bins, fy=1/bins, interpolation=cv2.INTER_AREA)
     
     if src.dtype == np.uint8: # RGB or gray image <uint8>
