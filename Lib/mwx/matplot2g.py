@@ -21,6 +21,12 @@ from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
 
 
+def _to_array(x):
+    if isinstance(x, (list, tuple)):
+        x = np.array(x)
+    return x
+
+
 def _to_cvtype(src):
     """Convert the image to a type that can be applied to the cv2 function.
     Note:
@@ -31,28 +37,19 @@ def _to_cvtype(src):
     return src
 
 
-def _to_buffer(img, grayscale=True):
+def _to_buffer(img):
     if isinstance(img, Image.Image):
         ## return np.asarray(img) # ref
         return np.array(img) # copy
     
-    if isinstance(img, wx.Bitmap):
+    if isinstance(img, wx.Bitmap): # bitmap to image
         img = img.ConvertToImage()
     
-    if isinstance(img, wx.Image):
+    if isinstance(img, wx.Image): # image to RGB array; RGB to grayscale
         w, h = img.GetSize()
-        buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
-        return buf.reshape(h, w, 3)
-    
-    if img.ndim > 2 and grayscale:
+        img = np.frombuffer(img.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
         return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
-
-
-def _to_array(x):
-    if isinstance(x, (list, tuple)):
-        x = np.array(x)
-    return x
 
 
 def _to_image(src, cutoff=0, threshold=None, binning=1):
