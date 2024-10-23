@@ -957,7 +957,7 @@ class Icon(wx.Bitmap):
 
 
 class ClassicButton(wx.Button):
-    """Flat button
+    """Classic button
     
     Args:
         label   : button label
@@ -1035,7 +1035,7 @@ class ToggleButton(wx.ToggleButton):
 
 
 class TextCtrl(wx.Control):
-    """Text panel
+    """Text control
     
     Args:
         label   : button label
@@ -1089,7 +1089,7 @@ class TextCtrl(wx.Control):
 
 
 class Choice(wx.Control):
-    """Editable Choice (ComboBox) panel
+    """Editable Choice (ComboBox) control
     
     Args:
         label   : button label
