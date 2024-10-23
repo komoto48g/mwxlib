@@ -31,6 +31,24 @@ def _to_cvtype(src):
     return src
 
 
+def _to_buffer(img, grayscale=True):
+    if isinstance(img, Image.Image):
+        ## return np.asarray(img) # ref
+        return np.array(img) # copy
+    
+    if isinstance(img, wx.Bitmap):
+        img = img.ConvertToImage()
+    
+    if isinstance(img, wx.Image):
+        w, h = img.GetSize()
+        buf = np.frombuffer(img.GetDataBuffer(), dtype='uint8')
+        return buf.reshape(h, w, 3)
+    
+    if img.ndim > 2 and grayscale:
+        return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    return img
+
+
 def _to_array(x):
     if isinstance(x, (list, tuple)):
         x = np.array(x)
@@ -118,16 +136,7 @@ class AxesImagePhantom:
         self.__aspect_ratio = aspect
         self.__attributes = attributes
         self.__attributes['localunit'] = self.__localunit
-        if isinstance(buf, Image.Image):
-            buf = np.array(buf)         # copy buffer to array
-        if isinstance(buf, wx.Bitmap):
-            buf = buf.ConvertToImage()  # bitmap to image
-        if isinstance(buf, wx.Image):   # image to RGB array
-            w, h = buf.GetSize()
-            buf = np.frombuffer(buf.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
-        if buf.ndim > 2:
-            buf = cv2.cvtColor(buf, cv2.COLOR_RGB2GRAY) # RGB to grayscale
-        self.__buf = buf
+        self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
@@ -273,7 +282,8 @@ class AxesImagePhantom:
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
         if buf is not None:
-            self.__buf = buf
+            self.__buf = _to_buffer(buf)
+        
         bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
              threshold = self.parent.nbytes_threshold,
