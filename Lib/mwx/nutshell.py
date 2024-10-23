@@ -147,10 +147,14 @@ def can_edit(f):
 def ask(f, prompt="Enter value", type=str):
     """Get response from the user using a dialog box."""
     @wraps(f)
-    def _f(*v):
-        with wx.TextEntryDialog(None, prompt, f.__name__) as dlg:
+    def _f(evt, value=''):
+        with wx.TextEntryDialog(None, prompt, f.__name__, value) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
-                return f(type(dlg.Value))
+                value = dlg.Value
+                try:
+                    return f(type(value))
+                except ValueError:
+                    return _f(evt, value) # show the prompt again
     return _f
 
 
