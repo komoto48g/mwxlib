@@ -964,11 +964,6 @@ class Frame(mwx.Frame):
             else:
                 win.handler('page_closed', win)
         
-        if pane.dock_direction:
-            pane.Dock()
-        else:
-            pane.Float()
-        
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
         ##       and will be fixed in wxPython 4.2.1.
@@ -1000,6 +995,11 @@ class Frame(mwx.Frame):
                 pane.CaptionVisible(False)       # no caption bar
                 pane.Gripper(dock not in (0, 5)) # show a grip when docked
             pane.Dockable(dock)
+        
+        if pane.dock_direction:
+            pane.Dock()
+        else:
+            pane.Float()
     
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
