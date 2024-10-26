@@ -503,9 +503,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                   ## 'C-/ pressed' : (0, ), # cf. C-a home
                   ## 'C-\ pressed' : (0, ), # cf. C-e end
                   'C-; pressed' : (0, _F(self.comment_out_line)),
-                'C-S-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
-                'C-S-: pressed' : (0, _F(self.uncomment_line)),
                   'select_line' : (11, self.on_linesel_begin),
                  'select_lines' : (11, self.on_linesel_next),
             },
@@ -637,10 +635,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.IndicatorSetForeground(10, "red")
         
         self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
+        self.IndicatorSetForeground(11, "yellow")
         self.IndicatorSetUnder(11, True)
-        self.IndicatorSetAlpha(11, 60)
-        self.IndicatorSetOutlineAlpha(11, 60)
-        self.IndicatorSetForeground(11, "light gray")
+        self.IndicatorSetAlpha(11, 0xe8)
+        self.IndicatorSetOutlineAlpha(11, 0)
         
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
