@@ -2437,10 +2437,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.swap_buffer(buf, lineno)
                 return True
             return False
+        except FileNotFoundError:
+            self.post_message(f"New file: {filename!r}.")
+            self.delete_buffer(buf)
+            return False
         except Exception as e:
             self.post_message(f"Failed to load {filename!r}.", e)
             self.delete_buffer(buf)
-            return False
+            raise
     
     def find_file(self, filename=None):
         """Open the specified file."""
@@ -2453,7 +2457,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     for fn in dlg.Paths:
                         self.find_file(fn)
             return
-        if not self.load_file(filename):
+        if self.load_file(filename) == False:
             buf = self.create_buffer(filename)
             buf._Buffer__mtime = 0 # => need_buffer_save
             self.swap_buffer(buf)
