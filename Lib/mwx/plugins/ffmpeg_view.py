@@ -133,11 +133,15 @@ class Plugin(Layer):
             0 : {
                          'play' : (1, ),
                 'space pressed' : (1, _F(self.mc.Play)),
+                 'left pressed' : (0, _F(self.seekd, -1000)),
+                'right pressed' : (0, _F(self.seekd,  1000)),
             },
             1 : {
                          'stop' : (0, ),
                         'pause' : (0, ),
                 'space pressed' : (1, _F(self.mc.Pause)),
+                 'left pressed' : (1, _F(self.seekd, -1000)),
+                'right pressed' : (1, _F(self.seekd,  1000)),
             },
         })
         
@@ -145,10 +149,8 @@ class Plugin(Layer):
         self.mc.Bind(wx.media.EVT_MEDIA_PLAY, partial(self.handler, 'play'))
         self.mc.Bind(wx.media.EVT_MEDIA_STOP, partial(self.handler, 'stop'))
         
-        ## self.mc.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
-        ## self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
-        self.mc.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        self.mc.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.mc.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
+        self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
         
         self.Bind(wx.EVT_SHOW, self.OnShow)
     
@@ -157,14 +159,6 @@ class Plugin(Layer):
             self.parent.handler.unbind("unknown_format", self.load_media)
         finally:
             return Layer.Destroy(self)
-    
-    def OnKeyDown(self, evt):
-        if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
-            evt.Skip()
-    
-    def OnKeyUp(self, evt):
-        if self.handler('{} released'.format(hotkey(evt)), evt) is None:
-            evt.Skip()
     
     def OnShow(self, evt):
         if not evt.IsShown():
@@ -251,17 +245,23 @@ class Plugin(Layer):
         self.crop.Value = crop
     
     def seekdelta(self, offset):
-        """Seek relative position [ms]."""
-        if wx.GetKeyState(wx.WXK_SHIFT):
-            offset /= 10
+        """Seek relative position [ms] from `to` value."""
         try:
             t = self.to.value + offset/1000
-        except Exception as e:
-            print(e)
-        else:
-            if self._path and 0 <= t < self.video_dur:
+            if 0 <= t < self.video_dur:
                 self.to.value = round(t, 3)
-            self.set_offset(self.to) # => seek
+            self.set_offset(self.to)
+        except AttributeError:
+            pass
+    
+    def seekd(self, offset):
+        """Seek relative position [ms]."""
+        try:
+            t = self.mc.Tell() + offset
+            if 0 <= t < self.video_dur * 1000:
+                self.mc.Seek(self.DELTA + t)
+        except AttributeError:
+            pass
     
     def snapshot(self):
         """Create a snapshot of the current frame.
