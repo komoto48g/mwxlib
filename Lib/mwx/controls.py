@@ -465,7 +465,13 @@ class Knob(wx.Panel):
             self.text.BackgroundColour = c
             self.text.Refresh()
     
-    def shift(self, evt, bit):
+    def shift_ctrl(self, evt, bit):
+        """Called when a key/mouse wheel is pressed/scrolled.
+        
+        In addition to direct key input to the textctrl,
+        [up][down][wheelup][wheeldown] keys can be used,
+        with modifiers S- 2x, C- 16x, and M- 256x steps.
+        """
         if bit:
             if evt.ShiftDown():   bit *= 2
             if evt.ControlDown(): bit *= 16
@@ -485,13 +491,13 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
-        self.shift(evt, 1 if evt.WheelRotation>0 else -1)
+        self.shift_ctrl(evt, 1 if evt.WheelRotation>0 else -1)
         evt.Skip(False)
     
     def OnCtrlKeyDown(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
-        if key == wx.WXK_LEFT: return self.shift(evt, -1)
-        if key == wx.WXK_RIGHT: return self.shift(evt, 1)
+        if key == wx.WXK_LEFT: return self.shift_ctrl(evt, -1)
+        if key == wx.WXK_RIGHT: return self.shift_ctrl(evt, 1)
         
         def _focus(c):
             if isinstance(c, Knob) and c.ctrl.IsEnabled():
@@ -508,8 +514,8 @@ class Knob(wx.Panel):
     
     def OnTextKeyDown(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
-        if key == wx.WXK_DOWN: return self.shift(evt, -1)
-        if key == wx.WXK_UP: return self.shift(evt, 1)
+        if key == wx.WXK_DOWN: return self.shift_ctrl(evt, -1)
+        if key == wx.WXK_UP: return self.shift_ctrl(evt, 1)
         if key == wx.WXK_ESCAPE:
             self.__par.reset(self.__par.value, internal_callback=None) # restore value
         evt.Skip()
