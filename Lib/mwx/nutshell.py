@@ -1847,7 +1847,7 @@ class Buffer(EditorInterface, EditWindow):
             """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, evt)
         
-        ## Note: Key events are not propagated from Buffer to EditorBook.
+        ## Note: Mouse events are not propagated from Buffer to EditorBook.
         ## They are explicitly dispatched from buffer.handler to editor.handler.
         
         self.handler.update({ # DNA<Buffer>
@@ -1867,8 +1867,9 @@ class Buffer(EditorInterface, EditWindow):
              '*[LR]win pressed' : (-1, ),
             },
             0 : { # Normal mode
-                    '* pressed' : (0, skip, dispatch),
+                    '* pressed' : (0, skip),
                    '* released' : (0, skip, dispatch),
+             '*button* pressed' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
@@ -2209,10 +2210,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
              'buffer_activated' : [ None, dispatch, self.on_activated ],
            'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
        'buffer_caption_updated' : [ None, dispatch ],
-             '*button* pressed' : [ None, dispatch, skip ],
-            '*button* released' : [ None, dispatch, skip ],
             },
             0 : { # Normal mode
+                    '* pressed' : (0, skip),
+                   '* released' : (0, skip, dispatch),
+             '*button* pressed' : (0, skip, dispatch),
                  'M-up pressed' : (0, _F(self.previous_buffer)),
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
@@ -2817,8 +2819,6 @@ class Nautilus(EditorInterface, Shell):
                'shell_modified' : [ None, dispatch ],
               'shell_activated' : [ None, dispatch, self.on_activated ],
             'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
-             '*button* pressed' : [ None, dispatch, skip ],
-            '*button* released' : [ None, dispatch, skip ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -2835,7 +2835,8 @@ class Nautilus(EditorInterface, Shell):
             },
             0 : { # Normal mode
                     '* pressed' : (0, skip),
-                   '* released' : (0, skip),
+                   '* released' : (0, skip, dispatch),
+             '*button* pressed' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
