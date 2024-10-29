@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -395,9 +395,9 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed."""
-        if evt.EventObject is not self:
-            evt.Skip()
-            return
+        ## if evt.EventObject is not self:
+        ##     evt.Skip()
+        ##     return
         key = hotkey(evt)
         self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
