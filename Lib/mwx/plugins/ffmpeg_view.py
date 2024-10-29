@@ -109,8 +109,8 @@ class Plugin(Layer):
         self.snp = Button(self, handler=self.snapshot, icon='clip')
         self.exp = Button(self, handler=self.export, icon='save')
         
-        self.rw = Button(self, handler=lambda v: self.seekdelta(-100), icon='|<-')
-        self.fw = Button(self, handler=lambda v: self.seekdelta(+100), icon='->|')
+        self.rw = Button(self, handler=lambda v: self.seekto(-100), icon='|<-')
+        self.fw = Button(self, handler=lambda v: self.seekto(+100), icon='->|')
         
         self.layout((self.mc,), expand=2)
         self.layout((self.ss, self.to, self.rw, self.fw,
@@ -130,18 +130,24 @@ class Plugin(Layer):
         self.parent.handler.bind("unknown_format", self.load_media)
         
         self.handler.update({ # DNA<ffmpeg_viewer>
-            0 : {
-                         'play' : (1, ),
-                'space pressed' : (1, _F(self.mc.Play)),
+            0 : { # MEDIASTATE_STOPPED
+                         'play' : (2, ),
+                'space pressed' : (2, _F(self.mc.Play)),
                  'left pressed' : (0, _F(self.seekd, -1000)),
                 'right pressed' : (0, _F(self.seekd,  1000)),
             },
-            1 : {
+            1 : { # MEDIASTATE_PAUSED
                          'stop' : (0, ),
-                        'pause' : (0, ),
-                'space pressed' : (1, _F(self.mc.Pause)),
+                'space pressed' : (2, _F(self.mc.Play)),
                  'left pressed' : (1, _F(self.seekd, -1000)),
                 'right pressed' : (1, _F(self.seekd,  1000)),
+            },
+            2 : { # MEDIASTATE_PLAYING
+                         'stop' : (0, ),
+                        'pause' : (1, ),
+                'space pressed' : (1, _F(self.mc.Pause)),
+                 'left pressed' : (2, _F(self.seekd, -1000)),
+                'right pressed' : (2, _F(self.seekd,  1000)),
             },
         })
         
@@ -244,8 +250,8 @@ class Plugin(Layer):
             crop = "{}:{}:0:0".format(*self.video_size)
         self.crop.Value = crop
     
-    def seekdelta(self, offset):
-        """Seek relative position [ms] from `to` value."""
+    def seekto(self, offset):
+        """Seek position with offset [ms] from the `to` position."""
         try:
             t = self.to.value + offset/1000
             if 0 <= t < self.video_dur:
@@ -255,7 +261,7 @@ class Plugin(Layer):
             pass
     
     def seekd(self, offset):
-        """Seek relative position [ms]."""
+        """Seek position with offset [ms] from the current position."""
         try:
             t = self.mc.Tell() + offset
             if 0 <= t < self.video_dur * 1000:
