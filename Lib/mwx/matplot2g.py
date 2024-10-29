@@ -48,6 +48,8 @@ def _to_buffer(img):
     if isinstance(img, wx.Image): # image to RGB array; RGB to grayscale
         w, h = img.GetSize()
         img = np.frombuffer(img.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
+    
+    if img.ndim > 2:
         return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
 
