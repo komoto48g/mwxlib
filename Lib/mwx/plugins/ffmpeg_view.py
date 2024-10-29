@@ -130,18 +130,24 @@ class Plugin(Layer):
         self.parent.handler.bind("unknown_format", self.load_media)
         
         self.handler.update({ # DNA<ffmpeg_viewer>
-            0 : {
-                         'play' : (1, ),
-                'space pressed' : (1, _F(self.mc.Play)),
+            0 : { # MEDIASTATE_STOPPED
+                         'play' : (2, ),
+                'space pressed' : (2, _F(self.mc.Play)),
                  'left pressed' : (0, _F(self.seekd, -1000)),
                 'right pressed' : (0, _F(self.seekd,  1000)),
             },
-            1 : {
+            1 : { # MEDIASTATE_PAUSED
                          'stop' : (0, ),
-                        'pause' : (0, ),
-                'space pressed' : (1, _F(self.mc.Pause)),
+                'space pressed' : (2, _F(self.mc.Play)),
                  'left pressed' : (1, _F(self.seekd, -1000)),
                 'right pressed' : (1, _F(self.seekd,  1000)),
+            },
+            2 : { # MEDIASTATE_PLAYING
+                         'stop' : (0, ),
+                        'pause' : (1, ),
+                'space pressed' : (1, _F(self.mc.Pause)),
+                 'left pressed' : (2, _F(self.seekd, -1000)),
+                'right pressed' : (2, _F(self.seekd,  1000)),
             },
         })
         
