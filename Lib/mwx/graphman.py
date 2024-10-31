@@ -261,6 +261,12 @@ class LayerInterface(CtrlInterface):
     ## thread_type = Thread
     thread = None
     
+    ## layout helper function (internal use only)
+    pack = mwx.pack
+    
+    ## funcall = interactive_call (internal use only)
+    funcall = staticmethod(_F)
+    
     ## for debug (internal use only)
     pane = property(lambda self: self.parent.get_pane(self))
     
