@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -266,8 +266,7 @@ class KeyCtrlInterfaceMixin:
         ## Check text selection for [C-c/C-x].
         wnd = wx.Window.FindFocus()
         if isinstance(wnd, wx.TextEntry) and wnd.StringSelection\
-        or isinstance(wnd, stc.StyledTextCtrl) and wnd.SelectedText:
-            ## or any other of pre-selection-p?
+          or isinstance(wnd, stc.StyledTextCtrl) and wnd.SelectedText:
             self.handler('quit', evt)
         else:
             self.message(evt.key + '-')
@@ -275,6 +274,9 @@ class KeyCtrlInterfaceMixin:
     
     def post_command_hook(self, evt):
         """Called when exiting extension mode (internal use only)."""
+        ## Check if the event has reached a top-level window.
+        if isinstance(self, wx.TopLevelWindow):
+            return
         keymap = self.handler.previous_state
         if keymap:
             self.message("{} {}".format(keymap, evt.key))
@@ -729,11 +731,6 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     
     message = property(lambda self: self.statusbar)
     
-    def post_command_hook(self, evt):
-        ## (override) Don't skip events as a TopLevelWindow.
-        pass
-    post_command_hook.__name__ = str('noskip')
-    
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
@@ -807,11 +804,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     handler = property(lambda self: self.__handler)
     
     message = property(lambda self: self.statusbar)
-    
-    def post_command_hook(self, evt):
-        ## (override) Don't skip events as a TopLevelWindow.
-        pass
-    post_command_hook.__name__ = str('noskip')
     
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)

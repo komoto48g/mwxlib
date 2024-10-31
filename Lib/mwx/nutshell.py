@@ -1785,16 +1785,6 @@ class Buffer(EditorInterface, EditWindow):
         """
         return self.mtdelta is not None and self.mtdelta > 0
     
-    def pre_command_hook(self, evt):
-        self.parent.handler(self.handler.current_event, evt)
-        return EditorInterface.pre_command_hook(self, evt)
-    pre_command_hook.__name__ = str('pre_command_dispatch') # alias
-    
-    def post_command_hook(self, evt):
-        self.parent.handler(self.handler.current_event, evt)
-        return EditorInterface.post_command_hook(self, evt)
-    post_command_hook.__name__ = str('post_command_dispatch') # alias
-    
     def __init__(self, parent, filename, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
