@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.0.8"
+__version__ = "1.0.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -261,8 +261,11 @@ class KeyCtrlInterfaceMixin:
             },
         })
     
+    builtins.enter = "Enter extension mode."
+    builtins.exit = "Exit extension mode."
+    
     def pre_command_hook(self, evt):
-        """Called when entering extension mode (internal use only)."""
+        ## """Called when entering extension mode (internal use only)."""
         ## Check text selection for [C-c/C-x].
         wnd = wx.Window.FindFocus()
         if isinstance(wnd, wx.TextEntry) and wnd.StringSelection\
@@ -271,9 +274,10 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key + '-')
         evt.Skip()
+    pre_command_hook.__name__ = str('enter')
     
     def post_command_hook(self, evt):
-        """Called when exiting extension mode (internal use only)."""
+        ## """Called when exiting extension mode (internal use only)."""
         ## Check if the event has reached a top-level window.
         if isinstance(self, wx.TopLevelWindow):
             return
@@ -283,6 +287,7 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key)
         evt.Skip()
+    post_command_hook.__name__ = str('exit')
     
     def define_key(self, keymap, action=None, *args, **kwargs):
         """Define [map key (pressed)] action.
