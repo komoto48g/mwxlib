@@ -160,6 +160,12 @@ class MatplotPanel(wx.Panel):
             if self.handler.fork(self.handler.current_event, evt) is None:
                 evt.Skip()
         
+        def skip(evt): #<wx._core.KeyEvent> #<matplotlib.backend_bases.MouseEvent>
+            try:
+                evt.Skip()
+            except AttributeError:
+                pass
+        
         self.__handler = FSM({ # DNA<MatplotPanel>
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ], # before canvas.draw
@@ -188,6 +194,7 @@ class MatplotPanel(wx.Panel):
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
                     'z pressed' : (ZOOM, self.OnZoomBegin),
+                    '* pressed' : (NORMAL, skip),
                  'xaxis motion' : (XAXIS, self.OnAxisEnter),
                  'yaxis motion' : (YAXIS, self.OnAxisEnter),
                 'y2axis motion' : (YAXIS, self.OnAxisEnter),

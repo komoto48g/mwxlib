@@ -426,7 +426,7 @@ class Knob(wx.Panel):
                 self.ctrl.SetItems(items)
                 self.ctrl.SetStringSelection(str(v))
         else:
-            self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> <wx.SpinButton>
+            self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
     
     def update_label(self):
         """Called when label is being changed (internal use only)."""
@@ -482,7 +482,7 @@ class Knob(wx.Panel):
             v.index = j
             v.reset(v.value)
     
-    def OnScroll(self, evt): #<wx._core.ScrollEvent><wx._controls.SpinEvent><wx._core.CommandEvent>
+    def OnScroll(self, evt): #<wx._core.ScrollEvent> #<wx._controls.SpinEvent> #<wx._core.CommandEvent>
         v = self.__par
         j = self.ctrl.GetValue()
         if j != v.index:
