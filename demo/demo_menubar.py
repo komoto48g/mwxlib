@@ -3,11 +3,11 @@ import sys
 import wx
 
 sys.path.append("../Lib")
-import mwx
 from mwx.controls import Icon
+from mwx.framework import Frame
 
 
-class Frame(mwx.Frame):
+class Frame(Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -52,7 +52,7 @@ class Frame(mwx.Frame):
 
 
 if __name__ == "__main__":
-    app = wx.App()
-    frm = Frame(None)
-    frm.Show()
-    app.MainLoop()
+    from mwx.testsuite import *
+    with testApp():
+        frm = Frame(None)
+        frm.Show()

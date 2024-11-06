@@ -4,10 +4,10 @@ import wx
 from numpy import inf
 
 sys.path.append("../Lib")
-import mwx
 from mwx.controls import Param, LParam
 from mwx.controls import Button, ToggleButton, TextCtrl, Choice, Icon
-from mwx.graphman import Layer, Frame
+from mwx.framework import StatusBar
+from mwx.graphman import Layer
 
 
 class Plugin(Layer):
@@ -85,7 +85,7 @@ class Plugin(Layer):
                              |wx.TE_RICH
                              |wx.TE_AUTO_URL
                         )
-        self.statusline = mwx.StatusBar(self)
+        self.statusline = StatusBar(self)
         
         self.layout((
                 self.textctrl,
@@ -107,8 +107,6 @@ class Plugin(Layer):
 
 
 if __name__ == "__main__":
-    app = wx.App()
-    frm = Frame(None)
-    frm.load_plug(Plugin, show=1)
-    frm.Show()
-    app.MainLoop()
+    from mwx.testsuite import *
+    with Plugman() as frm:
+        frm.load_plug(Plugin, show=1)

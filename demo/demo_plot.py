@@ -1,12 +1,11 @@
 #! python3
 import sys
-import wx
 import numpy as np
 from numpy import pi,exp,sin,cos
 
 sys.path.append("../Lib")
 from mwx.controls import LParam
-from mwx.graphman import Layer, Frame
+from mwx.graphman import Layer
 
 
 class Plugin(Layer):
@@ -47,8 +46,6 @@ class Plugin(Layer):
 
 
 if __name__ == "__main__":
-    app = wx.App()
-    frm = Frame(None)
-    frm.load_plug(Plugin, show=1)
-    frm.Show()
-    app.MainLoop()
+    from mwx.testsuite import *
+    with Plugman() as frm:
+        frm.load_plug(Plugin, show=1)
