@@ -2637,10 +2637,9 @@ class Nautilus(EditorInterface, Shell):
     
         - quoteback : x`y --> y=x  | x`y`z --> z=y=x
         - pullback  : x@y --> y(x) | x@y@z --> z(y(x))
-        - apropos   : x.y? [not] p --> shows apropos (not-)matched by predicates p
-                      equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p])
-                      ``y`` can contain regular expressions except for a dot.
-                      ``y`` can contain abbreviations: \\a:[a-z], \\A:[A-Z] .
+        - apropos   : x.y? [not] p --> shows items (not) matched by predicate p
+                      equiv. apropos(x, y [,ignorecase ?:True,??:False] [,pred=p]).
+                      ``y`` can contain regular expressions, but no dots or backslashes.
                       ``p`` can be atom, callable, type (e.g., int, str, ...),
                       and any predicates such as inspect.isclass.
         

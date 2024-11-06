@@ -138,9 +138,6 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
     """
     name = alias or typename(obj)
     
-    rexpr = (rexpr.replace('\\a','[a-z0-9]')  #\a: identifier chars (custom rule)
-                  .replace('\\A','[A-Z0-9]')) #\A: 
-    
     if isinstance(pred, str):
         pred = predicate(pred, locals)
     
@@ -326,9 +323,9 @@ def split_tokens(text, comment=True):
         j, k = 1, 0
         for type, string, start, end, line in tokens:
             l, m = start
-            if type in (0,5,6) or not string:
+            if type in (tokenize.ENDMARKER, tokenize.INDENT, tokenize.DEDENT):
                 continue
-            if type == 61 and not comment:
+            if type == tokenize.COMMENT and not comment:
                 token = next(tokens)  # eats a trailing token
                 string = token.string # cr/lf or ''
                 if m == 0:
