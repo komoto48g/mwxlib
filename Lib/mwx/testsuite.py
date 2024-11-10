@@ -17,7 +17,7 @@ Is equivlent to:
 from contextlib import contextmanager
 import wx
 
-__all__ = ["testApp", "testFrame", "Plugman", "ControlPanel"]
+__all__ = ["testApp", "testFrame", "Plugman", "testPanel"]
 
 
 @contextmanager
@@ -48,7 +48,7 @@ def Plugman(**kwargs):
 
 
 @contextmanager
-def ControlPanel(**kwargs):
+def testPanel(**kwargs):
     import mwx
     with testApp():
         frm = mwx.Frame(None)
