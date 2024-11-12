@@ -156,5 +156,11 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             data = self.GetItemData(evt.Item)
             if data:
                 data.SetFocus()
+            else:
+                name = self.GetItemText(evt.Item)
+                editor = self.Parent.FindWindow(name) # window.Name (not page.caption)
+                if not editor.IsShown():
+                    ## editor.SetFocus()
+                    self.Parent.Selection = self.Parent.FindPage(editor)
             self.SetFocus()
         evt.Skip()
