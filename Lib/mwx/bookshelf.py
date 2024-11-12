@@ -5,6 +5,49 @@ import wx
 from .framework import CtrlInterface, postcall
 
 
+class MyDropTarget(wx.DropTarget):
+    """DnD loader for files and URL text.
+    """
+    def __init__(self, tree):
+        wx.DropTarget.__init__(self)
+        
+        self.tree = tree
+        self.datado = wx.CustomDataObject("TreeItem")
+        self.filedo = wx.FileDataObject()
+        self.DataObject = wx.DataObjectComposite()
+        self.DataObject.Add(self.datado)
+        self.DataObject.Add(self.filedo, True)
+    
+    def OnDragOver(self, x, y, result):
+        item, flags = self.tree.HitTest((x, y))
+        items = list(self.tree._gen_items(self.tree.RootItem)) # first level items
+        if not item:
+            item = items[0]
+        if item in items and item != self.tree.Selection:
+            self.tree.SelectItem(item)
+        return result
+    
+    def OnData(self, x, y, result):
+        item = self.tree.Selection
+        name = self.tree.GetItemText(item)
+        editor = self.tree.Parent.FindWindow(name) # window.Name (not page.caption)
+        def _load(f):
+            if editor.load_file(f):
+                editor.buffer.SetFocus()
+                editor.post_message(f"Loaded {f!r} successfully.")
+        self.GetData()
+        data = self.datado.Data
+        if data:
+            f = data.tobytes().decode()
+            _load(f)
+            self.datado.SetData(b"")
+        else:
+            for f in self.filedo.Filenames:
+                _load(f)
+            self.filedo.SetData(wx.DF_FILENAME, None)
+        return result
+
+
 class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     """TreeList/Ctrl
     
@@ -21,6 +64,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         ## self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
+        self.SetDropTarget(MyDropTarget(self))
+        
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
         
         def dispatch(evt):
             """Fork events to the parent."""
@@ -100,22 +147,26 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             self._set_item(self.RootItem, editor.Name, editor.all_buffers)
         self.Refresh()
     
-    def _gen_item(self, root, key):
+    def _gen_items(self, root, key=None):
         """Generates the [root/key] items."""
         item, cookie = self.GetFirstChild(root)
         while item:
-            caption = self.GetItemText(item)
-            if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
+            if not key:
                 yield item
+            else:
+                ## キャプション先頭の識別子 %* を除外して比較する
+                caption = self.GetItemText(item)
+                if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
+                    yield item
             item, cookie = self.GetNextChild(root, cookie)
     
     def _get_item(self, root, key):
         """Get the first [root/key] item found."""
-        return next(self._gen_item(root, key), None)
+        return next(self._gen_items(root, key), None)
     
     def _set_item(self, root, key, data):
         """Set the [root/key] item with data recursively."""
-        for item in self._gen_item(root, key):
+        for item in self._gen_items(root, key):
             buf = self.GetItemData(item)
             if not buf or buf is data:
                 break
@@ -164,3 +215,14 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                     self.Parent.Selection = self.Parent.FindPage(editor)
             self.SetFocus()
         evt.Skip()
+    
+    def OnBeginDrag(self, evt):
+        data = self.GetItemData(evt.Item)
+        if data:
+            dd = wx.CustomDataObject("TreeItem")
+            dd.SetData(data.filename.encode())
+            do = wx.DataObjectComposite()
+            do.Add(dd)
+            dropSource = wx.DropSource()
+            dropSource.SetData(do)
+            dropSource.DoDragDrop(wx.Drag_AllowMove) # -> wx.DragResult
