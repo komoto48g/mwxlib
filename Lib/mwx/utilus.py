@@ -359,6 +359,8 @@ def _extract_words_from_tokens(tokens, reverse=False):
     stack = []
     words = []
     for j, c in enumerate(tokens):
+        if not c:
+            continue
         if c in p:
             stack.append(c)
         elif c in q:
@@ -390,6 +392,8 @@ def _extract_paren_from_tokens(tokens, reverse=False):
     stack = []
     words = []
     for j, c in enumerate(tokens):
+        if not c:
+            continue
         if c in p:
             stack.append(c)
         elif c in q:
