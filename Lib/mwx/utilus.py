@@ -323,7 +323,8 @@ def split_tokens(text, comment=True):
         j, k = 1, 0
         for type, string, start, end, line in tokens:
             l, m = start
-            if type in (tokenize.ENDMARKER, tokenize.INDENT, tokenize.DEDENT):
+            if type in (tokenize.INDENT, tokenize.DEDENT) or not string:
+                ## Empty strings such as NEWLINE and ENDMARKER are also skipped.
                 continue
             if type == tokenize.COMMENT and not comment:
                 token = next(tokens)  # eats a trailing token
