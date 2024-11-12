@@ -667,6 +667,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.__mark = -1
         self.__stylus = {}
     
+    __dnd_from = None
+    __dnd_flag = 0
+    
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
         EditorInterface.__dnd_from = evt.EventObject
         try:
