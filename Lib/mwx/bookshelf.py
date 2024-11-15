@@ -2,7 +2,7 @@
 import re
 import wx
 
-from .framework import CtrlInterface, postcall
+from .framework import CtrlInterface
 
 
 class MyDropTarget(wx.DropTarget):
@@ -52,6 +52,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     """TreeList/Ctrl
     
     Construct treectrl in the order of tree:list.
+    Note:
+        This only works with single selection mode.
     """
     def __init__(self, parent, *args, **kwargs):
         wx.TreeCtrl.__init__(self, parent, *args, **kwargs)
@@ -81,7 +83,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             },
             0 : {
                'delete pressed' : (0, self._delete),
-                   'f5 pressed' : (0, self._refresh),
             },
         })
         self.context = { # DNA<EditorBook>
@@ -108,26 +109,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 editor.handler.remove(self.context)
         evt.Skip()
     
-    def _refresh(self, evt):
-        def _item(editor):
-            return self._get_item(self.RootItem, editor.Name)
-        ls = []
-        for editor in self.parent.all_editors:
-            if self.IsExpanded(_item(editor)):
-                ls.append(editor)
-        data = None
-        if self.Selection.IsOk():
-            data = self.GetItemData(self.Selection)
-            if data:
-                wx.CallAfter(data.SetFocus)
-                wx.CallAfter(self.SetFocus)
-        self.build_tree()
-        for editor in ls:
-            self.Expand(_item(editor))
-    
     def _delete(self, evt):
-        if self.Selection.IsOk():
-            data = self.GetItemData(self.Selection)
+        item = self.Selection
+        if item:
+            data = self.GetItemData(item)
             if data:
                 data.parent.kill_buffer(data) # the focus moves
                 wx.CallAfter(self.SetFocus)
@@ -193,10 +178,9 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     
     ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる
     ##       buf.__itemId がない場合がある (delete_buffer 直後など)
-    @postcall
     def on_buffer_selected(self, buf):
         if self and buf:
-            self.SelectItem(buf.__itemId)
+            wx.CallAfter(lambda: self.SelectItem(buf.__itemId))
     
     def on_buffer_filename(self, buf):
         if self and buf:
@@ -213,7 +197,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 if not editor.IsShown():
                     ## editor.SetFocus()
                     self.Parent.Selection = self.Parent.FindPage(editor)
-            self.SetFocus()
+            wx.CallAfter(self.SetFocus)
         evt.Skip()
     
     def OnBeginDrag(self, evt):
