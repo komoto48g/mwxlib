@@ -2,13 +2,58 @@
 import re
 import wx
 
-from .framework import CtrlInterface, postcall
+from .framework import CtrlInterface
+
+
+class MyDropTarget(wx.DropTarget):
+    """DnD loader for files and URL text.
+    """
+    def __init__(self, tree):
+        wx.DropTarget.__init__(self)
+        
+        self.tree = tree
+        self.datado = wx.CustomDataObject("TreeItem")
+        self.filedo = wx.FileDataObject()
+        self.DataObject = wx.DataObjectComposite()
+        self.DataObject.Add(self.datado)
+        self.DataObject.Add(self.filedo, True)
+    
+    def OnDragOver(self, x, y, result):
+        item, flags = self.tree.HitTest((x, y))
+        items = list(self.tree._gen_items(self.tree.RootItem)) # first level items
+        if not item:
+            item = items[0]
+        if item in items and item != self.tree.Selection:
+            self.tree.SelectItem(item)
+        return result
+    
+    def OnData(self, x, y, result):
+        item = self.tree.Selection
+        name = self.tree.GetItemText(item)
+        editor = self.tree.Parent.FindWindow(name) # window.Name (not page.caption)
+        def _load(f):
+            if editor.load_file(f):
+                editor.buffer.SetFocus()
+                editor.post_message(f"Loaded {f!r} successfully.")
+        self.GetData()
+        data = self.datado.Data
+        if data:
+            f = data.tobytes().decode()
+            _load(f)
+            self.datado.SetData(b"")
+        else:
+            for f in self.filedo.Filenames:
+                _load(f)
+            self.filedo.SetData(wx.DF_FILENAME, None)
+        return result
 
 
 class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     """TreeList/Ctrl
     
     Construct treectrl in the order of tree:list.
+    Note:
+        This only works with single selection mode.
     """
     def __init__(self, parent, *args, **kwargs):
         wx.TreeCtrl.__init__(self, parent, *args, **kwargs)
@@ -22,6 +67,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
+        self.SetDropTarget(MyDropTarget(self))
+        
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
+        
         def dispatch(evt):
             """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, evt)
@@ -34,7 +83,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             },
             0 : {
                'delete pressed' : (0, self._delete),
-                   'f5 pressed' : (0, self._refresh),
             },
         })
         self.context = { # DNA<EditorBook>
@@ -61,26 +109,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 editor.handler.remove(self.context)
         evt.Skip()
     
-    def _refresh(self, evt):
-        def _item(editor):
-            return self._get_item(self.RootItem, editor.Name)
-        ls = []
-        for editor in self.parent.all_editors:
-            if self.IsExpanded(_item(editor)):
-                ls.append(editor)
-        data = None
-        if self.Selection.IsOk():
-            data = self.GetItemData(self.Selection)
-            if data:
-                wx.CallAfter(data.SetFocus)
-                wx.CallAfter(self.SetFocus)
-        self.build_tree()
-        for editor in ls:
-            self.Expand(_item(editor))
-    
     def _delete(self, evt):
-        if self.Selection.IsOk():
-            data = self.GetItemData(self.Selection)
+        item = self.Selection
+        if item:
+            data = self.GetItemData(item)
             if data:
                 data.parent.kill_buffer(data) # the focus moves
                 wx.CallAfter(self.SetFocus)
@@ -100,22 +132,26 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             self._set_item(self.RootItem, editor.Name, editor.all_buffers)
         self.Refresh()
     
-    def _gen_item(self, root, key):
+    def _gen_items(self, root, key=None):
         """Generates the [root/key] items."""
         item, cookie = self.GetFirstChild(root)
         while item:
-            caption = self.GetItemText(item)
-            if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
+            if not key:
                 yield item
+            else:
+                ## キャプション先頭の識別子 %* を除外して比較する
+                caption = self.GetItemText(item)
+                if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
+                    yield item
             item, cookie = self.GetNextChild(root, cookie)
     
     def _get_item(self, root, key):
         """Get the first [root/key] item found."""
-        return next(self._gen_item(root, key), None)
+        return next(self._gen_items(root, key), None)
     
     def _set_item(self, root, key, data):
         """Set the [root/key] item with data recursively."""
-        for item in self._gen_item(root, key):
+        for item in self._gen_items(root, key):
             buf = self.GetItemData(item)
             if not buf or buf is data:
                 break
@@ -142,10 +178,9 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     
     ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる
     ##       buf.__itemId がない場合がある (delete_buffer 直後など)
-    @postcall
     def on_buffer_selected(self, buf):
         if self and buf:
-            self.SelectItem(buf.__itemId)
+            wx.CallAfter(lambda: self.SelectItem(buf.__itemId))
     
     def on_buffer_filename(self, buf):
         if self and buf:
@@ -156,5 +191,22 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             data = self.GetItemData(evt.Item)
             if data:
                 data.SetFocus()
-            self.SetFocus()
+            else:
+                name = self.GetItemText(evt.Item)
+                editor = self.Parent.FindWindow(name) # window.Name (not page.caption)
+                if not editor.IsShown():
+                    ## editor.SetFocus()
+                    self.Parent.Selection = self.Parent.FindPage(editor)
+            wx.CallAfter(self.SetFocus)
         evt.Skip()
+    
+    def OnBeginDrag(self, evt):
+        data = self.GetItemData(evt.Item)
+        if data:
+            dd = wx.CustomDataObject("TreeItem")
+            dd.SetData(data.filename.encode())
+            do = wx.DataObjectComposite()
+            do.Add(dd)
+            dropSource = wx.DropSource()
+            dropSource.SetData(do)
+            dropSource.DoDragDrop(wx.Drag_AllowMove) # -> wx.DragResult

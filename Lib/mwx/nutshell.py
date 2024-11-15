@@ -2330,7 +2330,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.set_attributes(buf, **self.defaultBufferStyle)
             if index is None:
                 index = self.PageCount
-            self.InsertPage(index, buf, buf.name)
+            self.InsertPage(index, buf, buf.name) # => [buffer_activated]
             self.handler('buffer_new', buf)
             return buf
         finally:
