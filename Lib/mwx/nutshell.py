@@ -2424,20 +2424,16 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     buf._load_textfile(res.text, filename)
                     self.swap_buffer(buf, lineno)
                     return True
-                ## return False
-                raise Exception("The requested URL was not found")
+                return False
+                ## raise Exception("The requested URL was not found", filename)
             if buf._load_file(filename):
                 self.swap_buffer(buf, lineno)
                 return True
             return False
-        except FileNotFoundError:
-            self.post_message(f"New file: {filename!r}.")
+        except OSError as e:
+            self.post_message(e)
             self.delete_buffer(buf)
             return False
-        except Exception as e:
-            self.post_message(f"Failed to load {filename!r}.", e)
-            self.delete_buffer(buf)
-            raise
     
     def find_file(self, filename=None):
         """Open the specified file."""
@@ -2454,6 +2450,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             buf = self.create_buffer(filename)
             buf._Buffer__mtime = 0 # => need_buffer_save
             self.swap_buffer(buf)
+            self.post_message(f"New file: {filename!r}.")
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
@@ -2700,7 +2697,7 @@ class Nautilus(EditorInterface, Shell):
         """Reset the shell target object; Rename the parent title.
         """
         if not hasattr(obj, '__dict__'):
-            raise TypeError("primitive objects cannot be targeted")
+            raise TypeError("primitive objects cannot be targets")
         
         self.__target = obj
         self.locals = obj.__dict__
