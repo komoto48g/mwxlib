@@ -34,7 +34,7 @@ class MyDropTarget(wx.DropTarget):
         def _load(f):
             if editor.load_file(f):
                 editor.buffer.SetFocus()
-                editor.post_message(f"Loaded {f!r} successfully.")
+                editor.message(f"Loaded {f!r} successfully.")
         self.GetData()
         data = self.datado.Data
         if data:

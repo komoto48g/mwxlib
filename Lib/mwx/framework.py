@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.1.3"
+__version__ = "1.1.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1028,27 +1028,34 @@ class FileDropLoader(wx.DropTarget):
         self.DataObject.Add(self.textdo)
         self.DataObject.Add(self.filedo, True)
     
+    def OnDragOver(self, x, y, result):
+        index, flags = self.target.HitTest((x, y))
+        if index != -1:
+            self.target.Selection = index
+        return result
+    
     def OnData(self, x, y, result):
-        editor = self.target.current_editor
+        editor = self.target.Parent.current_editor
         self.GetData()
         if self.textdo.TextLength > 1:
             f = self.textdo.Text.strip()
             res = editor.load_file(f)
             if res:
                 editor.buffer.SetFocus()
+                editor.message(f"Loaded {f!r} successfully.")
                 result = wx.DragCopy
             elif res is None:
-                editor.post_message("Load canceled.")
+                editor.message(f"Loading {f!r} canceled.")
                 result = wx.DragCancel
             else:
-                editor.post_message(f"Loading {f!r} failed.")
+                editor.message(f"Loading {f!r} failed.")
                 result = wx.DragNone
-            self.textdo.Text = ''
+            self.textdo.SetText('')
         else:
             for f in self.filedo.Filenames:
                 if editor.load_file(f):
                     editor.buffer.SetFocus()
-                    editor.post_message(f"Loaded {f!r} successfully.")
+                    editor.message(f"Loaded {f!r} successfully.")
             self.filedo.SetData(wx.DF_FILENAME, None)
         return result
 
@@ -1159,7 +1166,7 @@ class ShellFrame(MiniFrame):
         
         self.ghost.AddPage(self.Bookshelf, "Bookshelf", bitmap=Icon('book'))
         
-        self.ghost.SetDropTarget(FileDropLoader(self))
+        self.ghost.SetDropTarget(FileDropLoader(self.ghost))
         
         self.watcher = AuiNotebook(self, size=(600,400), name="watcher")
         self.watcher.AddPage(self.ginfo, "globals")
