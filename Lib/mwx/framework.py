@@ -1024,9 +1024,10 @@ class FileDropLoader(wx.DropTarget):
         self.target = target
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
-        self.DataObject = wx.DataObjectComposite()
-        self.DataObject.Add(self.textdo)
-        self.DataObject.Add(self.filedo, True)
+        self.do = wx.DataObjectComposite()
+        self.do.Add(self.textdo)
+        self.do.Add(self.filedo)
+        self.SetDataObject(self.do)
     
     def OnDragOver(self, x, y, result):
         index, flags = self.target.HitTest((x, y))

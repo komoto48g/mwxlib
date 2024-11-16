@@ -14,9 +14,10 @@ class MyDropTarget(wx.DropTarget):
         self.tree = tree
         self.datado = wx.CustomDataObject("TreeItem")
         self.filedo = wx.FileDataObject()
-        self.DataObject = wx.DataObjectComposite()
-        self.DataObject.Add(self.datado)
-        self.DataObject.Add(self.filedo, True)
+        self.do = wx.DataObjectComposite()
+        self.do.Add(self.datado)
+        self.do.Add(self.filedo)
+        self.SetDataObject(self.do)
     
     def OnDragOver(self, x, y, result):
         item, flags = self.tree.HitTest((x, y))
@@ -205,8 +206,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         if data:
             dd = wx.CustomDataObject("TreeItem")
             dd.SetData(data.filename.encode())
-            do = wx.DataObjectComposite()
-            do.Add(dd)
             dropSource = wx.DropSource()
-            dropSource.SetData(do)
+            dropSource.SetData(dd)
             dropSource.DoDragDrop(wx.Drag_AllowMove) # -> wx.DragResult
