@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.1.4"
+__version__ = "1.1.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1656,6 +1656,8 @@ class ShellFrame(MiniFrame):
             self.linfo.watch(obj.__dict__)
             self.ginfo.watch(None)
             self.popup_window(self.linfo)
+        else:
+            raise TypeError("primitive objects cannot be set as watch targets")
     
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)

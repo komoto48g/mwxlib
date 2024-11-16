@@ -1451,7 +1451,7 @@ class Frame(mwx.Frame):
                     frame.name = os.path.basename(fn) # new name and pathname
                 output_frames.append(frame)
                 print(' ', self.message("\b done."))
-            except (PermissionError, OSError) as e:
+            except OSError as e:
                 print('-', self.message("\b failed.", e))
         
         frames = output_frames
