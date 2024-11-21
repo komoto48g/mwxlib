@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.1.5"
+__version__ = "1.1.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1979,7 +1979,7 @@ class ShellFrame(MiniFrame):
         if self.findDlg:
             self.OnFindClose(None)
         wnd.EnsureVisible(wnd.cline)
-        wnd.EnsureLineMoreOnScreen(wnd.cline)
+        wnd.ensureLineMoreOnScreen(wnd.cline)
     
     def OnFindPrev(self, evt):
         self.OnFindNext(evt, backward=True)

@@ -330,7 +330,7 @@ class Debugger(Pdb):
                     buffer.recenter(3)
                 buffer.goto_line(lineno - 1)
                 buffer.pointer = lineno - 1 # (->) pointer:marker
-                buffer.EnsureLineMoreOnScreen(lineno - 1)
+                buffer.ensureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
     

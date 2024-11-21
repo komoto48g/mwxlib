@@ -1108,7 +1108,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 break
             lc = la
         self.ToggleFold(lc)
-        self.EnsureLineOnScreen(lc)
+        self.ensureLineOnScreen(lc)
         return lc
     
     def get_region(self, line):
@@ -1265,7 +1265,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         w, h = self.PointFromPosition(pos)
         return self.FirstVisibleLine + h//self.TextHeight(0)
     
-    def EnsureLineOnScreen(self, line):
+    def ensureLineOnScreen(self, line):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
         """
@@ -1277,7 +1277,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         elif vl > hl + n - 1:
             self.ScrollToLine(vl - n + 1)
     
-    def EnsureLineMoreOnScreen(self, line, offset=0):
+    def ensureLineMoreOnScreen(self, line, offset=0):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
         If the line is at the screen edge, recenter it.
@@ -2446,7 +2446,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     for fn in dlg.Paths:
                         self.find_file(fn)
             return
-        if self.load_file(filename) == False:
+        if self.load_file(filename) == False: # not None
             buf = self.create_buffer(filename)
             buf._Buffer__mtime = 0 # => need_buffer_save
             self.swap_buffer(buf)
