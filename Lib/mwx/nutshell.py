@@ -667,35 +667,30 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.__mark = -1
         self.__stylus = {}
     
-    __dnd_from = None
     __dnd_flag = 0
     
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.__dnd_from = evt.EventObject
-        try:
-            EditorInterface.__dnd_flag = (evt.Position < self.bolc) # force copy
-        except AttributeError:
+        if isinstance(self, Shell):
+            EditorInterface.__dnd_flag = (evt.Position < self.bolc) # readonly
+        else:
             EditorInterface.__dnd_flag = 0
         evt.Skip()
     
     def OnDragging(self, evt): #<wx._core.StyledTextEvent>
-        _from = EditorInterface.__dnd_from
-        _to = evt.EventObject
-        if isinstance(_from, Shell) and _from is not _to:  # from shell to buffer
-            wx.UIActionSimulator().KeyDown(wx.WXK_CONTROL) # force copy
-        try:
-            if evt.Position < self.bolc:
-                evt.DragResult = wx.DragNone # Don't drop (as readonly)
+        if isinstance(self, Shell):
+            if evt.Position < self.bolc: # target is readonly
+                evt.DragResult = wx.DragNone
             elif EditorInterface.__dnd_flag:
-                evt.DragResult = wx.DragCopy # Don't move
-        except AttributeError:
-            pass
+                ## from shell to shell
+                evt.DragResult = wx.DragCopy if wx.GetKeyState(wx.WXK_CONTROL) else wx.DragNone
+        else:
+            if EditorInterface.__dnd_flag:
+                ## from shell to buffer
+                evt.DragResult = wx.DragCopy if wx.GetKeyState(wx.WXK_CONTROL) else wx.DragNone
         evt.Skip()
     
     def OnDragged(self, evt): #<wx._core.StyledTextEvent>
-        EditorInterface.__dnd_from = None
         EditorInterface.__dnd_flag = 0
-        wx.UIActionSimulator().KeyUp(wx.WXK_CONTROL)
         evt.Skip()
     
     ## --------------------------------
