@@ -235,11 +235,11 @@ class AxesImagePhantom:
     
     @unit.setter
     def unit(self, v):
-        if v is None:
+        if v is None or np.isnan(v): # nan => undefined
             v = self.parent.unit
             self.__localunit = None
-        elif np.isnan(v) or np.isinf(v):
-            raise ValueError("The unit value cannot be NaN or Inf")
+        elif np.isinf(v):
+            raise ValueError("The unit value must not be inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
         else:
@@ -802,10 +802,8 @@ class GraphPlot(MatplotPanel):
     
     @unit.setter
     def unit(self, v):
-        if v is None:
-            raise ValueError("The globalunit must be non-nil value")
-        elif np.isnan(v) or np.isinf(v):
-            raise ValueError("Axis limits cannot be NaN or Inf")
+        if v is None or np.isnan(v) or np.isinf(v):
+            raise ValueError("The unit value must not be nan or inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
         else:
