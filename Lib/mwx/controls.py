@@ -73,7 +73,7 @@ class Param:
             v = self.value
         try:
             return self.__format(v)
-        except ValueError:
+        except (TypeError, ValueError):
             return str(v)
     
     def __int__(self):
@@ -93,7 +93,7 @@ class Param:
                 return
         elif isinstance(v, str):
             try:
-                v = self.__eval(v.replace(',', '')) # eliminates commas; includes nan, inf
+                v = self.__eval(v.replace(',', '')) # eliminates commas
             except Exception:
                 v = self.value
                 internal_callback = False
@@ -202,9 +202,10 @@ class Param:
     def index(self):
         """A knob index -> value.
         Returns -1 if the value is not defined."""
-        if self:
-            return int(np.searchsorted(self.range, self.value))
-        return -1
+        v = self.value
+        if np.isnan(v) or np.isinf(v):
+            return -1
+        return int(np.searchsorted(self.range, v))
     
     @index.setter
     def index(self, j):
@@ -267,7 +268,7 @@ class LParam(Param):
         v = self.value
         if np.isnan(v) or np.isinf(v):
             return -1
-        return int(round((self.value - self.min) / self.step))
+        return int(round((v - self.min) / self.step))
     
     @index.setter
     def index(self, j):

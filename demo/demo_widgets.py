@@ -1,7 +1,7 @@
 #! python3
 import sys
 import wx
-from numpy import inf
+from numpy import nan, inf
 
 sys.path.append("../Lib")
 from mwx.controls import Param, LParam
@@ -66,7 +66,7 @@ class Plugin(Layer):
         )
         
         self.L = LParam('L', (-1, 1, 0.01), 0, handler=self.trace)
-        self.U = Param('U', (1,2,3,inf), handler=print)
+        self.U = Param('U', (1,2,3,inf), nan, handler=print)
         
         self.layout((
                 self.L,
