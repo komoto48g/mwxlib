@@ -2425,8 +2425,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.swap_buffer(buf, lineno)
                 return True
             return False
-        except OSError as e:
-            self.post_message(e)
+        except (OSError, UnicodeDecodeError) as e:
+            self.post_message(f"Failed to load:", e)
             self.delete_buffer(buf)
             return False
     
@@ -2467,8 +2467,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     self.default_buffer = None
                 return True
             return False
-        except Exception as e:
-            self.post_message(f"Failed to save {filename!r}.", e)
+        except (OSError, UnicodeDecodeError) as e:
+            self.post_message("Failed to save:", e)
             return False
     
     def load_buffer(self, buf=None):
