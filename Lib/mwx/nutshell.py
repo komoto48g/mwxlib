@@ -220,21 +220,21 @@ class AutoCompInterfaceMixin:
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = next(self.gen_text_at_caret(), None)
+        text = self.SelectedText or self.expr_at_caret or self.line_at_caret
         if text:
             text = introspect.getRoot(text, terminator='(')
             try:
                 obj = self.eval(text)
                 self.help(obj)
             except Exception as e:
-                self.message("- {} : {!r}".format(e, text))
+                self.message(e)
     
     def call_helpTip(self, evt):
         """Show a calltip for the selected function."""
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = next(self.gen_text_at_caret(), None)
+        text = self.SelectedText or self.expr_at_caret or self.line_at_caret
         if text:
             p = self.cpos
             self.autoCallTipShow(text,
@@ -2083,34 +2083,21 @@ class Buffer(EditorInterface, EditWindow):
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
     
-    def gen_text_at_caret(self):
-        """Generates the selected text,
-        otherwise the line or expression at the caret.
-        """
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.line_at_caret
-                yield self.expr_at_caret
-        return filter(None, _gen_text())
-    
     def eval_line(self):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        status = "No words"
-        for text in self.gen_text_at_caret():
+        text = self.SelectedText or self.expr_at_caret
+        if text:
             try:
                 obj = eval(text, self.globals, self.locals)
             except Exception as e:
-                status = "- {} : {!r}".format(e, text)
+                self.message(e)
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(text)
-                return
-        self.message(status)
+        else:
+            self.message("No words")
     
     def exec_region(self):
         try:
@@ -3592,39 +3579,25 @@ class Nautilus(EditorInterface, Shell):
         self.cpos, self.anchor = self.anchor, self.cpos
         self.EnsureCaretVisible()
     
-    def gen_text_at_caret(self):
-        """Generates the selected text,
-        otherwise the line or expression at the caret.
-        (override) Generates command line (that starts with a prompt).
-        """
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.getCommand() # self.line_at_caret
-                yield self.expr_at_caret
-        return filter(None, _gen_text())
-    
     def eval_line(self, evt):
         """Evaluate the selected word or line."""
         if self.CallTipActive():
             self.CallTipCancel()
         
-        status = "No words"
-        for text in self.gen_text_at_caret():
+        text = self.SelectedText or self.expr_at_caret
+        if text:
             tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 obj = self.eval(cmd)
             except Exception as e:
-                status = "- {} : {!r}".format(e, text)
+                self.message(e)
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(cmd)
-                return
-        self.message(status)
+        else:
+            self.message("No words")
     
     def exec_region(self, evt):
         """Execute the the selected region."""
