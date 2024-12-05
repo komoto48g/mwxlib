@@ -210,20 +210,18 @@ class Plugin(Layer):
     
     def set_offset(self, tc):
         """Set offset value by referring to ss/to value."""
-        try:
+        if self._path:
             self.mc.Seek(self.DELTA + int(tc.value * 1000))
-        except Exception:
-            pass
     
     def get_offset(self, tc):
         """Get offset value and assigns it to ss/to value."""
-        try:
+        if self._path:
             tc.value = round(self.mc.Tell()) / 1000
-        except Exception:
-            pass
     
     def set_crop(self):
         """Set crop area (W:H:Left:Top) to roi."""
+        if not self._path:
+            return
         frame = self.graph.frame
         if frame:
             try:
@@ -238,6 +236,8 @@ class Plugin(Layer):
     
     def get_crop(self):
         """Get crop area (W:H:Left:Top) from roi."""
+        if not self._path:
+            return
         crop = ''
         frame = self.graph.frame
         if frame:
@@ -246,28 +246,24 @@ class Plugin(Layer):
                 xo, yo = nx[0], ny[1]
                 xp, yp = nx[1], ny[0]
                 crop = "{}:{}:{}:{}".format(xp-xo, yp-yo, xo, yo)
-        if self._path and not crop:
+        if not crop:
             crop = "{}:{}:0:0".format(*self.video_size)
         self.crop.Value = crop
     
     def seekto(self, offset):
         """Seek position with offset [ms] from the `to` position."""
-        try:
+        if self._path:
             t = self.to.value + offset/1000
             if 0 <= t < self.video_dur:
                 self.to.value = round(t, 3)
             self.set_offset(self.to)
-        except AttributeError:
-            pass
     
     def seekd(self, offset):
         """Seek position with offset [ms] from the current position."""
-        try:
+        if self._path:
             t = self.mc.Tell() + offset
             if 0 <= t < self.video_dur * 1000:
                 self.mc.Seek(self.DELTA + t)
-        except AttributeError:
-            pass
     
     def snapshot(self):
         """Create a snapshot of the current frame.
