@@ -712,24 +712,25 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             return params
         return filter(lambda c: getattr(c, 'check', None), params)
     
-    def set_params(self, argv=None, checked_only=False):
+    def set_params(self, argv, checked_only=False):
         params = self.get_params(checked_only)
-        if argv is None:
-            for p in params:
-                try:
-                    p.reset()
-                except (AttributeError, TypeError):
-                    pass
-        else:
-            for p, v in zip(params, argv):
-                try:
-                    p.reset(v) # eval v:str -> value
-                except AttributeError:
-                    p.value = v
-                except Exception as e: # failed to eval
-                    print(f"- Failed to reset {p!r}.", e)
+        for p, v in zip(params, argv):
+            try:
+                p.reset(v) # eval v:str -> value
+            except AttributeError:
+                p.value = v
+            except Exception as e:
+                print(f"- Failed to eval {v}:", e)
     
-    reset_params = set_params
+    def reset_params(self, checked_only=False):
+        params = self.get_params(checked_only)
+        for p in params:
+            try:
+                p.reset()
+            except (AttributeError, TypeError):
+                ## TypeError might occur if p.reset(v) is called with
+                ## missing 1 required positional argument.
+                pass
     
     def copy_to_clipboard(self, checked_only=False):
         params = self.get_params(checked_only)

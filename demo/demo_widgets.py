@@ -76,7 +76,6 @@ class Plugin(Layer):
             type='slider', style='chkbox', cw=100, lw=20, tw=40, h=22,
         )
         
-        ## Regular wx.TextCtrl is not handled by Clipboard copy and paste.
         self.textctrl = wx.TextCtrl(self,
                         value=TextCtrl.__doc__,
                         size=(200,100),

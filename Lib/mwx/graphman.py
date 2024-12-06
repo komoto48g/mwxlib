@@ -16,6 +16,7 @@ import platform
 import re
 import wx
 from wx import aui
+from wx import stc
 
 from matplotlib import cm
 from matplotlib import colors
@@ -322,18 +323,22 @@ class LayerInterface(CtrlInterface):
         except AttributeError:
             self.parameters = None
         
-        def copy_params(**kwargs):
-            if self.parameters:
-                return self.copy_to_clipboard(**kwargs)
+        def copy_params(evt, checked_only=False):
+            if isinstance(evt.EventObject, (wx.TextEntry, stc.StyledTextCtrl)):
+                evt.Skip()
+            elif self.parameters:
+                self.copy_to_clipboard(checked_only)
         
-        def paste_params(**kwargs):
-            if self.parameters:
-                return self.paste_from_clipboard(**kwargs)
+        def paste_params(evt, checked_only=False):
+            if isinstance(evt.EventObject, (wx.TextEntry, stc.StyledTextCtrl)):
+                evt.Skip()
+            elif self.parameters:
+                self.paste_from_clipboard(checked_only)
         
-        def reset_params(**kwargs):
+        def reset_params(evt, checked_only=False):
             self.Draw(None)
             if self.parameters:
-                return self.set_params(**kwargs)
+                self.reset_params(checked_only)
         
         self.handler.append({ # DNA<Layer>
             None : {
@@ -356,15 +361,15 @@ class LayerInterface(CtrlInterface):
         })
         self.menu = [
             (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
-                lambda v: copy_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
+                lambda v: copy_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
                 
             (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
-                lambda v: paste_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
+                lambda v: paste_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
             (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params", Icon('-'),
-                lambda v: reset_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
+                lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
             (wx.ID_EDIT, "&Edit module", "Edit module", Icon('pen'),
