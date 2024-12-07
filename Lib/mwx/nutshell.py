@@ -1745,14 +1745,30 @@ class Buffer(EditorInterface, EditWindow):
         
         Returns:
             None : no file
-            = 0  : a file
+            = 0  : a file (even if not found)
             > 0  : a file edited externally
             < 0  : a url file
         """
-        if self.__path.is_file():
+        try:
             return self.__path.stat().st_mtime - self.__mtime
-        else:
+        except Exception:
+            if isinstance(self.__mtime, float): # path not resolved.
+                self.__mtime = False
             return self.__mtime
+    
+    @property
+    def need_buffer_save(self):
+        """Returns whether the buffer should be saved.
+        The file has been modified internally.
+        """
+        return self.mtdelta is not None and self.IsModified()
+    
+    @property
+    def need_buffer_load(self):
+        """Returns whether the buffer should be loaded.
+        The file has been modified externally.
+        """
+        return self.mtdelta is not None and self.mtdelta > 0
     
     @property
     def caption_prefix(self):
@@ -1776,20 +1792,6 @@ class Buffer(EditorInterface, EditWindow):
                 self.parent.handler('buffer_caption_updated', self)
         except AttributeError:
             pass
-    
-    @property
-    def need_buffer_save(self):
-        """Returns whether the buffer should be saved.
-        The file has been modified internally.
-        """
-        return self.mtdelta is not None and self.IsModified()
-    
-    @property
-    def need_buffer_load(self):
-        """Returns whether the buffer should be loaded.
-        The file has been modified externally.
-        """
-        return self.mtdelta is not None and self.mtdelta > 0
     
     def __init__(self, parent, filename, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
