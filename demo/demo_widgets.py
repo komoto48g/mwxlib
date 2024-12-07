@@ -5,7 +5,7 @@ from numpy import nan, inf
 
 sys.path.append("../Lib")
 from mwx.controls import Param, LParam
-from mwx.controls import Button, ToggleButton, TextCtrl, Choice, Icon
+from mwx.controls import Button, ToggleButton, TextBox, Choice, Icon
 from mwx.framework import StatusBar
 from mwx.graphman import Layer
 
@@ -36,7 +36,7 @@ class Plugin(Layer):
                         icon=('w','v'), # must be the same size icon
                         size=(120,-1),
                         )
-        self.text = TextCtrl(self, label="control",
+        self.text = TextBox(self, label="control",
                         ## handler=lambda v: self.statusline(f"Enter {v.Value!r}"),
                         ## updater=lambda v: self.statusline(f"Update {v.Value!r}"),
                         handler=on_enter,
@@ -77,13 +77,13 @@ class Plugin(Layer):
         )
         
         self.textctrl = wx.TextCtrl(self,
-                        value=TextCtrl.__doc__,
-                        size=(200,100),
-                        style=wx.TE_MULTILINE
-                             |wx.TE_PROCESS_TAB
-                             |wx.TE_RICH
-                             |wx.TE_AUTO_URL
-                        )
+                                    value=wx.TextCtrl.__doc__,
+                                    size=(200,100),
+                                    style=wx.TE_MULTILINE
+                                         |wx.TE_PROCESS_TAB
+                                         |wx.TE_RICH
+                                         |wx.TE_AUTO_URL
+                            )
         self.statusline = StatusBar(self)
         
         self.layout((

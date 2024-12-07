@@ -1042,7 +1042,7 @@ class ToggleButton(wx.ToggleButton):
                 self.SetBitmap(Icon(icon))
 
 
-class TextCtrl(wx.Control):
+class TextBox(wx.Control):
     """Text control
     
     Args:
@@ -1094,6 +1094,9 @@ class TextCtrl(wx.Control):
             self._handler(self)
         except AttributeError:
             pass
+
+
+TextCtrl = TextBox #: for backward compatibility
 
 
 class Choice(wx.Control):

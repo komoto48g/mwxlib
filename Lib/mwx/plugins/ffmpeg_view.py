@@ -10,7 +10,7 @@ import wx.media
 
 from mwx.framework import _F, hotkey
 from mwx.graphman import Layer
-from mwx.controls import LParam, Icon, Button, TextCtrl
+from mwx.controls import LParam, Icon, Button, TextBox
 
 
 def read_info(path):
@@ -101,7 +101,7 @@ class Plugin(Layer):
                         handler=self.set_offset,
                         updater=self.get_offset,
                         )
-        self.crop = TextCtrl(self, icon="cut", size=(130,-1),
+        self.crop = TextBox(self, icon="cut", size=(130,-1),
                         handler=self.set_crop,
                         updater=self.get_crop,
                         )
