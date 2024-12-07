@@ -4,6 +4,7 @@
 from functools import wraps
 from importlib import import_module
 from contextlib import contextmanager
+from pathlib import Path
 from pprint import pformat
 from bdb import BdbQuit
 import traceback
@@ -1721,10 +1722,19 @@ class Buffer(EditorInterface, EditWindow):
         return self.__filename
     
     def update_filestamp(self, fn):
-        if fn and os.path.isfile(fn):
-            self.__mtime = os.path.getmtime(fn) # update timestamp (modified time)
+        self.__path = Path(fn)
+        if self.__path.is_file():
+            self.__mtime = self.__path.stat().st_mtime # update timestamp (modified time)
         else:
-            self.__mtime = None
+            if re.match(url_re, fn):
+                self.__mtime = -1
+            else:
+                try:
+                    self.__path.resolve(True) # Check if the path format is valid.
+                except FileNotFoundError:
+                    self.__mtime = False
+                except Exception:
+                    self.__mtime = None
         if self.__filename != fn:
             self.__filename = fn
             self.update_caption()
@@ -1739,12 +1749,10 @@ class Buffer(EditorInterface, EditWindow):
             > 0  : a file edited externally
             < 0  : a url file
         """
-        fn = self.filename
-        if os.path.isfile(fn):
-            return os.path.getmtime(fn) - self.__mtime
-        if re.match(url_re, fn):
-            return -1
-        return None
+        if self.__path.is_file():
+            return self.__path.stat().st_mtime - self.__mtime
+        else:
+            return self.__mtime
     
     @property
     def caption_prefix(self):
@@ -2413,7 +2421,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return True
             return False
         except (OSError, UnicodeDecodeError) as e:
-            self.post_message(f"Failed to load:", e)
+            self.post_message("Failed to load:", e)
             self.delete_buffer(buf)
             return False
     
@@ -2428,11 +2436,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     for fn in dlg.Paths:
                         self.find_file(fn)
             return
-        if self.load_file(filename) == False: # not None
+        if self.load_file(filename) == False: # noqa: not None
             buf = self.create_buffer(filename)
-            buf._Buffer__mtime = 0 # => need_buffer_save
             self.swap_buffer(buf)
-            self.post_message(f"New file: {filename!r}.")
+            self.post_message("New file.")
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
