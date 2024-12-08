@@ -1725,16 +1725,15 @@ class Buffer(EditorInterface, EditWindow):
         self.__path = Path(fn)
         if self.__path.is_file():
             self.__mtime = self.__path.stat().st_mtime # update timestamp (modified time)
+        elif re.match(url_re, fn):
+            self.__mtime = -1
         else:
-            if re.match(url_re, fn):
-                self.__mtime = -1
-            else:
-                try:
-                    self.__path.resolve(True) # Check if the path format is valid.
-                except FileNotFoundError:
-                    self.__mtime = False
-                except Exception:
-                    self.__mtime = None
+            try:
+                self.__path.resolve(True) # Check if the path format is valid.
+            except FileNotFoundError:
+                self.__mtime = False # valid path (but not found)
+            except OSError:
+                self.__mtime = None # *invalid path*
         if self.__filename != fn:
             self.__filename = fn
             self.update_caption()
@@ -1751,10 +1750,11 @@ class Buffer(EditorInterface, EditWindow):
         """
         try:
             return self.__path.stat().st_mtime - self.__mtime
-        except Exception:
-            if isinstance(self.__mtime, float): # path not resolved.
-                self.__mtime = False
-            return self.__mtime
+        except FileNotFoundError:
+            self.__mtime = False  # valid path (but not found)
+        except OSError:
+            pass
+        return self.__mtime
     
     @property
     def need_buffer_save(self):
