@@ -33,7 +33,8 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 
 
 ## URL pattern (flag = re.M | re.A)
-url_re = r"https?://[\w/:%#$&?()~.=+-]+"
+## url_re = r"https?://[\w/:%#$&?()~.=+-]+"
+url_re = r"https?://[\w/:%#$&?~.=+-]+"  # excluding ()
 
 ## no-file pattern
 nofile_re = r'[\/:*?"<>|]'
@@ -630,7 +631,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         ## Custom indicators ([BUG] indicator=1 is reset when the buffer is udpated.)
         ## [10-11] filter_text
-        ## [2] URL for load_file
+        ## [2] URL
         ## [3] match_paren
         self.IndicatorSetStyle(10, stc.STC_INDIC_TEXTFORE)
         self.IndicatorSetForeground(10, "red")
@@ -1962,20 +1963,20 @@ class Buffer(EditorInterface, EditWindow):
             ## Processing text selection, dragging, or dragging+
             evt.Skip()
             return
+        
         pos = evt.Position
+        self.goto_char(pos) # Clear selection
         i = 2
         if self.IndicatorValueAt(i, pos): # [C-indic click]
             p = self.IndicatorStart(i, pos)
             q = self.IndicatorEnd(i, pos)
             url = self.GetTextRange(p, q).strip()
-            self.message("URL {!r}".format(url))
             if wx.GetKeyState(wx.WXK_SHIFT): # [C-S-indic click]
                 import webbrowser
                 return webbrowser.open(url)
             else:
                 ## Note: post-call for the confirmation dialog.
                 wx.CallAfter(self.parent.load_file, url)
-        self.anchor = pos # Clear selection
     
     def on_modified(self, buf):
         """Called when the buffer is modified."""
@@ -2416,8 +2417,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     buf._load_textfile(res.text, filename)
                     self.swap_buffer(buf, lineno)
                     return True
-                return False
-                ## raise Exception("The requested URL was not found", filename)
+                ## raise Exception("URL not found:", filename)
+                res.raise_for_status()  # raise HTTP error
             if buf._load_file(filename):
                 self.swap_buffer(buf, lineno)
                 return True
