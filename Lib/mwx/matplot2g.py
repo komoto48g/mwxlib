@@ -88,7 +88,7 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     if src.dtype == np.uint8: # RGB or gray image <uint8>
         return bins, (0, 255), src
     
-    if hasattr(cutoff, '__iter__'): # cutoff vlim:list is specified.
+    if hasattr(cutoff, '__iter__'): # cutoff vlim: (vmin, vmax) is specified.
         a, b = cutoff
     elif cutoff > 0:
         a = np.percentile(src, cutoff)
@@ -129,7 +129,7 @@ class AxesImagePhantom:
     """
     def __init__(self, parent, buf, name, show=True,
                  localunit=None, aspect=1.0, **attributes):
-        self.__owner = parent
+        self.parent = parent
         self.__name = name
         self.__localunit = localunit or None # [+] value, no assertion
         self.__aspect_ratio = aspect
@@ -141,7 +141,7 @@ class AxesImagePhantom:
              threshold = self.parent.nbytes_threshold,
         )
         self.__bins = bins
-        self.__vlim = vlim
+        self.__cuts = vlim
         self.__art = parent.axes.imshow(img,
                   cmap = cm.gray,
                 aspect = 'equal',
@@ -157,24 +157,25 @@ class AxesImagePhantom:
     def __eq__(self, x):
         return x is self.__art
     
-    parent = property(lambda self: self.__owner)
-    artist = property(lambda self: self.__art)
-    name = property(lambda self: self.__name)
-    buffer = property(lambda self: self.__buf)  # buffer.setter is defined below.
-    binning = property(lambda self: self.__bins)
+    artist = property(
+        lambda self: self.__art)
+    
+    binning = property(
+        lambda self: self.__bins,
+        doc="Binning value resulting from the score_percentile.")
+    
+    cuts = property(
+        lambda self: self.__cuts,
+        doc="Lower/Upper cutoff values of the buffer.")
     
     image = property(
         lambda self: self.__art.get_array(),
         doc="A displayed image array<uint8>.")
     
-    vlim = property(
-        lambda self: self.__vlim,
-        doc="Image lower/upper values.")
-    
     clim = property(
         lambda self: self.__art.get_clim(),
         lambda self,v: self.__art.set_clim(v),
-        doc="Buffer lower/upper values.")
+        doc="Lower/Upper color limit values of the buffer.")
     
     attributes = property(
         lambda self: self.__attributes,
@@ -218,6 +219,10 @@ class AxesImagePhantom:
     selector = _Property('Selector')
     markers = _Property('Markers')
     region = _Property('Region')
+    
+    @property
+    def name(self):
+        return self.__name
     
     @name.setter
     def name(self, v):
@@ -288,7 +293,7 @@ class AxesImagePhantom:
              threshold = self.parent.nbytes_threshold,
         )
         self.__bins = bins
-        self.__vlim = vlim
+        self.__cuts = vlim
         self.__art.set_array(img)
         self.parent.handler('frame_modified', self)
     
@@ -315,6 +320,10 @@ class AxesImagePhantom:
         self.roi[:] = v # cannot broadcast input array into different shape
         self.update_buffer()
     
+    @property
+    def buffer(self):
+        return self.__buf
+
     @buffer.setter
     def buffer(self, v):
         self.update_buffer(v)
@@ -951,7 +960,7 @@ class GraphPlot(MatplotPanel):
             data = frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = _to_image(data, frame.vlim)
+            bins, vlim, img = _to_image(data, frame.cuts)
             Clipboard.imwrite(img)
             self.message("Write buffer to clipboard.")
         except Exception as e:
