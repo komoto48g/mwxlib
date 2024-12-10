@@ -33,7 +33,8 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 
 
 ## URL pattern (flag = re.M | re.A)
-url_re = r"https?://[\w/:%#$&?()~.=+-]+"
+## url_re = r"https?://[\w/:%#$&?()~.=+-]+"
+url_re = r"https?://[\w/:%#$&?~.=+-]+"  # excluding ()
 
 ## no-file pattern
 nofile_re = r'[\/:*?"<>|]'
@@ -630,7 +631,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         ## Custom indicators ([BUG] indicator=1 is reset when the buffer is udpated.)
         ## [10-11] filter_text
-        ## [2] URL for load_file
+        ## [2] URL
         ## [3] match_paren
         self.IndicatorSetStyle(10, stc.STC_INDIC_TEXTFORE)
         self.IndicatorSetForeground(10, "red")
@@ -1725,16 +1726,15 @@ class Buffer(EditorInterface, EditWindow):
         self.__path = Path(fn)
         if self.__path.is_file():
             self.__mtime = self.__path.stat().st_mtime # update timestamp (modified time)
+        elif re.match(url_re, fn):
+            self.__mtime = -1
         else:
-            if re.match(url_re, fn):
-                self.__mtime = -1
-            else:
-                try:
-                    self.__path.resolve(True) # Check if the path format is valid.
-                except FileNotFoundError:
-                    self.__mtime = False
-                except Exception:
-                    self.__mtime = None
+            try:
+                self.__path.resolve(True) # Check if the path format is valid.
+            except FileNotFoundError:
+                self.__mtime = False # valid path (but not found)
+            except OSError:
+                self.__mtime = None # *invalid path*
         if self.__filename != fn:
             self.__filename = fn
             self.update_caption()
@@ -1751,10 +1751,11 @@ class Buffer(EditorInterface, EditWindow):
         """
         try:
             return self.__path.stat().st_mtime - self.__mtime
-        except Exception:
-            if isinstance(self.__mtime, float): # path not resolved.
-                self.__mtime = False
-            return self.__mtime
+        except FileNotFoundError:
+            self.__mtime = False  # valid path (but not found)
+        except OSError:
+            pass
+        return self.__mtime
     
     @property
     def need_buffer_save(self):
@@ -1962,20 +1963,20 @@ class Buffer(EditorInterface, EditWindow):
             ## Processing text selection, dragging, or dragging+
             evt.Skip()
             return
+        
         pos = evt.Position
+        self.goto_char(pos) # Clear selection
         i = 2
         if self.IndicatorValueAt(i, pos): # [C-indic click]
             p = self.IndicatorStart(i, pos)
             q = self.IndicatorEnd(i, pos)
             url = self.GetTextRange(p, q).strip()
-            self.message("URL {!r}".format(url))
             if wx.GetKeyState(wx.WXK_SHIFT): # [C-S-indic click]
                 import webbrowser
                 return webbrowser.open(url)
             else:
                 ## Note: post-call for the confirmation dialog.
                 wx.CallAfter(self.parent.load_file, url)
-        self.anchor = pos # Clear selection
     
     def on_modified(self, buf):
         """Called when the buffer is modified."""
@@ -2416,8 +2417,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     buf._load_textfile(res.text, filename)
                     self.swap_buffer(buf, lineno)
                     return True
-                return False
-                ## raise Exception("The requested URL was not found", filename)
+                ## raise Exception("URL not found:", filename)
+                res.raise_for_status()  # raise HTTP error
             if buf._load_file(filename):
                 self.swap_buffer(buf, lineno)
                 return True
