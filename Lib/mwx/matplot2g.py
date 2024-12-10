@@ -157,6 +157,57 @@ class AxesImagePhantom:
     def __eq__(self, x):
         return x is self.__art
     
+    def update_attributes(self, attr=None, **kwargs):
+        """Update frame-specifc attributes.
+        The frame holds any attributes with dictionary
+        There are some keys which acts as the value setter when given,
+        `annotation` also shows the message with infobar
+        `localunit` also updates the frame.unit
+        """
+        attr = attr or {}
+        attr.update(kwargs)
+        self.__attributes.update(attr)
+        
+        if 'localunit' in attr:
+            self.unit = attr['localunit']
+        
+        if 'aspect' in attr:
+            self.aspect_ratio = attr['aspect']
+        
+        if 'annotation' in attr:
+            v = attr['annotation']
+            if self.parent.frame is self:
+                self.parent.infobar.ShowMessage(v)
+        
+        if {'pathname', 'annotation'} & attr.keys():
+            self.parent.handler('frame_updated', self)
+    
+    def update_buffer(self, buf=None):
+        """Update buffer and the image (internal use only)."""
+        if buf is not None:
+            self.__buf = _to_buffer(buf)
+        
+        bins, vlim, img = _to_image(self.__buf,
+                cutoff = self.parent.score_percentile,
+             threshold = self.parent.nbytes_threshold,
+        )
+        self.__bins = bins
+        self.__cuts = vlim
+        self.__art.set_array(img)
+        self.parent.handler('frame_modified', self)
+    
+    def update_extent(self):
+        """Update logical extent of the image (internal use only)."""
+        h, w = self.__buf.shape[:2]
+        ux, uy = self.xy_unit
+        w *= ux/2
+        h *= uy/2
+        self.__art.set_extent((-w,w,-h,h))
+    
+    selector = _Property('Selector')
+    markers = _Property('Markers')
+    region = _Property('Region')
+    
     artist = property(
         lambda self: self.__art)
     
@@ -190,35 +241,6 @@ class AxesImagePhantom:
         lambda self: self.__attributes.get('annotation', ''),
         lambda self,v: self.update_attributes({'annotation': v}),
         doc="Annotation of the buffer.")
-    
-    def update_attributes(self, attr=None, **kwargs):
-        """Update frame-specifc attributes.
-        The frame holds any attributes with dictionary
-        There are some keys which acts as the value setter when given,
-        `annotation` also shows the message with infobar
-        `localunit` also updates the frame.unit
-        """
-        attr = attr or {}
-        attr.update(kwargs)
-        self.__attributes.update(attr)
-        
-        if 'localunit' in attr:
-            self.unit = attr['localunit']
-        
-        if 'aspect' in attr:
-            self.aspect_ratio = attr['aspect']
-        
-        if 'annotation' in attr:
-            v = attr['annotation']
-            if self.parent.frame is self:
-                self.parent.infobar.ShowMessage(v)
-        
-        if {'pathname', 'annotation'} & attr.keys():
-            self.parent.handler('frame_updated', self)
-    
-    selector = _Property('Selector')
-    markers = _Property('Markers')
-    region = _Property('Region')
     
     @property
     def name(self):
@@ -282,28 +304,6 @@ class AxesImagePhantom:
     def index(self):
         """Page number in the parent book."""
         return self.parent.index(self)
-    
-    def update_buffer(self, buf=None):
-        """Update buffer and the image (internal use only)."""
-        if buf is not None:
-            self.__buf = _to_buffer(buf)
-        
-        bins, vlim, img = _to_image(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-        )
-        self.__bins = bins
-        self.__cuts = vlim
-        self.__art.set_array(img)
-        self.parent.handler('frame_modified', self)
-    
-    def update_extent(self):
-        """Update logical extent of the image (internal use only)."""
-        h, w = self.__buf.shape[:2]
-        ux, uy = self.xy_unit
-        w *= ux/2
-        h *= uy/2
-        self.__art.set_extent((-w,w,-h,h))
     
     @property
     def roi(self):
@@ -797,12 +797,12 @@ class GraphPlot(MatplotPanel):
         lambda self: self.frame and self.frame.buffer,
         lambda self,v: self.__setitem__(self.__index, v),
         lambda self: self.__delitem__(self.__index),
-        doc="current buffer array")
+        doc="Current buffer array")
     
     newbuffer = property(
         lambda self: None,
         lambda self,v: self.load(v),
-        doc="new buffer loader")
+        doc="New buffer loader")
     
     @property
     def unit(self):
