@@ -785,16 +785,27 @@ class GraphPlot(MatplotPanel):
         if self.__Arts and self.__index is not None:
             return self.__Arts[self.__index]
     
-    buffer = property(
-        lambda self: self.frame and self.frame.buffer,
-        lambda self,v: self.__setitem__(self.__index, v),
-        lambda self: self.__delitem__(self.__index),
-        doc="Current buffer array")
+    @property
+    def buffer(self):
+        """Current buffer array."""
+        if self.frame:
+            return self.frame.buffer
     
-    newbuffer = property(
-        lambda self: None,
-        lambda self,v: self.load(v),
-        doc="New buffer loader")
+    @buffer.setter
+    def buffer(self, v):
+        if self.frame:
+            self.__setitem__(self.__index, v)
+        else:
+            self.load(v)
+    
+    @property
+    def newbuffer(self):
+        """New buffer loader."""
+        return None
+    
+    @newbuffer.setter
+    def newbuffer(self, v):
+        self.load(v)
     
     @property
     def unit(self):
