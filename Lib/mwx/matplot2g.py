@@ -14,7 +14,7 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
-## from .utilus import warn
+from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -627,9 +627,6 @@ class GraphPlot(MatplotPanel):
                 - aspect    : aspect ratio
                 - pathname  : full path of the buffer file
         """
-        if buf is None:
-            return
-        
         if isinstance(buf, str):
             buf = Image.open(buf)
         
@@ -696,9 +693,6 @@ class GraphPlot(MatplotPanel):
             j = self.index(j)
         
         buffers = [art.buffer for art in self.__Arts]
-        if hasattr(j, '__iter__'):
-            return [buffers[i] for i in j]
-        
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
@@ -708,14 +702,14 @@ class GraphPlot(MatplotPanel):
             except ValueError:
                 return self.load(v, name=j) # new buffer
         
-        if hasattr(j, '__iter__') or isinstance(j, slice):
-            raise ValueError("attempt to assign buffers into slice")
+        if isinstance(j, slice):
+            raise ValueError("attempt to assign buffers via slicing")
         
         if v is None:
-            self.__delitem__(j)
+            raise ValueError("values must be buffers, not NoneType.")
         else:
             art = self.__Arts[j]
-            art.update_buffer(v)
+            art.update_buffer(v) # update buffer
             art.update_extent()
             self.select(j)
     
@@ -723,9 +717,7 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, str):
             j = self.index(j)
         
-        if hasattr(j, '__iter__'):
-            arts = [self.__Arts[i] for i in j]
-        elif isinstance(j, slice):
+        if isinstance(j, slice):
             arts = self.__Arts[j]
         else:
             arts = [self.__Arts[j]]
