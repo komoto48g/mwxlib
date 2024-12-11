@@ -323,10 +323,11 @@ class AxesImagePhantom:
     @property
     def buffer(self):
         return self.__buf
-
+    
     @buffer.setter
     def buffer(self, v):
         self.update_buffer(v)
+        self.update_extent()
     
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
