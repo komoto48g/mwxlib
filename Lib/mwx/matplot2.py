@@ -348,22 +348,22 @@ class MatplotPanel(wx.Panel):
     xbound = property(
         lambda self: np.array(self.axes.get_xbound()),
         lambda self,v: self.axes.set_xbound(v),
-        doc="x-axis numerical bounds where lowerBound < upperBound)")
+        doc="X-axis numerical bounds where lowerBound < upperBound)")
     
     ybound = property(
         lambda self: np.array(self.axes.get_ybound()),
         lambda self,v: self.axes.set_ybound(v),
-        doc="y-axis numerical bounds where lowerBound < upperBound)")
+        doc="Y-axis numerical bounds where lowerBound < upperBound)")
     
     xlim = property(
         lambda self: np.array(self.axes.get_xlim()),
         lambda self,v: self.axes.set_xlim(v),
-        doc="x-axis range [left, right]")
+        doc="X-axis range [left, right]")
     
     ylim = property(
         lambda self: np.array(self.axes.get_ylim()),
         lambda self,v: self.axes.set_ylim(v),
-        doc="y-axis range [bottom, top]")
+        doc="Y-axis range [bottom, top]")
     
     @property
     def ddpu(self):

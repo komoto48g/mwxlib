@@ -14,7 +14,7 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
-## from .utilus import warn
+from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -88,7 +88,7 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     if src.dtype == np.uint8: # RGB or gray image <uint8>
         return bins, (0, 255), src
     
-    if hasattr(cutoff, '__iter__'): # cutoff vlim:list is specified.
+    if hasattr(cutoff, '__iter__'): # cutoff vlim: (vmin, vmax) is specified.
         a, b = cutoff
     elif cutoff > 0:
         a = np.percentile(src, cutoff)
@@ -129,7 +129,7 @@ class AxesImagePhantom:
     """
     def __init__(self, parent, buf, name, show=True,
                  localunit=None, aspect=1.0, **attributes):
-        self.__owner = parent
+        self.parent = parent
         self.__name = name
         self.__localunit = localunit or None # [+] value, no assertion
         self.__aspect_ratio = aspect
@@ -141,7 +141,7 @@ class AxesImagePhantom:
              threshold = self.parent.nbytes_threshold,
         )
         self.__bins = bins
-        self.__vlim = vlim
+        self.__cuts = vlim
         self.__art = parent.axes.imshow(img,
                   cmap = cm.gray,
                 aspect = 'equal',
@@ -156,39 +156,6 @@ class AxesImagePhantom:
     
     def __eq__(self, x):
         return x is self.__art
-    
-    parent = property(lambda self: self.__owner)
-    artist = property(lambda self: self.__art)
-    name = property(lambda self: self.__name)
-    buffer = property(lambda self: self.__buf)  # buffer.setter is defined below.
-    binning = property(lambda self: self.__bins)
-    
-    image = property(
-        lambda self: self.__art.get_array(),
-        doc="A displayed image array<uint8>.")
-    
-    vlim = property(
-        lambda self: self.__vlim,
-        doc="Image lower/upper values.")
-    
-    clim = property(
-        lambda self: self.__art.get_clim(),
-        lambda self,v: self.__art.set_clim(v),
-        doc="Buffer lower/upper values.")
-    
-    attributes = property(
-        lambda self: self.__attributes,
-        doc="Miscellaneous info about the frame/buffer.")
-    
-    pathname = property(
-        lambda self: self.__attributes.get('pathname'),
-        lambda self,v: self.update_attributes({'pathname': v}),
-        doc="A fullpath of buffer, when bounds to file.")
-    
-    annotation = property(
-        lambda self: self.__attributes.get('annotation', ''),
-        lambda self,v: self.update_attributes({'annotation': v}),
-        doc="Annotation of the buffer.")
     
     def update_attributes(self, attr=None, **kwargs):
         """Update frame-specifc attributes.
@@ -215,9 +182,69 @@ class AxesImagePhantom:
         if {'pathname', 'annotation'} & attr.keys():
             self.parent.handler('frame_updated', self)
     
+    def update_buffer(self, buf=None):
+        """Update buffer and the image (internal use only)."""
+        if buf is not None:
+            self.__buf = _to_buffer(buf)
+        
+        bins, vlim, img = _to_image(self.__buf,
+                cutoff = self.parent.score_percentile,
+             threshold = self.parent.nbytes_threshold,
+        )
+        self.__bins = bins
+        self.__cuts = vlim
+        self.__art.set_array(img)
+        self.parent.handler('frame_modified', self)
+    
+    def update_extent(self):
+        """Update logical extent of the image (internal use only)."""
+        h, w = self.__buf.shape[:2]
+        ux, uy = self.xy_unit
+        w *= ux/2
+        h *= uy/2
+        self.__art.set_extent((-w,w,-h,h))
+    
     selector = _Property('Selector')
     markers = _Property('Markers')
     region = _Property('Region')
+    
+    artist = property(
+        lambda self: self.__art)
+    
+    binning = property(
+        lambda self: self.__bins,
+        doc="Binning value resulting from the score_percentile.")
+    
+    cuts = property(
+        lambda self: self.__cuts,
+        doc="Lower/Upper cutoff values of the buffer.")
+    
+    image = property(
+        lambda self: self.__art.get_array(),
+        doc="A displayed image array<uint8>.")
+    
+    clim = property(
+        lambda self: self.__art.get_clim(),
+        lambda self,v: self.__art.set_clim(v),
+        doc="Lower/Upper color limit values of the buffer.")
+    
+    attributes = property(
+        lambda self: self.__attributes,
+        doc="Miscellaneous info about the frame/buffer.")
+    
+    pathname = property(
+        lambda self: self.__attributes.get('pathname'),
+        lambda self,v: self.update_attributes({'pathname': v}),
+        doc="A fullpath of buffer, when bounds to file.")
+    
+    annotation = property(
+        lambda self: self.__attributes.get('annotation', ''),
+        lambda self,v: self.update_attributes({'annotation': v}),
+        doc="Annotation of the buffer.")
+    
+    @property
+    def name(self):
+        return self.__name
     
     @name.setter
     def name(self, v):
@@ -278,28 +305,6 @@ class AxesImagePhantom:
         """Page number in the parent book."""
         return self.parent.index(self)
     
-    def update_buffer(self, buf=None):
-        """Update buffer and the image (internal use only)."""
-        if buf is not None:
-            self.__buf = _to_buffer(buf)
-        
-        bins, vlim, img = _to_image(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-        )
-        self.__bins = bins
-        self.__vlim = vlim
-        self.__art.set_array(img)
-        self.parent.handler('frame_modified', self)
-    
-    def update_extent(self):
-        """Update logical extent of the image (internal use only)."""
-        h, w = self.__buf.shape[:2]
-        ux, uy = self.xy_unit
-        w *= ux/2
-        h *= uy/2
-        self.__art.set_extent((-w,w,-h,h))
-    
     @property
     def roi(self):
         """Current buffer ROI (region of interest)."""
@@ -315,9 +320,14 @@ class AxesImagePhantom:
         self.roi[:] = v # cannot broadcast input array into different shape
         self.update_buffer()
     
+    @property
+    def buffer(self):
+        return self.__buf
+    
     @buffer.setter
     def buffer(self, v):
         self.update_buffer(v)
+        self.update_extent()
     
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
@@ -618,9 +628,6 @@ class GraphPlot(MatplotPanel):
                 - aspect    : aspect ratio
                 - pathname  : full path of the buffer file
         """
-        if buf is None:
-            return
-        
         if isinstance(buf, str):
             buf = Image.open(buf)
         
@@ -687,9 +694,6 @@ class GraphPlot(MatplotPanel):
             j = self.index(j)
         
         buffers = [art.buffer for art in self.__Arts]
-        if hasattr(j, '__iter__'):
-            return [buffers[i] for i in j]
-        
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
@@ -699,14 +703,14 @@ class GraphPlot(MatplotPanel):
             except ValueError:
                 return self.load(v, name=j) # new buffer
         
-        if hasattr(j, '__iter__') or isinstance(j, slice):
-            raise ValueError("attempt to assign buffers into slice")
+        if isinstance(j, slice):
+            raise ValueError("attempt to assign buffers via slicing")
         
         if v is None:
-            self.__delitem__(j)
+            raise ValueError("values must be buffers, not NoneType.")
         else:
             art = self.__Arts[j]
-            art.update_buffer(v)
+            art.update_buffer(v) # update buffer
             art.update_extent()
             self.select(j)
     
@@ -714,9 +718,7 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, str):
             j = self.index(j)
         
-        if hasattr(j, '__iter__'):
-            arts = [self.__Arts[i] for i in j]
-        elif isinstance(j, slice):
+        if isinstance(j, slice):
             arts = self.__Arts[j]
         else:
             arts = [self.__Arts[j]]
@@ -784,16 +786,27 @@ class GraphPlot(MatplotPanel):
         if self.__Arts and self.__index is not None:
             return self.__Arts[self.__index]
     
-    buffer = property(
-        lambda self: self.frame and self.frame.buffer,
-        lambda self,v: self.__setitem__(self.__index, v),
-        lambda self: self.__delitem__(self.__index),
-        doc="current buffer array")
+    @property
+    def buffer(self):
+        """Current buffer array."""
+        if self.frame:
+            return self.frame.buffer
     
-    newbuffer = property(
-        lambda self: None,
-        lambda self,v: self.load(v),
-        doc="new buffer loader")
+    @buffer.setter
+    def buffer(self, v):
+        if self.frame:
+            self.__setitem__(self.__index, v)
+        else:
+            self.load(v)
+    
+    @property
+    def newbuffer(self):
+        """New buffer loader."""
+        return None
+    
+    @newbuffer.setter
+    def newbuffer(self, v):
+        self.load(v)
     
     @property
     def unit(self):
@@ -951,7 +964,7 @@ class GraphPlot(MatplotPanel):
             data = frame.roi
             GraphPlot.clipboard_name = name
             GraphPlot.clipboard_data = data
-            bins, vlim, img = _to_image(data, frame.vlim)
+            bins, vlim, img = _to_image(data, frame.cuts)
             Clipboard.imwrite(img)
             self.message("Write buffer to clipboard.")
         except Exception as e:
