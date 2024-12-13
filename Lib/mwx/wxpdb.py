@@ -53,7 +53,6 @@ class Debugger(Pdb):
     use_rawinput = False
     prompt = property(lambda self: self.indents + '(Pdb) ',
                       lambda self,v: None) # fake setter
-    parent = property(lambda self: self.__shellframe)
     handler = property(lambda self: self.__handler)
     
     @property
@@ -90,12 +89,12 @@ class Debugger(Pdb):
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
-        self.__shellframe = parent
-        self.__hookpoint = None
+        self.parent = parent
         self.indents = ' ' * 2
         self.interactive_shell = parent.rootshell
         self.editor = None
         self.code = None
+        self.__hookpoint = None
         
         def _input(msg):
             ## redirects input such as cl(ear)
