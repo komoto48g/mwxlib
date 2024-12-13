@@ -829,8 +829,8 @@ class GraphPlot(MatplotPanel):
             self.canvas.draw_idle()
     
     def kill_buffer(self):
-        if self.buffer is not None:
-            del self.buffer
+        if self.frame:
+            del self[self.__index]
     
     def kill_buffer_all(self):
         del self[:]
