@@ -73,20 +73,18 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     if src.dtype in (np.complex64, np.complex128): # maybe fft pattern
         src = np.log(1 + abs(src))
     
-    bins = binning
     if threshold:
-        ## Converted to <uint8(=1byte)> finally, binning should be reduced by itemsize.
-        n = int(np.sqrt(src.nbytes / threshold / src.itemsize)) + 1
-        if bins < n:
-            bins = n # binning or threshold; Select the larger one.
-    
-    if bins > 1:
-        ## src = src[::bins,::bins]
+        ## Reduce the binning by itemsize before finally converting to <uint8>.
+        ## Select the larger value between binning and threshold.
+        n = max(binning, int(np.sqrt(src.nbytes / threshold / src.itemsize)) + 1)
+    else:
+        n = binning
+    if n > 1:
         src = _to_cvtype(src)
-        src = cv2.resize(src, None, fx=1/bins, fy=1/bins, interpolation=cv2.INTER_AREA)
+        src = cv2.resize(src, None, fx=1/n, fy=1/n, interpolation=cv2.INTER_AREA)
     
     if src.dtype == np.uint8: # RGB or gray image <uint8>
-        return bins, (0, 255), src
+        return n, (0, 255), src
     
     if hasattr(cutoff, '__iter__'): # cutoff vlim: (vmin, vmax) is specified.
         a, b = cutoff
@@ -99,10 +97,10 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     
     r = (255 / (b - a)) if a < b else 1
     ## img = cv2.convertScaleAbs(src, alpha=r, beta=-r*a) # 負数は絶対値になるので以下に変更
-    img = np.uint8((src - a) * r) # copy buffer
+    img = np.uint8((src - a) * r)
     img[src < a] = 0
     img[src > b] = 255
-    return bins, (a, b), img
+    return n, (a, b), img
 
 
 def _Property(name):
@@ -155,6 +153,7 @@ class AxesImagePhantom:
         return getattr(self.__art, attr)
     
     def __eq__(self, x):
+        ## Called in `on_pick` and `__contains__` to check objects in.
         return x is self.__art
     
     def update_attributes(self, attr=None, **kwargs):
@@ -221,7 +220,7 @@ class AxesImagePhantom:
     
     image = property(
         lambda self: self.__art.get_array(),
-        doc="A displayed image array<uint8>.")
+        doc="Displayed image array<uint8>.")
     
     clim = property(
         lambda self: self.__art.get_clim(),
@@ -235,7 +234,7 @@ class AxesImagePhantom:
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
         lambda self,v: self.update_attributes({'pathname': v}),
-        doc="A fullpath of buffer, when bounds to file.")
+        doc="Fullpath of the buffer, if bound to a file.")
     
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
@@ -631,6 +630,10 @@ class GraphPlot(MatplotPanel):
         if isinstance(buf, str):
             buf = Image.open(buf)
         
+        if not isinstance(buf, (np.ndarray, Image.Image, wx.Bitmap, wx.Image)):
+            warn("Load targets must be either arrays or images.")
+            return None
+        
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
@@ -829,8 +832,8 @@ class GraphPlot(MatplotPanel):
             self.canvas.draw_idle()
     
     def kill_buffer(self):
-        if self.buffer is not None:
-            del self.buffer
+        if self.frame:
+            del self[self.__index]
     
     def kill_buffer_all(self):
         del self[:]
