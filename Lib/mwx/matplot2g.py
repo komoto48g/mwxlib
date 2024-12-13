@@ -630,6 +630,10 @@ class GraphPlot(MatplotPanel):
         if isinstance(buf, str):
             buf = Image.open(buf)
         
+        if not isinstance(buf, (np.ndarray, Image.Image, wx.Bitmap, wx.Image)):
+            warn("Load targets must be either arrays or images.")
+            return None
+        
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
