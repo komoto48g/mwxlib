@@ -770,6 +770,7 @@ class Clipboard:
             return text
         else:
             print("- Unable to open clipboard.")
+            return None
     
     @staticmethod
     def write(text, verbose=False):
@@ -792,7 +793,7 @@ class Clipboard:
             bmp = do.GetBitmap()
         else:
             print("- Unable to open clipboard.")
-            return
+            return None
         try:
             ## Convert bmp --> buf
             img = bmp.ConvertToImage()
@@ -802,7 +803,8 @@ class Clipboard:
             w, h = img.GetSize()
             return buf.reshape(h, w, 3)
         except Exception:
-            print("- The contents of the clipboard are not images.")
+            print("- Contents of the clipboard are not images.")
+            return None
     
     @staticmethod
     def imwrite(buf, verbose=False):
@@ -815,7 +817,7 @@ class Clipboard:
             img = wx.Image(w, h, buf.tobytes())
             bmp = img.ConvertToBitmap()
         except Exception:
-            print("- The contents of the clipboard are not images.")
+            print("- Argument 'buf' is not a 2d array.")
             return
         do = wx.BitmapDataObject(bmp)
         if wx.TheClipboard.Open():
