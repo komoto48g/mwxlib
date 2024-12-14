@@ -37,15 +37,16 @@ def ignore(*category):
         yield
 
 
-def warn(message, category=None):
-    frame = inspect.currentframe().f_back # previous call stack frame
-    skip = [frame.f_code.co_filename]
-    stacklevel = 1
-    while frame.f_code.co_filename in skip:
-        frame = frame.f_back
-        if not frame:
-            break
-        stacklevel += 1
+def warn(message, category=None, stacklevel=None):
+    if stacklevel is None:
+        frame = inspect.currentframe().f_back # previous call stack frame
+        skip = [frame.f_code.co_filename]
+        stacklevel = 1
+        while frame.f_code.co_filename in skip:
+            frame = frame.f_back
+            if not frame:
+                break
+            stacklevel += 1
     return warnings.warn(message, category, stacklevel+1)
 
 
