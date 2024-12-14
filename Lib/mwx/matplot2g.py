@@ -1,7 +1,6 @@
 #! python3
 """mwxlib graph plot for images.
 """
-import traceback
 import wx
 
 from matplotlib import cm
@@ -48,6 +47,11 @@ def _to_buffer(img):
     if isinstance(img, wx.Image): # image to RGB array; RGB to grayscale
         w, h = img.GetSize()
         img = np.frombuffer(img.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
+    
+    if not isinstance(img, np.ndarray):
+        raise ValueError("targets must be arrays or images.")
+    
+    assert img.ndim > 1, "targets must be 2d arrays."
     
     if img.ndim > 2:
         return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -630,10 +634,6 @@ class GraphPlot(MatplotPanel):
         if isinstance(buf, str):
             buf = Image.open(buf)
         
-        if not isinstance(buf, (np.ndarray, Image.Image, wx.Bitmap, wx.Image)):
-            warn("Load targets must be either arrays or images.")
-            return None
-        
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
@@ -700,22 +700,19 @@ class GraphPlot(MatplotPanel):
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
+        if v is None:
+            raise ValueError("values must be buffers, not NoneType.")
+        
         if isinstance(j, str):
-            try:
-                j = self.index(j) # overwrite buffer
-            except ValueError:
-                return self.load(v, name=j) # new buffer
+            return self.load(v, name=j) # update buffer or new buffer
         
         if isinstance(j, slice):
             raise ValueError("attempt to assign buffers via slicing")
         
-        if v is None:
-            raise ValueError("values must be buffers, not NoneType.")
-        else:
-            art = self.__Arts[j]
-            art.update_buffer(v) # update buffer
-            art.update_extent()
-            self.select(j)
+        art = self.__Arts[j]
+        art.update_buffer(v) # update buffer
+        art.update_extent()
+        self.select(j)
     
     def __delitem__(self, j):
         if isinstance(j, str):
@@ -962,34 +959,28 @@ class GraphPlot(MatplotPanel):
         if not frame:
             self.message("No frame")
             return
-        try:
-            name = frame.name
-            data = frame.roi
-            GraphPlot.clipboard_name = name
-            GraphPlot.clipboard_data = data
-            bins, vlim, img = _to_image(data, frame.cuts)
-            Clipboard.imwrite(img)
-            self.message("Write buffer to clipboard.")
-        except Exception as e:
-            traceback.print_exc()
-            self.message("- Failed to write to clipboard.", e)
+        
+        name = frame.name
+        data = frame.roi
+        GraphPlot.clipboard_name = name
+        GraphPlot.clipboard_data = data
+        bins, vlim, img = _to_image(data, frame.cuts)
+        Clipboard.imwrite(img)
+        self.message("Write buffer to clipboard.")
     
     def read_buffer_from_clipboard(self):
         """Read buffer data from clipboard."""
-        try:
-            name = GraphPlot.clipboard_name
-            data = GraphPlot.clipboard_data
-            if name:
-                self.message("Read buffer from clipboard.")
-                GraphPlot.clipboard_name = None
-                GraphPlot.clipboard_data = None
-            else:
-                self.message("Read image from clipboard.")
-                data = Clipboard.imread()
+        name = GraphPlot.clipboard_name
+        data = GraphPlot.clipboard_data
+        if name:
+            self.message("Read buffer from clipboard.")
+            GraphPlot.clipboard_name = None
+            GraphPlot.clipboard_data = None
+        else:
+            self.message("Read image from clipboard.")
+            data = Clipboard.imread()
+        if data is not None:
             self.load(data)
-        except Exception as e:
-            traceback.print_exc()
-            self.message("- No data in clipboard.", e)
     
     def destroy_colorbar(self):
         if self.cbar:
