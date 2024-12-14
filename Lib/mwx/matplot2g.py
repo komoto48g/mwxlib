@@ -1,7 +1,6 @@
 #! python3
 """mwxlib graph plot for images.
 """
-import traceback
 import wx
 
 from matplotlib import cm
@@ -962,34 +961,28 @@ class GraphPlot(MatplotPanel):
         if not frame:
             self.message("No frame")
             return
-        try:
-            name = frame.name
-            data = frame.roi
-            GraphPlot.clipboard_name = name
-            GraphPlot.clipboard_data = data
-            bins, vlim, img = _to_image(data, frame.cuts)
-            Clipboard.imwrite(img)
-            self.message("Write buffer to clipboard.")
-        except Exception as e:
-            traceback.print_exc()
-            self.message("- Failed to write to clipboard.", e)
+        
+        name = frame.name
+        data = frame.roi
+        GraphPlot.clipboard_name = name
+        GraphPlot.clipboard_data = data
+        bins, vlim, img = _to_image(data, frame.cuts)
+        Clipboard.imwrite(img)
+        self.message("Write buffer to clipboard.")
     
     def read_buffer_from_clipboard(self):
         """Read buffer data from clipboard."""
-        try:
-            name = GraphPlot.clipboard_name
-            data = GraphPlot.clipboard_data
-            if name:
-                self.message("Read buffer from clipboard.")
-                GraphPlot.clipboard_name = None
-                GraphPlot.clipboard_data = None
-            else:
-                self.message("Read image from clipboard.")
-                data = Clipboard.imread()
+        name = GraphPlot.clipboard_name
+        data = GraphPlot.clipboard_data
+        if name:
+            self.message("Read buffer from clipboard.")
+            GraphPlot.clipboard_name = None
+            GraphPlot.clipboard_data = None
+        else:
+            self.message("Read image from clipboard.")
+            data = Clipboard.imread()
+        if data is not None:
             self.load(data)
-        except Exception as e:
-            traceback.print_exc()
-            self.message("- No data in clipboard.", e)
     
     def destroy_colorbar(self):
         if self.cbar:
