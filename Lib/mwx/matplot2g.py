@@ -48,6 +48,11 @@ def _to_buffer(img):
         w, h = img.GetSize()
         img = np.frombuffer(img.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
     
+    if not isinstance(img, np.ndarray):
+        raise ValueError("targets must be arrays or images.")
+    
+    assert img.ndim > 1, "targets must be 2d arrays."
+    
     if img.ndim > 2:
         return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
@@ -629,10 +634,6 @@ class GraphPlot(MatplotPanel):
         if isinstance(buf, str):
             buf = Image.open(buf)
         
-        if not isinstance(buf, (np.ndarray, Image.Image, wx.Bitmap, wx.Image)):
-            warn("Load targets must be either arrays or images.")
-            return None
-        
         pathname = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
@@ -699,22 +700,19 @@ class GraphPlot(MatplotPanel):
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
+        if v is None:
+            raise ValueError("values must be buffers, not NoneType.")
+        
         if isinstance(j, str):
-            try:
-                j = self.index(j) # overwrite buffer
-            except ValueError:
-                return self.load(v, name=j) # new buffer
+            return self.load(v, name=j) # update buffer or new buffer
         
         if isinstance(j, slice):
             raise ValueError("attempt to assign buffers via slicing")
         
-        if v is None:
-            raise ValueError("values must be buffers, not NoneType.")
-        else:
-            art = self.__Arts[j]
-            art.update_buffer(v) # update buffer
-            art.update_extent()
-            self.select(j)
+        art = self.__Arts[j]
+        art.update_buffer(v) # update buffer
+        art.update_extent()
+        self.select(j)
     
     def __delitem__(self, j):
         if isinstance(j, str):
