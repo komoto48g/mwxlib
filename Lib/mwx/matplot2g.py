@@ -121,7 +121,6 @@ class AxesImagePhantom:
         buf         : buffer
         name        : buffer name
         show        : show immediately when loaded
-        aspect      : initial aspect ratio
         localunit   : initial localunit
         attributes  : additional info:dict
     
@@ -130,11 +129,11 @@ class AxesImagePhantom:
         the image pixel size could be reduced by binning.
     """
     def __init__(self, parent, buf, name, show=True,
-                 localunit=None, aspect=1.0, **attributes):
+                 localunit=None, **attributes):
         self.parent = parent
         self.__name = name
         self.__localunit = localunit or None # [+] value, no assertion
-        self.__aspect_ratio = aspect
+        self.__aspect_ratio = 1.0
         self.__attributes = attributes
         self.__attributes['localunit'] = self.__localunit
         self.__buf = _to_buffer(buf)
@@ -151,7 +150,7 @@ class AxesImagePhantom:
                visible = show,
                 picker = True,
         )
-        self.update_extent() # this determines the aspect ratio
+        self.update_extent()
     
     def __getattr__(self, attr):
         return getattr(self.__art, attr)
@@ -162,6 +161,7 @@ class AxesImagePhantom:
     
     def update_attributes(self, attr=None, **kwargs):
         """Update frame-specifc attributes.
+        
         The frame holds any attributes with dictionary
         There are some keys which acts as the value setter when given,
         `annotation` also shows the message with infobar
@@ -173,9 +173,6 @@ class AxesImagePhantom:
         
         if 'localunit' in attr:
             self.unit = attr['localunit']
-        
-        if 'aspect' in attr:
-            self.aspect_ratio = attr['aspect']
         
         if 'annotation' in attr:
             v = attr['annotation']
@@ -297,8 +294,6 @@ class AxesImagePhantom:
     
     @aspect_ratio.setter
     def aspect_ratio(self, v):
-        if v == self.__aspect_ratio:
-            return
         self.__aspect_ratio = v or 1.0
         self.update_extent()
         self.parent.handler('frame_updated', self)
@@ -628,7 +623,6 @@ class GraphPlot(MatplotPanel):
             **kwargs: frame attributes.
             
                 - localunit : localunit
-                - aspect    : aspect ratio
                 - pathname  : full path of the buffer file
         """
         if isinstance(buf, str):
