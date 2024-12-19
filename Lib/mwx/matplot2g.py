@@ -264,17 +264,16 @@ class AxesImagePhantom:
     
     @unit.setter
     def unit(self, v):
+        if v == self.__localunit: # no effect
+            return
         if v is None or np.isnan(v): # nan => undefined
-            v = self.parent.unit
-            self.__localunit = None
+            v = None
         elif np.isinf(v):
             raise ValueError("The unit value must not be inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
-        else:
-            if v == self.__localunit: # no effect when v is localunit
-                return
-            self.__localunit = v
+        
+        self.__localunit = v
         self.__attributes['localunit'] = self.__localunit
         self.update_extent()
         self.parent.handler('frame_updated', self)
@@ -819,13 +818,13 @@ class GraphPlot(MatplotPanel):
     
     @unit.setter
     def unit(self, v):
+        if v == self.__unit:  # no effect unless unit changes
+            return
         if v is None or np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value must not be nan or inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
         else:
-            if v == self.__unit:  # no effect unless unit changes
-                return
             self.__unit = v
             for art in self.__Arts:
                 art.update_extent()
