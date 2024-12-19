@@ -697,17 +697,19 @@ class GraphPlot(MatplotPanel):
             j = self.index(j)
         
         buffers = [art.buffer for art in self.__Arts]
+        if hasattr(j, '__iter__'):
+            return [buffers[i] for i in j]
         return buffers[j] # j can also be slicing
     
     def __setitem__(self, j, v):
         if v is None:
-            raise ValueError("values must be buffers, not NoneType.")
+            raise ValueError("values must be buffers, not NoneType")
         
         if isinstance(j, str):
             return self.load(v, name=j) # update buffer or new buffer
         
-        if isinstance(j, slice):
-            raise ValueError("attempt to assign buffers via slicing")
+        if isinstance(j, slice) or hasattr(j, '__iter__'):
+            raise ValueError("attempt to assign buffers via slicing or iterator")
         
         art = self.__Arts[j]
         art.update_buffer(v) # update buffer
@@ -718,7 +720,9 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, str):
             j = self.index(j)
         
-        if isinstance(j, slice):
+        if hasattr(j, '__iter__'):
+            arts = [self.__Arts[i] for i in j]
+        elif isinstance(j, slice):
             arts = self.__Arts[j]
         else:
             arts = [self.__Arts[j]]
