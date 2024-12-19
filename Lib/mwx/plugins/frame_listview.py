@@ -185,7 +185,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         if selected_frames:
             text = ''
             for frame in selected_frames:
-                text += pformat(frame.attributes, sort_dicts=0) # ALL attributes
+                text += pformat(frame.get_attributes(), sort_dicts=0) # ALL attributes
                 ## text += '{}\n{}\n'.format(frame.name, frame.annotation)
             Clipboard.write(text)
         else:

@@ -118,25 +118,22 @@ class AxesImagePhantom:
     """Phantom of frame facade
     
     Args:
-        buf         : buffer
-        name        : buffer name
-        show        : show immediately when loaded
-        aspect      : initial aspect ratio
-        localunit   : initial localunit
-        attributes  : additional info:dict
+        buf     : buffer
+        name    : buffer name
+        show    : show immediately when loaded
+        **kwargs: frame attributes
     
     Note:
         Due to the problem of performance,
         the image pixel size could be reduced by binning.
     """
-    def __init__(self, parent, buf, name, show=True,
-                 localunit=None, aspect=1.0, **attributes):
+    def __init__(self, parent, buf, name, show=True, **kwargs):
         self.parent = parent
         self.__name = name
-        self.__localunit = localunit or None # [+] value, no assertion
-        self.__aspect_ratio = aspect
-        self.__attributes = attributes
-        self.__attributes['localunit'] = self.__localunit
+        self.__attributes = kwargs
+        self.__localunit = kwargs.get('localunit')
+        self.__center = kwargs.get('center', (0, 0))
+        self.__aspect_ratio = 1
         self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
@@ -151,7 +148,7 @@ class AxesImagePhantom:
                visible = show,
                 picker = True,
         )
-        self.update_extent() # this determines the aspect ratio
+        self.update_extent()
     
     def __getattr__(self, attr):
         return getattr(self.__art, attr)
@@ -160,22 +157,27 @@ class AxesImagePhantom:
         ## Called in `on_pick` and `__contains__` to check objects in.
         return x is self.__art
     
-    def update_attributes(self, attr=None, **kwargs):
-        """Update frame-specifc attributes.
-        The frame holds any attributes with dictionary
-        There are some keys which acts as the value setter when given,
-        `annotation` also shows the message with infobar
-        `localunit` also updates the frame.unit
+    def get_attributes(self):
+        """Auxiliary info about the frame."""
+        return self.__attributes
+    
+    def set_attributes(self, attr):
+        """Update frame-specifc attributes:
+        
+            annotation : aux info (also displayed as a message in the infobar)
+            center     : frame.center defaults to (0, 0)
+            localunit  : frame.unit
+            pathname   : full path of the buffer file
         """
-        attr = attr or {}
-        attr.update(kwargs)
+        if not attr:
+            return
         self.__attributes.update(attr)
         
         if 'localunit' in attr:
-            self.unit = attr['localunit']
+            self.unit = attr['localunit'] # => [frame_updated]
         
-        if 'aspect' in attr:
-            self.aspect_ratio = attr['aspect']
+        if 'center' in attr:
+            self.center = attr['center'] # => [frame_updated]
         
         if 'annotation' in attr:
             v = attr['annotation']
@@ -205,7 +207,8 @@ class AxesImagePhantom:
         ux, uy = self.xy_unit
         w *= ux/2
         h *= uy/2
-        self.__art.set_extent((-w,w,-h,h))
+        cx, cy = self.center
+        self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
     
     selector = _Property('Selector')
     markers = _Property('Markers')
@@ -231,18 +234,14 @@ class AxesImagePhantom:
         lambda self,v: self.__art.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
     
-    attributes = property(
-        lambda self: self.__attributes,
-        doc="Miscellaneous info about the frame/buffer.")
-    
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
-        lambda self,v: self.update_attributes({'pathname': v}),
+        lambda self,v: self.set_attributes({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
     
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
-        lambda self,v: self.update_attributes({'annotation': v}),
+        lambda self,v: self.set_attributes({'annotation': v}),
         doc="Annotation of the buffer.")
     
     @property
@@ -265,17 +264,16 @@ class AxesImagePhantom:
     
     @unit.setter
     def unit(self, v):
+        if v == self.__localunit: # no effect
+            return
         if v is None or np.isnan(v): # nan => undefined
-            v = self.parent.unit
-            self.__localunit = None
+            v = None
         elif np.isinf(v):
             raise ValueError("The unit value must not be inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
-        else:
-            if v == self.__localunit: # no effect when v is localunit
-                return
-            self.__localunit = v
+        
+        self.__localunit = v
         self.__attributes['localunit'] = self.__localunit
         self.update_extent()
         self.parent.handler('frame_updated', self)
@@ -291,15 +289,25 @@ class AxesImagePhantom:
         return (u, u * self.__aspect_ratio)
     
     @property
+    def center(self):
+        """Center of logical unit."""
+        return self.__center
+    
+    @center.setter
+    def center(self, v):
+        self.__center = tuple(v)
+        self.__attributes['center'] = self.__center
+        self.update_extent()
+        self.parent.handler('frame_updated', self)
+    
+    @property
     def aspect_ratio(self):
         """Aspect ratio of logical unit."""
         return self.__aspect_ratio
     
     @aspect_ratio.setter
     def aspect_ratio(self, v):
-        if v == self.__aspect_ratio:
-            return
-        self.__aspect_ratio = v or 1.0
+        self.__aspect_ratio = v or 1
         self.update_extent()
         self.parent.handler('frame_updated', self)
     
@@ -624,12 +632,7 @@ class GraphPlot(MatplotPanel):
             name    : buffer name (default to *temp*).
             pos     : Insertion position in the frame list.
             show    : Show immediately when loaded.
-            
             **kwargs: frame attributes.
-            
-                - localunit : localunit
-                - aspect    : aspect ratio
-                - pathname  : full path of the buffer file
         """
         if isinstance(buf, str):
             buf = Image.open(buf)
@@ -645,8 +648,8 @@ class GraphPlot(MatplotPanel):
             j = names.index(name) # existing frame
         if j != -1:
             art = self.__Arts[j]
-            art.update_buffer(buf)        # => [frame_modified]
-            art.update_attributes(kwargs) # => [frame_updated] localunit => [canvas_draw]
+            art.update_buffer(buf)      # => [frame_modified]
+            art.set_attributes(kwargs)  # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
             if show:
                 self.select(j)
@@ -819,13 +822,13 @@ class GraphPlot(MatplotPanel):
     
     @unit.setter
     def unit(self, v):
+        if v == self.__unit:  # no effect unless unit changes
+            return
         if v is None or np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value must not be nan or inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
         else:
-            if v == self.__unit:  # no effect unless unit changes
-                return
             self.__unit = v
             for art in self.__Arts:
                 art.update_extent()
