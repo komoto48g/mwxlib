@@ -157,20 +157,27 @@ class AxesImagePhantom:
         ## Called in `on_pick` and `__contains__` to check objects in.
         return x is self.__art
     
-    def update_attributes(self, attr=None, **kwargs):
-        """Update frame-specifc attributes.
+    def get_attributes(self):
+        """Auxiliary info about the frame."""
+        return self.__attributes
+    
+    def set_attributes(self, attr):
+        """Update frame-specifc attributes:
         
-        The frame holds any attributes with dictionary
-        There are some keys which acts as the value setter when given,
-        `annotation` also shows the message with infobar
-        `localunit` also updates the frame.unit
+            annotation : aux info (also displayed as a message in the infobar)
+            center     : frame.center defaults to (0, 0)
+            localunit  : frame.unit
+            pathname   : full path of the buffer file
         """
-        attr = attr or {}
-        attr.update(kwargs)
+        if not attr:
+            return
         self.__attributes.update(attr)
         
         if 'localunit' in attr:
-            self.unit = attr['localunit']
+            self.unit = attr['localunit'] # => [frame_updated]
+        
+        if 'center' in attr:
+            self.center = attr['center'] # => [frame_updated]
         
         if 'annotation' in attr:
             v = attr['annotation']
@@ -227,18 +234,14 @@ class AxesImagePhantom:
         lambda self,v: self.__art.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
     
-    attributes = property(
-        lambda self: self.__attributes,
-        doc="Miscellaneous info about the frame/buffer.")
-    
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
-        lambda self,v: self.update_attributes({'pathname': v}),
+        lambda self,v: self.set_attributes({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
     
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
-        lambda self,v: self.update_attributes({'annotation': v}),
+        lambda self,v: self.set_attributes({'annotation': v}),
         doc="Annotation of the buffer.")
     
     @property
@@ -646,8 +649,8 @@ class GraphPlot(MatplotPanel):
             j = names.index(name) # existing frame
         if j != -1:
             art = self.__Arts[j]
-            art.update_buffer(buf)        # => [frame_modified]
-            art.update_attributes(kwargs) # => [frame_updated] localunit => [canvas_draw]
+            art.update_buffer(buf)      # => [frame_modified]
+            art.set_attributes(kwargs)  # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
             if show:
                 self.select(j)
