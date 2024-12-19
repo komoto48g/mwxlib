@@ -118,24 +118,22 @@ class AxesImagePhantom:
     """Phantom of frame facade
     
     Args:
-        buf         : buffer
-        name        : buffer name
-        show        : show immediately when loaded
-        localunit   : initial localunit
-        attributes  : additional info:dict
+        buf     : buffer
+        name    : buffer name
+        show    : show immediately when loaded
+        **kwargs: frame attributes
     
     Note:
         Due to the problem of performance,
         the image pixel size could be reduced by binning.
     """
-    def __init__(self, parent, buf, name, show=True,
-                 localunit=None, **attributes):
+    def __init__(self, parent, buf, name, show=True, **kwargs):
         self.parent = parent
         self.__name = name
-        self.__localunit = localunit or None # [+] value, no assertion
-        self.__aspect_ratio = 1.0
-        self.__attributes = attributes
-        self.__attributes['localunit'] = self.__localunit
+        self.__attributes = kwargs
+        self.__localunit = kwargs.get('localunit')
+        self.__center = kwargs.get('center', (0, 0))
+        self.__aspect_ratio = 1
         self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
                 cutoff = self.parent.score_percentile,
@@ -202,7 +200,8 @@ class AxesImagePhantom:
         ux, uy = self.xy_unit
         w *= ux/2
         h *= uy/2
-        self.__art.set_extent((-w,w,-h,h))
+        cx, cy = self.center
+        self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
     
     selector = _Property('Selector')
     markers = _Property('Markers')
@@ -288,13 +287,25 @@ class AxesImagePhantom:
         return (u, u * self.__aspect_ratio)
     
     @property
+    def center(self):
+        """Center of logical unit."""
+        return self.__center
+    
+    @center.setter
+    def center(self, v):
+        self.__center = tuple(v)
+        self.__attributes['center'] = self.__center
+        self.update_extent()
+        self.parent.handler('frame_updated', self)
+    
+    @property
     def aspect_ratio(self):
         """Aspect ratio of logical unit."""
         return self.__aspect_ratio
     
     @aspect_ratio.setter
     def aspect_ratio(self, v):
-        self.__aspect_ratio = v or 1.0
+        self.__aspect_ratio = v or 1
         self.update_extent()
         self.parent.handler('frame_updated', self)
     
@@ -619,11 +630,7 @@ class GraphPlot(MatplotPanel):
             name    : buffer name (default to *temp*).
             pos     : Insertion position in the frame list.
             show    : Show immediately when loaded.
-            
             **kwargs: frame attributes.
-            
-                - localunit : localunit
-                - pathname  : full path of the buffer file
         """
         if isinstance(buf, str):
             buf = Image.open(buf)
