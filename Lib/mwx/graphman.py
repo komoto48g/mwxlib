@@ -1486,14 +1486,16 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read())) # read res <dict>
             
             for name, attr in tuple(res.items()):
-                fn = os.path.join(savedir, name)
-                if not os.path.exists(fn): # search by relpath (dir+name)
-                    fn = attr.get('pathname')
-                if not os.path.exists(fn): # check & pop missing files
-                    res.pop(name)
-                    mis.update({name:attr})
+                fn = os.path.join(savedir, name) # search by relpath (dir / name)
+                if os.path.exists(fn):
+                    attr.update(pathname=fn)  # if found, update pathname
                 else:
-                    attr.update(pathname=fn)
+                    fn = attr.get('pathname') # if not found, try pathname
+                    if fn.startswith(r'\\'):
+                        warn(f"The pathnme of {fn!r} contains network path, "
+                             f"so the search may take long time.", stacklevel=3)
+                    if not os.path.exists(fn):
+                        mis[name] = res.pop(name) # pop missing items
         except FileNotFoundError:
             pass
         except Exception as e:
