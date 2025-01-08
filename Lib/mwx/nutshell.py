@@ -2390,7 +2390,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return True
         return False
     
-    def load_file(self, filename, lineno=0, verbose=True):
+    def load_file(self, filename, lineno=0, verbose=True, **kwargs):
         """Load a file into an existing or new buffer.
         The requests module is required to use URL extension.
         """
@@ -2412,18 +2412,18 @@ class EditorBook(AuiNotebook, CtrlInterface):
         try:
             if re.match(url_re, filename):
                 import requests
-                res = requests.get(filename, timeout=3.0)
-                if res.status_code == requests.codes.ok:
+                kwargs.setdefault('timeout', 3.0)
+                res = requests.get(filename, **kwargs)
+                if res.status_code == requests.codes.OK:
                     buf._load_textfile(res.text, filename)
                     self.swap_buffer(buf, lineno)
                     return True
-                ## raise Exception("URL not found:", filename)
-                res.raise_for_status()  # raise HTTP error
+                res.raise_for_status()  # raise HTTP error; don't catch here.
             if buf._load_file(filename):
                 self.swap_buffer(buf, lineno)
                 return True
             return False
-        except (OSError, UnicodeDecodeError) as e:
+        except (OSError, UnicodeDecodeError, ModuleNotFoundError) as e:
             self.post_message("Failed to load:", e)
             self.delete_buffer(buf)
             return False
