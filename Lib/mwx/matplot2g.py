@@ -157,11 +157,7 @@ class AxesImagePhantom:
         ## Called in `on_pick` and `__contains__` to check objects in.
         return x is self.__art
     
-    def get_attributes(self):
-        """Auxiliary info about the frame."""
-        return self.__attributes
-    
-    def set_attributes(self, attr):
+    def update_attr(self, attr):
         """Update frame-specifc attributes:
         
             annotation : aux info (also displayed as a message in the infobar)
@@ -234,14 +230,18 @@ class AxesImagePhantom:
         lambda self,v: self.__art.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
     
+    attributes = property(
+        lambda self: self.__attributes,
+        doc="Auxiliary info about the frame.")
+    
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
-        lambda self,v: self.set_attributes({'pathname': v}),
+        lambda self,v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
     
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
-        lambda self,v: self.set_attributes({'annotation': v}),
+        lambda self,v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
     
     @property
@@ -648,8 +648,8 @@ class GraphPlot(MatplotPanel):
             j = names.index(name) # existing frame
         if j != -1:
             art = self.__Arts[j]
-            art.update_buffer(buf)      # => [frame_modified]
-            art.set_attributes(kwargs)  # => [frame_updated] localunit => [canvas_draw]
+            art.update_buffer(buf)  # => [frame_modified]
+            art.update_attr(kwargs) # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
             if show:
                 self.select(j)

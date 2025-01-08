@@ -1410,7 +1410,7 @@ class Frame(mwx.Frame):
         frames = self.load_buffer(paths, view)
         if frames:
             for frame in frames:
-                frame.set_attributes(res.get(frame.name))
+                frame.update_attr(res.get(frame.name))
         
         n = len(frames)
         self.message(
@@ -1486,14 +1486,16 @@ class Frame(mwx.Frame):
                 res.update(eval(i.read())) # read res <dict>
             
             for name, attr in tuple(res.items()):
-                fn = os.path.join(savedir, name)
-                if not os.path.exists(fn): # search by relpath (dir+name)
-                    fn = attr.get('pathname')
-                if not os.path.exists(fn): # check & pop missing files
-                    res.pop(name)
-                    mis.update({name:attr})
+                fn = os.path.join(savedir, name) # search by relpath (dir / name)
+                if os.path.exists(fn):
+                    attr.update(pathname=fn)  # if found, update pathname
                 else:
-                    attr.update(pathname=fn)
+                    fn = attr.get('pathname') # if not found, try pathname
+                    if fn.startswith(r'\\'):
+                        warn(f"The pathnme of {fn!r} contains network path, "
+                             f"so the search may take long time.", stacklevel=3)
+                    if not os.path.exists(fn):
+                        mis[name] = res.pop(name) # pop missing items
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -1507,7 +1509,7 @@ class Frame(mwx.Frame):
         """Write attributes file."""
         try:
             res, mis = self.read_attributes(filename)
-            new = dict((x.name, x.get_attributes()) for x in frames)
+            new = dict((x.name, x.attributes) for x in frames)
             
             ## `res` order may differ from that of given frames,
             ## so we take a few steps to merge `new` to be exported.
@@ -1540,7 +1542,7 @@ class Frame(mwx.Frame):
                     res, mis = self.read_attributes(fn)
                     savedirs[savedir] = res
                 results = savedirs[savedir]
-                frame.set_attributes(results.get(frame.name))
+                frame.update_attr(results.get(frame.name))
         return frames
     
     def save_frame(self, path=None, frame=None):
