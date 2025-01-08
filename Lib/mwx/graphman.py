@@ -1410,7 +1410,7 @@ class Frame(mwx.Frame):
         frames = self.load_buffer(paths, view)
         if frames:
             for frame in frames:
-                frame.set_attributes(res.get(frame.name))
+                frame.update_attr(res.get(frame.name))
         
         n = len(frames)
         self.message(
@@ -1509,7 +1509,7 @@ class Frame(mwx.Frame):
         """Write attributes file."""
         try:
             res, mis = self.read_attributes(filename)
-            new = dict((x.name, x.get_attributes()) for x in frames)
+            new = dict((x.name, x.attributes) for x in frames)
             
             ## `res` order may differ from that of given frames,
             ## so we take a few steps to merge `new` to be exported.
@@ -1542,7 +1542,7 @@ class Frame(mwx.Frame):
                     res, mis = self.read_attributes(fn)
                     savedirs[savedir] = res
                 results = savedirs[savedir]
-                frame.set_attributes(results.get(frame.name))
+                frame.update_attr(results.get(frame.name))
         return frames
     
     def save_frame(self, path=None, frame=None):
