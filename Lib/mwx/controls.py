@@ -337,13 +337,9 @@ class Knob(wx.Panel):
         label = self.__par.name + '  '
         
         if style == 'chkbox' or style == 'checkbox':
-            if lw >= 0:
-                lw += 16
             self.label = wx.CheckBox(self, label=label, size=(lw,-1))
             self.label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         elif style == 'button':
-            if lw >= 0:
-                lw += 16
             self.label = pb.PlateButton(self, label=label, size=(lw,-1),
                             style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
             self.label.Bind(wx.EVT_BUTTON, self.OnPress)
