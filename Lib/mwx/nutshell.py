@@ -2438,11 +2438,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 if dlg.ShowModal() == wx.ID_OK:
                     for fn in dlg.Paths:
                         self.find_file(fn)
-            return
+            return None
         if self.load_file(filename) == False: # noqa: not None
             buf = self.create_buffer(filename)
             self.swap_buffer(buf)
             self.post_message("New file.")
+            return buf
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
