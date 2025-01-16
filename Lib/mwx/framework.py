@@ -1484,7 +1484,7 @@ class ShellFrame(MiniFrame):
                                 style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                             self.__autoload = False # Don't ask any more.
                             return
-                        book.load_file(buf.filename)
+                        book.load_file(buf.filename, buf.markline+1)
         ## Reinitialize self-specific builtins if other instances are destroyed.
         if evt.Active:
             self.Init()
