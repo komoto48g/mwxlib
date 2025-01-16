@@ -3354,7 +3354,7 @@ class Nautilus(EditorInterface, Shell):
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
     ##     [BUG 4.1.1] Don't use for current prompt --> Fixed in 4.2.0.
     
-    def getMultilineCommand(self):
+    def getMultilineCommand(self, rstrip=True):
         """Extract a multi-line command which starts with a prompt.
         
         (override) Don't remove trailing ps2 + spaces.
@@ -3364,7 +3364,12 @@ class Nautilus(EditorInterface, Shell):
         if region:
             p, q = (self.PositionFromLine(x) for x in region)
             p += len(sys.ps1)
-            return self.GetTextRange(p, q)
+            command = self.GetTextRange(p, q).rstrip(os.linesep) # remove the last cr/lf
+            if rstrip:
+                command = command.replace(os.linesep + sys.ps2, '\n')
+                command = command.rstrip()
+                command = command.replace('\n', os.linesep + sys.ps2)
+            return command
         return ''
     
     def get_region(self, line):
