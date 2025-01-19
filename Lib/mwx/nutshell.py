@@ -2839,8 +2839,8 @@ class Nautilus(EditorInterface, Shell):
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
            'C-S-insert pressed' : (0, _F(self.Paste, rectangle=1)),
-                  'C-j pressed' : (0, self.eval_line),
-                  'M-j pressed' : (0, self.exec_region),
+                  'C-j pressed' : (0, _F(self.eval_line)),
+                  'M-j pressed' : (0, _F(self.exec_region)),
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpDoc),
                     '. pressed' : (2, self.OnEnterDot),
@@ -2898,7 +2898,7 @@ class Nautilus(EditorInterface, Shell):
            '*backspace pressed' : (2, self.OnBackspace),
           '*backspace released' : (2, self.call_word_autocomp),
         'C-S-backspace pressed' : (2, ),
-                  'C-j pressed' : (2, self.eval_line),
+                  'C-j pressed' : (2, _F(self.eval_line)),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -2926,7 +2926,7 @@ class Nautilus(EditorInterface, Shell):
            '*backspace pressed' : (3, self.OnBackspace),
           '*backspace released' : (3, self.call_apropos_autocomp),
         'C-S-backspace pressed' : (3, ),
-                  'C-j pressed' : (3, self.eval_line),
+                  'C-j pressed' : (3, _F(self.eval_line)),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -2954,7 +2954,7 @@ class Nautilus(EditorInterface, Shell):
            '*backspace pressed' : (4, self.OnBackspace),
           '*backspace released' : (4, self.call_text_autocomp),
         'C-S-backspace pressed' : (4, ),
-                  'C-j pressed' : (4, self.eval_line),
+                  'C-j pressed' : (4, _F(self.eval_line)),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
                '*shift pressed' : (4, ),
@@ -3594,7 +3594,7 @@ class Nautilus(EditorInterface, Shell):
         self.cpos, self.anchor = self.anchor, self.cpos
         self.EnsureCaretVisible()
     
-    def eval_line(self, evt):
+    def eval_line(self):
         """Evaluate the selected word or line."""
         if self.CallTipActive():
             self.CallTipCancel()
@@ -3614,7 +3614,7 @@ class Nautilus(EditorInterface, Shell):
         else:
             self.message("No words")
     
-    def exec_region(self, evt):
+    def exec_region(self):
         """Execute the the selected region."""
         if self.CallTipActive():
             self.CallTipCancel()
