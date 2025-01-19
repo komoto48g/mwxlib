@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.2.9"
+__version__ = "1.2.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1929,19 +1929,14 @@ class ShellFrame(MiniFrame):
         return next((x for x in self.all_editors if x.IsShown()), self.Scratch)
     
     def find_editor(self, fn):
-        """Find an editor with the specified fn:filename or code.
-        If found, switch to the buffer page.
+        """Find an editor containing the specified fn:filename or code.
+        If found, switch to the corresponding page.
         """
-        return next(self.find_editors(fn), None)
-    
-    def find_editors(self, fn):
-        """Yields all editors with the specified fn:filename or code."""
-        def _f(book):
+        for book in self.get_all_editors():
             buf = book.find_buffer(fn)
             if buf:
                 book.swap_page(buf)
-            return buf
-        return filter(_f, self.all_editors)
+                return book
     
     ## --------------------------------
     ## Find text dialog
