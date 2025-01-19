@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.2.10"
+__version__ = "1.3.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1874,12 +1874,14 @@ class ShellFrame(MiniFrame):
         if not hasattr(target, '__dict__'):
             raise TypeError("primitive objects cannot be targeted")
         
-        shell = self.rootshell.__class__(self, target, name="clone",
-                    style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
-        self.handler('shell_new', shell)
-        self.Show()
-        self.console.AddPage(shell, typename(shell.target))
+        shell = self.find_shell(target)
+        if not shell:
+            shell = self.rootshell.__class__(self, target, name="clone",
+                        style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
+            self.console.AddPage(shell, typename(shell.target))
+            self.handler('shell_new', shell)
         self.popup_window(shell)
+        self.Show()
         shell.SetFocus()
         return shell
     
