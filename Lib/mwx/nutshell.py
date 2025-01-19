@@ -2442,13 +2442,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() == wx.ID_OK:
-                    for fn in dlg.Paths:
-                        self.find_file(fn)
-            return
-        if self.load_file(filename) == False: # noqa: not None
+                    return all([self.find_file(fn) for fn in dlg.Paths])
+            return None
+        retval = self.load_file(filename)
+        if retval == False: # noqa: not None
             buf = self.create_buffer(filename)
             self.swap_buffer(buf)
             self.post_message("New file.")
+        return retval
     
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
