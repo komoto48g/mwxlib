@@ -8,7 +8,7 @@ Usage:
         frm = wx.Frame(None)
         frm.Show()
 
-Is equivlent to:
+Is equivalent to:
     app = wx.App()
     frm = wx.Frame(None)
     frm.Show()

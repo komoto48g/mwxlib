@@ -1492,7 +1492,7 @@ class Frame(mwx.Frame):
                 else:
                     fn = attr.get('pathname') # if not found, try pathname
                     if fn.startswith(r'\\'):
-                        warn(f"The pathnme of {fn!r} contains network path, "
+                        warn(f"The pathname of {fn!r} contains network path, "
                              f"so the search may take long time.", stacklevel=3)
                     if not os.path.exists(fn):
                         mis[name] = res.pop(name) # pop missing items

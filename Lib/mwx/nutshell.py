@@ -629,7 +629,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicators ([BUG] indicator=1 is reset when the buffer is udpated.)
+        ## Custom indicators ([BUG] indicator=1 is reset when the buffer is updated.)
         ## [10-11] filter_text
         ## [2] URL
         ## [3] match_paren
