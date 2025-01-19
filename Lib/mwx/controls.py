@@ -591,6 +591,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                         for cc in obj.Children: # child of child <wx._core.SizerItem>
                             cc.Show(not cc.IsShown())
                         self.Layout()
+                        self.SendSizeEvent()
                         break
         evt.Skip()
     
