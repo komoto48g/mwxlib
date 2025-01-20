@@ -1337,7 +1337,7 @@ class ShellFrame(MiniFrame):
             o.write("self.SetSize({})\n".format(self.Size))
             o.write("self.SetPosition({})\n".format(self.Position))
             
-            for book in self.all_editors:
+            for book in self.get_all_editors():
                 for buf in book.all_buffers:
                     if buf.mtdelta is not None:
                         o.write("self.{}.load_file({!r}, {})\n"
@@ -1446,7 +1446,7 @@ class ShellFrame(MiniFrame):
                           "The trace pointer will be cleared.")
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
-        for book in self.all_editors:
+        for book in self.get_all_editors():
             for buf in book.all_buffers:
                 if buf.need_buffer_save:
                     self.popup_window(book)
@@ -1473,7 +1473,7 @@ class ShellFrame(MiniFrame):
         elif evt.GetActivationReason() == evt.Reason_Mouse\
           and self.__autoload:
             ## Check all buffers that need to be loaded.
-            for book in self.all_editors:
+            for book in self.get_all_editors():
                 for buf in book.all_buffers:
                     if buf.need_buffer_load:
                         if wx.MessageBox( # Confirm load.
@@ -1905,8 +1905,16 @@ class ShellFrame(MiniFrame):
         yield from self.console.get_pages(type)
         yield from self.ghost.get_pages(type)
     
+    def get_all_shells(self):
+        """Yields all shells in the notebooks."""
+        yield from self.console.get_pages(type(self.rootshell))
+    
+    def get_all_editors(self):
+        """Yields all editors in the notebooks."""
+        yield from self.ghost.get_pages(type(self.Log))
+    
     @property
-    def all_shells(self):
+    def all_shells(self): # (deprecated) for backward compatibility
         """Yields all books in the notebooks."""
         return self.console.get_pages(type(self.rootshell))
     
@@ -1915,8 +1923,17 @@ class ShellFrame(MiniFrame):
         """Currently selected shell or rootshell."""
         return self.console.CurrentPage
     
+    def find_shell(self, target):
+        """Find a shell targeting the specified object.
+        If found, switch to the corresponding page.
+        """
+        for shell in self.get_all_shells():
+            if shell.target is target:
+                self.console.swap_page(shell)
+                return shell
+    
     @property
-    def all_editors(self):
+    def all_editors(self): # (deprecated) for backward compatibility
         """Yields all editors in the notebooks."""
         return self.ghost.get_pages(type(self.Log))
     
@@ -1926,7 +1943,7 @@ class ShellFrame(MiniFrame):
         editor = self.ghost.CurrentPage
         if isinstance(editor, type(self.Log)):
             return editor
-        return next((x for x in self.all_editors if x.IsShown()), self.Scratch)
+        return next((x for x in self.get_all_editors() if x.IsShown()), self.Scratch)
     
     def find_editor(self, fn):
         """Find an editor containing the specified fn:filename or code.

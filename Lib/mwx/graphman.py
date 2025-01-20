@@ -1328,7 +1328,7 @@ class Frame(mwx.Frame):
         self.load_plug(plug.__module__, force=1, session=session)
         
         ## Update shell.target --> new plug
-        for shell in self.shellframe.all_shells:
+        for shell in self.shellframe.get_all_shells():
             if shell.target is plug:
                 shell.handler('shell_activated', shell)
     

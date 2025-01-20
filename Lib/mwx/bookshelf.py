@@ -99,14 +99,14 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         }
         def _attach():
             if self and self.parent:
-                for editor in self.parent.all_editors:
+                for editor in self.parent.get_all_editors():
                     editor.handler.append(self.context)
                 self.build_tree()
         wx.CallAfter(_attach)
     
     def OnDestroy(self, evt):
         if self and self.parent:
-            for editor in self.parent.all_editors:
+            for editor in self.parent.get_all_editors():
                 editor.handler.remove(self.context)
         evt.Skip()
     
@@ -129,7 +129,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         if clear:
             self.DeleteAllItems()
             self.AddRoot(self.Name)
-        for editor in self.parent.all_editors:
+        for editor in self.parent.get_all_editors():
             self._set_item(self.RootItem, editor.Name, editor.all_buffers)
         self.Refresh()
     
