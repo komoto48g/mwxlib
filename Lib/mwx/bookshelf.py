@@ -130,7 +130,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             self.DeleteAllItems()
             self.AddRoot(self.Name)
         for editor in self.parent.get_all_editors():
-            self._set_item(self.RootItem, editor.Name, editor.all_buffers)
+            self._set_item(self.RootItem, editor.Name, editor.get_all_buffers())
         self.Refresh()
     
     def _gen_items(self, root, key=None):

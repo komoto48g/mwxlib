@@ -2214,7 +2214,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
-        buf = nb.all_buffers[evt.Selection]
+        buf = nb.all_pages[evt.Selection]
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
@@ -2258,7 +2258,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             _setattribute(buf, kwargs)
         else:
             self.defaultBufferStyle.update(kwargs)
-            for buf in self.all_buffers:
+            for buf in self.get_all_buffers():
                 _setattribute(buf, self.defaultBufferStyle)
     
     def on_activated(self, buf):
@@ -2275,11 +2275,25 @@ class EditorBook(AuiNotebook, CtrlInterface):
     ## --------------------------------
     
     @property
-    def all_buffers(self):
+    def all_buffers(self): # (deprecated) for backward compatibility
         """Returns all buffer pages.
-        cf. equiv. AuiNotebook.all_pages
+        cf. equiv. AuiNotebook.all_pages or get_pages()
         """
         return [self.GetPage(j) for j in range(self.PageCount)]
+    
+    def get_all_buffers(self, fn=None):
+        """Yields all buffers with specified fn:filename or code."""
+        if fn is None:
+            yield from self.get_pages(Buffer)
+        elif isinstance(fn, str):
+            g = os.path.realpath(fn)
+            for buf in self.get_pages(Buffer):
+                if fn == buf.filename or g == os.path.realpath(buf.filename):
+                    yield buf
+        else:
+            for buf in self.get_pages(Buffer):
+                if fn is buf or fn in buf: # check code
+                    yield buf
     
     @property
     def menu(self):
@@ -2290,7 +2304,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 lambda v: buf.SetFocus(),
                 lambda v: v.Check(buf is self.buffer))
         
-        return (_menu(j+1, x) for j, x in enumerate(self.all_buffers))
+        return (_menu(j+1, x) for j, x in enumerate(self.get_all_buffers()))
     
     @property
     def buffer(self):
@@ -2298,16 +2312,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
         return self.CurrentPage
     
     def find_buffer(self, fn):
-        """Find buffer with specified fn:filename or code."""
-        if isinstance(fn, str):
-            g = os.path.realpath(fn)
-            for buf in self.all_buffers:
-                if fn == buf.filename or g == os.path.realpath(buf.filename):
-                    return buf
-        else:
-            for buf in self.all_buffers:
-                if fn is buf or fn in buf: # check code
-                    return buf
+        """Find a buffer with specified fn:filename or code."""
+        return next(self.get_all_buffers(fn), None)
     
     def swap_buffer(self, buf, lineno=0):
         self.swap_page(buf)
@@ -2506,7 +2512,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return self.save_file(dlg.Path, buf)
     
     def save_all_buffers(self):
-        for buf in self.all_buffers:
+        for buf in self.get_all_buffers():
             if buf.need_buffer_save:
                 self.save_buffer(buf)
     
@@ -2525,7 +2531,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         wx.CallAfter(self.delete_buffer, buf)
     
     def kill_all_buffers(self):
-        for buf in self.all_buffers:
+        for buf in self.get_all_buffers():
             if buf.need_buffer_save:
                 if wx.MessageBox( # Confirm close.
                         "You are closing unsaved content.\n\n"

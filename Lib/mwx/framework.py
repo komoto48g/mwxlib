@@ -1338,7 +1338,7 @@ class ShellFrame(MiniFrame):
             o.write("self.SetPosition({})\n".format(self.Position))
             
             for book in self.get_all_editors():
-                for buf in book.all_buffers:
+                for buf in book.get_all_buffers():
                     if buf.mtdelta is not None:
                         o.write("self.{}.load_file({!r}, {})\n"
                                 .format(book.Name, buf.filename, buf.markline+1))
@@ -1447,7 +1447,7 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch() # cf. [pointer_unset] stop_trace
         
         for book in self.get_all_editors():
-            for buf in book.all_buffers:
+            for buf in book.get_all_buffers():
                 if buf.need_buffer_save:
                     self.popup_window(book)
                     buf.SetFocus()
@@ -1474,7 +1474,7 @@ class ShellFrame(MiniFrame):
           and self.__autoload:
             ## Check all buffers that need to be loaded.
             for book in self.get_all_editors():
-                for buf in book.all_buffers:
+                for buf in book.get_all_buffers():
                     if buf.need_buffer_load:
                         if wx.MessageBox( # Confirm load.
                                 "The file has been modified externally.\n\n"
