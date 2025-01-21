@@ -34,7 +34,7 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 
 ## URL pattern (flag = re.M | re.A)
 ## url_re = r"https?://[\w/:%#$&?()~.=+-]+"
-url_re = r"https?://[\w/:%#$&?~.=+-]+"  # excluding ()
+url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
 
 ## no-file pattern
 nofile_re = r'[\/:*?"<>|]'
