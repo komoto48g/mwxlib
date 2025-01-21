@@ -7,17 +7,15 @@
 *.pptx
 *.docx
 *.xlsx
-*.bat
-*.cmd
 *.l
 *.log
 *.out
 *.txt
+*.bak
 Makefile
 exclude_files
 
 # Resources
-docs/
 docfiles*/
 etc/
 test*/
@@ -25,6 +23,7 @@ icons*/
 vclips*/
 !Lib/mwx/
 !requirements.txt
+!docs/_sources/*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
