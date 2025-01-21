@@ -780,7 +780,7 @@ class GraphPlot(MatplotPanel):
     nbytes_threshold = 24e6
     
     #: image cutoff score percentiles
-    score_percentile = 0.01
+    score_percentile = 0.005
     
     @property
     def all_frames(self):
