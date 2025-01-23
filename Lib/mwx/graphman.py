@@ -887,7 +887,7 @@ class Frame(mwx.Frame):
                     return
                 self.Quit()
                 break
-        for frame in self.graph.all_frames:
+        for frame in self.graph.get_all_frames():
             if frame.pathname is None:
                 if wx.MessageBox( # Confirm close.
                         "You are closing unsaved frame.\n\n"
@@ -1425,7 +1425,7 @@ class Frame(mwx.Frame):
         """
         view = self.selected_view
         if not frames:
-            frames = view.all_frames
+            frames = view.get_all_frames()
             if not frames:
                 return None
         
@@ -1691,7 +1691,7 @@ class Frame(mwx.Frame):
     def save_buffers_as_tiffs(self, path=None, frames=None):
         """Save buffers to a file as a multi-page tiff."""
         if not frames:
-            frames = self.selected_view.all_frames
+            frames = self.selected_view.get_all_frames()
             if not frames:
                 return None
         
@@ -1810,7 +1810,7 @@ class Frame(mwx.Frame):
             
             def _save(view):
                 name = view.Name
-                paths = [x.pathname for x in view.all_frames if x.pathname]
+                paths = [x.pathname for x in view.get_all_frames() if x.pathname]
                 o.write(f"self.{name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{name})\n")
                 try:

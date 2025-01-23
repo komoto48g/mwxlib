@@ -772,6 +772,10 @@ class GraphPlot(MatplotPanel):
             return next((art for art in self.__Arts if art.name == j), None)
         return self.__Arts[j]
     
+    def get_all_frames(self):
+        """List of arts <matplotlib.image.AxesImage>."""
+        return self.__Arts
+    
     ## --------------------------------
     ## Property of frame / drawer
     ## --------------------------------
@@ -783,7 +787,7 @@ class GraphPlot(MatplotPanel):
     score_percentile = 0.005
     
     @property
-    def all_frames(self):
+    def all_frames(self): # (deprecated) for backward compatibility
         """List of arts <matplotlib.image.AxesImage>."""
         return self.__Arts
     
