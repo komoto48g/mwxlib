@@ -872,18 +872,18 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, tab_menu)
     
     @property
-    def all_pages(self):
-        """Returns all window pages."""
+    def all_pages(self): # (deprecated) internal use only
+        """Returns all window pages (internal use only)."""
         return [self.GetPage(i) for i in range(self.PageCount)]
     
     @property
-    def all_tabs(self):
-        """Returns all AuiTabCtrl objects."""
+    def all_tabs(self): # (deprecated) internal use only
+        """Returns all AuiTabCtrl objects (internal use only)."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
     
     @property
-    def all_panes(self):
-        """Returns all AuiPaneInfo excluding `dummy` one."""
+    def all_panes(self): # (deprecated) internal use only
+        """Returns all AuiPaneInfo excluding `dummy` one (internal use only)."""
         return list(self._mgr.AllPanes)[1:]
     
     def get_pages(self, type=None):
@@ -1535,7 +1535,7 @@ class ShellFrame(MiniFrame):
     
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
-        win = nb.all_pages[evt.Selection]
+        win = list(nb.get_pages())[evt.Selection]
         if win is self.rootshell:
             ## self.message("Don't close the root shell.")
             nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB

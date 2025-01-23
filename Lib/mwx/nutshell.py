@@ -2214,7 +2214,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
-        buf = nb.all_pages[evt.Selection]
+        buf = list(nb.get_pages())[evt.Selection]
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
@@ -2276,9 +2276,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     @property
     def all_buffers(self): # (deprecated) for backward compatibility
-        """Returns all buffer pages.
-        cf. equiv. AuiNotebook.all_pages or get_pages()
-        """
+        """Returns all buffers."""
         return [self.GetPage(j) for j in range(self.PageCount)]
     
     def get_all_buffers(self, fn=None):

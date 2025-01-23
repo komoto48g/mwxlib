@@ -970,7 +970,7 @@ class Frame(mwx.Frame):
                 win.handler('page_shown', win)
         elif not show and shown:
             if isinstance(win, aui.AuiNotebook):
-                for plug in win.all_pages:
+                for plug in win.get_pages():
                     plug.handler('page_closed', plug)
             else:
                 win.handler('page_closed', win)
@@ -1016,7 +1016,7 @@ class Frame(mwx.Frame):
         pane = evt.GetPane()
         win = pane.window
         if isinstance(win, aui.AuiNotebook):
-            for plug in win.all_pages:
+            for plug in win.get_pages():
                 plug.handler('page_closed', plug)
         else:
             win.handler('page_closed', win)
