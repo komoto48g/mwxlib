@@ -13,9 +13,11 @@ class MyDropTarget(wx.DropTarget):
         
         self.tree = tree
         self.datado = wx.CustomDataObject("TreeItem")
+        self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.do = wx.DataObjectComposite()
         self.do.Add(self.datado)
+        self.do.Add(self.textdo)
         self.do.Add(self.filedo)
         self.SetDataObject(self.do)
     
@@ -31,20 +33,20 @@ class MyDropTarget(wx.DropTarget):
     def OnData(self, x, y, result):
         item = self.tree.Selection
         name = self.tree.GetItemText(item)
-        editor = self.tree.Parent.FindWindow(name) # window.Name (not page.caption)
-        def _load(f):
-            if editor.load_file(f):
-                editor.buffer.SetFocus()
-                editor.message(f"Loaded {f!r} successfully.")
+        editor = self.tree.Parent.FindWindow(name) # window.Name
         self.GetData()
-        data = self.datado.Data
-        if data:
-            f = data.tobytes().decode()
-            _load(f)
+        if self.datado.Data:
+            fn = self.datado.Data.tobytes().decode()
+            editor.load_file(fn)
             self.datado.SetData(b"")
+        elif self.textdo.Text:
+            fn = self.textdo.Text.strip()
+            editor.load_file(fn)
+            result = wx.DragCopy
+            self.textdo.SetText("")
         else:
-            for f in self.filedo.Filenames:
-                _load(f)
+            for fn in self.filedo.Filenames:
+                editor.load_file(fn)
             self.filedo.SetData(wx.DF_FILENAME, None)
         return result
 

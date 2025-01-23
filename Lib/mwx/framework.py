@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1038,25 +1038,14 @@ class FileDropLoader(wx.DropTarget):
     def OnData(self, x, y, result):
         editor = self.target.Parent.current_editor
         self.GetData()
-        if self.textdo.TextLength > 1:
-            f = self.textdo.Text.strip()
-            res = editor.load_file(f)
-            if res:
-                editor.buffer.SetFocus()
-                editor.message(f"Loaded {f!r} successfully.")
-                result = wx.DragCopy
-            elif res is None:
-                editor.message(f"Loading {f!r} canceled.")
-                result = wx.DragCancel
-            else:
-                editor.message(f"Loading {f!r} failed.")
-                result = wx.DragNone
-            self.textdo.SetText('')
+        if self.textdo.Text:
+            fn = self.textdo.Text.strip()
+            editor.load_file(fn)
+            result = wx.DragCopy
+            self.textdo.SetText("")
         else:
-            for f in self.filedo.Filenames:
-                if editor.load_file(f):
-                    editor.buffer.SetFocus()
-                    editor.message(f"Loaded {f!r} successfully.")
+            for fn in self.filedo.Filenames:
+                editor.load_file(fn)
             self.filedo.SetData(wx.DF_FILENAME, None)
         return result
 
