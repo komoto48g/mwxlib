@@ -103,7 +103,7 @@ class Debugger(Pdb):
         pdb.input = _input
         
         def _help():
-            self.parent.handler('add_help', pdb.__doc__)
+            self.parent.handler('add_help', pdb.__doc__, "pdb")
         pdb.help = _help
         
         def dispatch(evt):

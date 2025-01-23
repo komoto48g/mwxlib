@@ -27,7 +27,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import ignore
+from .utilus import ignore, typename
 from .utilus import split_words, split_paren, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
@@ -2653,7 +2653,7 @@ class Nautilus(EditorInterface, Shell):
     
         C-up        : [0] retrieve previous history
         C-down      : [0] retrieve next history
-        C-j, M-j    : [0] tooltip of eval (for the selected or focused word)
+        C-j         : [0] tooltip of eval (for the selected or focused word)
         C-h, M-h    : [0] calltip of help (for the selected or focused func)
         TAB         : [1] history-comp
         M-p         : [1] retrieve previous history in history-comp mode
@@ -3520,13 +3520,13 @@ class Nautilus(EditorInterface, Shell):
         """Short information."""
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
-        self.parent.handler('add_help', doc) or print(doc)
+        self.parent.handler('add_help', doc, typename(obj)) or print(doc)
     
     def help(self, obj):
         """Full description."""
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
-        self.parent.handler('add_help', doc) or print(doc)
+        self.parent.handler('add_help', doc, typename(obj)) or print(doc)
     
     def eval(self, text):
         return eval(text, self.globals, self.locals)

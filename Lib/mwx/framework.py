@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1550,22 +1550,20 @@ class ShellFrame(MiniFrame):
     def About(self, evt=None):
         self.add_help(
             '\n\n'.join((
-                "#<module 'mwx' from {!r}>".format(__file__),
-                "Author: {!r}".format(__author__),
-                "Version: {!s}".format(__version__),
+                f"#<module 'mwx' from {__file__!r}>",
+                f"Author: {__author__!r}",
+                f"Version: {__version__!s}",
                 self.__class__.__doc__,
                 self.rootshell.__class__.__doc__,
-                
-                ## Thanks to wx.py.shell.
-                "#{!r}".format(wx.py),
-                "Author: {!r}".format(wx.py.version.__author__),
-                "Version: {!s}".format(wx.py.version.VERSION),
+                ## --- Thanks to <wx.py.shell> ---
+                f"#{wx.py!r}",
+                f"Author: {wx.py.version.__author__!r}",
+                f"Version: {wx.py.version.VERSION!s}",
                 wx.py.shell.Shell.__doc__,
                 textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
-                
-                ## Thanks are also due to wx.
-                "#{!r}".format(wx),
-                "To show the credit, press C-M-Mbutton.\n",
+                ## --- Thanks are also due to <wx> ---
+                ## f"#{wx!r}".format(wx),
+                ## f"To show the credit, press [C-M-Mbutton].", # cf. wx.InfoMessageBox(None)
                 ))
             )
     
@@ -1846,7 +1844,7 @@ class ShellFrame(MiniFrame):
     
     def add_log(self, text, noerr=None):
         """Add text to the logging buffer.
-        If noerr <bool> is specified, add a line-marker.
+        If noerr:bool is specified, add a line-marker.
         """
         buf = self.Log.default_buffer or self.Log.new_buffer()
         with buf.off_readonly():
@@ -1861,11 +1859,18 @@ class ShellFrame(MiniFrame):
         ## with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
         ##     o.write(text)
     
-    def add_help(self, text):
-        """Add text to the help buffer."""
+    def add_help(self, text, title=None):
+        """Add text to the help buffer.
+        If title:str is specified, create a new buffer with that title.
+        """
         buf = self.Help.default_buffer or self.Help.new_buffer()
+        if title is not None:
+            self.Help.find_file(f"*{title}*")
+            buf = self.Help.buffer
         with buf.off_readonly():
-            buf.SetText(text)
+            buf.Text = text
+            buf.EmptyUndoBuffer()
+            buf.SetSavePoint()
         ## Overwrite text and popup the window.
         self.popup_window(self.Help)
         self.Help.swap_page(buf)
