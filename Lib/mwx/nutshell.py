@@ -2022,12 +2022,11 @@ class Buffer(EditorInterface, EditWindow):
     ## File I/O
     ## --------------------------------
     
-    def _load_textfile(self, text, filename):
+    def _load_textfile(self, text):
         with self.off_readonly():
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-        self.update_filestamp(filename)
         self.handler('buffer_loaded', self)
     
     def _load_file(self, filename):
@@ -2389,7 +2388,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
             elif not buf.need_buffer_load:
                 self.swap_buffer(buf, lineno)
                 return True
-            buf._load_textfile(''.join(lines), filename)
+            buf._load_textfile(''.join(lines))
+            buf.update_filestamp(filename)
             self.swap_buffer(buf, lineno)
             return True
         return False
@@ -2419,7 +2419,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 kwargs.setdefault('timeout', 3.0)
                 res = requests.get(filename, **kwargs)
                 if res.status_code == requests.codes.OK:
-                    buf._load_textfile(res.text, filename)
+                    buf._load_textfile(res.text)
+                    buf.update_filestamp(filename)
                     self.swap_buffer(buf, lineno)
                     return True
                 res.raise_for_status()  # raise HTTP error; don't catch here.
