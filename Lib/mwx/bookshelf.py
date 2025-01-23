@@ -41,7 +41,9 @@ class MyDropTarget(wx.DropTarget):
             self.datado.SetData(b"")
         elif self.textdo.Text:
             fn = self.textdo.Text.strip()
-            editor.load_file(fn)
+            res = editor.parent.handler("text_dropped", fn)
+            if res is None or not any(res):
+                editor.load_file(fn)
             result = wx.DragCopy
             self.textdo.SetText("")
         else:
