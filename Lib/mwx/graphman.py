@@ -1103,6 +1103,7 @@ class Frame(mwx.Frame):
             else:
                 module = import_module(name)
         except Exception as e:
+            traceback.print_exc()
             print(f"- Unable to load {root!r}.", e)
             return False
         
