@@ -1033,6 +1033,9 @@ class FileDropLoader(wx.DropTarget):
         index, flags = self.target.HitTest((x, y))
         if index != -1:
             self.target.Selection = index
+            result = wx.DragCopy
+        else:
+            result = wx.DragNone
         return result
     
     def OnData(self, x, y, result):
@@ -1040,7 +1043,9 @@ class FileDropLoader(wx.DropTarget):
         self.GetData()
         if self.textdo.Text:
             fn = self.textdo.Text.strip()
-            editor.load_file(fn)
+            res = editor.parent.handler("text_dropped", fn)
+            if res is None or not any(res):
+                editor.load_file(fn)
             result = wx.DragCopy
             self.textdo.SetText("")
         else:
