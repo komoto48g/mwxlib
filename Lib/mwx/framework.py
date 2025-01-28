@@ -1245,12 +1245,10 @@ class ShellFrame(MiniFrame):
                     'trace_end' : [ None, self.on_trace_end ],
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
-                   'buffer_new' : [ None, ],
                     'shell_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
                  'title_window' : [ None, self.on_title_window ],
-       'buffer_caption_updated' : [ None, self.on_buffer_caption ], # => self.OnActivate
             },
             0 : {
                     '* pressed' : (0, fork_debugger),
@@ -1470,6 +1468,7 @@ class ShellFrame(MiniFrame):
             for book in self.get_all_editors():
                 for buf in book.get_all_buffers():
                     if buf.need_buffer_load:
+                        buf.update_caption()
                         if verbose:
                             with wx.MessageDialog(self, # Confirm load.
                                     "The file has been modified externally.\n\n"
@@ -1836,13 +1835,6 @@ class ShellFrame(MiniFrame):
         """Set title to the frame."""
         title = obj if isinstance(obj, str) else repr(obj)
         self.SetTitle("Nautilus - {}".format(title))
-    
-    def on_buffer_caption(self, buf):
-        """Called when the buffer caption is updated."""
-        if buf.caption_prefix.startswith('!'):
-            v = wx.ActivateEvent(wx.wxEVT_ACTIVATE, True,
-                                 buf.Id, ActivationReason=0)
-            self.EventHandler.ProcessEvent(v) # => self.OnActivate
     
     def add_log(self, text, noerr=None):
         """Add text to the logging buffer.
