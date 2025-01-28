@@ -1108,7 +1108,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.ensureLineOnScreen(lc)
         return lc
     
-    def get_region(self, line):
+    def get_indent_region(self, line):
         """Line numbers of folding head and tail containing the line."""
         lc = line
         le = lc + 1
@@ -3366,7 +3366,7 @@ class Nautilus(EditorInterface, Shell):
         (override) Don't remove trailing ps2 + spaces.
                    Don't invoke ``GotoLine``.
         """
-        region = self.get_region(self.cline)
+        region = self.get_command_region(self.cline)
         if region:
             p, q = (self.PositionFromLine(x) for x in region)
             p += len(sys.ps1)
@@ -3378,7 +3378,7 @@ class Nautilus(EditorInterface, Shell):
             return command
         return ''
     
-    def get_region(self, line):
+    def get_command_region(self, line):
         """Line numbers of prompt head and tail containing the line."""
         lc = line
         le = lc + 1
@@ -3639,7 +3639,7 @@ class Nautilus(EditorInterface, Shell):
                 err = re.findall(py_error_re, msg, re.M)
                 lines = [int(ln) for fn, ln in err if fn == filename]
                 if lines:
-                    region = self.get_region(self.cline)
+                    region = self.get_command_region(self.cline)
                     lx = region[0] + lines[-1] - 1
                     self.red_pointer = lx
                 self.message(e)
