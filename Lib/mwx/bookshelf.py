@@ -26,7 +26,9 @@ class MyDropTarget(wx.DropTarget):
         items = list(self.tree._gen_items(self.tree.RootItem)) # first level items
         if not item:
             item = items[0]
-        if item in items and item != self.tree.Selection:
+        elif item not in items:
+            item = self.tree.GetItemParent(item) # Select the parent item
+        if item != self.tree.Selection:
             self.tree.SelectItem(item)
         return result
     
