@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1464,21 +1464,29 @@ class ShellFrame(MiniFrame):
         if not evt.Active:
             ## Reset autoload when active focus going outside.
             self.__autoload = True
-        elif evt.GetActivationReason() == evt.Reason_Mouse\
-          and self.__autoload:
+        elif evt.GetActivationReason() == evt.Reason_Mouse and self.__autoload:
             ## Check all buffers that need to be loaded.
+            verbose = 1
             for book in self.get_all_editors():
                 for buf in book.get_all_buffers():
                     if buf.need_buffer_load:
-                        if wx.MessageBox( # Confirm load.
-                                "The file has been modified externally.\n\n"
-                                "The contents of the buffer will be overwritten.\n"
-                                "Continue loading {}/{}?".format(book.Name, buf.name),
-                                "Load {!r}".format(buf.name),
-                                style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                            self.__autoload = False # Don't ask any more.
-                            return
+                        if verbose:
+                            with wx.MessageDialog(self, # Confirm load.
+                                    "The file has been modified externally.\n\n"
+                                    "The contents of the buffer will be overwritten.\n"
+                                    "Continue loading {}/{}?".format(book.Name, buf.name),
+                                    "Load {!r}".format(buf.name),
+                                    style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
+                                dlg.SetHelpLabel("Yes to All")
+                                ret = dlg.ShowModal()
+                                if ret == wx.ID_NO:
+                                    continue
+                                if ret == wx.ID_CANCEL:
+                                    break # all
+                                if ret == wx.ID_HELP: # ID_YESTOALL
+                                    verbose = 0
                         book.load_file(buf.filename, buf.markline+1)
+            self.__autoload = False
         ## Reinitialize self-specific builtins if other instances are destroyed.
         if evt.Active:
             self.Init()
