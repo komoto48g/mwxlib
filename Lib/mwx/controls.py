@@ -1086,6 +1086,8 @@ class TextBox(wx.Control):
         if updater:
             self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
+        
+        self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
     
     def reset(self, v):
         try:
@@ -1093,6 +1095,12 @@ class TextBox(wx.Control):
             self._handler(self)
         except AttributeError:
             pass
+    
+    def OnNavKey(self, evt):
+        if evt.EventObject is self._ctrl:
+            self.Navigate(evt.Direction)
+        elif self.IsShown():
+            self._ctrl.SetFocus()
 
 
 TextCtrl = TextBox #: for backward compatibility
@@ -1159,6 +1167,8 @@ class Choice(wx.Control):
         if updater:
             self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
+        
+        self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
     
     def reset(self, v):
         try:
@@ -1175,6 +1185,12 @@ class Choice(wx.Control):
             self._ctrl.Append(s)
             self._ctrl.SetStringSelection(s)
         evt.Skip()
+    
+    def OnNavKey(self, evt):
+        if evt.EventObject is self._ctrl:
+            self.Navigate(evt.Direction)
+        elif self.IsShown():
+            self._ctrl.SetFocus()
 
 
 class Indicator(wx.Control):
