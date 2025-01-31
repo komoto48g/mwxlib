@@ -4,10 +4,6 @@
 *.ssn
 *.db
 *.lnk
-*.pptx
-*.docx
-*.xlsx
-*.l
 *.log
 *.out
 *.txt
