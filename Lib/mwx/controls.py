@@ -289,13 +289,13 @@ class Knob(wx.Panel):
     
     Args:
         param   : <Param> or <LParam> object
-        type    : ctrl type (slider[*], [hv]spin, choice, None)
+        type    : control type (slider[*], [hv]spin, choice, None)
         style   : style of label
                   None -> static text (default)
                   button -> label with flat button
                   chkbox -> label with checkbox
                   checkbox -> label with checkbox
-        cw      : width of ctrl
+        cw      : width of control
         lw      : width of label
         tw      : width of textbox
         h       : height of widget (defaults to 22)
@@ -317,10 +317,8 @@ class Knob(wx.Panel):
                  style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
-        assert isinstance(param, Param),\
-          "Argument `param` must be an instance of Param"
+        assert isinstance(param, Param), "Argument `param` must be an instance of Param"
         
-        self.__bit = 1
         self.__par = param
         self.__par.knobs.append(self) # パラメータの関連付けを行う
         
@@ -337,72 +335,72 @@ class Knob(wx.Panel):
         label = self.__par.name + '  '
         
         if style == 'chkbox' or style == 'checkbox':
-            self.label = wx.CheckBox(self, label=label, size=(lw,-1))
-            self.label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
+            self._label = wx.CheckBox(self, label=label, size=(lw,-1))
+            self._label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         elif style == 'button':
-            self.label = pb.PlateButton(self, label=label, size=(lw,-1),
+            self._label = pb.PlateButton(self, label=label, size=(lw,-1),
                             style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
-            self.label.Bind(wx.EVT_BUTTON, self.OnPress)
+            self._label.Bind(wx.EVT_BUTTON, self.OnPress)
         elif not style:
-            self.label = wx.StaticText(self, label=label, size=(lw,-1))
+            self._label = wx.StaticText(self, label=label, size=(lw,-1))
         else:
             raise Exception("unknown style: {!r}".format(style))
         
-        self.label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
-        self.label.SetToolTip(self.__par._tooltip)
-        self.label.Enable(lw) # skip focus
+        self._label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        self._label.SetToolTip(self.__par._tooltip)
+        self._label.Enable(lw) # skip focus
         
-        self.text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
-        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
-        self.text.Bind(wx.EVT_KILL_FOCUS, self.OnTextExit)
-        self.text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
-        self.text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
-        self.text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
-        self.text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        self._text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
+        self._text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
+        self._text.Bind(wx.EVT_KILL_FOCUS, self.OnTextExit)
+        self._text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
+        self._text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
+        self._text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+        self._text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         
-        self.text.Enable(tw) # skip focus
+        self._text.Enable(tw) # skip focus
         
         if type == 'slider':
-            self.ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
-            self.ctrl.Bind(wx.EVT_SCROLL_CHANGED, self.OnScroll)
-            self.ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
-            self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+            self._ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
+            self._ctrl.Bind(wx.EVT_SCROLL_CHANGED, self.OnScroll)
+            self._ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
+            self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'slider*':
-            self.ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
-            self.ctrl.Bind(wx.EVT_SCROLL, self.OnScroll) # called while dragging
-            self.ctrl.Bind(wx.EVT_SCROLL_CHANGED, lambda v: None) # pass no action
-            self.ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
-            self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+            self._ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
+            self._ctrl.Bind(wx.EVT_SCROLL, self.OnScroll) # called while dragging
+            self._ctrl.Bind(wx.EVT_SCROLL_CHANGED, lambda v: None) # pass no action
+            self._ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
+            self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'spin' or type =='hspin':
-            self.ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_HORIZONTAL)
-            self.ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
-            self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+            self._ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_HORIZONTAL)
+            self._ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
+            self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'vspin':
-            self.ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_VERTICAL)
-            self.ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
-            self.ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+            self._ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_VERTICAL)
+            self._ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
+            self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'choice':
-            self.ctrl = wx.Choice(self, size=(cw,h))
-            self.ctrl.Bind(wx.EVT_CHOICE, self.OnScroll)
-            self.ctrl.SetValue = self.ctrl.SetSelection # setter of choice
-            self.ctrl.GetValue = self.ctrl.GetSelection # getter (ditto)
+            self._ctrl = wx.Choice(self, size=(cw,h))
+            self._ctrl.Bind(wx.EVT_CHOICE, self.OnScroll)
+            self._ctrl.SetValue = self._ctrl.SetSelection # setter of choice
+            self._ctrl.GetValue = self._ctrl.GetSelection # getter (ditto)
             
         else:
             raise Exception("unknown type: {!r}".format(type))
         
-        self.ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
-        self.ctrl.Enable(cw) # skip focus
+        self._ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        self._ctrl.Enable(cw) # skip focus
         
         c = (cw and type != 'vspin')
         self.SetSizer(
             pack(self, (
-                (self.label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
-                (self.text,  0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, tw and 1),
-                (self.ctrl,  c, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, cw and 1),
+                (self._label, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, lw and 1),
+                (self._text,  0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, tw and 1),
+                (self._ctrl,  c, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, cw and 1),
             ))
         )
         self.update_range()
@@ -417,33 +415,33 @@ class Knob(wx.Panel):
     def update_range(self):
         """Called when range is being changed (internal use only)."""
         v = self.__par
-        if isinstance(self.ctrl, wx.Choice): #<wx.Choice>
+        if isinstance(self._ctrl, wx.Choice): #<wx.Choice>
             items = [v.__str__(x) for x in v.range]
-            if items != self.ctrl.Items:
-                self.ctrl.SetItems(items)
-                self.ctrl.SetStringSelection(str(v))
+            if items != self._ctrl.Items:
+                self._ctrl.SetItems(items)
+                self._ctrl.SetStringSelection(str(v))
         else:
-            self.ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
+            self._ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
     
     def update_label(self):
         """Called when label is being changed (internal use only)."""
         v = self.__par
-        if isinstance(self.label, wx.CheckBox):
-            self.label.SetValue(v.check)
+        if isinstance(self._label, wx.CheckBox):
+            self._label.SetValue(v.check)
         
         t = '  ' if np.isnan(v.std_value) or v.value == v.std_value else '*'
-        self.label.SetLabel(v.name + t)
-        self.label.Refresh()
+        self._label.SetLabel(v.name + t)
+        self._label.Refresh()
         self.Refresh()
     
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
         v = self.__par
-        self.ctrl.SetValue(v.index)
-        wx.CallAfter(self.text.SetValue, str(v)) # for wxAssertionError
+        self._ctrl.SetValue(v.index)
+        wx.CallAfter(self._text.SetValue, str(v)) # for wxAssertionError
         if valid:
             if notify:
-                if self.text.BackgroundColour != '#ffff80':
+                if self._text.BackgroundColour != '#ffff80':
                     wx.CallAfter(wx.CallLater, 1000,
                                  self.set_textcolour, '#ffffff')
                     self.set_textcolour('#ffff80') # light-yellow
@@ -459,8 +457,8 @@ class Knob(wx.Panel):
     
     def set_textcolour(self, c):
         if self:
-            self.text.BackgroundColour = c
-            self.text.Refresh()
+            self._text.BackgroundColour = c
+            self._text.Refresh()
     
     def shift_ctrl(self, evt, bit):
         """Called when a key/mouse wheel is pressed/scrolled.
@@ -474,14 +472,14 @@ class Knob(wx.Panel):
             if evt.ControlDown(): bit *= 16
             if evt.AltDown():     bit *= 256
         v = self.__par
-        j = self.ctrl.GetValue() + bit
+        j = self._ctrl.GetValue() + bit
         if j != v.index:
             v.index = j
             v.reset(v.value)
     
     def OnScroll(self, evt): #<wx._core.ScrollEvent> #<wx._controls.SpinEvent> #<wx._core.CommandEvent>
         v = self.__par
-        j = self.ctrl.GetValue()
+        j = self._ctrl.GetValue()
         if j != v.index:
             v.index = j
             v.reset(v.value)
@@ -497,8 +495,8 @@ class Knob(wx.Panel):
         if key == wx.WXK_RIGHT: return self.shift_ctrl(evt, 1)
         
         def _focus(c):
-            if isinstance(c, Knob) and c.ctrl.IsEnabled():
-                c.ctrl.SetFocus()
+            if isinstance(c, Knob) and c._ctrl.IsEnabled():
+                c._ctrl.SetFocus()
                 return True
         
         ls = next(x for x in self.Parent.layout_groups if self in x)
@@ -519,11 +517,11 @@ class Knob(wx.Panel):
     
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
         evt.Skip()
-        x = self.text.Value.strip()
+        x = self._text.Value.strip()
         self.__par.reset(x)
     
     def OnTextExit(self, evt): #<wx._core.FocusEvent>
-        x = self.text.Value.strip()
+        x = self._text.Value.strip()
         if x != str(self.__par):
             self.__par.reset(x)
         evt.Skip()
@@ -537,9 +535,9 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def Enable(self, p=True):
-        self.label.Enable(p)
-        self.ctrl.Enable(p)
-        self.text.Enable(p)
+        self._label.Enable(p)
+        self._ctrl.Enable(p)
+        self._text.Enable(p)
 
 
 class KnobCtrlPanel(scrolled.ScrolledPanel):
