@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.5"
+__version__ = "1.3.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1182,7 +1182,7 @@ class ShellFrame(MiniFrame):
         self._mgr.AddPane(self.ghost,
                           aui.AuiPaneInfo().Name("ghost")
                              .Caption("Ghost in the Shell").Right()
-                             .MaximizeButton().Show(0))
+                             .MaximizeButton().Show(1))
         
         self._mgr.AddPane(self.watcher,
                           aui.AuiPaneInfo().Name("watcher")
