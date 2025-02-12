@@ -40,6 +40,7 @@ class Param:
             - control -> when index is changed by knobs or reset (handler)
             - updated -> when button is pressed (updater)
             - checked -> when tick turns on/off (checker)
+            - notified -> when value changed
             - overflow -> when value overflows
             - underflow -> when value underflows
     """
@@ -63,6 +64,7 @@ class Param:
             'control' : [ _F(handler) ] if handler else [],
             'updated' : [ _F(updater) ] if updater else [],
             'checked' : [ _F(checker) ] if checker else [],
+           'notified' : [],
            'overflow' : [],
           'underflow' : [],
         })
@@ -130,14 +132,10 @@ class Param:
     def value(self, v):
         if v is None:
             v = nan
-        if np.isnan(v) or np.isinf(v):
+        if np.isnan(v) or np.isinf(v):  # Skip events for nan and inf.
             self.__value = v
             for knob in self.knobs:
-                knob.update_ctrl(None, notify=False)
-            return
-        elif v == self.__value:
-            for knob in self.knobs:
-                knob.update_ctrl(True, notify=False)
+                knob.update_ctrl(None)
             return
         
         ## If the value is out of range, it will be modified.
@@ -152,6 +150,7 @@ class Param:
             self.callback('overflow', self)
         for knob in self.knobs:
             knob.update_ctrl(valid, notify=True)
+        self.callback('notified', self)
     
     @property
     def std_value(self):
@@ -234,6 +233,7 @@ class LParam(Param):
             - control -> when index is changed by knobs or reset (handler)
             - updated -> when button is pressed (updater)
             - checked -> when tick turns on/off (checker)
+            - notified -> when value changed
             - overflow -> when value overflows
             - underflow -> when value underflows
     """
