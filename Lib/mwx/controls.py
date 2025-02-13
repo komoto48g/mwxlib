@@ -339,12 +339,12 @@ class Knob(wx.Panel):
             self._label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         elif style == 'button':
             self._label = pb.PlateButton(self, label=label, size=(lw,-1),
-                            style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
+                                         style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
             self._label.Bind(wx.EVT_BUTTON, self.OnPress)
         elif not style:
             self._label = wx.StaticText(self, label=label, size=(lw,-1))
         else:
-            raise Exception("unknown style: {!r}".format(style))
+            raise Exception(f"unknown style: {style!r}")
         
         self._label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         self._label.SetToolTip(self.__par._tooltip)
@@ -390,7 +390,7 @@ class Knob(wx.Panel):
             self._ctrl.GetValue = self._ctrl.GetSelection # getter (ditto)
             
         else:
-            raise Exception("unknown type: {!r}".format(type))
+            raise Exception(f"unknown type: {type!r}")
         
         self._ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
         self._ctrl.Enable(cw) # skip focus

@@ -115,7 +115,7 @@ class Plugin(Layer):
         self.layout((self.mc,), expand=2)
         self.layout((self.ss, self.to, self.rw, self.fw,
                      self.snp, self.crop, self.exp),
-                    expand=0, row=7, style='button', lw=12, cw=0, tw=64)
+                    expand=0, row=7, style='button', lw=28, cw=0, tw=64)
         
         self.menu[0:5] = [
             (1, "&Load file", Icon('open'),
