@@ -321,7 +321,9 @@ class AutoCompInterfaceMixin:
         cmdl = self.GetTextRange(self.bol, self.cpos)
         hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
         
-        ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
+        ## ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
+        q = hint.lower()
+        ls = [x for x in self.fragmwords if x.lower().startswith(q)] # case-insensitive match
         words = sorted(ls, key=lambda s:s.upper())
         
         self._gen_autocomp(0, hint, words)
@@ -360,9 +362,9 @@ class AutoCompInterfaceMixin:
                     self.message("\b failed.", e)
                     return
                 else:
-                    ## Add unimported module names.
-                    p = "{}.{}".format(text, hint)
-                    keys = [x[len(text)+1:] for x in self.modules if x.startswith(p)]
+                    ## Add unimported module names (case-insensitive match).
+                    q = f"{text}.{hint}".lower()
+                    keys = [x[len(text)+1:] for x in self.modules if x.lower().startswith(q)]
                     modules.update(k for k in keys if '.' not in k)
             
             elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
@@ -1730,7 +1732,7 @@ class Buffer(EditorInterface, EditWindow):
             self.__mtime = -1
         else:
             try:
-                self.__path.resolve(True) # Check if the path format is valid.
+                self.__path.resolve(True) # Check if the path is valid.
             except FileNotFoundError:
                 self.__mtime = False # valid path (but not found)
             except OSError:
