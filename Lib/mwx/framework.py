@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.7"
+__version__ = "1.3.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -32,8 +32,9 @@ def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
                   If None, the target is set to `__main__`.
         loop    : If True, the app and the mainloop will be created.
         locals  : Additional context of the shell
-        debrc   : file name of the session; defaults to None.
+        debrc   : file name of the session. Defaults to None.
                   If None, no session will be created or saved.
+                  If `''`, the default session (.debrc) will be loaded.
         
         **kwargs: Nautilus ShellFrame arguments
         
@@ -1061,8 +1062,9 @@ class ShellFrame(MiniFrame):
     Args:
         target  : target object of the rootshell.
                   If None, it will be __main__.
-        session : file name of the session; defaults to None.
+        session : file name of the session. Defaults to None.
                   If None, no session will be created or saved.
+                  If `''`, the default session (.debrc) will be loaded.
         ensureClose : flag for the shell standalone.
                       If True, EVT_CLOSE will close the window.
                       Otherwise the window will be only hidden.
