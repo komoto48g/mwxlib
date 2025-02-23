@@ -39,6 +39,13 @@ class MyDropTarget(wx.DropTarget):
         self.GetData()
         if self.datado.Data:
             fn = self.datado.Data.tobytes().decode()
+            if result == wx.DragMove:
+                try:
+                    buf = self.tree._buffer  # only for the same process buffer DnD
+                    buf.parent.kill_buffer(buf) # the focus moves
+                    wx.CallAfter(self.tree.SetFocus)
+                except AttributeError:
+                    pass
             editor.load_file(fn)
             self.datado.SetData(b"")
         elif self.textdo.Text:
@@ -58,7 +65,6 @@ class MyDropTarget(wx.DropTarget):
 class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     """TreeList/Ctrl
     
-    Construct treectrl in the order of tree:list.
     Note:
         This only works with single selection mode.
     """
@@ -202,7 +208,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 name = self.GetItemText(evt.Item)
                 editor = self.Parent.FindWindow(name) # window.Name (not page.caption)
                 if not editor.IsShown():
-                    ## editor.SetFocus()
                     self.Parent.Selection = self.Parent.FindPage(editor)
             wx.CallAfter(self.SetFocus)
         evt.Skip()
@@ -210,8 +215,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     def OnBeginDrag(self, evt):
         data = self.GetItemData(evt.Item)
         if data:
+            self._buffer = data
             dd = wx.CustomDataObject("TreeItem")
             dd.SetData(data.filename.encode())
             dropSource = wx.DropSource()
             dropSource.SetData(dd)
             dropSource.DoDragDrop(wx.Drag_AllowMove) # -> wx.DragResult
+            del self._buffer
