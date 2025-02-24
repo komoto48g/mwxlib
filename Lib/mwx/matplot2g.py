@@ -695,6 +695,10 @@ class GraphPlot(MatplotPanel):
         
         return self.frame
     
+    def __iter__(self):
+        for art in self.__Arts:
+            yield art.buffer
+    
     def __getitem__(self, j):
         if isinstance(j, str):
             j = self.index(j)
@@ -758,19 +762,26 @@ class GraphPlot(MatplotPanel):
     def __contains__(self, j):
         if isinstance(j, str):
             return j in (art.name for art in self.__Arts)
+        elif isinstance(j, np.ndarray):
+            return any(j is art.buffer for art in self.__Arts)
         else:
             return j in self.__Arts
     
     def index(self, j):
         if isinstance(j, str):
-            names = [art.name for art in self.__Arts]
-            return names.index(j)
-        return self.__Arts.index(j)
+            return next(i for i, art in enumerate(self.__Arts) if j == art.name)
+        elif isinstance(j, np.ndarray):
+            return next(i for i, art in enumerate(self.__Arts) if j is art.buffer)
+        else:
+            return self.__Arts.index(j) # j:frame -> int
     
     def find_frame(self, j):
         if isinstance(j, str):
-            return next((art for art in self.__Arts if art.name == j), None)
-        return self.__Arts[j]
+            return next((art for art in self.__Arts if j == art.name), None)
+        elif isinstance(j, np.ndarray):
+            return next((art for art in self.__Arts if j is art.buffer), None)
+        else:
+            return self.__Arts[j] # j:int -> frame
     
     def get_all_frames(self):
         """List of arts <matplotlib.image.AxesImage>."""
