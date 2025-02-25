@@ -1101,9 +1101,6 @@ class TextBox(wx.Control):
             self._ctrl.SetFocus()
 
 
-TextCtrl = TextBox #: for backward compatibility
-
-
 class Choice(wx.Control):
     """Editable Choice (ComboBox) control
     

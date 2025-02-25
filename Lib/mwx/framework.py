@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.9"
+__version__ = "1.3.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1917,11 +1917,6 @@ class ShellFrame(MiniFrame):
         yield from self.ghost.get_pages(type(self.Log))
     
     @property
-    def all_shells(self): # (deprecated) for backward compatibility
-        """Yields all books in the notebooks."""
-        return self.console.get_pages(type(self.rootshell))
-    
-    @property
     def current_shell(self):
         """Currently selected shell or rootshell."""
         return self.console.CurrentPage
@@ -1934,11 +1929,6 @@ class ShellFrame(MiniFrame):
             if shell.target is target:
                 self.console.swap_page(shell)
                 return shell
-    
-    @property
-    def all_editors(self): # (deprecated) for backward compatibility
-        """Yields all editors in the notebooks."""
-        return self.ghost.get_pages(type(self.Log))
     
     @property
     def current_editor(self):

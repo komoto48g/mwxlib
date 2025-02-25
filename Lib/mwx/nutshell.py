@@ -2275,11 +2275,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
     ## Buffer list controls
     ## --------------------------------
     
-    @property
-    def all_buffers(self): # (deprecated) for backward compatibility
-        """Returns all buffers."""
-        return [self.GetPage(j) for j in range(self.PageCount)]
-    
     def get_all_buffers(self, fn=None):
         """Yields all buffers with specified fn:filename or code."""
         if fn is None:
