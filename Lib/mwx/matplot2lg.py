@@ -512,8 +512,8 @@ class LineProfile(LinePlot):
             self.__plot.set_xdata(x * ru)
             if self.region is not None:
                 self.region *= ru
-            sel = self.Selector
-            self.Selector = (sel[0] * ru, sel[1])
+            sel = self.selector
+            self.selector = (sel[0] * ru, sel[1])
             self.draw()
     
     def set_linewidth(self, w):
@@ -730,16 +730,16 @@ class LineProfile(LinePlot):
             
             peaks = np.sort(np.append(maxima, minima))
             if peaks.size:
-                self.Selector = x[peaks], y[peaks]
+                self.selector = x[peaks], y[peaks]
     
     def OnMarkErase(self, evt):
         """Erase markers on peaks."""
-        ## del self.Selector
+        ## del self.selector
         self.OnEscapeSelection(evt)
     
     def OnMarkSelectionBegin(self, evt):
         org = self.p_event
-        xs, ys = self.Selector
+        xs, ys = self.selector
         xc, yc = org.xdata, org.ydata
         ## xc, yc = evt.xdata, evt.ydata
         if xs.size:
@@ -750,7 +750,7 @@ class LineProfile(LinePlot):
         self.draw()
     
     def OnMarkSelectionMove(self, evt):
-        xs, ys = self.Selector
+        xs, ys = self.selector
         xc, yc = evt.xdata, evt.ydata
         if xs.size:
             ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])

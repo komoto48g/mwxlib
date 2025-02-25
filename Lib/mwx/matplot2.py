@@ -457,12 +457,12 @@ class MatplotPanel(wx.Panel):
         self.canvas.draw()
     
     @property
-    def Selector(self):
+    def selector(self):
         """Selected points array [[x],[y]]."""
         return np.array(self.selected.get_data(orig=0))
     
-    @Selector.setter
-    def Selector(self, v):
+    @selector.setter
+    def selector(self, v):
         x, y = v
         if not hasattr(x, '__iter__'):
             x, y = [x], [y]
@@ -472,8 +472,8 @@ class MatplotPanel(wx.Panel):
         self.draw(self.selected)
         self.trace_point(*v)
     
-    @Selector.deleter
-    def Selector(self):
+    @selector.deleter
+    def selector(self):
         self.selected.set_visible(0)
         self.selected.set_data([], [])
         self.handler('selector_removed', self.frame)
@@ -502,7 +502,7 @@ class MatplotPanel(wx.Panel):
         self.__isMenu = 0
     
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
-        """Find index near (x,y) and set the Selector.
+        """Find index near (x,y) and set the selector.
         Called (maybe) after mouse button pressed.
         """
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
@@ -527,7 +527,7 @@ class MatplotPanel(wx.Panel):
             evt.index = k = indices[distances.argmin()] # index of the nearest point
             evt.xdata = x = xs[k]
             evt.ydata = y = ys[k]
-            self.Selector = ([x], [y])
+            self.selector = ([x], [y])
             self.canvas.draw_idle()
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
@@ -634,7 +634,7 @@ class MatplotPanel(wx.Panel):
     
     def OnMotion(self, evt):
         """Called when mouse moves in axes."""
-        if not self.Selector.size:
+        if not self.selector.size:
             self.trace_point(evt.xdata, evt.ydata)
     
     def OnForwardPosition(self, evt):
@@ -656,7 +656,7 @@ class MatplotPanel(wx.Panel):
     
     def OnEscapeSelection(self, evt):
         """Escape from selection."""
-        del self.Selector
+        del self.selector
         self.canvas.draw_idle()
     
     def zoomlim(self, lim, M, c=None):

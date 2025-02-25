@@ -277,7 +277,7 @@ class Debugger(Pdb):
     ## --------------------------------
     
     def _markbp(self, lineno, style):
-        """Add a marker to lineno, with the following style markers:
+        """Add a mark to lineno, with the following style markers:
         [1] white-arrow for breakpoints
         [2] red-arrow for exception
         """
@@ -324,11 +324,11 @@ class Debugger(Pdb):
             buffer = self.editor.buffer
             if filename == buffer.filename:
                 if code != self.code:
-                    buffer.markline = firstlineno - 1 # (o) entry:marker
+                    buffer.markline = firstlineno - 1 # (o) entry:mark
                     buffer.goto_marker(1)
                     buffer.recenter(3)
                 buffer.goto_line(lineno - 1)
-                buffer.pointer = lineno - 1 # (->) pointer:marker
+                buffer.pointer = lineno - 1 # (->) pointer:mark
                 buffer.ensureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
@@ -462,7 +462,7 @@ class Debugger(Pdb):
         """Print the stack entry frame_lineno (frame, lineno).
         
         (override) Change prompt_prefix.
-                   Add pointer:marker when step next or jump.
+                   Add pointer:mark when step next or jump.
         """
         if self.verbose:
             Pdb.print_stack_entry(self, frame_lineno,

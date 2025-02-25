@@ -553,9 +553,9 @@ class Graph(GraphPlot):
         self.update_art_of_mark()
     
     def remove_markups(self):
-        del self.Selector
-        del self.Markers
-        del self.Region
+        del self.selector
+        del self.markers
+        del self.region
     
     def hide_layers(self):
         for name in self.parent.plugins:
@@ -730,21 +730,21 @@ class Frame(mwx.Frame):
             (wx.ID_PASTE, "&Paste\t(C-v)", "Paste buffer from clipboard", Icon('paste'),
                 lambda v: self.__view.read_buffer_from_clipboard()),
             (),
-            (mwx.ID_(21), "Toggle &Markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
+            (mwx.ID_(21), "Toggle &markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
                 lambda v: self.__view.set_markups_visible(v.IsChecked()),
                 lambda v: v.Check(self.__view.get_markups_visible())),
                 
-            (mwx.ID_(22), "&Remove Markers", "Remove markups", Icon('-'),
+            (mwx.ID_(22), "&Remove markers", "Remove markups", Icon('-'),
                 lambda v: self.__view.remove_markups()),
             (),
-            (mwx.ID_(23), "Hide all &Layers", "Hide all layers", Icon('xr'),
+            (mwx.ID_(23), "Hide all &layers", "Hide all layers", Icon('xr'),
                 lambda v: self.__view.hide_layers()),
             (),
-            (mwx.ID_(24), "&Histogram\tCtrl-h", "Show Histogram window", wx.ITEM_CHECK,
+            (mwx.ID_(24), "&Histogram\tCtrl-h", "Show histogram window", wx.ITEM_CHECK,
                 lambda v: self.show_pane(self.histogram, v.IsChecked()),
                 lambda v: v.Check(self.histogram.IsShownOnScreen())),
                 
-            (mwx.ID_(25), "&Invert Color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
+            (mwx.ID_(25), "&Invert color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.__view.invert_cmap(),
                 lambda v: v.Check(self.__view.get_cmap()[-2:] == "_r")),
         ]
@@ -764,10 +764,10 @@ class Frame(mwx.Frame):
             ##     lambda v: self.__view.set_cmap('gray'),
             ##     lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
             ##     
-            ("Standard Colors",
+            ("Standard colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
                 
-            ("Other Colors",
+            ("Other colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if not c.islower()]),
         ]
         

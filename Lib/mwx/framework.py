@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.8"
+__version__ = "1.3.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1840,14 +1840,14 @@ class ShellFrame(MiniFrame):
     
     def add_log(self, text, noerr=None):
         """Add text to the logging buffer.
-        If noerr:bool is specified, add a line-marker.
+        If noerr:bool is specified, add a line-mark.
         """
         buf = self.Log.default_buffer or self.Log.new_buffer()
         with buf.off_readonly():
-            buf.goto_char(buf.TextLength) # line to set an arrow marker
+            buf.goto_char(buf.TextLength) # line to set an arrow mark
             buf.write(text)
         if noerr is not None:
-            ## Set a marker on the current line.
+            ## Set a mark on the current line.
             buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
             return
         
