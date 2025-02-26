@@ -306,8 +306,8 @@ class Debugger(Pdb):
             module = import_module(m.group(1))
             filename = inspect.getfile(module)
         
-        editor = self.parent.find_editor(code)\
-              or self.parent.find_editor(filename)
+        editor = next(self.parent.get_all_editors(code),
+                 next(self.parent.get_all_editors(filename), None))
         if not editor:
             editor = self.parent.Log
             ## Note: Need a post-call for a thread debugging.
