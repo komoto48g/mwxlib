@@ -2357,10 +2357,26 @@ class EditorBook(AuiNotebook, CtrlInterface):
         wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
     
     def next_buffer(self):
-        self.Selection += 1
+        if self.Selection < self.PageCount - 1:
+            self.Selection += 1
+        else:
+            books = list(self.Parent.get_pages(type(self)))
+            k = books.index(self)
+            if k < len(books) - 1:
+                other_editor = books[k+1]
+                other_editor.Selection = 0
+                other_editor.CurrentPage.SetFocus()
     
     def previous_buffer(self):
-        self.Selection -= 1
+        if self.Selection > 0:
+            self.Selection -= 1
+        else:
+            books = list(self.Parent.get_pages(type(self)))
+            k = books.index(self)
+            if k > 0:
+                other_editor = books[k-1]
+                other_editor.Selection = other_editor.PageCount - 1
+                other_editor.CurrentPage.SetFocus()
     
     ## --------------------------------
     ## File I/O
