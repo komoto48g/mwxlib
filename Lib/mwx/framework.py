@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.10"
+__version__ = "1.3.11"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -873,23 +873,19 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, tab_menu)
     
     @property
-    def all_pages(self): # (deprecated) internal use only
-        """Returns all window pages (internal use only)."""
-        return [self.GetPage(i) for i in range(self.PageCount)]
-    
-    @property
-    def all_tabs(self): # (deprecated) internal use only
+    def _all_tabs(self): # (deprecated) internal use only
         """Returns all AuiTabCtrl objects (internal use only)."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
     
     @property
-    def all_panes(self): # (deprecated) internal use only
+    def _all_panes(self): # (deprecated) internal use only
         """Returns all AuiPaneInfo excluding `dummy` one (internal use only)."""
         return list(self._mgr.AllPanes)[1:]
     
     def get_pages(self, type=None):
         """Yields pages of the specified window type."""
-        for win in self.all_pages:
+        for i in range(self.PageCount):
+            win = self.GetPage(i)
             if type is None or isinstance(win, type):
                 yield win
     
@@ -927,7 +923,7 @@ class AuiNotebook(aui.AuiNotebook):
         Note:
             Argument `win` can also be page.window.Name (not page.caption).
         """
-        for tabs in self.all_tabs: #<aui.AuiTabCtrl>
+        for tabs in self._all_tabs: #<aui.AuiTabCtrl>
             for page in tabs.Pages: #<aui.AuiNotebookPage>
                 ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
@@ -945,8 +941,8 @@ class AuiNotebook(aui.AuiNotebook):
         tabs.AddPage(win, page) # Add a page with the copied info.
         if tc1.PageCount == 0:
             ## Delete an empty tab and the corresponding pane.
-            j = self.all_tabs.index(tc1)
-            pane = self.all_panes[j]
+            j = self._all_tabs.index(tc1)
+            pane = self._all_panes[j]
             tc1.Destroy()
             self._mgr.DetachPane(pane.window)
         self._mgr.Update()
@@ -962,10 +958,10 @@ class AuiNotebook(aui.AuiNotebook):
             Perspectives are saved according to page.window.Name.
             User should give it (not page.caption) a unique name.
         """
-        for j, pane in enumerate(self.all_panes):
+        for j, pane in enumerate(self._all_panes):
             pane.name = f"pane{j+1}"
         spec = ""
-        for j, tabs in enumerate(self.all_tabs):
+        for j, tabs in enumerate(self._all_tabs):
             k = next(k for k, page in enumerate(tabs.Pages)
                                    if page.window.Shown) # get active window
             ## names = [page.caption for page in tabs.Pages]
@@ -985,19 +981,19 @@ class AuiNotebook(aui.AuiNotebook):
         try:
             self.Parent.Freeze()
             ## Collapse all tabs to main tabctrl
-            maintab = self.all_tabs[0]
-            for win in self.all_pages:
+            maintab = self._all_tabs[0]
+            for win in self.get_pages():
                 self.move_tab(win, maintab)
             
             ## Create a new tab using Split method.
             ## Note: The normal way of creating panes with `_mgr` crashes.
             
-            all_names = [win.Name for win in self.all_pages]
+            all_names = [win.Name for win in self.get_pages()]
             for names, k in tabinfo[1:]:
                 names, k = eval(names), int(k)
                 i = all_names.index(names[0]) # Assuming 0:tab is included.
                 self.Split(i, wx.LEFT)
-                newtab = self.all_tabs[-1]
+                newtab = self._all_tabs[-1]
                 for name in names[1:]:
                     self.move_tab(name, newtab)
                 self.Selection = all_names.index(names[k]) # new tabs active window
@@ -1006,7 +1002,7 @@ class AuiNotebook(aui.AuiNotebook):
                 names, k = eval(names), int(k)
                 self.Selection = all_names.index(names[k]) # main tabs active window
             
-            for j, pane in enumerate(self.all_panes):
+            for j, pane in enumerate(self._all_panes):
                 pane.name = f"pane{j+1}"
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()

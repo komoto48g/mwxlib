@@ -2214,8 +2214,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         evt.Skip()
     
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
-        nb = evt.EventObject
-        buf = list(nb.get_pages())[evt.Selection]
+        buf = self.GetPage(evt.Selection)
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm close.
                     "You are closing unsaved content.\n\n"
