@@ -2349,12 +2349,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if j != -1:
             self.DeletePage(j)  # the focus moves
             if not self.buffer: # no buffers
-                self.new_buffer()
+                wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
     
     def delete_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
-        self.new_buffer()
+        wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
     
     def next_buffer(self):
         self.Selection += 1
@@ -2525,7 +2525,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
-        wx.CallAfter(self.delete_buffer, buf)
+        self.delete_buffer(buf)
     
     def kill_all_buffers(self):
         for buf in self.get_all_buffers():
@@ -2538,7 +2538,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                         style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                     self.post_message("The close has been canceled.")
                     return None
-        wx.CallAfter(self.delete_all_buffers)
+        self.delete_all_buffers()
 
 
 class Interpreter(interpreter.Interpreter):
