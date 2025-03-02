@@ -152,32 +152,38 @@ class Thread:
             raise KeyboardInterrupt("terminated by user")
         return True
     
-    def pause(self, msg="Pausing..."):
+    def pause(self, msg=None, caption=wx.MessageBoxCaptionStr):
         """Pause the thread.
+        Confirm whether to terminate the thread.
         
-        Use ``check`` method where you want to pause.
+        Returns:
+            True  : [OK] if terminating.
+            False : [CANCEL] otherwise.
         
         Note:
+            Use ``check`` method where you want to pause.
             Even after the message dialog is displayed, the thread
             does not suspend until check (or event.wait) is called.
         """
         if not self.running:
             return None
-        if '\n\n' not in msg:
-            msg += '\n\n'
+        if not msg:
+            msg = ("The thread is running.\n\n"
+                   "Do you want to terminate the thread?")
         try:
             self.event.clear() # suspend
-            if wx.MessageBox(  # Confirm terminatation.
-                    msg + "Do you want to terminate the process?",
+            if wx.MessageBox(  # Confirm closing the thread.
+                    msg, caption,
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
                 self.Stop()
-                return False
-            return True
+                return True
+            return False
         finally:
             self.event.set() # resume
     
     def Start(self, f, *args, **kwargs):
-        """Start the thread to run the specified function."""
+        """Start the thread to run the specified function.
+        """
         @wraps(f)
         def _f(*v, **kw):
             try:
@@ -213,7 +219,10 @@ class Thread:
     def Stop(self):
         """Stop the thread.
         
-        Use ``check`` method where you want to quit.
+        Note:
+            Use ``check`` method where you want to stop.
+            Even after the message dialog is displayed, the thread
+            does not suspend until check (or event.wait) is called.
         """
         def _stop():
             with wx.BusyInfo("One moment please, "
@@ -876,20 +885,17 @@ class Frame(mwx.Frame):
         for name in self.plugins:
             plug = self.get_plug(name)
             if plug.thread and plug.thread.active:
-                if wx.MessageBox( # Confirm thread close.
+                if not plug.thread.pause( # Confirm closing the thread.
                         "The thread is running.\n\n"
-                        "Enter [q]uit to exit before closing.\n"
                         "Continue closing?",
-                        "Close {!r}".format(plug.Name),
-                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                        "Close {!r}".format(plug.Name)):
                     self.message("The close has been canceled.")
                     evt.Veto()
                     return
-                self.Quit()
-                break
+        ## self.Quit()
         for frame in self.graph.get_all_frames():
             if frame.pathname is None:
-                if wx.MessageBox( # Confirm close.
+                if wx.MessageBox( # Confirm closing the frame.
                         "You are closing unsaved frame.\n\n"
                         "Continue closing?",
                         "Close {!r}".format(frame.name),
