@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.3.11"
+__version__ = "1.4.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1420,7 +1420,7 @@ class ShellFrame(MiniFrame):
     
     def OnClose(self, evt):
         if self.debugger.busy:
-            if wx.MessageBox( # Confirm debugger close.
+            if wx.MessageBox( # Confirm closing the debugger.
                     "The debugger is running.\n\n"
                     "Enter [q]uit to exit before closing.\n"
                     "Continue closing?",
@@ -1441,7 +1441,7 @@ class ShellFrame(MiniFrame):
                 if buf.need_buffer_save:
                     self.popup_window(book)
                     buf.SetFocus()
-                    if wx.MessageBox( # Confirm close.
+                    if wx.MessageBox( # Confirm closing the buffer.
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",

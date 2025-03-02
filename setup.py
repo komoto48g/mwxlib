@@ -54,6 +54,7 @@ setup(
     
     ## License and classifiers for PyPi distribution
     license = "MIT",
+    license_files = [],
     
     classifiers = [
         "License :: OSI Approved :: MIT License",

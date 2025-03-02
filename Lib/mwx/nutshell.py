@@ -2216,7 +2216,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         buf = self.GetPage(evt.Selection)
         if buf.need_buffer_save:
-            if wx.MessageBox( # Confirm close.
+            if wx.MessageBox( # Confirm closing the buffer.
                     "You are closing unsaved content.\n\n"
                     "The changes will be discarded.\n"
                     "Continue closing?",
@@ -2414,7 +2414,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if not buf:
             buf = self.create_buffer("*temp file*")
         elif buf.need_buffer_save and verbose:
-            if wx.MessageBox( # Confirm load.
+            if wx.MessageBox( # Confirm loading the buffer.
                     "You are leaving unsaved content.\n\n"
                     "The changes will be discarded.\n"
                     "Continue loading?",
@@ -2468,7 +2468,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         buf = buf or self.buffer
         if buf.need_buffer_load and verbose:
             self.swap_buffer(buf)
-            if wx.MessageBox( # Confirm save.
+            if wx.MessageBox( # Confirm saving the buffer.
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
                     "Continue saving?",
@@ -2532,7 +2532,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Confirm the close with the dialog."""
         buf = buf or self.buffer
         if buf.need_buffer_save:
-            if wx.MessageBox( # Confirm close.
+            if wx.MessageBox( # Confirm closing the buffer.
                     "You are closing unsaved content.\n\n"
                     "The changes will be discarded.\n"
                     "Continue closing?",
@@ -2545,7 +2545,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def kill_all_buffers(self):
         for buf in self.get_all_buffers():
             if buf.need_buffer_save:
-                if wx.MessageBox( # Confirm close.
+                if wx.MessageBox( # Confirm closing the buffer.
                         "You are closing unsaved content.\n\n"
                         "The changes will be discarded.\n"
                         "Continue closing?",
