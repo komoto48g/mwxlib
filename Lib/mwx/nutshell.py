@@ -863,7 +863,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         return sty
     
     def get_char(self, pos):
-        """Returns the character at the position."""
+        """Returns the character at the given position."""
         return chr(self.GetCharAt(pos))
     
     def get_text(self, start, end):
@@ -944,10 +944,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             return topic
         with self.save_excursion():
             p = q = self.cpos
-            if self.get_char(p-1).isalnum():
+            ## if self.get_char(p-1).isidentifier():
+            if self.GetTextRange(self.PositionBefore(p), p).isidentifier():
                 self.WordLeft()
                 p = self.cpos
-            if self.get_char(q).isalnum():
+            ## if self.get_char(q).isidentifier():
+            if self.GetTextRange(q, self.PositionAfter(q)).isidentifier():
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
@@ -3524,7 +3526,7 @@ class Nautilus(EditorInterface, Shell):
     def write(self, text, pos=None):
         """Display text in the shell.
         
-        (override) Append text if it is writable at the position.
+        (override) Append text if it is writable at the given position.
         """
         if pos is not None:
             if pos < 0:
