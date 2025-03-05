@@ -783,9 +783,14 @@ class GraphPlot(MatplotPanel):
         else:
             return self.__Arts[j] # j:int -> frame
     
-    def get_all_frames(self):
+    def get_all_frames(self, j=None):
         """List of arts <matplotlib.image.AxesImage>."""
-        return self.__Arts
+        if j is None:
+            yield from self.__Arts
+        elif isinstance(j, str):
+            yield from (art for art in self.__Arts if j in art.name)
+        elif isinstance(j, np.ndarray):
+            yield from (art for art in self.__Arts if j is art.buffer)
     
     ## --------------------------------
     ## Property of frame / drawer
@@ -798,7 +803,7 @@ class GraphPlot(MatplotPanel):
     score_percentile = 0.005
     
     @property
-    def all_frames(self): # (deprecated) for backward compatibility
+    def all_frames(self):
         """List of arts <matplotlib.image.AxesImage>."""
         return self.__Arts
     
