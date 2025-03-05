@@ -192,12 +192,12 @@ class Thread:
             except BdbQuit:
                 pass
             except KeyboardInterrupt as e:
-                print("- Thread:execution stopped:", e)
+                print("- Thread execution stopped:", e)
             except AssertionError as e:
-                print("- Thread:execution failed:", e)
+                print("- Thread execution failed:", e)
             except Exception as e:
                 traceback.print_exc()
-                print("- Thread:exception:", e)
+                print("- Thread exception:", e)
                 self.handler('thread_error', self)
             finally:
                 self.active = 0
@@ -437,7 +437,7 @@ class LayerInterface(CtrlInterface):
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             if self.thread and self.thread.active:
-                self.thread.active = 0
+                ## self.thread.active = 0
                 self.thread.Stop()
             del self.Arts
         evt.Skip()
@@ -882,28 +882,28 @@ class Frame(mwx.Frame):
             elif ret == wx.ID_CANCEL:
                 evt.Veto()
                 return
-        for name in self.plugins:
-            plug = self.get_plug(name)
-            if plug.thread and plug.thread.active:
-                if not plug.thread.pause( # Confirm closing the thread.
-                        "The thread is running.\n\n"
-                        "Continue closing?",
-                        "Close {!r}".format(plug.Name)):
-                    self.message("The close has been canceled.")
-                    evt.Veto()
-                    return
-        ## self.Quit()
-        for frame in self.graph.get_all_frames():
-            if frame.pathname is None:
-                if wx.MessageBox( # Confirm closing the frame.
-                        "You are closing unsaved frame.\n\n"
-                        "Continue closing?",
-                        "Close {!r}".format(frame.name),
-                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                    self.message("The close has been canceled.")
-                    evt.Veto()
-                    return
-                break
+        n = sum(bool(plug.thread and plug.thread.active)
+                for plug in (self.get_plug(name) for name in self.plugins))
+        if n:
+            s = 's' if n > 1 else ''
+            if wx.MessageBox( # Confirm closing the thread.
+                    f"Currently  running {n} thread{s}.\n\n"
+                    "Continue closing?",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.message("The close has been canceled.")
+                evt.Veto()
+                return
+            self.Quit()
+        n = sum(frame.pathname is None for frame in self.graph.get_all_frames())
+        if n:
+            s = 's' if n > 1 else ''
+            if wx.MessageBox( # Confirm closing the frame.
+                    f"You are closing {n} unsaved frame{s}.\n\n"
+                     "Continue closing?",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.message("The close has been canceled.")
+                evt.Veto()
+                return
         evt.Skip()
     
     def Destroy(self):
@@ -1383,7 +1383,7 @@ class Frame(mwx.Frame):
             plug = self.get_plug(name)
             thread = plug.thread  # Note: thread can be None or shared.
             if thread and thread.active:
-                thread.active = 0
+                ## thread.active = 0
                 thread.Stop()
     
     ## --------------------------------
