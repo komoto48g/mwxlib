@@ -641,8 +641,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
         self.IndicatorSetForeground(11, "yellow")
         self.IndicatorSetUnder(11, True)
-        self.IndicatorSetAlpha(11, 0xe8)
-        self.IndicatorSetOutlineAlpha(11, 0)
+        ## self.IndicatorSetAlpha(11, 0xe8)
+        ## self.IndicatorSetOutlineAlpha(11, 0)
         
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
