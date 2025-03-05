@@ -2099,8 +2099,15 @@ class Buffer(EditorInterface, EditWindow):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.expr_at_caret
-        if text:
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        
+        for text in _gen_text():
             try:
                 obj = eval(text, self.globals, self.locals)
             except Exception as e:
@@ -2108,7 +2115,8 @@ class Buffer(EditorInterface, EditWindow):
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(text)
-        else:
+                return
+        if not text:
             self.message("No words")
     
     def exec_region(self):
@@ -3617,8 +3625,15 @@ class Nautilus(EditorInterface, Shell):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.expr_at_caret
-        if text:
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        
+        for text in _gen_text():
             tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
@@ -3629,7 +3644,8 @@ class Nautilus(EditorInterface, Shell):
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(cmd)
-        else:
+                return
+        if not text:
             self.message("No words")
     
     def exec_region(self):
