@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1460,7 +1460,8 @@ class ShellFrame(MiniFrame):
         if not evt.Active:
             ## Reset autoload when active focus going outside.
             self.__autoload = True
-        elif evt.GetActivationReason() == evt.Reason_Mouse and self.__autoload:
+        ## elif evt.GetActivationReason() == evt.Reason_Mouse and self.__autoload:
+        elif self.__autoload:
             ## Check all buffers that need to be loaded.
             verbose = 1
             for book in self.get_all_editors():
