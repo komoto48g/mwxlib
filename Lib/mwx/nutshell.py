@@ -641,8 +641,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
         self.IndicatorSetForeground(11, "yellow")
         self.IndicatorSetUnder(11, True)
-        self.IndicatorSetAlpha(11, 0xe8)
-        self.IndicatorSetOutlineAlpha(11, 0)
+        ## self.IndicatorSetAlpha(11, 0xe8)
+        ## self.IndicatorSetOutlineAlpha(11, 0)
         
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
@@ -863,7 +863,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         return sty
     
     def get_char(self, pos):
-        """Returns the character at the position."""
+        """Returns the character at the given position."""
         return chr(self.GetCharAt(pos))
     
     def get_text(self, start, end):
@@ -944,10 +944,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             return topic
         with self.save_excursion():
             p = q = self.cpos
-            if self.get_char(p-1).isalnum():
+            ## if self.get_char(p-1).isidentifier():
+            if self.GetTextRange(self.PositionBefore(p), p).isidentifier():
                 self.WordLeft()
                 p = self.cpos
-            if self.get_char(q).isalnum():
+            ## if self.get_char(q).isidentifier():
+            if self.GetTextRange(q, self.PositionAfter(q)).isidentifier():
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
@@ -1376,32 +1378,34 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def grep(self, pattern, flags=re.M):
         yield from re.finditer(pattern.encode(), self.TextRaw, flags)
     
-    def search_text(self, text):
-        """Yields raw-positions where `text` is found."""
-        word = text.encode()
-        raw = self.TextRaw
+    def search_text(self, text, mode=True):
+        """Yields positions where `text` is found.
+        If mode is True, search by word; otherwise, search by string.
+        """
+        text = text.encode()
         pos = -1
+        p = re.compile(r"[a-zA-Z0-9_]")
         while 1:
-            pos = raw.find(word, pos+1)
+            pos = self.TextRaw.find(text, pos+1)
             if pos < 0:
                 break
+            if mode and p.search(self.get_char(pos-1) + self.get_char(pos+len(text))):
+                continue
             yield pos
     
-    def filter_text(self, text=None):
+    def filter_text(self):
         """Show indicators for the selected text."""
         self.__itextlines = []
         for i in (10, 11,):
             self.SetIndicatorCurrent(i)
             self.IndicatorClearRange(0, self.TextLength)
-        if text is None:
-            text = self.topic_at_caret
+        text = self.topic_at_caret
         if not text:
             self.message("No words")
             return
-        
         lw = len(text.encode()) # for multi-byte string
         lines = []
-        for p in self.search_text(text):
+        for p in self.search_text(text, mode=(not self.SelectedText)):
             lines.append(self.LineFromPosition(p))
             for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
@@ -2099,8 +2103,15 @@ class Buffer(EditorInterface, EditWindow):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.expr_at_caret
-        if text:
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        
+        for text in _gen_text():
             try:
                 obj = eval(text, self.globals, self.locals)
             except Exception as e:
@@ -2108,7 +2119,8 @@ class Buffer(EditorInterface, EditWindow):
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(text)
-        else:
+                return
+        if not text:
             self.message("No words")
     
     def exec_region(self):
@@ -3516,7 +3528,7 @@ class Nautilus(EditorInterface, Shell):
     def write(self, text, pos=None):
         """Display text in the shell.
         
-        (override) Append text if it is writable at the position.
+        (override) Append text if it is writable at the given position.
         """
         if pos is not None:
             if pos < 0:
@@ -3617,8 +3629,15 @@ class Nautilus(EditorInterface, Shell):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        text = self.SelectedText or self.expr_at_caret
-        if text:
+        def _gen_text():
+            text = self.SelectedText
+            if text:
+                yield text
+            else:
+                yield self.line_at_caret
+                yield self.expr_at_caret
+        
+        for text in _gen_text():
             tokens = split_words(text)
             try:
                 cmd = self.magic_interpret(tokens)
@@ -3629,7 +3648,8 @@ class Nautilus(EditorInterface, Shell):
             else:
                 self.CallTipShow(self.cpos, pformat(obj))
                 self.message(cmd)
-        else:
+                return
+        if not text:
             self.message("No words")
     
     def exec_region(self):
