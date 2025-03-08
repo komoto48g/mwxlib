@@ -1837,12 +1837,8 @@ class Buffer(EditorInterface, EditWindow):
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
-            if self.CanEdit():
-                with self.off_undocollection():
-                    self.ReplaceSelection("")
             self.message("")
         
         def fork(evt):
@@ -1886,7 +1882,7 @@ class Buffer(EditorInterface, EditWindow):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (2, skip, self.on_completion_backward),
                  'down pressed' : (2, skip, self.on_completion_forward),
                 '*left pressed' : (2, skip),
@@ -1913,7 +1909,7 @@ class Buffer(EditorInterface, EditWindow):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (3, skip, self.on_completion_backward),
                  'down pressed' : (3, skip, self.on_completion_forward),
                 '*left pressed' : (3, skip),
@@ -2808,12 +2804,8 @@ class Nautilus(EditorInterface, Shell):
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
-            if self.CanEdit():
-                with self.off_undocollection():
-                    self.ReplaceSelection("")
             self.message("")
         
         def fork(evt):
@@ -2912,7 +2904,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (2, skip, self.on_completion_backward),
                  'down pressed' : (2, skip, self.on_completion_forward),
                 '*left pressed' : (2, skip),
@@ -2940,7 +2932,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (3, skip, self.on_completion_backward),
                  'down pressed' : (3, skip, self.on_completion_forward),
                 '*left pressed' : (3, skip),
@@ -2968,7 +2960,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (4, skip, self.on_completion_backward),
                  'down pressed' : (4, skip, self.on_completion_forward),
                 '*left pressed' : (4, skip),
@@ -2996,7 +2988,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (5, skip, self.on_completion_backward),
                  'down pressed' : (5, skip, self.on_completion_forward),
                 '*left pressed' : (5, skip),
