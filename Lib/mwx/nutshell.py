@@ -210,8 +210,8 @@ class AutoCompInterfaceMixin:
             dispatcher.send(signal='Shell.calltip', sender=self, calltip=tip)
         p = self.cpos
         if argspec and insertcalltip:
-            self.AddText(argspec + ')')     # 挿入後のカーソル位置は変化しない
-            self.SetSelection(self.cpos, p) # selection back
+            self.AddText(argspec + ')')
+            self.cpos = p # selection backward to the point
         if tip:
             ## In case there isn't enough room, only go back to bol fallback.
             tippos = max(self.bol, p - len(name) - 1)
@@ -269,7 +269,7 @@ class AutoCompInterfaceMixin:
                     self.anchor = q
             with self.off_undocollection():
                 self.ReplaceSelection(word[n:])
-            self.cpos = p # backward selection to the point
+            self.cpos = p # selection backward to the point
             self.__comp_ind = j
         except IndexError:
             self.message("No completion words")
@@ -3606,15 +3606,6 @@ class Nautilus(EditorInterface, Shell):
     ## --------------------------------
     ## Autocomp actions of the shell
     ## --------------------------------
-    
-    def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
-        """Display argument spec and docstring in a popup window.
-        
-        (override) Swap anchors to not scroll to the end of the line.
-        """
-        Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
-        self.cpos, self.anchor = self.anchor, self.cpos
-        self.EnsureCaretVisible()
     
     def eval_line(self):
         """Evaluate the selected word or line."""
