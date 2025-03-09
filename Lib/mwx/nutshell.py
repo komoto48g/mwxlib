@@ -3242,7 +3242,7 @@ class Nautilus(EditorInterface, Shell):
                 ## func(a,b,c) @debug --> func,a,b,c @debug
                 if rhs in ("debug", "profile", "timeit"):
                     if lhs[-1] in ')':
-                        L, R = split_paren(lhs, reverse=1)
+                        L, R = split_paren(lhs)
                         if not L:
                             lhs = "{!r}".format(R[1:-1])
                         elif R:

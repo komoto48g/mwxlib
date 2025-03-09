@@ -283,26 +283,16 @@ if pp:
         pp.sort_dicts = True
 
 
-def split_paren(text, reverse=False):
-    """Split text into a head parenthesis and the rest, including the tail.
-    If reverse is True, search from tail to head.
-    """
-    tokens = list(split_tokens(text))
-    p = "({["
-    if reverse:
-        tokens = tokens[::-1]
-        p = ")}]"
-    words = _extract_words_from_tokens(tokens, reverse)
-    if words and words[0][0] in p:
-        paren = ''.join(reversed(words) if reverse else words)
-        rest = ''.join(reversed(tokens) if reverse else tokens)
+def split_paren(text):
+    """Split the text into the rightmost parenthesis and the rest."""
+    tokens = list(split_tokens(text))[::-1]
+    words = _extract_words_from_tokens(tokens, reverse=True)
+    if words and words[0][0] in ")}]":
+        paren = ''.join(reversed(words))
+        text = ''.join(reversed(tokens))
     else:
         paren = ''
-        rest = text
-    if reverse:
-        return rest, paren
-    else:
-        return paren, rest
+    return text, paren
 
 
 def split_words(text, reverse=False):
