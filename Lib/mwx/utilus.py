@@ -300,17 +300,22 @@ def split_paren(text, reverse=False):
 
 
 def split_words(text, reverse=False):
-    """Generates words extracted from text.
+    """Generates words (python phrase) extracted from text.
     If reverse is True, process from tail to head.
     """
     tokens = list(split_tokens(text))
     if reverse:
         tokens = tokens[::-1]
     while tokens:
-        words = _extract_words_from_tokens(tokens, reverse)
+        words = []
+        while 1:
+            word = _extract_words_from_tokens(tokens, reverse)
+            if not word:
+                break
+            words += word
         if words:
             yield ''.join(reversed(words) if reverse else words)
-        else:
+        if tokens:
             yield tokens.pop(0) # sep-token
 
 
@@ -345,10 +350,6 @@ def split_tokens(text, comment=True):
 def _extract_words_from_tokens(tokens, reverse=False):
     """Extracts pythonic expressions from tokens.
     
-    Extraction continues until the parenthesis is closed
-    and the following token starts with a char in sep, where
-    the sep includes `@, ops, delims, and whitespaces, etc.
-    
     Returns:
         A token list extracted including the parenthesis.
         If reverse is True, the order of the tokens will be reversed.
@@ -372,7 +373,11 @@ def _extract_words_from_tokens(tokens, reverse=False):
         elif not stack and c[0] in sep: # ok; starts with a char in sep
             break
         words.append(c)
-    else: # if stack: error("unclosed-paren")
+        if not stack: # ok
+            j += 1 # to remove current token
+            break
+    else:
+        ## if stack: error("unclosed-paren")
         j = None
     del tokens[:j] # remove extracted tokens (except the last one)
     return words
