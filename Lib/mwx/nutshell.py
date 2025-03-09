@@ -210,8 +210,8 @@ class AutoCompInterfaceMixin:
             dispatcher.send(signal='Shell.calltip', sender=self, calltip=tip)
         p = self.cpos
         if argspec and insertcalltip:
-            self.AddText(argspec + ')')     # 挿入後のカーソル位置は変化しない
-            self.SetSelection(self.cpos, p) # selection back
+            self.AddText(argspec + ')')
+            self.cpos = p # selection backward to the point
         if tip:
             ## In case there isn't enough room, only go back to bol fallback.
             tippos = max(self.bol, p - len(name) - 1)
@@ -269,7 +269,7 @@ class AutoCompInterfaceMixin:
                     self.anchor = q
             with self.off_undocollection():
                 self.ReplaceSelection(word[n:])
-            self.cpos = p # backward selection to the point
+            self.cpos = p # selection backward to the point
             self.__comp_ind = j
         except IndexError:
             self.message("No completion words")
@@ -1837,12 +1837,8 @@ class Buffer(EditorInterface, EditWindow):
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
-            if self.CanEdit():
-                with self.off_undocollection():
-                    self.ReplaceSelection("")
             self.message("")
         
         def fork(evt):
@@ -1886,7 +1882,7 @@ class Buffer(EditorInterface, EditWindow):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (2, skip, self.on_completion_backward),
                  'down pressed' : (2, skip, self.on_completion_forward),
                 '*left pressed' : (2, skip),
@@ -1913,7 +1909,7 @@ class Buffer(EditorInterface, EditWindow):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (3, skip, self.on_completion_backward),
                  'down pressed' : (3, skip, self.on_completion_forward),
                 '*left pressed' : (3, skip),
@@ -2808,12 +2804,8 @@ class Nautilus(EditorInterface, Shell):
             self.message("")
         
         def clear_autocomp(evt):
-            ## """Clear autocomp, selection, and message."""
             if self.AutoCompActive():
                 self.AutoCompCancel()
-            if self.CanEdit():
-                with self.off_undocollection():
-                    self.ReplaceSelection("")
             self.message("")
         
         def fork(evt):
@@ -2912,7 +2904,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (2, skip, self.on_completion_backward),
                  'down pressed' : (2, skip, self.on_completion_forward),
                 '*left pressed' : (2, skip),
@@ -2940,7 +2932,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (3, skip, self.on_completion_backward),
                  'down pressed' : (3, skip, self.on_completion_forward),
                 '*left pressed' : (3, skip),
@@ -2968,7 +2960,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (4, skip, self.on_completion_backward),
                  'down pressed' : (4, skip, self.on_completion_forward),
                 '*left pressed' : (4, skip),
@@ -2996,7 +2988,7 @@ class Nautilus(EditorInterface, Shell):
                     '* pressed' : (0, clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
-               'escape pressed' : (0, clear_autocomp),
+               'escape pressed' : (0, clear, skip),
                    'up pressed' : (5, skip, self.on_completion_backward),
                  'down pressed' : (5, skip, self.on_completion_forward),
                 '*left pressed' : (5, skip),
@@ -3147,7 +3139,7 @@ class Nautilus(EditorInterface, Shell):
         rst = self.get_style(p)
         if p == self.bolc:
             self.ReplaceSelection('self') # replace [.] --> [self.]
-        elif st in ('nil', 'space', 'op', 'sep', 'lparen'):
+        elif st in ('space', 'sep', 'lparen'):
             self.ReplaceSelection('self')
         elif st not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
@@ -3614,15 +3606,6 @@ class Nautilus(EditorInterface, Shell):
     ## --------------------------------
     ## Autocomp actions of the shell
     ## --------------------------------
-    
-    def autoCallTipShow(self, command, insertcalltip=True, forceCallTip=False):
-        """Display argument spec and docstring in a popup window.
-        
-        (override) Swap anchors to not scroll to the end of the line.
-        """
-        Shell.autoCallTipShow(self, command, insertcalltip, forceCallTip)
-        self.cpos, self.anchor = self.anchor, self.cpos
-        self.EnsureCaretVisible()
     
     def eval_line(self):
         """Evaluate the selected word or line."""
