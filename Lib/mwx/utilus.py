@@ -288,11 +288,17 @@ def split_paren(text, reverse=False):
     If reverse is True, search from tail to head.
     """
     tokens = list(split_tokens(text))
+    p = "({["
     if reverse:
         tokens = tokens[::-1]
-    words = _extract_paren_from_tokens(tokens, reverse)
-    paren = ''.join(reversed(words) if reverse else words)
-    rest = ''.join(reversed(tokens) if reverse else tokens)
+        p = ")}]"
+    words = _extract_words_from_tokens(tokens, reverse)
+    if words and words[0][0] in p:
+        paren = ''.join(reversed(words) if reverse else words)
+        rest = ''.join(reversed(tokens) if reverse else tokens)
+    else:
+        paren = ''
+        rest = text
     if reverse:
         return rest, paren
     else:
@@ -300,17 +306,22 @@ def split_paren(text, reverse=False):
 
 
 def split_words(text, reverse=False):
-    """Generates words extracted from text.
+    """Generates words (python phrase) extracted from text.
     If reverse is True, process from tail to head.
     """
     tokens = list(split_tokens(text))
     if reverse:
         tokens = tokens[::-1]
     while tokens:
-        words = _extract_words_from_tokens(tokens, reverse)
+        words = []
+        while 1:
+            word = _extract_words_from_tokens(tokens, reverse)
+            if not word:
+                break
+            words += word
         if words:
             yield ''.join(reversed(words) if reverse else words)
-        else:
+        if tokens:
             yield tokens.pop(0) # sep-token
 
 
@@ -345,10 +356,6 @@ def split_tokens(text, comment=True):
 def _extract_words_from_tokens(tokens, reverse=False):
     """Extracts pythonic expressions from tokens.
     
-    Extraction continues until the parenthesis is closed
-    and the following token starts with a char in sep, where
-    the sep includes `@, ops, delims, and whitespaces, etc.
-    
     Returns:
         A token list extracted including the parenthesis.
         If reverse is True, the order of the tokens will be reversed.
@@ -372,43 +379,14 @@ def _extract_words_from_tokens(tokens, reverse=False):
         elif not stack and c[0] in sep: # ok; starts with a char in sep
             break
         words.append(c)
-    else: # if stack: error("unclosed-paren")
+        if not stack: # ok
+            j += 1 # to remove current token
+            break
+    else:
+        ## if stack: error("unclosed-paren")
         j = None
     del tokens[:j] # remove extracted tokens (except the last one)
     return words
-
-
-def _extract_paren_from_tokens(tokens, reverse=False):
-    """Extracts parenthesis from tokens.
-    
-    The first token must be a parenthesis.
-    Returns:
-        A token list extracted including the parenthesis,
-        or an empty list if the parenthesis is not closed.
-        If reverse is True, the order of the tokens will be reversed.
-    """
-    p, q = "({[", ")}]"
-    if reverse:
-        p, q = q, p
-    stack = []
-    words = []
-    for j, c in enumerate(tokens):
-        if not c:
-            continue
-        if c in p:
-            stack.append(c)
-        elif c in q:
-            if not stack: # error("open-paren")
-                break
-            if c != q[p.index(stack.pop())]: # error("mismatch-paren")
-                break
-        elif j == 0:
-            break # first char is not paren
-        words.append(c)
-        if not stack: # ok
-            del tokens[:j+1] # remove extracted tokens
-            return words
-    return [] # error("unclosed-paren")
 
 
 def walk_packages_no_import(path=None, prefix=''):
