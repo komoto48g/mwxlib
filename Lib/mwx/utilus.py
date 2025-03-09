@@ -288,11 +288,17 @@ def split_paren(text, reverse=False):
     If reverse is True, search from tail to head.
     """
     tokens = list(split_tokens(text))
+    p = "({["
     if reverse:
         tokens = tokens[::-1]
-    words = _extract_paren_from_tokens(tokens, reverse)
-    paren = ''.join(reversed(words) if reverse else words)
-    rest = ''.join(reversed(tokens) if reverse else tokens)
+        p = ")}]"
+    words = _extract_words_from_tokens(tokens, reverse)
+    if words and words[0][0] in p:
+        paren = ''.join(reversed(words) if reverse else words)
+        rest = ''.join(reversed(tokens) if reverse else tokens)
+    else:
+        paren = ''
+        rest = text
     if reverse:
         return rest, paren
     else:
@@ -381,39 +387,6 @@ def _extract_words_from_tokens(tokens, reverse=False):
         j = None
     del tokens[:j] # remove extracted tokens (except the last one)
     return words
-
-
-def _extract_paren_from_tokens(tokens, reverse=False):
-    """Extracts parenthesis from tokens.
-    
-    The first token must be a parenthesis.
-    Returns:
-        A token list extracted including the parenthesis,
-        or an empty list if the parenthesis is not closed.
-        If reverse is True, the order of the tokens will be reversed.
-    """
-    p, q = "({[", ")}]"
-    if reverse:
-        p, q = q, p
-    stack = []
-    words = []
-    for j, c in enumerate(tokens):
-        if not c:
-            continue
-        if c in p:
-            stack.append(c)
-        elif c in q:
-            if not stack: # error("open-paren")
-                break
-            if c != q[p.index(stack.pop())]: # error("mismatch-paren")
-                break
-        elif j == 0:
-            break # first char is not paren
-        words.append(c)
-        if not stack: # ok
-            del tokens[:j+1] # remove extracted tokens
-            return words
-    return [] # error("unclosed-paren")
 
 
 def walk_packages_no_import(path=None, prefix=''):
