@@ -3252,6 +3252,10 @@ class Nautilus(EditorInterface, Shell):
                 elif rhs.startswith('('):
                     rhs = re.sub(r"^\((.*)\)", r"partial(\1)", rhs, flags=re.S)
                 
+                ## obj @.method --> (obj).method
+                elif rhs.startswith('.'):
+                    return self.magic_interpret([f"({lhs}){rhs}"] + rest)
+                
                 return self.magic_interpret([f"{rhs}({lhs})"] + rest)
             
             if c == '`':
