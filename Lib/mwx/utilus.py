@@ -950,26 +950,44 @@ class TreeList:
 
 
 def get_fullargspec(f):
-    argv = []
-    defaults = {}
-    varargs = None
-    varkwargs = None
-    kwonlyargs = []
-    kwonlydefaults = {}
+    """Get the names and default values of a callable object's parameters.
+    If the object is a built-in function, it tries to get argument
+    information from the docstring. If it fails, it returns None.
+    
+    Returns:
+        args            : a list of the parameter names.
+        varargs         : the name of the  * parameter or None.
+        varkwargs       : the name of the ** parameter or None.
+        defaults        : a dict mapping names from args to defaults.
+        kwonlyargs      : a list of keyword-only parameter names.
+        kwonlydefaults  : a dict mapping names from kwonlyargs to defaults.
+    
+    Note:
+        `self` parameter is not reported for bound methods.
+    
+    cf. inspect.getfullargspec
+    """
+    argv = []           # <before /> 0:POSITIONAL_ONLY
+                        # <before *> 1:POSITIONAL_OR_KEYWORD
+    varargs = None      # <*args>    2:VAR_POSITIONAL
+    varkwargs = None    # <**kwargs> 4:VAR_KEYWORD
+    defaults = {}       # 
+    kwonlyargs = []     # <after *>  3:KEYWORD_ONLY
+    kwonlydefaults = {} # 
     try:
         sig = inspect.signature(f)
         for k, v in sig.parameters.items():
-            if v.kind <= 1: # POSITIONAL_ONLY / POSITIONAL_OR_KEYWORD
+            if v.kind in (v.POSITIONAL_ONLY, v.POSITIONAL_OR_KEYWORD):
                 argv.append(k)
                 if v.default != v.empty:
                     defaults[k] = v.default
-            elif v.kind == 2: # VAR_POSITIONAL (*args)
+            elif v.kind == v.VAR_POSITIONAL:
                 varargs = k
-            elif v.kind == 3: # KEYWORD_ONLY
+            elif v.kind == v.KEYWORD_ONLY:
                 kwonlyargs.append(k)
                 if v.default != v.empty:
                     kwonlydefaults[k] = v.default
-            elif v.kind == 4: # VAR_KEYWORD (**kwargs)
+            elif v.kind == v.VAR_KEYWORD:
                 varkwargs = k
     except ValueError:
         ## Builtin functions don't have an argspec that we can get.
@@ -980,19 +998,33 @@ def get_fullargspec(f):
         ## 
         ## ...(details)...
         ## ```
-        docs = [ln for ln in inspect.getdoc(f).splitlines() if ln]
-        m = re.search(r"(\w+)\((.*)\)", docs[0])
-        if m:
-            ## Note: Cannot process args containing commas.
-            ## e.g., v='Hello, world"
+        doc = inspect.getdoc(f)
+        if doc is None:
+            return None
+        m = re.match(r"(\w+)\s*\((.*?)\)", doc.strip(), re.S)
+        if not m:
+            return None
+        else:
             name, argspec = m.groups()
-            for v in argspec.strip().split(','):
-                m = re.search(r"(\w+)", v)
+            argparts = ['']
+            for part in split_parts(argspec): # Separate argument parts with commas.
+                if not part.strip():
+                    continue
+                if part != ',':
+                    argparts[-1] += part
+                else:
+                    argparts.append('')
+            for v in argparts:
+                m = re.match(r"(\w+):?", v) # argv + kwonlyargs
                 if m:
                     argv.append(m.group(1))
-            defaults = dict(re.findall(r"(\w+)\s*=\s*([\w' ]+)", argspec))
-        else:
-            return None
+                    m = re.match(r"(\w+)(?::\w+)?=(.+)", v) # defaults + kwonlydefaults
+                    if m:
+                        defaults.update([m.groups()])
+                elif v.startswith('**'): # <**kwargs>
+                    varkwargs = v[2:]
+                elif v.startswith('*'): # <*args>
+                    varargs = v[1:]
     return (argv, varargs, varkwargs,
             defaults, kwonlyargs, kwonlydefaults)
 
@@ -1009,10 +1041,10 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         >>> Act1 = lambda *v,**kw: f(*(v+args), **(kwargs|kw))
         >>> Act2 = lambda *v,**kw: f(*args, **(kwargs|kw))
         
-        Returns Act1 (accepts event arguments) if event arguments
+        `Act1` is returned (accepts event arguments) if event arguments
         cannot be omitted or if there are any remaining arguments
         that must be explicitly specified.
-        Otherwise, returns Act2 (ignores event arguments).
+        Otherwise, `Act2` is returned (ignores event arguments).
     """
     assert callable(f)
     assert isinstance(doc, (str, type(None)))
@@ -1033,6 +1065,7 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
         (argv, varargs, varkwargs, defaults,
             kwonlyargs, kwonlydefaults) = get_fullargspec(f)
     except Exception:
+        warn(f"Failed to get the signature of {f}.")
         return f
     if not varargs:
         N = len(argv)
