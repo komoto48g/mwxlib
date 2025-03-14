@@ -28,7 +28,7 @@ from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
 from .utilus import ignore, typename
-from .utilus import split_words, split_paren, split_tokens, find_modules
+from .utilus import split_words, split_parts, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
 
@@ -3242,7 +3242,8 @@ class Nautilus(EditorInterface, Shell):
                 ## func(a,b,c) @debug --> func,a,b,c @debug
                 if rhs in ("debug", "profile", "timeit"):
                     if lhs[-1] in ')':
-                        L, R = split_paren(lhs)
+                        R = next(split_parts(lhs, reverse=1))
+                        L = lhs[:-len(R)]
                         if not L:
                             lhs = "{!r}".format(R[1:-1])
                         elif R:

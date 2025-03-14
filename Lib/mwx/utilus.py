@@ -283,18 +283,6 @@ if pp:
         pp.sort_dicts = True
 
 
-def split_paren(text):
-    """Split the text into the rightmost parenthesis and the rest."""
-    tokens = list(split_tokens(text))[::-1]
-    words = _extract_words_from_tokens(tokens, reverse=True)
-    if words and words[0][0] in ")}]":
-        paren = ''.join(reversed(words))
-        text = ''.join(reversed(tokens))
-    else:
-        paren = ''
-    return text, paren
-
-
 def split_words(text, reverse=False):
     """Generates words (python phrase) extracted from text.
     If reverse is True, process from tail to head.
@@ -312,6 +300,21 @@ def split_words(text, reverse=False):
         if words:
             yield ''.join(reversed(words) if reverse else words)
         if tokens:
+            yield tokens.pop(0) # sep-token
+
+
+def split_parts(text, reverse=False):
+    """Generates portions (words and parens) extracted from text.
+    If reverse is True, process from tail to head.
+    """
+    tokens = list(split_tokens(text))
+    if reverse:
+        tokens = tokens[::-1]
+    while tokens:
+        words = _extract_words_from_tokens(tokens, reverse)
+        if words:
+            yield ''.join(reversed(words) if reverse else words)
+        else:
             yield tokens.pop(0) # sep-token
 
 
