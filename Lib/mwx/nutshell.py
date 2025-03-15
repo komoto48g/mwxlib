@@ -28,8 +28,21 @@ from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
 from .utilus import ignore, typename
-from .utilus import split_words, split_paren, split_tokens, find_modules
+from .utilus import split_words, split_parts, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
+
+
+## Monkey-patch for wx.py.introspect.getRoot with terminator '('.
+getRoot = introspect.getRoot
+def _getRoot(command, terminator=None):
+    """Return the rightmost root portion of an arbitrary Python command."""
+    if terminator == '(':
+        words = split_words(command, reverse=1)
+        for word in words:
+            if word == terminator:
+                return next(words, '')
+    return getRoot(command, terminator) # original
+introspect.getRoot = _getRoot
 
 
 ## URL pattern (flag = re.M | re.A)
@@ -2618,22 +2631,6 @@ class Interpreter(interpreter.Interpreter):
             self.parent.handler('interp_error', v)
         except AttributeError:
             pass
-    
-    @ignore(DeprecationWarning)
-    def getCallTip(self, command='', *args, **kwargs):
-        """Return call tip text for a command.
-        
-        (override) Ignore DeprecationWarning: for function,
-                   `formatargspec` is deprecated since Python 3.5.
-        (override) Ignore ValueError: no signature found for builtin
-                   if the unwrapped function is a builtin function.
-        """
-        ## In 4.2.1, DeprecationWarning was fixed.
-        ## In 4.2.2, ValueError was fixed.
-        try:
-            return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
-        except ValueError:
-            return interpreter.Interpreter.getCallTip(self) # dummy
 
 
 class Nautilus(EditorInterface, Shell):
@@ -3242,10 +3239,11 @@ class Nautilus(EditorInterface, Shell):
                 ## func(a,b,c) @debug --> func,a,b,c @debug
                 if rhs in ("debug", "profile", "timeit"):
                     if lhs[-1] in ')':
-                        L, R = split_paren(lhs)
+                        R = next(split_parts(lhs, reverse=1))
+                        L = lhs[:-len(R)]
                         if not L:
                             lhs = "{!r}".format(R[1:-1])
-                        elif R:
+                        else:
                             lhs = "{}, {}".format(L, R[1:-1])
                 
                 ## @(y1,,,yn) --> @partial(y1,,,yn)
