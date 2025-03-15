@@ -999,13 +999,13 @@ def get_fullargspec(f):
         ## ...(details)...
         ## ```
         doc = inspect.getdoc(f)
-        if doc is None:
-            return None
-        m = re.match(r"(\w+)\s*\((.*?)\)", doc.strip(), re.S)
-        if not m:
-            return None
+        for word in split_parts(doc or ''): # Search pattern for `func(argspec)`.
+            if word.startswith('('):
+                argspec = word[1:-1]
+                break
         else:
-            name, argspec = m.groups()
+            return None # no argument spec information
+        if argspec:
             argparts = ['']
             for part in split_parts(argspec): # Separate argument parts with commas.
                 if not part.strip():
