@@ -2618,22 +2618,6 @@ class Interpreter(interpreter.Interpreter):
             self.parent.handler('interp_error', v)
         except AttributeError:
             pass
-    
-    @ignore(DeprecationWarning)
-    def getCallTip(self, command='', *args, **kwargs):
-        """Return call tip text for a command.
-        
-        (override) Ignore DeprecationWarning: for function,
-                   `formatargspec` is deprecated since Python 3.5.
-        (override) Ignore ValueError: no signature found for builtin
-                   if the unwrapped function is a builtin function.
-        """
-        ## In 4.2.1, DeprecationWarning was fixed.
-        ## In 4.2.2, ValueError was fixed.
-        try:
-            return interpreter.Interpreter.getCallTip(self, command, *args, **kwargs)
-        except ValueError:
-            return interpreter.Interpreter.getCallTip(self) # dummy
 
 
 class Nautilus(EditorInterface, Shell):
@@ -3246,7 +3230,7 @@ class Nautilus(EditorInterface, Shell):
                         L = lhs[:-len(R)]
                         if not L:
                             lhs = "{!r}".format(R[1:-1])
-                        elif R:
+                        else:
                             lhs = "{}, {}".format(L, R[1:-1])
                 
                 ## @(y1,,,yn) --> @partial(y1,,,yn)
