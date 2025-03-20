@@ -26,7 +26,7 @@ class Plugin(Layer):
                 self.blink,
             ),
             row=2, expand=1,
-            type='slider*', lw=40, tw=40, h=22
+            type='slider*', lw=40, tw=40, h=22,
         )
         self.timer = wx.Timer(self)
         self.timer.Start(1000)

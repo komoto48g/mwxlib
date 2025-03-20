@@ -27,11 +27,8 @@ class Plugin(Layer):
             row=1, expand=0, show=1, # grouping style: row means the horizontal stack size
             type='vspin',            # control type: slider[*], [hv]spin, choice
             style='chkbox',          # control style: None, chkbox, button
-            cw=-1, lw=36, tw=30      # w: width of [c]ontrol, [l]abel, [t]ext
+            cw=-1, lw=50, tw=30      # w: width of [c]ontrol, [l]abel, [t]ext
         )
-    
-    ## def Destroy(self):
-    ##     return Layer.Destroy(self)
     
     def run(self):
         k = self.ksize.value

@@ -22,7 +22,7 @@ class Plugin(Layer):
                 self.Cs,
                 Button(self, "Run", self.run, icon='->'),
             ),
-            type=None, style='button', lw=40, tw=40
+            type=None, style='button', lw=60, tw=40,
         )
         self.run() # first drawing
     

@@ -73,7 +73,7 @@ class Plugin(Layer):
                 self.U,
             ),
             title="Custom param controls", expand=1, show=1,
-            type='slider', style='chkbox', cw=100, lw=20, tw=40, h=22,
+            type='slider', style='button', cw=100, lw=50, tw=40, h=22,
         )
         
         self.textctrl = wx.TextCtrl(self,

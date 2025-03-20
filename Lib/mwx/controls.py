@@ -293,7 +293,6 @@ class Knob(wx.Panel):
         style   : style of label
                   None -> static text (default)
                   button -> label with flat button
-                  chkbox -> label with checkbox
                   checkbox -> label with checkbox
         cw      : width of control
         lw      : width of label
@@ -335,9 +334,11 @@ class Knob(wx.Panel):
         label = self.__par.name + '  '
         
         if style == 'chkbox' or style == 'checkbox':
+            ## Keep margin for the checkbox: lw += 16
             self._label = wx.CheckBox(self, label=label, size=(lw,-1))
             self._label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         elif style == 'button':
+            ## Keep margin for the button: lw += 16
             self._label = pb.PlateButton(self, label=label, size=(lw,-1),
                                          style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
             self._label.Bind(wx.EVT_BUTTON, self.OnPress)
