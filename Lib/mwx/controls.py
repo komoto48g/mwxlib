@@ -669,17 +669,18 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
-        ## Register object and parameter groups
-        def _flatiter(a):
-            for c in a:
+        ## Register objects and parameter groups
+        def _flatiter(objects):
+            for c in objects:
                 if isinstance(c, tuple):
                     yield from _flatiter(c)
                 elif isinstance(c, wx.Object):
                     yield c
         self.__groups.append(list(_flatiter(objs)))
         
-        def _variter(a):
-            for c in a:
+        ## Parameters : Knob.param or widgets that have a `value`.
+        def _variter(objects):
+            for c in objects:
                 if isinstance(c, Knob):
                     yield c.param
                 elif hasattr(c, 'value'):
@@ -690,6 +691,8 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.show(-1, visible)
         self.fold(-1, not show)
         self.Sizer.Fit(self)
+        
+        return self.__groups[-1]
     
     ## --------------------------------
     ## 外部入出力／クリップボード通信
