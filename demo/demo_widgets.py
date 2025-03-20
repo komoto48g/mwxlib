@@ -68,22 +68,23 @@ class Plugin(Layer):
         self.L = LParam('L', (-1, 1, 0.01), 0, handler=self.trace)
         self.U = Param('U', (1,2,3,inf), nan, handler=print)
         
-        self.layout((
+        knobs = self.layout((
                 self.L,
                 self.U,
             ),
             title="Custom param controls", expand=1, show=1,
             type='slider', style='button', cw=100, lw=50, tw=40, h=22,
         )
+        knobs[0].button.SetBitmap(Icon('+'))
+        knobs[1].button.SetBitmap(Icon('-'))
         
         self.textctrl = wx.TextCtrl(self,
-                                    value=wx.TextCtrl.__doc__,
-                                    size=(200,100),
-                                    style=wx.TE_MULTILINE
-                                         |wx.TE_PROCESS_TAB
-                                         |wx.TE_RICH
-                                         |wx.TE_AUTO_URL
-                            )
+                                value=wx.TextCtrl.__doc__,
+                                style=wx.TE_MULTILINE
+                                     |wx.TE_PROCESS_TAB
+                                     |wx.TE_PROCESS_ENTER
+                                     |wx.TE_AUTO_URL
+                                )
         self.statusline = StatusBar(self)
         
         self.layout((

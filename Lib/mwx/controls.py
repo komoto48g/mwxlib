@@ -2,6 +2,7 @@
 """mwxlib param controller and wx custom controls.
 """
 from itertools import chain
+import inspect
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -68,7 +69,8 @@ class Param:
            'overflow' : [],
           'underflow' : [],
         })
-        self._tooltip = _Tip(handler.__doc__, updater.__doc__)
+        self._tooltip = _Tip(handler.__doc__,
+                             updater.__doc__)
     
     def __str__(self, v=None):
         if v is None:
@@ -988,8 +990,7 @@ class ClassicButton(wx.Button):
         
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
-        
-        self.SetToolTip(_Tip(handler.__doc__))
+            self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             self.SetBitmap(Icon(icon))
 
@@ -1009,8 +1010,7 @@ class Button(pb.PlateButton):
         
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
-        
-        self.SetToolTip(_Tip(handler.__doc__))
+            self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             self.SetBitmap(Icon(icon))
     
@@ -1042,8 +1042,7 @@ class ToggleButton(wx.ToggleButton):
         
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
-        
-        self.SetToolTip(_Tip(handler.__doc__))
+            self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             try:
                 self.SetBitmap(Icon(icon[0]))
@@ -1079,14 +1078,12 @@ class TextBox(wx.Control):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
-                            | wx.TE_PROCESS_ENTER
-                            | (wx.TE_READONLY if readonly else 0))
+                                    | wx.TE_PROCESS_ENTER
+                                    | (wx.TE_READONLY if readonly else 0))
         
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.SetToolTip(_Tip(handler.__doc__))
-        self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.SetSizer(
             pack(self, (
@@ -1097,9 +1094,11 @@ class TextBox(wx.Control):
         if handler:
             self._handler = _F(handler)
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
+            self._ctrl.SetToolTip(_Tip(handler.__doc__))
         if updater:
             self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
+            self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
     
@@ -1158,14 +1157,12 @@ class Choice(wx.Control):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
-                            | wx.TE_PROCESS_ENTER
-                            | (wx.CB_READONLY if readonly else 0))
+                                    | wx.TE_PROCESS_ENTER
+                                    | (wx.CB_READONLY if readonly else 0))
         
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.SetToolTip(_Tip(handler.__doc__))
-        self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.SetSizer(
             pack(self, (
@@ -1177,10 +1174,12 @@ class Choice(wx.Control):
             self._handler = _F(handler)
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
             self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: self._handler(self))
+            self._ctrl.SetToolTip(_Tip(handler.__doc__))
         self._ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         if updater:
             self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
+            self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
     
