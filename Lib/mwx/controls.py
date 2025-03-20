@@ -312,6 +312,15 @@ class Knob(wx.Panel):
         self.update_range()
         self.update_ctrl()
     
+    @property
+    def button(self):
+        if isinstance(self._label, pb.PlateButton):
+            return self._label
+    
+    @property
+    def control(self):
+        return self._ctrl
+    
     def __init__(self, parent, param, type=None,
                  style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -1062,6 +1071,9 @@ class TextBox(wx.Control):
     
     value = Value #: internal use only
     
+    button = property(lambda self: self._btn)
+    control = property(lambda self: self._ctrl)
+    
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
@@ -1137,6 +1149,9 @@ class Choice(wx.Control):
         lambda self: self._ctrl.GetItems(),
         lambda self,v: self._ctrl.SetItems(v),
         doc="combobox items:list")
+    
+    button = property(lambda self: self._btn)
+    control = property(lambda self: self._ctrl)
     
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
