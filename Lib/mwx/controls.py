@@ -2,6 +2,7 @@
 """mwxlib param controller and wx custom controls.
 """
 from itertools import chain
+import inspect
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -68,7 +69,8 @@ class Param:
            'overflow' : [],
           'underflow' : [],
         })
-        self._tooltip = _Tip(handler.__doc__, updater.__doc__)
+        self._tooltip = _Tip(handler.__doc__,
+                             updater.__doc__)
     
     def __str__(self, v=None):
         if v is None:
@@ -293,7 +295,6 @@ class Knob(wx.Panel):
         style   : style of label
                   None -> static text (default)
                   button -> label with flat button
-                  chkbox -> label with checkbox
                   checkbox -> label with checkbox
         cw      : width of control
         lw      : width of label
@@ -312,6 +313,15 @@ class Knob(wx.Panel):
         self.__par.knobs.append(self)
         self.update_range()
         self.update_ctrl()
+    
+    @property
+    def button(self):
+        if isinstance(self._label, pb.PlateButton):
+            return self._label
+    
+    @property
+    def control(self):
+        return self._ctrl
     
     def __init__(self, parent, param, type=None,
                  style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
@@ -335,9 +345,11 @@ class Knob(wx.Panel):
         label = self.__par.name + '  '
         
         if style == 'chkbox' or style == 'checkbox':
+            ## Keep margin for the checkbox: lw += 16
             self._label = wx.CheckBox(self, label=label, size=(lw,-1))
             self._label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         elif style == 'button':
+            ## Keep margin for the button: lw += 16
             self._label = pb.PlateButton(self, label=label, size=(lw,-1),
                                          style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
             self._label.Bind(wx.EVT_BUTTON, self.OnPress)
@@ -668,17 +680,18 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
-        ## Register object and parameter groups
-        def _flatiter(a):
-            for c in a:
+        ## Register objects and parameter groups
+        def _flatiter(objects):
+            for c in objects:
                 if isinstance(c, tuple):
                     yield from _flatiter(c)
                 elif isinstance(c, wx.Object):
                     yield c
         self.__groups.append(list(_flatiter(objs)))
         
-        def _variter(a):
-            for c in a:
+        ## Parameters : Knob.param or widgets that have a `value`.
+        def _variter(objects):
+            for c in objects:
                 if isinstance(c, Knob):
                     yield c.param
                 elif hasattr(c, 'value'):
@@ -689,6 +702,8 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.show(-1, visible)
         self.fold(-1, not show)
         self.Sizer.Fit(self)
+        
+        return self.__groups[-1]
     
     ## --------------------------------
     ## 外部入出力／クリップボード通信
@@ -975,8 +990,7 @@ class ClassicButton(wx.Button):
         
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
-        
-        self.SetToolTip(_Tip(handler.__doc__))
+            self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             self.SetBitmap(Icon(icon))
 
@@ -996,8 +1010,7 @@ class Button(pb.PlateButton):
         
         if handler:
             self.Bind(wx.EVT_BUTTON, _F(handler))
-        
-        self.SetToolTip(_Tip(handler.__doc__))
+            self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             self.SetBitmap(Icon(icon))
     
@@ -1029,8 +1042,7 @@ class ToggleButton(wx.ToggleButton):
         
         if handler:
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
-        
-        self.SetToolTip(_Tip(handler.__doc__))
+            self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             try:
                 self.SetBitmap(Icon(icon[0]))
@@ -1058,19 +1070,20 @@ class TextBox(wx.Control):
     
     value = Value #: internal use only
     
+    button = property(lambda self: self._btn)
+    control = property(lambda self: self._ctrl)
+    
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
-                            | wx.TE_PROCESS_ENTER
-                            | (wx.TE_READONLY if readonly else 0))
+                                    | wx.TE_PROCESS_ENTER
+                                    | (wx.TE_READONLY if readonly else 0))
         
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.SetToolTip(_Tip(handler.__doc__))
-        self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.SetSizer(
             pack(self, (
@@ -1081,9 +1094,11 @@ class TextBox(wx.Control):
         if handler:
             self._handler = _F(handler)
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
+            self._ctrl.SetToolTip(_Tip(handler.__doc__))
         if updater:
             self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
+            self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
     
@@ -1134,19 +1149,20 @@ class Choice(wx.Control):
         lambda self,v: self._ctrl.SetItems(v),
         doc="combobox items:list")
     
+    button = property(lambda self: self._btn)
+    control = property(lambda self: self._ctrl)
+    
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0)
-                            | wx.TE_PROCESS_ENTER
-                            | (wx.CB_READONLY if readonly else 0))
+                                    | wx.TE_PROCESS_ENTER
+                                    | (wx.CB_READONLY if readonly else 0))
         
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        self._ctrl.SetToolTip(_Tip(handler.__doc__))
-        self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.SetSizer(
             pack(self, (
@@ -1158,10 +1174,12 @@ class Choice(wx.Control):
             self._handler = _F(handler)
             self._ctrl.Bind(wx.EVT_TEXT_ENTER, lambda v: self._handler(self))
             self._ctrl.Bind(wx.EVT_COMBOBOX, lambda v: self._handler(self))
+            self._ctrl.SetToolTip(_Tip(handler.__doc__))
         self._ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         if updater:
             self._updater = _F(updater)
             self._btn.Bind(wx.EVT_BUTTON, lambda v: self._updater(self))
+            self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
     

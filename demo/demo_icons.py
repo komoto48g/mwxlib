@@ -64,12 +64,12 @@ class Plugin(Layer):
         self.layout(
             (Button(self, k, icon=k, size=(80,-1)) for k in Icon.provided_arts),
             title="Provided art images",
-            row=6, show=0
+            row=6, show=0,
         )
         self.layout(
             (Button(self, k, icon=k, size=(80,-1)) for k in Icon.custom_images),
             title="Custom art images",
-            row=6, show=0
+            row=6, show=0,
         )
 
 

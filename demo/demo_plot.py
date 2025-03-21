@@ -28,8 +28,7 @@ class Plugin(Layer):
                 self.A,
                 self.B,
             ),
-            title="Params",
-            expand=0, show=1,
+            title="Params", expand=0, show=1,
             type='slider*', cw=100, lw=20, tw=40, h=22,
         )
         self.run(None)
