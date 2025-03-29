@@ -381,10 +381,10 @@ class LayerInterface(CtrlInterface):
                 lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (wx.ID_EDIT, "&Edit module", "Edit module", Icon('pen'),
-                lambda v: self.parent.edit_plug(self.__module__),
-                lambda v: v.Enable(self.editable)),
-                
+            ## (wx.ID_EDIT, "&Edit module", "Edit module", Icon('pen'),
+            ##     lambda v: self.parent.edit_plug(self.__module__),
+            ##     lambda v: v.Enable(self.editable)),
+            ##     
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
                 lambda v: self.parent.reload_plug(self.__module__),
                 lambda v: v.Enable(self.reloadable
@@ -843,9 +843,6 @@ class Frame(mwx.Frame):
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
-        
-    ## Script editor for plugins (external call)
-    EDITOR = "notepad"
     
     SYNC_SWITCH = True
     
@@ -1339,13 +1336,13 @@ class Frame(mwx.Frame):
             if shell.target is plug:
                 shell.handler('shell_activated', shell)
     
-    @ignore(ResourceWarning)
-    def edit_plug(self, name):
-        plug = self.get_plug(name)
-        if not plug:
-            return
-        
-        Popen([self.EDITOR, inspect.getmodule(plug).__file__])
+    ## Script editor for plugins (external call)
+    ## EDITOR = "notepad"
+    ## 
+    ## @ignore(ResourceWarning)
+    ## def edit_plug(self, name):
+    ##     plug = self.get_plug(name)
+    ##     Popen([self.EDITOR, inspect.getmodule(plug).__file__])
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.
