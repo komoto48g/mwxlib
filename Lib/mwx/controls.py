@@ -875,8 +875,8 @@ class Icon(wx.Bitmap):
             '!!!' : wx.ART_ERROR,
               '+' : wx.ART_PLUS,
               '-' : wx.ART_MINUS,
-              'x' : wx.ART_DELETE,
-              't' : wx.ART_TICK_MARK,
+              ## 'x' : wx.ART_DELETE,
+              ## 't' : wx.ART_TICK_MARK,
               '~' : wx.ART_GO_HOME,
            'undo' : wx.ART_UNDO,
            'redo' : wx.ART_REDO,
@@ -916,18 +916,17 @@ class Icon(wx.Bitmap):
             except Exception:
                 art = Icon.provided_arts.get(key)
                 bmp = wx.ArtProvider.GetBitmap(art or key, wx.ART_OTHER, size)
+            ## Note: The result could be a zero-shaped bitmap.
             return bmp
-        
-        ## Note: null (0-shaped) bitmap fails with AssertionError from 4.1.1
         elif key == '':
+            ## Note: A zero-shaped bitmap fails with AssertionError since 4.1.1
             bmp = wx.Bitmap(size)
             with wx.MemoryDC(bmp) as dc:
                 dc.SetBackground(wx.Brush('black'))
                 dc.Clear()
             bmp.SetMaskColour('black') # return dummy-sized blank bitmap
             return bmp
-        
-        return wx.NullBitmap # The standard wx controls accept this,
+        return wx.NullBitmap # The standard wx controls accept this.
 
     @staticmethod
     def _getBitmap2(back, fore, size=None, subsize=3/4):
@@ -937,6 +936,8 @@ class Icon(wx.Bitmap):
             subsize = wx.Size(size) * subsize
         back = Icon._getBitmap1(back, size)
         fore = Icon._getBitmap1(fore, subsize)
+        if back.Size == (0, 0) or fore.Size == (0, 0):
+            return back
         x = size[0] - subsize[0]
         y = size[1] - subsize[1]
         with wx.MemoryDC(back) as dc:
