@@ -912,15 +912,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def expr_at_caret(self):
         """A syntax unit (expression) at the caret-line."""
         p = q = self.cpos
-        lsty = self.get_style(p-1)
-        rsty = self.get_style(p)
-        if lsty == rsty == 'moji': # inside string
+        lst = self.get_style(p-1)
+        rst = self.get_style(p)
+        if lst == rst == 'moji': # inside string
             ## styles = {'moji'}
             return ''
-        elif lsty == 'suji' or rsty == 'suji':
+        elif lst == 'suji' or rst == 'suji':
             styles = {'suji'}
-        elif lsty in ('word', 'dot', 'moji', 'rparen')\
-          or rsty in ('word', 'dot', 'moji', 'lparen'):
+        elif lst in ('word', 'dot', 'moji', 'rparen')\
+          or rst in ('word', 'dot', 'moji', 'lparen'):
             styles = {'word', 'dot', 'moji', 'paren'}
         else:
             return ''
@@ -1998,9 +1998,9 @@ class Buffer(EditorInterface, EditWindow):
     
     def OnEnterDot(self, evt):
         p = self.cpos
-        st = self.get_style(p-1)
+        lst = self.get_style(p-1)
         rst = self.get_style(p)
-        if st not in ('moji', 'word', 'rparen') or rst == 'word':
+        if lst not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
@@ -3119,13 +3119,13 @@ class Nautilus(EditorInterface, Shell):
             self.handler('quit', evt)
             return
         p = self.cpos
-        st = self.get_style(p-1)
+        lst = self.get_style(p-1)
         rst = self.get_style(p)
         if p == self.bolc:
             self.ReplaceSelection('self') # replace [.] --> [self.]
-        elif st in ('space', 'sep', 'lparen'):
+        elif lst in ('space', 'sep', 'lparen'):
             self.ReplaceSelection('self')
-        elif st not in ('moji', 'word', 'rparen') or rst == 'word':
+        elif lst not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
