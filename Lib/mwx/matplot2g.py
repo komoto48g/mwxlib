@@ -419,6 +419,8 @@ class GraphPlot(MatplotPanel):
                'M-down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],
              'pagedown pressed' : [ None, self.OnPageDown ],
+                 'home pressed' : [ None, _F(self.select, 0) ],
+                  'end pressed' : [ None, _F(self.select, -1) ],
                   'M-a pressed' : [ None, _F(self.fit_to_canvas) ],
                   'C-a pressed' : [ None, _F(self.fit_to_axes) ],
                   'C-i pressed' : [ None, _F(self.invert_cmap) ],
@@ -681,7 +683,7 @@ class GraphPlot(MatplotPanel):
         if j != self.__index and self.__index is not None:
             self.handler('frame_hidden', self.frame)
         
-        if j is not None:
+        if j is not None and self.__Arts:
             art = self.__Arts[j]
             art.set_visible(1)
             self.__index = j % len(self)
@@ -692,7 +694,6 @@ class GraphPlot(MatplotPanel):
         self.draw()
         self.writeln()
         self.trace_point(*self.selector)
-        
         return self.frame
     
     def __iter__(self):
