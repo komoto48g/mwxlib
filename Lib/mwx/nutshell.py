@@ -498,8 +498,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
             'C-S-space pressed' : (0, _F(self.set_pointer)),
-          'C-backspace pressed' : (0, skip),
+          'C-backspace pressed' : (0, _F(self.backward_kill_word)),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
+             'C-delete pressed' : (0, _F(self.kill_word)),
+             'S-delete pressed' : (0, _F(self.kill_line)),
                 'C-tab pressed' : (0, _F(self.insert_space_like_tab)),
               'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
                   'tab pressed' : (0, self.on_indent_line),
@@ -1665,6 +1667,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         p = self.cpos
         self.skip_chars_backward(' \t')
         self.Replace(max(self.cpos, self.bol), p, '')
+    
+    @can_edit
+    def kill_word(self):
+        self.WordRightEndExtend()
+        self.ReplaceSelection('')
+    
+    @can_edit
+    def backward_kill_word(self):
+        self.WordLeftExtend()
+        self.ReplaceSelection('')
     
     @can_edit
     def kill_line(self):
@@ -3060,18 +3072,6 @@ class Nautilus(EditorInterface, Shell):
         evt.Skip()
     
     @can_edit
-    def backward_kill_line(self):
-        p = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
-        text, lp = self.CurLine
-        if text[:lp] == sys.ps2:
-            self.Replace(p - lp, p, '') # eats ps2:prompt
-            return
-        if p == self.cpos > 0: # caret at beginning of line
-            if self.get_char(p-1) == '\n': p -= 1
-            if self.get_char(p-1) == '\r': p -= 1
-        self.Replace(p, self.cpos, '')
-    
-    @can_edit
     def backward_kill_word(self):
         p = self.cpos
         text, lp = self.CurLine
@@ -3082,6 +3082,18 @@ class Nautilus(EditorInterface, Shell):
         if self.cpos < q:
             self.goto_char(q) # Don't skip back prompt
         self.Replace(self.cpos, p, '')
+    
+    @can_edit
+    def backward_kill_line(self):
+        p = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
+        text, lp = self.CurLine
+        if text[:lp] == sys.ps2:
+            self.Replace(p - lp, p, '') # eats ps2:prompt
+            return
+        if p == self.cpos > 0: # caret at beginning of line
+            if self.get_char(p-1) == '\n': p -= 1
+            if self.get_char(p-1) == '\r': p -= 1
+        self.Replace(p, self.cpos, '')
     
     def OnEnter(self, evt):
         """Called when enter pressed."""
