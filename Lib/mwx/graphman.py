@@ -974,7 +974,7 @@ class Frame(mwx.Frame):
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
-        ##       and will be fixed in wxPython 4.2.1.
+        ##       and will be fixed in wx ver 4.2.1.
         if wx.Display.GetFromWindow(pane.window) == -1:
             pane.floating_pos = wx.GetMousePosition()
         

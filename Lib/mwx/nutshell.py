@@ -404,6 +404,7 @@ class AutoCompInterfaceMixin:
         try:
             text, sep, hint = self._get_words_hint()
             obj = self.eval(text)
+            ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -431,6 +432,7 @@ class AutoCompInterfaceMixin:
         try:
             text, sep, hint = self._get_words_hint()
             obj = self.eval(text)
+            ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3.
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -566,7 +568,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.AutoCompSetMaxHeight(10)
         
         ## To prevent @filling crash (Never access to DropTarget)
-        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
+        ## [BUG ver 4.1.1] Don't allow DnD of text, file, whatever.
         ## self.SetDropTarget(None)
         
         self.Bind(stc.EVT_STC_START_DRAG, self.OnDrag)
@@ -1008,7 +1010,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
-        ## [BUG 4.2.0] The last char is replaced with b'\x00'.
+        ## [BUG ver 4.2.0] The last char is replaced with b'\x00'.
         ## text, lp = self.CurLineRaw
         ## return self.py_calc_indentation(text[:lp].decode())
         text, lp = self.CurLine
@@ -3381,7 +3383,7 @@ class Nautilus(EditorInterface, Shell):
     
     ## cf. getCommand() -> caret-line that starts with a prompt
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
-    ##     [BUG 4.1.1] Don't use for current prompt --> Fixed in 4.2.0.
+    ##     [BUG ver 4.1.1] Don't use for current prompt --> Fixed in wx ver 4.2.0.
     
     def getMultilineCommand(self, rstrip=True):
         """Extract a multi-line command which starts with a prompt.
