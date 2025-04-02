@@ -6,7 +6,6 @@ from importlib import reload, import_module
 from contextlib import contextmanager
 from bdb import BdbQuit
 from pprint import pformat
-from subprocess import Popen
 import threading
 import traceback
 import inspect
@@ -257,7 +256,6 @@ class LayerInterface(CtrlInterface):
     caption = True
     category = None
     dockable = True
-    editable = True # deprecated
     reloadable = True
     unloadable = True
     
@@ -381,10 +379,6 @@ class LayerInterface(CtrlInterface):
                 lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            ## (wx.ID_EDIT, "&Edit module", "Edit module", Icon('pen'),
-            ##     lambda v: self.parent.edit_plug(self.__module__),
-            ##     lambda v: v.Enable(self.editable)),
-            ##     
             (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
                 lambda v: self.parent.reload_plug(self.__module__),
                 lambda v: v.Enable(self.reloadable
@@ -1335,14 +1329,6 @@ class Frame(mwx.Frame):
         for shell in self.shellframe.get_all_shells():
             if shell.target is plug:
                 shell.handler('shell_activated', shell)
-    
-    ## Script editor for plugins (external call)
-    ## EDITOR = "notepad"
-    ## 
-    ## @ignore(ResourceWarning)
-    ## def edit_plug(self, name):
-    ##     plug = self.get_plug(name)
-    ##     Popen([self.EDITOR, inspect.getmodule(plug).__file__])
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.

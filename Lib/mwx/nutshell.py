@@ -138,7 +138,7 @@ def skip(evt):
     evt.Skip()
 
 
-def can_edit(f):
+def editable(f):
     @wraps(f)
     def _f(self, *v, **kw):
         if self.CanEdit():
@@ -972,7 +972,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         else:
             self.py_outdent_line()
     
-    @can_edit
+    @editable
     def py_indent_line(self):
         """Indent the current line."""
         text = self.line_at_caret # w/ no-prompt
@@ -984,7 +984,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.Replace(self.bol, p, ' '*indent)
             self.goto_char(self.bol + indent + offset)
     
-    @can_edit
+    @editable
     def py_outdent_line(self):
         """Outdent the current line."""
         text = self.line_at_caret # w/ no-prompt
@@ -1607,7 +1607,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     ## --------------------------------
     comment_prefix = "## "
     
-    @can_edit
+    @editable
     def comment_out_selection(self, from_=None, to_=None):
         """Comment out the selected text."""
         if from_ is not None: self.anchor = from_
@@ -1621,7 +1621,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 text = text[:-len(prefix)]
             self.ReplaceSelection(text)
     
-    @can_edit
+    @editable
     def uncomment_selection(self, from_=None, to_=None):
         """Uncomment the selected text."""
         if from_ is not None: self.anchor = from_
@@ -1631,7 +1631,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if text != self.SelectedText:
                 self.ReplaceSelection(text)
     
-    @can_edit
+    @editable
     def comment_out_line(self):
         if self.SelectedText:
             self.comment_out_selection()
@@ -1647,7 +1647,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.comment_out_selection(self.cpos, self.eol)
             self.LineDown()
     
-    @can_edit
+    @editable
     def uncomment_line(self):
         if self.SelectedText:
             self.uncomment_selection()
@@ -1656,29 +1656,29 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.uncomment_selection(self.cpos, self.eol)
             self.LineDown()
     
-    @can_edit
+    @editable
     def eat_white_forward(self):
         p = self.cpos
         self.skip_chars_forward(' \t')
         self.Replace(p, self.cpos, '')
     
-    @can_edit
+    @editable
     def eat_white_backward(self):
         p = self.cpos
         self.skip_chars_backward(' \t')
         self.Replace(max(self.cpos, self.bol), p, '')
     
-    @can_edit
+    @editable
     def kill_word(self):
         self.WordRightEndExtend()
         self.ReplaceSelection('')
     
-    @can_edit
+    @editable
     def backward_kill_word(self):
         self.WordLeftExtend()
         self.ReplaceSelection('')
     
-    @can_edit
+    @editable
     def kill_line(self):
         p = self.eol
         if p == self.cpos: # caret at end of line
@@ -1686,7 +1686,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if self.get_char(p) == '\n': p += 1
         self.Replace(self.cpos, p, '')
     
-    @can_edit
+    @editable
     def backward_kill_line(self):
         p = self.bol
         if p == self.cpos > 0: # caret at beginning of line
@@ -1694,7 +1694,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if self.get_char(p-1) == '\r': p -= 1
         self.Replace(p, self.cpos, '')
     
-    @can_edit
+    @editable
     def insert_space_like_tab(self):
         """Insert half-width spaces forward as if feeling like [tab].
         タブの気持ちになって半角スペースを入力する
@@ -1703,7 +1703,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         _text, lp = self.CurLine
         self.WriteText(' ' * (4 - lp % 4))
     
-    @can_edit
+    @editable
     def delete_backward_space_like_tab(self):
         """Delete half-width spaces backward as if feeling like [S-tab].
         シフト+タブの気持ちになって半角スペースを消す
@@ -3071,7 +3071,7 @@ class Nautilus(EditorInterface, Shell):
             return
         evt.Skip()
     
-    @can_edit
+    @editable
     def backward_kill_word(self):
         p = self.cpos
         text, lp = self.CurLine
@@ -3083,7 +3083,7 @@ class Nautilus(EditorInterface, Shell):
             self.goto_char(q) # Don't skip back prompt
         self.Replace(self.cpos, p, '')
     
-    @can_edit
+    @editable
     def backward_kill_line(self):
         p = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
         text, lp = self.CurLine
