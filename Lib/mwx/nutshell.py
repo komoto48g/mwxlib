@@ -1670,16 +1670,21 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @editable
     def kill_word(self):
-        self.WordRightEndExtend()
+        if not self.SelectedText:
+            self.WordRightEndExtend()
         self.ReplaceSelection('')
     
     @editable
     def backward_kill_word(self):
-        self.WordLeftExtend()
+        if not self.SelectedText:
+            self.WordLeftExtend()
         self.ReplaceSelection('')
     
     @editable
     def kill_line(self):
+        if self.SelectedText:
+            self.ReplaceSelection('')
+            return
         p = self.eol
         if p == self.cpos: # caret at end of line
             if self.get_char(p) == '\r': p += 1
@@ -1688,6 +1693,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @editable
     def backward_kill_line(self):
+        if self.SelectedText:
+            self.ReplaceSelection('')
+            return
         p = self.bol
         if p == self.cpos > 0: # caret at beginning of line
             if self.get_char(p-1) == '\n': p -= 1
@@ -1845,7 +1853,7 @@ class Buffer(EditorInterface, EditWindow):
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
             if self.CanEdit():
                 with self.off_undocollection():
-                    self.ReplaceSelection("")
+                    self.ReplaceSelection('')
             self.message("")
         
         def clear_autocomp(evt):
@@ -2796,7 +2804,7 @@ class Nautilus(EditorInterface, Shell):
             ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
             if self.CanEdit():
                 with self.off_undocollection():
-                    self.ReplaceSelection("")
+                    self.ReplaceSelection('')
             self.message("")
         
         def clear_autocomp(evt):
@@ -2839,8 +2847,6 @@ class Nautilus(EditorInterface, Shell):
                'escape pressed' : (-1, self.on_enter_escmap),
                 'space pressed' : (0, self.OnSpace),
            '*backspace pressed' : (0, self.OnBackspace),
-          'C-backspace pressed' : (0, _F(self.backward_kill_word)),
-          'S-backspace pressed' : (0, _F(self.backward_kill_line)),
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
