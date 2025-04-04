@@ -1682,25 +1682,21 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @editable
     def kill_line(self):
-        if self.SelectedText:
-            self.ReplaceSelection('')
-            return
-        p = self.eol
-        if p == self.cpos: # caret at end of line
-            if self.get_char(p) == '\r': p += 1
-            if self.get_char(p) == '\n': p += 1
-        self.Replace(self.cpos, p, '')
+        if not self.SelectedText:
+            if self.cpos == self.eol:
+                self.WordRightEndExtend() # Select cr/lf
+            else:
+                self.cpos = self.eol
+        self.ReplaceSelection('')
     
     @editable
     def backward_kill_line(self):
-        if self.SelectedText:
-            self.ReplaceSelection('')
-            return
-        p = self.bol
-        if p == self.cpos > 0: # caret at beginning of line
-            if self.get_char(p-1) == '\n': p -= 1
-            if self.get_char(p-1) == '\r': p -= 1
-        self.Replace(p, self.cpos, '')
+        if not self.SelectedText:
+            if self.cpos == self.bol:
+                self.WordLeftExtend() # Select cr/lf
+            else:
+                self.cpos = self.bol
+        self.ReplaceSelection('')
     
     @editable
     def insert_space_like_tab(self):
@@ -1987,7 +1983,7 @@ class Buffer(EditorInterface, EditWindow):
             return
         
         pos = evt.Position
-        self.goto_char(pos) # Clear selection
+        self.goto_char(pos)
         i = 2
         if self.IndicatorValueAt(i, pos): # [C-indic click]
             p = self.IndicatorStart(i, pos)
@@ -3078,28 +3074,35 @@ class Nautilus(EditorInterface, Shell):
         evt.Skip()
     
     @editable
-    def backward_kill_word(self):
-        p = self.cpos
-        text, lp = self.CurLine
-        if text[:lp] == sys.ps2:
-            self.goto_char(p - lp) # skips ps2:prompt
-        self.WordLeft()
-        q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
-        if self.cpos < q:
-            self.goto_char(q) # Don't skip back prompt
-        self.Replace(self.cpos, p, '')
+    def backward_kill_word(self): # (override)
+        if not self.SelectedText:
+            text, lp = self.CurLine
+            if text[:lp] == sys.ps2:
+                self.cpos -= lp       # Select ps2:prompt
+                self.WordLeftExtend() # Select cr/lf
+            else:
+                q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
+                self.WordLeftExtend()
+                if self.cpos < q:
+                    self.cpos = q # Don't skip back prompt
+        self.ReplaceSelection('')
     
     @editable
-    def backward_kill_line(self):
-        p = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
-        text, lp = self.CurLine
-        if text[:lp] == sys.ps2:
-            self.Replace(p - lp, p, '') # eats ps2:prompt
-            return
-        if p == self.cpos > 0: # caret at beginning of line
-            if self.get_char(p-1) == '\n': p -= 1
-            if self.get_char(p-1) == '\r': p -= 1
-        self.Replace(p, self.cpos, '')
+    def backward_kill_line(self): # (override)
+        if not self.SelectedText:
+            text, lp = self.CurLine
+            if text[:lp] == sys.ps2:
+                self.cpos -= lp       # Select ps2:prompt
+                self.WordLeftExtend() # Select cr/lf
+            else: 
+                q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
+                if self.cpos <= self.bolc:
+                    return
+                elif self.cpos > q:
+                    self.cpos = q
+                else:
+                    self.WordLeftExtend() # Select cr/lf
+        self.ReplaceSelection('')
     
     def OnEnter(self, evt):
         """Called when enter pressed."""
@@ -3484,7 +3487,7 @@ class Nautilus(EditorInterface, Shell):
         
         (override) Remove ps1 and ps2 from the multi-line command to paste.
                    Add offset in paste-rectangle mode.
-                   Don't relplace the last crlf to ps.
+                   Don't relplace the last cr/lf to ps.
         """
         if self.CanPaste() and wx.TheClipboard.Open():
             data = wx.TextDataObject()
