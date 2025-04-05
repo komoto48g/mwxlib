@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.10"
+__version__ = "1.4.11"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -290,7 +290,7 @@ class KeyCtrlInterfaceMixin:
         evt.Skip()
     post_command_hook.__name__ = str('exit')
     
-    def define_key(self, keymap, action=None, *args, **kwargs):
+    def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.
         
         If no action, it invalidates the key and returns @decor(binder).
