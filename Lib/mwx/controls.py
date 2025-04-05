@@ -139,6 +139,10 @@ class Param:
             for knob in self.knobs:
                 knob.update_ctrl(None)
             return
+        elif v == self.__value:
+            for knob in self.knobs:
+                knob.update_ctrl()
+            return
         
         ## If the value is out of range, it will be modified.
         valid = (self.min <= v <= self.max)
