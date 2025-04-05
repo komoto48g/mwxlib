@@ -851,7 +851,7 @@ class Icon(wx.Bitmap):
     If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
     
     Note:
-        A null (0-shaped) bitmap fails with AssertionError from 4.1.1
+        A null (0-shaped) bitmap fails with AssertionError from wx ver 4.1.1.
     """
     provided_arts = {
             'cut' : wx.ART_CUT,
@@ -919,7 +919,7 @@ class Icon(wx.Bitmap):
             ## Note: The result could be a zero-shaped bitmap.
             return bmp
         elif key == '':
-            ## Note: A zero-shaped bitmap fails with AssertionError since 4.1.1
+            ## Note: A zero-shaped bitmap fails with AssertionError since wx ver 4.1.1.
             bmp = wx.Bitmap(size)
             with wx.MemoryDC(bmp) as dc:
                 dc.SetBackground(wx.Brush('black'))

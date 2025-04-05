@@ -404,6 +404,7 @@ class AutoCompInterfaceMixin:
         try:
             text, sep, hint = self._get_words_hint()
             obj = self.eval(text)
+            ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -431,6 +432,7 @@ class AutoCompInterfaceMixin:
         try:
             text, sep, hint = self._get_words_hint()
             obj = self.eval(text)
+            ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3.
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -566,7 +568,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.AutoCompSetMaxHeight(10)
         
         ## To prevent @filling crash (Never access to DropTarget)
-        ## [BUG 4.1.1] Don't allow DnD of text, file, whatever.
+        ## [BUG ver 4.1.1] Don't allow DnD of text, file, whatever.
         ## self.SetDropTarget(None)
         
         self.Bind(stc.EVT_STC_START_DRAG, self.OnDrag)
@@ -1008,7 +1010,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
-        ## [BUG 4.2.0] The last char is replaced with b'\x00'.
+        ## [BUG ver 4.2.0] The last char is replaced with b'\x00'.
         ## text, lp = self.CurLineRaw
         ## return self.py_calc_indentation(text[:lp].decode())
         text, lp = self.CurLine
@@ -1890,6 +1892,8 @@ class Buffer(EditorInterface, EditWindow):
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
+                  'C-. pressed' : (2, self.call_word_autocomp),
+                  'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
             },
@@ -2673,14 +2677,14 @@ class Nautilus(EditorInterface, Shell):
         C-up        : [0] retrieve previous history
         C-down      : [0] retrieve next history
         C-j         : [0] tooltip of eval (for the selected or focused word)
-        C-h, M-h    : [0] calltip of help (for the selected or focused func)
+        C-h  M-h    : [0] calltip of help (for the selected or focused func)
         TAB         : [1] history-comp
         M-p         : [1] retrieve previous history in history-comp mode
         M-n         : [1] retrieve next history in history-comp mode
-        M-.         : [2] word-comp
-        M-/         : [3] apropos-comp
-        M-,         : [4] text-comp
-        M-m         : [5] module-comp
+        M-.  C-.    : [2] word-comp
+        M-/  C-/    : [3] apropos-comp
+        M-,  C-,    : [4] text-comp
+        M-m  C-m    : [5] module-comp
         
         Autocomps are incremental when pressed any alnums,
                   and decremental when backspace.
@@ -2867,6 +2871,10 @@ class Nautilus(EditorInterface, Shell):
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
+                  'C-. pressed' : (2, self.call_word_autocomp),
+                  'C-/ pressed' : (3, self.call_apropos_autocomp),
+                  'C-, pressed' : (4, self.call_text_autocomp),
+                  'C-m pressed' : (5, self.call_module_autocomp),
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
                   'M-, pressed' : (4, self.call_text_autocomp),
@@ -3384,7 +3392,7 @@ class Nautilus(EditorInterface, Shell):
     
     ## cf. getCommand() -> caret-line that starts with a prompt
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
-    ##     [BUG 4.1.1] Don't use for current prompt --> Fixed in 4.2.0.
+    ##     [BUG ver 4.1.1] Don't use for current prompt --> Fixed in wx ver 4.2.0.
     
     def getMultilineCommand(self, rstrip=True):
         """Extract a multi-line command which starts with a prompt.

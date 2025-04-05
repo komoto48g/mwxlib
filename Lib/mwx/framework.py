@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.9"
+__version__ = "1.4.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1594,7 +1594,7 @@ class ShellFrame(MiniFrame):
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
-        ##       and will be fixed in wxPython 4.2.1.
+        ##       and will be fixed in wx ver 4.2.1.
         if wx.Display.GetFromWindow(pane.window) == -1:
             pane.floating_pos = wx.GetMousePosition()
         
