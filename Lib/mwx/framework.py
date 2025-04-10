@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.11"
+__version__ = "1.4.12"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1256,8 +1256,8 @@ class ShellFrame(MiniFrame):
                   'C-f pressed' : (0, self.OnFindText),
                    'f3 pressed' : (0, self.OnFindNext),
                  'S-f3 pressed' : (0, self.OnFindPrev),
-                  'f11 pressed' : (0, _F(self.toggle_window, self.ghost, alias='toggle_ghost')),
-                'S-f11 pressed' : (0, _F(self.toggle_window, self.watcher, alias='toggle_watcher')),
+                  'f11 pressed' : (0, _F(self.toggle_window, win=self.ghost, alias='toggle_ghost')),
+                'S-f11 pressed' : (0, _F(self.toggle_window, win=self.watcher, alias='toggle_watcher')),
                   'f12 pressed' : (0, _F(self.Close, alias="close")),
              '*f[0-9]* pressed' : (0, ),
             },

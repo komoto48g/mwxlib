@@ -419,8 +419,8 @@ class GraphPlot(MatplotPanel):
                'M-down pressed' : [ None, self.OnPageDown ],
                'pageup pressed' : [ None, self.OnPageUp ],
              'pagedown pressed' : [ None, self.OnPageDown ],
-                 'home pressed' : [ None, _F(self.select, 0) ],
-                  'end pressed' : [ None, _F(self.select, -1) ],
+                 'home pressed' : [ None, _F(self.select, index=0) ],
+                  'end pressed' : [ None, _F(self.select, index=-1) ],
                   'M-a pressed' : [ None, _F(self.fit_to_canvas) ],
                   'C-a pressed' : [ None, _F(self.fit_to_axes) ],
                   'C-i pressed' : [ None, _F(self.invert_cmap) ],
@@ -673,9 +673,11 @@ class GraphPlot(MatplotPanel):
                 self.axes.axis(art.get_extent())
         return art
     
-    def select(self, j):
-        if isinstance(j, (str, AxesImagePhantom)):
-            j = self.index(j)
+    def select(self, index):
+        if isinstance(index, (str, AxesImagePhantom)):
+            j = self.index(index)
+        else:
+            j = index
         
         for art in self.__Arts: # Hide all frames
             art.set_visible(0)

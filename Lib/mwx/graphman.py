@@ -353,9 +353,9 @@ class LayerInterface(CtrlInterface):
                    'thread_end' : [ None ], # end processing
                   'thread_quit' : [ None ], # terminated by user
                  'thread_error' : [ None ], # failed in error
-                   'page_shown' : [ None, _F(self.Draw, True)  ],
-                  'page_closed' : [ None, _F(self.Draw, False) ],
-                  'page_hidden' : [ None, _F(self.Draw, False) ],
+                   'page_shown' : [ None, _F(self.Draw, show=True)  ],
+                  'page_closed' : [ None, _F(self.Draw, show=False) ],
+                  'page_hidden' : [ None, _F(self.Draw, show=False) ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
