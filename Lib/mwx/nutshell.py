@@ -478,7 +478,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 'pointer_unset' : [ None, dispatch ],
             },
             0 : {
-               'insert pressed' : (0, _F(self.over, None, doc="toggle-over")),
+               'insert pressed' : (0, _F(self.over, mode=None, doc="toggle-over")),
                'C-left pressed' : (0, _F(self.WordLeft)),
               'C-right pressed' : (0, _F(self.WordRightEnd)),
              'C-S-left pressed' : (0, _F(self.selection_backward_word_or_paren)),
@@ -2890,10 +2890,10 @@ class Nautilus(EditorInterface, Shell):
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
              'S-right released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, _F(self._on_completion,  1)), # 古いヒストリへ進む
-                'S-tab pressed' : (1, _F(self._on_completion, -1)), # 新しいヒストリへ戻る
-                  'M-p pressed' : (1, _F(self._on_completion,  1)),
-                  'M-n pressed' : (1, _F(self._on_completion, -1)),
+                  'tab pressed' : (1, _F(self._on_completion, step=1)), # 古いヒストリへ進む
+                'S-tab pressed' : (1, _F(self._on_completion, step=-1)), # 新しいヒストリへ戻る
+                  'M-p pressed' : (1, _F(self._on_completion, step=1)),
+                  'M-n pressed' : (1, _F(self._on_completion, step=-1)),
             '[a-z0-9_] pressed' : (1, skip),
            '[a-z0-9_] released' : (1, self.call_history_comp),
             'S-[a-z\\] pressed' : (1, skip),
