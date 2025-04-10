@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.11"
+__version__ = "1.4.12"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -24,7 +24,7 @@ from .utilus import get_rootpath, ignore, warn
 from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
 
 
-def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
+def deb(target=None, loop=True, locals=None, **kwargs):
     """Dive into the process.
     
     Args:
@@ -32,17 +32,15 @@ def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
                   If None, the target is set to `__main__`.
         loop    : If True, the app and the mainloop will be created.
         locals  : Additional context of the shell
-        debrc   : file name of the session. Defaults to None.
-                  If None, no session will be created or saved.
-                  If `''`, the default session (.debrc) will be loaded.
         
-        **kwargs: Nautilus ShellFrame arguments
+        **kwargs: ShellFrame and Nautilus arguments
         
+            - session           : file name of the session. Defaults to None.
+            - ensureClose       : True => EVT_CLOSE will close the window.
+                                  False => EVT_CLOSE will hide the window.
             - introText         : introductory of the shell
             - startupScript     : startup script file (default None)
             - execStartupScript : True => Execute the startup script.
-            - ensureClose       : True => EVT_CLOSE will close the window.
-                                  False => EVT_CLOSE will hide the window.
     
     Note:
         This will execute the startup script $(PYTHONSTARTUP).
@@ -50,9 +48,13 @@ def deb(target=None, loop=True, locals=None, debrc=None, **kwargs):
     kwargs.setdefault("introText", f"mwx {__version__}\n")
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
-
+    
+    if "debrc" in kwargs: # for backward compatibility
+        warn("Deprecated keyword: 'debrc'. Use 'session' instead.", DeprecationWarning)
+        kwargs.setdefault('session', kwargs.pop('debrc'))
+    
     app = wx.GetApp() or wx.App()
-    frame = ShellFrame(None, target, session=debrc, **kwargs)
+    frame = ShellFrame(None, target, **kwargs)
     frame.Show()
     frame.rootshell.SetFocus()
     if locals:

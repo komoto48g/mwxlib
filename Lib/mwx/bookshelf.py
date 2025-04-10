@@ -115,6 +115,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                     editor.handler.append(self.context)
                 self.build_tree()
         wx.CallAfter(_attach)
+        wx.CallAfter(self.ExpandAll)
     
     def OnDestroy(self, evt):
         if self and self.parent:
