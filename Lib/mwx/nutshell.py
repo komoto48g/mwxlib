@@ -1891,7 +1891,6 @@ class Buffer(EditorInterface, EditWindow):
              '*button* pressed' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
-                    '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -2014,14 +2013,6 @@ class Buffer(EditorInterface, EditWindow):
     
     def OnSavePointReached(self, evt):
         self.update_caption()
-        evt.Skip()
-    
-    def OnEnterDot(self, evt):
-        p = self.cpos
-        lst = self.get_style(p-1)
-        rst = self.get_style(p)
-        if lst not in ('moji', 'word', 'rparen') or rst == 'word':
-            self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
     def on_activated(self, buf):
@@ -2867,10 +2858,10 @@ class Nautilus(EditorInterface, Shell):
                   'M-j pressed' : (0, _F(self.exec_region)),
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpDoc),
-                    '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
+                    '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'C-, pressed' : (4, self.call_text_autocomp),
