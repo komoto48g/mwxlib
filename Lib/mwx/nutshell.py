@@ -288,7 +288,10 @@ class AutoCompInterfaceMixin:
     
     def _get_words_hint(self):
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        text = next(split_words(cmdl, reverse=1), '')
+        if cmdl.endswith(' '): # 前の文字が空白の場合はスキップする
+            text = ''
+        else:
+            text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
     
     def call_history_comp(self, evt):
@@ -345,7 +348,7 @@ class AutoCompInterfaceMixin:
                         return lh
         
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
+        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word including dots
         try:
             if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
@@ -401,11 +404,15 @@ class AutoCompInterfaceMixin:
         if not self.CanEdit():
             self.handler('quit', evt)
             return
+        
+        text, sep, hint = self._get_words_hint()
+        if not text:
+            self.handler('quit', evt)
+            self.message("- No autocompletion candidates or hints found.")
+            return
         try:
-            text, sep, hint = self._get_words_hint()
-            obj = self.eval(text)
             ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3
-            
+            obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
             words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
@@ -429,11 +436,15 @@ class AutoCompInterfaceMixin:
         if not self.CanEdit():
             self.handler('quit', evt)
             return
+        
+        text, sep, hint = self._get_words_hint()
+        if not text:
+            self.handler('quit', evt)
+            self.message("- No autocompletion candidates or hints found.")
+            return
         try:
-            text, sep, hint = self._get_words_hint()
-            obj = self.eval(text)
             ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3.
-            
+            obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
             words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
@@ -2997,6 +3008,7 @@ class Nautilus(EditorInterface, Shell):
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
                   '\\ released' : (5, self.call_module_autocomp),
+                  'C-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
                   'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
            '*backspace pressed' : (5, self.OnBackspace),
