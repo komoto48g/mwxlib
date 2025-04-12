@@ -1383,9 +1383,9 @@ class Frame(mwx.Frame):
             view = self.selected_view
         
         if not filename:
-            fn = view.frame.pathname if view.frame else ''
+            default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Select index file to import",
-                    defaultDir=os.path.dirname(fn or ''),
+                    defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
                              "ALL files (*.*)|*.*",
@@ -1420,9 +1420,9 @@ class Frame(mwx.Frame):
                 return None
         
         if not filename:
-            fn = view.frame.pathname if view.frame else ''
+            default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Select index file to export",
-                    defaultDir=os.path.dirname(fn or ''),
+                    defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
@@ -1437,7 +1437,8 @@ class Frame(mwx.Frame):
                 self.message("Export index of {!r}...".format(frame.name))
                 fn = frame.pathname
                 if not fn:
-                    fn = os.path.join(savedir, frame.name) # new file
+                    fn = os.path.join(savedir,
+                            re.sub(r'[\/:*?"<>|]', '_', frame.name)) # replace invalid chars
                 if not os.path.exists(fn):
                     if not fn.endswith('.tif'):
                         fn += '.tif'
@@ -1592,9 +1593,9 @@ class Frame(mwx.Frame):
             paths = [paths]
         
         if paths is None:
-            fn = view.frame.pathname if view.frame else ''
+            default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Open image files",
-                    defaultDir=os.path.dirname(fn or ''),
+                    defaultDir=os.path.dirname(default_path or ''),
                     defaultFile='',
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
@@ -1649,10 +1650,10 @@ class Frame(mwx.Frame):
                 return None
         
         if not path:
-            fn = view.frame.pathname if view.frame else ''
+            default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Save buffer as",
-                    defaultDir=os.path.dirname(fn or ''),
-                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),
+                    defaultDir=os.path.dirname(default_path or ''),
+                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name), # replace invalid chars
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:

@@ -45,7 +45,7 @@ class Plugin(Layer):
             self.Arts = self.graph.axes.plot(r[N:], ctf(r[N:]), 'y-', lw=1)
         
         Z = ctf(np.hypot(X, Y))
-        self.graph.load((255 * Z ** 2).astype(np.uint8), 'ctf', localunit=lu)
+        self.graph.load((255 * Z ** 2).astype(np.uint8), "*ctf*", localunit=lu)
 
 
 if __name__ == "__main__":
