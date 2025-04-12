@@ -355,6 +355,7 @@ class AutoCompInterfaceMixin:
         cmdl = self.GetTextRange(self.bol, self.cpos)
         hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word including dots
         try:
+            ## from * import ...
             if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
                 if not _continue(hints) and not force:
@@ -374,13 +375,14 @@ class AutoCompInterfaceMixin:
                     q = f"{text}.{hint}".lower()
                     keys = [x[len(text)+1:] for x in self.modules if x.lower().startswith(q)]
                     modules.update(k for k in keys if '.' not in k)
-            
+            ## import ...
             elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
                 text, hints = m.groups()
                 if not _continue(hints) and not force:
                     self.message("[module]>>> waiting for key input...")
                     return
                 modules = self.modules
+            ## Module X.Y.Z
             else:
                 text, sep, hint = self._get_words_hint()
                 obj = self.eval(text)
@@ -575,7 +577,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.SetKeyWords(1, ' '.join(builtins.__dict__)
                           + ' '.join(_dunders(type, int, float, str, bytes,
                                               tuple, list, range, operator,))
-                          + ' self this')
+                          + ' self this shell')
         
         ## AutoComp setting
         self.AutoCompSetAutoHide(False)
