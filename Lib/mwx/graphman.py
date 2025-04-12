@@ -451,7 +451,7 @@ class LayerInterface(CtrlInterface):
         lambda self,v: self.Show(v))
     
     def IsShown(self):
-        """Returns True if the window is physically visible on the screen.
+        """Return True if the window is physically visible on the screen.
         
         (override) Equivalent to ``IsShownOnScreen``.
                    Note: The instance could be a page within a notebook.

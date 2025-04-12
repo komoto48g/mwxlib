@@ -92,7 +92,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.BuildTree(obj)
     
     def GetTextForWidget(self, obj):
-        """Returns the string to be used in the tree for a widget.
+        """Return the string to be used in the tree for a widget.
         
         (override) Make better object name and Id.
         """

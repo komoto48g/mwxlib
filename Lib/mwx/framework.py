@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.12"
+__version__ = "1.4.13"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -221,7 +221,7 @@ class KeyCtrlInterfaceMixin:
     
     @staticmethod
     def getKeyState(key):
-        """Returns state of speckey (cf. wx.GetKeyState)."""
+        """Return state of speckey (cf. wx.GetKeyState)."""
         try:
             return wx.GetKeyState(_speckeys_wxkmap[key])
         except KeyError:
@@ -876,12 +876,12 @@ class AuiNotebook(aui.AuiNotebook):
     
     @property
     def _all_tabs(self): # (deprecated) internal use only
-        """Returns all AuiTabCtrl objects (internal use only)."""
+        """Return all AuiTabCtrl objects (internal use only)."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
     
     @property
     def _all_panes(self): # (deprecated) internal use only
-        """Returns all AuiPaneInfo excluding `dummy` one (internal use only)."""
+        """Return all AuiPaneInfo excluding `dummy` one (internal use only)."""
         return list(self._mgr.AllPanes)[1:]
     
     def get_pages(self, type=None):
@@ -919,7 +919,7 @@ class AuiNotebook(aui.AuiNotebook):
             return True
     
     def find_tab(self, win):
-        """Returns AuiTabCtrl and AuiNotebookPage for the window.
+        """Return AuiTabCtrl and AuiNotebookPage for the window.
         
         cf. aui.AuiNotebook.FindTab -> bool, tab, idx
         Note:

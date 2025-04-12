@@ -867,7 +867,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         return sty
     
     def get_char(self, pos):
-        """Returns the character at the given position."""
+        """Return the character at the given position."""
         return chr(self.GetCharAt(pos))
     
     def get_text(self, start, end):
@@ -1018,7 +1018,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @classmethod
     def py_calc_indentation(self, text):
-        """Returns indent spaces for the command text."""
+        """Return indent spaces for the command text."""
         text = self.py_strip_comments(text)
         lstr, indent = self.py_strip_indents(text)
         text = text.rstrip()
@@ -1032,7 +1032,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @classmethod
     def py_strip_indents(self, text):
-        """Returns left-stripped text and the number of indent spaces."""
+        """Return left-stripped text and the number of indent spaces."""
         text = self.py_strip_prompts(text) # cf. shell.lstripPrompt(text)
         lstr = text.lstrip(' \t')
         indent = len(text) - len(lstr)
@@ -1040,7 +1040,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @classmethod
     def py_strip_prompts(self, text):
-        """Returns text without a leading prompt."""
+        """Return text without a leading prompt."""
         for ps in (sys.ps1, sys.ps2, sys.ps3):
             if text.startswith(ps):
                 text = text[len(ps):]
@@ -1049,7 +1049,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     @classmethod
     def py_strip_comments(self, text):
-        """Returns text without comments."""
+        """Return text without comments."""
         return ''.join(split_tokens(text, comment=False))
     
     ## --------------------------------
@@ -1783,14 +1783,14 @@ class Buffer(EditorInterface, EditWindow):
     
     @property
     def need_buffer_save(self):
-        """Returns whether the buffer should be saved.
+        """Return whether the buffer should be saved.
         The file has been modified internally.
         """
         return self.mtdelta is not None and self.IsModified()
     
     @property
     def need_buffer_load(self):
-        """Returns whether the buffer should be loaded.
+        """Return whether the buffer should be loaded.
         The file has been modified externally.
         """
         return self.mtdelta is not None and self.mtdelta > 0
@@ -2329,7 +2329,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     @property
     def buffer(self):
-        """Returns the currently selected page or None."""
+        """Return the currently selected page or None."""
         return self.CurrentPage
     
     def find_buffer(self, fn):

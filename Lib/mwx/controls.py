@@ -849,7 +849,7 @@ class Clipboard:
 ## --------------------------------
 
 class Icon(wx.Bitmap):
-    """Returns an iconic bitmap with the specified size (w, h).
+    """Return an iconic bitmap with the specified size (w, h).
     
     The key is either Icon.provided_arts or Icon.custom_images key.
     If the key is empty it returns a transparent bitmap, otherwise NullBitmap.
