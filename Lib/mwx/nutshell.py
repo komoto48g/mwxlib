@@ -288,8 +288,16 @@ class AutoCompInterfaceMixin:
     
     def _get_words_hint(self):
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        text = next(split_words(cmdl, reverse=1), '')
+        if cmdl.endswith(' '): # 前の文字が空白の場合はスキップする
+            text = ''
+        else:
+            text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
+    
+    def clear_autocomp(self, evt):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
+        self.message("")
     
     def call_history_comp(self, evt):
         """Called when history-comp mode."""
@@ -345,8 +353,9 @@ class AutoCompInterfaceMixin:
                         return lh
         
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
+        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word including dots
         try:
+            ## from * import ...
             if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
                 text, hints = m.groups()
                 if not _continue(hints) and not force:
@@ -366,13 +375,14 @@ class AutoCompInterfaceMixin:
                     q = f"{text}.{hint}".lower()
                     keys = [x[len(text)+1:] for x in self.modules if x.lower().startswith(q)]
                     modules.update(k for k in keys if '.' not in k)
-            
+            ## import ...
             elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
                 text, hints = m.groups()
                 if not _continue(hints) and not force:
                     self.message("[module]>>> waiting for key input...")
                     return
                 modules = self.modules
+            ## Module X.Y.Z
             else:
                 text, sep, hint = self._get_words_hint()
                 obj = self.eval(text)
@@ -401,11 +411,15 @@ class AutoCompInterfaceMixin:
         if not self.CanEdit():
             self.handler('quit', evt)
             return
+        
+        text, sep, hint = self._get_words_hint()
+        if not text:
+            self.handler('quit', evt)
+            self.message("- No autocompletion candidates or hints found.")
+            return
         try:
-            text, sep, hint = self._get_words_hint()
-            obj = self.eval(text)
             ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3
-            
+            obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
             words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
@@ -429,11 +443,15 @@ class AutoCompInterfaceMixin:
         if not self.CanEdit():
             self.handler('quit', evt)
             return
+        
+        text, sep, hint = self._get_words_hint()
+        if not text:
+            self.handler('quit', evt)
+            self.message("- No autocompletion candidates or hints found.")
+            return
         try:
-            text, sep, hint = self._get_words_hint()
-            obj = self.eval(text)
             ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3.
-            
+            obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
             words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
@@ -559,7 +577,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.SetKeyWords(1, ' '.join(builtins.__dict__)
                           + ' '.join(_dunders(type, int, float, str, bytes,
                                               tuple, list, range, operator,))
-                          + ' self this')
+                          + ' self this shell')
         
         ## AutoComp setting
         self.AutoCompSetAutoHide(False)
@@ -1854,11 +1872,6 @@ class Buffer(EditorInterface, EditWindow):
                     self.ReplaceSelection('')
             self.message("")
         
-        def clear_autocomp(evt):
-            if self.AutoCompActive():
-                self.AutoCompCancel()
-            self.message("")
-        
         def fork(evt):
             self.handler.fork(self.handler.current_event, evt)
         
@@ -1891,15 +1904,14 @@ class Buffer(EditorInterface, EditWindow):
              '*button* pressed' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
-                    '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
             },
             2 : { # word auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
+                         'quit' : (0, self.clear_autocomp),
+                    '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear, skip),
@@ -1917,7 +1929,7 @@ class Buffer(EditorInterface, EditWindow):
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, skip),
           '*backspace released' : (2, self.call_word_autocomp),
-         '*S-backspace pressed' : (0, clear_autocomp, fork),
+         '*S-backspace pressed' : (0, self.clear_autocomp, fork),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
                '*shift pressed' : (2, ),
@@ -1925,8 +1937,8 @@ class Buffer(EditorInterface, EditWindow):
              '*f[0-9]* pressed' : (2, ),
             },
             3 : { # apropos auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
+                         'quit' : (0, self.clear_autocomp),
+                    '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear, skip),
@@ -1944,7 +1956,7 @@ class Buffer(EditorInterface, EditWindow):
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, skip),
           '*backspace released' : (3, self.call_apropos_autocomp),
-         '*S-backspace pressed' : (0, clear_autocomp, fork),
+         '*S-backspace pressed' : (0, self.clear_autocomp, fork),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
                '*shift pressed' : (3, ),
@@ -2014,14 +2026,6 @@ class Buffer(EditorInterface, EditWindow):
     
     def OnSavePointReached(self, evt):
         self.update_caption()
-        evt.Skip()
-    
-    def OnEnterDot(self, evt):
-        p = self.cpos
-        lst = self.get_style(p-1)
-        rst = self.get_style(p)
-        if lst not in ('moji', 'word', 'rparen') or rst == 'word':
-            self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
     def on_activated(self, buf):
@@ -2807,11 +2811,6 @@ class Nautilus(EditorInterface, Shell):
                     self.ReplaceSelection('')
             self.message("")
         
-        def clear_autocomp(evt):
-            if self.AutoCompActive():
-                self.AutoCompCancel()
-            self.message("")
-        
         def fork(evt):
             self.handler.fork(self.handler.current_event, evt)
         
@@ -2867,10 +2866,10 @@ class Nautilus(EditorInterface, Shell):
                   'M-j pressed' : (0, _F(self.exec_region)),
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpDoc),
-                    '. pressed' : (2, self.OnEnterDot),
                   'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
+                    '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'C-, pressed' : (4, self.call_text_autocomp),
@@ -2906,8 +2905,8 @@ class Nautilus(EditorInterface, Shell):
              '*f[0-9]* pressed' : (1, ),
             },
             2 : { # word auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
+                         'quit' : (0, self.clear_autocomp),
+                    '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear, skip),
@@ -2925,7 +2924,7 @@ class Nautilus(EditorInterface, Shell):
               '*delete pressed' : (2, skip),
            '*backspace pressed' : (2, self.OnBackspace),
           '*backspace released' : (2, self.call_word_autocomp),
-         '*S-backspace pressed' : (0, clear_autocomp, fork),
+         '*S-backspace pressed' : (0, self.clear_autocomp, fork),
                   'C-j pressed' : (2, _F(self.eval_line)),
                  '*alt pressed' : (2, ),
                 '*ctrl pressed' : (2, ),
@@ -2934,8 +2933,8 @@ class Nautilus(EditorInterface, Shell):
              '*f[0-9]* pressed' : (2, ),
             },
             3 : { # apropos auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
+                         'quit' : (0, self.clear_autocomp),
+                    '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear, skip),
@@ -2953,7 +2952,7 @@ class Nautilus(EditorInterface, Shell):
               '*delete pressed' : (3, skip),
            '*backspace pressed' : (3, self.OnBackspace),
           '*backspace released' : (3, self.call_apropos_autocomp),
-         '*S-backspace pressed' : (0, clear_autocomp, fork),
+         '*S-backspace pressed' : (0, self.clear_autocomp, fork),
                   'C-j pressed' : (3, _F(self.eval_line)),
                  '*alt pressed' : (3, ),
                 '*ctrl pressed' : (3, ),
@@ -2962,8 +2961,8 @@ class Nautilus(EditorInterface, Shell):
              '*f[0-9]* pressed' : (3, ),
             },
             4 : { # text auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
+                         'quit' : (0, self.clear_autocomp),
+                    '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear, skip),
@@ -2981,7 +2980,7 @@ class Nautilus(EditorInterface, Shell):
               '*delete pressed' : (4, skip),
            '*backspace pressed' : (4, self.OnBackspace),
           '*backspace released' : (4, self.call_text_autocomp),
-         '*S-backspace pressed' : (0, clear_autocomp, fork),
+         '*S-backspace pressed' : (0, self.clear_autocomp, fork),
                   'C-j pressed' : (4, _F(self.eval_line)),
                  '*alt pressed' : (4, ),
                 '*ctrl pressed' : (4, ),
@@ -2990,8 +2989,8 @@ class Nautilus(EditorInterface, Shell):
              '*f[0-9]* pressed' : (4, ),
             },
             5 : { # module auto completion AS-mode
-                         'quit' : (0, clear_autocomp),
-                    '* pressed' : (0, clear_autocomp, fork),
+                         'quit' : (0, self.clear_autocomp),
+                    '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
                 'enter pressed' : (0, clear, skip),
                'escape pressed' : (0, clear, skip),
@@ -3006,11 +3005,12 @@ class Nautilus(EditorInterface, Shell):
             'S-[a-z\\] pressed' : (5, skip),
            'S-[a-z\\] released' : (5, self.call_module_autocomp),
                   '\\ released' : (5, self.call_module_autocomp),
+                  'C-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
                   'M-m pressed' : (5, _F(self.call_module_autocomp, force=1)),
               '*delete pressed' : (5, skip),
            '*backspace pressed' : (5, self.OnBackspace),
           '*backspace released' : (5, self.call_module_autocomp),
-         '*S-backspace pressed' : (0, clear_autocomp, fork),
+         '*S-backspace pressed' : (0, self.clear_autocomp, fork),
                  '*alt pressed' : (5, ),
                 '*ctrl pressed' : (5, ),
                '*shift pressed' : (5, ),
