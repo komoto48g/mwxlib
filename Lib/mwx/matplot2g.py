@@ -636,6 +636,8 @@ class GraphPlot(MatplotPanel):
             show    : Show immediately when loaded.
             **kwargs: frame attributes.
         """
+        assert buf is not None, "Load buffer must be an array or string (not None)"
+        
         if isinstance(buf, str):
             buf = Image.open(buf)
         
