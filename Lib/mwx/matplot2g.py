@@ -1641,8 +1641,7 @@ class GraphPlot(MatplotPanel):
                     color='red', size=7, #fontsize=8,
                   )
                 )
-            self.selector = self.get_current_mark()
-            self.trace_point(*self.selector, type=MARK)
+            self.trace_point(*self.get_current_mark(), type=MARK)
         self.draw(self.marked)
     
     def OnMarkAppend(self, evt):
@@ -1665,7 +1664,7 @@ class GraphPlot(MatplotPanel):
         else:
             self.__marksel = [k]
         self.update_art_of_mark()
-        
+        self.selector = self.get_current_mark()
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame) # 多重マーカー選択時
     
