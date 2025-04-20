@@ -1,9 +1,9 @@
 #! python3
 """Graph manager.
 """
+from contextlib import contextmanager
 from functools import wraps
 from importlib import reload, import_module
-from contextlib import contextmanager
 from bdb import BdbQuit
 from pprint import pformat
 import threading

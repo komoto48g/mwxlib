@@ -1,8 +1,9 @@
 #! python3
 """mwxlib param controller and wx custom controls.
 """
+from contextlib import contextmanager
 from itertools import chain
-import inspect
+import io
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -772,6 +773,19 @@ class Clipboard:
     This does not work unless wx.App instance exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
+    @contextmanager
+    @staticmethod
+    def istrstream():
+        with io.StringIO(Clipboard.read()) as f:
+            yield f
+    
+    @contextmanager
+    @staticmethod
+    def ostrstream():
+        with io.StringIO() as f:
+            yield f
+            Clipboard.write(f.getvalue())
+    
     @staticmethod
     def read(verbose=False):
         do = wx.TextDataObject()

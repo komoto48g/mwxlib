@@ -1,9 +1,9 @@
 #! python3
 """mwxlib Nautilus in the shell.
 """
+from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
-from contextlib import contextmanager
 from pathlib import Path
 from pprint import pformat
 from bdb import BdbQuit
