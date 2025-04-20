@@ -2120,6 +2120,7 @@ class Buffer(EditorInterface, EditWindow):
                         sender=self, command=None, more=False)
     
     def eval_line(self):
+        """Evaluate the selected word or line and show calltips."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -2144,6 +2145,7 @@ class Buffer(EditorInterface, EditWindow):
             self.message("No words")
     
     def exec_region(self):
+        """Execute a region of code."""
         try:
             code = compile(self.Text, self.filename, "exec")
             exec(code, self.globals, self.locals)
@@ -3626,7 +3628,7 @@ class Nautilus(EditorInterface, Shell):
     ## --------------------------------
     
     def eval_line(self):
-        """Evaluate the selected word or line."""
+        """Evaluate the selected word or line and show calltips."""
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -3654,7 +3656,7 @@ class Nautilus(EditorInterface, Shell):
             self.message("No words")
     
     def exec_region(self):
-        """Execute the the selected region."""
+        """Execute a region of code."""
         if self.CallTipActive():
             self.CallTipCancel()
         
