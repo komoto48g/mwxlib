@@ -1703,8 +1703,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @editable
     def kill_line(self):
         if not self.SelectedText:
-            if self.cpos == self.eol:
-                self.WordRightEndExtend() # Select cr/lf
+            p = self.cpos
+            if p == self.eol:
+                ## self.WordRightEndExtend()  # Select cr/lf chunks
+                if self.get_char(p) == '\r': p += 1
+                if self.get_char(p) == '\n': p += 1
+                self.cpos = p
             else:
                 self.cpos = self.eol
         self.ReplaceSelection('')
@@ -1712,8 +1716,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @editable
     def backward_kill_line(self):
         if not self.SelectedText:
-            if self.cpos == self.bol:
-                self.WordLeftExtend() # Select cr/lf
+            p = self.cpos
+            if p == self.bol:
+                ## self.WordLeftExtend()  # Select cr/lf chunks
+                if self.get_char(p-1) == '\n': p -= 1
+                if self.get_char(p-1) == '\r': p -= 1
+                self.cpos = p
             else:
                 self.cpos = self.bol
         self.ReplaceSelection('')
@@ -3079,39 +3087,41 @@ class Nautilus(EditorInterface, Shell):
         Backspace-guard from autocomp eating over a prompt whitespace.
         """
         if self.cpos == self.bolc:
-            self.handler('quit', evt) # don't eat backward prompt
+            self.handler('quit', evt) # Don't eat backward prompt
             return
         evt.Skip()
     
     @editable
     def backward_kill_word(self): # (override)
         if not self.SelectedText:
+            if self.cpos <= self.bolc:
+                return
             text, lp = self.CurLine
             if text[:lp] == sys.ps2:
-                self.cpos -= lp       # Select ps2:prompt
-                self.WordLeftExtend() # Select cr/lf
+                self.cpos -= lp        # Select ps2:prompt
+                self.WordLeftExtend()  # Select cr/lf chunks
             else:
-                q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
                 self.WordLeftExtend()
+                q = max(self.bol, self.bolc)  # for debugger mode: bol <= bolc
                 if self.cpos < q:
-                    self.cpos = q # Don't skip back prompt
+                    self.cpos = q  # Don't skip back ps2:prompt
         self.ReplaceSelection('')
     
     @editable
-    def backward_kill_line(self): # (override)
+    def backward_kill_line(self):  # (override)
         if not self.SelectedText:
+            if self.cpos <= self.bolc:
+                return
             text, lp = self.CurLine
             if text[:lp] == sys.ps2:
-                self.cpos -= lp       # Select ps2:prompt
-                self.WordLeftExtend() # Select cr/lf
+                self.cpos -= lp        # Select ps2:prompt
+                self.WordLeftExtend()  # Select cr/lf chunks
             else: 
                 q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
-                if self.cpos <= self.bolc:
-                    return
-                elif self.cpos > q:
+                if self.cpos > q:
                     self.cpos = q
                 else:
-                    self.WordLeftExtend() # Select cr/lf
+                    self.WordLeftExtend()  # Select cr/lf chunks
         self.ReplaceSelection('')
     
     def OnEnter(self, evt):
