@@ -16,8 +16,7 @@ import fnmatch
 import pkgutil
 import pydoc
 import inspect
-from inspect import (isclass, ismodule, ismethod, isbuiltin,
-                     isfunction, isgenerator, isframe, iscode, istraceback)
+from inspect import isclass, ismodule, ismethod, isbuiltin, isfunction, isgenerator  # noqa
 from pprint import pprint
 
 

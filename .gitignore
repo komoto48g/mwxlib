@@ -13,11 +13,7 @@ exclude_files
 
 # Resources
 docfiles*/
-etc/
 test*/
-icons*/
-vclips*/
-!Lib/mwx/
 !requirements.txt
 !docs/_sources/*.txt
 
