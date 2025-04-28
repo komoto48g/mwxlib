@@ -1912,6 +1912,7 @@ class Buffer(EditorInterface, EditWindow):
              '*button* pressed' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
+                    '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -2034,6 +2035,17 @@ class Buffer(EditorInterface, EditWindow):
     
     def OnSavePointReached(self, evt):
         self.update_caption()
+        evt.Skip()
+    
+    def OnEnterDot(self, evt):
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        p = self.cpos
+        lst = self.get_style(p-1)
+        rst = self.get_style(p)
+        if lst not in ('moji', 'word', 'rparen') or rst == 'word':
+            self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
     def on_activated(self, buf):
