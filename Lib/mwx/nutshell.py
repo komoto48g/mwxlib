@@ -596,16 +596,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## Global style for all languages
         ## font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, "MS Gothic")
         ## self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
-        
         ## self.StyleClearAll()
-        ## self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
-        ## self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        ## => STC_STYLE_DEFAULT に設定したスタイルを他のスタイルに全適用する
         
         ## The magin style for line numbers and symbols
         ## [0] for markers, 10 pixels wide, mask 0b11111
         ## [1] for numbers, 32 pixels wide, mask 0x01ffffff (~stc.STC_MASK_FOLDERS)
         ## [2] for borders,  1 pixels wide, mask 0xfe000000 ( stc.STC_MASK_FOLDERS)
-        
+        ## 
+        ## cf. `EditWindow.setDisplayLineNumbers`
+        ## 
         ## 32 bit margin mask
         ## [0] 1111,1111,1111,1111,1111,1111,1111,1111 = -1 for all markers
         ## [1] 0000,0001,1111,1111,1111,1111,1111,1111 = 0x01ffffff for markers
@@ -1198,6 +1198,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if default:
             self.StyleSetSpec(stc.STC_STYLE_DEFAULT, default)
             self.StyleClearAll()
+        
+        self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         
         ## Add style to the folding margin
         item = _map(spec.get(stc.STC_STYLE_LINENUMBER, ''))
