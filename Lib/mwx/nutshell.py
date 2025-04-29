@@ -61,6 +61,7 @@ class Stylus:
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_INDENTGUIDE : "",
         stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
         stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
@@ -69,11 +70,11 @@ class Stylus:
         stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
         stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
         stc.STC_P_NUMBER          : "fore:#7f0000",
-        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf",
         stc.STC_P_CHARACTER       : "fore:#7f7f7f",
         stc.STC_P_STRING          : "fore:#7f7f7f",
         stc.STC_P_TRIPLE          : "fore:#7f7f7f",
         stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf,eol",
         stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
         stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
@@ -87,6 +88,7 @@ class Stylus:
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#cccccc,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_INDENTGUIDE : "",
         stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#f0f0ff,size:2", # optional
         stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
@@ -95,11 +97,11 @@ class Stylus:
         stc.STC_P_COMMENTLINE     : "fore:#007f00,back:#f0fff0",
         stc.STC_P_COMMENTBLOCK    : "fore:#007f00,back:#f0fff0,eol",
         stc.STC_P_NUMBER          : "fore:#e02000",
-        stc.STC_P_STRINGEOL       : "fore:#7f7f7f,back:#ffc0c0,eol",
         stc.STC_P_CHARACTER       : "fore:#7f7f7f",
         stc.STC_P_STRING          : "fore:#7f7f7f",
         stc.STC_P_TRIPLE          : "fore:#7f7f7f",
         stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_STRINGEOL       : "fore:#7f7f7f,back:#ffc0c0,eol",
         stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
         stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
@@ -113,6 +115,7 @@ class Stylus:
         stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_INDENTGUIDE : "",
         stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
         stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#cccccc",
@@ -121,11 +124,11 @@ class Stylus:
         stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
         stc.STC_P_COMMENTBLOCK    : "fore:#42c18c,back:#004040,eol",
         stc.STC_P_NUMBER          : "fore:#ffc080",
-        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#004040,eol",
         stc.STC_P_CHARACTER       : "fore:#a0a0a0",
-        stc.STC_P_STRING          : "fore:#a0a0a0",
-        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040",
-        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040",
+        stc.STC_P_STRING          : "fore:#a0c0ff",
+        stc.STC_P_TRIPLE          : "fore:#a0a0a0",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0c0ff",
+        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#400000,eol",
         stc.STC_P_CLASSNAME       : "fore:#61d6d6,bold",
         stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
         stc.STC_P_WORD            : "fore:#80c0ff",
@@ -628,7 +631,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.SetMarginLeft(2) # +1 margin at the left
         
-        self.SetFoldFlags(0x10) # draw below if not expanded
+        self.SetFoldFlags(stc.STC_FOLDFLAG_LINEAFTER_CONTRACTED)
         
         self.SetProperty('fold', '1') # Enable folder property
         
@@ -1219,10 +1222,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.SetFoldMarginColour(True, item.get('fore'))
                 self.SetFoldMarginHiColour(True, item.get('fore'))
         
+        self.SetCaretLineVisible(0)
+        self.SetCaretForeground(_map(default).get('fore'))
+        
         ## Custom style for caret and line colour
         item = _map(spec.pop(stc.STC_STYLE_CARETLINE, ''))
         if item:
-            self.SetCaretLineVisible(0)
             if 'fore' in item:
                 self.SetCaretForeground(item['fore'])
             if 'back' in item:
