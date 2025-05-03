@@ -61,6 +61,7 @@ class Stylus:
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#ffffb8,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_INDENTGUIDE : "",
         stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
         stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
@@ -69,11 +70,11 @@ class Stylus:
         stc.STC_P_COMMENTLINE     : "fore:#007f7f,back:#ffcfcf",
         stc.STC_P_COMMENTBLOCK    : "fore:#007f7f,back:#ffcfcf,eol",
         stc.STC_P_NUMBER          : "fore:#7f0000",
-        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf",
         stc.STC_P_CHARACTER       : "fore:#7f7f7f",
         stc.STC_P_STRING          : "fore:#7f7f7f",
         stc.STC_P_TRIPLE          : "fore:#7f7f7f",
         stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_STRINGEOL       : "fore:#000000,back:#ffcfcf,eol",
         stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
         stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
@@ -87,6 +88,7 @@ class Stylus:
         stc.STC_STYLE_BRACELIGHT  : "fore:#000000,back:#cccccc,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_INDENTGUIDE : "",
         stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#f0f0ff,size:2", # optional
         stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
@@ -95,11 +97,11 @@ class Stylus:
         stc.STC_P_COMMENTLINE     : "fore:#007f00,back:#f0fff0",
         stc.STC_P_COMMENTBLOCK    : "fore:#007f00,back:#f0fff0,eol",
         stc.STC_P_NUMBER          : "fore:#e02000",
-        stc.STC_P_STRINGEOL       : "fore:#7f7f7f,back:#ffc0c0,eol",
         stc.STC_P_CHARACTER       : "fore:#7f7f7f",
         stc.STC_P_STRING          : "fore:#7f7f7f",
         stc.STC_P_TRIPLE          : "fore:#7f7f7f",
         stc.STC_P_TRIPLEDOUBLE    : "fore:#7f7f7f",
+        stc.STC_P_STRINGEOL       : "fore:#7f7f7f,back:#ffc0c0,eol",
         stc.STC_P_CLASSNAME       : "fore:#7f00ff,bold",
         stc.STC_P_DEFNAME         : "fore:#0000ff,bold",
         stc.STC_P_WORD            : "fore:#0000ff",
@@ -113,6 +115,7 @@ class Stylus:
         stc.STC_STYLE_BRACELIGHT  : "fore:#ffffff,back:#202020,bold",
         stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
+        stc.STC_STYLE_INDENTGUIDE : "",
         stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
         stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
         stc.STC_P_DEFAULT         : "fore:#cccccc",
@@ -121,11 +124,11 @@ class Stylus:
         stc.STC_P_COMMENTLINE     : "fore:#42c18c,back:#004040",
         stc.STC_P_COMMENTBLOCK    : "fore:#42c18c,back:#004040,eol",
         stc.STC_P_NUMBER          : "fore:#ffc080",
-        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#004040,eol",
         stc.STC_P_CHARACTER       : "fore:#a0a0a0",
-        stc.STC_P_STRING          : "fore:#a0a0a0",
-        stc.STC_P_TRIPLE          : "fore:#a0a0a0,back:#004040",
-        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0a0a0,back:#004040",
+        stc.STC_P_STRING          : "fore:#a0c0ff",
+        stc.STC_P_TRIPLE          : "fore:#a0a0a0",
+        stc.STC_P_TRIPLEDOUBLE    : "fore:#a0c0ff",
+        stc.STC_P_STRINGEOL       : "fore:#cccccc,back:#400000,eol",
         stc.STC_P_CLASSNAME       : "fore:#61d6d6,bold",
         stc.STC_P_DEFNAME         : "fore:#3a96ff,bold",
         stc.STC_P_WORD            : "fore:#80c0ff",
@@ -201,7 +204,10 @@ class AutoCompInterfaceMixin:
         super().CallTipShow(pos, tip)
     
     def autoCallTipShow(self, command, insertcalltip=True):
-        """Display argument spec and docstring in a popup window."""
+        """Display argument spec and docstring in a popup window.
+        
+        (override) Fix cursor position on calltip insertion.
+        """
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -596,16 +602,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## Global style for all languages
         ## font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, "MS Gothic")
         ## self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
-        
         ## self.StyleClearAll()
-        ## self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
-        ## self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        ## => STC_STYLE_DEFAULT に設定したスタイルを他のスタイルに全適用する
         
         ## The magin style for line numbers and symbols
         ## [0] for markers, 10 pixels wide, mask 0b11111
         ## [1] for numbers, 32 pixels wide, mask 0x01ffffff (~stc.STC_MASK_FOLDERS)
         ## [2] for borders,  1 pixels wide, mask 0xfe000000 ( stc.STC_MASK_FOLDERS)
-        
+        ## 
+        ## cf. `EditWindow.setDisplayLineNumbers`
+        ## 
         ## 32 bit margin mask
         ## [0] 1111,1111,1111,1111,1111,1111,1111,1111 = -1 for all markers
         ## [1] 0000,0001,1111,1111,1111,1111,1111,1111 = 0x01ffffff for markers
@@ -628,7 +634,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.SetMarginLeft(2) # +1 margin at the left
         
-        self.SetFoldFlags(0x10) # draw below if not expanded
+        self.SetFoldFlags(stc.STC_FOLDFLAG_LINEAFTER_CONTRACTED)
         
         self.SetProperty('fold', '1') # Enable folder property
         
@@ -742,7 +748,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     def add_marker(self, line, n):
         if self.MarkerAdd(line, n):
-            self.EnsureVisible(line) # expand if folded
+            self.EnsureVisible(line)  # expand if folded
             self.handler('{}_set'.format(self.marker_names[n]), line)
     
     def del_marker(self, n):
@@ -754,7 +760,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def goto_marker(self, markerMask, selection=False):
         line = self.MarkerNext(0, markerMask)
         if line != -1:
-            self.EnsureVisible(line) # expand if folded
+            self.EnsureVisible(line)  # expand if folded
             self.goto_line(line, selection)
             self.recenter()
     
@@ -1199,6 +1205,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.StyleSetSpec(stc.STC_STYLE_DEFAULT, default)
             self.StyleClearAll()
         
+        self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        
         ## Add style to the folding margin
         item = _map(spec.get(stc.STC_STYLE_LINENUMBER, ''))
         if item:
@@ -1216,10 +1225,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.SetFoldMarginColour(True, item.get('fore'))
                 self.SetFoldMarginHiColour(True, item.get('fore'))
         
+        self.SetCaretLineVisible(0)
+        self.SetCaretForeground(_map(default).get('fore'))
+        
         ## Custom style for caret and line colour
         item = _map(spec.pop(stc.STC_STYLE_CARETLINE, ''))
         if item:
-            self.SetCaretLineVisible(0)
             if 'fore' in item:
                 self.SetCaretForeground(item['fore'])
             if 'back' in item:
@@ -1310,6 +1321,48 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         vl = self._calc_vline(line)
         if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
+    
+    def DoFindNext(self, findData, findDlg=None):
+        """Find the search text defined in `findData`.
+        
+        If found, selects the matched text and scrolls to its line.
+        Typically called from `wx.EVT_FIND` event handlers.
+        
+        (override) Enables the whole word search.
+                   Returns True if a match is found, False otherwise.
+        """
+        flags = 0
+        if findData.Flags & wx.FR_MATCHCASE: flags |= wx.stc.STC_FIND_MATCHCASE
+        if findData.Flags & wx.FR_WHOLEWORD: flags |= wx.stc.STC_FIND_WHOLEWORD
+        self.SetSearchFlags(flags)
+        
+        backward = not (findData.Flags & wx.FR_DOWN)
+        findstring = findData.FindString
+        if backward:
+            self.TargetStart = self.anchor  # backward anchor
+            self.TargetEnd = 0
+        else:
+            self.TargetStart = self.cpos  # forward anchor
+            self.TargetEnd = self.TextLength
+        loc = self.SearchInTarget(findstring)
+        
+        ## If it wasn't found then restart at beginning.
+        if loc == -1:
+            self.TargetStart = self.TextLength if backward else 0
+            loc = self.SearchInTarget(findstring)
+        
+        ## Was it still not found?
+        if loc == -1:
+            wx.MessageBox("Unable to find the search text.",
+                          "Not found!", wx.OK|wx.ICON_INFORMATION)
+            if findDlg:
+                wx.CallAfter(findDlg.SetFocus)
+            return False
+        
+        self.SetSelection(loc, loc + len(findstring))
+        self.EnsureVisible(self.cline)  # expand if folded
+        self.EnsureCaretVisible()
+        return True
     
     ## --------------------------------
     ## Search functions
@@ -1425,17 +1478,22 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not text:
             self.message("No words")
             return
-        lw = len(text.encode()) # for multi-byte string
+        wholeword = (not self.SelectedText)  # Enable or disable whole word search.
+        lw = len(text.encode())
         lines = []
-        for p in self.search_text(text, mode=(not self.SelectedText)):
+        for p in self.search_text(text, wholeword):
             lines.append(self.LineFromPosition(p))
             for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
-        self.__itextlines = sorted(set(lines)) # keep order, no duplication
+        self.__itextlines = sorted(set(lines))  # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
         try:
             self.TopLevelParent.findData.FindString = text
+            if wholeword:
+                self.TopLevelParent.findData.Flags |= wx.FR_WHOLEWORD
+            else:
+                self.TopLevelParent.findData.Flags &= ~wx.FR_WHOLEWORD
         except AttributeError:
             pass
     
@@ -1471,7 +1529,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             evt.Skip()
             return
         line = self.__itextlines[i]
-        self.EnsureVisible(line) # expand if folded
+        self.EnsureVisible(line)  # expand if folded
         self.goto_line(line)
         self.recenter()
         self.on_itext_exit(evt)
@@ -1912,6 +1970,7 @@ class Buffer(EditorInterface, EditWindow):
              '*button* pressed' : (0, skip, dispatch),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
+                    '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
                   'M-. pressed' : (2, self.call_word_autocomp),
@@ -2034,6 +2093,17 @@ class Buffer(EditorInterface, EditWindow):
     
     def OnSavePointReached(self, evt):
         self.update_caption()
+        evt.Skip()
+    
+    def OnEnterDot(self, evt):
+        if not self.CanEdit():
+            self.handler('quit', evt)
+            return
+        p = self.cpos
+        lst = self.get_style(p-1)
+        rst = self.get_style(p)
+        if lst not in ('moji', 'word', 'rparen') or rst == 'word':
+            self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
     def on_activated(self, buf):
@@ -2170,7 +2240,7 @@ class Buffer(EditorInterface, EditWindow):
                 lx = lines[-1] - 1
                 self.red_arrow = lx
                 self.goto_line(lx)
-                self.EnsureVisible(lx) # expand if folded
+                self.EnsureVisible(lx)  # expand if folded
                 self.EnsureCaretVisible()
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
@@ -3092,7 +3162,7 @@ class Nautilus(EditorInterface, Shell):
         evt.Skip()
     
     @editable
-    def backward_kill_word(self): # (override)
+    def backward_kill_word(self):  # (override)
         if not self.SelectedText:
             if self.cpos <= self.bolc:
                 return

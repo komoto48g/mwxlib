@@ -1035,6 +1035,7 @@ class Button(pb.PlateButton):
     
     def SetBitmap(self, bmp):
         """Set the bitmap displayed in the button.
+        
         (override) If it fails, it clears the bitmap.
         """
         try:

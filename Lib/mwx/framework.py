@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.16"
+__version__ = "1.4.18"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -49,7 +49,7 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("ensureClose", True)
     
-    if "debrc" in kwargs: # for backward compatibility
+    if "debrc" in kwargs:  # for backward compatibility
         warn("Deprecated keyword: 'debrc'. Use 'session' instead.", DeprecationWarning)
         kwargs.setdefault('session', kwargs.pop('debrc'))
     
@@ -1255,9 +1255,9 @@ class ShellFrame(MiniFrame):
                    '* released' : (0, fork_debugger),
                   'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
-                  'C-f pressed' : (0, self.OnFindText),
-                   'f3 pressed' : (0, self.OnFindNext),
-                 'S-f3 pressed' : (0, self.OnFindPrev),
+                  'C-f pressed' : (0, self.on_search_dialog),
+                   'f3 pressed' : (0, self.repeat_forward_search),
+                 'S-f3 pressed' : (0, self.repeat_backward_search),
                   'f11 pressed' : (0, _F(self.toggle_window, win=self.ghost, alias='toggle_ghost')),
                 'S-f11 pressed' : (0, _F(self.toggle_window, win=self.watcher, alias='toggle_watcher')),
                   'f12 pressed' : (0, _F(self.Close, alias="close")),
@@ -1951,13 +1951,13 @@ class ShellFrame(MiniFrame):
         return next((x for x in self.get_all_editors() if x.IsShown()), self.Scratch)
     
     ## --------------------------------
-    ## Find text dialog
+    ## Find / Replace text dialog
     ## --------------------------------
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
     
     __find_target = None
     
-    def OnFindText(self, evt):
+    def on_search_dialog(self, evt):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
             return
@@ -1967,29 +1967,34 @@ class ShellFrame(MiniFrame):
             return
         self.__find_target = wnd
         self.findData.FindString = wnd.topic_at_caret
-        self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find",
-                            style=wx.FR_NOWHOLEWORD|wx.FR_NOUPDOWN)
+        self.findData.Flags |= wx.FR_DOWN
+        self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find")
         self.findDlg.Show()
     
-    def OnFindNext(self, evt, backward=False): #<wx._core.FindDialogEvent>
-        data = self.findData
-        down_p = data.Flags & wx.FR_DOWN
-        if (backward and down_p) or (not backward and not down_p):
-            data.Flags ^= wx.FR_DOWN # toggle up/down flag
+    def repeat_forward_search(self, evt):
+        self.OnFindNext(evt, direction=True)
+    
+    def repeat_backward_search(self, evt):
+        self.OnFindNext(evt, direction=False)
+    
+    def OnFindNext(self, evt, direction=None): #<wx._core.FindDialogEvent>
+        if not self.findData.FindString:
+            self.message("No last search.")
+            return
+        
+        if direction is not None:
+            dir = self.findData.Flags & wx.FR_DOWN  # 0:up, 1:down
+            if direction != dir:
+                self.findData.Flags ^= wx.FR_DOWN  # toggle up/down flag
         
         wnd = wx.Window.FindFocus()
         if not isinstance(wnd, stc.StyledTextCtrl):
             wnd = self.__find_target
             if not wnd:
                 return
-        wnd.DoFindNext(data, self.findDlg or wnd)
+        wnd.DoFindNext(self.findData, self.findDlg or wnd)
         if self.findDlg:
             self.OnFindClose(None)
-        wnd.EnsureVisible(wnd.cline)
-        wnd.ensureLineMoreOnScreen(wnd.cline)
-    
-    def OnFindPrev(self, evt):
-        self.OnFindNext(evt, backward=True)
     
     def OnFindClose(self, evt): #<wx._core.FindDialogEvent>
         self.findDlg.Destroy()
