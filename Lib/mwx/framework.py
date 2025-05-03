@@ -1202,7 +1202,7 @@ class ShellFrame(MiniFrame):
         self.findDlg = None
         self.findData = wx.FindReplaceData(wx.FR_DOWN | wx.FR_MATCHCASE)
         
-        self.Bind(wx.EVT_FIND, self.OnFindText)
+        self.Bind(wx.EVT_FIND, self.OnFindNext)
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
@@ -1255,9 +1255,9 @@ class ShellFrame(MiniFrame):
                    '* released' : (0, fork_debugger),
                   'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
-                  'C-f pressed' : (0, self.on_find_dialog),
-                   'f3 pressed' : (0, self.OnFindNext),
-                 'S-f3 pressed' : (0, self.OnFindPrev),
+                  'C-f pressed' : (0, self.on_search_dialog),
+                   'f3 pressed' : (0, self.repeat_forward_search),
+                 'S-f3 pressed' : (0, self.repeat_backward_search),
                   'f11 pressed' : (0, _F(self.toggle_window, win=self.ghost, alias='toggle_ghost')),
                 'S-f11 pressed' : (0, _F(self.toggle_window, win=self.watcher, alias='toggle_watcher')),
                   'f12 pressed' : (0, _F(self.Close, alias="close")),
@@ -1957,7 +1957,7 @@ class ShellFrame(MiniFrame):
     
     __find_target = None
     
-    def on_find_dialog(self, evt):
+    def on_search_dialog(self, evt):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
             return
@@ -1971,7 +1971,17 @@ class ShellFrame(MiniFrame):
         self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find")
         self.findDlg.Show()
     
-    def OnFindText(self, evt, direction=None): #<wx._core.FindDialogEvent>
+    def repeat_forward_search(self, evt):
+        self.OnFindNext(evt, direction=True)
+    
+    def repeat_backward_search(self, evt):
+        self.OnFindNext(evt, direction=False)
+    
+    def OnFindNext(self, evt, direction=None): #<wx._core.FindDialogEvent>
+        if not self.findData.FindString:
+            self.message("No last search.")
+            return
+        
         if direction is not None:
             dir = self.findData.Flags & wx.FR_DOWN  # 0:up, 1:down
             if direction != dir:
@@ -1985,12 +1995,6 @@ class ShellFrame(MiniFrame):
         wnd.DoFindNext(self.findData, self.findDlg or wnd)
         if self.findDlg:
             self.OnFindClose(None)
-    
-    def OnFindNext(self, evt):
-        self.OnFindText(evt, direction=True)
-    
-    def OnFindPrev(self, evt):
-        self.OnFindText(evt, direction=False)
     
     def OnFindClose(self, evt): #<wx._core.FindDialogEvent>
         self.findDlg.Destroy()
