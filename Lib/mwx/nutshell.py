@@ -204,7 +204,10 @@ class AutoCompInterfaceMixin:
         super().CallTipShow(pos, tip)
     
     def autoCallTipShow(self, command, insertcalltip=True):
-        """Display argument spec and docstring in a popup window."""
+        """Display argument spec and docstring in a popup window.
+        
+        (override) Fix cursor position on calltip insertion.
+        """
         if self.CallTipActive():
             self.CallTipCancel()
         
@@ -3158,7 +3161,7 @@ class Nautilus(EditorInterface, Shell):
         evt.Skip()
     
     @editable
-    def backward_kill_word(self): # (override)
+    def backward_kill_word(self):  # (override)
         if not self.SelectedText:
             if self.cpos <= self.bolc:
                 return

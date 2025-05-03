@@ -40,6 +40,7 @@ if 1:
     class Cursor(Cursor):
         def onmove(self, event):
             """Internal event handler to draw the cursor when the mouse moves.
+            
             (override) If the cursor is off the axes, the xdata and ydata will
                        be None, and will simply be cleared rather than drawn.
             """
