@@ -1967,6 +1967,7 @@ class ShellFrame(MiniFrame):
             return
         self.__find_target = wnd
         self.findData.FindString = wnd.topic_at_caret
+        self.findData.Flags |= wx.FR_DOWN
         self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find")
         self.findDlg.Show()
     
@@ -1984,8 +1985,6 @@ class ShellFrame(MiniFrame):
         wnd.DoFindNext(self.findData, self.findDlg or wnd)
         if self.findDlg:
             self.OnFindClose(None)
-        wnd.EnsureVisible(wnd.cline)
-        wnd.ensureLineMoreOnScreen(wnd.cline)
     
     def OnFindNext(self, evt):
         self.OnFindText(evt, direction=True)

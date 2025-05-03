@@ -1319,6 +1319,47 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
     
+    def DoFindNext(self, findData, findDlg=None):
+        """Called from the `wx.EVT_FIND` handler.
+        
+        (override) Enables the whole word search.
+                   Returns True if a match is found, False otherwise.
+        """
+        flags = 0
+        if findData.Flags & wx.FR_MATCHCASE: flags |= wx.stc.STC_FIND_MATCHCASE
+        if findData.Flags & wx.FR_WHOLEWORD: flags |= wx.stc.STC_FIND_WHOLEWORD
+        self.SetSearchFlags(flags)
+        
+        backward = not (findData.Flags & wx.FR_DOWN)
+        findstring = findData.FindString
+        if backward:
+            self.TargetStart = self.anchor  # backward anchor
+            self.TargetEnd = 0
+        else:
+            self.TargetStart = self.cpos  # forward anchor
+            self.TargetEnd = self.TextLength
+        loc = self.SearchInTarget(findstring)
+        
+        ## If it wasn't found then restart at beginning.
+        if loc == -1:
+            self.TargetStart = self.TextLength if backward else 0
+            loc = self.SearchInTarget(findstring)
+        
+        ## Was it still not found?
+        if loc == -1:
+            wx.MessageBox("Unable to find the search text.",
+                          "Not found!", wx.OK|wx.ICON_INFORMATION)
+            if findDlg:
+                wx.CallAfter(findDlg.SetFocus)
+                return False
+        if findDlg:
+            findDlg.Close()
+        
+        self.SetSelection(loc, loc + len(findstring))
+        self.EnsureVisible(self.cline)  # expand if folded
+        self.EnsureCaretVisible()
+        return True
+    
     ## --------------------------------
     ## Search functions
     ## --------------------------------
@@ -1433,17 +1474,22 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not text:
             self.message("No words")
             return
-        lw = len(text.encode()) # for multi-byte string
+        wholeword = (not self.SelectedText)  # Enable or disable whole word search.
+        lw = len(text.encode())
         lines = []
-        for p in self.search_text(text, mode=(not self.SelectedText)):
+        for p in self.search_text(text, wholeword):
             lines.append(self.LineFromPosition(p))
             for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, lw)
-        self.__itextlines = sorted(set(lines)) # keep order, no duplication
+        self.__itextlines = sorted(set(lines))  # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
         try:
             self.TopLevelParent.findData.FindString = text
+            if wholeword:
+                self.TopLevelParent.findData.Flags |= wx.FR_WHOLEWORD
+            else:
+                self.TopLevelParent.findData.Flags &= ~wx.FR_WHOLEWORD
         except AttributeError:
             pass
     
