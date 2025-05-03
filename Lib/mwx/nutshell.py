@@ -748,7 +748,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     def add_marker(self, line, n):
         if self.MarkerAdd(line, n):
-            self.EnsureVisible(line) # expand if folded
+            self.EnsureVisible(line)  # expand if folded
             self.handler('{}_set'.format(self.marker_names[n]), line)
     
     def del_marker(self, n):
@@ -760,7 +760,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def goto_marker(self, markerMask, selection=False):
         line = self.MarkerNext(0, markerMask)
         if line != -1:
-            self.EnsureVisible(line) # expand if folded
+            self.EnsureVisible(line)  # expand if folded
             self.goto_line(line, selection)
             self.recenter()
     
@@ -1323,7 +1323,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.ScrollToLine(vl - n//2)
     
     def DoFindNext(self, findData, findDlg=None):
-        """Called from the `wx.EVT_FIND` handler.
+        """Find the search text defined in `findData`.
+        
+        If found, selects the matched text and scrolls to its line.
+        Typically called from `wx.EVT_FIND` event handlers.
         
         (override) Enables the whole word search.
                    Returns True if a match is found, False otherwise.
@@ -1354,9 +1357,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                           "Not found!", wx.OK|wx.ICON_INFORMATION)
             if findDlg:
                 wx.CallAfter(findDlg.SetFocus)
-                return False
-        if findDlg:
-            findDlg.Close()
+            return False
         
         self.SetSelection(loc, loc + len(findstring))
         self.EnsureVisible(self.cline)  # expand if folded
@@ -1528,7 +1529,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             evt.Skip()
             return
         line = self.__itextlines[i]
-        self.EnsureVisible(line) # expand if folded
+        self.EnsureVisible(line)  # expand if folded
         self.goto_line(line)
         self.recenter()
         self.on_itext_exit(evt)
@@ -2239,7 +2240,7 @@ class Buffer(EditorInterface, EditWindow):
                 lx = lines[-1] - 1
                 self.red_arrow = lx
                 self.goto_line(lx)
-                self.EnsureVisible(lx) # expand if folded
+                self.EnsureVisible(lx)  # expand if folded
                 self.EnsureCaretVisible()
                 self.AnnotationSetStyle(lx, stc.STC_STYLE_ANNOTATION)
                 self.AnnotationSetText(lx, msg)
