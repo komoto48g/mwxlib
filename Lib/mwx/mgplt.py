@@ -154,7 +154,5 @@ class GnuplotFrame(mwx.Frame):
         self.menubar.reset()
     
     def Destroy(self):
-        try:
-            del self.gnuplot
-        finally:
-            return mwx.Frame.Destroy(self)
+        del self.gnuplot
+        return mwx.Frame.Destroy(self)

@@ -1492,8 +1492,7 @@ class Frame(mwx.Frame):
         except Exception as e:
             print("- Failed to read attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
-        finally:
-            return res, mis # finally raises no exception
+        return res, mis
     
     @classmethod
     def write_attributes(self, filename, frames):
@@ -1504,7 +1503,6 @@ class Frame(mwx.Frame):
             
             ## `res` order may differ from that of given frames,
             ## so we take a few steps to merge `new` to be exported.
-            
             res.update(new) # res updates to new info,
             new.update(res) # copy res back keeping new order.
             
@@ -1514,8 +1512,7 @@ class Frame(mwx.Frame):
         except Exception as e:
             print("- Failed to write attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
-        finally:
-            return new, mis # finally raises no exception
+        return new, mis
     
     def load_frame(self, paths=None, view=None):
         """Load frames from files to the view window.

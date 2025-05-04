@@ -42,10 +42,8 @@ class Plugin(Layer):
         self.sig.blink(self.blink.value)
     
     def Destroy(self):
-        try:
-            self.timer.Stop()
-        finally:
-            return Layer.Destroy(self)
+        self.timer.Stop()
+        return Layer.Destroy(self)
 
 
 if __name__ == "__main__":

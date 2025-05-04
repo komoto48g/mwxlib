@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.18"
+__version__ = "1.4.19"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -618,8 +618,9 @@ class Menu(wx.Menu):
     def Destroy(self):
         try:
             self._unbind()
-        finally:
-            return wx.Menu.Destroy(self)
+        except Exception:
+            pass
+        return wx.Menu.Destroy(self)
     
     @staticmethod
     def Popup(parent, menulist, *args, **kwargs):
@@ -795,11 +796,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                       "About this software")
     
     def Destroy(self):
-        try:
-            self.timer.Stop()
-            self.shellframe.Destroy() # shellframe is not my child
-        finally:
-            return wx.Frame.Destroy(self)
+        self.timer.Stop()
+        self.shellframe.Destroy() # shellframe is not my child
+        return wx.Frame.Destroy(self)
 
 
 class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
@@ -1413,12 +1412,11 @@ class ShellFrame(MiniFrame):
             del builtins.highlight
         except AttributeError:
             pass
-        try:
-            self.timer.Stop()
-            self.save_session()
-        finally:
-            self._mgr.UnInit()
-            return MiniFrame.Destroy(self)
+        
+        self.timer.Stop()
+        self.save_session()
+        self._mgr.UnInit()
+        return MiniFrame.Destroy(self)
     
     def OnClose(self, evt):
         if self.debugger.busy:

@@ -243,7 +243,6 @@ class Debugger(Pdb):
                          f"Debugger is closed.\n\n{e}")
         finally:
             self.set_quit()
-            return
     
     def run(self, cmd, filename="<string>"):
         """Debug a statement executed via the exec() function.
@@ -270,7 +269,6 @@ class Debugger(Pdb):
                          f"Debugger is closed.\n\n{e}")
         finally:
             self.set_quit()
-            return
     
     ## --------------------------------
     ## Actions for handler

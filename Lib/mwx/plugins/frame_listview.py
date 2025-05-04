@@ -113,10 +113,8 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                   lambda v: Menu.Popup(self, self.menu))
     
     def Destroy(self):
-        try:
-            self.Target.handler.remove(self.context)
-        finally:
-            return wx.ListCtrl.Destroy(self)
+        self.Target.handler.remove(self.context)
+        return wx.ListCtrl.Destroy(self)
     
     def UpdateInfo(self, frame):
         ls = ("{}".format(frame.index),

@@ -161,10 +161,8 @@ class Plugin(Layer):
         self.Bind(wx.EVT_SHOW, self.OnShow)
     
     def Destroy(self):
-        try:
-            self.parent.handler.unbind("unknown_format", self.load_media)
-        finally:
-            return Layer.Destroy(self)
+        self.parent.handler.unbind("unknown_format", self.load_media)
+        return Layer.Destroy(self)
     
     def OnShow(self, evt):
         if not evt.IsShown():
