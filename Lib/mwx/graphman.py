@@ -30,10 +30,10 @@ from .utilus import funcall as _F
 from .controls import KnobCtrlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
-from .matplot2 import MatplotPanel # noqa
+from .matplot2 import MatplotPanel  # noqa
 from .matplot2g import GraphPlot
-from .matplot2lg import LinePlot # noqa
-from .matplot2lg import LineProfile # noqa
+from .matplot2lg import LinePlot  # noqa
+from .matplot2lg import LineProfile  # noqa
 from .matplot2lg import Histogram
 
 
@@ -1467,8 +1467,8 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, filename):
         """Read attributes file."""
-        from numpy import nan, inf  # noqa: necessary to eval
-        import datetime             # noqa: necessary to eval
+        from numpy import nan, inf  # noqa # necessary to eval
+        import datetime             # noqa # necessary to eval
         try:
             res = {}
             mis = {}

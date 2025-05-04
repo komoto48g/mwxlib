@@ -3,7 +3,7 @@
 """
 import wx
 
-import matplotlib; matplotlib.use('wxagg') # noqa
+import matplotlib; matplotlib.use('wxagg')  # noqa
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
 from matplotlib.widgets import Cursor

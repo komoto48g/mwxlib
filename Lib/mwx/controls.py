@@ -14,7 +14,7 @@ from .utilus import funcall as _F
 from .framework import pack, Menu, CtrlInterface
 
 import numpy as np
-from numpy import nan, inf  # noqa: necessary to eval
+from numpy import nan, inf  # noqa # necessary to eval
 
 
 def _Tip(*tips):

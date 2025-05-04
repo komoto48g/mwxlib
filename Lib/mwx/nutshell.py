@@ -2568,7 +2568,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     return all([self.find_file(fn) for fn in dlg.Paths])
             return None
         retval = self.load_file(filename)
-        if retval == False: # noqa: not None
+        if retval == False:  # noqa # to check if not None
             buf = self.create_buffer(filename)
             self.swap_buffer(buf)
             self.post_message("New file.")
