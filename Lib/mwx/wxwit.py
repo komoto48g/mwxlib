@@ -8,7 +8,7 @@ import wx.lib.inspection as it
 
 from .controls import Icon
 from .utilus import typename
-from .framework import CtrlInterface, Menu, filling
+from .framework import CtrlInterface, Menu
 
 
 class Inspector(it.InspectionTree, CtrlInterface):
@@ -187,8 +187,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
 
 
 def miniIcon(key, size=(16,16)):
-    if key == 'ShowFilling':
-        return wx.py.filling.images.getPyImage().Scale(16,16).ConvertToBitmap()
+    ## if key == 'ShowFilling':
+    ##     return wx.py.filling.images.getPyImage().Scale(16,16).ConvertToBitmap()
     art = getattr(it, key)
     return art.GetImage().Scale(*size).ConvertToBitmap()
 

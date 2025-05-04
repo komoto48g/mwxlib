@@ -13,7 +13,7 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
-from .utilus import warn
+## from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
