@@ -898,8 +898,6 @@ class Frame(mwx.Frame):
         evt.Skip()
     
     def Destroy(self):
-        ## for name in list(self.plugins):
-        ##     self.unload_plug(name) # => plug.Destroy
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
     
@@ -1797,13 +1795,12 @@ class Frame(mwx.Frame):
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
-                name = view.Name
                 paths = [x.pathname for x in view.all_frames if x.pathname]
-                o.write(f"self.{name}.unit = {view.unit:g}\n")
-                o.write(f"self.load_frame({paths!r}, self.{name})\n")
+                o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
+                o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
                     index = paths.index(view.frame.pathname)
-                    o.write(f"self.{name}.select({index})\n")
+                    o.write(f"self.{view.Name}.select({index})\n")
                 except Exception:
                     pass
             

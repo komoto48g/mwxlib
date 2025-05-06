@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.4.19"
+__version__ = "1.4.20"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1981,9 +1981,13 @@ class ShellFrame(MiniFrame):
             return
         
         if direction is not None:
-            dir = self.findData.Flags & wx.FR_DOWN  # 0:up, 1:down
-            if direction != dir:
-                self.findData.Flags ^= wx.FR_DOWN  # toggle up/down flag
+            ## dir = self.findData.Flags & wx.FR_DOWN  # 0:up, 1:down
+            ## if direction != dir:
+            ##     self.findData.Flags ^= wx.FR_DOWN  # toggle up/down flag
+            if direction:
+                self.findData.Flags |= wx.FR_DOWN
+            else:
+                self.findData.Flags &= ~wx.FR_DOWN
         
         wnd = wx.Window.FindFocus()
         if not isinstance(wnd, stc.StyledTextCtrl):
@@ -2006,7 +2010,7 @@ def filling(obj=None, **kwargs):
                          rootLabel=typename(obj),
                          pos=wx.GetMousePosition(),
                          **kwargs)
-    frame.filling.text.WrapMode = 0 # no wrap
-    frame.filling.text.Zoom = -1 # zoom level of size of fonts
+    frame.filling.text.WrapMode = 0  # no wrap
+    frame.filling.text.Zoom = -1  # zoom level of size of fonts
     frame.Show()
     return frame
