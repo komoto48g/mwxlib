@@ -107,7 +107,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         if not isinstance(widget, wx.Object):
             wx.MessageBox("Cannot watch the widget.\n\n"
-                          "- {!r} is not a wx.Object.".format(widget))
+                          "- {!r} is not a wx.Object.".format(widget),
+                          self.__module__)
             return
         self._target = widget
         self.target = widget

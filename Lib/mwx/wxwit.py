@@ -77,19 +77,16 @@ class Inspector(it.InspectionTree, CtrlInterface):
     ## --------------------------------
     
     def SetObj(self, obj):
-        """Called from tree.toolFrame -> SetObj.
-        
-        (override) Set target object.
-        """
+        """Called from tree.toolFrame -> SetObj."""
         if self.target is obj:
             return
         self.target = obj
-        item = self.FindWidgetItem(obj)
+        item = self.FindWidgetItem(obj)  # cf. it.InspectionTree.SelectObj
         if item:
             self.EnsureVisible(item)
             self.SelectItem(item)
         elif obj:
-            self.BuildTree(obj)
+            self.BuildTree(obj)  # If the item for obj is missing, rebuild the tree.
     
     def GetTextForWidget(self, obj):
         """Return the string to be used in the tree for a widget.
@@ -119,11 +116,11 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if obj is None:
             item = self.Selection
             if item:
-                obj = self.GetItemData(item) # Restart
-        self.BuildTree(obj)
-        if not isinstance(obj, wx.Window):
+                obj = self.GetItemData(item)  # Restart
+        if not isinstance(obj, (wx.Window, type(None))):
             wx.MessageBox("Cannot watch the widget.\n\n"
-                          "- {!r} is not a wx.Object.".format(obj))
+                          "- {!r} is not a wx.Object.".format(obj),
+                          self.__module__)
             return
         self.SetObj(obj)
         self.timer.Start(500)
@@ -137,7 +134,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
     ## --------------------------------
     
     def OnTimer(self, evt):
-        ## wnd, pt = wx.FindWindowAtPointer() # as HitTest
+        ## wnd, pt = wx.FindWindowAtPointer()  # as HitTest
         wnd = wx.Window.FindFocus()
         if (wnd and wnd is not self.target
                 and wnd not in self._noWatchList):

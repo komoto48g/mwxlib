@@ -1491,24 +1491,16 @@ class ShellFrame(MiniFrame):
         evt.Skip()
     
     def OnShow(self, evt):
-        pane = self._mgr.GetPane(self.watcher)
-        if evt.IsShown():
-            if pane.IsShown():
-                self.inspector.watch()
-                self.monitor.watch()
-        else:
-            if pane.IsDocked():
-                self.inspector.unwatch()
-                self.monitor.unwatch()
+        for pane in self._mgr.GetAllPanes():
+            ## When the window is hidden, disable docking and keep child panes floating.
+            pane.Dockable(evt.IsShown() or pane.IsDocked())
         evt.Skip()
     
     def OnGhostShow(self, evt):
         if evt.IsShown():
             self.inspector.watch()
-            self.monitor.watch()
         else:
             self.inspector.unwatch()
-            self.monitor.unwatch()
         evt.Skip()
     
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
@@ -1608,6 +1600,7 @@ class ShellFrame(MiniFrame):
     
     def Quit(self, evt=None):
         """Stop debugger and monitor."""
+        self.monitor.unwatch()
         self.debugger.unwatch()
         self.debugger.send_input('\n') # terminates the reader of threading pdb
         shell = self.debugger.interactive_shell # reset interp locals
