@@ -1453,21 +1453,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def grep(self, pattern, flags=re.M):
         yield from re.finditer(pattern.encode(), self.TextRaw, flags)
     
-    def search_text(self, text, mode=True):
-        """Yields positions where `text` is found.
-        If mode is True, search by word; otherwise, search by string.
-        """
-        text = text.encode()
-        pos = -1
-        p = re.compile(r"[a-zA-Z0-9_]")
-        while 1:
-            pos = self.TextRaw.find(text, pos+1)
-            if pos < 0:
-                break
-            if mode and p.search(self.get_char(pos-1) + self.get_char(pos+len(text))):
-                continue
-            yield pos
-    
     def filter_text(self):
         """Show indicators for the selected text."""
         self.__itextlines = []
@@ -1479,13 +1464,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.message("No words")
             return
         wholeword = (not self.SelectedText)  # Enable or disable whole word search.
-        lw = len(text.encode())
+        pattern = re.escape(text)
+        if wholeword:
+            pattern = rf"\b{pattern}\b"
         lines = []
-        for p in self.search_text(text, wholeword):
+        for m in self.grep(pattern):
+            p, q = m.span()
             lines.append(self.LineFromPosition(p))
             for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
-                self.IndicatorFillRange(p, lw)
+                self.IndicatorFillRange(p, q-p)
         self.__itextlines = sorted(set(lines))  # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
         try:
