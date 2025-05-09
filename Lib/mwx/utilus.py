@@ -826,6 +826,22 @@ class FSM(dict):
                      f"  The transaction must be a list, not a tuple.")
         return action
     
+    def binds(self, event, action=None, state=None, state2=None):
+        """Append a one-time transaction to the context.
+        
+        Like `bind`, but unbinds itself after being called once.
+        """
+        if action is None:
+            return lambda f: self.binds(event, f, state, state2)
+        
+        @wraps(action)
+        def _act(*v, **kw):
+            try:
+                return action(*v, **kw)
+            finally:
+                self.unbind(event, _act, state)
+        return self.bind(event, _act, state, state2)
+    
     def unbind(self, event, action=None, state=None):
         """Remove a transaction from the context.
         
