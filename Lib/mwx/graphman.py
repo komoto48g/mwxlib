@@ -100,8 +100,6 @@ class Thread:
                 None : {
                  'thread_begin' : [ None ], # begin processing
                    'thread_end' : [ None ], # end processing
-                  'thread_quit' : [ None ], # terminated by user
-                 'thread_error' : [ None ], # failed in error
                 },
             })
     
@@ -117,7 +115,6 @@ class Thread:
         frame = inspect.currentframe().f_back.f_back
         filename = frame.f_code.co_filename
         name = frame.f_code.co_name
-        fname, _ = os.path.splitext(os.path.basename(filename))
         
         ## Other threads are not allowed to enter.
         ct = threading.current_thread()
@@ -125,14 +122,7 @@ class Thread:
         
         ## The thread must be activated to enter.
         ## assert self.active, f"{self!r} must be activated to enter {name!r}."
-        try:
-            self.handler(f"{fname}/{name}:enter", self)
-            yield self
-        except Exception:
-            self.handler(f"{fname}/{name}:error", self)
-            raise
-        finally:
-            self.handler(f"{fname}/{name}:exit", self)
+        yield self
     
     def wraps(self, f, *args, **kwargs):
         """Decorator of thread starter function."""
@@ -186,21 +176,20 @@ class Thread:
         @wraps(f)
         def _f(*v, **kw):
             try:
-                self.handler('thread_begin', self)
+                wx.CallAfter(self.handler, 'thread_begin', self)
                 self.result = f(*v, **kw)
             except BdbQuit:
                 pass
             except KeyboardInterrupt as e:
-                print("- Thread execution stopped:", e)
-            except AssertionError as e:
-                print("- Thread execution failed:", e)
+                print("- Thread terminated by user:", e)
+                ## wx.CallAfter(self.handler, 'thread_quit', self)
             except Exception as e:
                 traceback.print_exc()
-                print("- Thread exception:", e)
-                self.handler('thread_error', self)
+                print("- Thread failed in error:", e)
+                ## wx.CallAfter(self.handler, 'thread_error', self)
             finally:
                 self.active = 0
-                self.handler('thread_end', self)
+                wx.CallAfter(self.handler, 'thread_end', self)
         
         if self.running:
             wx.MessageBox("The thread is running (Press [C-g] to quit).",
@@ -226,7 +215,6 @@ class Thread:
         def _stop():
             with wx.BusyInfo("One moment please, "
                              "waiting for threads to die..."):
-                self.handler('thread_quit', self)
                 self.worker.join(1)
         if self.running:
             self.active = 0
@@ -349,10 +337,6 @@ class LayerInterface(CtrlInterface):
         
         self.handler.append({ # DNA<Layer>
             None : {
-                 'thread_begin' : [ None ], # begin processing
-                   'thread_end' : [ None ], # end processing
-                  'thread_quit' : [ None ], # terminated by user
-                 'thread_error' : [ None ], # failed in error
                    'page_shown' : [ None, _F(self.Draw, show=True)  ],
                   'page_closed' : [ None, _F(self.Draw, show=False) ],
                   'page_hidden' : [ None, _F(self.Draw, show=False) ],
