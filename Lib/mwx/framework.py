@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1948,7 +1948,7 @@ class ShellFrame(MiniFrame):
     
     __find_target = None
     
-    def on_search_dialog(self, evt):
+    def on_search_dialog(self, evt, flags=0):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
             return
@@ -1959,35 +1959,33 @@ class ShellFrame(MiniFrame):
         self.__find_target = wnd
         self.findData.FindString = wnd.topic_at_caret
         self.findData.Flags |= wx.FR_DOWN
-        self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find")
+        self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find", flags)
         self.findDlg.Show()
     
+    def on_replace_dialog(self, evt):
+        self.on_search_dialog(evt, flags=wx.FR_REPLACEDIALOG)
+    
     def repeat_forward_search(self, evt):
-        self.OnFindNext(evt, direction=True)
+        self.OnFindNext(evt, backward=False)
     
     def repeat_backward_search(self, evt):
-        self.OnFindNext(evt, direction=False)
+        self.OnFindNext(evt, backward=True)
     
-    def OnFindNext(self, evt, direction=None): #<wx._core.FindDialogEvent>
+    def OnFindNext(self, evt, backward=None): #<wx._core.FindDialogEvent>
         if not self.findData.FindString:
             self.message("No last search.")
             return
-        
-        if direction is not None:
-            ## dir = self.findData.Flags & wx.FR_DOWN  # 0:up, 1:down
-            ## if direction != dir:
-            ##     self.findData.Flags ^= wx.FR_DOWN  # toggle up/down flag
-            if direction:
-                self.findData.Flags |= wx.FR_DOWN
-            else:
+        if isinstance(evt, wx.FindDialogEvent):
+            wnd = self.findDlg.Parent
+        else:
+            wnd = evt.EventObject
+            if not isinstance(wnd, stc.StyledTextCtrl):
+                wnd = self.__find_target
+            if backward:
                 self.findData.Flags &= ~wx.FR_DOWN
-        
-        wnd = wx.Window.FindFocus()
-        if not isinstance(wnd, stc.StyledTextCtrl):
-            wnd = self.__find_target
-            if not wnd:
-                return
-        wnd.DoFindNext(self.findData, self.findDlg or wnd)
+            else:
+                self.findData.Flags |= wx.FR_DOWN
+        wnd.DoFindNext(self.findData, self.findDlg)
         if self.findDlg:
             self.OnFindClose(None)
     
