@@ -1203,6 +1203,8 @@ class ShellFrame(MiniFrame):
         
         self.Bind(wx.EVT_FIND, self.OnFindNext)
         self.Bind(wx.EVT_FIND_NEXT, self.OnFindNext)
+        self.Bind(wx.EVT_FIND_REPLACE, self.OnFindNext)
+        self.Bind(wx.EVT_FIND_REPLACE_ALL, self.OnFindNext)
         self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         
         self.indicator = Indicator(self.statusbar, value=1)
@@ -1255,6 +1257,7 @@ class ShellFrame(MiniFrame):
                   'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.on_search_dialog),
+                'C-S-f pressed' : (0, self.on_replace_dialog),
                    'f3 pressed' : (0, self.repeat_forward_search),
                  'S-f3 pressed' : (0, self.repeat_backward_search),
                   'f11 pressed' : (0, _F(self.toggle_window, win=self.ghost, alias='toggle_ghost')),
@@ -1957,7 +1960,9 @@ class ShellFrame(MiniFrame):
         if not isinstance(wnd, stc.StyledTextCtrl):
             return
         self.__find_target = wnd
-        self.findData.FindString = wnd.topic_at_caret
+        topic = wnd.topic_at_caret
+        if topic:
+            self.findData.FindString = topic
         self.findData.Flags |= wx.FR_DOWN
         self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find", flags)
         self.findDlg.Show()
@@ -1985,9 +1990,22 @@ class ShellFrame(MiniFrame):
                 self.findData.Flags &= ~wx.FR_DOWN
             else:
                 self.findData.Flags |= wx.FR_DOWN
-        wnd.DoFindNext(self.findData, self.findDlg)
-        if self.findDlg:
-            self.OnFindClose(None)
+        
+        if evt.EventType == wx.EVT_FIND_REPLACE_ALL.typeId:  # replace-all
+            n = wnd.DoReplaceAll(self.findData)
+            self.message(f"Replaced {n} strings.")
+            if self.findDlg:
+                self.OnFindClose(None)
+            return
+        elif evt.EventType == wx.EVT_FIND_REPLACE.typeId:  # replace
+            loc = wnd.DoReplaceNext(self.findData)
+        else:
+            loc = wnd.DoFindNext(self.findData)
+            if self.findDlg:
+                if not (self.findDlg.WindowStyle & wx.FR_REPLACEDIALOG):  # for search-dialog
+                    self.OnFindClose(None)
+        if loc < 0:
+            self.message("Unable to find the search text.")
     
     def OnFindClose(self, evt): #<wx._core.FindDialogEvent>
         self.findDlg.Destroy()

@@ -520,8 +520,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 'C-S-c pressed' : (0, _F(self.Copy)),
                 'C-S-v pressed' : (0, _F(self.Paste)),
                   'C-l pressed' : (0, _F(self.recenter)),
-                'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
-                'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
+                ## 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
+                ## 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
             'C-S-space pressed' : (0, _F(self.set_pointer)),
           'C-backspace pressed' : (0, _F(self.backward_kill_word)),
@@ -1322,22 +1322,26 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
     
-    def DoFindNext(self, findData, findDlg=None):
+    ## --------------------------------
+    ## Search functions
+    ## --------------------------------
+    
+    def DoFindNext(self, findData):
         """Find the search text defined in `findData`.
         
         If found, selects the matched text and scrolls to its line.
         Typically called from `wx.EVT_FIND` event handlers.
         
-        (override) Enables the whole word search.
-                   Returns True if a match is found, False otherwise.
+        (override) Enables whole word search.
+                   Returns the match position if found, -1 otherwise.
         """
         flags = 0
-        if findData.Flags & wx.FR_MATCHCASE: flags |= wx.stc.STC_FIND_MATCHCASE
-        if findData.Flags & wx.FR_WHOLEWORD: flags |= wx.stc.STC_FIND_WHOLEWORD
+        if findData.Flags & wx.FR_MATCHCASE: flags |= stc.STC_FIND_MATCHCASE
+        if findData.Flags & wx.FR_WHOLEWORD: flags |= stc.STC_FIND_WHOLEWORD
         self.SetSearchFlags(flags)
         
         backward = not (findData.Flags & wx.FR_DOWN)
-        findstring = findData.FindString
+        findstring = findData.FindString.encode()
         if backward:
             self.TargetStart = self.anchor  # backward anchor
             self.TargetEnd = 0
@@ -1353,20 +1357,37 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         ## Was it still not found?
         if loc == -1:
-            wx.MessageBox("Unable to find the search text.",
-                          "Not found!", wx.OK|wx.ICON_INFORMATION)
-            if findDlg:
-                wx.CallAfter(findDlg.SetFocus)
-            return False
-        
-        self.SetSelection(loc, loc + len(findstring))
-        self.EnsureVisible(self.cline)  # expand if folded
-        self.EnsureCaretVisible()
-        return True
+            ## wx.MessageBox("Unable to find the search text any more.",
+            ##               "Not found!", wx.OK|wx.ICON_INFORMATION)
+            wx.Bell()
+            pass
+        else:
+            self.SetSelection(loc, loc + len(findstring))
+            self.EnsureVisible(self.cline)  # expand if folded
+            self.EnsureCaretVisible()
+        return loc
     
-    ## --------------------------------
-    ## Search functions
-    ## --------------------------------
+    def DoReplaceNext(self, findData):
+        if self.SelectedText == findData.FindString:
+            if self.CanEdit():
+                self.ReplaceSelection(findData.ReplaceString)
+        return self.DoFindNext(findData)
+    
+    def DoReplaceAll(self, findData):
+        with self.save_excursion():
+            locs = [-1]
+            count = 0
+            while 1:
+                loc = self.DoFindNext(findData)
+                if loc in locs:
+                    break
+                locs.append(loc)
+                self.TargetStart = self.anchor
+                self.TargetEnd = self.cpos
+                if self.CanEdit():
+                    self.ReplaceTarget(findData.ReplaceString)
+                    count += 1
+            return count
     
     def get_right_paren(self, p):
         if self.get_char(p) in "({[<": # left-parentheses, <
