@@ -342,7 +342,7 @@ class AxesImagePhantom:
     
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
-        if nearest is False, retval is interpolated with spline
+        If `nearest` is False, the return value is interpolated with spline.
         """
         h, w = self.__buf.shape[:2]
         nx, ny = self.xytopixel(x, y, cast=nearest)
@@ -355,7 +355,7 @@ class AxesImagePhantom:
     
     def xytopixel(self, x, y=None, cast=True):
         """Convert xydata (x,y) -> [nx,ny] pixel.
-        If cast, convert pixel-based lengths to pixel numbers.
+        If `cast` is True, the return value will be integer pixel values.
         """
         def _cast(n):
             return np.int32(np.floor(np.round(n, 1)))
@@ -372,7 +372,8 @@ class AxesImagePhantom:
         return (nx-0.5, ny-0.5)
     
     def xyfrompixel(self, nx, ny=None):
-        """Convert pixel [nx,ny] -> (x,y) xydata (float number)."""
+        """Convert pixel [nx,ny] -> (x,y) xydata (float number).
+        """
         if ny is None:
             ## warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
