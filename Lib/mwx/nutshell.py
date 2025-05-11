@@ -3563,6 +3563,17 @@ class Nautilus(EditorInterface, Shell):
             ## shell.__init__ よりも先に実行される
             pass
     
+    def setBuiltinKeywords(self):
+        """Create pseudo keywords as part of builtins.
+        
+        (override) Don't add `close`, `exit` and `quit` to builtins.
+        """
+        from wx.py.path import ls, cd, pwd, sx
+        builtins.cd = cd
+        builtins.ls = ls
+        builtins.pwd = pwd
+        builtins.sx = sx
+    
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
@@ -3711,10 +3722,6 @@ class Nautilus(EditorInterface, Shell):
         for cmd in commands:
             self.write(cmd)
             self.processLine()
-    
-    ## --------------------------------
-    ## Autocomp actions of the shell
-    ## --------------------------------
     
     def eval_line(self):
         """Evaluate the selected word or line and show calltips."""

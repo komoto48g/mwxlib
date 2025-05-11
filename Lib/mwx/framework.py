@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -263,9 +263,6 @@ class KeyCtrlInterfaceMixin:
              '*[LR]win pressed' : [ keymap, _Pass ],
             },
         })
-    
-    builtins.enter = "Enter extension mode."
-    builtins.exit = "Exit extension mode."
     
     def pre_command_hook(self, evt):
         ## """Called when entering extension mode (internal use only)."""
