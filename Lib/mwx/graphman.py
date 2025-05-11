@@ -113,7 +113,6 @@ class Thread:
         Allows only this worker (but no other thread) to enter.
         """
         frame = inspect.currentframe().f_back.f_back
-        filename = frame.f_code.co_filename
         name = frame.f_code.co_name
         
         ## Other threads are not allowed to enter.
@@ -126,11 +125,11 @@ class Thread:
     
     def enters(self, f):
         """Decorator to register a one-time handler for the enter event."""
-        return self.handler.binds('thread_begin', f)
+        return self.handler.binds('thread_begin', _F(f))
     
     def exits(self, f):
         """Decorator to register a one-time handler for the exit event."""
-        return self.handler.binds('thread_end', f)
+        return self.handler.binds('thread_end', _F(f))
     
     def wraps(self, f, *args, **kwargs):
         """Decorator for a function that starts a new thread."""
@@ -190,11 +189,9 @@ class Thread:
                 pass
             except KeyboardInterrupt as e:
                 print("- Thread terminated by user:", e)
-                ## wx.CallAfter(self.handler, 'thread_quit', self)
             except Exception as e:
                 traceback.print_exc()
                 print("- Thread failed in error:", e)
-                ## wx.CallAfter(self.handler, 'thread_error', self)
             finally:
                 self.active = 0
                 wx.CallAfter(self.handler, 'thread_end', self)
@@ -1791,8 +1788,8 @@ class Frame(mwx.Frame):
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
-                    index = paths.index(view.frame.pathname)
-                    o.write(f"self.{view.Name}.select({index})\n")
+                    if view.frame.pathname in paths:
+                        o.write(f"self.{view.Name}.select({view.frame.name!r})\n")
                 except Exception:
                     pass
             
