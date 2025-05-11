@@ -1105,7 +1105,7 @@ class ShellFrame(MiniFrame):
         
         self.Init()
         
-        from .nutshell import Nautilus, EditorBook
+        from .nutshell import Nautilus, EditorBook, Stylus
         from .bookshelf import EditorTreeCtrl
         
         self.__shell = Nautilus(self,
@@ -1119,6 +1119,28 @@ class ShellFrame(MiniFrame):
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
                                         style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+        
+        ## Set shell and editor styles.
+        self.Scratch.set_attributes(Style=Stylus.py_shell_mode)
+        
+        self.Log.set_attributes(ReadOnly=True,
+                                Style=Stylus.py_log_mode)
+        
+        self.Help.set_attributes(ReadOnly=False,
+                                 Style=Stylus.py_log_mode)
+        
+        self.set_hookable(self.Scratch)
+        self.set_hookable(self.Log)
+        
+        @self.Scratch.define_key('C-j')
+        def eval_line(evt):
+            self.Scratch.buffer.eval_line()
+            evt.Skip(False) # Don't skip explicitly.
+        
+        @self.Scratch.define_key('M-j')
+        def eval_buffer(evt):
+            self.Scratch.buffer.exec_region()
+            evt.Skip(False) # Don't skip explicitly.
         
         from .wxpdb import Debugger
         from .wxwit import Inspector
@@ -1273,8 +1295,6 @@ class ShellFrame(MiniFrame):
             self.load_session(session or self.SESSION_FILE)
         else:
             self.SESSION_FILE = None
-        
-        self.postInit()
     
     def load_session(self, filename):
         """Load session from file.
@@ -1341,34 +1361,6 @@ class ShellFrame(MiniFrame):
                 "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                 "self._mgr.Update()\n",
             )))
-    
-    def postInit(self):
-        """Set shell and editor styles.
-        Note:
-            This is called after loading session.
-        """
-        from .nutshell import Stylus
-        
-        self.Scratch.set_attributes(Style=Stylus.py_shell_mode)
-        
-        self.Log.set_attributes(ReadOnly=True,
-                                Style=Stylus.py_log_mode)
-        
-        self.Help.set_attributes(ReadOnly=False,
-                                 Style=Stylus.py_log_mode)
-        
-        self.set_hookable(self.Scratch)
-        self.set_hookable(self.Log)
-        
-        @self.Scratch.define_key('C-j')
-        def eval_line(evt):
-            self.Scratch.buffer.eval_line()
-            evt.Skip(False) # Don't skip explicitly.
-        
-        @self.Scratch.define_key('M-j')
-        def eval_buffer(evt):
-            self.Scratch.buffer.exec_region()
-            evt.Skip(False) # Don't skip explicitly.
     
     def Init(self):
         """Initialize self-specific builtins.
