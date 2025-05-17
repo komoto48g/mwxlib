@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from . import framework as mwx
-from .framework import hotkey, regulate_key, pack, Menu, FSM
+from .framework import hotkey, regulate_key, postcall, pack, Menu, FSM
 
 
 ## state constants
@@ -178,8 +178,6 @@ class MatplotPanel(wx.Panel):
                    'axes_enter' : [ None, ],
                    'axes_leave' : [ None, ],
                  'home pressed' : [ None, self.OnHomePosition ],
-                 'left pressed' : [ None, self.OnBackPosition ],
-                'right pressed' : [ None, self.OnForwardPosition ],
              'Xbutton1 pressed' : [ None, self.OnBackPosition ],
              'Xbutton2 pressed' : [ None, self.OnForwardPosition ],
                 },
@@ -314,6 +312,8 @@ class MatplotPanel(wx.Panel):
         self.cursor = Cursor(self.axes, useblit=True, color='grey', linewidth=1)
         self.cursor.visible = 1
     
+    ## Note: To avoid a wxAssertionError when running in a thread.
+    @postcall
     def draw(self, art=None):
         """Draw plots.
         Call each time the drawing should be updated.

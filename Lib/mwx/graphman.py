@@ -223,7 +223,7 @@ class Thread:
                 self.worker.join(1)
         if self.running:
             self.active = 0
-            wx.CallAfter(_stop) # main-thread で終了させる
+            wx.CallAfter(_stop)  # main thread で終了させる
 
 
 class LayerInterface(CtrlInterface):
@@ -454,7 +454,7 @@ class LayerInterface(CtrlInterface):
         (override) Show associated pane window.
                    Note: This might be called from a thread.
         """
-        wx.CallAfter(self.parent.show_pane, self, show)
+        wx.CallAfter(self.parent.show_pane, self, show)  # Show pane windows in the main thread.
     
     Drawn = property(
         lambda self: self.IsDrawn(),
@@ -649,7 +649,7 @@ class Frame(mwx.Frame):
         self.histogram.Name = "histogram"
         
         self._mgr.AddPane(self.graph,
-                          aui.AuiPaneInfo().CenterPane().CloseButton(1)
+                          aui.AuiPaneInfo().CenterPane()
                              .Name("graph").Caption("graph").CaptionVisible(1))
         
         size = (200, 200)
@@ -774,7 +774,7 @@ class Frame(mwx.Frame):
         self.menubar.reset()
         
         def show_frameview(frame):
-            wx.CallAfter(self.show_pane, frame.parent) # Show graph / output
+            wx.CallAfter(self.show_pane, frame.parent)  # Show graph / output in the main thread.
         
         self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
@@ -1175,7 +1175,7 @@ class Frame(mwx.Frame):
                 )
         except (AttributeError, NameError) as e:
             traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,
+            wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
                          f"{e}\n\n" + traceback.format_exc(),
                          f"Error in loading {module.__name__!r}",
                          style=wx.ICON_ERROR)
@@ -1189,7 +1189,7 @@ class Frame(mwx.Frame):
             plug = module.Plugin(self, session, **kwargs)
         except Exception as e:
             traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,
+            wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
                          f"{e}\n\n" + traceback.format_exc(),
                          f"Error in loading {name!r}",
                          style=wx.ICON_ERROR)
