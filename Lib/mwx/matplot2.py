@@ -624,7 +624,8 @@ class MatplotPanel(wx.Panel):
     ## Pan/Zoom actions 
     ## --------------------------------
     
-    ZOOM_RATIO = 10**0.2
+    ZOOM_RATIO = 10 ** 0.2
+    ZOOM_LIMIT = 0.1  # logical limit <= epsilon
     
     def OnDraw(self, evt):
         """Called before canvas.draw."""
@@ -663,7 +664,7 @@ class MatplotPanel(wx.Panel):
         if c is None:
             c = (lim[1] + lim[0]) / 2
         y = c - M * (c - lim)
-        if abs(y[1] - y[0]) > 0.1 or M > 1:
+        if abs(y[1] - y[0]) > self.ZOOM_LIMIT:
             return y
     
     def OnZoom(self, evt):
