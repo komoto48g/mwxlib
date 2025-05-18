@@ -113,7 +113,6 @@ class Thread:
         Allows only this worker (but no other thread) to enter.
         """
         frame = inspect.currentframe().f_back.f_back
-        filename = frame.f_code.co_filename
         name = frame.f_code.co_name
         
         ## Other threads are not allowed to enter.
@@ -126,11 +125,11 @@ class Thread:
     
     def enters(self, f):
         """Decorator to register a one-time handler for the enter event."""
-        return self.handler.binds('thread_begin', f)
+        return self.handler.binds('thread_begin', _F(f))
     
     def exits(self, f):
         """Decorator to register a one-time handler for the exit event."""
-        return self.handler.binds('thread_end', f)
+        return self.handler.binds('thread_end', _F(f))
     
     def wraps(self, f, *args, **kwargs):
         """Decorator for a function that starts a new thread."""
@@ -190,11 +189,9 @@ class Thread:
                 pass
             except KeyboardInterrupt as e:
                 print("- Thread terminated by user:", e)
-                ## wx.CallAfter(self.handler, 'thread_quit', self)
             except Exception as e:
                 traceback.print_exc()
                 print("- Thread failed in error:", e)
-                ## wx.CallAfter(self.handler, 'thread_error', self)
             finally:
                 self.active = 0
                 wx.CallAfter(self.handler, 'thread_end', self)
@@ -226,7 +223,7 @@ class Thread:
                 self.worker.join(1)
         if self.running:
             self.active = 0
-            wx.CallAfter(_stop) # main-thread で終了させる
+            wx.CallAfter(_stop)  # main thread で終了させる
 
 
 class LayerInterface(CtrlInterface):
@@ -457,7 +454,7 @@ class LayerInterface(CtrlInterface):
         (override) Show associated pane window.
                    Note: This might be called from a thread.
         """
-        wx.CallAfter(self.parent.show_pane, self, show)
+        wx.CallAfter(self.parent.show_pane, self, show)  # Show pane windows in the main thread.
     
     Drawn = property(
         lambda self: self.IsDrawn(),
@@ -652,7 +649,7 @@ class Frame(mwx.Frame):
         self.histogram.Name = "histogram"
         
         self._mgr.AddPane(self.graph,
-                          aui.AuiPaneInfo().CenterPane().CloseButton(1)
+                          aui.AuiPaneInfo().CenterPane()
                              .Name("graph").Caption("graph").CaptionVisible(1))
         
         size = (200, 200)
@@ -777,7 +774,7 @@ class Frame(mwx.Frame):
         self.menubar.reset()
         
         def show_frameview(frame):
-            wx.CallAfter(self.show_pane, frame.parent) # Show graph / output
+            wx.CallAfter(self.show_pane, frame.parent)  # Show graph / output in the main thread.
         
         self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
@@ -1178,7 +1175,7 @@ class Frame(mwx.Frame):
                 )
         except (AttributeError, NameError) as e:
             traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,
+            wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
                          f"{e}\n\n" + traceback.format_exc(),
                          f"Error in loading {module.__name__!r}",
                          style=wx.ICON_ERROR)
@@ -1192,7 +1189,7 @@ class Frame(mwx.Frame):
             plug = module.Plugin(self, session, **kwargs)
         except Exception as e:
             traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,
+            wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
                          f"{e}\n\n" + traceback.format_exc(),
                          f"Error in loading {name!r}",
                          style=wx.ICON_ERROR)
@@ -1791,8 +1788,8 @@ class Frame(mwx.Frame):
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
-                    index = paths.index(view.frame.pathname)
-                    o.write(f"self.{view.Name}.select({index})\n")
+                    if view.frame.pathname in paths:
+                        o.write(f"self.{view.Name}.select({view.frame.name!r})\n")
                 except Exception:
                     pass
             
