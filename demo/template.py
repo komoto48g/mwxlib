@@ -14,7 +14,7 @@ class Plugin(Layer):
     menukey = "Plugins/&Templates/&template ver.1"
     category = "Test"
     caption = True
-    
+
     def Init(self):
         self.ksize = LParam("ksize", (1,99,2), 13) # kernel window size
         
@@ -29,7 +29,7 @@ class Plugin(Layer):
             style='chkbox',          # control style: None, chkbox, button
             cw=-1, lw=50, tw=30      # w: width of [c]ontrol, [l]abel, [t]ext
         )
-    
+
     def run(self):
         k = self.ksize.value
         src = self.graph.buffer

@@ -3195,7 +3195,7 @@ class Nautilus(EditorInterface, Shell):
             if text[:lp] == sys.ps2:
                 self.cpos -= lp        # Select ps2:prompt
                 self.WordLeftExtend()  # Select cr/lf chunks
-            else: 
+            else:
                 q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
                 if self.cpos > q:
                     self.cpos = q

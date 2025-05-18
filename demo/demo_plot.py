@@ -10,7 +10,7 @@ from mwx.graphman import Layer
 
 class Plugin(Layer):
     menukey = "Plugins/&Demo/"
-    
+
     def Init(self):
         axes = self.graph.axes
         ## axes.clear()
@@ -32,7 +32,7 @@ class Plugin(Layer):
             type='slider*', cw=100, lw=20, tw=40, h=22,
         )
         self.run(None)
-    
+
     def run(self, lp):
         a = self.A.value
         b = self.B.value

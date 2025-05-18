@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.2"
+__version__ = "1.5.3"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -243,7 +243,7 @@ class KeyCtrlInterfaceMixin:
         
         def _Pass(evt):
             self.message("{} {}".format(keymap, evt.key))
-        _Pass.__name__ = str('pass')
+        _Pass.__name__ = str("pass")
         
         state = self.handler.default_state
         event = keymap + ' pressed'
@@ -274,7 +274,7 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key + '-')
         evt.Skip()
-    pre_command_hook.__name__ = str('enter')
+    pre_command_hook.__name__ = str("enter")
     
     def post_command_hook(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
@@ -287,7 +287,7 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key)
         evt.Skip()
-    post_command_hook.__name__ = str('exit')
+    post_command_hook.__name__ = str("exit")
     
     def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.

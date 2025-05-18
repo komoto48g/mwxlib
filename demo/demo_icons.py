@@ -22,7 +22,7 @@ from mwx.graphman import Layer
 
 class Plugin(Layer):
     menukey = "Plugins/&Demo/"
-    
+
     def Init(self):
         def _icon(k):
             return Button(self, label=k, icon=Icon.iconify(k, 22, 22))

@@ -12,7 +12,7 @@ from mwx.graphman import Layer
 
 class Plugin(Layer):
     menukey = "Plugins/&Demo/"
-    
+
     def Init(self):
         def on_press(v):
             """Test button."""

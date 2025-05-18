@@ -283,7 +283,7 @@ class LParam(Param):
 
 
 ## --------------------------------
-## Knob unit for Parameter Control 
+## Knob unit for Parameter Control
 ## --------------------------------
 
 class Knob(wx.Panel):
@@ -859,7 +859,7 @@ class Clipboard:
 
 
 ## --------------------------------
-## Wx custom controls and bitmaps 
+## Wx custom controls and bitmaps
 ## --------------------------------
 
 class Icon(wx.Bitmap):

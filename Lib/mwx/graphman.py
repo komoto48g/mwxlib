@@ -1451,7 +1451,7 @@ class Frame(mwx.Frame):
         return frames
     
     ## --------------------------------
-    ## load/save frames and attributes 
+    ## load/save frames and attributes
     ## --------------------------------
     
     @classmethod

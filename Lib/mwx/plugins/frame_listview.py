@@ -52,7 +52,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.__dir = True
         
         _alist = ( # assoc-list of column names
-            ("id", 42),
+            ("id", 45),
             ("name", 160),
             ("shape", 90),
             ("dtype", 60),

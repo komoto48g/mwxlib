@@ -9,7 +9,7 @@ from mwx.graphman import Layer
 
 class Plugin(Layer):
     menukey = "Plugins/&Demo/"
-    
+
     def Init(self):
         self.g1 = wx.Gauge(self, range=24, size=(100,24))
         self.g2 = Gauge(self, range=24, size=(100,24))
@@ -31,16 +31,16 @@ class Plugin(Layer):
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
-    
+
     def update(self, p):
         self.g1.Value = p.value
         self.g2.Value = p.value
         self.sig.Value = p.value
-    
+
     def OnTimer(self, evt):
         self.sig.Value = self.param.value
         self.sig.blink(self.blink.value)
-    
+
     def Destroy(self):
         self.timer.Stop()
         return Layer.Destroy(self)

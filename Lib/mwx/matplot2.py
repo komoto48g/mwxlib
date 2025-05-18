@@ -418,7 +418,7 @@ class MatplotPanel(wx.Panel):
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
     
     ## --------------------------------
-    ## External I/O file and clipboard 
+    ## External I/O file and clipboard
     ## --------------------------------
     
     def copy_to_clipboard(self):
@@ -621,7 +621,7 @@ class MatplotPanel(wx.Panel):
         self.p_event = None
     
     ## --------------------------------
-    ## Pan/Zoom actions 
+    ## Pan/Zoom actions
     ## --------------------------------
     
     ZOOM_RATIO = 10**0.2

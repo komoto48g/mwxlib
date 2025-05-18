@@ -132,7 +132,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 wx.CallAfter(self.SetFocus)
     
     ## --------------------------------
-    ## TreeList/Ctrl wrapper interface 
+    ## TreeList/Ctrl wrapper interface
     ## --------------------------------
     
     def build_tree(self, clear=True):
