@@ -95,7 +95,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             '*button* released' : [ None, dispatch ],
             },
             0 : {
-               'delete pressed' : (0, self._delete),
+               'delete pressed' : (0, self.on_delete_buffer),
             },
         })
         self.context = { # DNA<EditorBook>
@@ -122,14 +122,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             for editor in self.parent.get_all_editors():
                 editor.handler.remove(self.context)
         evt.Skip()
-    
-    def _delete(self, evt):
-        item = self.Selection
-        if item:
-            data = self.GetItemData(item)
-            if data:
-                data.parent.kill_buffer(data) # the focus moves
-                wx.CallAfter(self.SetFocus)
     
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface
@@ -199,6 +191,14 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     def on_buffer_filename(self, buf):
         if self and buf:
             self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
+    
+    def on_delete_buffer(self, evt):
+        item = self.Selection
+        if item:
+            data = self.GetItemData(item)
+            if data:
+                data.parent.kill_buffer(data)  # the focus moves
+                wx.CallAfter(self.SetFocus)
     
     def OnSelChanged(self, evt):
         if self and self.HasFocus():

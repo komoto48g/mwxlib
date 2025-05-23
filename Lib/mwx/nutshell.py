@@ -2453,7 +2453,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Create a new default buffer."""
         buf = self.default_buffer
         if not buf or buf.mtdelta is not None: # is saved?
-            buf = self.create_buffer(self.default_name, index=0)
+            buf = self.create_buffer(self.default_name)
             self.default_buffer = buf
         else:
             buf.ClearAll()
