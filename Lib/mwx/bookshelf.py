@@ -35,7 +35,7 @@ class MyDropTarget(wx.DropTarget):
     def OnData(self, x, y, result):
         item = self.tree.Selection
         name = self.tree.GetItemText(item)
-        editor = self.tree.Parent.FindWindow(name) # window.Name
+        editor = self.tree._find_editor(name)
         self.GetData()
         if self.datado.Data:
             fn = self.datado.Data.tobytes().decode()
@@ -200,6 +200,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 data.parent.kill_buffer(data)  # the focus moves
                 wx.CallAfter(self.SetFocus)
     
+    def _find_editor(self, name):
+        ## return self.Parent.FindWindow(name) # window.Name (not page.caption)
+        return next(editor for editor in self.parent.get_all_editors() if editor.Name == name)
+    
     def OnSelChanged(self, evt):
         if self and self.HasFocus():
             data = self.GetItemData(evt.Item)
@@ -207,9 +211,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 data.SetFocus()
             else:
                 name = self.GetItemText(evt.Item)
-                editor = self.Parent.FindWindow(name) # window.Name (not page.caption)
+                editor = self._find_editor(name)
                 if not editor.IsShown():
-                    self.Parent.Selection = self.Parent.FindPage(editor)
+                    nb = self.Parent
+                    nb.Selection = nb.FindPage(editor)
             wx.CallAfter(self.SetFocus)
         evt.Skip()
     
