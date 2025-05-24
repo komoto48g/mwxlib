@@ -2820,7 +2820,8 @@ class Nautilus(EditorInterface, Shell):
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
-            obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+            obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>.
+            obj.__name__ = typename(obj)  # A namespace for ghost in the shell. cf. exec_region
         except AttributeError:
             pass
         self.parent.handler('title_window', obj)

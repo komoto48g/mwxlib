@@ -16,7 +16,7 @@ import fnmatch
 import pkgutil
 import pydoc
 import inspect
-from inspect import isclass, ismodule, ismethod, isbuiltin, isfunction, isgenerator  # noqa
+from inspect import isclass, ismodule, ismethod, isbuiltin, isfunction
 from pprint import pprint
 
 
@@ -50,7 +50,12 @@ def warn(message, category=None, stacklevel=None):
 
 
 def atom(v):
-    return not hasattr(v, '__name__')
+    ## Not a class, method, function, module, or any type (class, int, str, etc.).
+    if (isclass(v) or ismethod(v) or isfunction(v) or isbuiltin(v)
+            or ismodule(v) or isinstance(v, type)):
+        return False
+    ## Include the case where __name__ is manually defined for a class instance.
+    return not hasattr(v, '__name__') or hasattr(v, '__class__')
 
 
 def isobject(v):
