@@ -184,22 +184,22 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
 def typename(obj, docp=False, qualp=True):
     """Formatted object type name.
     """
-    if hasattr(obj, '__name__'): # module, class, method, function, etc.
+    if not atom(obj):  # module, class, method, function, etc.
         if qualp:
             name = getattr(obj, '__qualname__', obj.__name__)
         else:
             name = obj.__name__
-    elif hasattr(obj, '__module__'): # atom -> module.class
+    elif hasattr(obj, '__class__'):  # class instance -> module.class
         name = obj.__class__.__name__
     else:
-        return pydoc.describe(obj) # atom -> short description
+        return pydoc.describe(obj)  # atom -> short description
     
     modname = getattr(obj, '__module__', None)
     if modname and modname != "__main__" and not modname.startswith('mwx'):
         name = modname + ('.' if qualp else '..') + name
     
     if docp and callable(obj) and obj.__doc__:
-        name += "<{!r}>".format(obj.__doc__.splitlines()[0]) # concat the first doc line
+        name += "<{!r}>".format(obj.__doc__.splitlines()[0])  # concat the first doc line
     return name
 
 

@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.4"
+__version__ = "1.5.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1861,7 +1861,7 @@ class ShellFrame(MiniFrame):
             shell = next(self.get_all_shells(target))
         except StopIteration:
             shell = self.rootshell.__class__(self, target, name="clone",
-                        style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
+                                             style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
             self.console.AddPage(shell, typename(shell.target))
             self.handler('shell_new', shell)
         self.popup_window(shell)
