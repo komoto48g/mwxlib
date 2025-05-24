@@ -217,8 +217,8 @@ class Histogram(LinePlot):
     常に整数ビット画像となるので，高速なビンづめ法で計算する
     
     Attributes:
-       __graphs : list of attached graph <matplot2g.GraphPlot>
-        __frame : reference to the current frame
+        __graphs : list of attached graph <matplot2g.GraphPlot>
+        __frame  : reference to the current frame
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
@@ -387,10 +387,10 @@ class LineProfile(LinePlot):
     """LinePlot panel for line profile (Multi-graph : Single-frame)
     
     Attributes:
-       __graphs : list of attached graph <matplot2g.GraphPlot>
-        __frame : reference to the current frame
-       __logicp : line axis in logical unit
-    __linewidth : line width to integrate [pixel]
+        __graphs    : list of attached graph <matplot2g.GraphPlot>
+        __frame     : reference to the current frame
+        __logicp    : line axis in logical unit
+        __linewidth : line width to integrate [pixel]
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)

@@ -916,7 +916,7 @@ class Frame(mwx.Frame):
         ## ドッキング時に再計算される
         if name == "output" or name is self.output:
             w, h = self.graph.GetClientSize()
-            pane.best_size = (w//2 - 3, h) # 分割線幅補正 -12pix (Windows only ?)
+            pane.best_size = (w//2 - 3, h)  # 分割線幅補正 -12pix (Windows only ?)
         
         ## Force Layer windows to show.
         if interactive:
@@ -932,12 +932,8 @@ class Frame(mwx.Frame):
                 pane.Float()
                 show = True
         
-        ## Note: We need to distinguish cases whether:
-        ##       - pane.window is AuiNotebook or normal Panel,
-        ##       - pane.window is floating (win.Parent is AuiFloatingFrame) or docked.
-        
-        plug = self.get_plug(name) # -> None if pane.window is a Graph
-        win = pane.window # -> Window (plug / notebook / Graph)
+        plug = self.get_plug(name)  # -> None if pane.window is a Graph
+        win = pane.window
         try:
             shown = plug.IsShown()
         except AttributeError:
@@ -947,7 +943,7 @@ class Frame(mwx.Frame):
             if isinstance(win, aui.AuiNotebook):
                 j = win.GetPageIndex(plug)
                 if j != win.Selection:
-                    win.Selection = j # the focus moves => EVT_SHOW
+                    win.Selection = j  # the focus moves => EVT_SHOW
                 else:
                     plug.handler('page_shown', plug)
             else:
@@ -988,7 +984,7 @@ class Frame(mwx.Frame):
                 pane.dock_direction = dock
             if not plug.caption:
                 pane.CaptionVisible(False)       # no caption bar
-                pane.Gripper(dock not in (0, 5)) # show a grip when docked
+                pane.Gripper(dock not in (0,5))  # show a grip when docked
             pane.Dockable(dock)
         
         if pane.dock_direction:
@@ -1733,13 +1729,17 @@ class Frame(mwx.Frame):
         self._mgr.Update()
         self.menubar.reset()
         
-        dirname_ = os.path.dirname(i.name)
-        if dirname_:
-            os.chdir(dirname_)
-        
         ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:
             self.Position = (0, 0)
+        
+        ## LoadPerspective => 表示状態の不整合．手動でイベントを発生させる．
+        for pane in self._mgr.GetAllPanes():
+            if pane.IsShown():
+                win = pane.window
+                if isinstance(win, aui.AuiNotebook):
+                    win = win.CurrentPage
+                win.handler('page_shown', win)
         
         self.message("\b done.")
     
