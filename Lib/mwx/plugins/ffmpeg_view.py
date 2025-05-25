@@ -1,7 +1,6 @@
 #! python3
 """FFmpeg wrapper.
 """
-from functools import partial
 from subprocess import Popen, PIPE
 import numpy as np
 import os
@@ -151,9 +150,9 @@ class Plugin(Layer):
             },
         })
         
-        self.mc.Bind(wx.media.EVT_MEDIA_PAUSE, partial(self.handler, 'pause'))
-        self.mc.Bind(wx.media.EVT_MEDIA_PLAY, partial(self.handler, 'play'))
-        self.mc.Bind(wx.media.EVT_MEDIA_STOP, partial(self.handler, 'stop'))
+        self.mc.Bind(wx.media.EVT_MEDIA_PAUSE, lambda v: self.handler('pause', v))
+        self.mc.Bind(wx.media.EVT_MEDIA_PLAY, lambda v: self.handler('play', v))
+        self.mc.Bind(wx.media.EVT_MEDIA_STOP, lambda v: self.handler('stop', v))
         
         self.mc.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
         self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
