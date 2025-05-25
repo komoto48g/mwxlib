@@ -2812,16 +2812,16 @@ class Nautilus(EditorInterface, Shell):
         """Reset the shell target object; Rename the parent title.
         """
         if not hasattr(obj, '__dict__'):
-            raise TypeError("primitive objects cannot be targets")
+            raise TypeError("invalid target")
         
         self.__target = obj
         self.locals = obj.__dict__
         self.globals = obj.__dict__
-        self.globals.update(self.__globals)
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
-            obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+            obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>.
+            obj.__name__ = typename(obj)  # A namespace for ghost in the shell. cf. exec_region
         except AttributeError:
             pass
         self.parent.handler('title_window', obj)
@@ -2849,9 +2849,6 @@ class Nautilus(EditorInterface, Shell):
     @globals.deleter
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
-        self.interp.globals.update(self.__globals)
-    
-    __globals = {}
     
     def __init__(self, parent, target, name="root",
                  introText=None,
@@ -3257,9 +3254,9 @@ class Nautilus(EditorInterface, Shell):
     def on_exit_escmap(self, evt):
         self.CaretPeriod = self.__caret_mode
         self.message("ESC {}".format(evt.key))
-        if self.eolc < self.bolc: # check if prompt is in valid state
+        if self.eolc < self.bolc:  # Check if prompt is in valid state.
             self.goto_char(self.eolc)
-            self.promptPosEnd = 0
+            self.promptPosEnd = 0  # Enabale write(prompt).
             self.prompt()
         self.AnnotationClearAll()
     
@@ -3273,7 +3270,7 @@ class Nautilus(EditorInterface, Shell):
         self.noteMode = False
         self.CaretForeground = self.__caret_mode
         self.goto_char(self.eolc)
-        self.promptPosEnd = 0
+        self.promptPosEnd = 0  # Enabale write(prompt).
         self.prompt()
         self.message("")
     
@@ -3577,11 +3574,8 @@ class Nautilus(EditorInterface, Shell):
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
-        (override) Add globals when executing su:startupScript.
-                   Fix history point.
+        (override) Don't add '_f' to globals when executing su:startupScript.
         """
-        keys = set(self.locals.keys()) # check for locals map changes
-        self.promptPosEnd = self.TextLength # fix history point
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
             self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
@@ -3590,7 +3584,6 @@ class Nautilus(EditorInterface, Shell):
         else:
             self.push("")
             self.interp.startupScript = None
-        self.__globals = {k: self.locals[k] for k in (self.locals.keys() - keys)}
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
