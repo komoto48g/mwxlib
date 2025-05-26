@@ -165,7 +165,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
         except re.error as e:
             print("- re:miss compilation:", e)
         else:
-            keys = sorted(filter(p.search, dir(obj)), key=lambda s:s.upper())
+            keys = sorted(filter(p.search, dir(obj)), key=lambda s: s.upper())
             n = 0
             for key in keys:
                 try:
@@ -730,7 +730,7 @@ class FSM(dict):
         This method is used for the contexts given to :append and :update
         so that the original transaction (if they are lists) is not removed.
         """
-        return {event:transaction[:] for event, transaction in context.items()}
+        return {event: transaction[:] for event, transaction in context.items()}
     
     def validate(self, state):
         """Sort and move to end items with key which includes ``*?[]``."""
@@ -747,7 +747,7 @@ class FSM(dict):
         context.clear()
         context.update(temp)
         context.update(sorted(bra, reverse=1))
-        context.update(sorted(ast, reverse=1, key=lambda v:len(v[0])))
+        context.update(sorted(ast, reverse=1, key=lambda v: len(v[0])))
     
     def update(self, contexts):
         """Update each context or Add new contexts."""

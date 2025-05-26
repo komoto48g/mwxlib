@@ -109,9 +109,9 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
 
 def _Property(name):
     return property(
-        lambda self:   getattr(self.parent, name),
-        lambda self,v: setattr(self.parent, name, v),
-        lambda self:   delattr(self.parent, name))
+        lambda self:    getattr(self.parent, name),
+        lambda self, v: setattr(self.parent, name, v),
+        lambda self:    delattr(self.parent, name))
 
 
 class AxesImagePhantom:
@@ -227,7 +227,7 @@ class AxesImagePhantom:
     
     clim = property(
         lambda self: self.__art.get_clim(),
-        lambda self,v: self.__art.set_clim(v),
+        lambda self, v: self.__art.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
     
     attributes = property(
@@ -236,12 +236,12 @@ class AxesImagePhantom:
     
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
-        lambda self,v: self.update_attr({'pathname': v}),
+        lambda self, v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
     
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
-        lambda self,v: self.update_attr({'annotation': v}),
+        lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
     
     @property
@@ -321,9 +321,9 @@ class AxesImagePhantom:
         """Current buffer ROI (region of interest)."""
         if self.parent.region.size:
             nx, ny = self.xytopixel(*self.parent.region)
-            sx = slice(max(0,nx[0]), nx[1]) # nx slice
-            sy = slice(max(0,ny[1]), ny[0]) # ny slice 反転 (降順)
-            return self.__buf[sy,sx]
+            sx = slice(max(0, nx[0]), nx[1])  # nx slice
+            sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
+            return self.__buf[sy, sx]
         return self.__buf
     
     @roi.setter
@@ -1218,9 +1218,9 @@ class GraphPlot(MatplotPanel):
         If centred, correct the point to the center of the nearest pixel.
         """
         dx, dy = x-xo, y-yo
-        L = np.hypot(dy,dx)
-        a = np.arctan2(dy,dx)
-        aa = np.linspace(-pi,pi,9) + pi/8 # 角度の検索範囲
+        L = np.hypot(dy, dx)
+        a = np.arctan2(dy, dx)
+        aa = np.linspace(-pi, pi, 9) + pi/8 # 角度の検索範囲
         k = np.searchsorted(aa, a)
         x = xo + L * np.cos(aa[k] - pi/8)
         y = yo + L * np.sin(aa[k] - pi/8)
@@ -1414,7 +1414,7 @@ class GraphPlot(MatplotPanel):
             if x.size:
                 self.__rectarts.append(
                   self.axes.add_patch(
-                    patches.Polygon(list(zip(x,y)),
+                    patches.Polygon(list(zip(x, y)),
                       color='red', ls='solid', lw=1/2, ec='white', alpha=0.2)
                   )
                 )
@@ -1459,7 +1459,7 @@ class GraphPlot(MatplotPanel):
         self.__lastpoint = self.calc_point(org.xdata, org.ydata, centred=False)
         if not self.__rectsel:
             x, y = self.__lastpoint
-            self.set_current_rect((x,x), (y,y)) # start new region
+            self.set_current_rect((x, x), (y, y))  # start new region
         self.__orgpoints = self.get_current_rect()
     
     def OnRegionDragMove(self, evt, shift=False, meta=False):
@@ -1478,7 +1478,7 @@ class GraphPlot(MatplotPanel):
                 i = np.searchsorted(nn, n)
                 x = xo + nn[i] * np.sign(x-xo) * ux
                 y = yo + nn[i] * np.sign(y-yo) * uy
-            self.set_current_rect((xo,x), (yo,y))
+            self.set_current_rect((xo, x), (yo, y))
         else:
             xc, yc = self.__lastpoint
             xo, yo = self.__orgpoints
@@ -1613,7 +1613,7 @@ class GraphPlot(MatplotPanel):
         j = self.__marksel
         if j:
             xm, ym = self.marked.get_data(orig=0)
-            xm, ym = np.delete(xm,j), np.delete(ym,j)
+            xm, ym = np.delete(xm, j), np.delete(ym, j)
             self.__marksel = []
             self.marked.set_data(xm, ym)
             n = len(xm)
@@ -1622,7 +1622,7 @@ class GraphPlot(MatplotPanel):
     
     def update_art_of_mark(self, *args):
         if args:
-            for k,x,y in zip(*args):
+            for k, x, y in zip(*args):
                 art = self.__markarts[k] # art の再描画処理をして終了
                 art.xy = x, y
             self.draw(self.marked)
@@ -1633,7 +1633,7 @@ class GraphPlot(MatplotPanel):
         if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
             N = self.maxnum_markers
             xm, ym = self.marked.get_data(orig=0)
-            for k, (x,y) in enumerate(zip(xm[:N],ym[:N])):
+            for k, (x, y) in enumerate(zip(xm[:N], ym[:N])):
                 self.__markarts.append(
                   self.axes.annotate(k, #<matplotlib.text.Annotation>
                     xy=(x,y), xycoords='data',

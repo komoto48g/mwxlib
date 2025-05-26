@@ -437,7 +437,7 @@ class LayerInterface(CtrlInterface):
     
     Shown = property(
         lambda self: self.IsShown(),
-        lambda self,v: self.Show(v))
+        lambda self, v: self.Show(v))
     
     def IsShown(self):
         """Return True if the window is physically visible on the screen.
@@ -458,7 +458,7 @@ class LayerInterface(CtrlInterface):
     
     Drawn = property(
         lambda self: self.IsDrawn(),
-        lambda self,v: self.Draw(v))
+        lambda self, v: self.Draw(v))
     
     def IsDrawn(self):
         return any(art.get_visible() for art in self.Arts)
@@ -572,7 +572,7 @@ class MyFileDropLoader(wx.FileDropTarget):
         self.loader = loader
     
     def OnDropFiles(self, x, y, filenames):
-        pos = self.view.ScreenPosition + (x,y)
+        pos = self.view.ScreenPosition + (x, y)
         paths = []
         for fn in filenames:
             name, ext = os.path.splitext(fn)
@@ -813,8 +813,8 @@ class Frame(mwx.Frame):
             _display(self.graph, show)
             _display(self.output, show)
             evt.Skip()
-        self.Bind(wx.EVT_MOVE_START, lambda v :on_move(v, show=0))
-        self.Bind(wx.EVT_MOVE_END, lambda v :on_move(v, show=1))
+        self.Bind(wx.EVT_MOVE_START, lambda v: on_move(v, show=0))
+        self.Bind(wx.EVT_MOVE_END, lambda v: on_move(v, show=1))
         
         ## Custom Key Bindings
         self.define_key('* C-g', self.Quit)

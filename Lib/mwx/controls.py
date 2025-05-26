@@ -906,8 +906,8 @@ class Icon(wx.Bitmap):
             '->|' : wx.ART_GOTO_LAST,
     }
     custom_images = {
-        k:v for k, v in vars(images).items()
-            if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
+        k: v for k, v in vars(images).items()
+             if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
     }
     
     def __init__(self, *args, **kwargs):
@@ -1085,7 +1085,7 @@ class TextBox(wx.Control):
     """
     Value = property(
         lambda self: self._ctrl.GetValue(),
-        lambda self,v: self._ctrl.SetValue(v),
+        lambda self, v: self._ctrl.SetValue(v),
         doc="textctrl value:str")
     
     value = Value #: internal use only
@@ -1154,19 +1154,19 @@ class Choice(wx.Control):
     """
     Value = property(
         lambda self: self._ctrl.GetValue(),
-        lambda self,v: self._ctrl.SetValue(v),
+        lambda self, v: self._ctrl.SetValue(v),
         doc="combobox value:str")
     
     value = Value #: internal use only
     
     Selection = property(
         lambda self: self._ctrl.GetSelection(),
-        lambda self,v: self._ctrl.SetSelection(v), # int or NOT_FOUND(-1)
+        lambda self, v: self._ctrl.SetSelection(v),  # int or NOT_FOUND(-1)
         doc="combobox selection:int")
     
     Items = property(
         lambda self: self._ctrl.GetItems(),
-        lambda self,v: self._ctrl.SetItems(v),
+        lambda self, v: self._ctrl.SetItems(v),
         doc="combobox items:list")
     
     button = property(lambda self: self._btn)

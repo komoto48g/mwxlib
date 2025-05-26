@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.5"
+__version__ = "1.5.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -322,6 +322,7 @@ class KeyCtrlInterfaceMixin:
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
         F = _F(action, *args, **kwargs)
+        
         @wraps(F)
         def f(*v, **kw):
             self.message(f.__name__)
@@ -465,7 +466,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
                 kbtn = self.__key + self.__button
                 self.handler('{}drag end'.format(kbtn), evt)
         
-        k = evt.GetButton() #{1:L, 2:M, 3:R, 4:X1, 5:X2}
+        k = evt.GetButton() # {1:L, 2:M, 3:R, 4:X1, 5:X2}
         if action == 'pressed' and k in (1,2,3):
             self.__button = 'LMR'[k-1]
         else:
@@ -579,7 +580,7 @@ class Menu(wx.Menu):
                 continue
             id = item[0]
             handlers = [x for x in item if callable(x)]
-            icons =  [x for x in item if isinstance(x, wx.Bitmap)]
+            icons = [x for x in item if isinstance(x, wx.Bitmap)]
             argv = [x for x in item if x not in handlers and x not in icons]
             if isinstance(id, int):
                 menu_item = wx.MenuItem(self, *argv) # <- menu_item.Id

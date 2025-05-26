@@ -52,7 +52,7 @@ class Debugger(Pdb):
     verbose = False
     use_rawinput = False
     prompt = property(lambda self: self.indents + '(Pdb) ',
-                      lambda self,v: None) # fake setter
+                      lambda self, v: None)  # fake setter
     handler = property(lambda self: self.__handler)
     
     @property

@@ -338,7 +338,7 @@ class AutoCompInterfaceMixin:
         ## ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
         q = hint.lower()
         ls = [x for x in self.fragmwords if x.lower().startswith(q)] # case-insensitive match
-        words = sorted(ls, key=lambda s:s.upper())
+        words = sorted(ls, key=lambda s: s.upper())
         
         self._gen_autocomp(0, hint, words)
         self.message("[text] {} candidates matched"
@@ -396,7 +396,7 @@ class AutoCompInterfaceMixin:
             
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in modules if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in modules if p.match(x)], key=lambda s: s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -428,7 +428,7 @@ class AutoCompInterfaceMixin:
             obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s:s.upper())
+            words = sorted([x for x in dir(obj) if p.match(x)], key=lambda s: s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -460,7 +460,7 @@ class AutoCompInterfaceMixin:
             obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
-            words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s:s.upper())
+            words = sorted([x for x in dir(obj) if p.search(x)], key=lambda s: s.upper())
             
             j = next((k for k, w in enumerate(words) if P.match(w)),
                 next((k for k, w in enumerate(words) if p.match(w)), -1))
@@ -513,7 +513,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                   'C-e pressed' : (0, _F(self.end_of_line)),
                   'M-a pressed' : (0, _F(self.back_to_indentation)),
                   'M-e pressed' : (0, _F(self.end_of_line)),
-                  'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x:int(x)-1),
+                  'M-g pressed' : (0, ask(self.goto_line, "Line to goto:", lambda x: int(x)-1),
                                        _F(self.recenter)),
                   'M-f pressed' : (10, _F(self.filter_text), self.on_itext_enter),
                   'C-k pressed' : (0, _F(self.kill_line)),
@@ -778,23 +778,23 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     white_arrow = property(
         lambda self: self.get_marker(1),
-        lambda self,v: self.set_marker(v, 1), # [arrow_set]
-        lambda self: self.del_marker(1))      # [arrow_unset]
+        lambda self, v: self.set_marker(v, 1),  # [arrow_set]
+        lambda self: self.del_marker(1))        # [arrow_unset]
     
     red_arrow = property(
         lambda self: self.get_marker(2),
-        lambda self,v: self.set_marker(v, 2), # [red-arrow_set]
-        lambda self: self.del_marker(2))      # [red-arrow_unset]
+        lambda self, v: self.set_marker(v, 2),  # [red-arrow_set]
+        lambda self: self.del_marker(2))        # [red-arrow_unset]
     
     pointer = property(
         lambda self: self.get_marker(3),
-        lambda self,v: self.set_marker(v, 3), # [pointer_set]
-        lambda self: self.del_marker(3))      # [pointer_unset]
+        lambda self, v: self.set_marker(v, 3),  # [pointer_set]
+        lambda self: self.del_marker(3))        # [pointer_unset]
     
     red_pointer = property(
         lambda self: self.get_marker(4),
-        lambda self,v: self.set_marker(v, 4), # [red-pointer_set]
-        lambda self: self.del_marker(4))      # [red-pointer_unset]
+        lambda self, v: self.set_marker(v, 4),  # [red-pointer_set]
+        lambda self: self.del_marker(4))        # [red-pointer_unset]
     
     @property
     def markline(self):
@@ -908,15 +908,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     anchor = property(
         lambda self: self.GetAnchor(),
-        lambda self,v: self.SetAnchor(v))
+        lambda self, v: self.SetAnchor(v))
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
-        lambda self,v: self.SetCurrentPos(v))
+        lambda self, v: self.SetCurrentPos(v))
     
     cline = property(
         lambda self: self.GetCurrentLine(),
-        lambda self,v: self.SetCurrentPos(self.PositionFromLine(v)))
+        lambda self, v: self.SetCurrentPos(self.PositionFromLine(v)))
     
     @property
     def bol(self):

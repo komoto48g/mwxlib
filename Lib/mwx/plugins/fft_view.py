@@ -3,7 +3,7 @@
 """
 import wx
 import numpy as np
-from numpy.fft import fft2,ifft2,fftshift,ifftshift
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 
 from mwx.graphman import Layer
 from mwx.controls import Param
@@ -74,7 +74,7 @@ class Plugin(Layer):
             
             if self.ftor.check:
                 y, x = np.ogrid[-h/2:h/2, -w/2:w/2]
-                mask = np.hypot(y,x) > w / self.ftor.value
+                mask = np.hypot(y, x) > w / self.ftor.value
                 src = src.copy() # apply mask to the copy
                 src[mask] = 0
             

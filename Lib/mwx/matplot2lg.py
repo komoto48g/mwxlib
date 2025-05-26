@@ -356,7 +356,7 @@ class Histogram(LinePlot):
                     i, j = x.searchsorted(self.region)
                 else:
                     i, j = (0, -1)
-                self.__fil.set_xy(list(chain([(x[i],0)], zip(x[i:j],y[i:j]), [(x[j-1],0)])))
+                self.__fil.set_xy(list(chain([(x[i], 0)], zip(x[i:j], y[i:j]), [(x[j-1], 0)])))
             else:
                 self.__fil.set_xy([(0,0)])
         else:
@@ -635,7 +635,7 @@ class LineProfile(LinePlot):
         
         x, y = self.plotdata
         if x.size:
-            self.__fil.set_xy(list(chain([(x[0],0)], zip(x,y), [(x[-1],0)])))
+            self.__fil.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
         self.writeln()
     
     ## --------------------------------
@@ -723,10 +723,10 @@ class LineProfile(LinePlot):
             ys = np.convolve(window/window.sum(), y, mode='same')
             
             ## maxima = signal.find_peaks_cwt(ys, np.arange(lw,lw*2))
-            maxima,_ = signal.find_peaks(ys, width=lw, prominence=20)
+            maxima, _ = signal.find_peaks(ys, width=lw, prominence=20)
             
             ## minima = signal.find_peaks_cwt(-ys, np.arange(lw,lw*2))
-            minima,_ = signal.find_peaks(-ys, width=lw, prominence=20)
+            minima, _ = signal.find_peaks(-ys, width=lw, prominence=20)
             
             peaks = np.sort(np.append(maxima, minima))
             if peaks.size:

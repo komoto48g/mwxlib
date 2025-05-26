@@ -345,22 +345,22 @@ class MatplotPanel(wx.Panel):
     
     xbound = property(
         lambda self: np.array(self.axes.get_xbound()),
-        lambda self,v: self.axes.set_xbound(v),
+        lambda self, v: self.axes.set_xbound(v),
         doc="X-axis numerical bounds where lowerBound < upperBound)")
     
     ybound = property(
         lambda self: np.array(self.axes.get_ybound()),
-        lambda self,v: self.axes.set_ybound(v),
+        lambda self, v: self.axes.set_ybound(v),
         doc="Y-axis numerical bounds where lowerBound < upperBound)")
     
     xlim = property(
         lambda self: np.array(self.axes.get_xlim()),
-        lambda self,v: self.axes.set_xlim(v),
+        lambda self, v: self.axes.set_xlim(v),
         doc="X-axis range [left, right]")
     
     ylim = property(
         lambda self: np.array(self.axes.get_ylim()),
-        lambda self,v: self.axes.set_ylim(v),
+        lambda self, v: self.axes.set_ylim(v),
         doc="Y-axis range [bottom, top]")
     
     @property
@@ -561,7 +561,7 @@ class MatplotPanel(wx.Panel):
         ## Overwrite evt.key with modifiers.
         key = self.__key
         if evt.button in (1,2,3):
-            key += 'LMR'[evt.button-1] #{1:L, 2:M, 3:R}
+            key += 'LMR'[evt.button-1] # {1:L, 2:M, 3:R}
             evt.key = key + 'button'
         elif evt.button in ('up', 'down'):
             key += 'wheel{}'.format(evt.button) # wheel[up|down]
