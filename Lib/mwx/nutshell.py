@@ -1961,9 +1961,9 @@ class Buffer(EditorInterface, EditWindow):
             None : {
                  'buffer_saved' : [ None, dispatch ],
                 'buffer_loaded' : [ None, dispatch ],
-              'buffer_modified' : [ None, dispatch, self.on_modified ],
-             'buffer_activated' : [ None, dispatch, self.on_activated ],
-           'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
+              'buffer_modified' : [ None, dispatch, self.on_buffer_modified ],
+             'buffer_activated' : [ None, dispatch, self.on_buffer_activated ],
+           'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
        'buffer_region_executed' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
@@ -2088,7 +2088,7 @@ class Buffer(EditorInterface, EditWindow):
                 ## Note: post-call for the confirmation dialog.
                 wx.CallAfter(self.parent.load_file, url)
     
-    def on_modified(self, buf):
+    def on_buffer_modified(self, buf):
         """Called when the buffer is modified."""
         self.SetIndicatorCurrent(2)
         self.IndicatorClearRange(0, self.TextLength)
@@ -2115,12 +2115,12 @@ class Buffer(EditorInterface, EditWindow):
             self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
-    def on_activated(self, buf):
+    def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         self.update_caption()
         self.trace_position()
     
-    def on_inactivated(self, buf):
+    def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
     
@@ -2315,8 +2315,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 'buffer_loaded' : [ None, dispatch ],
                'buffer_deleted' : [ None, dispatch ],
               'buffer_modified' : [ None, dispatch ],
-             'buffer_activated' : [ None, dispatch, self.on_activated ],
-           'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
+             'buffer_activated' : [ None, dispatch, self.on_buffer_activated ],
+           'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
        'buffer_caption_updated' : [ None, dispatch ],
             },
             0 : { # Normal mode
@@ -2382,12 +2382,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
             for buf in self.get_all_buffers():
                 _setattribute(buf, self.defaultBufferStyle)
     
-    def on_activated(self, buf):
+    def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         title = "{} file: {}".format(self.Name, buf.filename)
         self.parent.handler('title_window', title)
     
-    def on_inactivated(self, buf):
+    def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
     
@@ -2911,10 +2911,10 @@ class Nautilus(EditorInterface, Shell):
         self.handler.update({ # DNA<Nautilus>
             None : {
                  'interp_error' : [ None, self.on_interp_error ],
-                'shell_deleted' : [ None, dispatch, self.on_deleted ],
+                'shell_deleted' : [ None, dispatch, self.on_shell_deleted ],
                'shell_modified' : [ None, dispatch ],
-              'shell_activated' : [ None, dispatch, self.on_activated ],
-            'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
+              'shell_activated' : [ None, dispatch, self.on_shell_activated ],
+            'shell_inactivated' : [ None, dispatch, self.on_shell_inactivated ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -3390,7 +3390,7 @@ class Nautilus(EditorInterface, Shell):
             lhs += c # store in lhs; no more processing
         return lhs
     
-    def on_deleted(self, shell):
+    def on_shell_deleted(self, shell):
         """Called before shell:self is killed.
         Delete target shell to prevent referencing the dead shell.
         """
@@ -3403,7 +3403,7 @@ class Nautilus(EditorInterface, Shell):
                 pass
         wx.CallAfter(_del)
     
-    def on_activated(self, shell):
+    def on_shell_activated(self, shell):
         """Called when the shell:self is activated.
         Reset localvars assigned for the shell target. cf. target.setter.
         """
@@ -3417,7 +3417,7 @@ class Nautilus(EditorInterface, Shell):
             pass
         self.parent.handler('title_window', obj)
     
-    def on_inactivated(self, shell):
+    def on_shell_inactivated(self, shell):
         """Called when shell:self is inactivated.
         Remove target localvars assigned for the shell target.
         """
