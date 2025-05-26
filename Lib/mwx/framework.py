@@ -1421,7 +1421,7 @@ class ShellFrame(MiniFrame):
                 self.message("The close has been canceled.")
                 evt.Veto()
                 return
-            #? RuntimeError('wrapped C/C++ object ... has been deleted')
+            ## RuntimeError('wrapped C/C++ object ... has been deleted')
             self.Quit()
         
         if self.debugger.tracing:

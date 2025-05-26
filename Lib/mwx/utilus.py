@@ -277,6 +277,7 @@ def mro(obj):
 def pp(obj):
     pprint(obj, **pp.__dict__)
 
+
 if pp:
     pp.indent = 1
     pp.width = 80 # default 80

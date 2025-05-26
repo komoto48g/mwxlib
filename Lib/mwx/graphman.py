@@ -832,13 +832,13 @@ class Frame(mwx.Frame):
     def sync(self, a, b):
         """Synchronize b to a."""
         if (self.SYNC_SWITCH
-            and a.frame and b.frame
-            and a.frame.unit == b.frame.unit
-            and a.buffer.shape == b.buffer.shape):
-                b.xlim = a.xlim
-                b.ylim = a.ylim
-                b.OnDraw(None)
-                b.canvas.draw_idle()
+                and a.frame and b.frame
+                and a.frame.unit == b.frame.unit
+                and a.buffer.shape == b.buffer.shape):
+            b.xlim = a.xlim
+            b.ylim = a.ylim
+            b.OnDraw(None)
+            b.canvas.draw_idle()
     
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')

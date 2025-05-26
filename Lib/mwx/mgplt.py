@@ -84,7 +84,7 @@ class Gnuplot:
             while len(data) > len(opts): # opts 指定の数が足りない場合 (maybe+1)
                 opts.append("w l")
             
-            pcmd = ["tempfile using 1:{} {}".format(j+2,opt) for j,opt in enumerate(opts)]
+            pcmd = ["tempfile using 1:{} {}".format(j+2, opt) for j, opt in enumerate(opts)]
             data = np.vstack((axis, data))
             with open(self.tempfile, 'w') as o:
                 for v in data.T:

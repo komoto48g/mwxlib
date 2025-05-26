@@ -390,7 +390,7 @@ class Knob(wx.Panel):
             self._ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
             self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
-        elif type == 'spin' or type =='hspin':
+        elif type == 'spin' or type == 'hspin':
             self._ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_HORIZONTAL)
             self._ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
             self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
@@ -503,7 +503,7 @@ class Knob(wx.Panel):
         evt.Skip()
     
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
-        self.shift_ctrl(evt, 1 if evt.WheelRotation>0 else -1)
+        self.shift_ctrl(evt, (1 if evt.WheelRotation > 0 else -1))
         evt.Skip(False)
     
     def OnCtrlKeyDown(self, evt): #<wx._core.KeyEvent>

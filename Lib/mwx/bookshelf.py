@@ -109,6 +109,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
        'buffer_caption_updated' : [ None, self.on_buffer_filename ],
             },
         }
+        
         def _attach():
             if self and self.parent:
                 for editor in self.parent.get_all_editors():
