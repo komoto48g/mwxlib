@@ -27,7 +27,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import ignore, typename
+from .utilus import typename
 from .utilus import split_words, split_parts, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
@@ -53,6 +53,7 @@ py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 ## Custom constants in wx.stc
 stc.STC_STYLE_CARETLINE = 40
 stc.STC_STYLE_ANNOTATION = 41
+
 
 class Stylus:
     py_log_mode = {
@@ -1809,7 +1810,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         """
         self.eat_white_forward()
         _text, lp = self.CurLine
-        for i in range(lp % 4 or 4):
+        for _i in range(lp % 4 or 4):
             p = self.cpos
             if p == self.bol or self.get_char(p-1) != ' ':
                 break
@@ -2288,9 +2289,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
         ## So we set the tabs' height to zero to hide them.
         self.TabCtrlHeight = 0
         
-        self.defaultBufferStyle = dict(
-            ReadOnly = False,
-        )
+        self.defaultBufferStyle = {}
+        
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower()) # e.g. '*scratch*'
