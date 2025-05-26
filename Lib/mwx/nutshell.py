@@ -2817,6 +2817,7 @@ class Nautilus(EditorInterface, Shell):
         self.__target = obj
         self.locals = obj.__dict__
         self.globals = obj.__dict__
+        self.globals.update(self.__globals)
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
@@ -2849,6 +2850,9 @@ class Nautilus(EditorInterface, Shell):
     @globals.deleter
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
+        self.interp.globals.update(self.__globals)
+    
+    __globals = {}
     
     def __init__(self, parent, target, name="root",
                  introText=None,
@@ -3408,7 +3412,7 @@ class Nautilus(EditorInterface, Shell):
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
-            obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+            obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
             pass
         self.parent.handler('title_window', obj)
@@ -3574,8 +3578,10 @@ class Nautilus(EditorInterface, Shell):
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
-        (override) Don't add '_f' to globals when executing su:startupScript.
+        (override) Add globals when executing su:startupScript.
+                   Don't add '_f' to globals when executing su:startupScript.
         """
+        keys = set(self.locals.keys()) # check for locals map changes
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
             self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
@@ -3584,6 +3590,7 @@ class Nautilus(EditorInterface, Shell):
         else:
             self.push("")
             self.interp.startupScript = None
+        self.__globals = {k: self.locals[k] for k in (self.locals.keys() - keys)}
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
