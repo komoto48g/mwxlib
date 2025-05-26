@@ -3405,7 +3405,7 @@ class Nautilus(EditorInterface, Shell):
     
     def on_activated(self, shell):
         """Called when the shell:self is activated.
-        Reset localvars assigned for the shell target.
+        Reset localvars assigned for the shell target. cf. target.setter.
         """
         self.trace_position()
         obj = self.target
