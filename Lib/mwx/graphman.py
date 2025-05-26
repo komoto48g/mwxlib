@@ -1307,11 +1307,6 @@ class Frame(mwx.Frame):
             traceback.print_exc()
             print("- Failed to save session of", plug)
         self.load_plug(plug.__module__, force=1, session=session)
-        
-        ## Update shell.target --> new plug
-        for shell in self.shellframe.get_all_shells():
-            if shell.target is plug:
-                shell.handler('shell_activated', shell)
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell.
@@ -1324,10 +1319,11 @@ class Frame(mwx.Frame):
         
         @shell.handler.bind("shell_activated")
         def init(shell):
+            """Called when the plug shell is activated."""
             nonlocal plug
             _plug = self.get_plug(name)
             if _plug is not plug:
-                shell.target = _plug or self # reset for loaded/unloaded plug
+                shell.target = _plug or self  # Reset the target to the reloaded plug.
             plug = _plug
         init(shell)
         self.shellframe.Show()

@@ -27,7 +27,7 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import ignore, typename
+from .utilus import typename
 from .utilus import split_words, split_parts, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
@@ -53,6 +53,7 @@ py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 ## Custom constants in wx.stc
 stc.STC_STYLE_CARETLINE = 40
 stc.STC_STYLE_ANNOTATION = 41
+
 
 class Stylus:
     py_log_mode = {
@@ -1809,7 +1810,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         """
         self.eat_white_forward()
         _text, lp = self.CurLine
-        for i in range(lp % 4 or 4):
+        for _i in range(lp % 4 or 4):
             p = self.cpos
             if p == self.bol or self.get_char(p-1) != ' ':
                 break
@@ -1961,9 +1962,9 @@ class Buffer(EditorInterface, EditWindow):
             None : {
                  'buffer_saved' : [ None, dispatch ],
                 'buffer_loaded' : [ None, dispatch ],
-              'buffer_modified' : [ None, dispatch, self.on_modified ],
-             'buffer_activated' : [ None, dispatch, self.on_activated ],
-           'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
+              'buffer_modified' : [ None, dispatch, self.on_buffer_modified ],
+             'buffer_activated' : [ None, dispatch, self.on_buffer_activated ],
+           'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
        'buffer_region_executed' : [ None, dispatch ],
             },
             -1 : { # original action of the EditWindow
@@ -2088,7 +2089,7 @@ class Buffer(EditorInterface, EditWindow):
                 ## Note: post-call for the confirmation dialog.
                 wx.CallAfter(self.parent.load_file, url)
     
-    def on_modified(self, buf):
+    def on_buffer_modified(self, buf):
         """Called when the buffer is modified."""
         self.SetIndicatorCurrent(2)
         self.IndicatorClearRange(0, self.TextLength)
@@ -2115,12 +2116,12 @@ class Buffer(EditorInterface, EditWindow):
             self.handler('quit', evt) # don't enter autocomp
         evt.Skip()
     
-    def on_activated(self, buf):
+    def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         self.update_caption()
         self.trace_position()
     
-    def on_inactivated(self, buf):
+    def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
     
@@ -2288,9 +2289,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
         ## So we set the tabs' height to zero to hide them.
         self.TabCtrlHeight = 0
         
-        self.defaultBufferStyle = dict(
-            ReadOnly = False,
-        )
+        self.defaultBufferStyle = {}
+        
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower()) # e.g. '*scratch*'
@@ -2315,8 +2315,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 'buffer_loaded' : [ None, dispatch ],
                'buffer_deleted' : [ None, dispatch ],
               'buffer_modified' : [ None, dispatch ],
-             'buffer_activated' : [ None, dispatch, self.on_activated ],
-           'buffer_inactivated' : [ None, dispatch, self.on_inactivated ],
+             'buffer_activated' : [ None, dispatch, self.on_buffer_activated ],
+           'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
        'buffer_caption_updated' : [ None, dispatch ],
             },
             0 : { # Normal mode
@@ -2382,12 +2382,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
             for buf in self.get_all_buffers():
                 _setattribute(buf, self.defaultBufferStyle)
     
-    def on_activated(self, buf):
+    def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         title = "{} file: {}".format(self.Name, buf.filename)
         self.parent.handler('title_window', title)
     
-    def on_inactivated(self, buf):
+    def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
     
@@ -2817,6 +2817,7 @@ class Nautilus(EditorInterface, Shell):
         self.__target = obj
         self.locals = obj.__dict__
         self.globals = obj.__dict__
+        self.globals.update(self.__globals)
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
@@ -2849,6 +2850,9 @@ class Nautilus(EditorInterface, Shell):
     @globals.deleter
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
+        self.interp.globals.update(self.__globals)
+    
+    __globals = {}
     
     def __init__(self, parent, target, name="root",
                  introText=None,
@@ -2907,10 +2911,10 @@ class Nautilus(EditorInterface, Shell):
         self.handler.update({ # DNA<Nautilus>
             None : {
                  'interp_error' : [ None, self.on_interp_error ],
-                'shell_deleted' : [ None, dispatch, self.on_deleted ],
+                'shell_deleted' : [ None, dispatch, self.on_shell_deleted ],
                'shell_modified' : [ None, dispatch ],
-              'shell_activated' : [ None, dispatch, self.on_activated ],
-            'shell_inactivated' : [ None, dispatch, self.on_inactivated ],
+              'shell_activated' : [ None, dispatch, self.on_shell_activated ],
+            'shell_inactivated' : [ None, dispatch, self.on_shell_inactivated ],
             },
             -1 : { # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -3386,7 +3390,7 @@ class Nautilus(EditorInterface, Shell):
             lhs += c # store in lhs; no more processing
         return lhs
     
-    def on_deleted(self, shell):
+    def on_shell_deleted(self, shell):
         """Called before shell:self is killed.
         Delete target shell to prevent referencing the dead shell.
         """
@@ -3399,21 +3403,21 @@ class Nautilus(EditorInterface, Shell):
                 pass
         wx.CallAfter(_del)
     
-    def on_activated(self, shell):
+    def on_shell_activated(self, shell):
         """Called when the shell:self is activated.
-        Reset localvars assigned for the shell target.
+        Reset localvars assigned for the shell target. cf. target.setter.
         """
         self.trace_position()
         obj = self.target
         try:
             obj.self = obj
             obj.this = inspect.getmodule(obj)
-            obj.shell = self # overwrite the facade <wx.py.shell.ShellFacade>
+            obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
             pass
         self.parent.handler('title_window', obj)
     
-    def on_inactivated(self, shell):
+    def on_shell_inactivated(self, shell):
         """Called when shell:self is inactivated.
         Remove target localvars assigned for the shell target.
         """
@@ -3574,8 +3578,10 @@ class Nautilus(EditorInterface, Shell):
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
-        (override) Don't add '_f' to globals when executing su:startupScript.
+        (override) Add globals when executing su:startupScript.
+                   Don't add '_f' to globals when executing su:startupScript.
         """
+        keys = set(self.locals.keys()) # check for locals map changes
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
             self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
@@ -3584,6 +3590,7 @@ class Nautilus(EditorInterface, Shell):
         else:
             self.push("")
             self.interp.startupScript = None
+        self.__globals = {k: self.locals[k] for k in (self.locals.keys() - keys)}
     
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
