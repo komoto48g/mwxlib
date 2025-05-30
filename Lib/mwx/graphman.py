@@ -124,11 +124,15 @@ class Thread:
         yield self
     
     def enters(self, f):
-        """Decorator to register a one-time handler for the enter event."""
+        """Decorator to register a one-time handler for the enter event.
+        The specified function will be called from the main thread.
+        """
         return self.handler.binds('thread_begin', _F(f))
     
     def exits(self, f):
-        """Decorator to register a one-time handler for the exit event."""
+        """Decorator to register a one-time handler for the exit event.
+        The specified function will be called from the main thread.
+        """
         return self.handler.binds('thread_end', _F(f))
     
     def wraps(self, f, *args, **kwargs):
@@ -190,6 +194,11 @@ class Thread:
             except KeyboardInterrupt as e:
                 print("- Thread terminated by user:", e)
             except Exception as e:
+                tbstr = traceback.format_tb(e.__traceback__)
+                wx.CallAfter(wx.MessageBox,
+                             f"{e}\n\n" + tbstr[-1] + f"{type(e).__name__}: {e}",
+                             f"Error in the thread running {f.__name__!r}\n\n",
+                             style=wx.ICON_ERROR)
                 traceback.print_exc()
                 print("- Thread failed in error:", e)
             finally:
