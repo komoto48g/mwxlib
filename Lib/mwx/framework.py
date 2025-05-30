@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.6"
+__version__ = "1.5.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -36,7 +36,7 @@ def deb(target=None, loop=True, locals=None, **kwargs):
         **kwargs: ShellFrame and Nautilus arguments
         
             - session           : file name of the session. Defaults to None.
-            - ensureClose       : True => EVT_CLOSE will close the window.
+            - standalone        : True => EVT_CLOSE will close the window.
                                   False => EVT_CLOSE will hide the window.
             - introText         : introductory of the shell
             - startupScript     : startup script file (default None)
@@ -47,7 +47,7 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     """
     kwargs.setdefault("introText", f"mwx {__version__}\n")
     kwargs.setdefault("execStartupScript", True)
-    kwargs.setdefault("ensureClose", True)
+    kwargs.setdefault("standalone", True)
     
     if "debrc" in kwargs:  # for backward compatibility
         warn("Deprecated keyword: 'debrc'. Use 'session' instead.", DeprecationWarning)
@@ -1060,7 +1060,7 @@ class ShellFrame(MiniFrame):
         session : file name of the session. Defaults to None.
                   If None, no session will be created or saved.
                   If `''`, the default session (.debrc) will be loaded.
-        ensureClose : flag for the shell standalone.
+        standalone  : flag for the shell standalone.
                       If True, EVT_CLOSE will close the window.
                       Otherwise the window will be only hidden.
         **kwargs    : Nautilus arguments
@@ -1096,13 +1096,13 @@ class ShellFrame(MiniFrame):
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
     
-    def __init__(self, parent, target=None, session=None, ensureClose=False, **kwargs):
+    def __init__(self, parent, target=None, session=None, standalone=False, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
         
-        self.__standalone = bool(ensureClose)
+        self.__standalone = bool(standalone)
         
         self.Init()
         
@@ -1410,6 +1410,12 @@ class ShellFrame(MiniFrame):
         self.save_session()
         self._mgr.UnInit()
         return MiniFrame.Destroy(self)
+    
+    def Close(self):
+        if self.__standalone:
+            MiniFrame.Close(self)
+        else:
+            self.Show(not self.Shown)
     
     def OnClose(self, evt):
         if self.debugger.busy:
