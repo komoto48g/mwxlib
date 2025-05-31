@@ -973,12 +973,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             return topic
         with self.save_excursion():
             p = q = self.cpos
-            ## if self.get_char(p-1).isidentifier():
-            if self.GetTextRange(self.PositionBefore(p), p).isidentifier():
+            cp = self.GetTextRange(self.PositionBefore(p), p)  # cf. self.get_char(p-1)
+            if cp.isidentifier() or cp.isalnum():
                 self.WordLeft()
                 p = self.cpos
-            ## if self.get_char(q).isidentifier():
-            if self.GetTextRange(q, self.PositionAfter(q)).isidentifier():
+            cq = self.GetTextRange(q, self.PositionAfter(q))  # cf. self.get_char(q)
+            if cq.isidentifier() or cq.isalnum():
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
@@ -1485,7 +1485,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not text:
             self.message("No words")
             return
-        wholeword = (not self.SelectedText)  # Enable or disable whole word search.
+        wholeword = (not self.SelectedText  # Enable or disable whole word search.
+                     and text.isascii())    # whole word search is for ascii only. (単語境界が不明確のため)
         pattern = re.escape(text)
         if wholeword:
             pattern = rf"\b{pattern}\b"
