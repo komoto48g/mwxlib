@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.7"
+__version__ = "1.5.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1320,6 +1320,8 @@ class ShellFrame(MiniFrame):
                 exec(i.read())
         except FileNotFoundError:
             pass
+        except Exception as e:
+            print("- Failed to load session:", e)
         self.SESSION_FILE = session
         
         ## Reposition the window if it is not on the desktop.
@@ -1670,7 +1672,7 @@ class ShellFrame(MiniFrame):
             except Exception as e:
                 print(e)
         else:
-            print("- obj is neither a string nor callable")
+            print("- obj must be either a string or a callable.")
     
     def profile(self, obj, *args, **kwargs):
         """Profile a single function call."""
@@ -1691,7 +1693,7 @@ class ShellFrame(MiniFrame):
             except TypeError as e:
                 print(e)
         else:
-            print("- obj must be callable or be a string, bytes or code object")
+            print("- obj must be callable, or a string, bytes, or code object.")
     
     ## Note: history に余計な文字列が入らないようにする
     @postcall
