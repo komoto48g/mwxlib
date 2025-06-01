@@ -124,13 +124,13 @@ class Thread:
         yield self
     
     def enters(self, f):
-        """Decorator to register a one-time handler for the enter event.
+        """Decorator to add a one-time handler for the enter event.
         The specified function will be called from the main thread.
         """
         return self.handler.binds('thread_begin', _F(f))
     
     def exits(self, f):
-        """Decorator to register a one-time handler for the exit event.
+        """Decorator to add a one-time handler for the exit event.
         The specified function will be called from the main thread.
         """
         return self.handler.binds('thread_end', _F(f))
@@ -499,6 +499,30 @@ class Layer(LayerInterface, KnobCtrlPanel):
     def __init__(self, parent, session=None, **kwargs):
         KnobCtrlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
+
+
+def register(cls, module=None):
+    """Register dummy plug; Add module.Plugin <Layer>.
+    """
+    if not module:
+        module = inspect.getmodule(cls) # rebase module or __main__
+    
+    if issubclass(cls, LayerInterface):
+        cls.__module__ = module.__name__ # __main__ to module
+        warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
+        module.Plugin = cls
+        return cls
+    
+    class _Plugin(LayerInterface, cls):
+        def __init__(self, parent, session=None, **kwargs):
+            cls.__init__(self, parent, **kwargs)
+            LayerInterface.__init__(self, parent, session)
+    
+    _Plugin.__module__ = cls.__module__ = module.__name__
+    _Plugin.__name__ = cls.__name__ + str("~")
+    _Plugin.__doc__ = cls.__doc__
+    module.Plugin = _Plugin
+    return _Plugin
 
 
 class Graph(GraphPlot):
@@ -1044,30 +1068,6 @@ class Frame(mwx.Frame):
         elif isinstance(name, LayerInterface):
             return name
     
-    @staticmethod
-    def register(cls, module=None):
-        """Register dummy plug; Add module.Plugin <Layer>.
-        """
-        if not module:
-            module = inspect.getmodule(cls) # rebase module or __main__
-        
-        if issubclass(cls, LayerInterface):
-            cls.__module__ = module.__name__ # __main__ to module
-            warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
-            module.Plugin = cls
-            return cls
-        
-        class _Plugin(LayerInterface, cls):
-            def __init__(self, parent, session=None, **kwargs):
-                cls.__init__(self, parent, **kwargs)
-                LayerInterface.__init__(self, parent, session)
-        
-        _Plugin.__module__ = cls.__module__ = module.__name__
-        _Plugin.__name__ = cls.__name__ + str("~")
-        _Plugin.__doc__ = cls.__doc__
-        module.Plugin = _Plugin
-        return _Plugin
-    
     def load_module(self, root):
         """Load module of plugin (internal use only).
         
@@ -1101,12 +1101,12 @@ class Frame(mwx.Frame):
             if isinstance(root, type):
                 warn(f"Use dummy plug for debugging {name!r}.")
                 module.__dummy_plug__ = root
-                self.register(root, module)
+                register(root, module)
         else:
             if hasattr(module, '__dummy_plug__'):
                 root = module.__dummy_plug__         # old class (imported)
                 cls = getattr(module, root.__name__) # new class (reloaded)
-                self.register(cls, module)
+                register(cls, module)
         return module
     
     def load_plug(self, root, force=False, session=None, show=False,
