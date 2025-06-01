@@ -17,7 +17,7 @@ Is equivalent to:
 from contextlib import contextmanager
 import wx
 
-__all__ = ["testApp", "testFrame", "Plugman", "testPanel"]
+__all__ = ["testApp", "testFrame", "testPlugin", "testPanel"]
 
 
 @contextmanager
@@ -39,15 +39,6 @@ def testFrame(**kwargs):
 
 
 @contextmanager
-def Plugman(**kwargs):
-    import mwx.graphman
-    with testApp():
-        frm = mwx.graphman.Frame(None, **kwargs)
-        yield frm
-        frm.Show()
-
-
-@contextmanager
 def testPanel(**kwargs):
     import mwx
     with testApp():
@@ -55,4 +46,13 @@ def testPanel(**kwargs):
         panel = mwx.ControlPanel(frm, **kwargs)
         yield panel
         panel.Sizer.Fit(frm)
+        frm.Show()
+
+
+@contextmanager
+def testPlugin(**kwargs):
+    import mwx.graphman
+    with testApp():
+        frm = mwx.graphman.Frame(None, **kwargs)
+        yield frm
         frm.Show()

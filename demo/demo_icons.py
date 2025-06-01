@@ -75,5 +75,6 @@ class Plugin(Layer):
 
 if __name__ == "__main__":
     from mwx.testsuite import *
-    with Plugman() as frm:
+
+    with testPlugin() as frm:
         frm.load_plug(Plugin, show=1)
