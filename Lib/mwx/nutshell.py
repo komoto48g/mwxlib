@@ -3581,8 +3581,10 @@ class Nautilus(EditorInterface, Shell):
         
         (override) Add globals when executing su:startupScript.
                    Don't add '_f' to globals when executing su:startupScript.
+                   Don't add intro text in the history.
         """
-        keys = set(self.locals.keys()) # check for locals map changes
+        keys = set(self.locals.keys())  # to check for locals map changes.
+        self.promptPosEnd = self.TextLength  # Fix history point
         if su and os.path.isfile(su):
             self.push("print('Startup script executed:', {0!r})\n".format(su))
             self.push("with open({0!r}) as _f: exec(_f.read())\n".format(su))
