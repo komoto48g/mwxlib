@@ -124,13 +124,13 @@ class Thread:
         yield self
     
     def enters(self, f):
-        """Decorator to register a one-time handler for the enter event.
+        """Decorator to add a one-time handler for the enter event.
         The specified function will be called from the main thread.
         """
         return self.handler.binds('thread_begin', _F(f))
     
     def exits(self, f):
-        """Decorator to register a one-time handler for the exit event.
+        """Decorator to add a one-time handler for the exit event.
         The specified function will be called from the main thread.
         """
         return self.handler.binds('thread_end', _F(f))
@@ -499,6 +499,30 @@ class Layer(LayerInterface, KnobCtrlPanel):
     def __init__(self, parent, session=None, **kwargs):
         KnobCtrlPanel.__init__(self, parent, **kwargs)
         LayerInterface.__init__(self, parent, session)
+
+
+def register(cls, module=None):
+    """Register dummy plug; Add module.Plugin <Layer>.
+    """
+    if not module:
+        module = inspect.getmodule(cls) # rebase module or __main__
+    
+    if issubclass(cls, LayerInterface):
+        cls.__module__ = module.__name__ # __main__ to module
+        warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
+        module.Plugin = cls
+        return cls
+    
+    class _Plugin(LayerInterface, cls):
+        def __init__(self, parent, session=None, **kwargs):
+            cls.__init__(self, parent, **kwargs)
+            LayerInterface.__init__(self, parent, session)
+    
+    _Plugin.__module__ = cls.__module__ = module.__name__
+    _Plugin.__name__ = cls.__name__ + str("~")
+    _Plugin.__doc__ = cls.__doc__
+    module.Plugin = _Plugin
+    return _Plugin
 
 
 class Graph(GraphPlot):
@@ -1044,30 +1068,6 @@ class Frame(mwx.Frame):
         elif isinstance(name, LayerInterface):
             return name
     
-    @staticmethod
-    def register(cls, module=None):
-        """Register dummy plug; Add module.Plugin <Layer>.
-        """
-        if not module:
-            module = inspect.getmodule(cls) # rebase module or __main__
-        
-        if issubclass(cls, LayerInterface):
-            cls.__module__ = module.__name__ # __main__ to module
-            warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
-            module.Plugin = cls
-            return cls
-        
-        class _Plugin(LayerInterface, cls):
-            def __init__(self, parent, session=None, **kwargs):
-                cls.__init__(self, parent, **kwargs)
-                LayerInterface.__init__(self, parent, session)
-        
-        _Plugin.__module__ = cls.__module__ = module.__name__
-        _Plugin.__name__ = cls.__name__ + str("~")
-        _Plugin.__doc__ = cls.__doc__
-        module.Plugin = _Plugin
-        return _Plugin
-    
     def load_module(self, root):
         """Load module of plugin (internal use only).
         
@@ -1096,17 +1096,17 @@ class Frame(mwx.Frame):
             print(f"- Unable to load {root!r}.", e)
             return False
         
-        ## the module must have a class `Plugin`.
+        ## Check if the module has a class `Plugin`.
         if not hasattr(module, 'Plugin'):
             if isinstance(root, type):
                 warn(f"Use dummy plug for debugging {name!r}.")
                 module.__dummy_plug__ = root
-                self.register(root, module)
+                register(root, module)
         else:
             if hasattr(module, '__dummy_plug__'):
                 root = module.__dummy_plug__         # old class (imported)
                 cls = getattr(module, root.__name__) # new class (reloaded)
-                self.register(cls, module)
+                register(cls, module)
         return module
     
     def load_plug(self, root, force=False, session=None, show=False,
@@ -1153,31 +1153,23 @@ class Frame(mwx.Frame):
         
         module = self.load_module(root)
         if not module:
-            return False # failed to import
+            return False
         
+        ## assert name == Plugin.__module__
         try:
-            name = module.Plugin.__module__
-            title = module.Plugin.category
+            Plugin = module.Plugin   # Check if the module has a class `Plugin`.
+            title = Plugin.category  # Plugin <LayerInterface>
             
-            pane = self._mgr.GetPane(title)
+            pane = self._mgr.GetPane(title)  # Check if <pane:title> is already registered.
+            if pane.IsOk():
+                if not isinstance(pane.window, aui.AuiNotebook):
+                    raise NameError("Notebook name must not be the same as any other plugin")
             
-            if pane.IsOk(): # <pane:title> is already registered
-                nb = pane.window
-                if not isinstance(nb, aui.AuiNotebook):
-                    raise NameError("Notebook name must not be the same as any other plugins")
-            
-            pane = self.get_pane(name)
-            
-            if pane.IsOk(): # <pane:name> is already registered
+            pane = self.get_pane(name)  # Check if <pane:name> is already registered.
+            if pane.IsOk():
                 if name not in self.plugins:
-                    raise NameError("Plugin name must not be the same as any other panes")
-                
-                show = show or pane.IsShown()
-                props.update(
-                    dock_direction = pane.IsDocked() and pane.dock_direction,
-                    floating_pos = floating_pos or pane.floating_pos[:], # copy unloading pane
-                    floating_size = floating_size or pane.floating_size[:], # copy unloading pane
-                )
+                    raise NameError("Plugin name must not be the same as any other pane")
+            
         except (AttributeError, NameError) as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
@@ -1186,12 +1178,19 @@ class Frame(mwx.Frame):
                          style=wx.ICON_ERROR)
             return False
         
-        ## Create and register the plugin
+        ## Unload the plugin if loaded.
         if pane.IsOk():
-            self.unload_plug(name) # unload once right here
+            show = show or pane.IsShown()
+            props.update(
+                dock_direction = pane.IsDocked() and pane.dock_direction,
+                floating_pos = floating_pos or pane.floating_pos[:], # copy unloading pane
+                floating_size = floating_size or pane.floating_size[:], # copy unloading pane
+            )
+            self.unload_plug(name)
         
+        ## Create the plugin object.
         try:
-            plug = module.Plugin(self, session, **kwargs)
+            plug = Plugin(self, session, **kwargs)
         except Exception as e:
             traceback.print_exc()
             wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
@@ -1203,10 +1202,10 @@ class Frame(mwx.Frame):
         ## Add to the list after the plug is created successfully.
         self.plugins[name] = module
         
-        ## set reference of a plug (one module, one plugin)
+        ## Set reference of a plug (one module, one plugin).
         module.__plug__ = plug
         
-        ## Create pane or notebook pane
+        ## Create pane or notebook pane.
         caption = plug.caption
         if not isinstance(caption, str):
             caption = name
@@ -1218,7 +1217,7 @@ class Frame(mwx.Frame):
                 nb = pane.window
                 nb.AddPage(plug, caption)
             else:
-                size = plug.GetSize() + (2,30) # padding for notebook
+                size = plug.GetSize() + (2,30)  # padding for notebook
                 nb = AuiNotebook(self, name=title)
                 nb.AddPage(plug, caption)
                 self._mgr.AddPane(nb, aui.AuiPaneInfo()
@@ -1240,11 +1239,11 @@ class Frame(mwx.Frame):
         self.update_pane(name, **props)
         self.show_pane(name, show)
         
-        ## Create a menu
+        ## Create a menu.
         plug.__Menu_item = None
         
-        if not hasattr(module, 'ID_'): # give a unique index to the module
-            global __plug_ID__ # cache ID *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
+        if not hasattr(module, 'ID_'):  # give a unique index to the module
+            global __plug_ID__          # cache ID *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
             try:
                 __plug_ID__
             except NameError:

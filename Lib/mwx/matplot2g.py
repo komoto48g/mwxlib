@@ -833,15 +833,6 @@ class GraphPlot(MatplotPanel):
             self.load(v)
     
     @property
-    def newbuffer(self):
-        """New buffer loader."""
-        return None
-    
-    @newbuffer.setter
-    def newbuffer(self, v):
-        self.load(v)
-    
-    @property
     def unit(self):
         """Logical length per pixel arb.unit [u/pixel]."""
         return self.__unit
