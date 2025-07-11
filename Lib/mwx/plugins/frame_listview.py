@@ -75,6 +75,10 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                   'C-a pressed' : (0, self.OnSelectAllItems),
                   'C-o pressed' : (0, self.OnLoadItems),
                   'C-s pressed' : (0, self.OnSaveItems),
+                'C-S-s pressed' : (0, self.OnSaveItems),
+                  'C-c pressed' : (0, self.OnCopyInfo),
+                  'C-l pressed' : (0, self.OnEditLocalUnit),
+                   'f2 pressed' : (0, self.OnEditAnnotation),
                  'M-up pressed' : (0, self.Target.OnPageUp),
                'M-down pressed' : (0, self.Target.OnPageDown),
             },
@@ -98,7 +102,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.menu = [
             (100, "Edit localunit", Icon('image'),
-                self.OnEditUnit,
+                self.OnEditLocalUnit,
                 lambda v: v.Enable(self.focused_item != -1)),
                 
             (101, "Edit annotation", Icon('pencil'),
@@ -181,20 +185,20 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnCopyInfo(self, evt):
         selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
         if selected_frames:
-            text = ''
+            text = []
             for frame in selected_frames:
-                text += pformat(frame.attributes, sort_dicts=0) # ALL attributes
-                ## text += '{}\n{}\n'.format(frame.name, frame.annotation)
-            Clipboard.write(text)
+                text += [pformat(frame.attributes, sort_dicts=0)]  # ALL attributes
+            Clipboard.write('\n'.join(text))
         else:
             self.parent.message("No frame selected.")
     
-    def OnEditUnit(self, evt):
+    def OnEditLocalUnit(self, evt):
         frame = self.Target.all_frames[self.focused_item]
         with wx.TextEntryDialog(self, frame.name,
                 'Enter localunit', repr(frame.localunit)) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 frame.unit = eval(dlg.Value or 'None')
+        self.SetFocus()
     
     def OnEditAnnotation(self, evt):
         frame = self.Target.all_frames[self.focused_item]
@@ -202,6 +206,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 'Enter an annotation', frame.annotation) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 frame.annotation = dlg.Value
+        self.SetFocus()
     
     def OnItemSelected(self, evt):
         frame = self.Target.all_frames[evt.Index]
