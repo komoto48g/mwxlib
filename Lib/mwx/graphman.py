@@ -377,12 +377,12 @@ class LayerInterface(CtrlInterface):
                 lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (mwx.ID_(201), "&Reload module", "Reload module", Icon('load'),
+            (mwx.ID_(201), "&Reload {!r}".format(self.__module__), "Reload", Icon('load'),
                 lambda v: self.parent.reload_plug(self.__module__),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.active))),
                 
-            (mwx.ID_(202), "&Unload module", "Unload module", Icon('delete'),
+            (mwx.ID_(202), "&Unload {!r}".format(self.__module__), "Unload", Icon('delete'),
                 lambda v: self.parent.unload_plug(self.__module__),
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.active))),
@@ -1713,7 +1713,7 @@ class Frame(mwx.Frame):
                 filename = dlg.Path
         
         if flush:
-            for name in list(self.plugins): # plugins:dict mutates during iteration
+            for name in list(self.plugins):  # plugins:dict mutates during iteration
                 self.unload_plug(name)
             del self.graph[:]
             del self.output[:]
@@ -1767,24 +1767,25 @@ class Frame(mwx.Frame):
         self.message("Saving session to {!r}...".format(self.session_file))
         
         with open(self.session_file, 'w') as o,\
-          np.printoptions(threshold=np.inf): # printing all(inf) elements
+          np.printoptions(threshold=np.inf):  # printing all(inf) elements
             o.write("#! Session file (This file is generated automatically)\n")
             o.write("self.SetSize({})\n".format(self.Size))
             o.write("self.SetPosition({})\n".format(self.Position))
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                path = os.path.abspath(module.__file__)
-                basename = os.path.basename(path)
-                if basename == "__init__.py": # is module package?
-                    path = path[:-12]
+                if '.' not in name:
+                    name = os.path.abspath(module.__file__)  # Replace name with full path.
+                    basename = os.path.basename(name)
+                    if basename == "__init__.py":  # is module package?
+                        name = name[:-12]
                 session = {}
                 try:
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()
                     print("- Failed to save session of", plug)
-                o.write("self.load_plug({!r}, session={})\n".format(path, session or None))
+                o.write("self.load_plug({!r}, session={})\n".format(name, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
