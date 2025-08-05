@@ -278,14 +278,14 @@ def pp(obj):
     pprint(obj, **pp.__dict__)
 
 
-if pp:
+if 1:
     pp.indent = 1
     pp.width = 80 # default 80
     pp.depth = None
     if sys.version_info >= (3,6):
         pp.compact = False
     if sys.version_info >= (3,8):
-        pp.sort_dicts = True
+        pp.sort_dicts = False
 
 
 def split_words(text, reverse=False):
