@@ -181,13 +181,13 @@ class Thread:
             except KeyboardInterrupt as e:
                 print("- Thread terminated by user:", e)
             except Exception as e:
+                print("- Thread failed in error:", e)
+                traceback.print_exc()
                 tbstr = traceback.format_tb(e.__traceback__)
                 wx.CallAfter(wx.MessageBox,
                              f"{e}\n\n" + tbstr[-1] + f"{type(e).__name__}: {e}",
                              f"Error in the thread running {f.__name__!r}\n\n",
                              style=wx.ICON_ERROR)
-                traceback.print_exc()
-                print("- Thread failed in error:", e)
             finally:
                 self.active = 0
                 wx.CallAfter(self.handler, 'thread_end', self)
@@ -386,7 +386,7 @@ class LayerInterface(CtrlInterface):
         try:
             self.Init()
         except Exception as e:
-            traceback.print_exc()
+            traceback.print_exc()  # Failed to initialize the plug.
             if parent:
                 bmp = wx.StaticBitmap(self, bitmap=Icon('!!!'))
                 txt = wx.StaticText(self, label="Exception")
@@ -396,8 +396,7 @@ class LayerInterface(CtrlInterface):
             if session:
                 self.load_session(session)
         except Exception:
-            traceback.print_exc()
-            print("- Failed to load session of", self)
+            traceback.print_exc()  # Failed to load the plug session.
     
     def Init(self):
         """Initialize layout before load_session (to be overridden)."""
@@ -1102,8 +1101,7 @@ class Frame(mwx.Frame):
                 if session:
                     plug.load_session(session)
             except Exception:
-                traceback.print_exc()
-                print("- Failed to load session of", plug)
+                traceback.print_exc()  # Failed to load the plug session.
             return None
         
         ## Update the include-path to load the module correctly.
@@ -1112,7 +1110,7 @@ class Frame(mwx.Frame):
                 sys.path.remove(dirname_)
             sys.path.insert(0, dirname_)
         elif dirname_:
-            print("- No such directory {!r}".format(dirname_))
+            print(f"- No such directory {dirname_!r}.")
             return False
         
         ## Load or reload the root module, and check whether it contains a class named `Plugin`.
@@ -1121,9 +1119,8 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
-        except Exception as e:
-            traceback.print_exc()
-            print(f"- Unable to load {root!r}.", e)
+        except Exception:
+            traceback.print_exc()  # Unable to load the module.
             return False
         else:
             if not hasattr(module, 'Plugin'):
@@ -1253,10 +1250,12 @@ class Frame(mwx.Frame):
         """Unload plugin and detach the pane from UI manager."""
         plug = self.get_plug(name)
         if not plug:
+            print(f"- {name!r} is not listed in plugins.")
             return
         
         name = plug.__module__
         if name not in self.plugins:
+            print(f"- {name!r} is not listed in plugins.")
             return
         
         del self.plugins[name]
@@ -1287,15 +1286,19 @@ class Frame(mwx.Frame):
     
     def reload_plug(self, name):
         plug = self.get_plug(name)
-        if not plug or not plug.reloadable:
+        if not plug:
+            print(f"- {name!r} is not listed in plugins.")
             return
+        if not plug.reloadable:
+            print(f"- {name!r} is not reloadable.")
+            return
+        
         session = {}
         try:
             print("Reloading {}...".format(plug))
             plug.save_session(session)
         except Exception:
-            traceback.print_exc()
-            print("- Failed to save session of", plug)
+            traceback.print_exc()  # Failed to save the plug session.
         self.load_plug(plug.__module__, force=1, session=session)
     
     def inspect_plug(self, name):
@@ -1303,6 +1306,7 @@ class Frame(mwx.Frame):
         """
         plug = self.get_plug(name)
         if not plug:
+            print(f"- {name!r} is not listed in plugins.")
             return
         
         shell = self.shellframe.clone_shell(plug)
@@ -1765,8 +1769,7 @@ class Frame(mwx.Frame):
                 try:
                     plug.save_session(session)
                 except Exception:
-                    traceback.print_exc()
-                    print("- Failed to save session of", plug)
+                    traceback.print_exc()  # Failed to save the plug session.
                 o.write("self.load_plug({!r}, session={})\n".format(name, session or None))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
