@@ -37,19 +37,6 @@ from .matplot2lg import LineProfile  # noqa
 from .matplot2lg import Histogram
 
 
-def split_paths(obj):
-    """Split obj path into dirname and basename.
-    The object can be module name:str, module, or class.
-    """
-    if hasattr(obj, '__file__'): #<class 'module'>
-        obj = obj.__file__
-    elif isinstance(obj, type):  #<class 'type'>
-        obj = inspect.getsourcefile(obj)
-    if obj.endswith(".py"):
-        obj, _ = os.path.splitext(obj)
-    return os.path.split(obj)
-
-
 class Thread:
     """Thread manager for graphman.Layer
     
@@ -1068,47 +1055,6 @@ class Frame(mwx.Frame):
         elif isinstance(name, LayerInterface):
             return name
     
-    def load_module(self, root):
-        """Load module of plugin (internal use only).
-        
-        Note:
-            This is called automatically from load_plug,
-            and should not be called directly from user.
-        """
-        dirname_, name = split_paths(root)
-        
-        ## Update the include-path to load the module correctly.
-        if os.path.isdir(dirname_):
-            if dirname_ in sys.path:
-                sys.path.remove(dirname_)
-            sys.path.insert(0, dirname_)
-        elif dirname_:
-            print("- No such directory {!r}".format(dirname_))
-            return False
-        
-        try:
-            if name in sys.modules:
-                module = reload(sys.modules[name])
-            else:
-                module = import_module(name)
-        except Exception as e:
-            traceback.print_exc()
-            print(f"- Unable to load {root!r}.", e)
-            return False
-        
-        ## Check if the module has a class `Plugin`.
-        if not hasattr(module, 'Plugin'):
-            if isinstance(root, type):
-                warn(f"Use dummy plug for debugging {name!r}.")
-                module.__dummy_plug__ = root
-                register(root, module)
-        else:
-            if hasattr(module, '__dummy_plug__'):
-                root = module.__dummy_plug__         # old class (imported)
-                cls = getattr(module, root.__name__) # new class (reloaded)
-                register(cls, module)
-        return module
-    
     def load_plug(self, root, force=False, session=None, show=False,
                         dock=0, floating_pos=None, floating_size=None,
                         **kwargs):
@@ -1131,14 +1077,23 @@ class Frame(mwx.Frame):
             None if succeeded else False
         
         Note:
-            The root module must have a class Plugin <Layer>
+            The root module must contain a class Plugin <Layer>.
         """
         props = dict(dock_direction=dock,
                      floating_pos=floating_pos,
                      floating_size=floating_size)
         
-        _dirname, name = split_paths(root)
+        if inspect.ismodule(root):
+            name = root.__file__
+        elif inspect.isclass(root):
+            name = inspect.getsourcefile(root)
+        else:
+            name = root
+        dirname_, name = os.path.split(name)  # if the name is full path,...
+        if name.endswith(".py"):
+            name = name[:-3]
         
+        ## Check if the plug is already loaded or needs to be reloaded.
         plug = self.get_plug(name)
         if plug and not force:
             self.update_pane(name, **props)
@@ -1151,9 +1106,36 @@ class Frame(mwx.Frame):
                 print("- Failed to load session of", plug)
             return None
         
-        module = self.load_module(root)
-        if not module:
+        ## Update the include-path to load the module correctly.
+        if os.path.isdir(dirname_):
+            if dirname_ in sys.path:
+                sys.path.remove(dirname_)
+            sys.path.insert(0, dirname_)
+        elif dirname_:
+            print("- No such directory {!r}".format(dirname_))
             return False
+        
+        ## Load or reload the root module, and check whether it contains a class named `Plugin`.
+        try:
+            if name in sys.modules:
+                module = reload(sys.modules[name])
+            else:
+                module = import_module(name)
+        except Exception as e:
+            traceback.print_exc()
+            print(f"- Unable to load {root!r}.", e)
+            return False
+        else:
+            if not hasattr(module, 'Plugin'):
+                if isinstance(root, type):
+                    ## warn(f"Use dummy plug for {name!r}.")
+                    module.__dummy_plug__ = root
+                    register(root, module)
+            else:
+                if hasattr(module, '__dummy_plug__'):
+                    root = module.__dummy_plug__          # old class (imported)
+                    cls = getattr(module, root.__name__)  # new class (reloaded)
+                    register(cls, module)
         
         ## assert name == Plugin.__module__
         try:
