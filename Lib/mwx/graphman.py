@@ -364,18 +364,18 @@ class LayerInterface(CtrlInterface):
                 lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (mwx.ID_(201), "&Reload {!r}".format(self.__module__), "Reload", Icon('load'),
-                lambda v: self.parent.reload_plug(self.__module__),
+            (mwx.ID_(201), "&Reload module", "Reload", Icon('load'),
+                lambda v: self.parent.reload_plug(self),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.active))),
                 
-            (mwx.ID_(202), "&Unload {!r}".format(self.__module__), "Unload", Icon('delete'),
-                lambda v: self.parent.unload_plug(self.__module__),
+            (mwx.ID_(202), "&Unload module", "Unload", Icon('delete'),
+                lambda v: self.parent.unload_plug(self),
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.active))),
             (),
             (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
-                lambda v: self.parent.inspect_plug(self.__module__)),
+                lambda v: self.parent.inspect_plug(self)),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: Menu.Popup(self, self.menu))
@@ -1041,11 +1041,7 @@ class Frame(mwx.Frame):
         return plug
     
     def get_plug(self, name):
-        """Get named plug window.
-        
-        Args:
-            name : str or plug object.
-        """
+        """Get named plug window."""
         if isinstance(name, str):
             if name.endswith(".py"):
                 name, _ = os.path.splitext(os.path.basename(name))
@@ -1083,7 +1079,7 @@ class Frame(mwx.Frame):
                      floating_size=floating_size)
         
         if inspect.ismodule(root):
-            name = root.__file__
+            name = root.__file__  # @TODO root.__name__
         elif inspect.isclass(root):
             name = inspect.getsourcefile(root)
         else:
@@ -1134,7 +1130,7 @@ class Frame(mwx.Frame):
                     cls = getattr(module, root.__name__)  # new class (reloaded)
                     register(cls, module)
         
-        ## assert name == Plugin.__module__
+        ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
         try:
             Plugin = module.Plugin   # Check if the module has a class `Plugin`.
             title = Plugin.category  # Plugin <LayerInterface>
@@ -1253,12 +1249,7 @@ class Frame(mwx.Frame):
             print(f"- {name!r} is not listed in plugins.")
             return
         
-        name = plug.__module__
-        if name not in self.plugins:
-            print(f"- {name!r} is not listed in plugins.")
-            return
-        
-        del self.plugins[name]
+        del self.plugins[plug.Name]
         
         if plug.__Menu_item:
             menu, sep, tail = plug.menukey.rpartition('/')
@@ -1285,6 +1276,7 @@ class Frame(mwx.Frame):
             nb.Destroy()
     
     def reload_plug(self, name):
+        """Reload plugin."""
         plug = self.get_plug(name)
         if not plug:
             print(f"- {name!r} is not listed in plugins.")
@@ -1302,8 +1294,7 @@ class Frame(mwx.Frame):
         self.load_plug(plug.__module__, force=1, session=session)
     
     def inspect_plug(self, name):
-        """Dive into the process to inspect plugs in the shell.
-        """
+        """Dive into the process to inspect plugs in the shell."""
         plug = self.get_plug(name)
         if not plug:
             print(f"- {name!r} is not listed in plugins.")
@@ -1761,10 +1752,9 @@ class Frame(mwx.Frame):
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
                 if '.' not in name:
-                    name = os.path.abspath(module.__file__)  # Replace name with full path.
-                    basename = os.path.basename(name)
-                    if basename == "__init__.py":  # is module package?
-                        name = name[:-12]
+                    name = module.__file__  # Replace the name with full path.
+                    if hasattr(module, '__path__'):  # is the module a package?
+                        name = os.path.dirname(name)
                 session = {}
                 try:
                     plug.save_session(session)
