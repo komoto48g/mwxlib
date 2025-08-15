@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.10"
+__version__ = "1.5.11"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -48,10 +48,6 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     kwargs.setdefault("introText", f"mwx {__version__}\n")
     kwargs.setdefault("execStartupScript", True)
     kwargs.setdefault("standalone", True)
-    
-    if "debrc" in kwargs:  # for backward compatibility
-        warn("Deprecated keyword: 'debrc'. Use 'session' instead.", DeprecationWarning)
-        kwargs.setdefault('session', kwargs.pop('debrc'))
     
     app = wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
