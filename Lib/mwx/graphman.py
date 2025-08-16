@@ -1081,7 +1081,8 @@ class Frame(mwx.Frame):
                      floating_size=floating_size)
         
         if inspect.ismodule(root):
-            name = root.__file__  # @TODO root.__name__
+            name = root.__file__
+            ## name = root.__name__  @TODO: Change root module name
         elif inspect.isclass(root):
             name = inspect.getsourcefile(root)
         else:
@@ -1090,17 +1091,23 @@ class Frame(mwx.Frame):
         if name.endswith(".py"):
             name = name[:-3]
         
-        ## Check if the plug is already loaded or needs to be reloaded.
-        plug = self.get_plug(name)
-        if plug and not force:
-            self.update_pane(name, **props)
-            self.show_pane(name, show)
-            try:
-                if session:
-                    plug.load_session(session)
-            except Exception:
-                traceback.print_exc()  # Failed to load the plug session.
-            return None
+        if not force:
+            ## 文字列参照 (root:str) による重複ロードを避ける @TODO: Change root module name
+            ## for mod in self.plugins.values():
+            ##     if root == mod.__file__:
+            ##         print(f"- {name!r} is already loaded as {mod.__name__!r}.")
+            ##         return None
+            ## Check if the named plug is already loaded.
+            plug = self.get_plug(name)
+            if plug:
+                self.update_pane(name, **props)
+                self.show_pane(name, show)
+                try:
+                    if session:
+                        plug.load_session(session)
+                except Exception:
+                    traceback.print_exc()  # Failed to load the plug session.
+                return None
         
         ## Update the include-path to load the module correctly.
         if os.path.isdir(dirname_):
@@ -1111,7 +1118,7 @@ class Frame(mwx.Frame):
             print(f"- No such directory {dirname_!r}.")
             return False
         
-        ## Load or reload the root module, and check whether it contains a class named `Plugin`.
+        ## Load or reload the module, and check whether it contains a class named `Plugin`.
         try:
             if name in sys.modules:
                 module = reload(sys.modules[name])
@@ -1176,12 +1183,6 @@ class Frame(mwx.Frame):
                          style=wx.ICON_ERROR)
             return False
         
-        ## Add to the list after the plug is created successfully.
-        self.plugins[name] = module
-        
-        ## Set reference of a plug (one module, one plugin).
-        module.__plug__ = plug
-        
         ## Create pane or notebook pane.
         caption = plug.caption
         if not isinstance(caption, str):
@@ -1209,6 +1210,12 @@ class Frame(mwx.Frame):
             self._mgr.AddPane(plug, aui.AuiPaneInfo()
                                        .Name(name).Caption(caption)
                                        .FloatingSize(size).MinSize(size).Show(0))
+        
+        ## Add to the list after the plug is created successfully.
+        self.plugins[name] = module
+        
+        ## Set reference of a plug (one module, one plugin).
+        module.__plug__ = plug
         
         ## Set winow.Name for inspection.
         plug.Name = name
@@ -1282,9 +1289,6 @@ class Frame(mwx.Frame):
         plug = self.get_plug(name)
         if not plug:
             print(f"- {name!r} is not listed in plugins.")
-            return
-        if not plug.reloadable:
-            print(f"- {name!r} is not reloadable.")
             return
         
         session = {}
