@@ -569,8 +569,7 @@ class Graph(GraphPlot):
         del self.region
     
     def hide_layers(self):
-        for name in self.parent.plugins:
-            plug = self.parent.get_plug(name)
+        for plug in self.parent.get_all_plugs():
             for art in plug.Arts:
                 art.set_visible(0)
         self.remove_markups()
@@ -881,8 +880,7 @@ class Frame(mwx.Frame):
             elif ret == wx.ID_CANCEL:
                 evt.Veto()
                 return
-        n = sum(bool(plug.thread and plug.thread.active)
-                for plug in (self.get_plug(name) for name in self.plugins))
+        n = sum(bool(plug.thread and plug.thread.active) for plug in self.get_all_plugs())
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox( # Confirm closing the thread.
@@ -1049,6 +1047,10 @@ class Frame(mwx.Frame):
                 return self.plugins[name].__plug__
         elif isinstance(name, LayerInterface):
             return name
+    
+    def get_all_plugs(self):
+        for name, module in self.plugins.items():
+            yield module.__plug__
     
     def load_plug(self, root, force=False, session=None, show=False,
                         dock=0, floating_pos=None, floating_size=None,
@@ -1326,8 +1328,7 @@ class Frame(mwx.Frame):
     
     def Quit(self, evt=None):
         """Stop all Layer threads."""
-        for name in self.plugins:
-            plug = self.get_plug(name)
+        for plug in self.get_all_plugs():
             thread = plug.thread  # Note: thread can be None or shared.
             if thread and thread.active:
                 ## thread.active = 0
