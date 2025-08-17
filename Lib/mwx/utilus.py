@@ -200,8 +200,12 @@ def typename(obj, docp=False, qualp=True):
         return pydoc.describe(obj)  # atom -> short description
     
     modname = getattr(obj, '__module__', None)
-    if modname and modname != "__main__" and not modname.startswith('mwx'):
-        name = modname + ('.' if qualp else '..') + name
+    if modname:
+        if qualp:
+            name = modname + '.' + name
+        else:
+            if not modname.startswith(("__main__", "mwx")):
+                name = modname + '..' + name
     
     if docp and callable(obj) and obj.__doc__:
         name += "<{!r}>".format(obj.__doc__.splitlines()[0])  # concat the first doc line
