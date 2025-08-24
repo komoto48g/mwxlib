@@ -1081,9 +1081,9 @@ class Frame(mwx.Frame):
                      floating_pos=floating_pos,
                      floating_size=floating_size)
         
-        if inspect.ismodule(root):
+        if inspect.ismodule(root):  # @TODO: Change root module name
             name = root.__file__
-            ## name = root.__name__  @TODO: Change root module name
+            ## name = root.__name__
         elif inspect.isclass(root):
             name = inspect.getsourcefile(root)
         else:
@@ -1093,13 +1093,14 @@ class Frame(mwx.Frame):
             name = name[:-3]
         
         if not force:
-            ## 文字列参照 (root:str) による重複ロードを避ける @TODO: Change root module name
-            ## for mod in self.plugins.values():
-            ##     if root == mod.__file__:
-            ##         print(f"- {name!r} is already loaded as {mod.__name__!r}.")
-            ##         return None
+            ## 文字列参照 (root:str) による重複ロードを避ける
+            module = next((v for v in self.plugins.values() if root == v.__file__), None)
+            if module:
+                ## print(f"- {name!r} is already loaded as {module.__name__!r}.")
+                plug = module.__plug__
+            else:
+                plug = self.get_plug(name)
             ## Check if the named plug is already loaded.
-            plug = self.get_plug(name)
             if plug:
                 self.update_pane(name, **props)
                 self.show_pane(name, show)
@@ -1757,10 +1758,9 @@ class Frame(mwx.Frame):
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                if '.' not in name:
-                    name = module.__file__  # Replace the name with full path.
-                    if hasattr(module, '__path__'):  # is the module a package?
-                        name = os.path.dirname(name)
+                name = module.__file__  # Replace the name with full path.
+                if hasattr(module, '__path__'):  # is the module a package?
+                    name = os.path.dirname(name)
                 session = {}
                 try:
                     plug.save_session(session)
