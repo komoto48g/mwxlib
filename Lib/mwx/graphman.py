@@ -9,6 +9,7 @@ from pprint import pformat
 import threading
 import traceback
 import inspect
+import types
 import sys
 import os
 import platform
@@ -1062,11 +1063,12 @@ class Frame(mwx.Frame):
                      floating_pos=floating_pos,
                      floating_size=floating_size)
         
-        if inspect.ismodule(root):  # @TODO: Change root module name
-            name = root.__file__
-            ## name = root.__name__
+        if inspect.ismodule(root):
+            ## name = root.__file__
+            name = root.__name__
         elif inspect.isclass(root):
-            name = inspect.getsourcefile(root)
+            ## name = inspect.getsourcefile(root)
+            name = root.__module__
         else:
             name = root
         dirname_, name = os.path.split(name)  # if the name is full path,...
@@ -1107,20 +1109,24 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
+        except ModuleNotFoundError:
+            module = types.ModuleType(name)  # dummy module
+            module.__file__ = "<scratch>"
+            ## sys.modules[name] = module
         except Exception:
             traceback.print_exc()  # Unable to load the module.
             return False
+        
+        if not hasattr(module, 'Plugin'):
+            ## if isinstance(root, type):
+            if inspect.isclass(root):
+                module.__dummy_plug__ = root
+                register(root, module)
         else:
-            if not hasattr(module, 'Plugin'):
-                if isinstance(root, type):
-                    ## warn(f"Use dummy plug for {name!r}.")
-                    module.__dummy_plug__ = root
-                    register(root, module)
-            else:
-                if hasattr(module, '__dummy_plug__'):
-                    root = module.__dummy_plug__          # old class (imported)
-                    cls = getattr(module, root.__name__)  # new class (reloaded)
-                    register(cls, module)
+            if hasattr(module, '__dummy_plug__'):
+                root = module.__dummy_plug__          # old class (imported)
+                cls = getattr(module, root.__name__)  # new class (reloaded)
+                register(cls, module)
         
         ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
         try:
@@ -1276,7 +1282,7 @@ class Frame(mwx.Frame):
         
         session = {}
         try:
-            print("Reloading {}...".format(plug))
+            print(f"Reloading {plug}...")
             plug.save_session(session)
         except Exception:
             traceback.print_exc()  # Failed to save the plug session.
@@ -1336,7 +1342,7 @@ class Frame(mwx.Frame):
         
         if not filename:
             default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Select index file to import",
+            with wx.FileDialog(self, "Select index file to load",
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
@@ -1740,6 +1746,9 @@ class Frame(mwx.Frame):
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
                 name = module.__file__  # Replace the name with full path.
+                if not plug or not os.path.exists(name):
+                    print(f"Skipping dummy plugin {name!r}...")
+                    continue
                 if hasattr(module, '__path__'):  # is the module a package?
                     name = os.path.dirname(name)
                 session = {}
@@ -1747,7 +1756,7 @@ class Frame(mwx.Frame):
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()  # Failed to save the plug session.
-                o.write("self.load_plug({!r}, session={})\n".format(name, session or None))
+                o.write("self.load_plug({!r}, session={})\n".format(name, session))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
