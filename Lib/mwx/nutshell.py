@@ -1821,11 +1821,6 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
 class Buffer(EditorInterface, EditWindow):
     """Python code buffer.
-    
-    Attributes:
-        name     : buffer-name (basename)
-        filename : buffer-file-name
-        code     : code object
     """
     @property
     def message(self):
@@ -1833,12 +1828,14 @@ class Buffer(EditorInterface, EditWindow):
     
     @property
     def name(self):
+        """buffer-name (basename)."""
         return os.path.basename(self.__filename or '')
     
     Name = name # page.window.Name for save/loadPerspective
     
     @property
     def filename(self):
+        """buffer-file-name."""
         return self.__filename
     
     def update_filestamp(self, fn):
@@ -1863,10 +1860,10 @@ class Buffer(EditorInterface, EditWindow):
         """Timestamp delta (for checking external mod).
         
         Returns:
-            None : no file
-            = 0  : a file (even if not found)
-            > 0  : a file edited externally
-            < 0  : a url file
+            None: no file
+            = 0:  a file (even if not found)
+            > 0:  a file edited externally
+            < 0:  a url file
         """
         try:
             return self.__path.stat().st_mtime - self.__mtime
@@ -2269,11 +2266,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
     """Python code editor.
     
     Args:
-        name : Window.Name (e.g. 'Scratch')
+        name: Window.Name (e.g. 'Scratch')
     
     Attributes:
-        default_name   : default buffer name (e.g. '*scratch*')
-        default_buffer : default buffer
+        default_name: default buffer name (e.g. '*scratch*')
+        default_buffer: default buffer
     """
     @property
     def message(self):
@@ -2358,7 +2355,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Set multiple properties at once to the buffer(s).
         
         Args:
-            buf : a buffer to apply (if None, applies to all buffers).
+            buf: a buffer to apply (if None, applies to all buffers).
             **kwargs: default style.
             
                 ReadOnly        = False
@@ -3460,12 +3457,12 @@ class Nautilus(EditorInterface, Shell):
     
     @property
     def bolc(self):
-        "Beginning of command-line."
+        """Beginning of command-line."""
         return self.promptPosEnd
     
     @property
     def eolc(self):
-        "End of command-line."
+        """End of command-line."""
         return self.TextLength
     
     @property

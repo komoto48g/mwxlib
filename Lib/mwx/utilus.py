@@ -980,12 +980,12 @@ def get_fullargspec(f):
     information from the docstring. If it fails, it returns None.
     
     Returns:
-        args            : a list of the parameter names.
-        varargs         : the name of the  * parameter or None.
-        varkwargs       : the name of the ** parameter or None.
-        defaults        : a dict mapping names from args to defaults.
-        kwonlyargs      : a list of keyword-only parameter names.
-        kwonlydefaults  : a dict mapping names from kwonlyargs to defaults.
+        args:           a list of the parameter names.
+        varargs:        the name of the  * parameter or None.
+        varkwargs:      the name of the ** parameter or None.
+        defaults:       a dict mapping names from args to defaults.
+        kwonlyargs:     a list of keyword-only parameter names.
+        kwonlydefaults: a dict mapping names from kwonlyargs to defaults.
     
     Note:
         `self` parameter is not reported for bound methods.

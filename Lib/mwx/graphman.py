@@ -43,19 +43,19 @@ class Thread:
     The worker:thread runs the given target.
     
     Attributes:
-        target  : A target method of the Layer.
-        result  : A variable that retains the last retval of f.
-        worker  : Reference of the worker thread.
-        owner   : Reference of the handler owner (was typ. f.__self__).
-                  If None, the thread_event is handled by its own handler.
-        event   : A common event flag to interrupt the process.
+        target: A target method of the Layer.
+        result: A variable that retains the last retval of f.
+        worker: Reference of the worker thread.
+        owner: Reference of the handler owner (was typ. f.__self__).
+               If None, the thread_event is handled by its own handler.
+        event: A common event flag to interrupt the process.
     
     There are two flags to check the thread status:
     
-     - active   : A flag of being kept going.
-                  Check this to see the worker is running and intended being kept going.
-     - running  : A flag of being running now.
-                  Watch this to verify the worker is alive after it has been inactivated.
+     - active: A flag of being kept going.
+               Check this to see the worker is running and intended being kept going.
+     - running: A flag of being running now.
+                Watch this to verify the worker is alive after it has been inactivated.
     
     The event object can be used to suspend/resume the thread:
     
@@ -144,8 +144,8 @@ class Thread:
         Confirm whether to terminate the thread.
         
         Returns:
-            True  : [OK] if terminating.
-            False : [CANCEL] otherwise.
+            True:  [OK] if terminating.
+            False: [CANCEL] otherwise.
         
         Note:
             Use ``check`` method where you want to pause.
@@ -515,8 +515,8 @@ class Graph(GraphPlot):
     """GraphPlot (override) to better make use for graph manager
     
     Attributes:
-        parent : Parent window (usually mainframe)
-        loader : mainframe
+        parent: Parent window (usually mainframe)
+        loader: mainframe
     """
     def __init__(self, parent, loader=None, **kwargs):
         GraphPlot.__init__(self, parent, **kwargs)
@@ -580,8 +580,8 @@ class MyFileDropLoader(wx.FileDropTarget):
     """File Drop interface
     
     Args:
-        target : target view to drop in, e.g. frame, graph, pane, etc.
-        loader : mainframe
+        target: target view to drop in, e.g. frame, graph, pane, etc.
+        loader: mainframe
     """
     def __init__(self, target, loader):
         wx.FileDropTarget.__init__(self)
@@ -915,7 +915,7 @@ class Frame(mwx.Frame):
         """Get named pane or notebook pane.
         
         Args:
-            name : str or plug object.
+            name: str or plug object.
         """
         plug = self.get_plug(name)
         if plug:
@@ -1058,13 +1058,14 @@ class Frame(mwx.Frame):
         """Load plugin.
         
         Args:
-            root    : Plugin <Layer> module, or name of the module.
-                      Any wx.Window object can be specified (as dummy-plug).
-                      However, do not use this mode in release versions.
-            force   : force loading even if it is already loaded
-            session : Conditions for initializing the plug and starting session
-            show    : the pane is shown after loaded
-            dock    : dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
+            root: Plugin <Layer> module, or name of the module.
+                  Any wx.Window object can be specified (as dummy-plug).
+                  However, do not use this mode in release versions.
+            force: force loading even if it is already loaded
+            session: Conditions for initializing the plug and starting session
+            
+            show: the pane is shown after loaded
+            dock: dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             floating_pos: posision of floating window
             floating_size: size of floating window
             

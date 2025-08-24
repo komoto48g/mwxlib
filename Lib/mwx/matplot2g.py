@@ -70,9 +70,9 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
             beta = -a * alpha
     
     Args:
-        cutoff      : cutoff score [%] to cut the lo/hi limits
-        threshold   : limit bytes of image (to make matplotlib light)
-        binning     : minimum binning number of src array
+        cutoff: cutoff score [%] to cut the lo/hi limits
+        threshold: limit bytes of image (to make matplotlib light)
+        binning: minimum binning number of src array
     """
     if src.dtype in (np.complex64, np.complex128): # maybe fft pattern
         src = np.log(1 + abs(src))
@@ -118,9 +118,9 @@ class AxesImagePhantom:
     """Phantom of frame facade
     
     Args:
-        buf     : buffer
-        name    : buffer name
-        show    : show immediately when loaded
+        buf:  buffer
+        name: buffer name
+        show: show immediately when loaded
         **kwargs: frame attributes
     
     Note:
@@ -631,10 +631,10 @@ class GraphPlot(MatplotPanel):
         """Load a buffer with a name.
         
         Args:
-            buf     : buffer array.
-            name    : buffer name (default to *temp*).
-            pos     : Insertion position in the frame list.
-            show    : Show immediately when loaded.
+            buf:  buffer array.
+            name: buffer name (default to *temp*).
+            pos:  Insertion position in the frame list.
+            show: Show immediately when loaded.
             **kwargs: frame attributes.
         """
         assert buf is not None, "Load buffer must be an array or string (not None)"

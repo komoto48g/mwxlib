@@ -15,8 +15,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
     """Widget inspection tool
     
     Attributes:
-        parent : shellframe
-        target : widget to inspect
+        parent: shellframe
+        target: widget to inspect
     """
     def __init__(self, parent, *args, **kwargs):
         it.InspectionTree.__init__(self, parent, *args, **kwargs)

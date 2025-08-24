@@ -16,8 +16,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Event monitor
     
     Attributes:
-        parent : shellframe
-        target : widget to monitor
+        parent: shellframe
+        target: widget to monitor
     """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,

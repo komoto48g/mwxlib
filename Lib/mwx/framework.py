@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.5.12"
+__version__ = "1.5.13"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -28,19 +28,19 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     """Dive into the process.
     
     Args:
-        target  : Object or module (default None).
-                  If None, the target is set to `__main__`.
-        loop    : If True, the app and the mainloop will be created.
-        locals  : Additional context of the shell
+        target: Object or module (default None).
+                If None, the target is set to `__main__`.
+        loop:   If True, the app and the mainloop will be created.
+        locals: Additional context of the shell
         
         **kwargs: ShellFrame and Nautilus arguments
         
-            - session           : file name of the session. Defaults to None.
-            - standalone        : True => EVT_CLOSE will close the window.
-                                  False => EVT_CLOSE will hide the window.
-            - introText         : introductory of the shell
-            - startupScript     : startup script file (default None)
-            - execStartupScript : True => Execute the startup script.
+            - session: file name of the session. Defaults to None.
+            - standalone: True => EVT_CLOSE will close the window.
+                          False => EVT_CLOSE will hide the window.
+            - introText: introductory of the shell
+            - startupScript: startup script file (default None)
+            - execStartupScript: True => Execute the startup script.
     
     Note:
         This will execute the startup script $(PYTHONSTARTUP).
@@ -504,7 +504,7 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
         )
     
     Args:
-        items   : wx objects (with some packing parameters)
+        items: wx objects (with some packing parameters)
         
             - (obj, 1) -> sized with ratio 1 (parallel to `orient`)
             - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (perpendicular to `orient`)
@@ -513,9 +513,9 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
             - (-1,-1) -> padding space
             - None -> phantom
         
-        orient  : HORIZONTAL or VERTICAL
-        label   : StaticBox label
-        style   : Sizer option (proportion, flag, border)
+        orient: HORIZONTAL or VERTICAL
+        label:  StaticBox label
+        style:  Sizer option (proportion, flag, border)
         
             - flag-expansion -> EXPAND, SHAPED
             - flag-border -> TOP, BOTTOM, LEFT, RIGHT, ALL
@@ -554,8 +554,8 @@ class Menu(wx.Menu):
     """Construct the menu.
     
     Args:
-        menulist : list of MenuItem args
-        owner    : window object to bind handlers
+        owner: window object to bind handlers
+        menulist: list of MenuItem args
     
     (id, text, hint, style, icon,  ... Menu.Append arguments
        action, updater, highlight) ... Menu Event handlers
@@ -697,8 +697,8 @@ class StatusBar(wx.StatusBar):
     """Construct the statusbar with read/write interfaces.
     
     Attributes:
-        field   : list of field widths
-        pane    : index of status text field
+        field: list of field widths
+        pane: index of status text field
     """
     def __init__(self, *args, **kwargs):
         wx.StatusBar.__init__(self, *args, **kwargs)
@@ -726,9 +726,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
     """Frame extension class.
     
     Attributes:
-        menubar     : MenuBar
-        statusbar   : StatusBar
-        shellframe  : mini-frame of the shell
+        menubar: MenuBar
+        statusbar: StatusBar
+        shellframe: mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
     
@@ -799,8 +799,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     """MiniFrame extension class.
     
     Attributes:
-        menubar     : MenuBar
-        statusbar   : StatusBar (not shown by default)
+        menubar: MenuBar
+        statusbar: StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
     
@@ -1051,27 +1051,28 @@ class ShellFrame(MiniFrame):
     """MiniFrame of the Shell.
     
     Args:
-        target  : target object of the rootshell.
-                  If None, it will be __main__.
-        session : file name of the session. Defaults to None.
-                  If None, no session will be created or saved.
-                  If `''`, the default session (.debrc) will be loaded.
-        standalone  : flag for the shell standalone.
-                      If True, EVT_CLOSE will close the window.
-                      Otherwise the window will be only hidden.
-        **kwargs    : Nautilus arguments
+        target: target object of the rootshell.
+                If None, it will be __main__.
+        session: file name of the session. Defaults to None.
+                 If None, no session will be created or saved.
+                 If `''`, the default session (.debrc) will be loaded.
+        standalone: flag for the shell standalone.
+                    If True, EVT_CLOSE will close the window.
+                    Otherwise the window will be only hidden.
+        **kwargs: Nautilus arguments
     
     Attributes:
-        console     : Notebook of shells
-        ghost       : Notebook of editors/buffers
-        watcher     : Notebook of global/locals watcher
-        Scratch     : Book of scratch (tooltip)
-        Help        : Book of help
-        Log         : Book of logging
-        monitor     : wxmon.EventMonitor object
-        inspector   : wxwit.Inspector object
-        debugger    : wxpdb.Debugger object
-        ginfo/linfo : globals/locals list
+        console:    Notebook of shells
+        ghost:      Notebook of editors/buffers
+        watcher:    Notebook of global/locals watcher
+        Scratch:    Book of scratch (tooltip)
+        Help:       Book of help
+        Log:        Book of logging
+        monitor:    wxmon.EventMonitor object
+        inspector:  wxwit.Inspector object
+        debugger:   wxpdb.Debugger object
+        ginfo:      globals list
+        linfo:      locals list
     
     Built-in utility::
     
@@ -1611,10 +1612,10 @@ class ShellFrame(MiniFrame):
         """Load file @where the object is defined.
         
         Args:
-            filename : target filename:str or object.
-                       It also supports <'filename:lineno'> format.
-            lineno   : Set mark to lineno on load.
-            show     : Show the page.
+            filename: target filename:str or object.
+                      It also supports <'filename:lineno'> format.
+            lineno: Set mark to lineno on load.
+            show: Show the page.
         """
         if not isinstance(filename, str):
             filename = where(filename)

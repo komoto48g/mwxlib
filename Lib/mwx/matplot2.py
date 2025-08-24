@@ -71,11 +71,11 @@ class MatplotPanel(wx.Panel):
     """MPL panel for general graph
     
     Attributes:
-        figure      : <matplotlib.figure.Figure>
-        canvas      : <matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
-        toolbar     : <matplotlib.backends.backend_wx.NavigationToolbar2Wx>
-        cursor      : <matplotlib.widgets.Cursor>
-        selected    : Selected points <matplotlib.lines.Line2D>
+        figure:  <matplotlib.figure.Figure>
+        canvas:  <matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
+        toolbar: <matplotlib.backends.backend_wx.NavigationToolbar2Wx>
+        cursor:  <matplotlib.widgets.Cursor>
+        selected: Selected points <matplotlib.lines.Line2D>
     """
     handler = property(lambda self: self.__handler)
     

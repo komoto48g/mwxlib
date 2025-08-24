@@ -20,8 +20,8 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """Locals info watcher
     
     Attributes:
-        parent : shellframe
-        target : locals:dict to watch
+        parent: shellframe
+        target: locals:dict to watch
     """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,

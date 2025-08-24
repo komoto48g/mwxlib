@@ -30,14 +30,15 @@ class Debugger(Pdb):
     """Graphical debugger with extended Pdb
     
     Args:
-        parent  : shellframe
-        stdin   : shell.interp.stdin
-        stdout  : shell.interp.stdout
+        parent: shellframe
+        stdin:  shell.interp.stdin
+        stdout: shell.interp.stdout
     
     Attributes:
-        editor  : Notebook to show the stack frames
+        editor: Notebook to show the stack frames
     
-    Key bindings:
+    Key bindings::
+    
         C-g     : quit
         C-q     : quit
         C-n     : next   (step-over)

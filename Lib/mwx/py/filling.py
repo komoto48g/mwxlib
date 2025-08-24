@@ -212,6 +212,7 @@ class FillingTree(wx.TreeCtrl):
     def display(self, rooting=True):
         """Display the current item data.
         Called when an item/branch needs to be updated.
+        
         Args:
             rooting: True if the current item must be updated
                      False otherwise to reduce overheads.

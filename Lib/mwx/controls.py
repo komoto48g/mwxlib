@@ -26,18 +26,18 @@ class Param:
     """Standard Parameter
     
     Args:
-        name    : label
-        range   : list of values
-        value   : std_value (default is None)
-        fmt     : text formatter or format:str (default is '%g')
-                  `hex` specifies hexadecimal format
-        handler : called when knob is handled.
-        updater : called when button is pressed.
-        checker : called when tick turns on/off.
+        name:  label
+        range: list of values
+        value: std_value (default is None)
+        fmt:   text formatter or format:str (default is '%g')
+               `hex` specifies hexadecimal format
+        handler: called when knob is handled.
+        updater: called when button is pressed.
+        checker: called when tick turns on/off.
     
     Attributes:
-        knobs       : knob list
-        callback    : single state machine that handles following events
+        knobs: knob list
+        callback: single state machine that handles following events
         
             - control -> when index is changed by knobs or reset (handler)
             - updated -> when button is pressed (updater)
@@ -224,18 +224,18 @@ class LParam(Param):
     """Linear Parameter
     
     Args:
-        name    : label
-        range   : range params [min:max:step]
-        value   : std_value (default is None)
-        fmt     : text formatter or format:str (default is '%g')
-                  `hex` specifies hexadecimal format
-        handler : called when knob is handled.
-        updater : called when button is pressed.
-        checker : called when tick turns on/off.
+        name:  label
+        range: range params [min:max:step]
+        value: std_value (default is None)
+        fmt:   text formatter or format:str (default is '%g')
+               `hex` specifies hexadecimal format
+        handler: called when knob is handled.
+        updater: called when button is pressed.
+        checker: called when tick turns on/off.
     
     Attributes:
-        knobs       : knob list
-        callback    : single state machine that handles following events
+        knobs: knob list
+        callback: single state machine that handles following events
         
             - control -> when index is changed by knobs or reset (handler)
             - updated -> when button is pressed (updater)
@@ -295,16 +295,16 @@ class Knob(wx.Panel):
     [Mbutton] resets to the std. value if it exists.
     
     Args:
-        param   : <Param> or <LParam> object
-        type    : control type (slider[*], [hv]spin, choice, None)
-        style   : style of label
-                  None -> static text (default)
-                  button -> label with flat button
-                  checkbox -> label with checkbox
-        cw      : width of control
-        lw      : width of label
-        tw      : width of textbox
-        h       : height of widget (defaults to 22)
+        param: <Param> or <LParam> object
+        type:  control type (slider[*], [hv]spin, choice, None)
+        style: style of label
+               None -> static text (default)
+               button -> label with flat button
+               checkbox -> label with checkbox
+        cw: width of control
+        lw: width of label
+        tw: width of textbox
+        h:  height of widget (defaults to 22)
     """
     @property
     def param(self):
@@ -654,18 +654,19 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         """Do layout (cf. Layout).
         
         Args:
-            items   : list of Params, wx.Objects, tuple of sizing, or None
-            title   : box header string (default is None - no box)
-            row     : number of row to arange widgets
-            expand  : (0) fixed size
-                      (1) to expand horizontally
-                      (2) to expand horizontally and vertically
-            border  : size of outline border
+            items:    list of Params, wx.Objects, tuple of sizing, or None
+            title:    box header string (default is None - no box)
+            row:      number of row to arange widgets
+            expand:   expansion flag
+                      - (0) fixed size
+                      - (1) to expand horizontally
+                      - (2) to expand horizontally and vertically
+            border:   size of outline border
             hspacing: horizontal spacing among packed objs inside the group
             vspacing: vertical spacing among packed objs inside the group
-            show    : fold or unfold the boxed group
-            visible : Hide the boxed group if False
-            align   : alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
+            show:     Fold or unfold the boxed group.
+            visible:  Hide the boxed group if False.
+            align:    alignment flag (wx.ALIGN_*) default is ALIGN_LEFT
             **kwargs: extra keyword arguments given for Knob
         """
         objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
@@ -999,9 +1000,9 @@ class ClassicButton(wx.Button):
     """Classic button
     
     Args:
-        label   : button label
-        handler : event handler when the button is pressed
-        icon    : key:str or bitmap for button icon
+        label:    button label
+        handler:  event handler when the button is pressed
+        icon:     key:str or bitmap for button icon
         **kwargs: keywords for wx.lib.platebtn.PlateButton
     """
     def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
@@ -1018,9 +1019,9 @@ class Button(pb.PlateButton):
     """Flat button
     
     Args:
-        label   : button label
-        handler : event handler when the button is pressed
-        icon    : key:str or bitmap for button icon
+        label:    button label
+        handler:  event handler when the button is pressed
+        icon:     key:str or bitmap for button icon
         **kwargs: keywords for wx.lib.platebtn.PlateButton
     """
     def __init__(self, parent, label='', handler=None, icon=None, **kwargs):
@@ -1049,9 +1050,9 @@ class ToggleButton(wx.ToggleButton):
     """Togglable button
     
     Args:
-        label   : button label
-        handler : event handler when the button is pressed
-        icon    : key:str or bitmap for button icon
+        label:    button label
+        handler:  event handler when the button is pressed
+        icon:     key:str or bitmap for button icon
         **kwargs: keywords for wx.ToggleButton
     
     Note:
@@ -1075,10 +1076,10 @@ class TextBox(wx.Control):
     """Text control
     
     Args:
-        label   : button label
-        handler : event handler when text is entered
-        updater : event handler when the button is pressed
-        icon    : key:str or bitmap for button icon
+        label:    button label
+        handler:  event handler when text is entered
+        updater:  event handler when the button is pressed
+        icon:     key:str or bitmap for button icon
         readonly: flag:bool (equiv. style=wx.TE_READONLY)
         **kwargs: keywords for wx.TextCtrl
                   e.g., value:str
@@ -1140,10 +1141,10 @@ class Choice(wx.Control):
     """Editable Choice (ComboBox) control
     
     Args:
-        label   : button label
-        handler : event handler when text is entered or item is selected
-        updater : event handler when the button is pressed
-        icon    : key:str or bitmap for button icon
+        label:    button label
+        handler:  event handler when text is entered or item is selected
+        updater:  event handler when the button is pressed
+        icon:     key:str or bitmap for button icon
         readonly: flag:bool (equiv. style=wx.CB_READONLY)
         **kwargs: keywords for wx.ComboBox
                   e.g., choices:list
@@ -1230,8 +1231,8 @@ class Indicator(wx.Control):
     """Traffic light indicator
     
     Args:
-        colors  : list of colors (default is tricolour) cf. wx.ColourDatabase
-        value   : initial value
+        colors:   list of colors (default is tricolour) cf. wx.ColourDatabase
+        value:    initial value
         **kwargs: keywords for wx.Control
     """
     @property
@@ -1348,8 +1349,8 @@ class Gauge(wx.Control):
     """Rainbow gauge
     
     Args:
-        range   : maximum value
-        value   : initial value
+        range:    maximum value
+        value:    initial value
         **kwargs: keywords for wx.Control
     """
     @property
