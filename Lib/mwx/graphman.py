@@ -756,14 +756,14 @@ class Frame(mwx.Frame):
                 
             (mwx.ID_(25), "&Invert color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.__view.invert_cmap(),
-                lambda v: v.Check(self.__view.get_cmap()[-2:] == "_r")),
+                lambda v: v.Check(self.__view.get_cmapstr()[-2:] == "_r")),
         ]
         
         def _cmenu(i, name):
             return (mwx.ID_(30 + i), "&" + name, name, wx.ITEM_CHECK,
-                lambda v: self.__view.set_cmap(name),
-                lambda v: v.Check(self.__view.get_cmap() == name
-                               or self.__view.get_cmap() == name+"_r"),
+                lambda v: self.__view.set_cmapstr(name),
+                lambda v: v.Check(self.__view.get_cmapstr() == name
+                               or self.__view.get_cmapstr() == name+"_r"),
             )
         colours = [c for c in dir(cm) if c[-2:] != "_r"
                     and isinstance(getattr(cm, c), colors.LinearSegmentedColormap)]
@@ -771,8 +771,8 @@ class Frame(mwx.Frame):
         self.menubar["Edit"] += [
             (),
             ## (mwx.ID_(26), "Default Color", "gray", wx.ITEM_CHECK,
-            ##     lambda v: self.__view.set_cmap('gray'),
-            ##     lambda v: v.Check(self.__view.get_cmap()[:4] == "gray")),
+            ##     lambda v: self.__view.set_cmapstr('gray'),
+            ##     lambda v: v.Check(self.__view.get_cmapstr()[:4] == "gray")),
             ##     
             ("Standard colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),

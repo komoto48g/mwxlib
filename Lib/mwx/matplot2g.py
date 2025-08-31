@@ -572,7 +572,7 @@ class GraphPlot(MatplotPanel):
             (),
             (mwx.ID_(500), "&Invert Color", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.invert_cmap(),
-                lambda v: v.Check(self.get_cmap()[-2:] == "_r")),
+                lambda v: v.Check(self.get_cmapstr()[-2:] == "_r")),
             (),
             (wx.ID_CLOSE, "&Kill buffer\t(C-k)", "Kill buffer", _Icon(wx.ART_DELETE),
                 lambda v: self.kill_buffer(),
@@ -905,12 +905,12 @@ class GraphPlot(MatplotPanel):
             self.handler('frame_deselected', self.frame)
             self.on_picker_lock(evt)
     
-    def get_cmap(self):
+    def get_cmapstr(self):
         if self.frame:
             return self.frame.get_cmap().name
         return ''
     
-    def set_cmap(self, name):
+    def set_cmapstr(self, name):
         if self.frame:
             self.frame.set_cmap(name)
             self.handler('frame_cmapped', self.frame)
@@ -919,7 +919,7 @@ class GraphPlot(MatplotPanel):
     def invert_cmap(self):
         if self.frame:
             name = self.frame.get_cmap().name
-            self.set_cmap(name + "_r" if name[-2:] != "_r" else name[:-2])
+            self.set_cmapstr(name + "_r" if name[-2:] != "_r" else name[:-2])
     
     def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
