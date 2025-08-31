@@ -554,25 +554,13 @@ class Graph(GraphPlot):
         if self.infobar.IsShown():
             self.infobar.ShowMessage(frame.annotation)
     
-    def get_markups_visible(self):
-        return self.marked.get_visible()
-    
-    def set_markups_visible(self, v):
-        self.selected.set_visible(v)
-        self.marked.set_visible(v)
-        self.rected.set_visible(v)
-        self.update_art_of_mark()
-    
-    def remove_markups(self):
-        del self.selector
-        del self.markers
-        del self.region
-    
     def hide_layers(self):
         for plug in self.parent.get_all_plugs():
             for art in plug.Arts:
                 art.set_visible(0)
-        self.remove_markups()
+        del self.selector
+        del self.markers
+        del self.region
         self.draw()
 
 
@@ -740,13 +728,6 @@ class Frame(mwx.Frame):
             (wx.ID_PASTE, "&Paste\t(C-v)", "Paste buffer from clipboard", Icon('paste'),
                 lambda v: self.__view.read_buffer_from_clipboard()),
             (),
-            (mwx.ID_(21), "Toggle &markers", "Show/Hide markups", wx.ITEM_CHECK, Icon('+'),
-                lambda v: self.__view.set_markups_visible(v.IsChecked()),
-                lambda v: v.Check(self.__view.get_markups_visible())),
-                
-            (mwx.ID_(22), "&Remove markers", "Remove markups", Icon('-'),
-                lambda v: self.__view.remove_markups()),
-            (),
             (mwx.ID_(23), "Hide all &layers", "Hide all layers", Icon('xr'),
                 lambda v: self.__view.hide_layers()),
             (),
@@ -814,8 +795,8 @@ class Frame(mwx.Frame):
         })
         
         ## Add main-menu to context-menu
-        self.graph.menu += self.menubar["Edit"][2:7]
-        self.output.menu += self.menubar["Edit"][2:7]
+        self.graph.menu += self.menubar["Edit"][2:4]
+        self.output.menu += self.menubar["Edit"][2:4]
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
