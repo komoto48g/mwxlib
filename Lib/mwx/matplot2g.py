@@ -51,7 +51,8 @@ def _to_buffer(img):
     if not isinstance(img, np.ndarray):
         raise ValueError("targets must be arrays or images.")
     
-    assert img.ndim > 1, "targets must be 2d arrays."
+    if img.ndim < 2:
+        raise ValueError("targets must be 2d arrays.")
     
     if img.ndim > 2:
         return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -324,12 +325,18 @@ class AxesImagePhantom:
             sx = slice(max(0, nx[0]), nx[1])  # nx slice
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
             return self.__buf[sy, sx]
-        return self.__buf
+        return None
     
     @roi.setter
     def roi(self, v):
-        self.roi[:] = v # cannot broadcast input array into different shape
+        if not self.parent.region.size:
+             raise ValueError("region is not selected.")
+        self.roi[:] = v  # cannot broadcast input array into different shape
         self.update_buffer()
+    
+    @property
+    def roi_or_buffer(self):
+        return self.roi if self.parent.region.size else self.buffer
     
     @property
     def buffer(self):
@@ -637,7 +644,7 @@ class GraphPlot(MatplotPanel):
             show: Show immediately when loaded.
             **kwargs: frame attributes.
         """
-        assert buf is not None, "Load buffer must be an array or string (not None)"
+        assert buf is not None, "Load buffer must be an array or path:str (not None)"
         
         if isinstance(buf, str):
             buf = Image.open(buf)
@@ -985,7 +992,7 @@ class GraphPlot(MatplotPanel):
             return
         
         name = frame.name
-        data = frame.roi
+        data = frame.roi_or_buffer
         GraphPlot.clipboard_name = name
         GraphPlot.clipboard_data = data
         bins, vlim, img = _to_image(data, frame.cuts)

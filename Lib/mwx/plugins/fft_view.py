@@ -51,7 +51,7 @@ class Plugin(Layer):
         frame = self.graph.frame
         if frame:
             self.message("FFT execution...")
-            src = fftcrop(frame.roi)
+            src = fftcrop(frame.roi_or_buffer)
             h, w = src.shape
             
             dst = fftshift(fft2(src))
@@ -60,8 +60,7 @@ class Plugin(Layer):
             u = 1 / w
             if self.pchk.Value:
                 u /= frame.unit
-            self.output.load(dst, "*fft of {}*".format(frame.name),
-                                  localunit=u)
+            self.output.load(dst, f"*fft of {frame.name}*", localunit=u)
             self.message("\b done")
     
     def newifft(self):
@@ -69,18 +68,17 @@ class Plugin(Layer):
         frame = self.output.frame
         if frame:
             self.message("iFFT execution...")
-            src = frame.roi
+            src = frame.buffer  # Don't crop fft region
             h, w = src.shape
             
             if self.ftor.check:
                 y, x = np.ogrid[-h/2:h/2, -w/2:w/2]
                 mask = np.hypot(y, x) > w / self.ftor.value
-                src = src.copy() # apply mask to the copy
+                src = src.copy()  # apply mask to the copy
                 src[mask] = 0
             
             dst = ifft2(ifftshift(src))
             
             self.message("\b Loading image...")
-            self.graph.load(dst.real, "*ifft of {}*".format(frame.name),
-                                      localunit=1/w/frame.unit)
+            self.graph.load(dst.real, f"*ifft of {frame.name}*", localunit=1/w/frame.unit)
             self.message("\b done")

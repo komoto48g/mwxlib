@@ -216,7 +216,7 @@ class Plugin(Layer):
             tc.value = round(self.mc.Tell()) / 1000
     
     def set_crop(self):
-        """Set crop area (W:H:Left:Top) to roi."""
+        """Set crop area (W:H:Left:Top) to ROI."""
         if not self._path:
             return
         frame = self.graph.frame
@@ -232,7 +232,7 @@ class Plugin(Layer):
                 self.message("Failed to evaluate crop text.")
     
     def get_crop(self):
-        """Get crop area (W:H:Left:Top) from roi."""
+        """Get crop area (W:H:Left:Top) from ROI."""
         if not self._path:
             return
         crop = ''
