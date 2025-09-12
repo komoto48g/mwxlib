@@ -1027,7 +1027,8 @@ class Frame(mwx.Frame):
             if name in self.plugins:
                 return self.plugins[name].__plug__
         elif isinstance(name, LayerInterface):
-            return name
+            ## return name
+            return next((x for x in self.get_all_plugs() if x is name), None)
     
     def get_all_plugs(self):
         for name, module in self.plugins.items():
@@ -1281,6 +1282,11 @@ class Frame(mwx.Frame):
         except Exception:
             traceback.print_exc()  # Failed to save the plug session.
         self.load_plug(plug.__module__, force=1, session=session)
+        
+        ## Update shell.target --> new plug
+        for shell in self.shellframe.get_all_shells():
+            if shell.target is plug:
+                shell.handler('shell_activated', shell)
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell."""
@@ -1290,6 +1296,7 @@ class Frame(mwx.Frame):
             return
         
         shell = self.shellframe.clone_shell(plug)
+        name = plug.Name  # init(shell) で名前を参照するため再定義する
         
         @shell.handler.bind("shell_activated")
         def init(shell):
