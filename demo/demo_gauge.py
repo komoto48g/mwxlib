@@ -44,10 +44,3 @@ class Plugin(Layer):
     def Destroy(self):
         self.timer.Stop()
         return Layer.Destroy(self)
-
-
-if __name__ == "__main__":
-    from mwx.testsuite import *
-
-    with testPlugin() as frm:
-        frm.load_plug(Plugin, show=1)

@@ -71,10 +71,3 @@ class Plugin(Layer):
             title="Custom art images",
             row=6, show=0,
         )
-
-
-if __name__ == "__main__":
-    from mwx.testsuite import *
-
-    with testPlugin() as frm:
-        frm.load_plug(Plugin, show=1)

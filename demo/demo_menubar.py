@@ -53,6 +53,7 @@ class Frame(Frame):
 
 if __name__ == "__main__":
     from mwx.testsuite import *
+
     with testApp():
         frm = Frame(None)
         frm.Show()

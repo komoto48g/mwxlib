@@ -104,10 +104,3 @@ class Plugin(Layer):
         [Mbutton] resets to the std. value if it exists.
         """
         print(v)
-
-
-if __name__ == "__main__":
-    from mwx.testsuite import *
-
-    with testPlugin() as frm:
-        frm.load_plug(Plugin, show=1)

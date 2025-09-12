@@ -45,10 +45,3 @@ class Plugin(Layer):
         
         Z = ctf(np.hypot(X, Y))
         self.graph.load((255 * Z ** 2).astype(np.uint8), "*ctf*", localunit=lu)
-
-
-if __name__ == "__main__":
-    from mwx.testsuite import *
-
-    with testPlugin() as frm:
-        frm.load_plug(Plugin, show=1)

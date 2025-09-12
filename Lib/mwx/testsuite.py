@@ -17,7 +17,7 @@ Is equivalent to:
 from contextlib import contextmanager
 import wx
 
-__all__ = ["testApp", "testFrame", "testPlugin", "testPanel"]
+__all__ = ["testApp", "testFrame"]
 
 
 @contextmanager
@@ -36,23 +36,3 @@ def testFrame(**kwargs):
         yield frm
         frm.Show()
 ## wx.Frame.run = staticmethod(testFrame)
-
-
-@contextmanager
-def testPanel(**kwargs):
-    import mwx
-    with testApp():
-        frm = mwx.Frame(None)
-        panel = mwx.ControlPanel(frm, **kwargs)
-        yield panel
-        panel.Sizer.Fit(frm)
-        frm.Show()
-
-
-@contextmanager
-def testPlugin(**kwargs):
-    import mwx.graphman
-    with testApp():
-        frm = mwx.graphman.Frame(None, **kwargs)
-        yield frm
-        frm.Show()

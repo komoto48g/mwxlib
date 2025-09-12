@@ -42,10 +42,3 @@ class Plugin(Layer):
         y = r * sin(t)
         self.Arts = self.graph.axes.plot(x, y, 'y-', lw=1)
         self.graph.canvas.draw()
-
-
-if __name__ == "__main__":
-    from mwx.testsuite import *
-
-    with testPlugin() as frm:
-        frm.load_plug(Plugin, show=1)

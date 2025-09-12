@@ -5,7 +5,7 @@ import cv2
 import wx
 
 from mwx.controls import LParam
-from mwx.graphman import Layer
+from mwx.graphman import Layer, Frame
 
 
 class Plugin(Layer):
@@ -43,5 +43,7 @@ class Plugin(Layer):
 if __name__ == "__main__":
     from mwx.testsuite import *
 
-    with testPlugin() as frm:
+    with testApp():
+        frm = Frame(None)
         frm.load_plug(Plugin, show=1)
+        frm.Show()
