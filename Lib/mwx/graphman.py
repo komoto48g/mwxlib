@@ -1034,7 +1034,7 @@ class Frame(mwx.Frame):
         for name, module in self.plugins.items():
             yield module.__plug__
     
-    def load_plug(self, root, force=False, session=None, show=False,
+    def load_plug(self, root, session=None, force=False, show=False,
                         dock=0, floating_pos=None, floating_size=None,
                         **kwargs):
         """Load plugin.
@@ -1043,14 +1043,12 @@ class Frame(mwx.Frame):
             root: Plugin <Layer> module, or name of the module.
                   Any wx.Window object can be specified (as dummy-plug).
                   However, do not use this mode in release versions.
-            force: force loading even if it is already loaded
             session: Conditions for initializing the plug and starting session
-            
+            force: force loading even if it is already loaded
             show: the pane is shown after loaded
             dock: dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             floating_pos: posision of floating window
             floating_size: size of floating window
-            
             **kwargs: keywords for Plugin <Layer>
         
         Returns:
@@ -1286,7 +1284,7 @@ class Frame(mwx.Frame):
             plug.save_session(session)
         except Exception:
             traceback.print_exc()  # Failed to save the plug session.
-        self.load_plug(plug.__module__, force=1, session=session)
+        self.load_plug(plug.__module__, session=session, force=True)
     
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell."""
