@@ -488,15 +488,9 @@ class Layer(LayerInterface, KnobCtrlPanel):
         LayerInterface.__init__(self, parent, session)
 
 
-def register(cls, module=None):
-    """Register dummy plug; Add module.Plugin <Layer>.
-    """
-    if not module:
-        module = inspect.getmodule(cls) # rebase module or __main__
-    
+def _register__dummy_plug__(cls, module):
     if issubclass(cls, LayerInterface):
-        cls.__module__ = module.__name__ # __main__ to module
-        warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
+        ## warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
         module.Plugin = cls
         return cls
     
@@ -505,8 +499,8 @@ def register(cls, module=None):
             cls.__init__(self, parent, **kwargs)
             LayerInterface.__init__(self, parent, session)
     
-    _Plugin.__module__ = cls.__module__ = module.__name__
-    _Plugin.__name__ = cls.__name__ + str("~")
+    _Plugin.__module__ = module.__name__
+    _Plugin.__name__ = cls.__name__ + "~"
     _Plugin.__doc__ = cls.__doc__
     module.Plugin = _Plugin
     return _Plugin
@@ -1112,16 +1106,17 @@ class Frame(mwx.Frame):
             traceback.print_exc()  # Unable to load the module.
             return False
         
+        ## Register dummy plug; Add module.Plugin <Layer>.
         if not hasattr(module, 'Plugin'):
-            ## if isinstance(root, type):
             if inspect.isclass(root):
+                _register__dummy_plug__(root, module)
                 module.__dummy_plug__ = root
-                register(root, module)
         else:
             if hasattr(module, '__dummy_plug__'):
-                root = module.__dummy_plug__          # old class (imported)
-                cls = getattr(module, root.__name__)  # new class (reloaded)
-                register(cls, module)
+                cls = module.__dummy_plug__          # old class (imported)
+                cls = getattr(module, cls.__name__)  # new class (reloaded)
+                _register__dummy_plug__(cls, module)
+                module.__dummy_plug__ = cls
         
         ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
         try:
