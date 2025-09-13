@@ -1062,22 +1062,19 @@ class Frame(mwx.Frame):
                      floating_size=floating_size)
         
         if inspect.ismodule(root):
-            ## name = root.__file__
             name = root.__name__
         elif inspect.isclass(root):
-            ## name = inspect.getsourcefile(root)
             name = root.__module__
         else:
             name = root
-        dirname_, name = os.path.split(name)  # if the name is full path,...
+        dirname_, name = os.path.split(name)  # if the name is full-path:str
         if name.endswith(".py"):
             name = name[:-3]
         
         if not force:
-            ## 文字列参照 (root:str) による重複ロードを避ける
+            ## 文字列参照 (full-path) による重複ロードを避ける
             module = next((v for v in self.plugins.values() if root == v.__file__), None)
             if module:
-                ## print(f"- {name!r} is already loaded as {module.__name__!r}.")
                 plug = module.__plug__
             else:
                 plug = self.get_plug(name)
@@ -1108,7 +1105,7 @@ class Frame(mwx.Frame):
             else:
                 module = import_module(name)
         except ModuleNotFoundError:
-            module = types.ModuleType(name)  # dummy module
+            module = types.ModuleType(name)  # dummy module (cannot reload)
             module.__file__ = "<scratch>"
             ## sys.modules[name] = module
         except Exception:
@@ -1154,8 +1151,8 @@ class Frame(mwx.Frame):
             show = show or pane.IsShown()
             props.update(
                 dock_direction = pane.IsDocked() and pane.dock_direction,
-                floating_pos = floating_pos or pane.floating_pos[:], # copy unloading pane
-                floating_size = floating_size or pane.floating_size[:], # copy unloading pane
+                floating_pos = floating_pos or pane.floating_pos[:],  # copy unloading pane
+                floating_size = floating_size or pane.floating_size[:],  # copy unloading pane
             )
             self.unload_plug(name)
         
@@ -1743,7 +1740,7 @@ class Frame(mwx.Frame):
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                name = module.__file__  # Replace the name with full path.
+                name = module.__file__  # Replace the name with full-path.
                 if not plug or not os.path.exists(name):
                     print(f"Skipping dummy plugin {name!r}...")
                     continue
