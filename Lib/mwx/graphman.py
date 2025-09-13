@@ -1000,6 +1000,13 @@ class Frame(mwx.Frame):
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
     
+    def register(self, cls=None, **kwargs):
+        """Decorator of plugin class register."""
+        if cls is None:
+            return lambda f: self.register(f, **kwargs)
+        self.load_plug(cls, force=1, show=1, **kwargs)
+        return cls
+    
     def require(self, name):
         """Get named plug window.
         If not found, try to load it once.
