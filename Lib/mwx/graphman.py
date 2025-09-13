@@ -494,12 +494,15 @@ def _register__dummy_plug__(cls, module):
         module.Plugin = cls
         return cls
     
-    class _Plugin(LayerInterface, cls):
+    class _Plugin(cls, LayerInterface):
         def __init__(self, parent, session=None, **kwargs):
             cls.__init__(self, parent, **kwargs)
             LayerInterface.__init__(self, parent, session)
+        Show = LayerInterface.Show
+        IsShown = LayerInterface.IsShown
     
     _Plugin.__module__ = module.__name__
+    _Plugin.__qualname__ = cls.__qualname__ + "~"
     _Plugin.__name__ = cls.__name__ + "~"
     _Plugin.__doc__ = cls.__doc__
     module.Plugin = _Plugin
@@ -1069,6 +1072,9 @@ class Frame(mwx.Frame):
             name = root.__module__
         else:
             name = root
+        if name == "__main__":
+            name = inspect.getfile(__import__("__main__"))
+        
         dirname_, name = os.path.split(name)  # if the name is full-path:str
         if name.endswith(".py"):
             name = name[:-3]
@@ -1102,29 +1108,30 @@ class Frame(mwx.Frame):
         
         ## Load or reload the module, and check whether it contains a class named `Plugin`.
         try:
-            if name in sys.modules:
+            loadable = (not name.startswith("__main__"))  # Check if the module is loadable.
+            if not loadable:
+                module = types.ModuleType(name)  # dummy module (cannot reload)
+                module.__file__ = "<scratch>"
+                ## sys.modules[name] = module
+            elif name in sys.modules:
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
-        except ModuleNotFoundError:
-            module = types.ModuleType(name)  # dummy module (cannot reload)
-            module.__file__ = "<scratch>"
-            ## sys.modules[name] = module
         except Exception:
             traceback.print_exc()  # Unable to load the module.
             return False
-        
-        ## Register dummy plug; Add module.Plugin <Layer>.
-        if not hasattr(module, 'Plugin'):
-            if inspect.isclass(root):
-                _register__dummy_plug__(root, module)
-                module.__dummy_plug__ = root
         else:
-            if hasattr(module, '__dummy_plug__'):
-                cls = module.__dummy_plug__          # old class (imported)
-                cls = getattr(module, cls.__name__)  # new class (reloaded)
-                _register__dummy_plug__(cls, module)
-                module.__dummy_plug__ = cls
+            ## Register dummy plug; Add module.Plugin <Layer>.
+            if not hasattr(module, 'Plugin'):
+                if inspect.isclass(root):
+                    module.__dummy_plug__ = root.__name__
+                    root.reloadable = loadable
+                    _register__dummy_plug__(root, module)
+            else:
+                if hasattr(module, '__dummy_plug__'):
+                    root = getattr(module, module.__dummy_plug__)
+                    root.reloadable = loadable
+                    _register__dummy_plug__(root, module)
         
         ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
         try:
