@@ -9,6 +9,7 @@ from pprint import pformat
 import threading
 import traceback
 import inspect
+import types
 import sys
 import os
 import platform
@@ -487,15 +488,9 @@ class Layer(LayerInterface, KnobCtrlPanel):
         LayerInterface.__init__(self, parent, session)
 
 
-def register(cls, module=None):
-    """Register dummy plug; Add module.Plugin <Layer>.
-    """
-    if not module:
-        module = inspect.getmodule(cls) # rebase module or __main__
-    
+def _register__dummy_plug__(cls, module):
     if issubclass(cls, LayerInterface):
-        cls.__module__ = module.__name__ # __main__ to module
-        warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
+        ## warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
         module.Plugin = cls
         return cls
     
@@ -504,8 +499,8 @@ def register(cls, module=None):
             cls.__init__(self, parent, **kwargs)
             LayerInterface.__init__(self, parent, session)
     
-    _Plugin.__module__ = cls.__module__ = module.__name__
-    _Plugin.__name__ = cls.__name__ + str("~")
+    _Plugin.__module__ = module.__name__
+    _Plugin.__name__ = cls.__name__ + "~"
     _Plugin.__doc__ = cls.__doc__
     module.Plugin = _Plugin
     return _Plugin
@@ -1005,6 +1000,13 @@ class Frame(mwx.Frame):
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
     
+    def register(self, cls=None, **kwargs):
+        """Decorator of plugin class register."""
+        if cls is None:
+            return lambda f: self.register(f, **kwargs)
+        self.load_plug(cls, force=1, show=1, **kwargs)
+        return cls
+    
     def require(self, name):
         """Get named plug window.
         If not found, try to load it once.
@@ -1034,7 +1036,7 @@ class Frame(mwx.Frame):
         for name, module in self.plugins.items():
             yield module.__plug__
     
-    def load_plug(self, root, force=False, session=None, show=False,
+    def load_plug(self, root, session=None, force=False, show=False,
                         dock=0, floating_pos=None, floating_size=None,
                         **kwargs):
         """Load plugin.
@@ -1043,14 +1045,12 @@ class Frame(mwx.Frame):
             root: Plugin <Layer> module, or name of the module.
                   Any wx.Window object can be specified (as dummy-plug).
                   However, do not use this mode in release versions.
-            force: force loading even if it is already loaded
             session: Conditions for initializing the plug and starting session
-            
+            force: force loading even if it is already loaded
             show: the pane is shown after loaded
             dock: dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             floating_pos: posision of floating window
             floating_size: size of floating window
-            
             **kwargs: keywords for Plugin <Layer>
         
         Returns:
@@ -1063,22 +1063,20 @@ class Frame(mwx.Frame):
                      floating_pos=floating_pos,
                      floating_size=floating_size)
         
-        if inspect.ismodule(root):  # @TODO: Change root module name
-            name = root.__file__
-            ## name = root.__name__
+        if inspect.ismodule(root):
+            name = root.__name__
         elif inspect.isclass(root):
-            name = inspect.getsourcefile(root)
+            name = root.__module__
         else:
             name = root
-        dirname_, name = os.path.split(name)  # if the name is full path,...
+        dirname_, name = os.path.split(name)  # if the name is full-path:str
         if name.endswith(".py"):
             name = name[:-3]
         
         if not force:
-            ## 文字列参照 (root:str) による重複ロードを避ける
+            ## 文字列参照 (full-path) による重複ロードを避ける
             module = next((v for v in self.plugins.values() if root == v.__file__), None)
             if module:
-                ## print(f"- {name!r} is already loaded as {module.__name__!r}.")
                 plug = module.__plug__
             else:
                 plug = self.get_plug(name)
@@ -1108,20 +1106,25 @@ class Frame(mwx.Frame):
                 module = reload(sys.modules[name])
             else:
                 module = import_module(name)
+        except ModuleNotFoundError:
+            module = types.ModuleType(name)  # dummy module (cannot reload)
+            module.__file__ = "<scratch>"
+            ## sys.modules[name] = module
         except Exception:
             traceback.print_exc()  # Unable to load the module.
             return False
+        
+        ## Register dummy plug; Add module.Plugin <Layer>.
+        if not hasattr(module, 'Plugin'):
+            if inspect.isclass(root):
+                _register__dummy_plug__(root, module)
+                module.__dummy_plug__ = root
         else:
-            if not hasattr(module, 'Plugin'):
-                if isinstance(root, type):
-                    ## warn(f"Use dummy plug for {name!r}.")
-                    module.__dummy_plug__ = root
-                    register(root, module)
-            else:
-                if hasattr(module, '__dummy_plug__'):
-                    root = module.__dummy_plug__          # old class (imported)
-                    cls = getattr(module, root.__name__)  # new class (reloaded)
-                    register(cls, module)
+            if hasattr(module, '__dummy_plug__'):
+                cls = module.__dummy_plug__          # old class (imported)
+                cls = getattr(module, cls.__name__)  # new class (reloaded)
+                _register__dummy_plug__(cls, module)
+                module.__dummy_plug__ = cls
         
         ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
         try:
@@ -1151,8 +1154,8 @@ class Frame(mwx.Frame):
             show = show or pane.IsShown()
             props.update(
                 dock_direction = pane.IsDocked() and pane.dock_direction,
-                floating_pos = floating_pos or pane.floating_pos[:], # copy unloading pane
-                floating_size = floating_size or pane.floating_size[:], # copy unloading pane
+                floating_pos = floating_pos or pane.floating_pos[:],  # copy unloading pane
+                floating_size = floating_size or pane.floating_size[:],  # copy unloading pane
             )
             self.unload_plug(name)
         
@@ -1277,10 +1280,11 @@ class Frame(mwx.Frame):
         
         session = {}
         try:
-            print("Reloading {}...".format(plug))
+            print(f"Reloading {plug}...")
             plug.save_session(session)
         except Exception:
             traceback.print_exc()  # Failed to save the plug session.
+        
         self.load_plug(plug.__module__, force=1, session=session)
         
         ## Update shell.target --> new plug
@@ -1343,7 +1347,7 @@ class Frame(mwx.Frame):
         
         if not filename:
             default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Select index file to import",
+            with wx.FileDialog(self, "Select index file to load",
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.ATTRIBUTESFILE,
                     wildcard="Index (*.index)|*.index|"
@@ -1746,7 +1750,10 @@ class Frame(mwx.Frame):
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                name = module.__file__  # Replace the name with full path.
+                name = module.__file__  # Replace the name with full-path.
+                if not plug or not os.path.exists(name):
+                    print(f"Skipping dummy plugin {name!r}...")
+                    continue
                 if hasattr(module, '__path__'):  # is the module a package?
                     name = os.path.dirname(name)
                 session = {}
@@ -1754,7 +1761,7 @@ class Frame(mwx.Frame):
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()  # Failed to save the plug session.
-                o.write("self.load_plug({!r}, session={})\n".format(name, session or None))
+                o.write("self.load_plug({!r}, session={})\n".format(name, session))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
