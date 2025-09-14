@@ -485,8 +485,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         This class is mixed-in ``wx.stc.StyledTextCtrl``.
     """
     def __init__(self):
-        CtrlInterface.__init__(self)
         AutoCompInterfaceMixin.__init__(self)
+        CtrlInterface.__init__(self)
         
         def dispatch(evt):
             """Fork events to the parent."""
