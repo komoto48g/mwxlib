@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.6.5"
+__version__ = "1.6.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1349,6 +1349,8 @@ class ShellFrame(MiniFrame):
             o.write("self.SetPosition({})\n".format(self.Position))
             
             for book in self.get_all_editors():
+                if book.Name not in ("Scratch", "Log", "Help"):  # Save default editors only.
+                    continue
                 for buf in book.get_all_buffers():
                     if buf.mtdelta is not None:
                         o.write("self.{}.load_file({!r}, {})\n"
@@ -1628,7 +1630,7 @@ class ShellFrame(MiniFrame):
                 lineno = int(ln)
         editor = next(self.get_all_editors(filename), self.Log)
         ret = editor.load_file(filename, lineno)
-        if ret:
+        if ret and show:
             self.popup_window(editor, show)
         return ret
     
@@ -1937,7 +1939,8 @@ class ShellFrame(MiniFrame):
         editor = self.ghost.CurrentPage
         if isinstance(editor, type(self.Log)):
             return editor
-        return next((x for x in self.get_all_editors() if x.IsShown()), self.Scratch)
+        return next((book for book in self.get_all_editors() if book.IsShown()), self.Scratch)
+    
     
     ## --------------------------------
     ## Find / Replace text dialog

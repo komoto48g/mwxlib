@@ -23,11 +23,12 @@ class MyDropTarget(wx.DropTarget):
     
     def OnDragOver(self, x, y, result):
         item, flags = self.tree.HitTest((x, y))
-        items = list(self.tree._gen_items(self.tree.RootItem)) # first level items
+        items = list(self.tree._gen_items(self.tree.RootItem))  # first level items
         if not item:
-            item = items[0]
+            item = items[0]  # Select the first tree item.
+            ## return wx.DragNone
         elif item not in items:
-            item = self.tree.GetItemParent(item) # Select the parent item
+            item = self.tree.GetItemParent(item)  # Select the tree item.
         if item != self.tree.Selection:
             self.tree.SelectItem(item)
         return result
@@ -42,7 +43,7 @@ class MyDropTarget(wx.DropTarget):
             if result == wx.DragMove:
                 try:
                     buf = self.tree._buffer  # only for the same process buffer DnD
-                    buf.parent.kill_buffer(buf) # the focus moves
+                    buf.parent.kill_buffer(buf)  # the focus moves
                     wx.CallAfter(self.tree.SetFocus)
                 except AttributeError:
                     pass
