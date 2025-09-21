@@ -2435,8 +2435,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
-        try:
-            self.Freeze()
+        with wx.FrozenWindow(self):
             buf = Buffer(self, filename, style=wx.BORDER_DEFAULT)
             self.set_attributes(buf, **self.defaultBufferStyle)
             if index is None:
@@ -2444,8 +2443,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.InsertPage(index, buf, buf.name) # => [buffer_activated]
             self.handler('buffer_new', buf)
             return buf
-        finally:
-            self.Thaw()
     
     def new_buffer(self):
         """Create a new default buffer."""

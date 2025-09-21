@@ -314,7 +314,7 @@ class AxesImagePhantom:
     
     @property
     def index(self):
-        """Page number in the parent book."""
+        """Page number in the parent view."""
         return self.parent.index(self)
     
     @property

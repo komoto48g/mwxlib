@@ -1262,6 +1262,7 @@ class ShellFrame(MiniFrame):
                 'monitor_begin' : [ None, self.on_monitor_begin ],
                   'monitor_end' : [ None, self.on_monitor_end ],
                     'shell_new' : [ None, ],
+                     'book_new' : [ None, ],
                       'add_log' : [ None, self.add_log ],
                      'add_help' : [ None, self.add_help ],
                  'title_window' : [ None, self.on_title_window ],
@@ -1939,6 +1940,23 @@ class ShellFrame(MiniFrame):
             return editor
         return next((book for book in self.get_all_editors() if book.IsShown()), self.Scratch)
     
+    def create_editor(self, bookname):
+        """Create a new editor (internal use only)..
+        If such an editor already exists, no new editor is created.
+        """
+        try:
+            return next(book for book  in self.get_all_editors() if book.Name == bookname)
+        except StopIteration:
+            with wx.FrozenWindow(self.ghost):
+                editor = self.Log.__class__(self, bookname)
+                self.ghost.AddPage(editor, bookname)
+                self.ghost.move_tab(editor, 0)
+            self.handler('book_new', editor)
+            def _attach():
+                editor.handler.append(self.Bookshelf.context)
+                self.Bookshelf.build_tree(clear=0)
+            wx.CallAfter(_attach)
+            return editor
     
     ## --------------------------------
     ## Find / Replace text dialog
