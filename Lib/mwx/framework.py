@@ -868,12 +868,12 @@ class AuiNotebook(aui.AuiNotebook):
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, tab_menu)
     
     @property
-    def _all_tabs(self): # (deprecated) internal use only
+    def _all_tabs(self):
         """Return all AuiTabCtrl objects (internal use only)."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
     
     @property
-    def _all_panes(self): # (deprecated) internal use only
+    def _all_panes(self):
         """Return all AuiPaneInfo excluding `dummy` one (internal use only)."""
         return list(self._mgr.AllPanes)[1:]
     
@@ -926,6 +926,8 @@ class AuiNotebook(aui.AuiNotebook):
     
     def move_tab(self, win, tabs):
         """Move the window page to the specified tabs."""
+        if isinstance(tabs, int):
+            tabs = self._all_tabs[tabs]
         try:
             tc1, nb1 = self.find_tab(win)
             win = nb1.window
@@ -957,8 +959,7 @@ class AuiNotebook(aui.AuiNotebook):
             pane.name = f"pane{j+1}"
         spec = ""
         for j, tabs in enumerate(self._all_tabs):
-            k = next(k for k, page in enumerate(tabs.Pages)
-                                   if page.window.Shown) # get active window
+            k = next(k for k, page in enumerate(tabs.Pages) if page.window.Shown)
             ## names = [page.caption for page in tabs.Pages]
             names = [page.window.Name for page in tabs.Pages]
             spec += f"pane{j+1}={names};{k}|"
@@ -975,27 +976,24 @@ class AuiNotebook(aui.AuiNotebook):
         tabinfo = re.findall(r"pane\w+?=(.*?);(.*?)\|", tabs)
         try:
             self.Parent.Freeze()
-            ## Collapse all tabs to main tabctrl
-            maintab = self._all_tabs[0]
+            ## Collapse all tabctrls to main tabctrl
             for win in self.get_pages():
-                self.move_tab(win, maintab)
+                self.move_tab(win, 0)
             
-            ## Create a new tab using Split method.
+            ## Create a new tabctrl using Split method.
             ## Note: The normal way of creating panes with `_mgr` crashes.
-            
             all_names = [win.Name for win in self.get_pages()]
             for names, k in tabinfo[1:]:
                 names, k = eval(names), int(k)
-                i = all_names.index(names[0]) # Assuming 0:tab is included.
+                i = all_names.index(names[0])  # Assuming 0:tab is included.
                 self.Split(i, wx.LEFT)
-                newtab = self._all_tabs[-1]
                 for name in names[1:]:
-                    self.move_tab(name, newtab)
-                self.Selection = all_names.index(names[k]) # new tabs active window
+                    self.move_tab(name, -1)
+                self.Selection = all_names.index(names[k])  # new tabctrl active window
             else:
                 names, k = tabinfo[0]
                 names, k = eval(names), int(k)
-                self.Selection = all_names.index(names[k]) # main tabs active window
+                self.Selection = all_names.index(names[k])  # main tabctrl active window
             
             for j, pane in enumerate(self._all_panes):
                 pane.name = f"pane{j+1}"
