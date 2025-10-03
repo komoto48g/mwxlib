@@ -1377,6 +1377,186 @@ class GraphPlot(MatplotPanel):
         self.handler('line_moved', self.frame)
     
     ## --------------------------------
+    ## Marker interface
+    ## --------------------------------
+    
+    #: Limit number of markers to display 最大(表示)数を制限する
+    maxnum_markers = 1000
+    
+    @property
+    def markers(self):
+        """Marked points data array [[x],[y]]."""
+        xm, ym = self.marked.get_data(orig=0)
+        return np.array((xm, ym))
+    
+    @markers.setter
+    def markers(self, v):
+        x, y = v
+        if not hasattr(x, '__iter__'):
+            x, y = [x], [y]
+        elif len(x) > self.maxnum_markers:
+            self.message("- Got too many markers ({}) to plot".format(len(x)))
+            return
+        self.marked.set_data(x, y)
+        self.__marksel = []
+        self.update_art_of_mark()
+        self.handler('mark_drawn', self.frame)
+    
+    @markers.deleter
+    def markers(self):
+        if self.markers.size:
+            self.marked.set_data([], [])
+            self.__marksel = []
+            self.update_art_of_mark()
+            self.handler('mark_removed', self.frame)
+    
+    def get_current_mark(self):
+        """Currently selected mark."""
+        xm, ym = self.marked.get_data(orig=0)
+        return np.take((xm, ym), self.__marksel, axis=1)
+    
+    def set_current_mark(self, x, y):
+        xm, ym = self.marked.get_data(orig=0)
+        j = self.__marksel
+        if j:
+            xm[j], ym[j] = x, y
+            self.marked.set_data(xm, ym)
+            self.update_art_of_mark(j, xm[j], ym[j])
+        else:
+            n = len(xm)
+            k = len(x) if hasattr(x, '__iter__') else 1
+            self.__marksel = list(range(n, n+k))
+            xm, ym = np.append(xm, x), np.append(ym, y)
+            self.marked.set_data(xm, ym)
+            self.marked.set_visible(1)
+            self.update_art_of_mark()
+        self.selector = (x, y)
+    
+    def del_current_mark(self):
+        j = self.__marksel
+        if j:
+            xm, ym = self.marked.get_data(orig=0)
+            xm, ym = np.delete(xm, j), np.delete(ym, j)
+            self.__marksel = []
+            self.marked.set_data(xm, ym)
+            n = len(xm)
+            self.__marksel = [j[-1] % n] if n > 0 else []
+            self.update_art_of_mark()
+    
+    def update_art_of_mark(self, *args):
+        if args:
+            for k, x, y in zip(*args):
+                art = self.__markarts[k] # art の再描画処理をして終了
+                art.xy = x, y
+            self.draw(self.marked)
+            return
+        for art in self.__markarts: # or reset all arts
+            art.remove()
+        self.__markarts = []
+        if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
+            N = self.maxnum_markers
+            xm, ym = self.marked.get_data(orig=0)
+            for k, (x, y) in enumerate(zip(xm[:N], ym[:N])):
+                self.__markarts.append(
+                  self.axes.annotate(k, #<matplotlib.text.Annotation>
+                    xy=(x,y), xycoords='data',
+                    xytext=(6,6), textcoords='offset points',
+                    bbox=dict(boxstyle="round", fc=(1,1,1,), ec=(1,0,0,)),
+                    color='red', size=7, #fontsize=8,
+                  )
+                )
+            self.trace_point(*self.get_current_mark(), type=MARK)
+        self.draw(self.marked)
+    
+    def OnMarkAppend(self, evt):
+        xs, ys = self.selector
+        if not self.__marksel and len(xs) > 0:
+            self.set_current_mark(xs, ys)
+            self.handler('mark_drawn', self.frame)
+        self.update_art_of_mark()
+    
+    def OnMarkRemove(self, evt):
+        if self.__marksel:
+            self.del_current_mark()
+            self.handler('mark_removed', self.frame)
+    
+    def OnMarkSelected(self, evt): #<matplotlib.backend_bases.PickEvent>
+        k = evt.ind[0]
+        if evt.mouseevent.key == 'shift': # 多重マーカー選択
+            if k not in self.__marksel:
+                self.__marksel += [k]
+        else:
+            self.__marksel = [k]
+        self.update_art_of_mark()
+        self.selector = self.get_current_mark()
+        if self.selector.shape[1] > 1:
+            self.handler('line_drawn', self.frame) # 多重マーカー選択時
+    
+    def OnMarkDeselected(self, evt): #<matplotlib.backend_bases.PickEvent>
+        self.__marksel = []
+        self.update_art_of_mark()
+    
+    def OnMarkDragBegin(self, evt):
+        if not self.frame or self._inaxes(evt):
+            self.handler('quit', evt)
+            return
+        self.__orgpoints = self.get_current_mark()
+    
+    def OnMarkDragMove(self, evt):
+        x, y = self.calc_point(evt.xdata, evt.ydata)
+        self.set_current_mark(x, y)
+        self.handler('mark_draw', self.frame)
+    
+    def OnMarkDragEscape(self, evt):
+        self.set_current_mark(*self.__orgpoints)
+        self.handler('mark_drawn', self.frame)
+    
+    def OnMarkDragEnd(self, evt):
+        self.handler('mark_drawn', self.frame)
+    
+    def OnMarkShift(self, evt):
+        j = self.__marksel
+        if j and self.frame:
+            ux, uy = self.frame.xy_unit
+            du = {
+                'up' : ( 0., uy),
+              'down' : ( 0.,-uy),
+              'left' : (-ux, 0.),
+             'right' : ( ux, 0.),
+            }
+            p = self.get_current_mark() + np.resize(du[evt.key], (2,1))
+            self.set_current_mark(*p)
+            self.handler('mark_draw', self.frame)
+    
+    def OnMarkShiftEnd(self, evt):
+        self.handler('mark_drawn', self.frame)
+    
+    def next_mark(self, j):
+        self.__marksel = [j]
+        xs, ys = self.get_current_mark()
+        self.xlim += xs[-1] - (self.xlim[1] + self.xlim[0]) / 2
+        self.ylim += ys[-1] - (self.ylim[1] + self.ylim[0]) / 2
+        self.selector = (xs, ys)
+        self.trace_point(xs, ys, type=MARK)
+        self.draw()
+    
+    def OnMarkSkipNext(self, evt):
+        n = self.markers.shape[1]
+        j = self.__marksel
+        if j:
+            self.next_mark((j[-1]+1) % n)
+        elif n:
+            self.next_mark(0)
+    
+    def OnMarkSkipPrevious(self, evt):
+        n = self.markers.shape[1]
+        j = self.__marksel
+        if j:
+            self.next_mark((j[-1]-1) % n)
+        elif n:
+            self.next_mark(-1)
+    
+    ## --------------------------------
     ## Region interface
     ## --------------------------------
     
@@ -1589,183 +1769,3 @@ class GraphPlot(MatplotPanel):
                 self.set_wxcursor(wx.CURSOR_SIZENWSE) # on-NW/SE-corner
             else:
                 self.set_wxcursor(wx.CURSOR_ARROW) # outside
-    
-    ## --------------------------------
-    ## Marker interface
-    ## --------------------------------
-    
-    #: Limit number of markers to display 最大(表示)数を制限する
-    maxnum_markers = 1000
-    
-    @property
-    def markers(self):
-        """Marked points data array [[x],[y]]."""
-        xm, ym = self.marked.get_data(orig=0)
-        return np.array((xm, ym))
-    
-    @markers.setter
-    def markers(self, v):
-        x, y = v
-        if not hasattr(x, '__iter__'):
-            x, y = [x], [y]
-        elif len(x) > self.maxnum_markers:
-            self.message("- Got too many markers ({}) to plot".format(len(x)))
-            return
-        self.marked.set_data(x, y)
-        self.__marksel = []
-        self.update_art_of_mark()
-        self.handler('mark_drawn', self.frame)
-    
-    @markers.deleter
-    def markers(self):
-        if self.markers.size:
-            self.marked.set_data([], [])
-            self.__marksel = []
-            self.update_art_of_mark()
-            self.handler('mark_removed', self.frame)
-    
-    def get_current_mark(self):
-        """Currently selected mark."""
-        xm, ym = self.marked.get_data(orig=0)
-        return np.take((xm, ym), self.__marksel, axis=1)
-    
-    def set_current_mark(self, x, y):
-        xm, ym = self.marked.get_data(orig=0)
-        j = self.__marksel
-        if j:
-            xm[j], ym[j] = x, y
-            self.marked.set_data(xm, ym)
-            self.update_art_of_mark(j, xm[j], ym[j])
-        else:
-            n = len(xm)
-            k = len(x) if hasattr(x, '__iter__') else 1
-            self.__marksel = list(range(n, n+k))
-            xm, ym = np.append(xm, x), np.append(ym, y)
-            self.marked.set_data(xm, ym)
-            self.marked.set_visible(1)
-            self.update_art_of_mark()
-        self.selector = (x, y)
-    
-    def del_current_mark(self):
-        j = self.__marksel
-        if j:
-            xm, ym = self.marked.get_data(orig=0)
-            xm, ym = np.delete(xm, j), np.delete(ym, j)
-            self.__marksel = []
-            self.marked.set_data(xm, ym)
-            n = len(xm)
-            self.__marksel = [j[-1] % n] if n > 0 else []
-            self.update_art_of_mark()
-    
-    def update_art_of_mark(self, *args):
-        if args:
-            for k, x, y in zip(*args):
-                art = self.__markarts[k] # art の再描画処理をして終了
-                art.xy = x, y
-            self.draw(self.marked)
-            return
-        for art in self.__markarts: # or reset all arts
-            art.remove()
-        self.__markarts = []
-        if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
-            N = self.maxnum_markers
-            xm, ym = self.marked.get_data(orig=0)
-            for k, (x, y) in enumerate(zip(xm[:N], ym[:N])):
-                self.__markarts.append(
-                  self.axes.annotate(k, #<matplotlib.text.Annotation>
-                    xy=(x,y), xycoords='data',
-                    xytext=(6,6), textcoords='offset points',
-                    bbox=dict(boxstyle="round", fc=(1,1,1,), ec=(1,0,0,)),
-                    color='red', size=7, #fontsize=8,
-                  )
-                )
-            self.trace_point(*self.get_current_mark(), type=MARK)
-        self.draw(self.marked)
-    
-    def OnMarkAppend(self, evt):
-        xs, ys = self.selector
-        if not self.__marksel and len(xs) > 0:
-            self.set_current_mark(xs, ys)
-            self.handler('mark_drawn', self.frame)
-        self.update_art_of_mark()
-    
-    def OnMarkRemove(self, evt):
-        if self.__marksel:
-            self.del_current_mark()
-            self.handler('mark_removed', self.frame)
-    
-    def OnMarkSelected(self, evt): #<matplotlib.backend_bases.PickEvent>
-        k = evt.ind[0]
-        if evt.mouseevent.key == 'shift': # 多重マーカー選択
-            if k not in self.__marksel:
-                self.__marksel += [k]
-        else:
-            self.__marksel = [k]
-        self.update_art_of_mark()
-        self.selector = self.get_current_mark()
-        if self.selector.shape[1] > 1:
-            self.handler('line_drawn', self.frame) # 多重マーカー選択時
-    
-    def OnMarkDeselected(self, evt): #<matplotlib.backend_bases.PickEvent>
-        self.__marksel = []
-        self.update_art_of_mark()
-    
-    def OnMarkDragBegin(self, evt):
-        if not self.frame or self._inaxes(evt):
-            self.handler('quit', evt)
-            return
-        self.__orgpoints = self.get_current_mark()
-    
-    def OnMarkDragMove(self, evt):
-        x, y = self.calc_point(evt.xdata, evt.ydata)
-        self.set_current_mark(x, y)
-        self.handler('mark_draw', self.frame)
-    
-    def OnMarkDragEscape(self, evt):
-        self.set_current_mark(*self.__orgpoints)
-        self.handler('mark_drawn', self.frame)
-    
-    def OnMarkDragEnd(self, evt):
-        self.handler('mark_drawn', self.frame)
-    
-    def OnMarkShift(self, evt):
-        j = self.__marksel
-        if j and self.frame:
-            ux, uy = self.frame.xy_unit
-            du = {
-                'up' : ( 0., uy),
-              'down' : ( 0.,-uy),
-              'left' : (-ux, 0.),
-             'right' : ( ux, 0.),
-            }
-            p = self.get_current_mark() + np.resize(du[evt.key], (2,1))
-            self.set_current_mark(*p)
-            self.handler('mark_draw', self.frame)
-    
-    def OnMarkShiftEnd(self, evt):
-        self.handler('mark_drawn', self.frame)
-    
-    def next_mark(self, j):
-        self.__marksel = [j]
-        xs, ys = self.get_current_mark()
-        self.xlim += xs[-1] - (self.xlim[1] + self.xlim[0]) / 2
-        self.ylim += ys[-1] - (self.ylim[1] + self.ylim[0]) / 2
-        self.selector = (xs, ys)
-        self.trace_point(xs, ys, type=MARK)
-        self.draw()
-    
-    def OnMarkSkipNext(self, evt):
-        n = self.markers.shape[1]
-        j = self.__marksel
-        if j:
-            self.next_mark((j[-1]+1) % n)
-        elif n:
-            self.next_mark(0)
-    
-    def OnMarkSkipPrevious(self, evt):
-        n = self.markers.shape[1]
-        j = self.__marksel
-        if j:
-            self.next_mark((j[-1]-1) % n)
-        elif n:
-            self.next_mark(-1)
