@@ -207,7 +207,8 @@ class Param:
     @property
     def index(self):
         """A knob index -> value.
-        Returns -1 if the value is not defined."""
+        Returns -1 if the value is not defined.
+        """
         v = self.value
         if np.isnan(v) or np.isinf(v):
             return -1

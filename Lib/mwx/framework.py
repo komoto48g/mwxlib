@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.6.6"
+__version__ = "1.6.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -859,8 +859,8 @@ class AuiNotebook(aui.AuiNotebook):
             self.Name = name
         
         def tab_menu(evt):
-            tabs = evt.EventObject #<AuiTabCtrl>
-            page = tabs.Pages[evt.Selection] # GetPage for split notebook.
+            tabs = evt.EventObject  #<AuiTabCtrl>
+            page = tabs.Pages[evt.Selection]  # GetPage for split notebook.
             try:
                 Menu.Popup(self, page.window.menu)
             except AttributeError:
@@ -888,12 +888,12 @@ class AuiNotebook(aui.AuiNotebook):
         """Replace the page with the specified page w/o focusing."""
         j = self.GetPageIndex(win)
         if j != -1:
-            wnd = wx.Window.FindFocus() # original focus
+            wnd = wx.Window.FindFocus()  # original focus
             org = self.CurrentPage
             if j != self.Selection:
-                self.Selection = j      # the focus moves if shown
-            self.CurrentPage.SetFocus() # reset focus
-            if wnd and wnd is not org:  # restore focus other window
+                self.Selection = j       # the focus moves if shown
+            self.CurrentPage.SetFocus()  # reset focus
+            if wnd and wnd is not org:   # restore focus other window
                 wnd.SetFocus()
     
     def get_caption(self, win):
@@ -918,24 +918,24 @@ class AuiNotebook(aui.AuiNotebook):
         Note:
             Argument `win` can also be page.window.Name (not page.caption).
         """
-        for tabs in self._all_tabs: #<aui.AuiTabCtrl>
-            for page in tabs.Pages: #<aui.AuiNotebookPage>
+        for tab in self._all_tabs:  #<aui.AuiTabCtrl>
+            for page in tab.Pages:  #<aui.AuiNotebookPage>
                 ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
-                    return tabs, page
+                    return tab, page
     
-    def move_tab(self, win, tabs):
-        """Move the window page to the specified tabs."""
-        if isinstance(tabs, int):
-            tabs = self._all_tabs[tabs]
+    def move_tab(self, win, tab):
+        """Move the window page to the specified tab."""
+        if isinstance(tab, int):
+            tab = self._all_tabs[tab]
         try:
             tc1, nb1 = self.find_tab(win)
             win = nb1.window
-        except Exception: # object not found
+        except Exception:  # object not found
             return
-        page = wx.aui.AuiNotebookPage(nb1) # copy-ctor
+        page = wx.aui.AuiNotebookPage(nb1)  # copy-ctor
         tc1.RemovePage(win)     # Accessing nb1 will crash at this point.
-        tabs.AddPage(win, page) # Add a page with the copied info.
+        tab.AddPage(win, page)  # Add a page with the copied info.
         if tc1.PageCount == 0:
             ## Delete an empty tab and the corresponding pane.
             j = self._all_tabs.index(tc1)
@@ -1162,9 +1162,7 @@ class ShellFrame(MiniFrame):
         self.console = AuiNotebook(self, size=(600,400), name='console')
         self.console.AddPage(self.__shell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
-        ## self.console.Name = "console"
         
-        ## self.console.Bind(aui.EVT_AUINOTEBOOK_BUTTON, self.OnConsoleCloseBtn)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnConsolePageClose)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
@@ -1511,18 +1509,6 @@ class ShellFrame(MiniFrame):
             nb.WindowStyle |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
-    
-    ## def OnConsoleCloseBtn(self, evt): #<wx._aui.AuiNotebookEvent>
-    ##     tabs = evt.EventObject
-    ##     win = tabs.Pages[evt.Selection].window # GetPage for split notebook.
-    ##     if win is self.rootshell:
-    ##         ## self.message("- Don't close the root shell.")
-    ##         return
-    ##     elif self.debugger.busy and win is self.debugger.interactive_shell:
-    ##         wx.MessageBox("The debugger is running.\n\n"
-    ##                       "Enter [q]uit to exit before closing.")
-    ##         return
-    ##     evt.Skip()
     
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject

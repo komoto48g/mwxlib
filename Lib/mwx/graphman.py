@@ -228,14 +228,14 @@ class LayerInterface(CtrlInterface):
     
     The layer properties can be switched by the following classvars::
     
-        menukey     : menu item key:str in parent menubar
-        category    : title of notebook holder, otherwise None for single pane
-        caption     : flag to set the pane caption to be visible
-                      a string can also be specified (default is __module__)
-        dockable    : flag to set the pane to be dockable
-                      type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
-        reloadable  : flag to set the Layer to be reloadable
-        unloadable  : flag to set the Layer to be unloadable
+        menukey:  menu item key:str in parent menubar
+        category: title of notebook holder, otherwise None for single pane
+        caption:  flag to set the pane caption to be visible
+                  a string can also be specified (default is __module__)
+        dockable: flag to set the pane to be dockable
+                  type: bool or dock:int (1:t, 2:r, 3:b, 4:l, 5:c)
+        reloadable: flag to set the Layer to be reloadable
+        unloadable: flag to set the Layer to be unloadable
     
     Note:
         parent <Frame> is not always equal to Parent when floating.
