@@ -260,7 +260,7 @@ class AxesImagePhantom:
     
     @property
     def unit(self):
-        """Logical length per pixel arb.unit [u/pixel]."""
+        """Logical length per pixel arb.unit [u/pix]."""
         return self.__localunit or self.parent.unit
     
     @unit.setter
@@ -375,8 +375,8 @@ class AxesImagePhantom:
         nx = (x - l) / ux
         ny = (t - y) / uy # Y ピクセルインデクスは座標と逆
         if cast:
-            return (_cast(nx), _cast(ny))
-        return (nx-0.5, ny-0.5)
+            return np.array((_cast(nx), _cast(ny)))
+        return np.array((nx-0.5, ny-0.5))
     
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number).
@@ -389,7 +389,7 @@ class AxesImagePhantom:
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
-        return (x, y)
+        return np.array((x, y))
 
 
 class GraphPlot(MatplotPanel):
@@ -604,7 +604,7 @@ class GraphPlot(MatplotPanel):
         self.__Arts = []
         self.__index = None
         
-        ## cf. self.figure.dpi = 80dpi (0.3175mm/pixel)
+        ## cf. self.figure.dpi = 80dpi (0.3175mm/pix)
         self.__unit = 1.0
         
         #<matplotlib.lines.Line2D>
@@ -841,7 +841,7 @@ class GraphPlot(MatplotPanel):
     
     @property
     def unit(self):
-        """Logical length per pixel arb.unit [u/pixel]."""
+        """Logical length per pixel arb.unit [u/pix]."""
         return self.__unit
     
     @unit.setter
@@ -960,7 +960,7 @@ class GraphPlot(MatplotPanel):
         if frame:
             self.modeline.SetLabel(
                 "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
-                "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pixel]".format(
+                "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pix]".format(
                 page = self.__index,
              maxpage = len(self),
                 name = frame.name,
@@ -972,7 +972,7 @@ class GraphPlot(MatplotPanel):
                    a = '%%' if not frame.buffer.flags.writeable else '--'))
         else:
             self.modeline.SetLabel(
-                "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pixel]".format(
+                "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pix]".format(
                 page = '-',
              maxpage = len(self),
                 unit = self.__unit))
@@ -1124,7 +1124,7 @@ class GraphPlot(MatplotPanel):
             return
         frame = self.frame
         if frame:
-            ## [dots/pixel] = [dots/u] * [u/pixel]
+            ## [dots/pix] = [dots/u] * [u/pix]
             dots = self.ddpu[0] * frame.unit * frame.binning
             
             if frame.get_interpolation() == 'nearest' and dots < 1:
