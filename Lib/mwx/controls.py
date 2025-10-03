@@ -911,7 +911,7 @@ class Icon(wx.Bitmap):
         k: v for k, v in vars(images).items()
              if isinstance(v, wx.lib.embeddedimage.PyEmbeddedImage)
     }
-    
+
     def __init__(self, *args, **kwargs):
         try:
             bmp = Icon._getBitmap1(*args, **kwargs)
@@ -921,13 +921,16 @@ class Icon(wx.Bitmap):
 
     @staticmethod
     def _getBitmap1(key, size=None):
+        if not isinstance(size, (type(None), tuple, wx.Size)):
+            raise TypeError("invalid size type")
+        
         if isinstance(key, wx.Bitmap):
             if size and key.Size != size:
                 key = (key.ConvertToImage()
                           .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
                           .ConvertToBitmap())
             return key #<wx.Bitmap>
-        if not size:
+        if size is None:
             size = (16, 16)
         if key:
             try:
@@ -944,9 +947,9 @@ class Icon(wx.Bitmap):
             with wx.MemoryDC(bmp) as dc:
                 dc.SetBackground(wx.Brush('black'))
                 dc.Clear()
-            bmp.SetMaskColour('black') # return dummy-sized blank bitmap
+            bmp.SetMaskColour('black')  # return dummy-sized blank bitmap
             return bmp
-        return wx.NullBitmap # The standard wx controls accept this.
+        return wx.NullBitmap  # The standard wx controls accept this.
 
     @staticmethod
     def _getBitmap2(back, fore, size=None, subsize=3/4):
