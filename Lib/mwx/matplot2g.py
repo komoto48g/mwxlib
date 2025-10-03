@@ -207,10 +207,6 @@ class AxesImagePhantom:
         cx, cy = self.center
         self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
     
-    selector = _Property('selector')
-    markers = _Property('markers')
-    region = _Property('region')
-    
     artist = property(
         lambda self: self.__art)
     
@@ -321,7 +317,7 @@ class AxesImagePhantom:
     def roi(self):
         """Current buffer ROI (region of interest)."""
         if self.parent.region.size:
-            nx, ny = self.xytopixel(*self.parent.region)
+            nx, ny = self.xytopixel(*self.region)
             sx = slice(max(0, nx[0]), nx[1])  # nx slice
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
             return self.__buf[sy, sx]
@@ -390,6 +386,49 @@ class AxesImagePhantom:
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
         return np.array((x, y))
+    
+    selector = _Property('selector')
+    markers = _Property('markers')
+    region = _Property('region')
+    
+    @property
+    def selector_pix(self):
+        """Selected points array [[x],[y]] in pixels."""
+        return self.xytopixel(self.selector)
+    
+    @selector_pix.setter
+    def selector_pix(self, v):
+        self.selector = self.xyfrompixel(v)
+    
+    @selector_pix.deleter
+    def selector_pix(self):
+        del self.selector
+    
+    @property
+    def markers_pix(self):
+        """Marked points data array [[x],[y]] in pixels."""
+        return self.xytopixel(self.markers)
+    
+    @markers_pix.setter
+    def markers_pix(self, v):
+        self.markers = self.xyfrompixel(v)
+    
+    @markers_pix.deleter
+    def markers_pix(self):
+        del self.markers
+    
+    @property
+    def region_pix(self):
+        """Cropped points data array [l,r],[b,t] in pixels."""
+        return self.xytopixel(self.region)
+    
+    @region_pix.setter
+    def region_pix(self, v):
+        self.region = self.xyfrompixel(v)
+    
+    @region_pix.deleter
+    def region_pix(self):
+        del self.region
 
 
 class GraphPlot(MatplotPanel):
@@ -1264,7 +1303,7 @@ class GraphPlot(MatplotPanel):
         self.handler('line_drawn', self.frame)
     
     ## --------------------------------
-    ## Selector +Line interface
+    ## Selector + Line interface
     ## --------------------------------
     
     def OnLineSelected(self, evt):
@@ -1343,7 +1382,7 @@ class GraphPlot(MatplotPanel):
     
     @property
     def region(self):
-        """Rectangle points data array [l,r],[b,t]."""
+        """Cropped rectangle points data array [l,r],[b,t]."""
         x, y = self.rected.get_data(orig=0)
         if len(x) and len(y):
             xo, x = min(x), max(x) #= x[[0, 2]]
