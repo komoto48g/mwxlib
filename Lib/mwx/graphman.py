@@ -86,8 +86,8 @@ class Thread:
         except AttributeError:
             self.handler = FSM({ # DNA<Thread>
                 None : {
-                 'thread_begin' : [ None ], # begin processing
-                   'thread_end' : [ None ], # end processing
+                 'thread_begin' : [ None ],
+                   'thread_end' : [ None ],
                 },
             })
     
@@ -444,13 +444,13 @@ class LayerInterface(CtrlInterface):
         ## return self.pane.IsShown()
         return self.IsShownOnScreen()
     
-    def Show(self, show=True):
+    def Show(self, show=True, interactive=False):
         """Shows or hides the window.
         
         (override) Show associated pane window.
                    Note: This might be called from a thread.
         """
-        wx.CallAfter(self.parent.show_pane, self, show)  # Show pane windows in the main thread.
+        wx.CallAfter(self.parent.show_pane, self, show, interactive)  # Use main thread.
     
     Drawn = property(
         lambda self: self.IsDrawn(),
@@ -894,7 +894,7 @@ class Frame(mwx.Frame):
         """Get named pane or notebook pane.
         
         Args:
-            name: str or plug object.
+            name: plug name or object.
         """
         plug = self.get_plug(name)
         if plug:
@@ -903,7 +903,16 @@ class Frame(mwx.Frame):
             return self._mgr.GetPane(name)
     
     def show_pane(self, name, show=True, interactive=False):
-        """Show named pane or notebook pane."""
+        """Show named pane or notebook pane.
+        
+        Args:
+            name: plug name or object.
+            show: Show or hide the pane window.
+            interactive: If True, modifier keys can be used to reset or reload
+                         the plugin when showing the pane:
+                         - [S-menu] Reset floating position.
+                         - [M-S-menu] Reload plugin.
+        """
         pane = self.get_pane(name)
         if not pane.IsOk():
             return
