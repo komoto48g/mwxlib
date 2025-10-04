@@ -609,7 +609,7 @@ class LineProfile(LinePlot):
         if frame:
             self.modeline.SetLabel(
                 "[--] -{a}- {name} ({type}:{mode}) "
-                "[{length}:{width}] {x} [{unit:g}/pixel]".format(
+                "[{length}:{width}] {x} [{unit:g}/pix]".format(
                 name = frame.name,
                 type = frame.buffer.dtype,
                 mode = "logic" if self.__logicp else "pixel",

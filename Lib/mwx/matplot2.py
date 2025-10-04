@@ -371,12 +371,12 @@ class MatplotPanel(wx.Panel):
         return b - a
     
     def mapxy2disp(self, x, y):
-        """Map xydata --> display dot pixel-coordinates."""
+        """Map xydata --> display dot pixel coordinates."""
         v = np.array((x, y)).T
         return self.axes.transData.transform(v)
     
     def mapdisp2xy(self, px, py):
-        """Map display dot pixel-coordinates --> xydata."""
+        """Map display dot pixel coordinates --> xydata."""
         v = np.array((px, py)).T
         return self.axes.transData.inverted().transform(v)
     
