@@ -1252,6 +1252,8 @@ class Frame(mwx.Frame):
                 self.menubar[menu] = []
             self.menubar[menu] += [plug.__Menu_item]
             self.menubar.update(menu)
+        
+        self.handler('plug_loaded', plug)
         return None
     
     def unload_plug(self, name):
@@ -1279,6 +1281,7 @@ class Frame(mwx.Frame):
             self._mgr.DetachPane(plug)
             self._mgr.Update()
         
+        self.handler('plug_unloaded', plug)
         plug.handler('page_closed', plug) # (even if not shown)
         plug.Destroy()
         
