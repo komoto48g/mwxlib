@@ -449,7 +449,7 @@ class Debugger(Pdb):
         try:
             Pdb.set_quit(self)
         finally:
-            if self.parent: # Check if Destroy has begun.
+            if self.parent: # Check if the parent is being deleted.
                 self.handler('debug_end', self.curframe)
     
     ## --------------------------------

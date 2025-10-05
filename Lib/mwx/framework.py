@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.6.8"
+__version__ = "1.6.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -610,16 +610,14 @@ class Menu(wx.Menu):
                 item.SubMenu._unbind()
     
     def Destroy(self):
-        try:
+        if self.owner and not self.owner.IsBeingDeleted():
             self._unbind()
-        except Exception:
-            pass
         return wx.Menu.Destroy(self)
     
     @staticmethod
-    def Popup(parent, menulist, *args, **kwargs):
-        menu = Menu(parent, menulist)
-        parent.PopupMenu(menu, *args, **kwargs)
+    def Popup(owner, menulist, *args, **kwargs):
+        menu = Menu(owner, menulist)
+        owner.PopupMenu(menu, *args, **kwargs)
         menu.Destroy()
 
 
@@ -838,9 +836,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             },
         )
         self.make_keymap('C-x')
-    
-    def Destroy(self):
-        return wx.MiniFrame.Destroy(self)
 
 
 class AuiNotebook(aui.AuiNotebook):
