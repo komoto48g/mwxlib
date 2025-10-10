@@ -1081,8 +1081,6 @@ class Frame(mwx.Frame):
             name = root.__module__
         else:
             name = root
-        if name == "__main__":
-            name = inspect.getfile(__import__("__main__"))
         
         dirname_, name = os.path.split(name)  # if the name is full-path:str
         if name.endswith(".py"):
@@ -1117,11 +1115,11 @@ class Frame(mwx.Frame):
         
         ## Load or reload the module, and check whether it contains a class named `Plugin`.
         try:
-            loadable = (not name.startswith("__main__"))  # Check if the module is loadable.
+            ## Check if the module is reloadable.
+            loadable = not name.startswith(("__main__", "builtins"))  # no __file__
             if not loadable:
                 module = types.ModuleType(name)  # dummy module (cannot reload)
                 module.__file__ = "<scratch>"
-                ## sys.modules[name] = module
             elif name in sys.modules:
                 module = reload(sys.modules[name])
             else:
