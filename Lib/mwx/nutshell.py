@@ -1298,7 +1298,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         """Virtual line number in the buffer window."""
         pos = self.PositionFromLine(line)
         w, h = self.PointFromPosition(pos)
-        return self.FirstVisibleLine + h//self.TextHeight(0)
+        return self.FirstVisibleLine + h // self.TextHeight(line)
     
     def ensureLineOnScreen(self, line):
         """Ensure a particular line is visible by scrolling the buffer
@@ -1976,6 +1976,7 @@ class Buffer(EditorInterface, EditWindow):
                     '* pressed' : (0, skip),
                    '* released' : (0, skip, dispatch),
              '*button* pressed' : (0, skip, dispatch),
+              'Lbutton pressed' : (0, self.on_left_down),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
@@ -2111,7 +2112,7 @@ class Buffer(EditorInterface, EditWindow):
         lst = self.get_style(p-1)
         rst = self.get_style(p)
         if lst not in ('moji', 'word', 'rparen') or rst == 'word':
-            self.handler('quit', evt) # don't enter autocomp
+            self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
     
     def on_buffer_activated(self, buf):
@@ -2122,6 +2123,19 @@ class Buffer(EditorInterface, EditWindow):
     def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
+    
+    def on_left_down(self, evt):
+        pos = self.PositionFromPoint(evt.Position)
+        ln = self.LineFromPosition(pos)
+        ann_text = self.AnnotationGetText(ln)
+        if ann_text:
+            if pos == self.GetLineEndPosition(ln):  # Check eol (not clicked yet).
+                if wx.TheClipboard.Open():
+                    wx.TheClipboard.SetData(wx.TextDataObject(ann_text))
+                    wx.TheClipboard.Close()
+                    self.message("Annotation copied.")
+                self.AnnotationClearLine(ln)
+        evt.Skip()
     
     def on_enter_escmap(self, evt):
         self.message("ESC-")
@@ -3242,7 +3256,7 @@ class Nautilus(EditorInterface, Shell):
         elif lst in ('space', 'sep', 'lparen'):
             self.ReplaceSelection('self')
         elif lst not in ('moji', 'word', 'rparen') or rst == 'word':
-            self.handler('quit', evt) # don't enter autocomp
+            self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
     
     def on_enter_escmap(self, evt):
