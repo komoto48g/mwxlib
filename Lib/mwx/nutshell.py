@@ -1694,20 +1694,18 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     ## --------------------------------
     ## Edit: comment / insert / kill
     ## --------------------------------
-    comment_prefix = "## "
+    comment_prefix = "#"
     
     @editable
     def comment_out_selection(self, from_=None, to_=None):
         """Comment out the selected text."""
         if from_ is not None: self.anchor = from_
         if to_ is not None: self.cpos = to_
-        prefix = self.comment_prefix
         with self.pre_selection():
-            text = re.sub("^", prefix, self.SelectedText, flags=re.M)
-            ## Don't comment out the last (blank) line.
-            lines = text.splitlines()
-            if len(lines) > 1 and lines[-1].endswith(prefix):
-                text = text[:-len(prefix)]
+            text = re.sub("^", self.comment_prefix + ' ', self.SelectedText, flags=re.M)
+            ## Don't comment out the last (blank) line in a multiline selection.
+            if '\n' in text:
+                text = text.rstrip(self.comment_prefix + ' ')
             self.ReplaceSelection(text)
     
     @editable
@@ -1716,7 +1714,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if from_ is not None: self.anchor = from_
         if to_ is not None: self.cpos = to_
         with self.pre_selection():
-            text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
+            text = re.sub(f"^{self.comment_prefix}+ ", "", self.SelectedText, flags=re.M)
             if text != self.SelectedText:
                 self.ReplaceSelection(text)
     
