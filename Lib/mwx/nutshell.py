@@ -524,7 +524,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 ## 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
                 ## 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
-            'C-S-space pressed' : (0, _F(self.set_pointer)),
+            'C-S-space pressed' : (0, _F(self.toggle_pointer)),
           'C-backspace pressed' : (0, _F(self.backward_kill_word)),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
              'C-delete pressed' : (0, _F(self.kill_word)),
@@ -835,7 +835,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def set_mark(self):
         self.mark = self.cpos
     
-    def set_pointer(self):
+    def toggle_pointer(self):
         if self.pointer == self.cline: # toggle
             self.pointer = -1
         else:
