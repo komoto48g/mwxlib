@@ -24,9 +24,10 @@ class MyDropTarget(wx.DropTarget):
     def OnDragOver(self, x, y, result):
         item, flags = self.tree.HitTest((x, y))
         items = list(self.tree._gen_items(self.tree.RootItem))  # first level items
+        if self.datado.Format.Id != "TreeItem":
+            return wx.DragNone  # Don't drag and drop
         if not item:
             item = items[0]  # Select the first tree item.
-            ## return wx.DragNone
         elif item not in items:
             item = self.tree.GetItemParent(item)  # Select the tree item.
         if item != self.tree.Selection:
@@ -203,7 +204,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 wx.CallAfter(self.SetFocus)
     
     def _find_editor(self, name):
-        ## return self.Parent.FindWindow(name) # window.Name (not page.caption)
         return next(editor for editor in self.parent.get_all_editors() if editor.Name == name)
     
     def OnSelChanged(self, evt):
@@ -224,9 +224,13 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         data = self.GetItemData(evt.Item)
         if data:
             self._buffer = data
-            dd = wx.CustomDataObject("TreeItem")
-            dd.SetData(data.filename.encode())
+            if data.mtdelta is None:
+                dd = wx.CustomDataObject("DummyItem")  # no file object
+                dd.SetData(b"")
+            else:
+                dd = wx.CustomDataObject("TreeItem")
+                dd.SetData(data.filename.encode())
             dropSource = wx.DropSource()
             dropSource.SetData(dd)
-            dropSource.DoDragDrop(wx.Drag_AllowMove) # -> wx.DragResult
+            dropSource.DoDragDrop(wx.Drag_AllowMove)  # -> wx.DragResult
             del self._buffer
