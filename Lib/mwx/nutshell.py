@@ -780,22 +780,26 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     white_arrow = property(
         lambda self: self.get_marker(1),
         lambda self, v: self.set_marker(v, 1),  # [arrow_set]
-        lambda self: self.del_marker(1))        # [arrow_unset]
+        lambda self: self.del_marker(1),        # [arrow_unset]
+        doc="Arrow marker used to indicate success.")
     
     red_arrow = property(
         lambda self: self.get_marker(2),
         lambda self, v: self.set_marker(v, 2),  # [red-arrow_set]
-        lambda self: self.del_marker(2))        # [red-arrow_unset]
+        lambda self: self.del_marker(2),        # [red-arrow_unset]
+        doc="Arrow marker used to indicate failure.")
     
     pointer = property(
         lambda self: self.get_marker(3),
         lambda self, v: self.set_marker(v, 3),  # [pointer_set]
-        lambda self: self.del_marker(3))        # [pointer_unset]
+        lambda self: self.del_marker(3),        # [pointer_unset]
+        doc="Arrow marker used to indicate breakpoint.")
     
     red_pointer = property(
         lambda self: self.get_marker(4),
         lambda self, v: self.set_marker(v, 4),  # [red-pointer_set]
-        lambda self: self.del_marker(4))        # [red-pointer_unset]
+        lambda self: self.del_marker(4),        # [red-pointer_unset]
+        doc="Arrow marker used to indicate exception.")
     
     @property
     def markline(self):
@@ -804,7 +808,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @markline.setter
     def markline(self, v):
         if v != -1:
-            self.mark = self.PositionFromLine(v) # [mark_set]
+            self.mark = self.PositionFromLine(v)  # [mark_set]
         else:
             del self.mark # [mark_unset]
     
@@ -909,15 +913,18 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     anchor = property(
         lambda self: self.GetAnchor(),
-        lambda self, v: self.SetAnchor(v))
+        lambda self, v: self.SetAnchor(v),
+        doc="Position of the opposite end of the selection to the caret.")
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
-        lambda self, v: self.SetCurrentPos(v))
+        lambda self, v: self.SetCurrentPos(v),
+        doc="Position of the caret.")
     
     cline = property(
         lambda self: self.GetCurrentLine(),
-        lambda self, v: self.SetCurrentPos(self.PositionFromLine(v)))
+        lambda self, v: self.SetCurrentPos(self.PositionFromLine(v)),
+        doc="Line number of the line with the caret.")
     
     @property
     def bol(self):
@@ -2250,7 +2257,6 @@ class Buffer(EditorInterface, EditWindow):
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except BdbQuit:
-            self.red_pointer = self.cline
             pass
         except Exception as e:
             msg = traceback.format_exc()
