@@ -524,7 +524,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 ## 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
                 ## 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
-            'C-S-space pressed' : (0, _F(self.set_pointer)),
+            'C-S-space pressed' : (0, _F(self.toggle_pointer)),
           'C-backspace pressed' : (0, _F(self.backward_kill_word)),
           'S-backspace pressed' : (0, _F(self.backward_kill_line)),
              'C-delete pressed' : (0, _F(self.kill_word)),
@@ -780,22 +780,26 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     white_arrow = property(
         lambda self: self.get_marker(1),
         lambda self, v: self.set_marker(v, 1),  # [arrow_set]
-        lambda self: self.del_marker(1))        # [arrow_unset]
+        lambda self: self.del_marker(1),        # [arrow_unset]
+        doc="Arrow marker used to indicate success.")
     
     red_arrow = property(
         lambda self: self.get_marker(2),
         lambda self, v: self.set_marker(v, 2),  # [red-arrow_set]
-        lambda self: self.del_marker(2))        # [red-arrow_unset]
+        lambda self: self.del_marker(2),        # [red-arrow_unset]
+        doc="Arrow marker used to indicate failure.")
     
     pointer = property(
         lambda self: self.get_marker(3),
         lambda self, v: self.set_marker(v, 3),  # [pointer_set]
-        lambda self: self.del_marker(3))        # [pointer_unset]
+        lambda self: self.del_marker(3),        # [pointer_unset]
+        doc="Arrow marker used to indicate breakpoint.")
     
     red_pointer = property(
         lambda self: self.get_marker(4),
         lambda self, v: self.set_marker(v, 4),  # [red-pointer_set]
-        lambda self: self.del_marker(4))        # [red-pointer_unset]
+        lambda self: self.del_marker(4),        # [red-pointer_unset]
+        doc="Arrow marker used to indicate exception.")
     
     @property
     def markline(self):
@@ -804,7 +808,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @markline.setter
     def markline(self, v):
         if v != -1:
-            self.mark = self.PositionFromLine(v) # [mark_set]
+            self.mark = self.PositionFromLine(v)  # [mark_set]
         else:
             del self.mark # [mark_unset]
     
@@ -835,7 +839,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def set_mark(self):
         self.mark = self.cpos
     
-    def set_pointer(self):
+    def toggle_pointer(self):
         if self.pointer == self.cline: # toggle
             self.pointer = -1
         else:
@@ -909,15 +913,18 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     
     anchor = property(
         lambda self: self.GetAnchor(),
-        lambda self, v: self.SetAnchor(v))
+        lambda self, v: self.SetAnchor(v),
+        doc="Position of the opposite end of the selection to the caret.")
     
     cpos = property(
         lambda self: self.GetCurrentPos(),
-        lambda self, v: self.SetCurrentPos(v))
+        lambda self, v: self.SetCurrentPos(v),
+        doc="Position of the caret.")
     
     cline = property(
         lambda self: self.GetCurrentLine(),
-        lambda self, v: self.SetCurrentPos(self.PositionFromLine(v)))
+        lambda self, v: self.SetCurrentPos(self.PositionFromLine(v)),
+        doc="Line number of the line with the caret.")
     
     @property
     def bol(self):
@@ -1298,7 +1305,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         """Virtual line number in the buffer window."""
         pos = self.PositionFromLine(line)
         w, h = self.PointFromPosition(pos)
-        return self.FirstVisibleLine + h//self.TextHeight(0)
+        return self.FirstVisibleLine + h // self.TextHeight(line)
     
     def ensureLineOnScreen(self, line):
         """Ensure a particular line is visible by scrolling the buffer
@@ -1694,20 +1701,18 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     ## --------------------------------
     ## Edit: comment / insert / kill
     ## --------------------------------
-    comment_prefix = "## "
+    comment_prefix = "#"
     
     @editable
     def comment_out_selection(self, from_=None, to_=None):
         """Comment out the selected text."""
         if from_ is not None: self.anchor = from_
         if to_ is not None: self.cpos = to_
-        prefix = self.comment_prefix
         with self.pre_selection():
-            text = re.sub("^", prefix, self.SelectedText, flags=re.M)
-            ## Don't comment out the last (blank) line.
-            lines = text.splitlines()
-            if len(lines) > 1 and lines[-1].endswith(prefix):
-                text = text[:-len(prefix)]
+            text = re.sub("^", self.comment_prefix + ' ', self.SelectedText, flags=re.M)
+            ## Don't comment out the last (blank) line in a multiline selection.
+            if '\n' in text:
+                text = text.rstrip(self.comment_prefix + ' ')
             self.ReplaceSelection(text)
     
     @editable
@@ -1716,7 +1721,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if from_ is not None: self.anchor = from_
         if to_ is not None: self.cpos = to_
         with self.pre_selection():
-            text = re.sub("^#+ ", "", self.SelectedText, flags=re.M)
+            text = re.sub(f"^{self.comment_prefix}+ ", "", self.SelectedText, flags=re.M)
             if text != self.SelectedText:
                 self.ReplaceSelection(text)
     
@@ -1976,6 +1981,7 @@ class Buffer(EditorInterface, EditWindow):
                     '* pressed' : (0, skip),
                    '* released' : (0, skip, dispatch),
              '*button* pressed' : (0, skip, dispatch),
+              'Lbutton pressed' : (0, self.on_left_down),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
                     '. pressed' : (2, self.OnEnterDot),
@@ -2111,7 +2117,7 @@ class Buffer(EditorInterface, EditWindow):
         lst = self.get_style(p-1)
         rst = self.get_style(p)
         if lst not in ('moji', 'word', 'rparen') or rst == 'word':
-            self.handler('quit', evt) # don't enter autocomp
+            self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
     
     def on_buffer_activated(self, buf):
@@ -2122,6 +2128,19 @@ class Buffer(EditorInterface, EditWindow):
     def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
+    
+    def on_left_down(self, evt):
+        pos = self.PositionFromPoint(evt.Position)
+        ln = self.LineFromPosition(pos)
+        ann_text = self.AnnotationGetText(ln)
+        if ann_text:
+            if pos == self.GetLineEndPosition(ln):  # Check eol (not clicked yet).
+                if wx.TheClipboard.Open():
+                    wx.TheClipboard.SetData(wx.TextDataObject(ann_text))
+                    wx.TheClipboard.Close()
+                    self.message("Annotation copied.")
+                self.AnnotationClearLine(ln)
+        evt.Skip()
     
     def on_enter_escmap(self, evt):
         self.message("ESC-")
@@ -2238,7 +2257,6 @@ class Buffer(EditorInterface, EditWindow):
             dispatcher.send(signal='Interpreter.push',
                             sender=self, command=None, more=False)
         except BdbQuit:
-            self.red_pointer = self.cline
             pass
         except Exception as e:
             msg = traceback.format_exc()
@@ -3242,7 +3260,7 @@ class Nautilus(EditorInterface, Shell):
         elif lst in ('space', 'sep', 'lparen'):
             self.ReplaceSelection('self')
         elif lst not in ('moji', 'word', 'rparen') or rst == 'word':
-            self.handler('quit', evt) # don't enter autocomp
+            self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
     
     def on_enter_escmap(self, evt):

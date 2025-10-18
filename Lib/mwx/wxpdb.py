@@ -276,9 +276,9 @@ class Debugger(Pdb):
     ## --------------------------------
     
     def _markbp(self, lineno, style):
-        """Add a mark to lineno, with the following style markers:
-        [1] white-arrow for breakpoints
-        [2] red-arrow for exception
+        """Add a marker to lineno, with the following style markers:
+        [1] white_arrow for breakpoints
+        [2] red_arrow for exceptions
         """
         if self.editor:
             if lineno:

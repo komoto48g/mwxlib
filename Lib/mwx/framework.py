@@ -1810,14 +1810,14 @@ class ShellFrame(MiniFrame):
     
     def add_log(self, text, noerr=None):
         """Add text to the logging buffer.
-        If noerr:bool is specified, add a line-mark.
+        If noerr:bool is specified, add a line-marker.
         """
         buf = self.Log.default_buffer or self.Log.new_buffer()
         with buf.off_readonly():
-            buf.goto_char(buf.TextLength) # line to set an arrow mark
+            buf.goto_char(buf.TextLength) # line to set an arrow marker
             buf.write(text)
         if noerr is not None:
-            ## Set a mark on the current line.
+            ## Set a marker on the current line.
             buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
             return
         
