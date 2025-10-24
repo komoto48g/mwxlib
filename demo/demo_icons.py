@@ -35,13 +35,11 @@ class Plugin(Layer):
         ##     title="Iconify", row=2, show=0,
         ## )
         
-        def _bullet(*v, **kw):
-            return Button(self, icon=Icon.bullet(*v, **kw))
-        
         self.layout([
-                _bullet('red'),
-                _bullet('yellow'),
-                _bullet('green'),
+                Button(self, icon="bullet('blue', 8)"),
+                Button(self, icon=Icon.bullet('red', ec='blue')),
+                Button(self, icon=Icon.bullet('yellow', ec='blue')),
+                Button(self, icon=Icon.bullet('green', ec='blue')),
                 Button(self, icon=Icon('file', Icon.bullet('red'))),
                 Button(self, icon=Icon('file', Icon.bullet('yellow'))),
                 Button(self, icon=Icon('file', Icon.bullet('green'))),

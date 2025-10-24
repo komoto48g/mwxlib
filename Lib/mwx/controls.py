@@ -4,6 +4,7 @@
 from contextlib import contextmanager
 from itertools import chain
 import io
+import re
 import wx
 import wx.lib.platebtn as pb
 import wx.lib.scrolledpanel as scrolled
@@ -929,25 +930,29 @@ class Icon(wx.Bitmap):
                 key = (key.ConvertToImage()
                           .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
                           .ConvertToBitmap())
-            return key #<wx.Bitmap>
+            return key  #<wx.Bitmap>
         if size is None:
             size = (16, 16)
         if key:
+            ## Returns a bitmap of provided artwork.
+            ## Note: The result could be a zero-shaped bitmap.
+            if re.match("bullet(.*)", key):
+                return eval(f"Icon.{key}")  # -> Icon.bullet(*v, **kw)
             try:
                 art = Icon.custom_images.get(key)
                 bmp = art.GetBitmap()
             except Exception:
                 art = Icon.provided_arts.get(key)
                 bmp = wx.ArtProvider.GetBitmap(art or key, wx.ART_OTHER, size)
-            ## Note: The result could be a zero-shaped bitmap.
             return bmp
-        elif key == '':
+        if key == '':
+            ## Returns dummy-sized blank bitmap.
             ## Note: A zero-shaped bitmap fails with AssertionError since wx ver 4.1.1.
             bmp = wx.Bitmap(size)
             with wx.MemoryDC(bmp) as dc:
                 dc.SetBackground(wx.Brush('black'))
                 dc.Clear()
-            bmp.SetMaskColour('black')  # return dummy-sized blank bitmap
+            bmp.SetMaskColour('black')
             return bmp
         return wx.NullBitmap  # The standard wx controls accept this.
 
@@ -971,7 +976,7 @@ class Icon(wx.Bitmap):
         return back
 
     @staticmethod
-    def bullet(colour, ec=None, size=None, radius=4):
+    def bullet(colour, radius=4, size=None, ec=None):
         if not size:
             size = (16, 16)
         bmp = wx.Bitmap(size)
@@ -1252,7 +1257,7 @@ class Indicator(wx.Control):
         """Update multiple design properties at once.
         
         This method is useful for changing colors, spacing, radius, etc.
-        The best size will be automatically invalidated and re-calculated.
+        The best size will be automatically invalidated and recalculated.
         
         Args:
             **kwargs: class attributes, e.g. colors, spacing, radius.
