@@ -181,14 +181,14 @@ class AutoCompInterfaceMixin:
     history = []     # used in history-comp mode
     modules = set()  # used in module-comp mode
     fragmwords = set(keyword.kwlist + dir(builtins)) # used in text-comp mode
-    
+
     def __init__(self):
         ## cf. sys.modules
         if not self.modules:
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
             AutoCompInterfaceMixin.modules = set(find_modules(force))
-    
+
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
         
@@ -203,7 +203,7 @@ class AutoCompInterfaceMixin:
             tip = '\n'.join(lines)
             self._calltips[-1] = True # snipped (needs to be shown)
         super().CallTipShow(pos, tip)
-    
+
     def autoCallTipShow(self, command, insertcalltip=True):
         """Display argument spec and docstring in a popup window.
         
@@ -223,7 +223,7 @@ class AutoCompInterfaceMixin:
             ## In case there isn't enough room, only go back to bol fallback.
             tippos = max(self.bol, p - len(name) - 1)
             self.CallTipShow(tippos, tip)
-    
+
     def call_helpDoc(self, evt):
         """Show help:str for the selected topic."""
         if self.CallTipActive():
@@ -237,7 +237,7 @@ class AutoCompInterfaceMixin:
                 self.help(obj)
             except Exception as e:
                 self.message(e)
-    
+
     def call_helpTip(self, evt):
         """Show a calltip for the selected function."""
         if self.CallTipActive():
@@ -248,19 +248,19 @@ class AutoCompInterfaceMixin:
             p = self.cpos
             self.autoCallTipShow(text,
                 p == self.eol and self.get_char(p-1) == '(') # => CallTipShow
-    
+
     def on_completion_forward(self, evt):
         if not self.AutoCompActive():
             self.handler('quit', evt)
             return
         self._on_completion(1)
-    
+
     def on_completion_backward(self, evt):
         if not self.AutoCompActive():
             self.handler('quit', evt)
             return
         self._on_completion(-1)
-    
+
     def _on_completion(self, step=0):
         """Show completion with selection."""
         try:
@@ -280,7 +280,7 @@ class AutoCompInterfaceMixin:
             self.__comp_ind = j
         except IndexError:
             self.message("No completion words")
-    
+
     def _gen_autocomp(self, j, hint, words, sep=' ', mode=True):
         ## Prepare on_completion_forward/backward
         self.__comp_ind = j
@@ -292,7 +292,7 @@ class AutoCompInterfaceMixin:
         elif words:
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(len(hint), sep.join(words))
-    
+
     def _get_words_hint(self):
         cmdl = self.GetTextRange(self.bol, self.cpos)
         if cmdl.endswith(' '): # 前の文字が空白の場合はスキップする
@@ -300,12 +300,12 @@ class AutoCompInterfaceMixin:
         else:
             text = next(split_words(cmdl, reverse=1), '')
         return text.rpartition('.') # -> text, sep, hint
-    
+
     def clear_autocomp(self, evt):
         if self.AutoCompActive():
             self.AutoCompCancel()
         self.message("")
-    
+
     def call_history_comp(self, evt):
         """Called when history-comp mode."""
         if not self.CanEdit():
@@ -326,7 +326,7 @@ class AutoCompInterfaceMixin:
         self._gen_autocomp(0, hint, words, mode=False)
         self.message("[history] {} candidates matched"
                      " with {!r}".format(len(words), hint))
-    
+
     def call_text_autocomp(self, evt):
         """Called when text-comp mode."""
         if not self.CanEdit():
@@ -344,7 +344,7 @@ class AutoCompInterfaceMixin:
         self._gen_autocomp(0, hint, words)
         self.message("[text] {} candidates matched"
                      " with {!r}".format(len(words), hint))
-    
+
     def call_module_autocomp(self, evt, force=False):
         """Called when module-comp mode."""
         if not self.CanEdit():
@@ -412,7 +412,7 @@ class AutoCompInterfaceMixin:
             self.message("- {} : {!r}".format(e, text))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
-    
+
     def call_word_autocomp(self, evt):
         """Called when word-comp mode."""
         if not self.CanEdit():
@@ -425,7 +425,7 @@ class AutoCompInterfaceMixin:
             self.message("- No autocompletion candidates or hints found.")
             return
         try:
-            ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3
+            ## dir = introspect.getAttributeNames  # @TODO in wx ver 4.2.3
             obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -444,7 +444,7 @@ class AutoCompInterfaceMixin:
             self.message("- {} : {!r}".format(e, text))
         except Exception as e:
             self.message("- {} : {!r}".format(e, text))
-    
+
     def call_apropos_autocomp(self, evt):
         """Called when apropos mode."""
         if not self.CanEdit():
@@ -457,7 +457,7 @@ class AutoCompInterfaceMixin:
             self.message("- No autocompletion candidates or hints found.")
             return
         try:
-            ## dir = introspect.getAttributeNames @TODO in wx ver 4.2.3.
+            ## dir = introspect.getAttributeNames  # @TODO in wx ver 4.2.3.
             obj = self.eval(text)
             P = re.compile(hint)
             p = re.compile(hint, re.I)
@@ -699,16 +699,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.__mark = -1
         self.__stylus = {}
-    
+
     __dnd_flag = 0
-    
+
     def OnDrag(self, evt): #<wx._core.StyledTextEvent>
         if isinstance(self, Shell):
             EditorInterface.__dnd_flag = (evt.Position < self.bolc) # readonly
         else:
             EditorInterface.__dnd_flag = 0
         evt.Skip()
-    
+
     def OnDragging(self, evt): #<wx._core.StyledTextEvent>
         if isinstance(self, Shell):
             if evt.Position < self.bolc: # target is readonly
@@ -721,11 +721,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 ## from shell to buffer
                 evt.DragResult = wx.DragCopy if wx.GetKeyState(wx.WXK_CONTROL) else wx.DragNone
         evt.Skip()
-    
+
     def OnDragged(self, evt): #<wx._core.StyledTextEvent>
         EditorInterface.__dnd_flag = 0
         evt.Skip()
-    
+
     ## --------------------------------
     ## Marker attributes of the editor
     ## --------------------------------
@@ -736,90 +736,90 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         3: "pointer",
         4: "red-pointer",
     }
-    
+
     def get_marker(self, n):
         return self.MarkerNext(0, 1<<n)
-    
+
     def set_marker(self, line, n):
         if line != -1:
             self.MarkerDeleteAll(n)
             self.add_marker(line, n)
         else:
             self.del_marker(n)
-    
+
     def add_marker(self, line, n):
         if self.MarkerAdd(line, n):
             self.EnsureVisible(line)  # expand if folded
             self.handler('{}_set'.format(self.marker_names[n]), line)
-    
+
     def del_marker(self, n):
         line = self.MarkerNext(0, 1<<n)
         if line != -1:
             self.MarkerDeleteAll(n)
             self.handler('{}_unset'.format(self.marker_names[n]), line)
-    
+
     def goto_marker(self, markerMask, selection=False):
         line = self.MarkerNext(0, markerMask)
         if line != -1:
             self.EnsureVisible(line)  # expand if folded
             self.goto_line(line, selection)
             self.recenter()
-    
+
     def goto_next_marker(self, markerMask, selection=False):
         line = self.MarkerNext(self.cline+1, markerMask)
         if line == -1:
             line = self.LineCount
         self.goto_line(line, selection)
-    
+
     def goto_previous_marker(self, markerMask, selection=False):
         line = self.MarkerPrevious(self.cline-1, markerMask)
         if line == -1:
             line = 0
         self.goto_line(line, selection)
-    
+
     white_arrow = property(
         lambda self: self.get_marker(1),
         lambda self, v: self.set_marker(v, 1),  # [arrow_set]
         lambda self: self.del_marker(1),        # [arrow_unset]
         doc="Arrow marker used to indicate success.")
-    
+
     red_arrow = property(
         lambda self: self.get_marker(2),
         lambda self, v: self.set_marker(v, 2),  # [red-arrow_set]
         lambda self: self.del_marker(2),        # [red-arrow_unset]
         doc="Arrow marker used to indicate failure.")
-    
+
     pointer = property(
         lambda self: self.get_marker(3),
         lambda self, v: self.set_marker(v, 3),  # [pointer_set]
         lambda self: self.del_marker(3),        # [pointer_unset]
         doc="Arrow marker used to indicate breakpoint.")
-    
+
     red_pointer = property(
         lambda self: self.get_marker(4),
         lambda self, v: self.set_marker(v, 4),  # [red-pointer_set]
         lambda self: self.del_marker(4),        # [red-pointer_unset]
         doc="Arrow marker used to indicate exception.")
-    
+
     @property
     def markline(self):
         return self.MarkerNext(0, 1<<0)
-    
+
     @markline.setter
     def markline(self, v):
         if v != -1:
             self.mark = self.PositionFromLine(v)  # [mark_set]
         else:
             del self.mark # [mark_unset]
-    
+
     @markline.deleter
     def markline(self):
         del self.mark
-    
+
     @property
     def mark(self):
         return self.__mark
-    
+
     @mark.setter
     def mark(self, v):
         if v != -1:
@@ -828,24 +828,24 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.set_marker(ln, 0) # [mark_set]
         else:
             del self.mark
-    
+
     @mark.deleter
     def mark(self):
         v = self.__mark
         if v != -1:
             self.__mark = -1
             self.del_marker(0) # [mark_unset]
-    
+
     def set_mark(self):
         self.mark = self.cpos
-    
+
     def toggle_pointer(self):
         if self.pointer == self.cline: # toggle
             self.pointer = -1
         else:
             self.pointer = self.cline  # reset
         self.red_pointer = -1
-    
+
     def exchange_point_and_mark(self):
         p = self.cpos
         q = self.mark
@@ -855,7 +855,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.mark = p
         else:
             self.message("No marks")
-    
+
     ## --------------------------------
     ## Attributes of the editor
     ## --------------------------------
@@ -877,7 +877,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         stc.STC_P_CLASSNAME     : 'class',
         stc.STC_P_DEFNAME       : 'def',
     }
-    
+
     def get_style(self, pos):
         c = self.get_char(pos)
         st = self.GetStyleAt(pos)
@@ -894,11 +894,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if c in "({[": return 'lparen'
             if c in ")}]": return 'rparen'
         return sty
-    
+
     def get_char(self, pos):
         """Return the character at the given position."""
         return chr(self.GetCharAt(pos))
-    
+
     def get_text(self, start, end):
         """Retrieve a range of text.
         
@@ -910,40 +910,40 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         p = max(start, 0)
         q = min(end, self.TextLength)
         return self.GetTextRange(p, q)
-    
+
     anchor = property(
         lambda self: self.GetAnchor(),
         lambda self, v: self.SetAnchor(v),
         doc="Position of the opposite end of the selection to the caret.")
-    
+
     cpos = property(
         lambda self: self.GetCurrentPos(),
         lambda self, v: self.SetCurrentPos(v),
         doc="Position of the caret.")
-    
+
     cline = property(
         lambda self: self.GetCurrentLine(),
         lambda self, v: self.SetCurrentPos(self.PositionFromLine(v)),
         doc="Line number of the line with the caret.")
-    
+
     @property
     def bol(self):
         """Beginning of line."""
         text, lp = self.CurLine
         return self.cpos - lp
-    
+
     @property
     def eol(self):
         """End of line."""
         text, lp = self.CurLine
         text = text.strip('\r\n') # remove linesep: '\r' and '\n'
         return (self.cpos - lp + len(text.encode()))
-    
+
     @property
     def line_at_caret(self):
         """Text of the range (bol, eol) at the caret-line."""
         return self.GetTextRange(self.bol, self.eol)
-    
+
     @property
     def expr_at_caret(self):
         """A syntax unit (expression) at the caret-line."""
@@ -969,7 +969,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if sty not in styles:
                 break
         return self.GetTextRange(start, end).strip()
-    
+
     @property
     def topic_at_caret(self):
         """Topic word at the caret or selected substring.
@@ -989,23 +989,23 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
-    
+
     ## --------------------------------
     ## Python syntax and indentation
     ## --------------------------------
-    
+
     def on_indent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
         else:
             self.py_indent_line()
-    
+
     def on_outdent_line(self, evt):
         if self.SelectedText:
             evt.Skip()
         else:
             self.py_outdent_line()
-    
+
     @editable
     def py_indent_line(self):
         """Indent the current line."""
@@ -1017,7 +1017,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if indent >= 0:
             self.Replace(self.bol, p, ' '*indent)
             self.goto_char(self.bol + indent + offset)
-    
+
     @editable
     def py_outdent_line(self):
         """Outdent the current line."""
@@ -1029,7 +1029,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if indent >= 0:
             self.Replace(self.bol, p, ' '*indent)
             self.goto_char(self.bol + indent + offset)
-    
+
     def py_current_indent(self):
         """Calculate indent spaces from previous line."""
         text = self.GetLine(self.cline - 1)
@@ -1039,7 +1039,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if re.match(py_outdent_re, lstr):
             indent -= 4
         return indent
-    
+
     def py_electric_indent(self):
         """Calculate indent spaces for the following line."""
         ## [BUG ver 4.2.0] The last char is replaced with b'\x00'.
@@ -1047,7 +1047,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## return self.py_calc_indentation(text[:lp].decode())
         text, lp = self.CurLine
         return self.py_calc_indentation(text[:lp])
-    
+
     @classmethod
     def py_calc_indentation(self, text):
         """Return indent spaces for the command text."""
@@ -1061,7 +1061,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if re.match(py_closing_re, lstr):
             return indent - 4
         return indent
-    
+
     @classmethod
     def py_strip_indents(self, text):
         """Return left-stripped text and the number of indent spaces."""
@@ -1069,7 +1069,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         lstr = text.lstrip(' \t')
         indent = len(text) - len(lstr)
         return lstr, indent
-    
+
     @classmethod
     def py_strip_prompts(self, text):
         """Return text without a leading prompt."""
@@ -1078,16 +1078,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 text = text[len(ps):]
                 break
         return text
-    
+
     @classmethod
     def py_strip_comments(self, text):
         """Return text without comments."""
         return ''.join(split_tokens(text, comment=False))
-    
+
     ## --------------------------------
     ## Fold / Unfold functions
     ## --------------------------------
-    
+
     def show_folder(self, show=True):
         """Show folder margin.
         
@@ -1109,7 +1109,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.SetMarginSensitive(2, False)
             self.SetFoldMarginColour(True, 'black')
             self.SetFoldMarginHiColour(True, 'black')
-    
+
     def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
@@ -1121,7 +1121,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.handler('select_lines', evt)
         else:
             self.handler('select_line', evt)
-    
+
     def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
         """Popup context menu."""
         def _Icon(key):
@@ -1134,7 +1134,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             (wx.ID_UP, "&Expand ALL", _Icon(wx.ART_PLUS),
                 lambda v: self.FoldAll(1)),
         ])
-    
+
     def toggle_fold(self, lc):
         """Similar to ToggleFold, but the top header containing
         the specified line switches between expanded and contracted.
@@ -1147,7 +1147,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.ToggleFold(lc)
         self.ensureLineOnScreen(lc)
         return lc
-    
+
     def get_indent_region(self, line):
         """Line numbers of folding head and tail containing the line."""
         lc = line
@@ -1163,38 +1163,38 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 break
             le += 1
         return lc, le
-    
+
     def on_linesel_begin(self, evt):
         """Called when a line of text selection begins."""
         self.cpos = self.anchor = evt.Position #<select_line>
         self.CaptureMouse()
         evt.Skip()
-    
+
     def on_linesel_next(self, evt):
         """Called when next line of text selection begins."""
         self.cpos = evt.Position #<select_lines>
         self.CaptureMouse()
         evt.Skip()
-    
+
     def on_linesel_motion(self, evt):
         """Called when a line of text selection is changing."""
         self.cpos = self.PositionFromPoint(evt.Position)
         self.EnsureCaretVisible()
         evt.Skip()
-    
+
     def on_linesel_end(self, evt):
         """Called when a line of text selection ends."""
         if self.HasCapture():
             self.ReleaseMouse()
         evt.Skip()
-    
+
     ## --------------------------------
     ## Preferences / Appearance
     ## --------------------------------
-    
+
     def get_stylus(self):
         return self.__stylus
-    
+
     def set_stylus(self, spec=None, **kwargs):
         """Set style spec for wx.stc.StyleSetSpec."""
         spec = spec and spec.copy() or {}
@@ -1253,7 +1253,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## Apply the rest of the style
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
-    
+
     def match_paren(self):
         self.SetIndicatorCurrent(3)
         self.IndicatorClearRange(0, self.TextLength)
@@ -1276,13 +1276,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.BraceBadLight(p)
         else:
             self.BraceHighlight(-1,-1) # no highlight
-    
+
     def over(self, mode=1):
         """Set insert or overtype.
         mode in {0:insert, 1:over, None:toggle}
         """
         self.Overtype = mode if mode is not None else not self.Overtype
-    
+
     def wrap(self, mode=1):
         """Set whether text is word wrapped.
         
@@ -1290,7 +1290,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                             3:whitespace-wrap, None:toggle}
         """
         self.WrapMode = mode if mode is not None else not self.WrapMode
-    
+
     def recenter(self, ln=None):
         """Scroll the cursor line to the center of screen.
         If ln=0, the cursor moves to the top of the screen.
@@ -1300,13 +1300,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         m = n//2 if ln is None else ln % n if ln < n else n # ln[0:n]
         vl = self._calc_vline(self.cline)
         self.ScrollToLine(vl - m)
-    
+
     def _calc_vline(self, line):
         """Virtual line number in the buffer window."""
         pos = self.PositionFromLine(line)
         w, h = self.PointFromPosition(pos)
         return self.FirstVisibleLine + h // self.TextHeight(line)
-    
+
     def ensureLineOnScreen(self, line):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
@@ -1318,7 +1318,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.ScrollToLine(vl)
         elif vl > hl + n - 1:
             self.ScrollToLine(vl - n + 1)
-    
+
     def ensureLineMoreOnScreen(self, line, offset=0):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
@@ -1329,11 +1329,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         vl = self._calc_vline(line)
         if not hl + offset < vl < hl + n - 1 - offset:
             self.ScrollToLine(vl - n//2)
-    
+
     ## --------------------------------
     ## Search functions
     ## --------------------------------
-    
+
     def DoFindNext(self, findData):
         """Find the search text defined in `findData`.
         
@@ -1374,13 +1374,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.EnsureVisible(self.cline)  # expand if folded
             self.EnsureCaretVisible()
         return loc
-    
+
     def DoReplaceNext(self, findData):
         if self.SelectedText == findData.FindString:
             if self.CanEdit():
                 self.ReplaceSelection(findData.ReplaceString)
         return self.DoFindNext(findData)
-    
+
     def DoReplaceAll(self, findData):
         with self.save_excursion():
             locs = [-1]
@@ -1396,17 +1396,17 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                     self.ReplaceTarget(findData.ReplaceString)
                     count += 1
             return count
-    
+
     def get_right_paren(self, p):
         if self.get_char(p) in "({[<": # left-parentheses, <
             q = self.BraceMatch(p)
             return q if q < 0 else q+1
-    
+
     def get_left_paren(self, p):
         if self.get_char(p-1) in ")}]>": # right-parentheses, >
             q = self.BraceMatch(p-1)
             return q
-    
+
     def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'moji':
@@ -1415,7 +1415,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
             return p
-    
+
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'moji':
@@ -1424,7 +1424,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
             return p
-    
+
     def get_following_atom(self, p):
         q = p
         st = self.get_style(p)
@@ -1440,7 +1440,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             while self.get_style(q) == st and q < self.TextLength:
                 q += 1
         return p, q, st
-    
+
     def get_preceding_atom(self, p):
         q = p
         st = self.get_style(p-1)
@@ -1455,7 +1455,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
         return p, q, st
-    
+
     def grep_forward(self, pattern, flags=re.M):
         orig = self.eol if (self.markline == self.cline) else self.cpos
         text = self.GetTextRange(orig, self.TextLength)
@@ -1467,7 +1467,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.mark = self.cpos
             self.EnsureVisible(self.cline)
             yield err
-    
+
     def grep_backward(self, pattern, flags=re.M):
         text = self.GetTextRange(0, self.cpos)
         errs = re.finditer(pattern, text, flags)
@@ -1478,10 +1478,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.mark = self.cpos
             self.EnsureVisible(self.cline)
             yield err
-    
+
     def grep(self, pattern, flags=re.M):
         yield from re.finditer(pattern.encode(), self.TextRaw, flags)
-    
+
     def filter_text(self):
         """Show indicators for the selected text."""
         self.__itextlines = []
@@ -1514,7 +1514,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.TopLevelParent.findData.Flags &= ~wx.FR_WHOLEWORD
         except AttributeError:
             pass
-    
+
     def on_itext_enter(self, evt):
         """Called when entering filter_text mode."""
         if not self.__itextlines:
@@ -1533,13 +1533,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
         
         ## self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
-    
+
     def on_itext_exit(self, evt):
         """Called when exiting filter_text mode."""
         if self.AutoCompActive():
             self.AutoCompCancel()
         self.Unbind(stc.EVT_STC_AUTOCOMP_SELECTION, handler=self.on_itext_selection)
-    
+
     def on_itext_selection(self, evt):
         """Called when filter_text is selected."""
         i = self.AutoCompGetCurrent()
@@ -1551,11 +1551,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.goto_line(line)
         self.recenter()
         self.on_itext_exit(evt)
-    
+
     ## --------------------------------
     ## goto / skip / selection / etc.
     ## --------------------------------
-    
+
     def goto_char(self, pos, selection=False, interactive=False):
         """Goto char position with selection."""
         if pos is None or pos < 0:
@@ -1586,7 +1586,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 for k in modkeys:
                     vk.KeyDown(k) # restore modifier key state
         return True
-    
+
     def goto_line(self, ln, selection=False):
         """Goto line with selection."""
         if ln is None or ln < 0:
@@ -1598,60 +1598,60 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         else:
             self.GotoLine(ln)
         return True
-    
+
     def skip_chars_forward(self, chars):
         p = self.cpos
         while self.get_char(p) in chars and p < self.TextLength:
             p += 1
         self.goto_char(p)
-    
+
     def skip_chars_backward(self, chars):
         p = self.cpos
         while self.get_char(p-1) in chars and p > 0:
             p -= 1
         self.goto_char(p)
-    
+
     def back_to_indentation(self):
         text = self.line_at_caret # w/ no-prompt
         lstr = text.lstrip()      # w/ no-indent
         p = self.bol + len(text) - len(lstr)
         self.goto_char(p, interactive=True)
         self.ScrollToColumn(0)
-    
+
     def beginning_of_line(self):
         self.goto_char(self.bol, interactive=True)
         self.ScrollToColumn(0)
-    
+
     def end_of_line(self):
         self.goto_char(self.eol, interactive=True)
-    
+
     def beginning_of_buffer(self):
         self.mark = self.cpos
         self.goto_char(0, interactive=True)
-    
+
     def end_of_buffer(self):
         self.mark = self.cpos
         self.goto_char(self.TextLength, interactive=True)
-    
+
     def goto_matched_paren(self):
         p = self.cpos
         return (self.goto_char(self.get_left_paren(p))
              or self.goto_char(self.get_right_paren(p))
              or self.goto_char(self.get_left_quotation(p))
              or self.goto_char(self.get_right_quotation(p)))
-    
+
     def selection_forward_word_or_paren(self):
         p = self.cpos
         return (self.goto_char(self.get_right_paren(p), selection=True)
              or self.goto_char(self.get_right_quotation(p), selection=True)
              or self.WordRightEndExtend())
-    
+
     def selection_backward_word_or_paren(self):
         p = self.cpos
         return (self.goto_char(self.get_left_paren(p), selection=True)
              or self.goto_char(self.get_left_quotation(p), selection=True)
              or self.WordLeftExtend())
-    
+
     @contextmanager
     def save_excursion(self):
         """Save buffer excursion."""
@@ -1664,7 +1664,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.GotoPos(p)
             self.ScrollToLine(vpos)
             self.SetXOffset(hpos)
-    
+
     @contextmanager
     def pre_selection(self):
         """Save buffer cpos and anchor."""
@@ -1677,7 +1677,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.cpos = p
             else:
                 self.anchor = q
-    
+
     @contextmanager
     def save_attributes(self, **kwargs):
         """Save buffer attributes (e.g. ReadOnly=False)."""
@@ -1689,20 +1689,20 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         finally:
             for k, v in kwargs.items():
                 setattr(self, k, v)
-    
+
     def off_readonly(self):
         """Disables buffer read-only lock temporarily."""
         return self.save_attributes(ReadOnly=False)
-    
+
     def off_undocollection(self):
         """Disables buffer undo stack temporarily."""
         return self.save_attributes(UndoCollection=False)
-    
+
     ## --------------------------------
     ## Edit: comment / insert / kill
     ## --------------------------------
     comment_prefix = "#"
-    
+
     @editable
     def comment_out_selection(self, from_=None, to_=None):
         """Comment out the selected text."""
@@ -1714,7 +1714,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if '\n' in text:
                 text = text.rstrip(self.comment_prefix + ' ')
             self.ReplaceSelection(text)
-    
+
     @editable
     def uncomment_selection(self, from_=None, to_=None):
         """Uncomment the selected text."""
@@ -1724,7 +1724,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             text = re.sub(f"^{self.comment_prefix}+ ", "", self.SelectedText, flags=re.M)
             if text != self.SelectedText:
                 self.ReplaceSelection(text)
-    
+
     @editable
     def comment_out_line(self):
         if self.SelectedText:
@@ -1740,7 +1740,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.goto_char(self.bol + min(j, k))
             self.comment_out_selection(self.cpos, self.eol)
             self.LineDown()
-    
+
     @editable
     def uncomment_line(self):
         if self.SelectedText:
@@ -1749,31 +1749,31 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.back_to_indentation()
             self.uncomment_selection(self.cpos, self.eol)
             self.LineDown()
-    
+
     @editable
     def eat_white_forward(self):
         p = self.cpos
         self.skip_chars_forward(' \t')
         self.Replace(p, self.cpos, '')
-    
+
     @editable
     def eat_white_backward(self):
         p = self.cpos
         self.skip_chars_backward(' \t')
         self.Replace(max(self.cpos, self.bol), p, '')
-    
+
     @editable
     def kill_word(self):
         if not self.SelectedText:
             self.WordRightEndExtend()
         self.ReplaceSelection('')
-    
+
     @editable
     def backward_kill_word(self):
         if not self.SelectedText:
             self.WordLeftExtend()
         self.ReplaceSelection('')
-    
+
     @editable
     def kill_line(self):
         if not self.SelectedText:
@@ -1786,7 +1786,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             else:
                 self.cpos = self.eol
         self.ReplaceSelection('')
-    
+
     @editable
     def backward_kill_line(self):
         if not self.SelectedText:
@@ -1799,7 +1799,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             else:
                 self.cpos = self.bol
         self.ReplaceSelection('')
-    
+
     @editable
     def insert_space_like_tab(self):
         """Insert half-width spaces forward as if feeling like [tab].
@@ -1808,7 +1808,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.eat_white_forward()
         _text, lp = self.CurLine
         self.WriteText(' ' * (4 - lp % 4))
-    
+
     @editable
     def delete_backward_space_like_tab(self):
         """Delete half-width spaces backward as if feeling like [S-tab].
@@ -1830,19 +1830,19 @@ class Buffer(EditorInterface, EditWindow):
     @property
     def message(self):
         return self.parent.message
-    
+
     @property
     def name(self):
         """buffer-name (basename)."""
         return os.path.basename(self.__filename or '')
-    
+
     Name = name # page.window.Name for save/loadPerspective
-    
+
     @property
     def filename(self):
         """buffer-file-name."""
         return self.__filename
-    
+
     def update_filestamp(self, fn):
         self.__path = Path(fn)
         if self.__path.is_file():
@@ -1859,7 +1859,7 @@ class Buffer(EditorInterface, EditWindow):
         if self.__filename != fn:
             self.__filename = fn
             self.update_caption()
-    
+
     @property
     def mtdelta(self):
         """Timestamp delta (for checking external mod).
@@ -1877,21 +1877,21 @@ class Buffer(EditorInterface, EditWindow):
         except OSError:
             pass
         return self.__mtime
-    
+
     @property
     def need_buffer_save(self):
         """Return whether the buffer should be saved.
         The file has been modified internally.
         """
         return self.mtdelta is not None and self.IsModified()
-    
+
     @property
     def need_buffer_load(self):
         """Return whether the buffer should be loaded.
         The file has been modified externally.
         """
         return self.mtdelta is not None and self.mtdelta > 0
-    
+
     @property
     def caption_prefix(self):
         prefix = ''
@@ -1906,7 +1906,7 @@ class Buffer(EditorInterface, EditWindow):
         if prefix:
             prefix += ' '
         return prefix
-    
+
     def update_caption(self):
         caption = self.caption_prefix + self.name
         try:
@@ -1914,7 +1914,7 @@ class Buffer(EditorInterface, EditWindow):
                 self.parent.handler('buffer_caption_updated', self)
         except AttributeError:
             pass
-    
+
     def __init__(self, parent, filename, **kwargs):
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
@@ -2048,23 +2048,23 @@ class Buffer(EditorInterface, EditWindow):
         
         self.show_folder()
         self.set_stylus(Stylus.py_text_mode)
-    
+
     def __contains__(self, code):
         if inspect.iscode(code) and self.code:
             return code is self.code\
                 or code in self.code.co_consts
-    
+
     def trace_position(self):
         _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
-    
+
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('buffer_modified', self)
         evt.Skip()
-    
+
     def OnCallTipClick(self, evt): #<wx._stc.StyledTextEvent>
         if self.CallTipActive():
             self.CallTipCancel()
@@ -2072,7 +2072,7 @@ class Buffer(EditorInterface, EditWindow):
         if more:
             self.CallTipShow(pos, tip, N=None)
         evt.Skip()
-    
+
     def OnIndicatorClick(self, evt): #<wx._stc.StyledTextEvent>
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
             ## Processing text selection, dragging, or dragging+
@@ -2092,7 +2092,7 @@ class Buffer(EditorInterface, EditWindow):
             else:
                 ## Note: post-call for the confirmation dialog.
                 wx.CallAfter(self.parent.load_file, url)
-    
+
     def on_buffer_modified(self, buf):
         """Called when the buffer is modified."""
         self.SetIndicatorCurrent(2)
@@ -2100,15 +2100,15 @@ class Buffer(EditorInterface, EditWindow):
         for m in self.grep(url_re):
             p, q = m.span()
             self.IndicatorFillRange(p, q-p)
-    
+
     def OnSavePointLeft(self, evt):
         self.update_caption()
         evt.Skip()
-    
+
     def OnSavePointReached(self, evt):
         self.update_caption()
         evt.Skip()
-    
+
     def OnEnterDot(self, evt):
         if not self.CanEdit():
             self.handler('quit', evt)
@@ -2119,16 +2119,16 @@ class Buffer(EditorInterface, EditWindow):
         if lst not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
-    
+
     def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         self.update_caption()
         self.trace_position()
-    
+
     def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
-    
+
     def on_left_down(self, evt):
         pos = self.PositionFromPoint(evt.Position)
         ln = self.LineFromPosition(pos)
@@ -2141,25 +2141,25 @@ class Buffer(EditorInterface, EditWindow):
                     self.message("Annotation copied.")
                 self.AnnotationClearLine(ln)
         evt.Skip()
-    
+
     def on_enter_escmap(self, evt):
         self.message("ESC-")
-    
+
     def on_exit_escmap(self, evt):
         self.message("ESC {}".format(evt.key))
         self.AnnotationClearAll()
-    
+
     ## --------------------------------
     ## File I/O
     ## --------------------------------
-    
+
     def _load_textfile(self, text):
         with self.off_readonly():
             self.Text = text
             self.EmptyUndoBuffer()
             self.SetSavePoint()
         self.handler('buffer_loaded', self)
-    
+
     def _load_file(self, filename):
         """Wrapped method of LoadFile."""
         if self.LoadFile(filename):
@@ -2169,7 +2169,7 @@ class Buffer(EditorInterface, EditWindow):
             self.handler('buffer_loaded', self)
             return True
         return False
-    
+
     def _save_file(self, filename):
         """Wrapped method of SaveFile."""
         if self.SaveFile(filename):
@@ -2178,7 +2178,7 @@ class Buffer(EditorInterface, EditWindow):
             self.handler('buffer_saved', self)
             return True
         return False
-    
+
     def LoadFile(self, filename):
         """Load the contents of file into the editor.
         
@@ -2188,7 +2188,7 @@ class Buffer(EditorInterface, EditWindow):
             with self.off_readonly():
                 self.Text = i.read()
         return True
-    
+
     def SaveFile(self, filename):
         """Write the contents of the editor to file.
         
@@ -2197,33 +2197,33 @@ class Buffer(EditorInterface, EditWindow):
         with open(filename, "w", encoding='utf-8', newline='') as o:
             o.write(self.Text)
         return True
-    
+
     ## --------------------------------
     ## Python eval / exec
     ## --------------------------------
-    
+
     @property
     def locals(self): # internal use only
         try:
             return self.parent.parent.current_shell.locals
         except AttributeError:
             return None
-    
+
     @property
     def globals(self): # internal use only
         try:
             return self.parent.parent.current_shell.globals
         except AttributeError:
             return None
-    
+
     def eval(self, text):
         return eval(text, self.globals, self.locals) # using current shell namespace
-    
+
     def exec(self, text):
         exec(text, self.globals, self.locals) # using current shell namespace
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
-    
+
     def eval_line(self):
         """Evaluate the selected word or line and show calltips."""
         if self.CallTipActive():
@@ -2248,7 +2248,7 @@ class Buffer(EditorInterface, EditWindow):
                 return
         if not text:
             self.message("No words")
-    
+
     def exec_region(self):
         """Execute a region of code."""
         try:
@@ -2293,7 +2293,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     @property
     def message(self):
         return self.parent.message
-    
+
     def __init__(self, parent, name="book", **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
@@ -2343,13 +2343,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
         })
-    
+
     def OnDestroy(self, evt):
         obj = evt.EventObject
         if isinstance(obj, Buffer):
             self.handler('buffer_deleted', obj)
         evt.Skip()
-    
+
     def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         buf = self.GetPage(evt.Selection)
         if buf.need_buffer_save:
@@ -2363,12 +2363,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 evt.Veto()
                 return
         evt.Skip()
-    
+
     def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
         evt.Skip()
-    
+
     def set_attributes(self, buf=None, **kwargs):
         """Set multiple properties at once to the buffer(s).
         
@@ -2397,20 +2397,20 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.defaultBufferStyle.update(kwargs)
             for buf in self.get_all_buffers():
                 _setattribute(buf, self.defaultBufferStyle)
-    
+
     def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         title = "{} file: {}".format(self.Name, buf.filename)
         self.parent.handler('title_window', title)
-    
+
     def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
-    
+
     ## --------------------------------
     ## Buffer list controls
     ## --------------------------------
-    
+
     def get_all_buffers(self, fn=None):
         """Yields all buffers with specified fn:filename or code."""
         if fn is None:
@@ -2424,7 +2424,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             for buf in self.get_pages(Buffer):
                 if fn is buf or fn in buf: # check code
                     yield buf
-    
+
     @property
     def menu(self):
         """Yields context menu."""
@@ -2435,22 +2435,22 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 lambda v: v.Check(buf is self.buffer))
         
         return (_menu(j+1, x) for j, x in enumerate(self.get_all_buffers()))
-    
+
     @property
     def buffer(self):
         """Return the currently selected page or None."""
         return self.CurrentPage
-    
+
     def find_buffer(self, fn):
         """Find a buffer with specified fn:filename or code."""
         return next(self.get_all_buffers(fn), None)
-    
+
     def swap_buffer(self, buf, lineno=0):
         self.swap_page(buf)
         if lineno:
             buf.markline = lineno - 1
             buf.goto_marker(1)
-    
+
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         with wx.FrozenWindow(self):
@@ -2461,7 +2461,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.InsertPage(index, buf, buf.name) # => [buffer_activated]
             self.handler('buffer_new', buf)
             return buf
-    
+
     def new_buffer(self):
         """Create a new default buffer."""
         buf = self.default_buffer
@@ -2473,7 +2473,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             ## buf.EmptyUndoBuffer()
         buf.SetFocus()
         return buf
-    
+
     def delete_buffer(self, buf=None):
         """Pop the current buffer from the buffer list."""
         if not buf:
@@ -2483,12 +2483,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.DeletePage(j)  # the focus moves
             if not self.buffer: # no buffers
                 wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
-    
+
     def delete_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
         wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
-    
+
     def next_buffer(self):
         if self.Selection < self.PageCount - 1:
             self.Selection += 1
@@ -2499,7 +2499,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 other_editor = books[k+1]
                 other_editor.Selection = 0
                 other_editor.CurrentPage.SetFocus()
-    
+
     def previous_buffer(self):
         if self.Selection > 0:
             self.Selection -= 1
@@ -2510,7 +2510,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 other_editor = books[k-1]
                 other_editor.Selection = other_editor.PageCount - 1
                 other_editor.CurrentPage.SetFocus()
-    
+
     ## --------------------------------
     ## File I/O
     ## --------------------------------
@@ -2518,7 +2518,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         "PY files (*.py)|*.py",
         "ALL files (*.*)|*.*",
     ]
-    
+
     def load_cache(self, filename, lineno=0):
         """Load a file from cache using linecache.
         Note:
@@ -2539,7 +2539,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.swap_buffer(buf, lineno)
             return True
         return False
-    
+
     def load_file(self, filename, lineno=0, verbose=True, **kwargs):
         """Load a file into an existing or new buffer.
         The requests module is required to use URL extension.
@@ -2578,7 +2578,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.post_message("Failed to load:", e)
             self.delete_buffer(buf)
             return False
-    
+
     def find_file(self, filename=None):
         """Open the specified file."""
         if not filename:
@@ -2595,7 +2595,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.swap_buffer(buf)
             self.post_message("New file.")
         return retval
-    
+
     def save_file(self, filename, buf=None, verbose=True):
         """Save the current buffer to a file.
         """
@@ -2619,7 +2619,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         except (OSError, UnicodeDecodeError) as e:
             self.post_message("Failed to save:", e)
             return False
-    
+
     def load_buffer(self, buf=None):
         """Confirm the load with the dialog."""
         buf = buf or self.buffer
@@ -2632,7 +2632,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return None
         else:
             return self.load_file(buf.filename, buf.markline+1)
-    
+
     def save_buffer(self, buf=None):
         """Confirm the save with the dialog."""
         buf = buf or self.buffer
@@ -2645,7 +2645,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return None
         else:
             return self.save_file(buf.filename, buf)
-    
+
     def save_buffer_as(self, buf=None):
         """Confirm the saveas with the dialog."""
         buf = buf or self.buffer
@@ -2656,12 +2656,12 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 return self.save_file(dlg.Path, buf)
-    
+
     def save_all_buffers(self):
         for buf in self.get_all_buffers():
             if buf.need_buffer_save:
                 self.save_buffer(buf)
-    
+
     def kill_buffer(self, buf=None):
         """Confirm the close with the dialog."""
         buf = buf or self.buffer
@@ -2675,7 +2675,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 self.post_message("The close has been canceled.")
                 return None
         self.delete_buffer(buf)
-    
+
     def kill_all_buffers(self):
         for buf in self.get_all_buffers():
             if buf.need_buffer_save:
@@ -2698,7 +2698,7 @@ class Interpreter(interpreter.Interpreter):
         
         self.parent = interpShell
         self.globals = self.locals
-    
+
     def runcode(self, code):
         """Execute a code object.
         
@@ -2714,7 +2714,7 @@ class Interpreter(interpreter.Interpreter):
             ## ex. KeyboardInterrupt:
             if wx.IsBusy():
                 wx.EndBusyCursor()
-    
+
     def showtraceback(self):
         """Display the exception that just occurred.
         
@@ -2731,7 +2731,7 @@ class Interpreter(interpreter.Interpreter):
             self.parent.handler('interp_error', v)
         except AttributeError:
             pass
-    
+
     def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
         
@@ -2815,11 +2815,11 @@ class Nautilus(EditorInterface, Shell):
     @property
     def message(self):
         return self.parent.message
-    
+
     @property
     def target(self):
         return self.__target
-    
+
     @target.setter
     def target(self, obj):
         """Reset the shell target object; Rename the parent title.
@@ -2839,34 +2839,34 @@ class Nautilus(EditorInterface, Shell):
         except AttributeError:
             pass
         self.parent.handler('title_window', obj)
-    
+
     @property
     def locals(self):
         return self.interp.locals
-    
+
     @locals.setter
     def locals(self, v): # internal use only
         self.interp.locals = v
-    
+
     @locals.deleter
     def locals(self): # internal use only
         self.interp.locals = self.__target.__dict__
-    
+
     @property
     def globals(self):
         return self.interp.globals
-    
+
     @globals.setter
     def globals(self, v): # internal use only
         self.interp.globals = v
-    
+
     @globals.deleter
     def globals(self): # internal use only
         self.interp.globals = self.__target.__dict__
         self.interp.globals.update(self.__globals)
-    
+
     __globals = {}
-    
+
     def __init__(self, parent, target, name="root",
                  introText=None,
                  startupScript=None,
@@ -3131,16 +3131,16 @@ class Nautilus(EditorInterface, Shell):
         del self.red_arrow
         
         self.__text = ''
-    
+
     def trace_position(self):
         _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
-    
+
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.handler('shell_deleted', self)
         evt.Skip()
-    
+
     def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
@@ -3155,13 +3155,13 @@ class Nautilus(EditorInterface, Shell):
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('shell_modified', self)
         evt.Skip()
-    
+
     def OnCallTipClick(self, evt):
         if self.CallTipActive():
             self.CallTipCancel()
         self.parent.handler('add_help', self._calltips[1])
         evt.Skip()
-    
+
     def OnSpace(self, evt):
         """Called when space pressed."""
         if not self.CanEdit():
@@ -3174,7 +3174,7 @@ class Nautilus(EditorInterface, Shell):
             self.handler('M-m pressed', None) # => call_module_autocomp
             return
         evt.Skip()
-    
+
     def OnBackspace(self, evt):
         """Called when backspace pressed.
         Backspace-guard from autocomp eating over a prompt whitespace.
@@ -3183,7 +3183,7 @@ class Nautilus(EditorInterface, Shell):
             self.handler('quit', evt) # Don't eat backward prompt
             return
         evt.Skip()
-    
+
     @editable
     def backward_kill_word(self):  # (override)
         if not self.SelectedText:
@@ -3199,7 +3199,7 @@ class Nautilus(EditorInterface, Shell):
                 if self.cpos < q:
                     self.cpos = q  # Don't skip back ps2:prompt
         self.ReplaceSelection('')
-    
+
     @editable
     def backward_kill_line(self):  # (override)
         if not self.SelectedText:
@@ -3216,7 +3216,7 @@ class Nautilus(EditorInterface, Shell):
                 else:
                     self.WordLeftExtend()  # Select cr/lf chunks
         self.ReplaceSelection('')
-    
+
     def OnEnter(self, evt):
         """Called when enter pressed."""
         if not self.CanEdit():
@@ -3246,7 +3246,7 @@ class Nautilus(EditorInterface, Shell):
         
         self.exec_cmdline()
         ## evt.Skip() # => processLine
-    
+
     def OnEnterDot(self, evt):
         """Called when dot [.] pressed."""
         if not self.CanEdit():
@@ -3262,12 +3262,12 @@ class Nautilus(EditorInterface, Shell):
         elif lst not in ('moji', 'word', 'rparen') or rst == 'word':
             self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
-    
+
     def on_enter_escmap(self, evt):
         self.__caret_mode = self.CaretPeriod
         self.CaretPeriod = 0
         self.message("ESC-")
-    
+
     def on_exit_escmap(self, evt):
         self.CaretPeriod = self.__caret_mode
         self.message("ESC {}".format(evt.key))
@@ -3276,13 +3276,13 @@ class Nautilus(EditorInterface, Shell):
             self.promptPosEnd = 0  # Enabale write(prompt).
             self.prompt()
         self.AnnotationClearAll()
-    
+
     def on_enter_notemode(self, evt):
         self.noteMode = True
         self.__caret_mode = self.CaretForeground
         self.CaretForeground = 'red'
         self.message("Note mode")
-    
+
     def on_exit_notemode(self, evt):
         self.noteMode = False
         self.CaretForeground = self.__caret_mode
@@ -3290,23 +3290,23 @@ class Nautilus(EditorInterface, Shell):
         self.promptPosEnd = 0  # Enabale write(prompt).
         self.prompt()
         self.message("")
-    
+
     def goto_next_white_arrow(self):
         self.goto_next_marker(0b010) # next white-arrow
-    
+
     def goto_previous_white_arrow(self):
         self.goto_previous_marker(0b010) # previous white-arrow
-    
+
     def goto_next_mark_arrow(self, selection=False):
         self.goto_next_marker(0b110, selection) # next white/red-arrow
-    
+
     def goto_previous_mark_arrow(self, selection=False):
         self.goto_previous_marker(0b110, selection) # previous white/red-arrow
-    
+
     ## --------------------------------
     ## Magic caster of the shell
     ## --------------------------------
-    
+
     @classmethod
     def magic(self, cmd):
         """Called before command pushed.
@@ -3318,7 +3318,7 @@ class Nautilus(EditorInterface, Shell):
             elif cmd[0] == '?': cmd = 'info({})'.format(cmd[1:])
             elif cmd[0] == '!': cmd = 'sx({!r})'.format(cmd[1:])
         return cmd
-    
+
     @classmethod
     def magic_interpret(self, tokens):
         """Called when [Enter] command, or eval-time for tooltip.
@@ -3402,7 +3402,7 @@ class Nautilus(EditorInterface, Shell):
             
             lhs += c # store in lhs; no more processing
         return lhs
-    
+
     def on_shell_deleted(self, shell):
         """Called before shell:self is killed.
         Delete target shell to prevent referencing the dead shell.
@@ -3415,7 +3415,7 @@ class Nautilus(EditorInterface, Shell):
             except AttributeError:
                 pass
         wx.CallAfter(_del)
-    
+
     def on_shell_activated(self, shell):
         """Called when the shell:self is activated.
         Reset localvars assigned for the shell target. cf. target.setter.
@@ -3429,7 +3429,7 @@ class Nautilus(EditorInterface, Shell):
         except AttributeError:
             pass
         self.parent.handler('title_window', obj)
-    
+
     def on_shell_inactivated(self, shell):
         """Called when shell:self is inactivated.
         Remove target localvars assigned for the shell target.
@@ -3438,7 +3438,7 @@ class Nautilus(EditorInterface, Shell):
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
-    
+
     def on_text_input(self, text):
         """Called when [Enter] text (before push).
         Mark points, reset history point, etc.
@@ -3449,7 +3449,7 @@ class Nautilus(EditorInterface, Shell):
         if text.rstrip():
             self.__eolc_mark = self.eolc
             self.historyIndex = -1
-    
+
     def on_text_output(self, text):
         """Called when [Enter] text (after push).
         Set markers at the last command line.
@@ -3461,25 +3461,25 @@ class Nautilus(EditorInterface, Shell):
         err = re.findall(py_error_re, text, re.M)
         self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
         return (not err)
-    
+
     def on_interp_error(self, e):
         ln = self.LineFromPosition(self.bolc)
         self.red_pointer = ln + e.lineno - 1
-    
+
     ## --------------------------------
     ## Attributes of the shell
     ## --------------------------------
-    
+
     @property
     def bolc(self):
         """Beginning of command-line."""
         return self.promptPosEnd
-    
+
     @property
     def eolc(self):
         """End of command-line."""
         return self.TextLength
-    
+
     @property
     def bol(self):
         """Beginning of line (override) excluding prompt."""
@@ -3489,16 +3489,16 @@ class Nautilus(EditorInterface, Shell):
                 lp -= len(ps)
                 break
         return self.cpos - lp
-    
+
     @property
     def cmdline(self):
         """Full multi-line command in the current prompt."""
         return self.GetTextRange(self.bolc, self.eolc)
-    
+
     ## cf. getCommand() -> caret-line that starts with a prompt
     ## cf. getMultilineCommand() -> caret-multi-line that starts with a prompt
     ##     [BUG ver 4.1.1] Don't use for current prompt --> Fixed in wx ver 4.2.0.
-    
+
     def getMultilineCommand(self, rstrip=True):
         """Extract a multi-line command which starts with a prompt.
         
@@ -3516,7 +3516,7 @@ class Nautilus(EditorInterface, Shell):
                 command = command.replace('\n', os.linesep + sys.ps2)
             return command
         return ''
-    
+
     def get_command_region(self, line):
         """Line numbers of prompt head and tail containing the line."""
         lc = line
@@ -3534,11 +3534,11 @@ class Nautilus(EditorInterface, Shell):
                 break
             le += 1
         return lc, le
-    
+
     ## --------------------------------
     ## Execution methods of the shell
     ## --------------------------------
-    
+
     def push(self, command, **kwargs):
         """Send command to the interpreter for execution.
         
@@ -3546,7 +3546,7 @@ class Nautilus(EditorInterface, Shell):
         """
         self.on_text_input(command)
         Shell.push(self, command, **kwargs)
-    
+
     def addHistory(self, command):
         """Add command to the command history.
         
@@ -3576,7 +3576,7 @@ class Nautilus(EditorInterface, Shell):
             ## execStartupScript 実行時は出力先 (owner) が存在しない
             ## shell.__init__ よりも先に実行される
             pass
-    
+
     def setBuiltinKeywords(self):
         """Create pseudo keywords as part of builtins.
         
@@ -3587,7 +3587,7 @@ class Nautilus(EditorInterface, Shell):
         builtins.ls = ls
         builtins.pwd = pwd
         builtins.sx = sx
-    
+
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.
         
@@ -3606,7 +3606,7 @@ class Nautilus(EditorInterface, Shell):
             self.push("")
             self.interp.startupScript = None
         self.__globals = {k: self.locals[k] for k in (self.locals.keys() - keys)}
-    
+
     def Paste(self, rectangle=False):
         """Replace selection with clipboard contents.
         
@@ -3630,7 +3630,7 @@ class Nautilus(EditorInterface, Shell):
                 command = command.replace('\n', os.linesep + ps)
                 self.ReplaceSelection(command)
             wx.TheClipboard.Close()
-    
+
     def regulate_cmd(self, text):
         """Regulate text to executable command.
         
@@ -3644,14 +3644,14 @@ class Nautilus(EditorInterface, Shell):
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
                     .replace(os.linesep, lf))
-    
+
     def clear(self):
         """Delete all text (override) put new prompt."""
         self.ClearAll()
         self.promptPosStart = 0
         self.promptPosEnd = 0
         self.prompt()
-    
+
     def write(self, text, pos=None):
         """Display text in the shell.
         
@@ -3663,29 +3663,29 @@ class Nautilus(EditorInterface, Shell):
             self.goto_char(pos)
         if self.CanEdit():
             Shell.write(self, text) # => AddText
-    
+
     ## input = classmethod(Shell.ask)
-    
+
     def info(self, obj):
         """Short information."""
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
         self.parent.handler('add_help', doc, typename(obj)) or print(doc)
-    
+
     def help(self, obj):
         """Full description."""
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
         self.parent.handler('add_help', doc, typename(obj)) or print(doc)
-    
+
     def eval(self, text):
         return eval(text, self.globals, self.locals)
-    
+
     def exec(self, text):
         exec(text, self.globals, self.locals)
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
-    
+
     def exec_cmdline(self):
         """Execute command-line directly.
         
@@ -3737,7 +3737,7 @@ class Nautilus(EditorInterface, Shell):
         for cmd in commands:
             self.write(cmd)
             self.processLine()
-    
+
     def eval_line(self):
         """Evaluate the selected word or line and show calltips."""
         if self.CallTipActive():
@@ -3765,7 +3765,7 @@ class Nautilus(EditorInterface, Shell):
                 return
         if not text:
             self.message("No words")
-    
+
     def exec_region(self):
         """Execute a region of code."""
         if self.CallTipActive():

@@ -24,7 +24,7 @@ def _Tip(*tips):
 
 
 class Param:
-    """Standard Parameter
+    """Standard Parameter.
     
     Args:
         name:  label
@@ -73,7 +73,7 @@ class Param:
         })
         self._tooltip = _Tip(handler.__doc__,
                              updater.__doc__)
-    
+
     def __str__(self, v=None):
         if v is None:
             v = self.value
@@ -81,16 +81,16 @@ class Param:
             return self.__format(v)
         except (TypeError, ValueError):
             return str(v)
-    
+
     def __int__(self):
         return int(self.value)
-    
+
     def __float__(self):
         return float(self.value)
-    
+
     def __len__(self):
         return len(self.range)
-    
+
     def reset(self, v=None, internal_callback=True):
         """Reset value when indexed (by knobs) with callback."""
         if v is None:
@@ -106,32 +106,32 @@ class Param:
         self.value = v
         if internal_callback:
             self.callback('control', self)
-    
+
     @property
     def check(self):
         """A knob check-flag (user defined)."""
         return self.__check
-    
+
     @check.setter
     def check(self, v):
         self.__check = bool(v)
         self.callback('checked', self)
-    
+
     @property
     def name(self):
         return self.__name
-    
+
     @name.setter
     def name(self, v):
         self.__name = v
         for knob in self.knobs:
             knob.update_label()
-    
+
     @property
     def value(self):
         """Current value := std_value + offset."""
         return self.__value
-    
+
     @value.setter
     def value(self, v):
         if v is None:
@@ -159,12 +159,12 @@ class Param:
         for knob in self.knobs:
             knob.update_ctrl(valid, notify=True)
         self.callback('notified', self)
-    
+
     @property
     def std_value(self):
         """A standard value (default None)."""
         return self.__std_value
-    
+
     @std_value.setter
     def std_value(self, v):
         if v is None:
@@ -172,7 +172,7 @@ class Param:
         self.__std_value = v
         for knob in self.knobs:
             knob.update_label()
-    
+
     @property
     def offset(self):
         """Offset value
@@ -181,21 +181,21 @@ class Param:
         if not np.isnan(self.std_value):
             return self.value - self.std_value
         return self.value
-    
+
     @offset.setter
     def offset(self, v):
         if not np.isnan(self.std_value):
             v += self.std_value
         self.value = v
-    
+
     min = property(lambda self: self.__range[0] if self else nan)
     max = property(lambda self: self.__range[-1] if self else nan)
-    
+
     @property
     def range(self):
         """Index range."""
         return self.__range
-    
+
     @range.setter
     def range(self, v):
         if v is None:
@@ -204,7 +204,7 @@ class Param:
             self.__range = sorted(v)
         for knob in self.knobs:
             knob.update_range() # list range of related knobs
-    
+
     @property
     def index(self):
         """A knob index -> value.
@@ -214,7 +214,7 @@ class Param:
         if np.isnan(v) or np.isinf(v):
             return -1
         return int(np.searchsorted(self.range, v))
-    
+
     @index.setter
     def index(self, j):
         if self:
@@ -223,7 +223,7 @@ class Param:
 
 
 class LParam(Param):
-    """Linear Parameter
+    """Linear Parameter.
     
     Args:
         name:  label
@@ -249,15 +249,15 @@ class LParam(Param):
     min = property(lambda self: self.__min)
     max = property(lambda self: self.__max)
     step = property(lambda self: self.__step)
-    
+
     def __len__(self):
         return 1 + int(round((self.max - self.min) / self.step)) # includes [min,max]
-    
+
     @property
     def range(self):
         """Index range."""
         return np.arange(self.min, self.max + self.step, self.step)
-    
+
     @range.setter
     def range(self, v):
         assert v is None or len(v) <= 3, "The range must be of length <= 3 or None"
@@ -268,7 +268,7 @@ class LParam(Param):
         self.__step = v[2] if len(v) > 2 else 1
         for knob in self.knobs:
             knob.update_range() # linear range of related knobs
-    
+
     @property
     def index(self):
         """A knob index -> value
@@ -278,7 +278,7 @@ class LParam(Param):
         if np.isnan(v) or np.isinf(v):
             return -1
         return int(round((v - self.min) / self.step))
-    
+
     @index.setter
     def index(self, j):
         self.value = self.min + j * self.step
@@ -289,7 +289,7 @@ class LParam(Param):
 ## --------------------------------
 
 class Knob(wx.Panel):
-    """Parameter controller unit
+    """Parameter controller unit.
     
     In addition to direct key input to the textctrl,
     [up][down][wheelup][wheeldown] keys can be used,
@@ -312,7 +312,7 @@ class Knob(wx.Panel):
     def param(self):
         """Param object referred from knobs."""
         return self.__par
-    
+
     @param.setter
     def param(self, v):
         self.__par.knobs.remove(self)
@@ -320,16 +320,16 @@ class Knob(wx.Panel):
         self.__par.knobs.append(self)
         self.update_range()
         self.update_ctrl()
-    
+
     @property
     def button(self):
         if isinstance(self._label, pb.PlateButton):
             return self._label
-    
+
     @property
     def control(self):
         return self._ctrl
-    
+
     def __init__(self, parent, param, type=None,
                  style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
@@ -426,11 +426,11 @@ class Knob(wx.Panel):
         self.update_ctrl()
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-    
+
     def OnDestroy(self, evt):
         self.__par.knobs.remove(self) # パラメータの関連付けを解除する
         evt.Skip()
-    
+
     def update_range(self):
         """Called when range is being changed (internal use only)."""
         v = self.__par
@@ -441,7 +441,7 @@ class Knob(wx.Panel):
                 self._ctrl.SetStringSelection(str(v))
         else:
             self._ctrl.SetRange(0, len(v)-1) #<wx.Slider> #<wx.SpinButton>
-    
+
     def update_label(self):
         """Called when label is being changed (internal use only)."""
         v = self.__par
@@ -452,7 +452,7 @@ class Knob(wx.Panel):
         self._label.SetLabel(v.name + t)
         self._label.Refresh()
         self.Refresh()
-    
+
     def update_ctrl(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
         v = self.__par
@@ -473,12 +473,12 @@ class Knob(wx.Panel):
         else:
             self.set_textcolour('#ff8080') # False: light-red
         self.update_label()
-    
+
     def set_textcolour(self, c):
         if self:
             self._text.BackgroundColour = c
             self._text.Refresh()
-    
+
     def shift_ctrl(self, evt, bit):
         """Called when a key/mouse wheel is pressed/scrolled.
         
@@ -495,7 +495,7 @@ class Knob(wx.Panel):
         if j != v.index:
             v.index = j
             v.reset(v.value)
-    
+
     def OnScroll(self, evt): #<wx._core.ScrollEvent> #<wx._controls.SpinEvent> #<wx._core.CommandEvent>
         v = self.__par
         j = self._ctrl.GetValue()
@@ -503,11 +503,11 @@ class Knob(wx.Panel):
             v.index = j
             v.reset(v.value)
         evt.Skip()
-    
+
     def OnMouseWheel(self, evt): #<wx._core.MouseEvent>
         self.shift_ctrl(evt, (1 if evt.WheelRotation > 0 else -1))
         evt.Skip(False)
-    
+
     def OnCtrlKeyDown(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
         if key == wx.WXK_LEFT: return self.shift_ctrl(evt, -1)
@@ -522,10 +522,10 @@ class Knob(wx.Panel):
         i = ls.index(self)
         if key == wx.WXK_DOWN: return any(_focus(c) for c in ls[i+1:])
         if key == wx.WXK_UP: return any(_focus(c) for c in ls[i-1::-1])
-    
+
     def OnTextKeyUp(self, evt): #<wx._core.KeyEvent>
         evt.Skip()
-    
+
     def OnTextKeyDown(self, evt): #<wx._core.KeyEvent>
         key = evt.GetKeyCode()
         if key == wx.WXK_DOWN: return self.shift_ctrl(evt, -1)
@@ -533,26 +533,26 @@ class Knob(wx.Panel):
         if key == wx.WXK_ESCAPE:
             self.__par.reset(self.__par.value, internal_callback=None) # restore value
         evt.Skip()
-    
+
     def OnTextEnter(self, evt): #<wx._core.CommandEvent>
         evt.Skip()
         x = self._text.Value.strip()
         self.__par.reset(x)
-    
+
     def OnTextExit(self, evt): #<wx._core.FocusEvent>
         x = self._text.Value.strip()
         if x != str(self.__par):
             self.__par.reset(x)
         evt.Skip()
-    
+
     def OnCheck(self, evt): #<wx._core.CommandEvent>
         self.__par.check = evt.IsChecked()
         evt.Skip()
-    
+
     def OnPress(self, evt): #<wx._core.CommandEvent>
         self.__par.callback('updated', self.__par)
         evt.Skip()
-    
+
     def Enable(self, p=True):
         self._label.Enable(p)
         self._ctrl.Enable(p)
@@ -560,7 +560,7 @@ class Knob(wx.Panel):
 
 
 class KnobCtrlPanel(scrolled.ScrolledPanel):
-    """Scrollable Control Panel
+    """Scrollable Control Panel.
     """
     def __init__(self, *args, **kwargs):
         scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
@@ -592,11 +592,11 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnRecalcLayout)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnRecalcLayout)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnRecalcLayout)
-    
+
     def OnRecalcLayout(self, evt): #<wx._core.ScrollWinEvent>
         self.Layout()
         evt.Skip()
-    
+
     def OnToggleFold(self, evt): #<wx._core.MouseEvent>
         x, y = evt.Position
         for child in self.Sizer.Children: # child <wx._core.SizerItem>
@@ -611,37 +611,37 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                         self.SendSizeEvent()
                         break
         evt.Skip()
-    
+
     ## --------------------------------
     ## Layout commands and attributes
     ## --------------------------------
     @property
     def layout_groups(self):
         return self.__groups
-    
+
     def is_enabled(self, groupid, pred=all):
         return pred(win.Enabled for win in self.__groups[groupid])
-    
+
     def enable(self, groupid, p=True):
         for win in self.__groups[groupid]: # child could be deep nesting
             win.Enable(p)
-    
+
     def is_shown(self, groupid):
         ## child = self.Sizer.Children[groupid]
         ## return child.IsShown()
         return self.Sizer.IsShown(groupid % len(self.__groups))
-    
+
     def show(self, groupid, p=True):
         """Show/hide all including the box."""
         ## child = self.Sizer.Children[groupid]
         ## child.Show(p)
         self.Sizer.Show(groupid % len(self.__groups), p)
         self.Layout()
-    
+
     def is_folded(self, groupid):
         child = self.Sizer.Children[groupid]
         return not any(cc.IsShown() for cc in child.Sizer.Children)
-    
+
     def fold(self, groupid, p=True):
         """Fold/unfold the boxed group."""
         child = self.Sizer.Children[groupid]
@@ -649,7 +649,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             for cc in child.Sizer.Children: # child of child <wx._core.SizerItem>
                 cc.Show(not p)
             self.Layout()
-    
+
     def layout(self, items, title=None,
                row=0, expand=0, border=2, hspacing=1, vspacing=1,
                show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):
@@ -712,24 +712,24 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.Sizer.Fit(self)
         
         return self.__groups[-1]
-    
+
     ## --------------------------------
     ## 外部入出力／クリップボード通信
     ## --------------------------------
     @property
     def parameters(self):
         return [p.value for p in self.get_params()]
-    
+
     @parameters.setter
     def parameters(self, v):
         self.set_params(v)
-    
+
     def get_params(self, checked_only=False):
         params = chain(*self.__params)
         if not checked_only:
             return params
         return filter(lambda c: getattr(c, 'check', None), params)
-    
+
     def set_params(self, argv, checked_only=False):
         params = self.get_params(checked_only)
         for p, v in zip(params, argv):
@@ -739,7 +739,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                 p.value = v
             except Exception as e:
                 print(f"- Failed to eval {v}:", e)
-    
+
     def reset_params(self, checked_only=False):
         params = self.get_params(checked_only)
         for p in params:
@@ -749,13 +749,13 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                 ## TypeError might occur if p.reset(v) is called with
                 ## missing 1 required positional argument.
                 pass
-    
+
     def copy_to_clipboard(self, checked_only=False):
         params = self.get_params(checked_only)
         text = '\t'.join(str(p) if isinstance(p, Param) else
                          str(p.value) for p in params)
         Clipboard.write(text)
-    
+
     def paste_from_clipboard(self, checked_only=False):
         text = Clipboard.read()
         if text:
@@ -771,7 +771,7 @@ class ControlPanel(CtrlInterface, KnobCtrlPanel):
 
 
 class Clipboard:
-    """Clipboard interface of text and image
+    """Clipboard interface of text and image.
     
     This does not work unless wx.App instance exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
@@ -781,14 +781,14 @@ class Clipboard:
     def istrstream():
         with io.StringIO(Clipboard.read()) as f:
             yield f
-    
+
     @contextmanager
     @staticmethod
     def ostrstream():
         with io.StringIO() as f:
             yield f
             Clipboard.write(f.getvalue())
-    
+
     @staticmethod
     def read(verbose=False):
         do = wx.TextDataObject()
@@ -802,7 +802,7 @@ class Clipboard:
         else:
             print("- Unable to open clipboard.")
             return None
-    
+
     @staticmethod
     def write(text, verbose=False):
         do = wx.TextDataObject(str(text))
@@ -814,7 +814,7 @@ class Clipboard:
                 print(f"To clipboard:\n{text}")
         else:
             print("- Unable to open clipboard.")
-    
+
     @staticmethod
     def imread(verbose=False):
         do = wx.BitmapDataObject()
@@ -836,7 +836,7 @@ class Clipboard:
         except Exception:
             print("- Contents of the clipboard are not images.")
             return None
-    
+
     @staticmethod
     def imwrite(buf, verbose=False):
         try:
@@ -1006,7 +1006,7 @@ class Icon(wx.Bitmap):
 
 
 class ClassicButton(wx.Button):
-    """Classic button
+    """Classic button.
     
     Args:
         label:    button label
@@ -1025,7 +1025,7 @@ class ClassicButton(wx.Button):
 
 
 class Button(pb.PlateButton):
-    """Flat button
+    """Flat button.
     
     Args:
         label:    button label
@@ -1042,7 +1042,7 @@ class Button(pb.PlateButton):
             self.SetToolTip(_Tip(handler.__doc__))
         if icon:
             self.SetBitmap(Icon(icon))
-    
+
     def SetBitmap(self, bmp):
         """Set the bitmap displayed in the button.
         
@@ -1056,7 +1056,7 @@ class Button(pb.PlateButton):
 
 
 class ToggleButton(wx.ToggleButton):
-    """Togglable button
+    """Togglable button.
     
     Args:
         label:    button label
@@ -1082,7 +1082,7 @@ class ToggleButton(wx.ToggleButton):
 
 
 class TextBox(wx.Control):
-    """Text control
+    """Text control.
     
     Args:
         label:    button label
@@ -1097,12 +1097,12 @@ class TextBox(wx.Control):
         lambda self: self._ctrl.GetValue(),
         lambda self, v: self._ctrl.SetValue(v),
         doc="textctrl value:str")
-    
+
     value = Value #: internal use only
-    
+
     button = property(lambda self: self._btn)
     control = property(lambda self: self._ctrl)
-    
+
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
@@ -1131,14 +1131,14 @@ class TextBox(wx.Control):
             self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
-    
+
     def reset(self, v):
         try:
             self.Value = v
             self._handler(self)
         except AttributeError:
             pass
-    
+
     def OnNavKey(self, evt):
         if evt.EventObject is self._ctrl:
             self.Navigate(evt.Direction)
@@ -1147,7 +1147,7 @@ class TextBox(wx.Control):
 
 
 class Choice(wx.Control):
-    """Editable Choice (ComboBox) control
+    """Editable Choice (ComboBox) control.
     
     Args:
         label:    button label
@@ -1166,22 +1166,22 @@ class Choice(wx.Control):
         lambda self: self._ctrl.GetValue(),
         lambda self, v: self._ctrl.SetValue(v),
         doc="combobox value:str")
-    
+
     value = Value #: internal use only
-    
+
     Selection = property(
         lambda self: self._ctrl.GetSelection(),
         lambda self, v: self._ctrl.SetSelection(v),  # int or NOT_FOUND(-1)
         doc="combobox selection:int")
-    
+
     Items = property(
         lambda self: self._ctrl.GetItems(),
         lambda self, v: self._ctrl.SetItems(v),
         doc="combobox items:list")
-    
+
     button = property(lambda self: self._btn)
     control = property(lambda self: self._ctrl)
-    
+
     def __init__(self, parent, label='', handler=None, updater=None,
                  icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
@@ -1212,14 +1212,14 @@ class Choice(wx.Control):
             self._btn.SetToolTip(_Tip(updater.__doc__))
         
         self.Bind(wx.EVT_NAVIGATION_KEY, self.OnNavKey)
-    
+
     def reset(self, v):
         try:
             self.Value = v
             self._handler(self)
         except AttributeError:
             pass
-    
+
     def OnTextEnter(self, evt):
         s = evt.String.strip()
         if not s:
@@ -1228,7 +1228,7 @@ class Choice(wx.Control):
             self._ctrl.Append(s)
             self._ctrl.SetStringSelection(s)
         evt.Skip()
-    
+
     def OnNavKey(self, evt):
         if evt.EventObject is self._ctrl:
             self.Navigate(evt.Direction)
@@ -1237,7 +1237,7 @@ class Choice(wx.Control):
 
 
 class Indicator(wx.Control):
-    """Traffic light indicator
+    """Traffic light indicator.
     
     Args:
         colors:   list of colors (default is tricolour) cf. wx.ColourDatabase
@@ -1247,12 +1247,12 @@ class Indicator(wx.Control):
     @property
     def Value(self):
         return self.__value
-    
+
     @Value.setter
     def Value(self, v):
         self.__value = int(v)
         self.Refresh()
-    
+
     def redesign(self, **kwargs):
         """Update multiple design properties at once.
         
@@ -1267,14 +1267,14 @@ class Indicator(wx.Control):
         """
         self.__dict__.update(kwargs)
         self.InvalidateBestSize()
-    
+
     colors = ('green', 'yellow', 'red') # default tricolor style
     backgroundColour = 'dark gray'
     foregroundColour = 'light gray'
     spacing = 7
     radius = 4
     glow = 0
-    
+
     def __init__(self, parent, colors=None, value=0,
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
@@ -1292,15 +1292,15 @@ class Indicator(wx.Control):
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-    
+
     def DoGetBestSize(self):
         N = len(self.colors)
         s = self.spacing
         return wx.Size((2*s-1)*N+3, 2*s+2)
-    
+
     def OnSize(self, evt):
         self.Refresh()
-    
+
     def OnPaint(self, evt):
         dc = wx.BufferedPaintDC(self)
         dc.Clear()
@@ -1336,7 +1336,7 @@ class Indicator(wx.Control):
                 gc.DrawPath(path)
             dc.SetBrush(wx.Brush(name if b else self.foregroundColour))
             dc.DrawCircle(x, y, r)
-    
+
     def blink(self, msec, mask=0):
         """Blinks once for given milliseconds.
         
@@ -1355,7 +1355,7 @@ class Indicator(wx.Control):
 
 
 class Gauge(wx.Control):
-    """Rainbow gauge
+    """Rainbow gauge.
     
     Args:
         range:    maximum value
@@ -1365,21 +1365,21 @@ class Gauge(wx.Control):
     @property
     def Value(self):
         return self.__value
-    
+
     @Value.setter
     def Value(self, v):
         self.__value = int(v)
         self.Refresh()
-    
+
     @property
     def Range(self):
         return self.__range
-    
+
     @Range.setter
     def Range(self, v):
         self.__range = int(v)
         self.Refresh()
-    
+
     def __init__(self, parent, range=24, value=0,
                  style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
@@ -1391,10 +1391,10 @@ class Gauge(wx.Control):
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-    
+
     def OnSize(self, evt):
         self.Refresh()
-    
+
     def OnPaint(self, evt):
         dc = wx.BufferedPaintDC(self)
         dc.Clear()

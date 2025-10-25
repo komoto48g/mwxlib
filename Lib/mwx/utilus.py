@@ -467,15 +467,15 @@ def get_rootpath(fn):
 ## --------------------------------
 
 class SSM(dict):
-    """Single State Machine/Context of FSM
+    """Single State Machine/Context of FSM.
     """
     def __call__(self, event, *args, **kwargs):
         for act in self[event]:
             act(*args, **kwargs)
-    
+
     def __repr__(self):
         return "<{} object at 0x{:X}>".format(self.__class__.__name__, id(self))
-    
+
     def __str__(self):
         def _lstr(v):
             def _name(a):
@@ -484,7 +484,7 @@ class SSM(dict):
                 return repr(a)
             return ', '.join(_name(a) for a in v)
         return '\n'.join("{:>32} : {}".format(str(k), _lstr(v)) for k, v in self.items())
-    
+
     def bind(self, event, action=None):
         """Append a transaction to the context."""
         assert callable(action) or action is None
@@ -496,7 +496,7 @@ class SSM(dict):
         if action not in transaction:
             transaction.append(action)
         return action
-    
+
     def unbind(self, event, action=None):
         """Remove a transaction from the context."""
         assert callable(action) or action is None
@@ -513,7 +513,7 @@ class SSM(dict):
 
 
 class FSM(dict):
-    """Finite State Machine
+    """Finite State Machine.
     
     Args:
         contexts: map of context <DNA>
@@ -544,20 +544,20 @@ class FSM(dict):
         There is no enter/exit event handler.
     """
     debug = 0
-    
+
     default_state = None
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
-    
+
     current_event = property(lambda self: self.__event)
     previous_event = property(lambda self: self.__prev_event)
-    
+
     @current_state.setter
     def current_state(self, state):
         self.__state = state
         self.__event = '*forced*'
         self.__debcall__(self.__event)
-    
+
     def clear(self, state):
         """Reset current and previous states."""
         self.__state = state
@@ -565,7 +565,7 @@ class FSM(dict):
         self.__event = None
         self.__prev_event = None
         self.__matched_pattern = None
-    
+
     def __init__(self, contexts=None, default=None):
         dict.__init__(self) # update dict, however, it does not clear
         dict.clear(self)    # if and when __init__ is called, all contents are cleared
@@ -577,16 +577,16 @@ class FSM(dict):
         self.default_state = default
         self.clear(default) # the first clear creates object localvars
         self.update(contexts)
-    
+
     def __missing__(self, key):
         raise Exception("FSM logic-error: undefined state {!r}".format(key))
-    
+
     def __repr__(self):
         return "<{} object at 0x{:X}>".format(self.__class__.__name__, id(self))
-    
+
     def __str__(self):
         return '\n'.join("[ {!r} ]\n{!s}".format(k, v) for k, v in self.items())
-    
+
     def __call__(self, event, *args, **kwargs):
         """Handle the event.
         
@@ -629,7 +629,7 @@ class FSM(dict):
         self.__prev_state = self.__state
         if recept:
             return retvals
-    
+
     def fork(self, event, *args, **kwargs):
         """Invoke the event handlers (internal use only).
         
@@ -640,7 +640,7 @@ class FSM(dict):
         ret = self.call(event, *args, **kwargs)
         self.__prev_event = self.__event
         return ret
-    
+
     def call(self, event, *args, **kwargs):
         """Invoke the event handlers (internal use only).
         
@@ -690,7 +690,7 @@ class FSM(dict):
         
         self.__debcall__(event, *args, **kwargs) # check when no transition
         return None # no event, no action
-    
+
     def __debcall__(self, pattern, *args, **kwargs):
         v = self.debug
         if v and self.__state is not None:
@@ -715,11 +715,11 @@ class FSM(dict):
         
         if v > 7: # max verbose level puts all args
             self.log("\t:", args, kwargs)
-    
+
     @staticmethod
     def log(*args):
         print(*args, file=sys.__stdout__)
-    
+
     @staticmethod
     def dump(*args):
         fn = get_rootpath("deb-dump.log")
@@ -727,7 +727,7 @@ class FSM(dict):
             print(time.strftime('!!! %Y/%m/%d %H:%M:%S'), file=o)
             print(*args, traceback.format_exc(), sep='\n', file=o)
         print(*args, traceback.format_exc(), sep='\n', file=sys.__stderr__)
-    
+
     @staticmethod
     def duplicate(context):
         """Duplicate the transaction:list in the context.
@@ -736,7 +736,7 @@ class FSM(dict):
         so that the original transaction (if they are lists) is not removed.
         """
         return {event: transaction[:] for event, transaction in context.items()}
-    
+
     def validate(self, state):
         """Sort and move to end items with key which includes ``*?[]``."""
         context = self[state]
@@ -753,7 +753,7 @@ class FSM(dict):
         context.update(temp)
         context.update(sorted(bra, reverse=1))
         context.update(sorted(ast, reverse=1, key=lambda v: len(v[0])))
-    
+
     def update(self, contexts):
         """Update each context or Add new contexts."""
         for k, v in contexts.items():
@@ -762,7 +762,7 @@ class FSM(dict):
             else:
                 self[k] = SSM(self.duplicate(v)) # new context
             self.validate(k)
-    
+
     def append(self, contexts):
         """Append new contexts."""
         for k, v in contexts.items():
@@ -776,7 +776,7 @@ class FSM(dict):
             else:
                 self[k] = SSM(self.duplicate(v)) # new context
             self.validate(k)
-    
+
     def remove(self, contexts):
         """Remove old contexts."""
         for k, v in contexts.items():
@@ -791,7 +791,7 @@ class FSM(dict):
         for k, v in list(self.items()): # self mutates during iteration
             if not v:
                 del self[k]
-    
+
     def bind(self, event, action=None, state=None, state2=None):
         """Append a transaction to the context.
         
@@ -835,7 +835,7 @@ class FSM(dict):
                 warn(f"- FSM cannot append new transaction ({state!r} : {event!r}).\n"
                      f"  The transaction must be a list, not a tuple.")
         return action
-    
+
     def binds(self, event, action=None, state=None, state2=None):
         """Append a one-time transaction to the context.
         
@@ -851,7 +851,7 @@ class FSM(dict):
             finally:
                 self.unbind(event, _act, state)
         return self.bind(event, _act, state, state2)
-    
+
     def unbind(self, event, action=None, state=None):
         """Remove a transaction from the context.
         
@@ -901,41 +901,41 @@ class TreeList:
     """
     def __init__(self, ls=None):
         self.__items = ls or []
-    
+
     def __call__(self, k):
         return TreeList(self[k])
-    
+
     def __len__(self):
         return len(self.__items)
-    
+
     def __contains__(self, k):
         return self._getf(self.__items, k)
-    
+
     def __iter__(self):
         return self.__items.__iter__()
-    
+
     def __getitem__(self, k):
         if isinstance(k, str):
             return self._getf(self.__items, k)
         return self.__items.__getitem__(k)
-    
+
     def __setitem__(self, k, v):
         if isinstance(k, str):
             return self._setf(self.__items, k, v)
         return self.__items.__setitem__(k, v)
-    
+
     def __delitem__(self, k):
         if isinstance(k, str):
             return self._delf(self.__items, k)
         return self.__items.__delitem__(k)
-    
+
     def _find_item(self, ls, key):
         for x in ls:
             if isinstance(x, (tuple, list)) and x and x[0] == key:
                 if len(x) < 2:
                     raise ValueError(f"No value for {key=!r}")
                 return x
-    
+
     def _getf(self, ls, key):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -946,7 +946,7 @@ class TreeList:
         li = self._find_item(ls, key)
         if li is not None:
             return li[-1]
-    
+
     def _setf(self, ls, key, value):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -966,7 +966,7 @@ class TreeList:
                 ls.append([key, value]) # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
             warn(f"- TreeList {e!r}: {key=!r}")
-    
+
     def _delf(self, ls, key):
         if '/' in key:
             p, key = key.rsplit('/', 1)
@@ -1055,7 +1055,7 @@ def get_fullargspec(f):
 
 
 def funcall(f, *args, doc=None, alias=None, **kwargs):
-    """Decorator of event handler
+    """Decorator of event handler.
     
     Check if the event argument can be omitted and if any other
     required arguments are specified in args and kwargs.

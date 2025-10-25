@@ -72,7 +72,7 @@ class Thread:
         if self.worker:
             return self.worker.is_alive()
         return False
-    
+
     def __init__(self, owner=None):
         self.owner = owner
         self.worker = None
@@ -90,11 +90,11 @@ class Thread:
                    'thread_end' : [ None ],
                 },
             })
-    
+
     def __del__(self):
         if self.active:
             self.Stop()
-    
+
     @contextmanager
     def entry(self):
         """Exclusive reentrant lock manager.
@@ -110,26 +110,26 @@ class Thread:
         ## The thread must be activated to enter.
         ## assert self.active, f"{self!r} must be activated to enter {name!r}."
         yield self
-    
+
     def enters(self, f):
         """Decorator to add a one-time handler for the enter event.
         The specified function will be called from the main thread.
         """
         return self.handler.binds('thread_begin', _F(f))
-    
+
     def exits(self, f):
         """Decorator to add a one-time handler for the exit event.
         The specified function will be called from the main thread.
         """
         return self.handler.binds('thread_end', _F(f))
-    
+
     def wraps(self, f, *args, **kwargs):
         """Decorator for a function that starts a new thread."""
         @wraps(f)
         def _f(*v, **kw):
             return self.Start(f, *v, *args, **kw, **kwargs)
         return _f
-    
+
     def check(self, timeout=None):
         """Check the thread event flags."""
         if not self.running:
@@ -139,7 +139,7 @@ class Thread:
         if not self.active:
             raise KeyboardInterrupt("terminated by user")
         return True
-    
+
     def pause(self, msg=None, caption=wx.MessageBoxCaptionStr):
         """Pause the thread.
         Confirm whether to terminate the thread.
@@ -168,7 +168,7 @@ class Thread:
             return False
         finally:
             self.event.set() # resume
-    
+
     def Start(self, f, *args, **kwargs):
         """Start the thread to run the specified function.
         """
@@ -205,7 +205,7 @@ class Thread:
                                 args=args, kwargs=kwargs, daemon=True)
         self.worker.start()
         self.event.set()
-    
+
     def Stop(self):
         """Stop the thread.
         
@@ -248,31 +248,31 @@ class LayerInterface(CtrlInterface):
     dockable = True
     reloadable = True
     unloadable = True
-    
+
     graph = property(lambda self: self.parent.graph)
     output = property(lambda self: self.parent.output)
     histogram = property(lambda self: self.parent.histogram)
     selected_view = property(lambda self: self.parent.selected_view)
-    
+
     message = property(lambda self: self.parent.message)
-    
+
     ## thread_type = Thread
     thread = None
-    
+
     ## layout helper function (internal use only)
     pack = mwx.pack
-    
+
     ## funcall = interactive_call (internal use only)
     funcall = staticmethod(_F)
-    
+
     ## for debug (internal use only)
     pane = property(lambda self: self.parent.get_pane(self))
-    
+
     @property
     def Arts(self):
         """List of arts <matplotlib.artist.Artist>."""
         return self.__artists
-    
+
     @Arts.setter
     def Arts(self, arts):
         for art in self.__artists[:]:
@@ -280,13 +280,13 @@ class LayerInterface(CtrlInterface):
                 art.remove()
                 self.__artists.remove(art)
         self.__artists = arts
-    
+
     @Arts.deleter
     def Arts(self):
         for art in self.__artists:
             art.remove()
         self.__artists = []
-    
+
     def attach_artists(self, axes, *artists):
         """Attach artists (e.g., patches) to the given axes."""
         for art in artists:
@@ -296,7 +296,7 @@ class LayerInterface(CtrlInterface):
             axes.add_artist(art)
             if art not in self.__artists:
                 self.__artists.append(art)
-    
+
     def detach_artists(self, *artists):
         """Detach artists (e.g., patches) from their axes."""
         for art in artists:
@@ -304,7 +304,7 @@ class LayerInterface(CtrlInterface):
                 art.remove()
                 art._transformSet = False
             self.__artists.remove(art)
-    
+
     def __init__(self, parent, session=None):
         if hasattr(self, 'handler'):
             warn(f"Duplicate iniheritance of CtrlInterface by {self}.")
@@ -398,21 +398,21 @@ class LayerInterface(CtrlInterface):
                 self.load_session(session)
         except Exception:
             traceback.print_exc()  # Failed to load the plug session.
-    
+
     def Init(self):
         """Initialize layout before load_session (to be overridden)."""
         pass
-    
+
     def load_session(self, session):
         """Restore settings from a session file (to be overridden)."""
         if 'params' in session:
             self.parameters = session['params']
-    
+
     def save_session(self, session):
         """Save settings in a session file (to be overridden)."""
         if self.parameters:
             session['params'] = self.parameters
-    
+
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             if self.thread and self.thread.active:
@@ -420,7 +420,7 @@ class LayerInterface(CtrlInterface):
                 self.thread.Stop()
             del self.Arts
         evt.Skip()
-    
+
     def OnShow(self, evt):
         if not self:
             return
@@ -430,11 +430,11 @@ class LayerInterface(CtrlInterface):
             else:
                 self.handler('page_hidden', self)
         evt.Skip()
-    
+
     Shown = property(
         lambda self: self.IsShown(),
         lambda self, v: self.Show(v))
-    
+
     def IsShown(self):
         """Return True if the window is physically visible on the screen.
         
@@ -443,7 +443,7 @@ class LayerInterface(CtrlInterface):
         """
         ## return self.pane.IsShown()
         return self.IsShownOnScreen()
-    
+
     def Show(self, show=True, interactive=False):
         """Shows or hides the window.
         
@@ -451,14 +451,14 @@ class LayerInterface(CtrlInterface):
                    Note: This might be called from a thread.
         """
         wx.CallAfter(self.parent.show_pane, self, show, interactive)  # Use main thread.
-    
+
     Drawn = property(
         lambda self: self.IsDrawn(),
         lambda self, v: self.Draw(v))
-    
+
     def IsDrawn(self):
         return any(art.get_visible() for art in self.Arts)
-    
+
     def Draw(self, show=None):
         """Draw artists.
         If show is None:default, draw only when the pane is visible.
@@ -493,14 +493,14 @@ def _register__dummy_plug__(cls, module):
         ## warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
         module.Plugin = cls
         return cls
-    
+
     class _Plugin(cls, LayerInterface):
         def __init__(self, parent, session=None, **kwargs):
             cls.__init__(self, parent, **kwargs)
             LayerInterface.__init__(self, parent, session)
         Show = LayerInterface.Show
         IsShown = LayerInterface.IsShown
-    
+
     _Plugin.__module__ = module.__name__
     _Plugin.__qualname__ = cls.__qualname__ + "~"
     _Plugin.__name__ = cls.__name__ + "~"
@@ -534,24 +534,24 @@ class Graph(GraphPlot):
         })
         ## ドロップターゲットを許可する
         self.SetDropTarget(MyFileDropLoader(self, self.loader))
-    
+
     def refresh(self):
         if self.frame:
             self.frame.update_buffer()
             self.draw()
-    
+
     def toggle_infobar(self):
         """Toggle infobar (frame.annotation)."""
         if self.infobar.IsShown():
             self.infobar.Dismiss()
         elif self.frame:
             self.infobar.ShowMessage(self.frame.annotation)
-    
+
     def update_infobar(self, frame):
         """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
             self.infobar.ShowMessage(frame.annotation)
-    
+
     def hide_layers(self):
         for plug in self.parent.get_all_plugs():
             for art in plug.Arts:
@@ -574,7 +574,7 @@ class MyFileDropLoader(wx.FileDropTarget):
         
         self.view = target
         self.loader = loader
-    
+
     def OnDropFiles(self, x, y, filenames):
         pos = self.view.ScreenPosition + (x, y)
         paths = []
@@ -607,24 +607,24 @@ class Frame(mwx.Frame):
     graph = property(lambda self: self.__graph)
     output = property(lambda self: self.__output)
     histogram = property(lambda self: self.__histgrm)
-    
+
     selected_view = property(lambda self: self.__view)
-    
+
     def select_view(self, view):
         self.__view = view
         self.set_title(view.frame)
-    
+
     @property
     def graphic_windows(self):
         """Graphic windows list.
         [0] graph [1] output [2:] others(user-defined)
         """
         return self.__graphic_windows
-    
+
     @property
     def graphic_windows_on_screen(self):
         return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
-    
+
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
         
@@ -823,9 +823,9 @@ class Frame(mwx.Frame):
         
         ## Accepts DnD
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
-    
+
     SYNC_SWITCH = True
-    
+
     def sync(self, a, b):
         """Synchronize b to a."""
         if (self.SYNC_SWITCH
@@ -836,17 +836,17 @@ class Frame(mwx.Frame):
             b.ylim = a.ylim
             b.OnDraw(None)
             b.canvas.draw_idle()
-    
+
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
         ssn, _ = os.path.splitext(ssn)
         name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
-    
+
     def OnActivate(self, evt): #<wx._core.ActivateEvent>
         if self and evt.Active:
             self.set_title(self.selected_view.frame)
-    
+
     def OnClose(self, evt): #<wx._core.CloseEvent>
         ssn = os.path.basename(self.session_file or '--')
         with wx.MessageDialog(None,
@@ -881,15 +881,15 @@ class Frame(mwx.Frame):
                 evt.Veto()
                 return
         evt.Skip()
-    
+
     def Destroy(self):
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
-    
+
     ## --------------------------------
     ## pane window interface
     ## --------------------------------
-    
+
     def get_pane(self, name):
         """Get named pane or notebook pane.
         
@@ -901,7 +901,7 @@ class Frame(mwx.Frame):
             name = plug.category or plug
         if name:
             return self._mgr.GetPane(name)
-    
+
     def show_pane(self, name, show=True, interactive=False):
         """Show named pane or notebook pane.
         
@@ -969,7 +969,7 @@ class Frame(mwx.Frame):
         pane.Show(show)
         self._mgr.Update()
         return (show != shown)
-    
+
     def update_pane(self, name, **props):
         """Update the layout of the pane (internal use only).
         
@@ -996,7 +996,7 @@ class Frame(mwx.Frame):
             pane.Dock()
         else:
             pane.Float()
-    
+
     def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
         win = pane.window
@@ -1006,19 +1006,19 @@ class Frame(mwx.Frame):
         else:
             win.handler('page_closed', win)
         evt.Skip(False) # Don't skip to avoid being called twice.
-    
+
     ## --------------------------------
     ## Plugin <Layer> interface
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
-    
+
     def register(self, cls=None, **kwargs):
         """Decorator of plugin class register."""
         if cls is None:
             return lambda f: self.register(f, **kwargs)
         self.load_plug(cls, force=1, show=1, **kwargs)
         return cls
-    
+
     def require(self, name):
         """Get named plug window.
         If not found, try to load it once.
@@ -1032,7 +1032,7 @@ class Frame(mwx.Frame):
             if self.load_plug(name) is not False:
                 return self.get_plug(name)
         return plug
-    
+
     def get_plug(self, name):
         """Get named plug window."""
         if isinstance(name, str):
@@ -1043,11 +1043,11 @@ class Frame(mwx.Frame):
         elif isinstance(name, LayerInterface):
             ## return name
             return next((x for x in self.get_all_plugs() if x is name), None)
-    
+
     def get_all_plugs(self):
         for name, module in self.plugins.items():
             yield module.__plug__
-    
+
     def load_plug(self, root, session=None, force=False, show=False,
                         dock=0, floating_pos=None, floating_size=None,
                         **kwargs):
@@ -1253,7 +1253,7 @@ class Frame(mwx.Frame):
         
         self.handler('plug_loaded', plug)
         return None
-    
+
     def unload_plug(self, name):
         """Unload plugin and detach the pane from UI manager."""
         plug = self.get_plug(name)
@@ -1287,7 +1287,7 @@ class Frame(mwx.Frame):
             self._mgr.DetachPane(nb) # detach notebook pane
             self._mgr.Update()
             nb.Destroy()
-    
+
     def reload_plug(self, name):
         """Reload plugin."""
         plug = self.get_plug(name)
@@ -1308,7 +1308,7 @@ class Frame(mwx.Frame):
         for shell in self.shellframe.get_all_shells():
             if shell.target is plug:
                 shell.handler('shell_activated', shell)
-    
+
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell."""
         plug = self.get_plug(name)
@@ -1331,7 +1331,7 @@ class Frame(mwx.Frame):
         self.shellframe.Show()
         if wx.GetKeyState(wx.WXK_SHIFT): # open the source code.
             self.shellframe.load(plug)
-    
+
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
                 wildcard="Python file (*.py)|*.py",
@@ -1340,7 +1340,7 @@ class Frame(mwx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 for path in dlg.Paths:
                     self.load_plug(path)
-    
+
     def Quit(self, evt=None):
         """Stop all Layer threads."""
         for plug in self.get_all_plugs():
@@ -1348,12 +1348,12 @@ class Frame(mwx.Frame):
             if thread and thread.active:
                 ## thread.active = 0
                 thread.Stop()
-    
+
     ## --------------------------------
     ## load/save index file
     ## --------------------------------
     ATTRIBUTESFILE = "results.index"
-    
+
     def load_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
         
@@ -1389,7 +1389,7 @@ class Frame(mwx.Frame):
             "{} files are missing.".format(n, len(res)-n, len(mis)))
         print(self.message.read())
         return frames
-    
+
     def save_index(self, filename=None, frames=None):
         """Save frames :ref to the Index file.
         """
@@ -1439,11 +1439,11 @@ class Frame(mwx.Frame):
             "{} files are missing.".format(n, len(res)-n, len(mis)))
         print(self.message.read())
         return frames
-    
+
     ## --------------------------------
     ## load/save frames and attributes
     ## --------------------------------
-    
+
     @classmethod
     def read_attributes(self, filename):
         """Read attributes file."""
@@ -1473,7 +1473,7 @@ class Frame(mwx.Frame):
             print("- Failed to read attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         return res, mis
-    
+
     @classmethod
     def write_attributes(self, filename, frames):
         """Write attributes file."""
@@ -1493,7 +1493,7 @@ class Frame(mwx.Frame):
             print("- Failed to write attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         return new, mis
-    
+
     def load_frame(self, paths=None, view=None):
         """Load frames from files to the view window.
         
@@ -1512,7 +1512,7 @@ class Frame(mwx.Frame):
                 results = savedirs[savedir]
                 frame.update_attr(results.get(frame.name))
         return frames
-    
+
     def save_frame(self, path=None, frame=None):
         """Save frame to a file.
         
@@ -1524,7 +1524,7 @@ class Frame(mwx.Frame):
             fn = os.path.join(savedir, self.ATTRIBUTESFILE)
             res, mis = self.write_attributes(fn, [frame])
         return frame
-    
+
     ## --------------------------------
     ## load/save images
     ## --------------------------------
@@ -1532,7 +1532,7 @@ class Frame(mwx.Frame):
         "TIF file (*.tif)|*.tif",
          "ALL files (*.*)|*.*",
     ]
-    
+
     @staticmethod
     def read_buffer(path):
         """Read buffer from a file (to be overridden)."""
@@ -1543,7 +1543,7 @@ class Frame(mwx.Frame):
         ## return np.asarray(buf), info # ref
         ## return np.array(buf), info # copy
         return buf, info
-    
+
     @staticmethod
     def write_buffer(path, buf):
         """Write buffer to a file (to be overridden)."""
@@ -1556,7 +1556,7 @@ class Frame(mwx.Frame):
             if os.path.exists(path):
                 os.remove(path)
             raise
-    
+
     @ignore(ResourceWarning)
     def load_buffer(self, paths=None, view=None):
         """Load buffers from paths to the view window.
@@ -1616,7 +1616,7 @@ class Frame(mwx.Frame):
         if frame:
             view.select(frame)
         return frames
-    
+
     def save_buffer(self, path=None, frame=None):
         """Save buffer of the frame to a file.
         """
@@ -1655,7 +1655,7 @@ class Frame(mwx.Frame):
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
             return None
-    
+
     def save_buffers_as_tiffs(self, path=None, frames=None):
         """Save buffers to a file as a multi-page tiff."""
         if not frames:
@@ -1688,12 +1688,12 @@ class Frame(mwx.Frame):
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
             return False
-    
+
     ## --------------------------------
     ## load/save session
     ## --------------------------------
     session_file = None
-    
+
     def load_session(self, filename=None, flush=True):
         """Load session from file."""
         if not filename:
@@ -1739,7 +1739,7 @@ class Frame(mwx.Frame):
                 win.handler('page_shown', win)
         
         self.message("\b done.")
-    
+
     def save_session_as(self):
         """Save session as a new file."""
         with wx.FileDialog(self, "Save session as",
@@ -1751,7 +1751,7 @@ class Frame(mwx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 self.session_file = dlg.Path
                 self.save_session()
-    
+
     def save_session(self):
         """Save session to file."""
         if not self.session_file:

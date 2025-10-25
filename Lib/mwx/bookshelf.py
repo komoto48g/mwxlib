@@ -20,7 +20,7 @@ class MyDropTarget(wx.DropTarget):
         self.do.Add(self.textdo)
         self.do.Add(self.filedo)
         self.SetDataObject(self.do)
-    
+
     def OnDragOver(self, x, y, result):
         item, flags = self.tree.HitTest((x, y))
         items = list(self.tree._gen_items(self.tree.RootItem))  # first level items
@@ -33,7 +33,7 @@ class MyDropTarget(wx.DropTarget):
         if item != self.tree.Selection:
             self.tree.SelectItem(item)
         return result
-    
+
     def OnData(self, x, y, result):
         item = self.tree.Selection
         name = self.tree.GetItemText(item)
@@ -119,17 +119,17 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 self.build_tree()
         wx.CallAfter(_attach)
         wx.CallAfter(self.ExpandAll)
-    
+
     def OnDestroy(self, evt):
         if self and self.parent:
             for editor in self.parent.get_all_editors():
                 editor.handler.remove(self.context)
         evt.Skip()
-    
+
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface
     ## --------------------------------
-    
+
     def build_tree(self, clear=True):
         """Build tree control.
         All items will be cleared if specified.
@@ -140,7 +140,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         for editor in self.parent.get_all_editors():
             self._set_item(self.RootItem, editor.Name, editor.get_all_buffers())
         self.Refresh()
-    
+
     def _gen_items(self, root, key=None):
         """Generates the [root/key] items."""
         item, cookie = self.GetFirstChild(root)
@@ -153,11 +153,11 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
                     yield item
             item, cookie = self.GetNextChild(root, cookie)
-    
+
     def _get_item(self, root, key):
         """Get the first [root/key] item found."""
         return next(self._gen_items(root, key), None)
-    
+
     def _set_item(self, root, key, data):
         """Set the [root/key] item with data recursively."""
         for item in self._gen_items(root, key):
@@ -174,27 +174,27 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             self.SetItemData(item, data)
             self.SetItemText(item, data.caption_prefix + data.name)
         return item
-    
+
     ## --------------------------------
     ## Actions for bookshelf interfaces
     ## --------------------------------
-    
+
     def on_buffer_new(self, buf):
         self.build_tree(clear=0)
-    
+
     def on_buffer_deleted(self, buf):
         self.Delete(buf.__itemId)
-    
+
     ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる
     ##       buf.__itemId がない場合がある (delete_buffer 直後など)
     def on_buffer_selected(self, buf):
         if self and buf:
             wx.CallAfter(lambda: self.SelectItem(buf.__itemId))
-    
+
     def on_buffer_filename(self, buf):
         if self and buf:
             self.SetItemText(buf.__itemId, buf.caption_prefix + buf.name)
-    
+
     def on_delete_buffer(self, evt):
         item = self.Selection
         if item:
@@ -202,10 +202,10 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             if data:
                 data.parent.kill_buffer(data)  # the focus moves
                 wx.CallAfter(self.SetFocus)
-    
+
     def _find_editor(self, name):
         return next(editor for editor in self.parent.get_all_editors() if editor.Name == name)
-    
+
     def OnSelChanged(self, evt):
         if self and self.HasFocus():
             data = self.GetItemData(evt.Item)
@@ -219,7 +219,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                     nb.Selection = nb.FindPage(editor)
             wx.CallAfter(self.SetFocus)
         evt.Skip()
-    
+
     def OnBeginDrag(self, evt):
         data = self.GetItemData(evt.Item)
         if data:

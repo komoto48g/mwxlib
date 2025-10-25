@@ -21,15 +21,15 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     @property
     def selected_items(self):
         return filter(self.IsSelected, range(self.ItemCount))
-    
+
     @property
     def checked_items(self):
         return filter(self.IsItemChecked, range(self.ItemCount))
-    
+
     @property
     def focused_item(self):
         return self.FocusedItem
-    
+
     @property
     def all_items(self):
         rows = range(self.ItemCount)
@@ -37,7 +37,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         ## return [[self.GetItemText(j, k) for k in cols] for j in rows]
         for j in rows:
             yield [self.GetItemText(j, k) for k in cols]
-    
+
     def __init__(self, parent, target, **kwargs):
         wx.ListCtrl.__init__(self, parent, size=(400,130),
                              style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
@@ -115,11 +115,11 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: Menu.Popup(self, self.menu))
-    
+
     def Destroy(self):
         self.Target.handler.remove(self.context)
         return wx.ListCtrl.Destroy(self)
-    
+
     def UpdateInfo(self, frame):
         ls = ("{}".format(frame.index),
               "{}".format(frame.name),
@@ -134,13 +134,13 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetItem(j, k, v)
         if frame.pathname:
             self.CheckItem(j)
-    
+
     def OnShowItems(self, evt):
         self.Target.select(self.focused_item)
-    
+
     def OnRemoveItems(self, evt):
         del self.Target[self.selected_items]
-    
+
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         col = evt.Column
         if col == 0: # reverse the first column
@@ -166,14 +166,14 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 for k, v in enumerate(c[1:]): # update data except for id(0)
                     self.SetItem(j, k+1, v)
             self.Target.select(frame) # invokes [frame_shown] to select the item
-    
+
     def OnSelectAllItems(self, evt):
         for j in range(self.ItemCount):
             self.Select(j)
-    
+
     def OnLoadItems(self, evt):
         self.parent.parent.load_index(view=self.Target)
-    
+
     def OnSaveItems(self, evt):
         selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
         if selected_frames:
@@ -181,7 +181,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.parent.parent.save_index(frames=selected_frames)
         else:
             self.parent.message("No frame selected.")
-    
+
     def OnCopyInfo(self, evt):
         selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
         if selected_frames:
@@ -191,7 +191,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             Clipboard.write('\n'.join(text))
         else:
             self.parent.message("No frame selected.")
-    
+
     def OnEditLocalUnit(self, evt):
         frame = self.Target.all_frames[self.focused_item]
         with wx.TextEntryDialog(self, frame.name,
@@ -199,7 +199,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if dlg.ShowModal() == wx.ID_OK:
                 frame.unit = eval(dlg.Value or 'None')
         self.SetFocus()
-    
+
     def OnEditAnnotation(self, evt):
         frame = self.Target.all_frames[self.focused_item]
         with wx.TextEntryDialog(self, frame.name,
@@ -207,34 +207,34 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if dlg.ShowModal() == wx.ID_OK:
                 frame.annotation = dlg.Value
         self.SetFocus()
-    
+
     def OnItemSelected(self, evt):
         frame = self.Target.all_frames[evt.Index]
         self.parent.message(frame.pathname)
         evt.Skip()
-    
+
     ## --------------------------------
     ## Actions of frame-handler
     ## --------------------------------
-    
+
     def on_frame_loaded(self, frame):
         j = frame.index
         self.InsertItem(j, str(j))
         for k in range(j+1, self.ItemCount): # id(0) を更新する
             self.SetItem(k, 0, str(k))
         self.UpdateInfo(frame)
-    
+
     def on_frame_shown(self, frame):
         j = frame.index
         self.SetItemFont(j, self.Font.Bold())
         self.Select(j)
         self.Focus(j)
-    
+
     def on_frame_hidden(self, frame):
         j = frame.index
         self.SetItemFont(j, self.Font)
         self.Select(j, False)
-    
+
     def on_frames_removed(self, indices):
         with wx.FrozenWindow(self):
             for j in reversed(indices):
@@ -249,15 +249,15 @@ class Plugin(Layer):
     menukey = "Plugins/Extensions/&Buffer listbox\tAlt+b"
     caption = "Property list"
     dockable = False
-    
+
     @property
     def all_pages(self):
         return [self.nb.GetPage(i) for i in range(self.nb.PageCount)]
-    
+
     @property
     def message(self):
         return self.statusline
-    
+
     def Init(self):
         self.nb = aui.AuiNotebook(self, size=(400,150),
             style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_RIGHT)
@@ -278,12 +278,12 @@ class Plugin(Layer):
             self.parent.select_view(self.nb.CurrentPage.Target)
             evt.Skip()
         self.nb.Bind(wx.EVT_CHILD_FOCUS, on_focus_set)
-    
+
     def attach(self, target, caption):
         if target not in [lc.Target for lc in self.all_pages]:
             lc = CheckList(self, target)
             self.nb.AddPage(lc, caption)
-    
+
     def detach(self, target):
         for k, lc in enumerate(self.all_pages):
             if target is lc.Target:

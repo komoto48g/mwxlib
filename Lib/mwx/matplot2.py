@@ -34,7 +34,8 @@ if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     Event.__init__ = __init__
     del __init__
 
-## (local) Monkey-patch for matplotlib 3.8/WXAgg
+
+## Monkey-patch (local) for matplotlib 3.8/WXAgg
 if 1:
     class Cursor(Cursor):
         def onmove(self, event):
@@ -68,7 +69,7 @@ if 1:
 
 
 class MatplotPanel(wx.Panel):
-    """MPL panel for general graph
+    """MPL panel for general graph.
     
     Attributes:
         figure:  <matplotlib.figure.Figure>
@@ -78,7 +79,7 @@ class MatplotPanel(wx.Panel):
         selected: Selected points <matplotlib.lines.Line2D>
     """
     handler = property(lambda self: self.__handler)
-    
+
     def __init__(self, parent, log=None, margin=(.1,.1,.9,.9), **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
@@ -296,7 +297,7 @@ class MatplotPanel(wx.Panel):
         self.__isMenu = None
         self.__isPressed = None
         self.__isDragging = False # True if dragging. (None if dblclicked)
-    
+
     def clear(self):
         """Initialize the plot figure."""
         #<matplotlib.axes.Axes>
@@ -311,7 +312,7 @@ class MatplotPanel(wx.Panel):
         #<matplotlib.widgets.Cursor>
         self.cursor = Cursor(self.axes, useblit=True, color='grey', linewidth=1)
         self.cursor.visible = 1
-    
+
     ## Note: To avoid a wxAssertionError when running in a thread.
     @postcall
     def draw(self, art=None):
@@ -325,76 +326,76 @@ class MatplotPanel(wx.Panel):
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
-    
+
     def set_margin(self, lbrt):
         self.figure.subplots_adjust(*lbrt)
-    
+
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))
-    
+
     ## --------------------------------
     ## Property of the current frame
     ## --------------------------------
-    
+
     ## to be overridden (referenced in draw).
     frame = property(lambda self: self)
-    
+
     axes = property(
         lambda self: self.figure.axes[0],
         doc="The first figure axes <matplotlib.axes.Axes>")
-    
+
     xbound = property(
         lambda self: np.array(self.axes.get_xbound()),
         lambda self, v: self.axes.set_xbound(v),
         doc="X-axis numerical bounds where lowerBound < upperBound)")
-    
+
     ybound = property(
         lambda self: np.array(self.axes.get_ybound()),
         lambda self, v: self.axes.set_ybound(v),
         doc="Y-axis numerical bounds where lowerBound < upperBound)")
-    
+
     xlim = property(
         lambda self: np.array(self.axes.get_xlim()),
         lambda self, v: self.axes.set_xlim(v),
         doc="X-axis range [left, right]")
-    
+
     ylim = property(
         lambda self: np.array(self.axes.get_ylim()),
         lambda self, v: self.axes.set_ylim(v),
         doc="Y-axis range [bottom, top]")
-    
+
     @property
     def ddpu(self):
         """Display-dot resolution (x, y) [dots per arb.unit]."""
         ## return self.mapxy2disp(1,1) - self.mapxy2disp(0,0)
         a, b = self.mapxy2disp([0,1],[0,1])
         return b - a
-    
+
     def mapxy2disp(self, x, y):
         """Map xydata --> display dot pixel coordinates."""
         v = np.array((x, y)).T
         return self.axes.transData.transform(v)
-    
+
     def mapdisp2xy(self, px, py):
         """Map display dot pixel coordinates --> xydata."""
         v = np.array((px, py)).T
         return self.axes.transData.inverted().transform(v)
-    
+
     ## --------------------------------
     ## Property of the modeline
     ## --------------------------------
-    
+
     selectedModeLineBg = '#000000'
     selectedModeLineFg = '#f0f0f0'
     unselectedModeLineBg = 'auto'
     unselectedModeLineFg = 'auto'
-    
+
     def on_modeline_tip(self, evt): #<wx._core.MouseEvent>
         flag = self.modeline.HitTest(evt.Position)
         if flag == wx.HT_WINDOW_INSIDE:
             self.modeline.SetToolTip(self.modeline.Label)
         evt.Skip()
-    
+
     def on_focus_set(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour(self.selectedModeLineBg)
@@ -402,7 +403,7 @@ class MatplotPanel(wx.Panel):
             self.modeline.Refresh()
         self.escape()
         evt.Skip()
-    
+
     def on_focus_kill(self, evt): #<wx._core.FocusEvent>
         if self.modeline.IsShown():
             self.modeline.SetBackgroundColour(self.unselectedModeLineBg)
@@ -410,17 +411,17 @@ class MatplotPanel(wx.Panel):
             self.modeline.Refresh()
         self.escape()
         evt.Skip()
-    
+
     def escape(self, evt=None):
         """Feel like pressing {escape}.
         エスケープキーを押した気持ちになる
         """
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
-    
+
     ## --------------------------------
     ## External I/O file and clipboard
     ## --------------------------------
-    
+
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
         ## b = self.selected.get_visible()
@@ -435,30 +436,30 @@ class MatplotPanel(wx.Panel):
             ## self.selected.set_visible(b)
             self.cursor.visible = c
             self.canvas.draw()
-    
+
     ## --------------------------------
     ## Selector interface
     ## --------------------------------
-    
+
     def trace_point(self, x, y):
         if hasattr(x, '__iter__'):
             if not len(x):
                 return
             x, y = x[0], y[0]
         self.message("({:g}, {:g})".format(x, y))
-    
+
     def on_figure_enter(self, evt): #<matplotlib.backend_bases.MouseEvent>
         pass
-    
+
     def on_figure_leave(self, evt): #<matplotlib.backend_bases.MouseEvent>
         self.cursor.clear(evt)
         self.canvas.draw()
-    
+
     @property
     def selector(self):
         """Selected points array [[x],[y]]."""
         return np.array(self.selected.get_data(orig=0))
-    
+
     @selector.setter
     def selector(self, v):
         x, y = v
@@ -469,36 +470,36 @@ class MatplotPanel(wx.Panel):
         self.handler('selector_drawn', self.frame)
         self.draw(self.selected)
         self.trace_point(*v)
-    
+
     @selector.deleter
     def selector(self):
         self.selected.set_visible(0)
         self.selected.set_data([], [])
         self.handler('selector_removed', self.frame)
         self.draw(self.selected)
-    
+
     ## --------------------------------
     ## matplotlib interfaces
     ## --------------------------------
-    
+
     @property
     def p_event(self):
         """Last `pressed` event <matplotlib.backend_bases.MouseEvent>."""
         return self.__isPressed
-    
+
     @p_event.setter
     def p_event(self, v):
         self.__isPressed = v
-    
+
     def on_menu_lock(self, evt): #<matplotlib.backend_bases.MouseEvent>
         self.__isMenu = 1
-    
+
     def on_menu(self, evt): #<matplotlib.backend_bases.MouseEvent>
         if self.__isMenu:
             self.canvas.SetFocus()
             Menu.Popup(self, self.menu)
         self.__isMenu = 0
-    
+
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
         """Find index near (x,y) and set the selector.
         Called (maybe) after mouse button pressed.
@@ -529,14 +530,14 @@ class MatplotPanel(wx.Panel):
             self.canvas.draw_idle()
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
-    
+
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed."""
         key = hotkey(evt)
         self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
-    
+
     def on_hotkey_down(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
@@ -545,14 +546,14 @@ class MatplotPanel(wx.Panel):
             self.on_hotkey_press(evt)
         else:
             evt.Skip()
-    
+
     def on_hotkey_up(self, evt): #<wx._core.KeyEvent>
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
-    
+
     def _on_mouse_event(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called in mouse event handlers."""
         if not evt.inaxes or evt.inaxes is not self.axes:
@@ -567,7 +568,7 @@ class MatplotPanel(wx.Panel):
             key += 'wheel{}'.format(evt.button) # wheel[up|down]
             evt.key = key
         return key
-    
+
     def on_button_press(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is pressed."""
         self.p_event = evt
@@ -578,7 +579,7 @@ class MatplotPanel(wx.Panel):
         else:
             self.__isDragging = False
             self.handler('{}button pressed'.format(key), evt)
-    
+
     def on_button_release(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is released."""
         key = self._on_mouse_event(evt)
@@ -591,7 +592,7 @@ class MatplotPanel(wx.Panel):
                 return
             self.handler('{}button released'.format(key), evt)
         self.p_event = None
-    
+
     def on_motion_notify(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when the mouse is moved."""
         key = self._on_mouse_event(evt)
@@ -612,52 +613,52 @@ class MatplotPanel(wx.Panel):
             else:
                 return
             self.handler('{} motion'.format(event), evt)
-    
+
     def on_scroll(self, evt): #<matplotlib.backend_bases.MouseEvent>
         """Called when scrolling the mouse wheel."""
         self.p_event = evt
         key = self._on_mouse_event(evt)
         self.handler('{} pressed'.format(key), evt)
         self.p_event = None
-    
+
     ## --------------------------------
     ## Pan/Zoom actions
     ## --------------------------------
-    
+
     ZOOM_RATIO = 10 ** 0.2
     ZOOM_LIMIT = 0.1  # logical limit <= epsilon
-    
+
     def OnDraw(self, evt):
         """Called before canvas.draw."""
         pass
-    
+
     def OnMotion(self, evt):
         """Called when mouse moves in axes."""
         if not self.selector.size:
             self.trace_point(evt.xdata, evt.ydata)
-    
+
     def OnForwardPosition(self, evt):
         """Go forward view position."""
         self.toolbar.forward()
         self.draw()
-    
+
     def OnBackPosition(self, evt):
         """Go backward view position."""
         self.toolbar.back()
         self.draw()
-    
+
     def OnHomePosition(self, evt):
         """Go back to home position."""
         self.toolbar.home()
         self.toolbar.update()
         self.toolbar.push_current()
         self.draw()
-    
+
     def OnEscapeSelection(self, evt):
         """Escape from selection."""
         del self.selector
         self.canvas.draw_idle()
-    
+
     def zoomlim(self, lim, M, c=None):
         ## The limitation of zoom is necessary; If the axes is enlarged too much,
         ## the processing speed will significantly slow down.
@@ -666,7 +667,7 @@ class MatplotPanel(wx.Panel):
         y = c - M * (c - lim)
         if abs(y[1] - y[0]) > self.ZOOM_LIMIT:
             return y
-    
+
     def OnZoom(self, evt):
         M = 1/self.ZOOM_RATIO if evt.key[-1] in '+;' else self.ZOOM_RATIO
         self.xlim = x = self.zoomlim(self.xlim, M)
@@ -675,7 +676,7 @@ class MatplotPanel(wx.Panel):
         if x is not None or y is not None:
             self.toolbar.push_current()
             self.draw()
-    
+
     def OnScrollZoom(self, evt):
         M = 1/self.ZOOM_RATIO if evt.button == 'up' else self.ZOOM_RATIO
         self.xlim = x = self.zoomlim(self.xlim, M, evt.xdata if evt.inaxes else None)
@@ -684,35 +685,35 @@ class MatplotPanel(wx.Panel):
         if x is not None or y is not None:
             self.toolbar.push_current()
             self.draw()
-    
+
     def OnPanBegin(self, evt):
         """Toolbar pan - While panning, press x/y to constrain the direction."""
         ## self.toolbar.set_cursor(2)
         self.set_wxcursor(wx.CURSOR_HAND)
         self.toolbar.pan()
         self.__prev = self.handler.previous_state # save previous state of PAN
-    
+
     def OnPanEnd(self, evt):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
         self.handler.current_state = self.__prev  # --> previous state of PAN
         del self.__prev
-    
+
     def OnZoomBegin(self, evt):
         """Toolbar zoom - While zooming, press x/y to constrain the direction."""
         ## self.toolbar.set_cursor(3)
         self.set_wxcursor(wx.CURSOR_CROSS)
         self.toolbar.zoom()
         self.__prev = self.handler.previous_state # save previous state of ZOOM
-    
+
     def OnZoomEnd(self, evt):
         ## self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
         self.handler.current_state = self.__prev  # --> previous state of ZOOM
         del self.__prev
-    
+
     ## def OnZoomMove(self, evt):
     ##     """Zoom."""
     ##     ## http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744
@@ -759,39 +760,39 @@ class MatplotPanel(wx.Panel):
     ##         pass
     ##     self.toolbar.set_cursor(1)
     ##     self.draw()
-    
+
     ## --------------------------------
     ## Axis actions
     ## --------------------------------
-    
+
     def OnHomeXPosition(self, evt):
         self.OnHomePosition(evt)
-    
+
     def OnHomeYPosition(self, evt):
         self.OnHomePosition(evt)
-    
+
     def OnAxisEnter(self, evt):
         self.set_wxcursor(wx.CURSOR_HAND)
-    
+
     def OnAxisLeave(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
-    
+
     def OnAxisDragBegin(self, evt):
         org = self.p_event
         w, h = self.canvas.Size
         p = self.canvas.ScreenToClient(wx.GetMousePosition())
         org.x, org.y = (p[0], h-p[1])
         org.xdata, org.ydata = self.mapdisp2xy(org.x, org.y) # p_event overwrites
-    
+
     def OnAxisDragEnd(self, evt):
         self.toolbar.push_current()
         if evt.inaxes:
             self.handler('axes_enter', evt)
-    
+
     def OnXAxisPanMove(self, evt):
         self.xlim -= (evt.xdata - self.p_event.xdata)
         self.draw()
-    
+
     def OnXAxisPanZoom(self, evt, c=None):
         org = self.p_event
         M = np.exp(-(evt.x - org.x)/100)
@@ -800,14 +801,14 @@ class MatplotPanel(wx.Panel):
         self.xlim = self.zoomlim(self.xlim, M, c)
         org.x, org.y = evt.x, evt.y
         self.draw()
-    
+
     def OnXAxisPanZoomOrig(self, evt):
         self.OnXAxisPanZoom(evt, c=self.xlim[0])
-    
+
     def OnYAxisPanMove(self, evt):
         self.ylim -= (evt.ydata - self.p_event.ydata)
         self.draw()
-    
+
     def OnYAxisPanZoom(self, evt, c=None):
         org = self.p_event
         M = np.exp(-(evt.y - org.y)/100)
@@ -816,9 +817,9 @@ class MatplotPanel(wx.Panel):
         self.ylim = self.zoomlim(self.ylim, M, c)
         org.x, org.y = evt.x, evt.y
         self.draw()
-    
+
     def OnYAxisPanZoomOrig(self, evt):
         self.OnYAxisPanZoom(evt, c=self.ylim[0])
-    
+
     def OnYAxisPanZoomEdge(self, evt):
         self.OnYAxisPanZoom(evt, c=self.ylim[1])

@@ -18,7 +18,7 @@ from .matplot2 import NORMAL, MARK, LINE, REGION
 
 
 class LinePlot(MatplotPanel):
-    """Line plot 1D base panel
+    """Line plot 1D base panel.
     
     region : selected range (l,r) on the plot
     """
@@ -45,7 +45,7 @@ class LinePlot(MatplotPanel):
             },
         })
         self.modeline.Show(0)
-    
+
     def clear(self):
         MatplotPanel.clear(self)
         
@@ -64,14 +64,14 @@ class LinePlot(MatplotPanel):
         #<matplotlib.patches.Rectangle>
         self.__vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
-    
+
     ## the limit for dragging region
     boundary = None
-    
+
     @property
     def region(self):
         return self.__region
-    
+
     @region.setter
     def region(self, v):
         if v is not None:
@@ -95,11 +95,11 @@ class LinePlot(MatplotPanel):
             self.__vspan.set_visible(0)
             self.handler('region_unset', self.frame)
         self.__region = v
-    
+
     @region.deleter
     def region(self):
         self.region = None
-    
+
     def annotate(self):
         for art in self.__annotations:
             art.remove()
@@ -126,11 +126,11 @@ class LinePlot(MatplotPanel):
                 _A(None, (a,y), (b,y), textcoords='data', arrowstyle='<->'),
                 p,
             ]
-    
+
     ## --------------------------------
     ## Motion/Drag actions (override)
     ## --------------------------------
-    
+
     def region_test(self, evt):
         if self.region is not None:
             x = evt.xdata
@@ -140,11 +140,11 @@ class LinePlot(MatplotPanel):
             elif a-d < x < a+d: return 2 # left-edge
             elif b-d < x < b+d: return 3 # right-edge
             else: return 0 # outside
-    
+
     def OnDraw(self, evt):
         """Called before canvas.draw."""
         self.annotate()
-    
+
     def OnMotion(self, evt):
         MatplotPanel.OnMotion(self, evt)
         
@@ -155,11 +155,11 @@ class LinePlot(MatplotPanel):
             self.set_wxcursor(wx.CURSOR_SIZEWE) # on-edge
         else:
             self.set_wxcursor(wx.CURSOR_ARROW) # outside or None
-    
+
     def OnDragLock(self, evt):
         self.__lastpoint = evt.xdata
         self.__selection = self.region_test(evt)
-    
+
     def OnDragBegin(self, evt):
         v = self.__selection
         if v == 1:
@@ -172,7 +172,7 @@ class LinePlot(MatplotPanel):
             self.__lastpoint = self.region[0]   # set origin left
         else:
             self.set_wxcursor(wx.CURSOR_SIZEWE) # outside
-    
+
     def OnDragMove(self, evt):
         x = evt.xdata
         if self.__selection != 1:
@@ -198,10 +198,10 @@ class LinePlot(MatplotPanel):
         else:
             self.message("- No region.") #<FSM logic-error>
         self.draw()
-    
+
     def OnDragEnd(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
-    
+
     def OnEscapeSelection(self, evt):
         MatplotPanel.OnEscapeSelection(self, evt)
         
@@ -211,7 +211,7 @@ class LinePlot(MatplotPanel):
 
 
 class Histogram(LinePlot):
-    """LinePlot panel for histogram (Multi-graph : Single-frame)
+    """LinePlot panel for histogram (Multi-graph : Single-frame).
     
     frame.image <uint8> (buffer ではない) を参照して，ヒストグラムをプロットする
     常に整数ビット画像となるので，高速なビンづめ法で計算する
@@ -240,12 +240,12 @@ class Histogram(LinePlot):
         self.modeline.Show(0)
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-    
+
     def OnDestroy(self, evt):
         for graph in self.__graphs:
             self.detach(graph)
         evt.Skip()
-    
+
     def clear(self):
         LinePlot.clear(self)
         
@@ -258,23 +258,23 @@ class Histogram(LinePlot):
         #<matplotlib.patches.Polygon>
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
         self.axes.add_patch(self.__fil)
-    
+
     def attach(self, *graphs):
         for graph in graphs:
             if graph not in self.__graphs:
                 self.__graphs.append(graph)
                 graph.handler.append(self.context)
-    
+
     def detach(self, *graphs):
         for graph in graphs:
             if graph in self.__graphs:
                 self.__graphs.remove(graph)
                 graph.handler.remove(self.context)
-    
+
     @property
     def boundary(self):
         return [0,255]
-    
+
     def calc(self, frame):
         BINS = 256
         img = frame.image
@@ -288,7 +288,7 @@ class Histogram(LinePlot):
             hist, bins = np.histogram(img, BINS)
             bins = np.linspace(img.min(), img.max(), BINS)
         return bins, hist
-    
+
     def hplot(self, frame):
         self.__frame = frame # update reference of the frame
         if frame:
@@ -300,7 +300,7 @@ class Histogram(LinePlot):
             self.toolbar.update()
             self.toolbar.push_current()
             self.draw()
-    
+
     def hreplot(self, frame):
         self.__frame = frame # update reference of the frame
         if frame:
@@ -325,7 +325,7 @@ class Histogram(LinePlot):
         self.toolbar.update()
         self.toolbar.push_current()
         self.draw()
-    
+
     def writeln(self):
         if not self.modeline.IsShown():
             return
@@ -343,11 +343,11 @@ class Histogram(LinePlot):
                 ))
         else:
             self.modeline.SetLabel("")
-    
+
     ## --------------------------------
     ## Motion/Drag actions (override)
     ## --------------------------------
-    
+
     def annotate(self):
         if self.__frame:
             x, y = self.__frame.__data
@@ -362,7 +362,7 @@ class Histogram(LinePlot):
         else:
             self.__fil.set_xy([(0,0)])
         self.writeln()
-    
+
     def OnDragEnd(self, evt):
         LinePlot.OnDragEnd(self, evt)
         
@@ -373,7 +373,7 @@ class Histogram(LinePlot):
             self.draw()
             self.__frame.clim = self.xlim
             self.__frame.parent.draw()
-    
+
     def OnEscapeSelection(self, evt):
         LinePlot.OnEscapeSelection(self, evt)
         
@@ -384,7 +384,7 @@ class Histogram(LinePlot):
 
 
 class LineProfile(LinePlot):
-    """LinePlot panel for line profile (Multi-graph : Single-frame)
+    """LinePlot panel for line profile (Multi-graph : Single-frame).
     
     Attributes:
         __graphs: list of attached graph <matplot2g.GraphPlot>
@@ -460,12 +460,12 @@ class LineProfile(LinePlot):
         ]
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-    
+
     def OnDestroy(self, evt):
         for graph in self.__graphs:
             self.detach(graph)
         evt.Skip()
-    
+
     def clear(self):
         LinePlot.clear(self)
         
@@ -488,19 +488,19 @@ class LineProfile(LinePlot):
         self.__logicp = True
         
         self.selected.set_linestyle('')
-    
+
     def attach(self, *graphs):
         for graph in graphs:
             if graph not in self.__graphs:
                 self.__graphs.append(graph)
                 graph.handler.append(self.context)
-    
+
     def detach(self, *graphs):
         for graph in graphs:
             if graph in self.__graphs:
                 self.__graphs.remove(graph)
                 graph.handler.remove(self.context)
-    
+
     def set_logic(self, p):
         prep = self.__logicp
         self.__logicp = p = bool(p)
@@ -515,25 +515,25 @@ class LineProfile(LinePlot):
             sel = self.selector
             self.selector = (sel[0] * ru, sel[1])
             self.draw()
-    
+
     def set_linewidth(self, w):
         if 0 < w < 256:
             self.__linewidth = w
         if self.__frame:
             self.linplot(self.__frame, fit=0)
         self.writeln()
-    
+
     @property
     def boundary(self):
         x = self.__plot.get_xdata(orig=0)
         if x.size:
             return x[[0,-1]]
-    
+
     @property
     def plotdata(self):
         """Plotted (xdata, ydata) in single plot."""
         return self.__plot.get_data(orig=0)
-    
+
     def calc_average(self):
         X, Y = self.plotdata
         if self.region is not None:
@@ -541,7 +541,7 @@ class LineProfile(LinePlot):
             Y = Y[(a <= X) & (X <= b)]
         if Y.size:
             return Y.mean()
-    
+
     def linplot(self, frame, fit=True, force=True):
         if not force:
             if frame is self.__frame:
@@ -601,7 +601,7 @@ class LineProfile(LinePlot):
         self.toolbar.update()
         self.toolbar.push_current()
         self.draw()
-    
+
     def writeln(self):
         if not self.modeline.IsShown():
             return
@@ -620,7 +620,7 @@ class LineProfile(LinePlot):
                    a = '%%' if not frame.buffer.flags.writeable else '--'))
         else:
             self.modeline.SetLabel("")
-    
+
     def write_data_to_clipboard(self):
         """Write plot data to clipboard."""
         X, Y = self.plotdata
@@ -629,7 +629,7 @@ class LineProfile(LinePlot):
                 o.write("{:g}\t{:g}\n".format(x, y))
             Clipboard.write(o.getvalue())
             self.message("Write data to clipboard.")
-    
+
     def annotate(self):
         LinePlot.annotate(self)
         
@@ -637,49 +637,49 @@ class LineProfile(LinePlot):
         if x.size:
             self.__fil.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
         self.writeln()
-    
+
     ## --------------------------------
     ## Motion/Drag actions (override)
     ## --------------------------------
-    
+
     def OnHomeXPosition(self, evt):
         x = self.plotdata[0]
         if x.size:
             self.xlim = x[0], x[-1]
             self.toolbar.push_current()
             self.draw()
-    
+
     def OnHomeYPosition(self, evt):
         y = self.plotdata[1]
         if y.size:
             self.ylim = 0, y.max()
             self.toolbar.push_current()
             self.draw()
-    
+
     def OnLineWidth(self, evt):
         n = -2 if evt.key[-1] == '-' else 2
         self.set_linewidth(self.__linewidth + n)
-    
+
     def OnRegionShift(self, evt):
         if self.__frame and self.region is not None:
             u = self.__frame.unit
             if evt.key == "left": self.region -= u
             if evt.key == "right": self.region += u
             self.draw()
-    
+
     def OnEscapeSelection(self, evt):
         self.__hline.set_visible(0)
         LinePlot.OnEscapeSelection(self, evt)
-    
+
     def OnDragLineBegin(self, evt):
         self.set_wxcursor(wx.CURSOR_SIZENS)
-    
+
     def OnDragTrace(self, evt):
         """Show average value."""
         y = self.calc_average()
         if y is not None:
             self.message(f"ya = {y:g}")
-    
+
     def OnRegionLock(self, evt):
         """Show FWHM region."""
         x, y = self.plotdata
@@ -713,7 +713,7 @@ class LineProfile(LinePlot):
             self.__hline.set_visible(1)
             self.draw()
             self.message(f"yc = {yc:g}")
-    
+
     def OnMarkPeaks(self, evt):
         """Set markers on peaks."""
         x, y = self.plotdata
@@ -731,12 +731,12 @@ class LineProfile(LinePlot):
             peaks = np.sort(np.append(maxima, minima))
             if peaks.size:
                 self.selector = x[peaks], y[peaks]
-    
+
     def OnMarkErase(self, evt):
         """Erase markers on peaks."""
         ## del self.selector
         self.OnEscapeSelection(evt)
-    
+
     def OnMarkSelectionBegin(self, evt):
         org = self.p_event
         xs, ys = self.selector
@@ -748,7 +748,7 @@ class LineProfile(LinePlot):
             self.__orgpoint = xs[j]
         self.set_wxcursor(wx.CURSOR_SIZEWE)
         self.draw()
-    
+
     def OnMarkSelectionMove(self, evt):
         xs, ys = self.selector
         xc, yc = evt.xdata, evt.ydata

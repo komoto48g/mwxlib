@@ -16,16 +16,16 @@ class Gnuplot:
     """Gnuplot backend - gnuplot pipe wrapper.
     """
     debug = 0
-    
+
     PGNUPLOT = "gnuplot" # Note: gnuplot/pgnuplot is integrated
-    
+
     @staticmethod
     def init_path(path):
         if not os.path.isdir(path):
             print("- {!r} is not a directory.".format(path))
             return False
         os.environ['PATH'] = "{};{}".format(path, os.environ['PATH'])
-    
+
     def __init__(self, startup="__init__.plt", debug=0):
         print("Launching new gnuplot...")
         self.__gnuplot = Popen([self.PGNUPLOT],
@@ -36,13 +36,13 @@ class Gnuplot:
         self.tempfile = tempfile.mktemp()
         self.debug = debug
         self.reset()
-    
+
     def __del__(self):
         print("bye gnuplot...")
         self.terminate()
         if os.path.isfile(self.tempfile):
             os.remove(self.tempfile)
-    
+
     def __call__(self, text):
         for cmd in filter(None, (t.strip() for t in text.splitlines())):
             self.__gnuplot.stdin.write((cmd + '\n').encode())
@@ -50,7 +50,7 @@ class Gnuplot:
                 print("pgnupot>", cmd)
         self.__gnuplot.stdin.flush()
         return self
-    
+
     def plot(self, *args):
         if isinstance(args[0], str): # text command
             pcmd = [v.strip() for v in args]
@@ -91,7 +91,7 @@ class Gnuplot:
                     o.write('\t'.join(self.data_format(x) for x in v) + '\n')
         
         self("plot " + ', '.join(pcmd))
-    
+
     def terminate(self):
         if self.__gnuplot is not None:
             try:
@@ -101,21 +101,21 @@ class Gnuplot:
             except Exception:
                 pass
             self.__gnuplot = None
-    
+
     def restart(self):
         self.terminate()
         self.__init__(self.startupfile)
-    
+
     def reset(self, startup=None):
         if startup:
             self.startupfile = startup
         if self.startupfile:
             self("load '{}'".format(self.startupfile))
         self("tempfile = '{}'".format(self.tempfile))
-    
+
     def wait(self, msg=""):
         input(msg + " (Press ENTER to continue)")
-    
+
     def edit(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
@@ -152,7 +152,7 @@ class GnuplotFrame(mwx.Frame):
                 lambda v: self.gnuplot.restart()),
         ]
         self.menubar.reset()
-    
+
     def Destroy(self):
         del self.gnuplot
         return mwx.Frame.Destroy(self)

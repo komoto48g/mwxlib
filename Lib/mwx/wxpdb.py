@@ -27,7 +27,7 @@ echo.verbose = 0
 
 
 class Debugger(Pdb):
-    """Graphical debugger with extended Pdb
+    """Graphical debugger with extended Pdb.
     
     Args:
         parent: shellframe
@@ -55,18 +55,18 @@ class Debugger(Pdb):
     prompt = property(lambda self: self.indents + '(Pdb) ',
                       lambda self, v: None)  # fake setter
     handler = property(lambda self: self.__handler)
-    
+
     @property
     def interactive_shell(self):
         return self.__shell
-    
+
     @interactive_shell.setter
     def interactive_shell(self, v):
         self.__shell = v
         ## Don't use rawinput
         self.stdin = self.__shell.interp.stdin
         self.stdout = self.__shell.interp.stdout
-    
+
     @property
     def busy(self):
         """Indicates that the current state is debug mode.
@@ -79,14 +79,14 @@ class Debugger(Pdb):
             return self.curframe is not None
         except AttributeError:
             pass
-    
+
     @property
     def tracing(self):
         """Indicates that the current state is trace mode.
         """
         ## cf. (self.handler.current_state == 2)
         return self.__hookpoint is not None
-    
+
     def __init__(self, parent, *args, **kwargs):
         Pdb.__init__(self, *args, **kwargs)
         
@@ -138,26 +138,26 @@ class Debugger(Pdb):
                   'debug_begin' : (1, self.on_debug_begin, dispatch),
             },
         })
-    
+
     def set_breakpoint(self):
         """Set a breakpoint at the current line."""
         filename = self.curframe.f_code.co_filename
         ln = self.editor.buffer.cline + 1
         if ln not in self.get_file_breaks(filename):
             self.send_input('b {}'.format(ln), echo=True)
-    
+
     def jump_to_entry(self):
         """Jump to the first lineno of the code."""
         ln = self.editor.buffer.markline + 1
         if ln:
             self.send_input('j {}'.format(ln), echo=True)
-    
+
     def jump_to_lineno(self):
         """Jump to the lineno of the code."""
         ln = self.editor.buffer.cline + 1
         if ln:
             self.send_input('j {}'.format(ln), echo=True)
-    
+
     def exec_until_lineno(self):
         """Continue execution until the lineno of the code."""
         frame = self.curframe
@@ -170,14 +170,14 @@ class Debugger(Pdb):
             self.message("--> {}:{}:{}".format(filename, ln, name), indent=0)
         else:
             self.stamp_where()
-    
+
     def stamp_where(self):
         """Stamp current where(frame) message."""
         ## cf. (print_stack_entry for frame in self.stack)
         self.send_input('w')
         if not self.verbose:
             self.message("--> {}".format(where(self.curframe)), indent=0)
-    
+
     def send_input(self, c, echo=False):
         """Send input:str (echo message if needed)."""
         def _send():
@@ -185,14 +185,14 @@ class Debugger(Pdb):
             if echo or self.verbose:
                 self.message(c, indent=0)
         wx.CallAfter(_send)
-    
+
     def message(self, msg, indent=True):
         """Add prefix and insert msg at the end of command-line."""
         shell = self.interactive_shell
         shell.goto_char(shell.eolc)
         prefix = self.indents if indent else ''
         print("{}{}".format(prefix, msg), file=self.stdout)
-    
+
     def watch(self, bp):
         """Start tracing."""
         if self.busy: # don't set while debugging
@@ -202,7 +202,7 @@ class Debugger(Pdb):
         sys.settrace(self.trace_dispatch)
         threading.settrace(self.trace_dispatch)
         self.handler('trace_begin', bp)
-    
+
     def unwatch(self):
         """End tracing."""
         if self.busy: # don't unset while debugging
@@ -219,7 +219,7 @@ class Debugger(Pdb):
             ## Called to abort when the debugger is invalid status:
             ## e.g., (self.handler.current_state > 0 but not busy)
             self.handler('abort')
-    
+
     def debug(self, obj, *args, **kwargs):
         """Debug a callable object.
         """
@@ -244,7 +244,7 @@ class Debugger(Pdb):
                          f"Debugger has been closed.\n\n{e}")
         finally:
             self.set_quit()
-    
+
     def run(self, cmd, filename="<string>"):
         """Debug a statement executed via the exec() function.
         """
@@ -270,11 +270,11 @@ class Debugger(Pdb):
                          f"Debugger has been closed.\n\n{e}")
         finally:
             self.set_quit()
-    
+
     ## --------------------------------
     ## Actions for handler
     ## --------------------------------
-    
+
     def _markbp(self, lineno, style):
         """Add a marker to lineno, with the following style markers:
         [1] white_arrow for breakpoints
@@ -285,7 +285,7 @@ class Debugger(Pdb):
                 self.editor.buffer.MarkerAdd(lineno - 1, style)
             else:
                 self.editor.buffer.MarkerDeleteAll(style)
-    
+
     def on_debug_begin(self, frame):
         """Called before set_trace.
         Note: self.busy -> False or None
@@ -293,7 +293,7 @@ class Debugger(Pdb):
         self.__hookpoint = None
         self.indents = ' ' * 2
         self.stdin.input = '' # clear stdin buffer
-    
+
     def on_debug_mark(self, frame):
         """Called when interaction."""
         code = frame.f_code
@@ -331,7 +331,7 @@ class Debugger(Pdb):
                 buffer.ensureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
-    
+
     def on_debug_next(self, frame):
         """Called in preloop (cmdloop)."""
         shell = self.interactive_shell
@@ -347,7 +347,7 @@ class Debugger(Pdb):
             shell.EnsureCaretVisible()
             self.__cpos = shell.cpos
         wx.CallAfter(_next)
-    
+
     def on_debug_end(self, frame):
         """Called after set_quit.
         Note: self.busy -> True (until this stage)
@@ -359,23 +359,23 @@ class Debugger(Pdb):
         
         ## Note: Required to terminate the reader of threading pdb.
         self.send_input('\n')
-    
+
     def on_trace_hook(self, frame):
         """Called when a breakppoint is reached."""
         self.__hookpoint = None
         self.interactive_shell.write('\n', -1) # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
-    
+
     ## --------------------------------
     ## Override Bdb methods
     ## --------------------------------
-    
+
     def break_anywhere(self, frame):
         """Return False (override)
         even if there is any breakpoint for frame's filename.
         """
         return False
-    
+
     def dispatch_line(self, frame):
         """Invoke user function and return trace function for line event.
         
@@ -394,7 +394,7 @@ class Debugger(Pdb):
             else:
                 return None
         return Pdb.dispatch_line(self, frame)
-    
+
     def dispatch_call(self, frame, arg):
         """Invoke user function and return trace function for call event.
         
@@ -412,7 +412,7 @@ class Debugger(Pdb):
             else:
                 return None
         return Pdb.dispatch_call(self, frame, arg)
-    
+
     def dispatch_return(self, frame, arg):
         """Invoke user function and return trace function for return event.
         
@@ -421,7 +421,7 @@ class Debugger(Pdb):
         if self.__hookpoint:
             return None
         return Pdb.dispatch_return(self, frame, arg)
-    
+
     def dispatch_exception(self, frame, arg):
         """Invoke user function and return trace function for exception event.
         
@@ -430,7 +430,7 @@ class Debugger(Pdb):
         if self.__hookpoint:
             return None
         return Pdb.dispatch_exception(self, frame, arg)
-    
+
     def set_trace(self, frame=None):
         if self.busy:
             wx.MessageBox("Debugger is running.\n\n"
@@ -440,22 +440,22 @@ class Debugger(Pdb):
             frame = inspect.currentframe().f_back
         self.handler('debug_begin', frame)
         Pdb.set_trace(self, frame)
-    
+
     def set_break(self, filename, lineno, *args, **kwargs):
         self._markbp(lineno, 1)
         return Pdb.set_break(self, filename, lineno, *args, **kwargs)
-    
+
     def set_quit(self):
         try:
             Pdb.set_quit(self)
         finally:
             if self.parent: # Check if the parent is being deleted.
                 self.handler('debug_end', self.curframe)
-    
+
     ## --------------------------------
     ## Override Pdb methods
     ## --------------------------------
-    
+
     @echo
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
@@ -467,7 +467,7 @@ class Debugger(Pdb):
             Pdb.print_stack_entry(self, frame_lineno,
                 prompt_prefix or "\n{}-> ".format(self.indents))
         self.handler('debug_mark', frame_lineno[0])
-    
+
     @echo
     def user_call(self, frame, argument_list):
         """--Call--
@@ -479,13 +479,13 @@ class Debugger(Pdb):
             self.message("> {}".format(where(frame)), indent=0)
         self.indents += ' ' * 2
         Pdb.user_call(self, frame, argument_list)
-    
+
     @echo
     def user_line(self, frame):
         """--Next--
         """
         Pdb.user_line(self, frame)
-    
+
     @echo
     def user_return(self, frame, return_value):
         """--Return--
@@ -503,7 +503,7 @@ class Debugger(Pdb):
             self.indents = self.indents[:-2] # remove '  '
         self.interaction(frame, None)
         ## Pdb.user_return(self, frame, return_value)
-    
+
     @echo
     def user_exception(self, frame, exc_info):
         """--Exception--
@@ -514,7 +514,7 @@ class Debugger(Pdb):
         self._markbp(tb.tb_lineno, 2)
         self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
-    
+
     @echo
     def bp_commands(self, frame):
         """--Break--
@@ -527,13 +527,13 @@ class Debugger(Pdb):
         for lineno in breakpoints:
             self._markbp(lineno, 1)
         return Pdb.bp_commands(self, frame)
-    
+
     @echo
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called."""
         Pdb.preloop(self)
         self.handler('debug_next', self.curframe)
-    
+
     @echo
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""

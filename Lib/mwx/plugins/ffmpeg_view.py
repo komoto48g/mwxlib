@@ -62,7 +62,7 @@ class MyFileDropLoader(wx.FileDropTarget):
     def __init__(self, target):
         wx.FileDropTarget.__init__(self)
         self.target = target
-    
+
     def OnDropFiles(self, x, y, filenames):
         path = filenames[-1] # Only the last one will be loaded.
         if len(filenames) > 1:
@@ -77,7 +77,7 @@ class Plugin(Layer):
     """
     menukey = "Plugins/Extensions/FFMpeg viewer"
     dockable = False
-    
+
     def Init(self):
         self.mc = wx.media.MediaCtrl()
         self.mc.Create(self, size=(300,300),
@@ -156,25 +156,25 @@ class Plugin(Layer):
         
         self.mc.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
         self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
-    
+
     def Destroy(self):
         self.parent.handler.unbind("unknown_format", self.load_media)
         if self.mc:
             self.mc.Destroy()
         return Layer.Destroy(self)
-    
+
     def OnShow(self, evt):
         if not evt.IsShown():
             if self.mc:
                 self.mc.Stop()
         Layer.OnShow(self, evt)
-    
+
     def OnMediaLoaded(self, evt):
         self.ss.range = (0, self.video_dur, 0.01)
         self.to.range = (0, self.video_dur, 0.01)
         self.Show()
         evt.Skip()
-    
+
     def load_media(self, path=None):
         if path is None:
             with wx.FileDialog(self, "Choose a media file",
@@ -202,19 +202,19 @@ class Plugin(Layer):
         else:
             self.message(f"Failed to load file {path!r}.")
             return False
-    
+
     DELTA = 1000 # correction ▲理由は不明 (WMP10 backend only?)
-    
+
     def set_offset(self, tc):
         """Set offset value by referring to ss/to value."""
         if self._path:
             self.mc.Seek(self.DELTA + int(tc.value * 1000))
-    
+
     def get_offset(self, tc):
         """Get offset value and assigns it to ss/to value."""
         if self._path:
             tc.value = round(self.mc.Tell()) / 1000
-    
+
     def set_crop(self):
         """Set crop area (W:H:Left:Top) to ROI."""
         if not self._path:
@@ -230,7 +230,7 @@ class Plugin(Layer):
                 frame.region = frame.xyfrompixel(nx, ny)
             except Exception:
                 self.message("Failed to evaluate crop text.")
-    
+
     def get_crop(self):
         """Get crop area (W:H:Left:Top) from ROI."""
         if not self._path:
@@ -246,7 +246,7 @@ class Plugin(Layer):
         if not crop:
             crop = "{}:{}:0:0".format(*self.video_size)
         self.crop.Value = crop
-    
+
     def seekto(self, offset):
         """Seek position with offset [ms] from the `to` position."""
         if self._path:
@@ -254,14 +254,14 @@ class Plugin(Layer):
             if 0 <= t < self.video_dur:
                 self.to.value = round(t, 3)
             self.set_offset(self.to)
-    
+
     def seekd(self, offset):
         """Seek position with offset [ms] from the current position."""
         if self._path:
             t = self.mc.Tell() + offset
             if 0 <= t < self.video_dur * 1000:
                 self.mc.Seek(self.DELTA + t)
-    
+
     def snapshot(self):
         """Create a snapshot of the current frame.
         Load the snapshot image into the graph window.
@@ -273,7 +273,7 @@ class Plugin(Layer):
         buf = capture_video(self._path, t/1000).reshape((h,w,3))
         name = "{}-ss{}".format(os.path.basename(self._path), int(t))
         self.graph.load(buf, name)
-    
+
     def export(self):
         """Export the cropped / clipped data to a media file."""
         if not self._path:

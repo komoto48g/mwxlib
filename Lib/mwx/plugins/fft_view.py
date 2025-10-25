@@ -28,7 +28,7 @@ class Plugin(Layer):
     """
     menukey = "Plugins/Extensions/&FFT view\tAlt+f"
     caption = "FFT view"
-    
+
     def Init(self):
         self.pchk = wx.CheckBox(self, label="logical unit")
         self.pchk.Value = True
@@ -40,12 +40,12 @@ class Plugin(Layer):
         
         self.parent.define_key('C-f', self.newfft)
         self.parent.define_key('C-S-f', self.newifft)
-    
+
     def Destroy(self):
         self.parent.undefine_key('C-f')
         self.parent.undefine_key('C-S-f')
         return Layer.Destroy(self)
-    
+
     def newfft(self):
         """New FFT of graph to output."""
         frame = self.graph.frame
@@ -62,7 +62,7 @@ class Plugin(Layer):
                 u /= frame.unit
             self.output.load(dst, f"*fft of {frame.name}*", localunit=u)
             self.message("\b done")
-    
+
     def newifft(self):
         """New inverse FFT of output to graph."""
         frame = self.output.frame

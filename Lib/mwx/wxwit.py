@@ -12,7 +12,7 @@ from .framework import CtrlInterface, Menu
 
 
 class Inspector(it.InspectionTree, CtrlInterface):
-    """Widget inspection tool
+    """Widget inspection tool.
     
     Attributes:
         parent: shellframe
@@ -61,21 +61,21 @@ class Inspector(it.InspectionTree, CtrlInterface):
         @self.handler.bind('f5 pressed')
         def _refresh(evt):
             self.BuildTree(self.target)
-    
+
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             self.timer.Stop()
         evt.Skip()
-    
+
     def OnSetFocus(self, evt):
         title = self.__class__.__name__
         self.parent.handler('title_window', title)
         evt.Skip()
-    
+
     ## --------------------------------
     ## InspectionTree wrapper interface
     ## --------------------------------
-    
+
     def SetObj(self, obj):
         """Called from tree.toolFrame -> SetObj."""
         if self.target is obj:
@@ -87,7 +87,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.SelectItem(item)
         elif obj:
             self.BuildTree(obj)  # If the item for obj is missing, rebuild the tree.
-    
+
     def GetTextForWidget(self, obj):
         """Return the string to be used in the tree for a widget.
         
@@ -97,7 +97,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         if hasattr(obj, 'Name'):
             return "{} ({!r} {})".format(clsname, obj.Name, obj.Id)
         return clsname
-    
+
     def highlight(self, obj, msec=2000):
         self.highlighter.highlightTime = msec
         if isinstance(obj, wx.Window):
@@ -106,12 +106,12 @@ class Inspector(it.InspectionTree, CtrlInterface):
             self.highlighter.HighlightSizer(obj)
         elif isinstance(obj, wx.SizerItem):
             self.highlighter.HighlightSizer(obj.Sizer)
-    
+
     def set_colour(self, obj, col):
         item = self.FindWidgetItem(obj)
         if item:
             self.SetItemTextColour(item, col)
-    
+
     def watch(self, obj=None):
         if obj is None:
             item = self.Selection
@@ -124,15 +124,15 @@ class Inspector(it.InspectionTree, CtrlInterface):
             return
         self.SetObj(obj)
         self.timer.Start(500)
-    
+
     def unwatch(self):
         self.target = None
         self.timer.Stop()
-    
+
     ## --------------------------------
     ## Actions on tree items
     ## --------------------------------
-    
+
     def OnTimer(self, evt):
         ## wnd, pt = wx.FindWindowAtPointer()  # as HitTest
         wnd = wx.Window.FindFocus()
@@ -140,21 +140,21 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 and wnd not in self._noWatchList):
             self.SetObj(wnd)
         evt.Skip()
-    
+
     def OnShow(self, evt):
         if evt.IsShown():
             if not self.built:
                 self.BuildTree(self.target)
         self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
-    
+
     def OnItemTooltip(self, evt):
         item = evt.GetItem()
         if item:
             obj = self.GetItemData(item)
             evt.SetToolTip("id=0x{:X}".format(id(obj)))
         evt.Skip()
-    
+
     def OnRightDown(self, evt):
         item, flags = self.HitTest(evt.Position)
         if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):

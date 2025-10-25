@@ -17,7 +17,7 @@ def _repr(value):
 
 
 class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
-    """Locals info watcher
+    """Locals info watcher.
     
     Attributes:
         parent: shellframe
@@ -59,13 +59,13 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.copy()
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
-    
+
     def _update(self, *args, **kwargs):
         if not self:
             dispatcher.disconnect(receiver=self._update, signal='Interpreter.push')
             return
         self.update()
-    
+
     def watch(self, locals):
         self.clear()
         if not isinstance(locals, dict):
@@ -86,18 +86,18 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.blink(i)
         finally:
             self.Thaw()
-    
+
     def unwatch(self):
         self.target = None
-    
+
     ## --------------------------------
     ## Actions on list items
     ## --------------------------------
-    
+
     def clear(self):
         self.DeleteAllItems()
         del self.__items[:]
-    
+
     def update(self):
         if not self.target:
             return
@@ -125,7 +125,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetItem(i, 1, vstr)
             self.blink(i)
             self.EnsureVisible(i)
-    
+
     def blink(self, i):
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             self.SetItemBackgroundColour(i, "yellow")
@@ -133,7 +133,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 if self and i < self.ItemCount:
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallAfter(wx.CallLater, 1000, _reset_color)
-    
+
     def copy(self):
         if not self.SelectedItemCount:
             return
@@ -143,7 +143,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 key, vstr = self.__items[i]
                 text += "{} = {}\n".format(key, vstr)
         Clipboard.write(text)
-    
+
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
@@ -163,7 +163,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.Select(i, item in ls)
             if item == fi:
                 self.Focus(i)
-    
+
     def OnContextMenu(self, evt):
         Menu.Popup(self, [
             (1, "Copy data", Icon('copy'),

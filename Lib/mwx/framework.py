@@ -210,11 +210,11 @@ class KeyCtrlInterfaceMixin:
         esc-map     : 'escape'
     """
     message = print # override this in subclass
-    
+
     @postcall
     def post_message(self, *args, **kwargs):
         return self.message(*args, **kwargs)
-    
+
     @staticmethod
     def getKeyState(key):
         """Return state of speckey (cf. wx.GetKeyState)."""
@@ -222,7 +222,7 @@ class KeyCtrlInterfaceMixin:
             return wx.GetKeyState(_speckeys_wxkmap[key])
         except KeyError:
             pass
-    
+
     @staticmethod
     def setKeyState(key, state):
         """Makes you feel like having pressed/released speckey."""
@@ -231,7 +231,7 @@ class KeyCtrlInterfaceMixin:
             vk.KeyDown(_speckeys_wxkmap[key])
         else:
             vk.KeyUp(_speckeys_wxkmap[key])
-    
+
     def make_keymap(self, keymap):
         """Make a basis of extension map in the handler.
         """
@@ -259,7 +259,7 @@ class KeyCtrlInterfaceMixin:
              '*[LR]win pressed' : [ keymap, _Pass ],
             },
         })
-    
+
     def pre_command_hook(self, evt):
         ## """Called when entering extension mode (internal use only)."""
         ## Check text selection for [C-c/C-x].
@@ -271,7 +271,7 @@ class KeyCtrlInterfaceMixin:
             self.message(evt.key + '-')
         evt.Skip()
     pre_command_hook.__name__ = str("enter")
-    
+
     def post_command_hook(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
         ## Check if the event has reached a top-level window.
@@ -284,7 +284,7 @@ class KeyCtrlInterfaceMixin:
             self.message(evt.key)
         evt.Skip()
     post_command_hook.__name__ = str("exit")
-    
+
     def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.
         
@@ -329,7 +329,7 @@ class KeyCtrlInterfaceMixin:
         else:
             self.handler.update({map: {key: [state, f]}})
         return action
-    
+
     @ignore(UserWarning)
     def undefine_key(self, keymap):
         """Delete [map key (pressed)] context."""
@@ -340,7 +340,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     """Mouse/Key event interface mixin.
     """
     handler = property(lambda self: self.__handler)
-    
+
     def __init__(self):
         self.__key = ''
         self.__button = ''
@@ -396,7 +396,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _N('capture_lost', v))
         self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_changed', v))
-    
+
     def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed."""
         ## if evt.EventObject is not self:
@@ -406,7 +406,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
-    
+
     def on_hotkey_down(self, evt): #<wx._core.KeyEvent>
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
@@ -415,14 +415,14 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.on_hotkey_press(evt)
         else:
             evt.Skip()
-    
+
     def on_hotkey_up(self, evt): #<wx._core.KeyEvent>
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
-    
+
     def on_mousewheel(self, evt): #<wx._core.MouseEvent>
         """Called on mouse wheel events.
         Trigger event: 'key+wheel[up|down|right|left] pressed'
@@ -434,7 +434,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         evt.key = self.__key + "wheel{}".format(p)
         if self.handler('{} pressed'.format(evt.key), evt) is None:
             evt.Skip()
-    
+
     def on_motion(self, evt): #<wx._core.MouseEvent>
         """Called on mouse motion events.
         Trigger event: 'key+[LMR]drag begin/motion/end'
@@ -449,7 +449,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         else:
             self.handler('motion', evt)
         evt.Skip()
-    
+
     def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
         """Called on mouse button events.
         Trigger event: 'key+[LMRX]button pressed/released/dblclick'
@@ -473,7 +473,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.SetFocusIgnoringChildren() # let the panel accept keys
         except AttributeError:
             pass
-    
+
     def _normal_handler(self, event, evt): #<wx._core.Event>
         if self.handler(event, evt) is None:
             evt.Skip()
@@ -599,7 +599,7 @@ class Menu(wx.Menu):
                 self.Append(submenu_item)
                 self.Enable(submenu_item.Id, len(subitems)) # Disable an empty menu.
                 submenu.Id = submenu_item.Id # <- ID_ANY (dummy to check empty sbumenu)
-    
+
     def _unbind(self):
         for item in self.MenuItems:
             if item.Id != wx.ID_SEPARATOR:
@@ -608,12 +608,12 @@ class Menu(wx.Menu):
                 self.owner.Unbind(wx.EVT_MENU_HIGHLIGHT, item)
             if item.SubMenu:
                 item.SubMenu._unbind()
-    
+
     def Destroy(self):
         if self.owner and not self.owner.IsBeingDeleted():
             self._unbind()
         return wx.Menu.Destroy(self)
-    
+
     @staticmethod
     def Popup(owner, menulist, *args, **kwargs):
         menu = Menu(owner, menulist)
@@ -636,7 +636,7 @@ class MenuBar(wx.MenuBar, TreeList):
     def __init__(self, *args, **kwargs):
         wx.MenuBar.__init__(self, *args, **kwargs)
         TreeList.__init__(self)
-    
+
     def getmenu(self, key, root=None):
         if '/' in key:
             a, b = key.split('/', 1)
@@ -645,7 +645,7 @@ class MenuBar(wx.MenuBar, TreeList):
         if root is None:
             return next((menu for menu, label in self.Menus if menu.Title == key), None)
         return next((item.SubMenu for item in root.MenuItems if item.ItemLabel == key), None)
-    
+
     def update(self, key):
         """Update items of the menu that has specified key:root/branch.
         Call when the menulist is changed.
@@ -672,7 +672,7 @@ class MenuBar(wx.MenuBar, TreeList):
         
         for j, (key, values) in enumerate(self):
             self.EnableTop(j, bool(values)) # Disable empty main menu.
-    
+
     def reset(self):
         """Recreates the menubar if the Parent was attached.
         Call when the menulist is changed.
@@ -700,22 +700,22 @@ class StatusBar(wx.StatusBar):
     """
     def __init__(self, *args, **kwargs):
         wx.StatusBar.__init__(self, *args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         text = ' '.join(str(v) for v in args)
         if self:
             return self.write(text, **kwargs)
-    
+
     def resize(self, field):
         self.SetFieldsCount(len(field))
         self.SetStatusWidths(list(field)) # oldver requires list type
-    
+
     def write(self, text, pane=0):
         if text and text[0] == '\b':
             text = self.read(pane) + text[1:]
         self.SetStatusText(text, pane % self.GetFieldsCount())
         return text
-    
+
     def read(self, pane=0):
         return self.GetStatusText(pane % self.GetFieldsCount())
 
@@ -729,9 +729,9 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         shellframe: mini-frame of the shell
     """
     handler = property(lambda self: self.__handler)
-    
+
     message = property(lambda self: self.statusbar)
-    
+
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         
@@ -782,11 +782,11 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             },
         )
         self.make_keymap('C-x')
-    
+
     def About(self):
         wx.MessageBox(__import__("__main__").__doc__ or "no information",
                       "About this software")
-    
+
     def Destroy(self):
         self.timer.Stop()
         self.shellframe.Destroy() # shellframe is not my child
@@ -801,9 +801,9 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         statusbar: StatusBar (not shown by default)
     """
     handler = property(lambda self: self.__handler)
-    
+
     message = property(lambda self: self.statusbar)
-    
+
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
         
@@ -861,24 +861,24 @@ class AuiNotebook(aui.AuiNotebook):
             except AttributeError:
                 pass
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, tab_menu)
-    
+
     @property
     def _all_tabs(self):
         """Return all AuiTabCtrl objects (internal use only)."""
         return [x for x in self.Children if isinstance(x, aui.AuiTabCtrl)]
-    
+
     @property
     def _all_panes(self):
         """Return all AuiPaneInfo excluding `dummy` one (internal use only)."""
         return list(self._mgr.AllPanes)[1:]
-    
+
     def get_pages(self, type=None):
         """Yields pages of the specified window type."""
         for i in range(self.PageCount):
             win = self.GetPage(i)
             if type is None or isinstance(win, type):
                 yield win
-    
+
     def swap_page(self, win):
         """Replace the page with the specified page w/o focusing."""
         j = self.GetPageIndex(win)
@@ -890,12 +890,12 @@ class AuiNotebook(aui.AuiNotebook):
             self.CurrentPage.SetFocus()  # reset focus
             if wnd and wnd is not org:   # restore focus other window
                 wnd.SetFocus()
-    
+
     def get_caption(self, win):
         """Get caption of tab/page for specifiend window."""
         tab, page = self.find_tab(win)
         return page.caption
-    
+
     def set_caption(self, win, caption):
         """Set caption of tab/page for specifiend window.
         Returns True if the caption has changed.
@@ -905,7 +905,7 @@ class AuiNotebook(aui.AuiNotebook):
             page.caption = caption
             tab.Refresh()
             return True
-    
+
     def find_tab(self, win):
         """Return AuiTabCtrl and AuiNotebookPage for the window.
         
@@ -918,7 +918,7 @@ class AuiNotebook(aui.AuiNotebook):
                 ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
                     return tab, page
-    
+
     def move_tab(self, win, tab):
         """Move the window page to the specified tab."""
         if isinstance(tab, int):
@@ -938,10 +938,10 @@ class AuiNotebook(aui.AuiNotebook):
             tc1.Destroy()
             self._mgr.DetachPane(pane.window)
         self._mgr.Update()
-    
+
     ## Methods to save / load the perspectives.
     ## *** Inspired by wx.lib.agw.aui.AuiNotebook ***
-    
+
     def savePerspective(self):
         """Saves the entire user interface layout into an encoded string,
         which can then be stored by the application.
@@ -959,7 +959,7 @@ class AuiNotebook(aui.AuiNotebook):
             names = [page.window.Name for page in tabs.Pages]
             spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
-    
+
     def loadPerspective(self, spec):
         """Loads a saved perspective.
         
@@ -1013,7 +1013,7 @@ class FileDropLoader(wx.DropTarget):
         self.do.Add(self.textdo)
         self.do.Add(self.filedo)
         self.SetDataObject(self.do)
-    
+
     def OnDragOver(self, x, y, result):
         index, flags = self.target.HitTest((x, y))
         if index != -1:
@@ -1022,7 +1022,7 @@ class FileDropLoader(wx.DropTarget):
         else:
             result = wx.DragNone
         return result
-    
+
     def OnData(self, x, y, result):
         editor = self.target.Parent.current_editor
         self.GetData()
@@ -1085,7 +1085,7 @@ class ShellFrame(MiniFrame):
         @filling    : Inspection using ``wx.lib.filling.Filling``.
     """
     rootshell = property(lambda self: self.__shell) #: the root shell
-    
+
     def __init__(self, parent, target=None, session=None, standalone=False, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
@@ -1285,7 +1285,7 @@ class ShellFrame(MiniFrame):
             self.load_session(session or self.SESSION_FILE)
         else:
             self.SESSION_FILE = None
-    
+
     def load_session(self, filename):
         """Load session from file.
         Buffers, pointers, and the entire layout are loaded.
@@ -1316,7 +1316,7 @@ class ShellFrame(MiniFrame):
         ## Reposition the window if it is not on the desktop.
         if wx.Display.GetFromWindow(self) == -1:
             self.Position = (0, 0)
-    
+
     def save_session(self):
         """Save session to file.
         Buffers, pointers, and the entire layout are saved.
@@ -1355,7 +1355,7 @@ class ShellFrame(MiniFrame):
                 "self._mgr.LoadPerspective({!r})".format(self._mgr.SavePerspective()),
                 "self._mgr.Update()\n",
             )))
-    
+
     def Init(self):
         """Initialize self-specific builtins.
         Note:
@@ -1383,7 +1383,7 @@ class ShellFrame(MiniFrame):
             builtins.profile = self.profile
             builtins.highlight = self.highlight
             builtins.filling = filling
-    
+
     def Destroy(self):
         try:
             ## Remove built-in self methods
@@ -1403,13 +1403,13 @@ class ShellFrame(MiniFrame):
         self.save_session()
         self._mgr.UnInit()
         return MiniFrame.Destroy(self)
-    
+
     def Close(self):
         if self.__standalone:
             MiniFrame.Close(self)
         else:
             self.Show(not self.Shown)
-    
+
     def OnClose(self, evt):
         if self.debugger.busy:
             if wx.MessageBox( # Confirm closing the debugger.
@@ -1447,7 +1447,7 @@ class ShellFrame(MiniFrame):
             evt.Skip() # Close the window
         else:
             self.Show(0) # Don't destroy the window
-    
+
     def OnActivate(self, evt):
         if not evt.Active:
             ## Reset autoload when active focus going outside.
@@ -1481,20 +1481,20 @@ class ShellFrame(MiniFrame):
         if evt.Active:
             self.Init()
         evt.Skip()
-    
+
     def OnShow(self, evt):
         for pane in self._mgr.GetAllPanes():
             ## When the window is hidden, disable docking and keep child panes floating.
             pane.Dockable(evt.IsShown() or pane.IsDocked())
         evt.Skip()
-    
+
     def OnGhostShow(self, evt):
         if evt.IsShown():
             self.inspector.watch()
         else:
             self.inspector.unwatch()
         evt.Skip()
-    
+
     def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         win = nb.CurrentPage
@@ -1504,7 +1504,7 @@ class ShellFrame(MiniFrame):
             nb.WindowStyle |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
-    
+
     def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         win = list(nb.get_pages())[evt.Selection]
@@ -1518,7 +1518,7 @@ class ShellFrame(MiniFrame):
             evt.Veto()
         else:
             evt.Skip()
-    
+
     def About(self, evt=None):
         self.add_help(
             '\n\n'.join((
@@ -1538,7 +1538,7 @@ class ShellFrame(MiniFrame):
                 ## f"To show the credit, press [C-M-Mbutton].", # cf. wx.InfoMessageBox(None)
                 ))
             )
-    
+
     def toggle_window(self, win):
         pane = self._mgr.GetPane(win)
         if pane.IsDocked():
@@ -1548,7 +1548,7 @@ class ShellFrame(MiniFrame):
         if pane.IsShown():
             pane.best_size = win.Size
         self.popup_window(win, not pane.IsShown())
-    
+
     @save_focus_excursion()
     def popup_window(self, win, show=True):
         """Show the notebook page and keep the focus."""
@@ -1573,11 +1573,11 @@ class ShellFrame(MiniFrame):
         nb.Show(show)
         pane.Show(show)
         self._mgr.Update()
-    
+
     ## --------------------------------
     ## Actions for handler
     ## --------------------------------
-    
+
     def Quit(self, evt=None):
         """Stop debugger and monitor."""
         self.monitor.unwatch()
@@ -1588,7 +1588,7 @@ class ShellFrame(MiniFrame):
         del shell.globals
         self.indicator.Value = 1
         self.message("Quit")
-    
+
     @save_focus_excursion()
     def load(self, filename, lineno=0, show=True):
         """Load file @where the object is defined.
@@ -1613,13 +1613,13 @@ class ShellFrame(MiniFrame):
         if ret and show:
             self.popup_window(editor, show)
         return ret
-    
+
     def info(self, obj):
         self.rootshell.info(obj)
-    
+
     def help(self, obj):
         self.rootshell.help(obj)
-    
+
     def watch(self, obj):
         if isinstance(obj, wx.Object):
             self.monitor.watch(obj)
@@ -1630,10 +1630,10 @@ class ShellFrame(MiniFrame):
             self.popup_window(self.linfo)
         else:
             raise TypeError("primitive objects cannot be set as watch targets")
-    
+
     def highlight(self, obj, *args, **kwargs):
         self.inspector.highlight(obj, *args, **kwargs)
-    
+
     def timeit(self, obj, *args, **kwargs):
         """Measure the duration cpu time (per one execution)."""
         from timeit import timeit
@@ -1652,7 +1652,7 @@ class ShellFrame(MiniFrame):
                 print(e)
         else:
             print("- obj must be either a string or a callable.")
-    
+
     def profile(self, obj, *args, **kwargs):
         """Profile a single function call."""
         from profile import Profile
@@ -1673,7 +1673,7 @@ class ShellFrame(MiniFrame):
                 print(e)
         else:
             print("- obj must be callable, or a string, bytes, or code object.")
-    
+
     ## Note: history に余計な文字列が入らないようにする
     @postcall
     def debug(self, obj, *args, **kwargs):
@@ -1701,7 +1701,7 @@ class ShellFrame(MiniFrame):
                               style=wx.ICON_ERROR)
         finally:
             self.debugger.interactive_shell = shell
-    
+
     def on_debug_begin(self, frame):
         """Called before set_trace."""
         if not self:
@@ -1717,7 +1717,7 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 2
         if wx.IsBusy():
             wx.EndBusyCursor()
-    
+
     def on_debug_next(self, frame):
         """Called from cmdloop."""
         if not self:
@@ -1738,7 +1738,7 @@ class ShellFrame(MiniFrame):
             command = re.sub(r"^(.*)", r"    \1", command, flags=re.M)
             self.add_log(command)
         self.message("Debugger is busy now (Press [C-g] to quit).")
-    
+
     def on_debug_end(self, frame):
         """Called after set_quit."""
         if not self:
@@ -1755,7 +1755,7 @@ class ShellFrame(MiniFrame):
         self.indicator.Value = 1
         if wx.IsBusy():
             wx.EndBusyCursor()
-    
+
     def set_hookable(self, editor, traceable=True):
         """Bind pointer to set/unset trace."""
         if traceable:
@@ -1764,50 +1764,50 @@ class ShellFrame(MiniFrame):
         else:
             editor.handler.unbind('pointer_set')
             editor.handler.unbind('pointer_unset')
-    
+
     def start_trace(self, line, editor):
         if not self.debugger.busy:
             self.debugger.unwatch()
             self.debugger.editor = editor
             self.debugger.watch((editor.buffer.filename, line+1))
             self.debugger.send_input('') # clear input
-    
+
     def stop_trace(self, line, editor):
         if self.debugger.busy:
             return
         if self.debugger.tracing:
             self.debugger.editor = None
             self.debugger.unwatch()
-    
+
     def on_trace_begin(self, frame):
         """Called when set-trace."""
         self.message("Debugger has started tracing {!r}.".format(frame))
         self.indicator.Value = 3
-    
+
     def on_trace_hook(self, frame):
         """Called when a breakpoint is reached."""
         self.message("Debugger hooked {!r}.".format(frame))
-    
+
     def on_trace_end(self, frame):
         """Called when unset-trace."""
         self.message("Debugger has stopped tracing {!r}.".format(frame))
         self.indicator.Value = 1
-    
+
     def on_monitor_begin(self, widget):
         """Called when monitor watch."""
         self.inspector.set_colour(widget, 'blue')
         self.message("Started monitoring {!r}.".format(widget))
-    
+
     def on_monitor_end(self, widget):
         """Called when monitor unwatch."""
         self.inspector.set_colour(widget, 'black')
         self.message("Stopped monitoring {!r}.".format(widget))
-    
+
     def on_title_window(self, obj):
         """Set title to the frame."""
         title = obj if isinstance(obj, str) else repr(obj)
         self.SetTitle("Nautilus - {}".format(title))
-    
+
     def add_log(self, text, noerr=None):
         """Add text to the logging buffer.
         If noerr:bool is specified, add a line-marker.
@@ -1824,7 +1824,7 @@ class ShellFrame(MiniFrame):
         ## Logging text every step in case of crash.
         ## with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
         ##     o.write(text)
-    
+
     def add_help(self, text, title=None):
         """Add text to the help buffer.
         If title:str is specified, create a new buffer with that title.
@@ -1840,7 +1840,7 @@ class ShellFrame(MiniFrame):
         ## Overwrite text and popup the window.
         self.popup_window(self.Help)
         self.Help.swap_page(buf)
-    
+
     def clone_shell(self, target):
         if not hasattr(target, '__dict__'):
             raise TypeError("primitive objects cannot be targeted")
@@ -1856,7 +1856,7 @@ class ShellFrame(MiniFrame):
         self.Show()
         shell.SetFocus()
         return shell
-    
+
     def delete_shell(self, shell):
         """Close the current shell."""
         if shell is self.rootshell:
@@ -1869,16 +1869,16 @@ class ShellFrame(MiniFrame):
         j = self.console.GetPageIndex(shell)
         if j != -1:
             self.console.DeletePage(j) # Destroy the window
-    
+
     ## --------------------------------
     ## Attributes for notebook pages
     ## --------------------------------
-    
+
     def get_all_pages(self, type=None):
         """Yields all pages of the specified type in the notebooks."""
         yield from self.console.get_pages(type)
         yield from self.ghost.get_pages(type)
-    
+
     def get_all_shells(self, target=None):
         """Yields all shells with specified target.
         
@@ -1892,7 +1892,7 @@ class ShellFrame(MiniFrame):
                 if shell.target is target:
                     self.console.swap_page(shell)
                     yield shell
-    
+
     def get_all_editors(self, fn=None):
         """Yields all editors with specified fn:filename or code.
         
@@ -1907,12 +1907,12 @@ class ShellFrame(MiniFrame):
                 if buf:
                     book.swap_page(buf)
                     yield book
-    
+
     @property
     def current_shell(self):
         """Currently selected shell or rootshell."""
         return self.console.CurrentPage
-    
+
     @property
     def current_editor(self):
         """Currently selected editor or scratch."""
@@ -1920,7 +1920,7 @@ class ShellFrame(MiniFrame):
         if isinstance(editor, type(self.Log)):
             return editor
         return next((book for book in self.get_all_editors() if book.IsShown()), self.Scratch)
-    
+
     def create_editor(self, bookname):
         """Create a new editor (internal use only)..
         If such an editor already exists, no new editor is created.
@@ -1938,14 +1938,14 @@ class ShellFrame(MiniFrame):
                 self.Bookshelf.build_tree(clear=0)
             wx.CallAfter(_attach)
             return editor
-    
+
     ## --------------------------------
     ## Find / Replace text dialog
     ## --------------------------------
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
-    
+
     __find_target = None
-    
+
     def on_search_dialog(self, evt, flags=0):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
@@ -1961,16 +1961,16 @@ class ShellFrame(MiniFrame):
         self.findData.Flags |= wx.FR_DOWN
         self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find", flags)
         self.findDlg.Show()
-    
+
     def on_replace_dialog(self, evt):
         self.on_search_dialog(evt, flags=wx.FR_REPLACEDIALOG)
-    
+
     def repeat_forward_search(self, evt):
         self.OnFindNext(evt, backward=False)
-    
+
     def repeat_backward_search(self, evt):
         self.OnFindNext(evt, backward=True)
-    
+
     def OnFindNext(self, evt, backward=None): #<wx._core.FindDialogEvent>
         if not self.findData.FindString:
             self.message("No last search.")
@@ -2001,7 +2001,7 @@ class ShellFrame(MiniFrame):
                     self.OnFindClose(None)
         if loc < 0:
             self.message("Unable to find the search text.")
-    
+
     def OnFindClose(self, evt): #<wx._core.FindDialogEvent>
         self.findDlg.Destroy()
         self.findDlg = None

@@ -60,7 +60,7 @@ def _to_buffer(img):
 
 
 def _to_image(src, cutoff=0, threshold=None, binning=1):
-    """Convert buffer to image <uint8>
+    """Convert buffer to image <uint8>.
     
     >>> dst = (src-a) * 255 / (b-a)
     
@@ -116,7 +116,7 @@ def _Property(name):
 
 
 class AxesImagePhantom:
-    """Phantom of frame facade
+    """Phantom of frame facade.
     
     Args:
         buf:  buffer
@@ -150,14 +150,14 @@ class AxesImagePhantom:
                 picker = True,
         )
         self.update_extent()
-    
+
     def __getattr__(self, attr):
         return getattr(self.__art, attr)
-    
+
     def __eq__(self, x):
         ## Called in `on_pick` and `__contains__` to check objects in.
         return x is self.__art
-    
+
     def update_attr(self, attr):
         """Update frame-specifc attributes:
         
@@ -183,7 +183,7 @@ class AxesImagePhantom:
         
         if {'pathname', 'annotation'} & attr.keys():
             self.parent.handler('frame_updated', self)
-    
+
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
         if buf is not None:
@@ -197,7 +197,7 @@ class AxesImagePhantom:
         self.__cuts = vlim
         self.__art.set_array(img)
         self.parent.handler('frame_modified', self)
-    
+
     def update_extent(self):
         """Update logical extent of the image (internal use only)."""
         h, w = self.__buf.shape[:2]
@@ -206,59 +206,59 @@ class AxesImagePhantom:
         h *= uy/2
         cx, cy = self.center
         self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
-    
+
     artist = property(
         lambda self: self.__art)
-    
+
     binning = property(
         lambda self: self.__bins,
         doc="Binning value resulting from the score_percentile.")
-    
+
     cuts = property(
         lambda self: self.__cuts,
         doc="Lower/Upper cutoff values of the buffer.")
-    
+
     image = property(
         lambda self: self.__art.get_array(),
         doc="Displayed image array<uint8>.")
-    
+
     clim = property(
         lambda self: self.__art.get_clim(),
         lambda self, v: self.__art.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
-    
+
     attributes = property(
         lambda self: self.__attributes,
         doc="Auxiliary info about the frame.")
-    
+
     pathname = property(
         lambda self: self.__attributes.get('pathname'),
         lambda self, v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
-    
+
     annotation = property(
         lambda self: self.__attributes.get('annotation', ''),
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
-    
+
     @property
     def name(self):
         return self.__name
-    
+
     @name.setter
     def name(self, v):
         self.__name = v
         self.parent.handler('frame_updated', self)
-    
+
     @property
     def localunit(self):
         return self.__localunit
-    
+
     @property
     def unit(self):
         """Logical length per pixel arb.unit [u/pix]."""
         return self.__localunit or self.parent.unit
-    
+
     @unit.setter
     def unit(self, v):
         if v == self.__localunit: # no effect
@@ -275,44 +275,44 @@ class AxesImagePhantom:
         self.update_extent()
         self.parent.handler('frame_updated', self)
         self.parent.canvas.draw_idle()
-    
+
     @unit.deleter
     def unit(self):
         self.unit = None
-    
+
     @property
     def xy_unit(self):
         u = self.__localunit or self.parent.unit
         return (u, u * self.__aspect_ratio)
-    
+
     @property
     def center(self):
         """Center of logical unit."""
         return self.__center
-    
+
     @center.setter
     def center(self, v):
         self.__center = tuple(v)
         self.__attributes['center'] = self.__center
         self.update_extent()
         self.parent.handler('frame_updated', self)
-    
+
     @property
     def aspect_ratio(self):
         """Aspect ratio of logical unit."""
         return self.__aspect_ratio
-    
+
     @aspect_ratio.setter
     def aspect_ratio(self, v):
         self.__aspect_ratio = v or 1
         self.update_extent()
         self.parent.handler('frame_updated', self)
-    
+
     @property
     def index(self):
         """Page number in the parent view."""
         return self.parent.index(self)
-    
+
     @property
     def roi(self):
         """Current buffer ROI (region of interest)."""
@@ -322,27 +322,27 @@ class AxesImagePhantom:
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
             return self.__buf[sy, sx]
         return None
-    
+
     @roi.setter
     def roi(self, v):
         if not self.parent.region.size:
              raise ValueError("region is not selected.")
         self.roi[:] = v  # cannot broadcast input array into different shape
         self.update_buffer()
-    
+
     @property
     def roi_or_buffer(self):
         return self.roi if self.parent.region.size else self.buffer
-    
+
     @property
     def buffer(self):
         return self.__buf
-    
+
     @buffer.setter
     def buffer(self, v):
         self.update_buffer(v)
         self.update_extent()
-    
+
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
         If `nearest` is False, the return value is interpolated with spline.
@@ -355,7 +355,7 @@ class AxesImagePhantom:
         if nearest:
             return self.__buf[ny, nx] # nearest value
         return ndi.map_coordinates(self.__buf, np.vstack((ny, nx))) # spline value
-    
+
     def xytopixel(self, x, y=None, cast=True):
         """Convert xydata (x,y) -> [nx,ny] pixel.
         If `cast` is True, the return value will be integer pixel values.
@@ -373,7 +373,7 @@ class AxesImagePhantom:
         if cast:
             return np.array((_cast(nx), _cast(ny)))
         return np.array((nx-0.5, ny-0.5))
-    
+
     def xyfrompixel(self, nx, ny=None):
         """Convert pixel [nx,ny] -> (x,y) xydata (float number).
         """
@@ -386,53 +386,53 @@ class AxesImagePhantom:
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy # Y ピクセルインデクスは座標と逆
         return np.array((x, y))
-    
+
     selector = _Property('selector')
     markers = _Property('markers')
     region = _Property('region')
-    
+
     @property
     def selector_pix(self):
         """Selected points array [[x],[y]] in pixels."""
         return self.xytopixel(self.selector)
-    
+
     @selector_pix.setter
     def selector_pix(self, v):
         self.selector = self.xyfrompixel(v)
-    
+
     @selector_pix.deleter
     def selector_pix(self):
         del self.selector
-    
+
     @property
     def markers_pix(self):
         """Marked points data array [[x],[y]] in pixels."""
         return self.xytopixel(self.markers)
-    
+
     @markers_pix.setter
     def markers_pix(self, v):
         self.markers = self.xyfrompixel(v)
-    
+
     @markers_pix.deleter
     def markers_pix(self):
         del self.markers
-    
+
     @property
     def region_pix(self):
         """Cropped points data array [l,r],[b,t] in pixels."""
         return self.xytopixel(self.region)
-    
+
     @region_pix.setter
     def region_pix(self, v):
         self.region = self.xyfrompixel(v)
-    
+
     @region_pix.deleter
     def region_pix(self):
         del self.region
 
 
 class GraphPlot(MatplotPanel):
-    """Graph panel for 2D graph
+    """Graph panel for 2D graph.
     """
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
@@ -636,7 +636,7 @@ class GraphPlot(MatplotPanel):
         self.Layout()
         
         self.writeln()
-    
+
     def clear(self):
         MatplotPanel.clear(self)
         
@@ -663,7 +663,7 @@ class GraphPlot(MatplotPanel):
         self.__isPicked = None
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
-    
+
     def get_uniqname(self, name):
         base = name = name or "*temp*"
         i = 1
@@ -672,7 +672,7 @@ class GraphPlot(MatplotPanel):
             i += 1
             name = "{}<{:d}>".format(base, i)
         return name
-    
+
     def load(self, buf, name=None, pos=None, show=True, **kwargs):
         """Load a buffer with a name.
         
@@ -721,7 +721,7 @@ class GraphPlot(MatplotPanel):
             if u != art.unit:
                 self.axes.axis(art.get_extent())
         return art
-    
+
     def select(self, index):
         if isinstance(index, (str, AxesImagePhantom)):
             j = self.index(index)
@@ -746,11 +746,11 @@ class GraphPlot(MatplotPanel):
         self.writeln()
         self.trace_point(*self.selector)
         return self.frame
-    
+
     def __iter__(self):
         for art in self.__Arts:
             yield art.buffer
-    
+
     def __getitem__(self, j):
         if isinstance(j, str):
             j = self.index(j)
@@ -759,7 +759,7 @@ class GraphPlot(MatplotPanel):
         if hasattr(j, '__iter__'):
             return [buffers[i] for i in j]
         return buffers[j] # j can also be slicing
-    
+
     def __setitem__(self, j, v):
         if v is None:
             raise ValueError("values must be buffers, not NoneType")
@@ -774,7 +774,7 @@ class GraphPlot(MatplotPanel):
         art.update_buffer(v) # update buffer
         art.update_extent()
         self.select(j)
-    
+
     def __delitem__(self, j):
         if isinstance(j, str):
             j = self.index(j)
@@ -798,19 +798,19 @@ class GraphPlot(MatplotPanel):
                 n = len(self)
                 self.__index = None if n==0 else j if j<n else n-1
             self.select(self.__index)
-    
+
     ## __len__ は bool() でも呼び出されるため，オブジェクト判定で偽を返すことがある (PY2)
     ## __nonzero__ : bool() を追加しておく必要がある (PY2)
-    
+
     def __len__(self):
         return len(self.__Arts)
-    
+
     def __nonzero__(self):
         return True
-    
+
     def __bool__(self):
         return True
-    
+
     def __contains__(self, j):
         if isinstance(j, str):
             return j in (art.name for art in self.__Arts)
@@ -818,7 +818,7 @@ class GraphPlot(MatplotPanel):
             return any(j is art.buffer for art in self.__Arts)
         else:
             return j in self.__Arts
-    
+
     def index(self, j):
         if isinstance(j, str):
             return next(i for i, art in enumerate(self.__Arts) if j == art.name)
@@ -826,7 +826,7 @@ class GraphPlot(MatplotPanel):
             return next(i for i, art in enumerate(self.__Arts) if j is art.buffer)
         else:
             return self.__Arts.index(j) # j:frame -> int
-    
+
     def find_frame(self, j):
         if isinstance(j, str):
             return next((art for art in self.__Arts if j == art.name), None)
@@ -834,7 +834,7 @@ class GraphPlot(MatplotPanel):
             return next((art for art in self.__Arts if j is art.buffer), None)
         else:
             return self.__Arts[j] # j:int -> frame
-    
+
     def get_all_frames(self, j=None):
         """List of arts <matplotlib.image.AxesImage>."""
         if j is None:
@@ -843,46 +843,46 @@ class GraphPlot(MatplotPanel):
             yield from (art for art in self.__Arts if j in art.name)
         elif isinstance(j, np.ndarray):
             yield from (art for art in self.__Arts if j is art.buffer)
-    
+
     ## --------------------------------
     ## Property of frame / drawer
     ## --------------------------------
-    
+
     #: image bytes max for loading matplotlib (with wxAgg backend)
     nbytes_threshold = 24e6
-    
+
     #: image cutoff score percentiles
     score_percentile = 0.005
-    
+
     @property
     def all_frames(self):
         """List of arts <matplotlib.image.AxesImage>."""
         return self.__Arts
-    
+
     @property
     def frame(self):
         """Current art <matplotlib.image.AxesImage>."""
         if self.__Arts and self.__index is not None:
             return self.__Arts[self.__index]
-    
+
     @property
     def buffer(self):
         """Current buffer array."""
         if self.frame:
             return self.frame.buffer
-    
+
     @buffer.setter
     def buffer(self, v):
         if self.frame:
             self.__setitem__(self.__index, v)
         else:
             self.load(v)
-    
+
     @property
     def unit(self):
         """Logical length per pixel arb.unit [u/pix]."""
         return self.__unit
-    
+
     @unit.setter
     def unit(self, v):
         if v == self.__unit:  # no effect unless unit changes
@@ -897,14 +897,14 @@ class GraphPlot(MatplotPanel):
                 art.update_extent()
                 self.handler('frame_updated', art)
             self.canvas.draw_idle()
-    
+
     def kill_buffer(self):
         if self.frame:
             del self[self.__index]
-    
+
     def kill_buffer_all(self):
         del self[:]
-    
+
     def fit_to_axes(self):
         """Reset the view limits to the current frame extent."""
         if self.frame:
@@ -912,7 +912,7 @@ class GraphPlot(MatplotPanel):
             self.toolbar.update()
             self.toolbar.push_current()
             self.draw()
-    
+
     def fit_to_canvas(self):
         """Reset the view limits to the canvas range."""
         x, y = self.xlim, self.ylim
@@ -928,7 +928,7 @@ class GraphPlot(MatplotPanel):
             dy = (x[1] - x[0]) / 2 * r
             self.ylim = cy-dy, cy+dy
         self.draw()
-    
+
     def on_focus_set(self, evt):
         """Called when focus is set (override)."""
         MatplotPanel.on_focus_set(self, evt)
@@ -936,30 +936,30 @@ class GraphPlot(MatplotPanel):
             self.handler('frame_selected', self.frame)
             self.on_picker_unlock(evt)
         self.trace_point(*self.selector)
-    
+
     def on_focus_kill(self, evt):
         """Called when focus is killed (override)."""
         MatplotPanel.on_focus_kill(self, evt)
         if self.frame:
             self.handler('frame_deselected', self.frame)
             self.on_picker_lock(evt)
-    
+
     def get_cmapstr(self):
         if self.frame:
             return self.frame.get_cmap().name
         return ''
-    
+
     def set_cmapstr(self, name):
         if self.frame:
             self.frame.set_cmap(name)
             self.handler('frame_cmapped', self.frame)
             self.draw()
-    
+
     def invert_cmap(self):
         if self.frame:
             name = self.frame.get_cmap().name
             self.set_cmapstr(name + "_r" if name[-2:] != "_r" else name[:-2])
-    
+
     def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
         frame = self.frame
@@ -990,7 +990,7 @@ class GraphPlot(MatplotPanel):
                 xo, yo = min(nx), min(ny) # top-left
                 xr, yr = max(nx), max(ny) # bottom-right
                 self.message(f"[Region] crop={xr-xo}:{yr-yo}:{xo}:{yo}") # (W:H:left:top)
-    
+
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
         if not self.modeline.IsShown():
@@ -1015,14 +1015,14 @@ class GraphPlot(MatplotPanel):
                 page = '-',
              maxpage = len(self),
                 unit = self.__unit))
-    
+
     ## --------------------------------
     ## 外部入出力／複合インターフェース
     ## --------------------------------
     ## GraphPlot 間共有のグローバル変数
     clipboard_name = None
     clipboard_data = None
-    
+
     def write_buffer_to_clipboard(self):
         """Write buffer data to clipboard."""
         frame = self.frame
@@ -1037,7 +1037,7 @@ class GraphPlot(MatplotPanel):
         bins, vlim, img = _to_image(data, frame.cuts)
         Clipboard.imwrite(img)
         self.message("Write buffer to clipboard.")
-    
+
     def read_buffer_from_clipboard(self):
         """Read buffer data from clipboard."""
         name = GraphPlot.clipboard_name
@@ -1051,7 +1051,7 @@ class GraphPlot(MatplotPanel):
             data = Clipboard.imread()
         if data is not None:
             self.load(data)
-    
+
     def destroy_colorbar(self):
         if self.cbar:
             self.cbar = None
@@ -1060,13 +1060,13 @@ class GraphPlot(MatplotPanel):
             self.canvas.draw_idle()
             self.handler.unbind('frame_cmapped', self.update_colorbar)
             self.handler.unbind('frame_shown', self.update_colorbar)
-    
+
     def update_colorbar(self, frame):
         if self.cbar:
             self.cbar.update_normal(frame)
             self.canvas.draw_idle()
             self.figure.draw_without_rendering()
-    
+
     def create_colorbar(self):
         """Make a colorbar.
         The colorbar is plotted in self.figure.axes[1] (second axes)
@@ -1081,11 +1081,11 @@ class GraphPlot(MatplotPanel):
             self.handler.bind('frame_shown', self.update_colorbar)
         else:
             self.message("- A frame must exist to create a colorbar.")
-    
+
     ## --------------------------------
     ## matplotlib interfaces
     ## --------------------------------
-    
+
     def on_pick(self, evt): #<matplotlib.backend_bases.PickEvent>
         """Pickup image and other arts.
         Called (maybe) after mouse buttons are pressed.
@@ -1128,13 +1128,13 @@ class GraphPlot(MatplotPanel):
                 MatplotPanel.on_pick(self, evt) # [art_picked]
         
         self.canvas.draw_idle()
-    
+
     def on_picker_lock(self, evt):
         self.__isPicked = True
-    
+
     def on_picker_unlock(self, evt):
         self.__isPicked = False
-    
+
     def OnImagePicked(self, evt): #<matplotlib.backend_bases.PickEvent>
         x = evt.mouseevent.xdata
         y = evt.mouseevent.ydata
@@ -1142,13 +1142,13 @@ class GraphPlot(MatplotPanel):
         x, y = self.frame.xyfrompixel(nx, ny)
         evt.ind = (ny, nx)
         self.selector = (x, y)
-    
+
     def _inaxes(self, evt):
         try:
             return evt.inaxes is not self.axes #<matplotlib.backend_bases.MouseEvent>
         except AttributeError:
             return None #<wx._core.KeyEvent>
-    
+
     ## --------------------------------
     ## Pan/Zoom actions (override)
     ## --------------------------------
@@ -1156,7 +1156,7 @@ class GraphPlot(MatplotPanel):
     ## spline36, hanning, hamming, hermite, kaiser, quadric,
     ## catrom, gaussian, bessel, mitchell, sinc, lanczos, or none
     interpolation_mode = 'bilinear'
-    
+
     def OnDraw(self, evt):
         """Called before canvas.draw (overridden)."""
         if not self.interpolation_mode:
@@ -1171,33 +1171,33 @@ class GraphPlot(MatplotPanel):
                 
             elif frame.get_interpolation() != 'nearest' and dots > 1:
                 frame.set_interpolation('nearest')
-    
+
     def OnMotion(self, evt):
         """Called when mouse moves in axes (overridden)."""
         if self.selector.shape[1] < 2:
             self.trace_point(evt.xdata, evt.ydata)
-    
+
     def OnPageDown(self, evt):
         """Next page."""
         i = self.__index
         if i is not None and i < len(self)-1:
             self.select(i + 1)
-    
+
     def OnPageUp(self, evt):
         """Previous page."""
         i = self.__index
         if i is not None and i > 0:
             self.select(i - 1)
-    
+
     def OnHomePosition(self, evt):
         self.fit_to_axes()
-    
+
     def OnEscapeSelection(self, evt):
         xs, ys = self.selector
         del self.selector
         if len(xs) > 1:
             self.handler('line_removed', self.frame)
-    
+
     def OnXAxisPanZoom(self, evt, c=None):
         org = self.p_event
         M = np.exp(-(evt.x - org.x)/100)
@@ -1207,7 +1207,7 @@ class GraphPlot(MatplotPanel):
         self.ylim = self.zoomlim(self.ylim, M)
         org.x, org.y = evt.x, evt.y
         self.draw()
-    
+
     def OnYAxisPanZoom(self, evt, c=None):
         org = self.p_event
         M = np.exp(-(evt.y - org.y)/100)
@@ -1217,11 +1217,11 @@ class GraphPlot(MatplotPanel):
         self.ylim = self.zoomlim(self.ylim, M, c)
         org.x, org.y = evt.x, evt.y
         self.draw()
-    
+
     ## --------------------------------
     ## Selector interface
     ## --------------------------------
-    
+
     def calc_point(self, x, y, centred=True, inaxes=False):
         """Computes the nearest pixelated point from a point (x, y).
         If centred, correct the points to the center of the nearest pixel.
@@ -1249,7 +1249,7 @@ class GraphPlot(MatplotPanel):
             x = l + nx * ux
             y = t - ny * uy
         return (x, y)
-    
+
     def calc_shiftpoint(self, xo, yo, x, y, centred=True):
         """Restrict point (x, y) from (xo, yo) in pi/8 step angles.
         If centred, correct the point to the center of the nearest pixel.
@@ -1262,16 +1262,16 @@ class GraphPlot(MatplotPanel):
         x = xo + L * np.cos(aa[k] - pi/8)
         y = yo + L * np.sin(aa[k] - pi/8)
         return self.calc_point(x, y, centred)
-    
+
     def OnSelectorAppend(self, evt):
         xs, ys = self.selector
         x, y = self.calc_point(evt.xdata, evt.ydata)
         self.selector = np.append(xs, x), np.append(ys, y)
         self.handler('line_drawn', self.frame)
-    
+
     def OnDragLock(self, evt):
         pass
-    
+
     def OnDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
@@ -1279,7 +1279,7 @@ class GraphPlot(MatplotPanel):
         org = self.p_event # the last pressed
         self.__lastpoint = self.calc_point(org.xdata, org.ydata)
         self.__orgpoints = self.selector
-    
+
     def OnDragMove(self, evt, shift=False):
         x, y = self.calc_point(evt.xdata, evt.ydata)
         xo, yo = self.__lastpoint
@@ -1287,10 +1287,10 @@ class GraphPlot(MatplotPanel):
             x, y = self.calc_shiftpoint(xo, yo, x, y)
         self.selector = np.append(xo, x), np.append(yo, y)
         self.handler('line_draw', self.frame)
-    
+
     def OnDragShiftMove(self, evt):
         self.OnDragMove(evt, shift=True)
-    
+
     def OnDragEscape(self, evt):
         self.selector = self.__orgpoints
         self.handler('line_draw', self.frame)
@@ -1301,11 +1301,11 @@ class GraphPlot(MatplotPanel):
         if x == xo and y == yo:
             self.selector = ([x], [y])
         self.handler('line_drawn', self.frame)
-    
+
     ## --------------------------------
     ## Selector + Line interface
     ## --------------------------------
-    
+
     def OnLineSelected(self, evt):
         k = evt.ind[0]
         x = evt.mouseevent.xdata
@@ -1313,10 +1313,10 @@ class GraphPlot(MatplotPanel):
         xs, ys = evt.artist.get_data(orig=0)
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
         self.__linesel = k if dots < 8 else None
-    
+
     def OnLineDeselected(self, evt): #<matplotlib.backend_bases.PickEvent>
         self.__linesel = None
-    
+
     def OnLineDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
@@ -1324,7 +1324,7 @@ class GraphPlot(MatplotPanel):
         org = self.p_event # the last pressed
         self.__lastpoint = self.calc_point(org.xdata, org.ydata)
         self.__orgpoints = self.selector
-    
+
     def OnLineDragMove(self, evt, shift=False):
         x, y = self.calc_point(evt.xdata, evt.ydata)
         xc, yc = self.__lastpoint
@@ -1344,23 +1344,23 @@ class GraphPlot(MatplotPanel):
             ys = yo + (y - yc)
             self.selector = (xs, ys)
             self.handler('line_move', self.frame)
-    
+
     def OnLineDragShiftMove(self, evt):
         self.OnLineDragMove(evt, shift=True)
-    
+
     def OnLineDragEscape(self, evt):
         self.selector = self.__orgpoints
         if self.__linesel:
             self.handler('line_drawn', self.frame)
         else:
             self.handler('line_moved', self.frame)
-    
+
     def OnLineDragEnd(self, evt):
         if self.__linesel:
             self.handler('line_drawn', self.frame)
         else:
             self.handler('line_moved', self.frame)
-    
+
     def OnLineShift(self, evt):
         if self.selector.size and self.frame:
             ux, uy = self.frame.xy_unit
@@ -1372,23 +1372,23 @@ class GraphPlot(MatplotPanel):
             }
             self.selector += np.resize(du[evt.key], (2,1))
             self.handler('line_move', self.frame)
-    
+
     def OnLineShiftEnd(self, evt):
         self.handler('line_moved', self.frame)
-    
+
     ## --------------------------------
     ## Marker interface
     ## --------------------------------
-    
+
     #: Limit number of markers to display 最大(表示)数を制限する
     maxnum_markers = 1000
-    
+
     @property
     def markers(self):
         """Marked points data array [[x],[y]]."""
         xm, ym = self.marked.get_data(orig=0)
         return np.array((xm, ym))
-    
+
     @markers.setter
     def markers(self, v):
         x, y = v
@@ -1401,7 +1401,7 @@ class GraphPlot(MatplotPanel):
         self.__marksel = []
         self.update_art_of_mark()
         self.handler('mark_drawn', self.frame)
-    
+
     @markers.deleter
     def markers(self):
         if self.markers.size:
@@ -1409,12 +1409,12 @@ class GraphPlot(MatplotPanel):
             self.__marksel = []
             self.update_art_of_mark()
             self.handler('mark_removed', self.frame)
-    
+
     def get_current_mark(self):
         """Currently selected mark."""
         xm, ym = self.marked.get_data(orig=0)
         return np.take((xm, ym), self.__marksel, axis=1)
-    
+
     def set_current_mark(self, x, y):
         xm, ym = self.marked.get_data(orig=0)
         j = self.__marksel
@@ -1431,7 +1431,7 @@ class GraphPlot(MatplotPanel):
             self.marked.set_visible(1)
             self.update_art_of_mark()
         self.selector = (x, y)
-    
+
     def del_current_mark(self):
         j = self.__marksel
         if j:
@@ -1442,7 +1442,7 @@ class GraphPlot(MatplotPanel):
             n = len(xm)
             self.__marksel = [j[-1] % n] if n > 0 else []
             self.update_art_of_mark()
-    
+
     def update_art_of_mark(self, *args):
         if args:
             for k, x, y in zip(*args):
@@ -1467,19 +1467,19 @@ class GraphPlot(MatplotPanel):
                 )
             self.trace_point(*self.get_current_mark(), type=MARK)
         self.draw(self.marked)
-    
+
     def OnMarkAppend(self, evt):
         xs, ys = self.selector
         if not self.__marksel and len(xs) > 0:
             self.set_current_mark(xs, ys)
             self.handler('mark_drawn', self.frame)
         self.update_art_of_mark()
-    
+
     def OnMarkRemove(self, evt):
         if self.__marksel:
             self.del_current_mark()
             self.handler('mark_removed', self.frame)
-    
+
     def OnMarkSelected(self, evt): #<matplotlib.backend_bases.PickEvent>
         k = evt.ind[0]
         if evt.mouseevent.key == 'shift': # 多重マーカー選択
@@ -1491,29 +1491,29 @@ class GraphPlot(MatplotPanel):
         self.selector = self.get_current_mark()
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame) # 多重マーカー選択時
-    
+
     def OnMarkDeselected(self, evt): #<matplotlib.backend_bases.PickEvent>
         self.__marksel = []
         self.update_art_of_mark()
-    
+
     def OnMarkDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         self.__orgpoints = self.get_current_mark()
-    
+
     def OnMarkDragMove(self, evt):
         x, y = self.calc_point(evt.xdata, evt.ydata)
         self.set_current_mark(x, y)
         self.handler('mark_draw', self.frame)
-    
+
     def OnMarkDragEscape(self, evt):
         self.set_current_mark(*self.__orgpoints)
         self.handler('mark_drawn', self.frame)
-    
+
     def OnMarkDragEnd(self, evt):
         self.handler('mark_drawn', self.frame)
-    
+
     def OnMarkShift(self, evt):
         j = self.__marksel
         if j and self.frame:
@@ -1527,10 +1527,10 @@ class GraphPlot(MatplotPanel):
             p = self.get_current_mark() + np.resize(du[evt.key], (2,1))
             self.set_current_mark(*p)
             self.handler('mark_draw', self.frame)
-    
+
     def OnMarkShiftEnd(self, evt):
         self.handler('mark_drawn', self.frame)
-    
+
     def next_mark(self, j):
         self.__marksel = [j]
         xs, ys = self.get_current_mark()
@@ -1539,7 +1539,7 @@ class GraphPlot(MatplotPanel):
         self.selector = (xs, ys)
         self.trace_point(xs, ys, type=MARK)
         self.draw()
-    
+
     def OnMarkSkipNext(self, evt):
         n = self.markers.shape[1]
         j = self.__marksel
@@ -1547,7 +1547,7 @@ class GraphPlot(MatplotPanel):
             self.next_mark((j[-1]+1) % n)
         elif n:
             self.next_mark(0)
-    
+
     def OnMarkSkipPrevious(self, evt):
         n = self.markers.shape[1]
         j = self.__marksel
@@ -1555,11 +1555,11 @@ class GraphPlot(MatplotPanel):
             self.next_mark((j[-1]-1) % n)
         elif n:
             self.next_mark(-1)
-    
+
     ## --------------------------------
     ## Region interface
     ## --------------------------------
-    
+
     @property
     def region(self):
         """Cropped rectangle points data array [l,r],[b,t]."""
@@ -1569,26 +1569,26 @@ class GraphPlot(MatplotPanel):
             yo, y = min(y), max(y) #= y[[0, 2]]
             return np.array(((xo, x), (yo, y)))
         return np.resize(0., (2,0))
-    
+
     @region.setter
     def region(self, v):
         x, y = v
         if len(x) > 1:
             self.set_current_rect(x, y)
             self.handler('region_drawn', self.frame)
-    
+
     @region.deleter
     def region(self):
         if self.region.size:
             self.del_current_rect()
             self.handler('region_removed', self.frame)
-    
+
     def get_current_rect(self):
         """Currently selected region."""
         if self.__rectsel:
             x, y = self.rected.get_data(orig=0)
             return np.array((x, y))
-    
+
     def set_current_rect(self, x, y):
         if len(x) == 2:
             (xa,xb), (ya,yb) = x, y
@@ -1610,13 +1610,13 @@ class GraphPlot(MatplotPanel):
         self.rected.set_data(x, y)
         self.rected.set_visible(1)
         self.update_art_of_region()
-    
+
     def del_current_rect(self):
         self.__rectsel = []
         self.rected.set_data([], [])
         self.rected.set_visible(0)
         self.update_art_of_region()
-    
+
     def update_art_of_region(self, *args):
         if args:
             art = self.__rectarts # art の再描画処理をして終了
@@ -1637,7 +1637,7 @@ class GraphPlot(MatplotPanel):
                 )
             self.trace_point(x, y, type=REGION)
         self.draw(self.rected)
-    
+
     def OnRegionAppend(self, evt):
         xs, ys = self.selector
         if len(xs) > 0 and self.frame:
@@ -1647,13 +1647,13 @@ class GraphPlot(MatplotPanel):
             self.set_current_rect(xs, ys)
             self.update_art_of_region()
             self.handler('region_drawn', self.frame)
-    
+
     def OnRegionRemove(self, evt):
         if self.__rectsel:
             self.del_current_rect()
             self.handler('region_removed', self.frame)
         self.set_wxcursor(wx.CURSOR_ARROW)
-    
+
     def OnRegionSelected(self, evt): #<matplotlib.backend_bases.PickEvent>
         k = evt.ind[0]
         x = evt.mouseevent.xdata
@@ -1662,12 +1662,12 @@ class GraphPlot(MatplotPanel):
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
         self.__rectsel = [k] if dots < 8 else [0,1,2,3,4] # リージョンの全選択
         self.update_art_of_region()
-    
+
     def OnRegionDeselected(self, evt): #<matplotlib.backend_bases.PickEvent>
         self.__rectsel = []
         self.update_art_of_region()
         self.set_wxcursor(wx.CURSOR_ARROW)
-    
+
     def OnRegionDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
@@ -1678,7 +1678,7 @@ class GraphPlot(MatplotPanel):
             x, y = self.__lastpoint
             self.set_current_rect((x, x), (y, y))  # start new region
         self.__orgpoints = self.get_current_rect()
-    
+
     def OnRegionDragMove(self, evt, shift=False, meta=False):
         x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
         xs, ys = self.get_current_rect()
@@ -1703,21 +1703,21 @@ class GraphPlot(MatplotPanel):
             ys = yo + (y - yc)
             self.set_current_rect(xs, ys)
         self.handler('region_draw', self.frame)
-    
+
     def OnRegionDragShiftMove(self, evt):
         self.OnRegionDragMove(evt, shift=True)
-    
+
     def OnRegionDragMetaMove(self, evt):
         self.OnRegionDragMove(evt, meta=True)
-    
+
     def OnRegionDragEscape(self, evt):
         self.set_current_rect(*self.__orgpoints)
         self.handler('region_drawn', self.frame)
-    
+
     def OnRegionDragEnd(self, evt):
         ## self.__rectsel = [0,1,2,3,4] # リージョンの全選択
         self.handler('region_drawn', self.frame)
-    
+
     def OnRegionShift(self, evt):
         j = self.__rectsel
         if j and self.frame:
@@ -1739,10 +1739,10 @@ class GraphPlot(MatplotPanel):
                 p += dp
                 self.set_current_rect(*p.T)
             self.handler('region_draw', self.frame)
-    
+
     def OnRegionShiftEnd(self, evt):
         self.handler('region_drawn', self.frame)
-    
+
     def OnRegionMotion(self, evt):
         x, y = evt.xdata, evt.ydata
         if self.region.size:

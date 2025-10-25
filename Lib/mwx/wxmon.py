@@ -13,7 +13,7 @@ from .framework import CtrlInterface, Menu
 
 
 class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
-    """Event monitor
+    """Event monitor.
     
     Attributes:
         parent: shellframe
@@ -65,7 +65,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         @self.handler.bind('C-c pressed')
         def copy(evt):
             self.copy()
-    
+
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             try:
@@ -73,30 +73,30 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             except Exception as e:
                 print(e)
         evt.Skip()
-    
+
     def OnSetFocus(self, evt):
         title = "{} target: {}".format(self.__class__.__name__, self.target)
         self.parent.handler('title_window', title)
         evt.Skip()
-    
+
     ## --------------------------------
     ## EventWatcher wrapper interface
     ## --------------------------------
     ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
-    
+
     @staticmethod
     def get_name(event):
         return ew._eventIdMap.get(event, 'Unknown')
-    
+
     @staticmethod
     def get_binder(event):
         return next(x for x in ew._eventBinders if x.typeId == event)
-    
+
     @staticmethod
     def get_watchlist():
         """All watched event binders except noWatchList."""
         return (x for x in ew._eventBinders if x not in ew._noWatchList)
-    
+
     def watch(self, widget=None):
         """Begin watching the widget."""
         self.unwatch()
@@ -124,7 +124,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 print(" #{:6d}:{:32s}{!s}".format(event, name, e))
                 continue
         self.parent.handler('monitor_begin', widget)
-    
+
     def unwatch(self):
         """End watching the widget."""
         widget = self.target
@@ -135,12 +135,12 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 print("- Failed to unbind {}: {}".format(binder.typeId, widget))
         self.parent.handler('monitor_end', widget)
         self.target = None
-    
+
     def onWatchedEvent(self, evt):
         if self:
             self.update(evt)
         evt.Skip()
-    
+
     def dump(self, widget, verbose=True):
         """Dump all event handlers bound to the widget."""
         ## Note: This will not work unless [Monkey-patch for wx.core] is applied.
@@ -160,15 +160,15 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         except AttributeError:
             pass
         return ssmap
-    
+
     ## --------------------------------
     ## Actions on list items
     ## --------------------------------
-    
+
     def clear(self):
         self.DeleteAllItems()
         del self.__items[:]
-    
+
     def update(self, evt):
         event = evt.EventType
         obj = evt.EventObject
@@ -200,7 +200,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.parent.debugger.set_trace()
             return
         self.blink(i)
-    
+
     def append(self, event):
         data = self.__items
         if event in (item[0] for item in data):
@@ -215,7 +215,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetItem(i, j, str(v))
         self.SetItemTextColour(i, 'blue')
         self.blink(i)
-    
+
     def blink(self, i):
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             self.SetItemBackgroundColour(i, "yellow")
@@ -223,7 +223,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 if self and i < self.ItemCount:
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallAfter(wx.CallLater, 1000, _reset_color)
-    
+
     def copy(self):
         if not self.SelectedItemCount:
             return
@@ -233,7 +233,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 event, name, *_, attribs = self.__items[i]
                 text += "{}\t{}\n{}\n\n".format(event, name, attribs)
         Clipboard.write(text[:-1])
-    
+
     def OnSortItems(self, evt): #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
@@ -259,14 +259,14 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.SetItemTextColour(i, 'blue')
             if item == fi:
                 self.Focus(i)
-    
+
     def OnItemDClick(self, evt): #<wx._core.MouseEvent>
         i, flag = self.HitTest(evt.Position)
         if i >= 0:
             item = self.__items[i]
             wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
         evt.Skip()
-    
+
     def OnContextMenu(self, evt):
         obj = self.target
         wnd = self._target
