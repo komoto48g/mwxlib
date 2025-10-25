@@ -1091,10 +1091,9 @@ class TextBox(wx.Control):
         **kwargs: keywords for wx.TextCtrl
                   e.g., value:str
     """
-    Value = property(
+    Value = property(  # textctrl value:str
         lambda self: self._ctrl.GetValue(),
-        lambda self, v: self._ctrl.SetValue(v),
-        doc="textctrl value:str")
+        lambda self, v: self._ctrl.SetValue(v))
 
     value = Value #: internal use only
 
@@ -1160,22 +1159,19 @@ class Choice(wx.Control):
         If the input item is not found in the choices,
         it will be added to the list (unless readonly)
     """
-    Value = property(
+    Value = property(  # combobox value:str
         lambda self: self._ctrl.GetValue(),
-        lambda self, v: self._ctrl.SetValue(v),
-        doc="combobox value:str")
+        lambda self, v: self._ctrl.SetValue(v))
 
     value = Value #: internal use only
 
-    Selection = property(
+    Selection = property(  # combobox selection:int or NOT_FOUND(-1)
         lambda self: self._ctrl.GetSelection(),
-        lambda self, v: self._ctrl.SetSelection(v),  # int or NOT_FOUND(-1)
-        doc="combobox selection:int")
+        lambda self, v: self._ctrl.SetSelection(v))
 
-    Items = property(
+    Items = property(  # combobox items:list
         lambda self: self._ctrl.GetItems(),
-        lambda self, v: self._ctrl.SetItems(v),
-        doc="combobox items:list")
+        lambda self, v: self._ctrl.SetItems(v))
 
     button = property(lambda self: self._btn)
     control = property(lambda self: self._ctrl)
