@@ -8,7 +8,7 @@ import wx
 from matplotlib import patches
 import numpy as np
 from scipy import signal
-## from scipy import ndimage as ndi
+from scipy import ndimage
 
 from . import framework as mwx
 from .utilus import funcall as _F
@@ -128,7 +128,7 @@ class LinePlot(MatplotPanel):
             ]
 
     ## --------------------------------
-    ## Motion/Drag actions (override)
+    ## Region/Drag actions (override)
     ## --------------------------------
 
     def region_test(self, evt):
@@ -337,7 +337,7 @@ class Histogram(LinePlot):
             self.modeline.SetLabel("")
 
     ## --------------------------------
-    ## Motion/Drag actions (override)
+    ## Region/Drag actions (override)
     ## --------------------------------
 
     def annotate(self):
@@ -566,7 +566,7 @@ class LineProfile(LinePlot):
                     x = x[mask]
                     y = y[mask]
                     zi = frame.buffer[y.astype(int), x.astype(int)]  # nearest: 速くてそこそこ正確
-                    # zi = ndi.map_coordinates(frame.buffer, np.vstack((y, x)))  # spline: 遅いが正確
+                    # zi = ndimage.map_coordinates(frame.buffer, np.vstack((y, x)))  # spline: 遅いが正確
                     if zi.dtype in (np.complex64, np.complex128):
                         zi = np.log(1 + abs(zi))
                     zs[mask] += zi
@@ -623,7 +623,7 @@ class LineProfile(LinePlot):
         self.writeln()
 
     ## --------------------------------
-    ## Motion/Drag actions (override)
+    ## Region/Drag actions (override)
     ## --------------------------------
 
     def OnHomePosition(self, evt):
@@ -664,6 +664,10 @@ class LineProfile(LinePlot):
     def OnEscapeSelection(self, evt):
         self.__hline.set_visible(0)
         LinePlot.OnEscapeSelection(self, evt)
+
+    ## --------------------------------
+    ## Region-(H)Line/Drag actions
+    ## --------------------------------
 
     def OnDragLineBegin(self, evt):
         self.set_wxcursor(wx.CURSOR_SIZENS)
@@ -708,23 +712,32 @@ class LineProfile(LinePlot):
             self.draw()
             self.message(f"yc = {yc:g}")
 
+    ## --------------------------------
+    ## Region-Mark/Drag actions
+    ## --------------------------------
+    peak_blur_ratio = 0.01
+    peak_prominence_ratio = 0.1
+
     def OnMarkPeaks(self, evt):
         """Set markers on peaks."""
         x, y = self.plotdata
-        if x.size:
-            lw = 5
-            window = np.hanning(lw)
-            ys = np.convolve(window/window.sum(), y, mode='same')
+        if x.size > 1:
+            # lw = 5
+            ux = x[1] - x[0]  # equal spacing length
+            lw = max(1, self.peak_blur_ratio * (self.xbound[1] - self.xbound[0]) / ux)
+            lp = self.peak_prominence_ratio * (self.ybound[1] - self.ybound[0])
+            # window = np.hanning(lw)
+            # window = signal.windows.gaussian(lw, std=lw/6)
+            # ys = np.convolve(window/window.sum(), y, mode='same')
+            ys = ndimage.gaussian_filter1d(y, sigma=lw/6)
             
-            ## maxima = signal.find_peaks_cwt(ys, np.arange(lw,lw*2))
-            maxima, _ = signal.find_peaks(ys, width=lw, prominence=20)
-            
-            ## minima = signal.find_peaks_cwt(-ys, np.arange(lw,lw*2))
-            minima, _ = signal.find_peaks(-ys, width=lw, prominence=20)
+            maxima, _ = signal.find_peaks(ys, prominence=lp)
+            minima, _ = signal.find_peaks(-ys, prominence=lp)
             
             peaks = np.sort(np.append(maxima, minima))
             if peaks.size:
                 self.selector = x[peaks], y[peaks]
+            self.message(f"Peak detection: blur {lw=:g}, prom {lp=:g}")
 
     def OnMarkErase(self, evt):
         """Erase markers on peaks."""
@@ -751,5 +764,7 @@ class LineProfile(LinePlot):
             j = np.argmin(ld)
             if ld[j] < 20:  # check display-dot distance, snap to the nearest mark
                 xc = xs[j]
+                yc = ys[j]
+                self.message(f"({xc:g}, {yc:g})")
             self.region = (self.__orgpoint, xc)
             self.draw()
