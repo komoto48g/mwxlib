@@ -934,8 +934,11 @@ class Icon(wx.Bitmap):
         if key:
             ## Returns a bitmap of provided artwork.
             ## Note: The result could be a zero-shaped bitmap.
-            if re.match("bullet(.*)", key):
-                return eval(f"Icon.{key}")  # -> Icon.bullet(*v, **kw)
+            try:
+                if re.match("bullet(.*)", key):
+                    return eval(f"Icon.{key}")  # -> Icon.bullet(*v, **kw)
+            except TypeError:
+                pass
             try:
                 art = Icon.custom_images.get(key)
                 bmp = art.GetBitmap()
