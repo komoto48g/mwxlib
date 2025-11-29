@@ -293,8 +293,6 @@ class Histogram(LinePlot):
             self.xlim = x.min(), x.max()
             self.ylim = 0, y.max()
             self.region = None
-            self.toolbar.update()
-            self.toolbar.push_current()
             self.draw()
 
     def hreplot(self, frame):
@@ -318,8 +316,6 @@ class Histogram(LinePlot):
             self.__plot.set_data([], [])
             self.region = None
         
-        self.toolbar.update()
-        self.toolbar.push_current()
         self.draw()
 
     def writeln(self):
@@ -431,7 +427,7 @@ class LineProfile(LinePlot):
                    'line_moved' : [ None, _F(self.linplot, fit=0) ],
                   'frame_shown' : [ None, _F(self.linplot, fit=0) ],
                'frame_modified' : [ None, _F(self.linplot, fit=0) ],
-               'frame_selected' : [ None, _F(self.linplot, fit=0, force=0) ],
+               'frame_selected' : [ None, _F(self.linplot, fit=1, force=0) ],
             }
         }
         self.modeline.Show(1)
@@ -587,9 +583,7 @@ class LineProfile(LinePlot):
                 ly = self.ylim
                 self.xlim = ls[0], ls[-1]
                 self.ylim = ly[0], max(ly[1], max(zs))
-            
-        self.toolbar.update()
-        self.toolbar.push_current()
+        
         self.draw()
 
     def writeln(self):
@@ -631,6 +625,16 @@ class LineProfile(LinePlot):
     ## --------------------------------
     ## Motion/Drag actions (override)
     ## --------------------------------
+
+    def OnHomePosition(self, evt):
+        """Go back to home position."""
+        x, y = self.plotdata
+        if x.size and y.size:
+            self.xlim = x[0], x[-1]
+            self.ylim = 0, y.max()
+            self.toolbar.update()
+            self.toolbar.push_current()
+            self.draw()
 
     def OnHomeXPosition(self, evt):
         x = self.plotdata[0]
