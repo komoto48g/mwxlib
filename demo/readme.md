@@ -36,7 +36,7 @@ The simplest frame, which consists of
 The mwx.menubar is described as structured list.
 Designed as WYSiWYG (see demo).
 
-[demo_menubar](./demo_menubar.py)
+[test_menubar](./test_menubar.py)
 ![screenshot](./images/demo_menubar.png)
 
 
@@ -58,9 +58,6 @@ Those wx controls (not only shown above) are laid out by only one method `layout
 
 [demo_gauge](./demo_gauge.py)
 ![screenshot](./images/demo_gauge.png)
-
-[demo_plot](./demo_plot.py)
-![screenshot](./images/demo_plot.png)
 
 
 ## mwx.graphman.Layer
