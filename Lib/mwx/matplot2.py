@@ -181,6 +181,8 @@ class MatplotPanel(wx.Panel):
                  'home pressed' : [ None, self.OnHomePosition ],
              'Xbutton1 pressed' : [ None, self.OnBackPosition ],
              'Xbutton2 pressed' : [ None, self.OnForwardPosition ],
+               'M-left pressed' : [ None, self.OnBackPosition ],
+              'M-right pressed' : [ None, self.OnForwardPosition ],
                 },
                 NORMAL : {
                    'art_picked' : (NORMAL, ),
