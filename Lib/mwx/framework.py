@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.7.0"
+__version__ = "1.7.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1084,7 +1084,7 @@ class ShellFrame(MiniFrame):
         @highlight  : Highlight the widget.
         @filling    : Inspection using ``wx.lib.filling.Filling``.
     """
-    rootshell = property(lambda self: self.__shell) #: the root shell
+    rootshell = property(lambda self: self.__shell)  # the root shell
 
     def __init__(self, parent, target=None, session=None, standalone=False, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)

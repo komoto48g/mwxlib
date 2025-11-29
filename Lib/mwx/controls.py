@@ -1095,7 +1095,7 @@ class TextBox(wx.Control):
         lambda self: self._ctrl.GetValue(),
         lambda self, v: self._ctrl.SetValue(v))
 
-    value = Value #: internal use only
+    value = Value  # internal use only
 
     button = property(lambda self: self._btn)
     control = property(lambda self: self._ctrl)
@@ -1163,7 +1163,7 @@ class Choice(wx.Control):
         lambda self: self._ctrl.GetValue(),
         lambda self, v: self._ctrl.SetValue(v))
 
-    value = Value #: internal use only
+    value = Value  # internal use only
 
     Selection = property( # combobox selection:int or NOT_FOUND(-1)
         lambda self: self._ctrl.GetSelection(),

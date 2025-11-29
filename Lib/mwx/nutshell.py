@@ -2307,7 +2307,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.defaultBufferStyle = {}
         
-        self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
+        self.parent = parent  # parent<ShellFrame> is not Parent<AuiNotebook>
         self.Name = name
         self.default_name = "*{}*".format(name.lower())  # e.g. '*scratch*'
         self.default_buffer = self.create_buffer(self.default_name)
@@ -2882,7 +2882,7 @@ class Nautilus(EditorInterface, Shell):
                  **kwargs)
         EditorInterface.__init__(self)
         
-        self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
+        self.parent = parent  # parent<ShellFrame> is not Parent<AuiNotebook>
         self.target = target
         self.Name = name
         

@@ -848,10 +848,10 @@ class GraphPlot(MatplotPanel):
     ## Property of frame / drawer
     ## --------------------------------
 
-    #: image bytes max for loading matplotlib (with wxAgg backend)
+    ## image bytes max for loading matplotlib (with wxAgg backend)
     nbytes_threshold = 24e6
 
-    #: image cutoff score percentiles
+    ## image cutoff score percentiles
     score_percentile = 0.005
 
     @property
@@ -1380,7 +1380,7 @@ class GraphPlot(MatplotPanel):
     ## Marker interface
     ## --------------------------------
 
-    #: Limit number of markers to display 最大(表示)数を制限する
+    ## Limit number of markers to display 最大(表示)数を制限する
     maxnum_markers = 1000
 
     @property
