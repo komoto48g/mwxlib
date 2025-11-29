@@ -224,7 +224,7 @@ class Thread:
 
 
 class LayerInterface(CtrlInterface):
-    """Graphman.Layer interface mixin
+    """Graphman.Layer interface mixin.
     
     The layer properties can be switched by the following classvars::
     
@@ -563,7 +563,7 @@ class Graph(GraphPlot):
 
 
 class MyFileDropLoader(wx.FileDropTarget):
-    """File Drop interface
+    """File Drop interface.
     
     Args:
         target: target view to drop in, e.g. frame, graph, pane, etc.
@@ -953,6 +953,8 @@ class Frame(mwx.Frame):
                     plug.handler('page_shown', plug)
             else:
                 win.handler('page_shown', win)
+            if plug:
+                plug.SetFocus()  # plugins only
         elif not show and shown:
             if isinstance(win, aui.AuiNotebook):
                 for plug in win.get_pages():
