@@ -213,12 +213,8 @@ class LinePlot(MatplotPanel):
 class Histogram(LinePlot):
     """LinePlot panel for histogram (Multi-graph : Single-frame).
     
-    frame.image <uint8> (buffer ではない) を参照して，ヒストグラムをプロットする
-    常に整数ビット画像となるので，高速なビンづめ法で計算する
-    
-    Attributes:
-        __graphs: list of attached graph <matplot2g.GraphPlot>
-        __frame: reference to the current frame
+    frame.image <uint8> (buffer ではない) を参照して，ヒストグラムをプロットする．
+    常に整数ビット画像となるので，高速なビンづめ法で計算する．
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
@@ -249,8 +245,8 @@ class Histogram(LinePlot):
     def clear(self):
         LinePlot.clear(self)
         
-        self.__graphs = []
-        self.__frame = None
+        self.__graphs = []   # A list of attached view <matplot2g.GraphPlot>.
+        self.__frame = None  # Reference to the current frame.
         
         #<matplotlib.lines.Line2D>
         self.__plot, = self.axes.plot([], [], lw=1, color='c', alpha=1)
@@ -290,7 +286,7 @@ class Histogram(LinePlot):
         return bins, hist
 
     def hplot(self, frame):
-        self.__frame = frame  # update reference of the frame
+        self.__frame = frame  # Update reference of the frame.
         if frame:
             x, y = frame.__data = self.calc(frame)  # histogram_data buffer
             self.__plot.set_data(x, y)
@@ -302,10 +298,10 @@ class Histogram(LinePlot):
             self.draw()
 
     def hreplot(self, frame):
-        self.__frame = frame  # update reference of the frame
+        self.__frame = frame  # Update reference of the frame.
         if frame:
             try:
-                x, y = frame.__data  # reuse cached data
+                x, y = frame.__data  # Reuse cached data.
             except Exception:
                 x, y = frame.__data = self.calc(frame)  # new histogram_data buffer
             
@@ -385,12 +381,6 @@ class Histogram(LinePlot):
 
 class LineProfile(LinePlot):
     """LinePlot panel for line profile (Multi-graph : Single-frame).
-    
-    Attributes:
-        __graphs: list of attached graph <matplot2g.GraphPlot>
-        __frame: reference to the current frame
-        __logicp: line axis in logical unit
-        __linewidth: line width to integrate [pixel]
     """
     def __init__(self, *args, **kwargs):
         LinePlot.__init__(self, *args, **kwargs)
@@ -469,8 +459,8 @@ class LineProfile(LinePlot):
     def clear(self):
         LinePlot.clear(self)
         
-        self.__graphs = []
-        self.__frame = None
+        self.__graphs = []   # A list of attached view <matplot2g.GraphPlot>.
+        self.__frame = None  # Reference to the current frame.
         
         #<matplotlib.lines.Line2D>
         self.__plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1,
@@ -484,8 +474,8 @@ class LineProfile(LinePlot):
         self.__hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
                                          visible=0, zorder=2)
         
-        self.__linewidth = 1
-        self.__logicp = True
+        self.__linewidth = 1  # Line width to integrate [pixel].
+        self.__logicp = True  # Line axis in logical unit.
         
         self.selected.set_linestyle('')
 
@@ -504,7 +494,7 @@ class LineProfile(LinePlot):
     def set_logic(self, p):
         prep = self.__logicp
         self.__logicp = p = bool(p)
-        if self.__frame and prep != p:  # replot if toggled
+        if self.__frame and prep != p:  # Replot if toggled.
             u = self.__frame.unit
             ru = u if p else 1/u
             self.xlim *= ru
@@ -535,18 +525,18 @@ class LineProfile(LinePlot):
         return self.__plot.get_data(orig=0)
 
     def calc_average(self):
-        X, Y = self.plotdata
+        x, y = self.plotdata
         if self.region is not None:
             a, b = self.region
-            Y = Y[(a <= X) & (X <= b)]
-        if Y.size:
-            return Y.mean()
+            y = y[(a <= x) & (x <= b)]
+        if y.size:
+            return y.mean()
 
     def linplot(self, frame, fit=True, force=True):
         if not force:
             if frame is self.__frame:
                 return
-        self.__frame = frame  # update reference of the frame
+        self.__frame = frame  # Update reference of the frame.
         if frame:
             sel = frame.selector
             if sel.shape[1] < 2:
@@ -554,8 +544,8 @@ class LineProfile(LinePlot):
             if len(frame.buffer.shape) > 2:  # RGB image
                 return
             
-            xx, yy = sel[:,-2:]  # get the last 2-selected line
-            nx, ny = frame.xytopixel(xx, yy)  # converts to pixel [ny,nx]
+            xx, yy = sel[:,-2:]  # Get the last 2-selected line.
+            nx, ny = frame.xytopixel(xx, yy)  # Converts to pixel [ny,nx]
             lx = nx[1] - nx[0]
             ly = ny[1] - ny[0]
             if lx or ly:
@@ -580,7 +570,7 @@ class LineProfile(LinePlot):
                     x = x[mask]
                     y = y[mask]
                     zi = frame.buffer[y.astype(int), x.astype(int)]  # nearest: 速くてそこそこ正確
-                    ## zi = ndi.map_coordinates(frame.buffer, np.vstack((y, x)))  # spline: 遅いが正確
+                    # zi = ndi.map_coordinates(frame.buffer, np.vstack((y, x)))  # spline: 遅いが正確
                     if zi.dtype in (np.complex64, np.complex128):
                         zi = np.log(1 + abs(zi))
                     zs[mask] += zi
