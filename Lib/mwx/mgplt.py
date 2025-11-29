@@ -17,7 +17,7 @@ class Gnuplot:
     """
     debug = 0
 
-    PGNUPLOT = "gnuplot" # Note: gnuplot/pgnuplot is integrated
+    PGNUPLOT = "gnuplot"  # Note: gnuplot/pgnuplot is integrated
 
     @staticmethod
     def init_path(path):
@@ -52,7 +52,7 @@ class Gnuplot:
         return self
 
     def plot(self, *args):
-        if isinstance(args[0], str): # text command
+        if isinstance(args[0], str):  # text command
             pcmd = [v.strip() for v in args]
             if pcmd[-1].endswith(','):
                 pcmd[-1] = pcmd[-1][:-1]
@@ -76,12 +76,12 @@ class Gnuplot:
             for v in args:
                 if not isinstance(v, str):
                     data.append(v)
-                    if len(data) - len(opts) > 1: # opts 指定が省略されたのでデフォルト指定
+                    if len(data) - len(opts) > 1:  # opts 指定が省略されたのでデフォルト指定
                         opts.append("w l")
                 else:
                     opts.append(v)
             
-            while len(data) > len(opts): # opts 指定の数が足りない場合 (maybe+1)
+            while len(data) > len(opts):  # opts 指定の数が足りない場合 (maybe+1)
                 opts.append("w l")
             
             pcmd = ["tempfile using 1:{} {}".format(j+2, opt) for j, opt in enumerate(opts)]

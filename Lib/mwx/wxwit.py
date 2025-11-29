@@ -157,7 +157,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
 
     def OnRightDown(self, evt):
         item, flags = self.HitTest(evt.Position)
-        if item: # and flags & (0x10 | 0x20 | 0x40 | 0x80):
+        if item:  # and flags & (0x10 | 0x20 | 0x40 | 0x80):
             self.SelectItem(item)
             self.SetFocus()
         obj = self.target

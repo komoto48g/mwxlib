@@ -13,7 +13,7 @@ def fftcrop(src):
     """Crop src image in 2**N square ROI centered at (x, y)."""
     h, w = src.shape
     m = min(h, w)
-    n = 1 if m < 2 else 2 ** int(np.log2(m) - 1) # +-m/2
+    n = 1 if m < 2 else 2 ** int(np.log2(m) - 1)  # +-m/2
     x, y = w//2, h//2
     return src[y-n:y+n, x-n:x+n]
 
@@ -33,7 +33,7 @@ class Plugin(Layer):
         self.pchk = wx.CheckBox(self, label="logical unit")
         self.pchk.Value = True
         
-        self.ftor = Param("mask", (2,4,8,16,32,64)) # masking area factor of 1/2
+        self.ftor = Param("mask", (2,4,8,16,32,64))  # masking area factor of 1/2
         
         self.layout((self.pchk,), title="normal FFT")
         self.layout((self.ftor,), title="inverse FFT", style='chkbox', tw=32)

@@ -34,8 +34,8 @@ def capture_video(path, ss=0):
                '-pix_fmt', 'rgb24',     # rgb24, gray, etc.
                'pipe:'                  # pipe to stdout: '-'
                ]
-    bufsize = 4096 # w * h * 3
-    buf = b"" # bytearray()
+    bufsize = 4096  # w * h * 3
+    buf = b""
     with Popen(command, stdout=PIPE) as fp:
         while 1:
             s = fp.stdout.read(bufsize)
@@ -64,7 +64,7 @@ class MyFileDropLoader(wx.FileDropTarget):
         self.target = target
 
     def OnDropFiles(self, x, y, filenames):
-        path = filenames[-1] # Only the last one will be loaded.
+        path = filenames[-1]  # Only the last one will be loaded.
         if len(filenames) > 1:
             print("- Drop only one file please."
                   "Loading {!r} ...".format(path))
@@ -92,11 +92,11 @@ class Plugin(Layer):
         
         self._path = None
         
-        self.ss = LParam("ss:", # range/value will be set when loaded later.
+        self.ss = LParam("ss:",  # range/value will be set when loaded later.
                         handler=self.set_offset,
                         updater=self.get_offset,
                         )
-        self.to = LParam("to:", # range/value will be set when loaded later.
+        self.to = LParam("to:",  # range/value will be set when loaded later.
                         handler=self.set_offset,
                         updater=self.get_offset,
                         )
@@ -182,11 +182,11 @@ class Plugin(Layer):
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 path = dlg.Path
-        self.mc.Load(path) # -> True (always)
+        self.mc.Load(path)  # -> True (always)
         self.info = read_info(path)
         if self.info:
             v = next(x for x in self.info['streams'] if x['codec_type'] == 'video')
-            ## self.video_fps = eval(v['r_frame_rate']) # real base frame rate
+            # self.video_fps = eval(v['r_frame_rate'])  # real base frame rate
             self.video_fps = eval(v['avg_frame_rate'])  # averaged frame rate
             self.video_dur = eval(v['duration'])        # duration [s]
             w, h = v['width'], v['height']
@@ -203,7 +203,7 @@ class Plugin(Layer):
             self.message(f"Failed to load file {path!r}.")
             return False
 
-    DELTA = 1000 # correction ▲理由は不明 (WMP10 backend only?)
+    DELTA = 1000  # correction ▲理由は不明 (WMP10 backend only?)
 
     def set_offset(self, tc):
         """Set offset value by referring to ss/to value."""

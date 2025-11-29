@@ -29,11 +29,11 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.parent = parent
         self.target = None
-        self._target = None # previous target
+        self._target = None  # previous target
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.__dir = True # sort direction
+        self.__dir = True  # sort direction
         self.__items = []
         
         _alist = (
@@ -82,7 +82,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     ## --------------------------------
     ## EventWatcher wrapper interface
     ## --------------------------------
-    ew.buildWxEventMap() # build ew._eventBinders and ew._eventIdMap
+    ew.buildWxEventMap()  # build ew._eventBinders and ew._eventIdMap
 
     @staticmethod
     def get_name(event):
@@ -102,7 +102,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.unwatch()
         self.clear()
         if widget is None:
-            widget = self._target # Resume watching the previous target.
+            widget = self._target  # Resume watching the previous target.
         if not widget:
             return
         if not isinstance(widget, wx.Object):
@@ -179,7 +179,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             with ignore(DeprecationWarning):
                 attribs = ew._makeAttribString(evt)
         except Exception:
-            attribs = '' # Failed to get event attributes; possibly <BdbQuit>.
+            attribs = ''  # Failed to get event attributes; possibly <BdbQuit>.
         data = self.__items
         for i, item in enumerate(data):
             if item[0] == event:
@@ -234,7 +234,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 text += "{}\t{}\n{}\n\n".format(event, name, attribs)
         Clipboard.write(text[:-1])
 
-    def OnSortItems(self, evt): #<wx._controls.ListEvent>
+    def OnSortItems(self, evt):  #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
             return
@@ -254,17 +254,17 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.SetItem(i, j, str(v))
             self.Select(i, item in ls)
             self.CheckItem(i, item in lc)
-            self.SetItemTextColour(i, 'black') # reset font
+            self.SetItemTextColour(i, 'black')  # reset font
             if item in lb:
                 self.SetItemTextColour(i, 'blue')
             if item == fi:
                 self.Focus(i)
 
-    def OnItemDClick(self, evt): #<wx._core.MouseEvent>
+    def OnItemDClick(self, evt):  #<wx._core.MouseEvent>
         i, flag = self.HitTest(evt.Position)
         if i >= 0:
             item = self.__items[i]
-            wx.CallAfter(wx.TipWindow, self, item[-1], 512) # attribs
+            wx.CallAfter(wx.TipWindow, self, item[-1], 512)  # attribs
         evt.Skip()
 
     def OnContextMenu(self, evt):
@@ -297,7 +297,7 @@ def monit(widget=None, **kwargs):
 
 ## Monkey-patch for wx.core (deprecated)
 if 0:
-    from wx import core # PY3
+    from wx import core  # PY3
 
     def _EvtHandler_Bind(self, event, handler=None, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
         """
@@ -351,11 +351,11 @@ if 0:
                         if v[0] == id or v[1] == handler:
                             handlers.remove(v)
                 else:
-                    handlers.pop(0) # No optional arguments are specified.
+                    handlers.pop(0)  # No optional arguments are specified.
                 if not handlers:
                     del vmap[event.typeId]
             except KeyError:
-                pass # Note: vmap is actually inconsistent, but ignored.
+                pass  # Note: vmap is actually inconsistent, but ignored.
         return retval
 
     core.EvtHandler.Unbind = _EvtHandler_Unbind

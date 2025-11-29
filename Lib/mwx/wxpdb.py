@@ -195,7 +195,7 @@ class Debugger(Pdb):
 
     def watch(self, bp):
         """Start tracing."""
-        if self.busy: # don't set while debugging
+        if self.busy:  # don't set while debugging
             return
         self.__hookpoint = bp
         self.reset()
@@ -205,7 +205,7 @@ class Debugger(Pdb):
 
     def unwatch(self):
         """End tracing."""
-        if self.busy: # don't unset while debugging
+        if self.busy:  # don't unset while debugging
             return
         bp = self.__hookpoint
         self.reset()
@@ -292,7 +292,7 @@ class Debugger(Pdb):
         """
         self.__hookpoint = None
         self.indents = ' ' * 2
-        self.stdin.input = '' # clear stdin buffer
+        self.stdin.input = ''  # clear stdin buffer
 
     def on_debug_mark(self, frame):
         """Called when interaction."""
@@ -317,17 +317,17 @@ class Debugger(Pdb):
             self.editor.buffer.SetFocus()
         
         for ln in self.get_file_breaks(filename):
-            self._markbp(ln, 1) # (>>) bp:white-arrow
+            self._markbp(ln, 1)  # (>>) bp:white-arrow
         
         def _mark():
             buffer = self.editor.buffer
             if filename == buffer.filename:
                 if code != self.code:
-                    buffer.markline = firstlineno - 1 # (o) entry:mark
+                    buffer.markline = firstlineno - 1  # (o) entry:mark
                     buffer.goto_marker(1)
                     buffer.recenter(3)
                 buffer.goto_line(lineno - 1)
-                buffer.pointer = lineno - 1 # (->) pointer:mark
+                buffer.pointer = lineno - 1  # (->) pointer:mark
                 buffer.ensureLineMoreOnScreen(lineno - 1)
             self.code = code
         wx.CallAfter(_mark)
@@ -341,7 +341,7 @@ class Debugger(Pdb):
             pos = self.__cpos
             out = shell.GetTextRange(pos, shell.cpos)
             if out.strip(' ') == self.prompt.strip(' ') and pos > shell.bol:
-                shell.cpos = pos # backward selection
+                shell.cpos = pos  # backward selection
                 shell.ReplaceSelection('')
                 shell.prompt()
             shell.EnsureCaretVisible()
@@ -363,7 +363,7 @@ class Debugger(Pdb):
     def on_trace_hook(self, frame):
         """Called when a breakppoint is reached."""
         self.__hookpoint = None
-        self.interactive_shell.write('\n', -1) # move to eolc and insert LFD
+        self.interactive_shell.write('\n', -1)  # move to eolc and insert LFD
         self.message(where(frame.f_code), indent=0)
 
     ## --------------------------------
@@ -405,7 +405,7 @@ class Debugger(Pdb):
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             if target == filename:
-                if lineno <= line: # continue to dispatch_line
+                if lineno <= line:  # continue to dispatch_line
                     return self.trace_dispatch
                 else:
                     return None
@@ -449,7 +449,7 @@ class Debugger(Pdb):
         try:
             Pdb.set_quit(self)
         finally:
-            if self.parent: # Check if the parent is being deleted.
+            if self.parent:  # Check if the parent is being deleted.
                 self.handler('debug_end', self.curframe)
 
     ## --------------------------------
@@ -500,7 +500,7 @@ class Debugger(Pdb):
         frame.f_locals['__return__'] = return_value
         self.message('--Return--')
         if len(self.indents) > 2:
-            self.indents = self.indents[:-2] # remove '  '
+            self.indents = self.indents[:-2]  # remove '  '
         self.interaction(frame, None)
         ## Pdb.user_return(self, frame, return_value)
 

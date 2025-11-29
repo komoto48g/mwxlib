@@ -34,8 +34,8 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.__dir = True # sort direction
-        self.__items = [] # list of data:str
+        self.__dir = True  # sort direction
+        self.__items = []  # list of data:str
         
         _alist = (
             ("key", 140),
@@ -116,7 +116,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if i is not None:
                 if data[i][1] == vstr:
                     continue
-                data[i][1] = vstr # Update data to locals
+                data[i][1] = vstr  # Update data to locals
             else:
                 i = len(data)
                 item = [key, vstr]
@@ -144,7 +144,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 text += "{} = {}\n".format(key, vstr)
         Clipboard.write(text)
 
-    def OnSortItems(self, evt): #<wx._controls.ListEvent>
+    def OnSortItems(self, evt):  #<wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
             return

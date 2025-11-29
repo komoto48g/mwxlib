@@ -38,7 +38,7 @@ def ignore(*category):
 
 def warn(message, category=None, stacklevel=None):
     if stacklevel is None:
-        frame = inspect.currentframe().f_back # previous call stack frame
+        frame = inspect.currentframe().f_back  # previous call stack frame
         skip = [frame.f_code.co_filename]
         stacklevel = 1
         while frame.f_code.co_filename in skip:
@@ -178,7 +178,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
                 except Exception as e:
                     word = f"#<{e!r}>"
                 if len(word) > 80:
-                    word = word[:80] + '...' # truncate words +3 ellipsis
+                    word = word[:80] + '...'  # truncate words +3 ellipsis
                 print("    {}.{:<36s} {}".format(name, key, word))
             if pred:
                 print("found {} of {} words with :{}".format(n, len(keys), pred.__name__))
@@ -247,18 +247,18 @@ def where(obj):
     
     try:
         try:
-            return _where(obj) # module, class, method, function, frame, or code
+            return _where(obj)  # module, class, method, function, frame, or code
         except TypeError:
-            return _where(obj.__class__) # otherwise, class of the object
+            return _where(obj.__class__)  # otherwise, class of the object
     except Exception:
         pass
     ## The source code cannot be retrieved.
     ## Try to get filename where the object is defined.
     try:
         try:
-            return inspect.getfile(obj) # compiled file?
+            return inspect.getfile(obj)  # compiled file?
         except TypeError:
-            return inspect.getfile(obj.__class__) # or a special class?
+            return inspect.getfile(obj.__class__)  # or a special class?
     except Exception:
         pass
     
@@ -284,7 +284,7 @@ def pp(obj):
 
 if 1:
     pp.indent = 1
-    pp.width = 80 # default 80
+    pp.width = 80  # default 80
     pp.depth = None
     if sys.version_info >= (3,6):
         pp.compact = False
@@ -309,7 +309,7 @@ def split_words(text, reverse=False):
         if words:
             yield ''.join(reversed(words) if reverse else words)
         if tokens:
-            yield tokens.pop(0) # sep-token
+            yield tokens.pop(0)  # sep-token
 
 
 def split_parts(text, reverse=False):
@@ -324,7 +324,7 @@ def split_parts(text, reverse=False):
         if words:
             yield ''.join(reversed(words) if reverse else words)
         else:
-            yield tokens.pop(0) # sep-token
+            yield tokens.pop(0)  # sep-token
 
 
 def split_tokens(text, comment=True):
@@ -341,14 +341,14 @@ def split_tokens(text, comment=True):
                 ## Empty strings such as NEWLINE and ENDMARKER are also skipped.
                 continue
             if type == tokenize.COMMENT and not comment:
-                token = next(tokens)  # eats a trailing token
-                string = token.string # cr/lf or ''
+                token = next(tokens)   # eats a trailing token
+                string = token.string  # cr/lf or ''
                 if m == 0:
                     continue  # line starting with a comment
             if l > j and m > 0:
                 yield ' ' * m  # indent spaces
             elif m > k:
-                yield ' ' * (m-k) # white spaces
+                yield ' ' * (m-k)  # white spaces
             j, k = end
             yield string
     except tokenize.TokenError:
@@ -374,20 +374,20 @@ def _extract_words_from_tokens(tokens, reverse=False):
         if c in p:
             stack.append(c)
         elif c in q:
-            if not stack: # error("open-paren")
+            if not stack:  # error("open-paren")
                 break
-            if c != q[p.index(stack.pop())]: # error("mismatch-paren")
+            if c != q[p.index(stack.pop())]:  # error("mismatch-paren")
                 break
-        elif not stack and c[0] in sep: # ok; starts with a char in sep
+        elif not stack and c[0] in sep:  # ok; starts with a char in sep
             break
         words.append(c)
-        if not stack: # ok
-            j += 1 # to remove current token
+        if not stack:  # ok
+            j += 1  # to remove current token
             break
     else:
-        ## if stack: error("unclosed-paren")
+        # if stack: error("unclosed-paren")
         j = None
-    del tokens[:j] # remove extracted tokens (except the last one)
+    del tokens[:j]  # remove extracted tokens (except the last one)
     return words
 
 
@@ -426,7 +426,7 @@ def find_modules(force=False, verbose=True):
     
     if not force and os.path.exists(fn):
         with open(fn, 'r') as o:
-            lm = eval(o.read()) # read and evaluate module list
+            lm = eval(o.read())  # read and evaluate module list
         
         ## Check additional packages and modules
         verbose = False
@@ -447,7 +447,7 @@ def find_modules(force=False, verbose=True):
         
         lm.sort(key=str.upper)
         with open(fn, 'w') as o:
-            pprint(lm, stream=o) # write module list
+            pprint(lm, stream=o)  # write module list
         print("The results were written in {!r}.".format(fn))
     return lm
 
@@ -567,15 +567,15 @@ class FSM(dict):
         self.__matched_pattern = None
 
     def __init__(self, contexts=None, default=None):
-        dict.__init__(self) # update dict, however, it does not clear
-        dict.clear(self)    # if and when __init__ is called, all contents are cleared
+        dict.__init__(self)  # update dict, however, it does not clear
+        dict.clear(self)     # if and when __init__ is called, all contents are cleared
         if contexts is None:
             contexts = {}
-        if default is None: # if no default given, reset the first state as the default
+        if default is None:  # if no default given, reset the first state as the default
             if self.default_state is None:
                 default = next((k for k in contexts if k is not None), None)
         self.default_state = default
-        self.clear(default) # the first clear creates object localvars
+        self.clear(default)  # the first clear creates object localvars
         self.update(contexts)
 
     def __missing__(self, key):
@@ -600,8 +600,8 @@ class FSM(dict):
             - process the event (no actions) -> []
             - no event:transaction -> None
         """
-        recept = False # Is transaction performed?
-        retvals = [] # retvals of actions
+        recept = False  # Is transaction performed?
+        retvals = []  # retvals of actions
         self.__event = event
         if None in self:
             org = self.__state
@@ -609,17 +609,17 @@ class FSM(dict):
             try:
                 self.__state = None
                 self.__prev_state = None
-                ret = self.call(event, *args, **kwargs) # None process
+                ret = self.call(event, *args, **kwargs)  # None process
                 if ret is not None:
                     recept = True
                     retvals += ret
             finally:
-                if self.__state is None: # restore original
+                if self.__state is None:  # restore original
                     self.__state = org
                     self.__prev_state = prev
         
         if self.__state is not None:
-            ret = self.call(event, *args, **kwargs) # normal process
+            ret = self.call(event, *args, **kwargs)  # normal process
             if ret is not None:
                 recept = True
                 retvals += ret
@@ -657,16 +657,16 @@ class FSM(dict):
         context = self[self.__state]
         if event in context:
             transaction = context[event]
-            self.__prev_state = self.__state # save previous state
-            self.__state = transaction[0]    # the state transits here
-            self.__debcall__(event, *args, **kwargs) # check after transition
+            self.__prev_state = self.__state  # save previous state
+            self.__state = transaction[0]     # the state transits here
+            self.__debcall__(event, *args, **kwargs)  # check after transition
             retvals = []
             for act in transaction[1:]:
                 ## Save the event before each action (for nested call).
                 if self.__matched_pattern is None:
                     self.__event = event
                 try:
-                    ret = act(*args, **kwargs) # call actions after transition
+                    ret = act(*args, **kwargs)  # call actions after transition
                     retvals.append(ret)
                 except BdbQuit:
                     pass
@@ -682,14 +682,14 @@ class FSM(dict):
             self.__matched_pattern = None
             return retvals
         
-        if isinstance(event, str): # matching test using fnmatch
+        if isinstance(event, str):  # matching test using fnmatch
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
                     self.__matched_pattern = pat
-                    return self.call(pat, *args, **kwargs) # recursive call
+                    return self.call(pat, *args, **kwargs)  # recursive call
         
-        self.__debcall__(event, *args, **kwargs) # check when no transition
-        return None # no event, no action
+        self.__debcall__(event, *args, **kwargs)  # check when no transition
+        return None  # no event, no action
 
     def __debcall__(self, pattern, *args, **kwargs):
         v = self.debug
@@ -705,7 +705,7 @@ class FSM(dict):
                     a = '' if not actions else ('=> ' + actions),
                     c = '*' if self.__prev_state != self.__state else ' '))
         
-        elif v > 3: # state is None
+        elif v > 3:  # state is None
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
@@ -713,7 +713,7 @@ class FSM(dict):
                     self.__event,
                     a = '' if not actions else ('=> ' + actions)))
         
-        if v > 7: # max verbose level puts all args
+        if v > 7:  # max verbose level puts all args
             self.log("\t:", args, kwargs)
 
     @staticmethod
@@ -742,13 +742,13 @@ class FSM(dict):
         context = self[state]
         ast = []
         bra = []
-        for event in list(context): # context mutates during iteration
+        for event in list(context):  # context mutates during iteration
             if re.search(r"\[.+\]", event):
-                bra.append((event, context.pop(event))) # event key has '[]'
+                bra.append((event, context.pop(event)))  # event key has '[]'
             elif '*' in event or '?' in event:
-                ast.append((event, context.pop(event))) # event key has '*?'
+                ast.append((event, context.pop(event)))  # event key has '*?'
         
-        temp = sorted(context.items()) # normal event key
+        temp = sorted(context.items())  # normal event key
         context.clear()
         context.update(temp)
         context.update(sorted(bra, reverse=1))
@@ -760,7 +760,7 @@ class FSM(dict):
             if k in self:
                 self[k].update(self.duplicate(v))
             else:
-                self[k] = SSM(self.duplicate(v)) # new context
+                self[k] = SSM(self.duplicate(v))  # new context
             self.validate(k)
 
     def append(self, contexts):
@@ -769,12 +769,12 @@ class FSM(dict):
             if k in self:
                 for event, transaction in v.items():
                     if event not in self[k]:
-                        self[k][event] = transaction[:] # copy the event:transaction
+                        self[k][event] = transaction[:]  # copy the event:transaction
                         continue
                     for act in transaction[1:]:
                         self.bind(event, act, k, transaction[0])
             else:
-                self[k] = SSM(self.duplicate(v)) # new context
+                self[k] = SSM(self.duplicate(v))  # new context
             self.validate(k)
 
     def remove(self, contexts):
@@ -783,12 +783,12 @@ class FSM(dict):
             if k in self:
                 for event, transaction in v.items():
                     if self[k].get(event) == transaction:
-                        self[k].pop(event) # remove the event:transaction
+                        self[k].pop(event)  # remove the event:transaction
                         continue
                     for act in transaction[1:]:
                         self.unbind(event, act, k)
         ## cleanup
-        for k, v in list(self.items()): # self mutates during iteration
+        for k, v in list(self.items()):  # self mutates during iteration
             if not v:
                 del self[k]
 
@@ -805,7 +805,7 @@ class FSM(dict):
         
         if state not in self:
             warn(f"- FSM [{state!r}] context newly created.")
-            self[state] = SSM() # new context
+            self[state] = SSM()  # new context
         
         context = self[state]
         if state2 is None:
@@ -816,13 +816,13 @@ class FSM(dict):
                 warn(f"- FSM transaction may conflict ({event!r} : {state!r} --> {state2!r}).\n"
                      f"  The state {state2!r} is different from the original state.")
                 pass
-                context[event][0] = state2 # update transition
+                context[event][0] = state2  # update transition
         else:
             if state2 not in self:
                 warn(f"- FSM transaction may contradict ({event!r} : {state!r} --> {state2!r}).\n"
                      f"  The state {state2!r} is not found in the contexts.")
                 pass
-            context[event] = [state2] # new event:transaction
+            context[event] = [state2]  # new event:transaction
         
         transaction = context[event]
         if action is None:
@@ -954,16 +954,16 @@ class TreeList:
             if la is not None:
                 return self._setf(la, b, value)
             p, key = key.rsplit('/', 1)
-            return self._setf(ls, p, [[key, value]]) # ls[p].append([key, value])
+            return self._setf(ls, p, [[key, value]])  # ls[p].append([key, value])
         try:
             li = self._find_item(ls, key)
             if li is not None:
                 try:
-                    li[-1] = value # assign value to item (ls must be a list)
+                    li[-1] = value  # assign value to item (ls must be a list)
                 except TypeError:
-                    li[-1][:] = value # assign value to items:list
+                    li[-1][:] = value  # assign value to items:list
             else:
-                ls.append([key, value]) # append to items:list
+                ls.append([key, value])  # append to items:list
         except (ValueError, TypeError, AttributeError) as e:
             warn(f"- TreeList {e!r}: {key=!r}")
 
@@ -1024,15 +1024,15 @@ def get_fullargspec(f):
         ## ...(details)...
         ## ```
         doc = inspect.getdoc(f)
-        for word in split_parts(doc or ''): # Search pattern for `func(argspec)`.
+        for word in split_parts(doc or ''):  # Search pattern for `func(argspec)`.
             if word.startswith('('):
                 argspec = word[1:-1]
                 break
         else:
-            return None # no argument spec information
+            return None  # no argument spec information
         if argspec:
             argparts = ['']
-            for part in split_parts(argspec): # Separate argument parts with commas.
+            for part in split_parts(argspec):  # Separate argument parts with commas.
                 if not part.strip():
                     continue
                 if part != ',':
@@ -1040,15 +1040,15 @@ def get_fullargspec(f):
                 else:
                     argparts.append('')
             for v in argparts:
-                m = re.match(r"(\w+):?", v) # argv + kwonlyargs
+                m = re.match(r"(\w+):?", v)  # argv + kwonlyargs
                 if m:
                     argv.append(m.group(1))
-                    m = re.match(r"(\w+)(?::\w+)?=(.+)", v) # defaults + kwonlydefaults
+                    m = re.match(r"(\w+)(?::\w+)?=(.+)", v)  # defaults + kwonlydefaults
                     if m:
                         defaults.update([m.groups()])
-                elif v.startswith('**'): # <**kwargs>
+                elif v.startswith('**'):  # <**kwargs>
                     varkwargs = v[2:]
-                elif v.startswith('*'): # <*args>
+                elif v.startswith('*'):  # <*args>
                     varargs = v[1:]
     return (argv, varargs, varkwargs,
             defaults, kwonlyargs, kwonlydefaults)
@@ -1078,12 +1078,12 @@ def funcall(f, *args, doc=None, alias=None, **kwargs):
     @wraps(f)
     def _Act(*v, **kw):
         kwargs.update(kw)
-        return f(*v, *args, **kwargs) # function with event args
+        return f(*v, *args, **kwargs)  # function with event args
     
     @wraps(f)
     def _Act2(*v, **kw):
         kwargs.update(kw)
-        return f(*args, **kwargs) # function with no explicit args
+        return f(*args, **kwargs)  # function with no explicit args
     
     action = _Act
     try:

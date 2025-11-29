@@ -63,8 +63,8 @@ class Stylus:
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_INDENTGUIDE : "",
-        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2", # optional
-        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
+        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#ffff7f,size:2",  # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f",  # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
         stc.STC_P_OPERATOR        : "fore:#000000",
         stc.STC_P_IDENTIFIER      : "fore:#000000",
@@ -90,8 +90,8 @@ class Stylus:
         stc.STC_STYLE_BRACEBAD    : "fore:#000000,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_INDENTGUIDE : "",
-        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#f0f0ff,size:2", # optional
-        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
+        stc.STC_STYLE_CARETLINE   : "fore:#000000,back:#f0f0ff,size:2",  # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f",  # optional
         stc.STC_P_DEFAULT         : "fore:#000000",
         stc.STC_P_OPERATOR        : "fore:#000000",
         stc.STC_P_IDENTIFIER      : "fore:#000000",
@@ -117,8 +117,8 @@ class Stylus:
         stc.STC_STYLE_BRACEBAD    : "fore:#ffffff,back:#ff0000,bold",
         stc.STC_STYLE_CONTROLCHAR : "size:6",
         stc.STC_STYLE_INDENTGUIDE : "",
-        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2", # optional
-        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f", # optional
+        stc.STC_STYLE_CARETLINE   : "fore:#ffffff,back:#123460,size:2",  # optional
+        stc.STC_STYLE_ANNOTATION  : "fore:#7f0000,back:#ff7f7f",  # optional
         stc.STC_P_DEFAULT         : "fore:#cccccc",
         stc.STC_P_OPERATOR        : "fore:#cccccc",
         stc.STC_P_IDENTIFIER      : "fore:#cccccc",
@@ -160,7 +160,7 @@ def ask(f, prompt="Enter value", type=str):
                 try:
                     return f(type(value))
                 except ValueError:
-                    return _f(evt, value) # show the prompt again
+                    return _f(evt, value)  # show the prompt again
     return _f
 
 
@@ -180,7 +180,7 @@ class AutoCompInterfaceMixin:
     """
     history = []     # used in history-comp mode
     modules = set()  # used in module-comp mode
-    fragmwords = set(keyword.kwlist + dir(builtins)) # used in text-comp mode
+    fragmwords = set(keyword.kwlist + dir(builtins))  # used in text-comp mode
 
     def __init__(self):
         ## cf. sys.modules
@@ -201,7 +201,7 @@ class AutoCompInterfaceMixin:
             lines[N+1:] = ["\n...(snip) This tips are too long... "
                            "Click to show more details."]
             tip = '\n'.join(lines)
-            self._calltips[-1] = True # snipped (needs to be shown)
+            self._calltips[-1] = True  # snipped (needs to be shown)
         super().CallTipShow(pos, tip)
 
     def autoCallTipShow(self, command, insertcalltip=True):
@@ -218,7 +218,7 @@ class AutoCompInterfaceMixin:
         p = self.cpos
         if argspec and insertcalltip:
             self.AddText(argspec + ')')
-            self.cpos = p # selection backward to the point
+            self.cpos = p  # selection backward to the point
         if tip:
             ## In case there isn't enough room, only go back to bol fallback.
             tippos = max(self.bol, p - len(name) - 1)
@@ -247,7 +247,7 @@ class AutoCompInterfaceMixin:
         if text:
             p = self.cpos
             self.autoCallTipShow(text,
-                p == self.eol and self.get_char(p-1) == '(') # => CallTipShow
+                p == self.eol and self.get_char(p-1) == '(')  # => CallTipShow
 
     def on_completion_forward(self, evt):
         if not self.AutoCompActive():
@@ -271,12 +271,12 @@ class AutoCompInterfaceMixin:
             n = len(self.__comp_hint)
             p = self.cpos
             if not self.SelectedText:
-                p, q, sty = self.get_following_atom(p) # word-right-selection
+                p, q, sty = self.get_following_atom(p)  # word-right-selection
                 if sty == 'word':
                     self.anchor = q
             with self.off_undocollection():
                 self.ReplaceSelection(word[n:])
-            self.cpos = p # selection backward to the point
+            self.cpos = p  # selection backward to the point
             self.__comp_ind = j
         except IndexError:
             self.message("No completion words")
@@ -295,11 +295,11 @@ class AutoCompInterfaceMixin:
 
     def _get_words_hint(self):
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        if cmdl.endswith(' '): # 前の文字が空白の場合はスキップする
+        if cmdl.endswith(' '):  # 前の文字が空白の場合はスキップする
             text = ''
         else:
             text = next(split_words(cmdl, reverse=1), '')
-        return text.rpartition('.') # -> text, sep, hint
+        return text.rpartition('.')  # -> text, sep, hint
 
     def clear_autocomp(self, evt):
         if self.AutoCompActive():
@@ -314,13 +314,13 @@ class AutoCompInterfaceMixin:
         
         cmdl = self.GetTextRange(self.bol, self.cpos)
         if cmdl.isspace() or self.bol != self.bolc:
-            self.handler('skip', evt) # [tab pressed] => on_indent_line
+            self.handler('skip', evt)  # [tab pressed] => on_indent_line
             return
         
         hint = cmdl.strip()
         ls = [x.replace('\n', os.linesep + sys.ps2)
-                for x in self.history if x.startswith(hint)] # case-sensitive match
-        words = sorted(set(ls), key=ls.index, reverse=0)     # keep order, no duplication
+                for x in self.history if x.startswith(hint)]  # case-sensitive match
+        words = sorted(set(ls), key=ls.index, reverse=0)      # keep order, no duplication
         
         ## the latest history stacks in the head of the list (time-descending)
         self._gen_autocomp(0, hint, words, mode=False)
@@ -334,11 +334,11 @@ class AutoCompInterfaceMixin:
             return
         
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word
+        hint = re.search(r"[\w.]*$", cmdl).group(0)  # extract the last word
         
-        ## ls = [x for x in self.fragmwords if x.startswith(hint)] # case-sensitive match
+        ## ls = [x for x in self.fragmwords if x.startswith(hint)]  # case-sensitive match
         q = hint.lower()
-        ls = [x for x in self.fragmwords if x.lower().startswith(q)] # case-insensitive match
+        ls = [x for x in self.fragmwords if x.lower().startswith(q)]  # case-insensitive match
         words = sorted(ls, key=lambda s: s.upper())
         
         self._gen_autocomp(0, hint, words)
@@ -355,12 +355,12 @@ class AutoCompInterfaceMixin:
             if not hints.endswith(' '):
                 h = hints.strip()
                 if not h.endswith(','):
-                    lh = h.split(',')[-1].strip() # 'x, y, z|' last hint after ','
-                    if ' ' not in lh:             # 'x, y as|' contains no spaces.
+                    lh = h.split(',')[-1].strip()  # 'x, y, z|' last hint after ','
+                    if ' ' not in lh:              # 'x, y as|' contains no spaces.
                         return lh
         
         cmdl = self.GetTextRange(self.bol, self.cpos)
-        hint = re.search(r"[\w.]*$", cmdl).group(0) # extract the last word including dots
+        hint = re.search(r"[\w.]*$", cmdl).group(0)  # extract the last word including dots
         try:
             ## from * import ...
             if (m := re.match(r"from\s+([\w.]+)\s+import\s+(.*)", cmdl)):
@@ -521,8 +521,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 'C-S-c pressed' : (0, _F(self.Copy)),
                 'C-S-v pressed' : (0, _F(self.Paste)),
                   'C-l pressed' : (0, _F(self.recenter)),
-                ## 'C-S-l pressed' : (0, _F(self.recenter)), # overrides delete-line
-                ## 'C-S-f pressed' : (0, _F(self.set_mark)), # overrides mark
+                # 'C-S-l pressed' : (0, _F(self.recenter)),  # overrides delete-line
+                # 'C-S-f pressed' : (0, _F(self.set_mark)),  # overrides mark
               'C-space pressed' : (0, _F(self.set_mark)),
             'C-S-space pressed' : (0, _F(self.toggle_pointer)),
           'C-backspace pressed' : (0, _F(self.backward_kill_word)),
@@ -533,8 +533,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
               'C-S-tab pressed' : (0, _F(self.delete_backward_space_like_tab)),
                   'tab pressed' : (0, self.on_indent_line),
                 'S-tab pressed' : (0, self.on_outdent_line),
-                  ## 'C-/ pressed' : (0, ), # cf. C-a home
-                  ## 'C-\ pressed' : (0, ), # cf. C-e end
+                  # 'C-/ pressed' : (0, ),  # cf. C-a home
+                  # 'C-\ pressed' : (0, ),  # cf. C-e end
                   'C-; pressed' : (0, _F(self.comment_out_line)),
                   'C-: pressed' : (0, _F(self.uncomment_line)),
                   'select_line' : (11, self.on_linesel_begin),
@@ -556,7 +556,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
         self.Bind(stc.EVT_STC_UPDATEUI,
-                  lambda v: self.match_paren()) # no skip
+                  lambda v: self.match_paren())  # no skip
         
         def eof(evt):
             p = evt.Position
@@ -619,35 +619,35 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## [2] 1111,1110,0000,0000,0000,0000,0000,0000 = 0xfe000000 for folders
         
         self.SetMarginType(0, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(0, 0b00111) # mask for markers (0,1,2)
+        self.SetMarginMask(0, 0b00111)  # mask for markers (0,1,2)
         self.SetMarginWidth(0, 10)
         self.SetMarginSensitive(0, False)
         
         self.SetMarginType(1, stc.STC_MARGIN_NUMBER)
-        self.SetMarginMask(1, 0b11000) # mask for pointer (3,4)
+        self.SetMarginMask(1, 0b11000)  # mask for pointer (3,4)
         self.SetMarginWidth(1, 32)
         self.SetMarginSensitive(1, False)
         
         self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(2, stc.STC_MASK_FOLDERS) # mask for folders
+        self.SetMarginMask(2, stc.STC_MASK_FOLDERS)  # mask for folders
         self.SetMarginWidth(2, 1)
         self.SetMarginSensitive(2, False)
         
-        self.SetMarginLeft(2) # +1 margin at the left
+        self.SetMarginLeft(2)  # +1 margin at the left
         
         self.SetFoldFlags(stc.STC_FOLDFLAG_LINEAFTER_CONTRACTED)
         
-        self.SetProperty('fold', '1') # Enable folder property
+        self.SetProperty('fold', '1')  # Enable folder property
         
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
         ## Custom markers
-        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0') # o mark
-        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff') # > arrow
-        self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000') # > red-arrow
-        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')   # -> pointer
-        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', 'yellow')  # -> red-pointer
+        self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0')  # o mark
+        self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff')  # > arrow
+        self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000')  # > red-arrow
+        self.MarkerDefine(3, stc.STC_MARK_SHORTARROW, 'blue', 'gray')    # -> pointer
+        self.MarkerDefine(4, stc.STC_MARK_SHORTARROW, 'red', 'yellow')   # -> red-pointer
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
@@ -702,16 +702,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     __dnd_flag = 0
 
-    def OnDrag(self, evt): #<wx._core.StyledTextEvent>
+    def OnDrag(self, evt):  #<wx._core.StyledTextEvent>
         if isinstance(self, Shell):
-            EditorInterface.__dnd_flag = (evt.Position < self.bolc) # readonly
+            EditorInterface.__dnd_flag = (evt.Position < self.bolc)  # readonly
         else:
             EditorInterface.__dnd_flag = 0
         evt.Skip()
 
-    def OnDragging(self, evt): #<wx._core.StyledTextEvent>
+    def OnDragging(self, evt):  #<wx._core.StyledTextEvent>
         if isinstance(self, Shell):
-            if evt.Position < self.bolc: # target is readonly
+            if evt.Position < self.bolc:  # target is readonly
                 evt.DragResult = wx.DragNone
             elif EditorInterface.__dnd_flag:
                 ## from shell to shell
@@ -722,7 +722,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 evt.DragResult = wx.DragCopy if wx.GetKeyState(wx.WXK_CONTROL) else wx.DragNone
         evt.Skip()
 
-    def OnDragged(self, evt): #<wx._core.StyledTextEvent>
+    def OnDragged(self, evt):  #<wx._core.StyledTextEvent>
         EditorInterface.__dnd_flag = 0
         evt.Skip()
 
@@ -810,7 +810,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if v != -1:
             self.mark = self.PositionFromLine(v)  # [mark_set]
         else:
-            del self.mark # [mark_unset]
+            del self.mark  # [mark_unset]
 
     @markline.deleter
     def markline(self):
@@ -825,7 +825,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if v != -1:
             self.__mark = v
             ln = self.LineFromPosition(v)
-            self.set_marker(ln, 0) # [mark_set]
+            self.set_marker(ln, 0)  # [mark_set]
         else:
             del self.mark
 
@@ -834,16 +834,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         v = self.__mark
         if v != -1:
             self.__mark = -1
-            self.del_marker(0) # [mark_unset]
+            self.del_marker(0)  # [mark_unset]
 
     def set_mark(self):
         self.mark = self.cpos
 
     def toggle_pointer(self):
-        if self.pointer == self.cline: # toggle
+        if self.pointer == self.cline:  # toggle
             self.pointer = -1
         else:
-            self.pointer = self.cline  # reset
+            self.pointer = self.cline   # reset
         self.red_pointer = -1
 
     def exchange_point_and_mark(self):
@@ -860,8 +860,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     ## Attributes of the editor
     ## --------------------------------
     py_styles = {
-        stc.STC_P_DEFAULT       : 'nil', # etc. space \r\n\\$\0 (non-identifier)
-        stc.STC_P_OPERATOR      : 'op',  # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
+        stc.STC_P_DEFAULT       : 'nil',  # etc. space \r\n\\$\0 (non-identifier)
+        stc.STC_P_OPERATOR      : 'op',   # ops. `@=+-/*%<>&|^~!?.,:;([{<>}])
         stc.STC_P_COMMENTLINE   : 'comment',
         stc.STC_P_COMMENTBLOCK  : 'comment',
         stc.STC_P_NUMBER        : 'suji',
@@ -936,7 +936,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def eol(self):
         """End of line."""
         text, lp = self.CurLine
-        text = text.strip('\r\n') # remove linesep: '\r' and '\n'
+        text = text.strip('\r\n')  # remove linesep: '\r' and '\n'
         return (self.cpos - lp + len(text.encode()))
 
     @property
@@ -950,7 +950,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         p = q = self.cpos
         lst = self.get_style(p-1)
         rst = self.get_style(p)
-        if lst == rst == 'moji': # inside string
+        if lst == rst == 'moji':  # inside string
             ## styles = {'moji'}
             return ''
         elif lst == 'suji' or rst == 'suji':
@@ -1009,11 +1009,11 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @editable
     def py_indent_line(self):
         """Indent the current line."""
-        text = self.line_at_caret # w/ no-prompt
-        lstr = text.lstrip()      # w/ no-indent
+        text = self.line_at_caret  # w/ no-prompt
+        lstr = text.lstrip()       # w/ no-indent
         p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
-        indent = self.py_current_indent() # check current/previous line
+        indent = self.py_current_indent()  # check current/previous line
         if indent >= 0:
             self.Replace(self.bol, p, ' '*indent)
             self.goto_char(self.bol + indent + offset)
@@ -1021,8 +1021,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @editable
     def py_outdent_line(self):
         """Outdent the current line."""
-        text = self.line_at_caret # w/ no-prompt
-        lstr = text.lstrip()      # w/ no-indent
+        text = self.line_at_caret  # w/ no-prompt
+        lstr = text.lstrip()       # w/ no-indent
         p = self.bol + len(text) - len(lstr)
         offset = max(0, self.cpos - p)
         indent = len(text) - len(lstr) - 4
@@ -1033,9 +1033,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def py_current_indent(self):
         """Calculate indent spaces from previous line."""
         text = self.GetLine(self.cline - 1)
-        indent = self.py_calc_indentation(text) # check previous line
+        indent = self.py_calc_indentation(text)  # check previous line
         text = self.GetLine(self.cline)
-        lstr, _indent = self.py_strip_indents(text) # check current line
+        lstr, _indent = self.py_strip_indents(text)  # check current line
         if re.match(py_outdent_re, lstr):
             indent -= 4
         return indent
@@ -1065,7 +1065,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     @classmethod
     def py_strip_indents(self, text):
         """Return left-stripped text and the number of indent spaces."""
-        text = self.py_strip_prompts(text) # cf. shell.lstripPrompt(text)
+        text = self.py_strip_prompts(text)  # cf. shell.lstripPrompt(text)
         lstr = text.lstrip(' \t')
         indent = len(text) - len(lstr)
         return lstr, indent
@@ -1110,7 +1110,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.SetFoldMarginColour(True, 'black')
             self.SetFoldMarginHiColour(True, 'black')
 
-    def OnMarginClick(self, evt): #<wx._stc.StyledTextEvent>
+    def OnMarginClick(self, evt):  #<wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
         ## `level` indicates indent-level number
@@ -1122,7 +1122,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         else:
             self.handler('select_line', evt)
 
-    def OnMarginRClick(self, evt): #<wx._stc.StyledTextEvent>
+    def OnMarginRClick(self, evt):  #<wx._stc.StyledTextEvent>
         """Popup context menu."""
         def _Icon(key):
             return wx.ArtProvider.GetBitmap(key, size=(16,16))
@@ -1140,7 +1140,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         the specified line switches between expanded and contracted.
         """
         while 1:
-            la = self.GetFoldParent(lc) # get folding root
+            la = self.GetFoldParent(lc)  # get folding root
             if la == -1:
                 break
             lc = la
@@ -1153,7 +1153,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         lc = line
         le = lc + 1
         while 1:
-            la = self.GetFoldParent(lc) # get folding root
+            la = self.GetFoldParent(lc)  # get folding root
             if la == -1:
                 break
             lc = la
@@ -1166,13 +1166,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     def on_linesel_begin(self, evt):
         """Called when a line of text selection begins."""
-        self.cpos = self.anchor = evt.Position #<select_line>
+        self.cpos = self.anchor = evt.Position  #<select_line>
         self.CaptureMouse()
         evt.Skip()
 
     def on_linesel_next(self, evt):
         """Called when next line of text selection begins."""
-        self.cpos = evt.Position #<select_lines>
+        self.cpos = evt.Position  #<select_lines>
         self.CaptureMouse()
         evt.Skip()
 
@@ -1261,7 +1261,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if self.get_char(p-1) in ")}]>":
             q = self.BraceMatch(p-1)
             if q != -1:
-                self.BraceHighlight(q, p-1) # matched the preceding char
+                self.BraceHighlight(q, p-1)  # matched the preceding char
                 self.IndicatorFillRange(q, p-q)
                 return q
             else:
@@ -1269,13 +1269,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         elif self.get_char(p) in "({[<":
             q = self.BraceMatch(p)
             if q != -1:
-                self.BraceHighlight(p, q) # matched the following char
+                self.BraceHighlight(p, q)  # matched the following char
                 self.IndicatorFillRange(p, q-p+1)
                 return q
             else:
                 self.BraceBadLight(p)
         else:
-            self.BraceHighlight(-1,-1) # no highlight
+            self.BraceHighlight(-1,-1)  # no highlight
 
     def over(self, mode=1):
         """Set insert or overtype.
@@ -1296,8 +1296,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         If ln=0, the cursor moves to the top of the screen.
         If ln=-1 (ln=n-1), moves to the bottom
         """
-        n = self.LinesOnScreen() # lines completely visible
-        m = n//2 if ln is None else ln % n if ln < n else n # ln[0:n]
+        n = self.LinesOnScreen()  # lines completely visible
+        m = n//2 if ln is None else ln % n if ln < n else n  # ln[0:n]
         vl = self._calc_vline(self.cline)
         self.ScrollToLine(vl - m)
 
@@ -1311,7 +1311,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         """Ensure a particular line is visible by scrolling the buffer
         without expanding any header line hiding it.
         """
-        n = self.LinesOnScreen() # lines completely visible
+        n = self.LinesOnScreen()  # lines completely visible
         hl = self.FirstVisibleLine
         vl = self._calc_vline(line)
         if vl < hl:
@@ -1324,7 +1324,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         without expanding any header line hiding it.
         If the line is at the screen edge, recenter it.
         """
-        n = self.LinesOnScreen() # lines completely visible
+        n = self.LinesOnScreen()  # lines completely visible
         hl = self.FirstVisibleLine
         vl = self._calc_vline(line)
         if not hl + offset < vl < hl + n - 1 - offset:
@@ -1398,19 +1398,19 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             return count
 
     def get_right_paren(self, p):
-        if self.get_char(p) in "({[<": # left-parentheses, <
+        if self.get_char(p) in "({[<":  # left-parentheses, <
             q = self.BraceMatch(p)
             return q if q < 0 else q+1
 
     def get_left_paren(self, p):
-        if self.get_char(p-1) in ")}]>": # right-parentheses, >
+        if self.get_char(p-1) in ")}]>":  # right-parentheses, >
             q = self.BraceMatch(p-1)
             return q
 
     def get_right_quotation(self, p):
         st = self.get_style(p)
         if st == 'moji':
-            if self.get_style(p-1) == 'moji': # inside string
+            if self.get_style(p-1) == 'moji':  # inside string
                 return
             while self.get_style(p) == st and p < self.TextLength:
                 p += 1
@@ -1419,7 +1419,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def get_left_quotation(self, p):
         st = self.get_style(p-1)
         if st == 'moji':
-            if self.get_style(p) == 'moji': # inside string
+            if self.get_style(p) == 'moji':  # inside string
                 return
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -1432,10 +1432,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             q = self.BraceMatch(p)
             if q == -1:
                 q = self.TextLength
-                st = None # no closing paren
+                st = None  # no closing paren
             else:
                 q += 1
-                st = 'paren' # closed
+                st = 'paren'  # closed
         else:
             while self.get_style(q) == st and q < self.TextLength:
                 q += 1
@@ -1448,9 +1448,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             p = self.BraceMatch(p-1)
             if p == -1:
                 p = 0
-                st = None # no closing paren
+                st = None  # no closing paren
             else:
-                st = 'paren' # closed
+                st = 'paren'  # closed
         else:
             while self.get_style(p-1) == st and p > 0:
                 p -= 1
@@ -1584,7 +1584,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                     vk.KeyDown(wx.WXK_LEFT)
                     vk.KeyDown(wx.WXK_RIGHT)
                 for k in modkeys:
-                    vk.KeyDown(k) # restore modifier key state
+                    vk.KeyDown(k)  # restore modifier key state
         return True
 
     def goto_line(self, ln, selection=False):
@@ -1612,8 +1612,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.goto_char(p)
 
     def back_to_indentation(self):
-        text = self.line_at_caret # w/ no-prompt
-        lstr = text.lstrip()      # w/ no-indent
+        text = self.line_at_caret  # w/ no-prompt
+        lstr = text.lstrip()       # w/ no-indent
         p = self.bol + len(text) - len(lstr)
         self.goto_char(p, interactive=True)
         self.ScrollToColumn(0)
@@ -1836,7 +1836,7 @@ class Buffer(EditorInterface, EditWindow):
         """buffer-name (basename)."""
         return os.path.basename(self.__filename or '')
 
-    Name = name # page.window.Name for save/loadPerspective
+    Name = name  # page.window.Name for save/loadPerspective
 
     @property
     def filename(self):
@@ -1846,16 +1846,16 @@ class Buffer(EditorInterface, EditWindow):
     def update_filestamp(self, fn):
         self.__path = Path(fn)
         if self.__path.is_file():
-            self.__mtime = self.__path.stat().st_mtime # update timestamp (modified time)
+            self.__mtime = self.__path.stat().st_mtime  # update timestamp (modified time)
         elif re.match(url_re, fn):
             self.__mtime = -1
         else:
             try:
-                self.__path.resolve(True) # Check if the path is valid.
+                self.__path.resolve(True)  # Check if the path is valid.
             except FileNotFoundError:
-                self.__mtime = False # valid path (but not found)
+                self.__mtime = False  # valid path (but not found)
             except OSError:
-                self.__mtime = None # *invalid path*
+                self.__mtime = None  # *invalid path*
         if self.__filename != fn:
             self.__filename = fn
             self.update_caption()
@@ -1924,7 +1924,7 @@ class Buffer(EditorInterface, EditWindow):
         self.update_filestamp(filename)
         self.code = None
         
-        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)  # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         self.Bind(stc.EVT_STC_INDICATOR_CLICK, self.OnIndicatorClick)
         
@@ -2058,14 +2058,14 @@ class Buffer(EditorInterface, EditWindow):
         _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
 
-    def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
+    def OnUpdate(self, evt):  #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('buffer_modified', self)
         evt.Skip()
 
-    def OnCallTipClick(self, evt): #<wx._stc.StyledTextEvent>
+    def OnCallTipClick(self, evt):  #<wx._stc.StyledTextEvent>
         if self.CallTipActive():
             self.CallTipCancel()
         pos, tip, more = self._calltips
@@ -2073,7 +2073,7 @@ class Buffer(EditorInterface, EditWindow):
             self.CallTipShow(pos, tip, N=None)
         evt.Skip()
 
-    def OnIndicatorClick(self, evt): #<wx._stc.StyledTextEvent>
+    def OnIndicatorClick(self, evt):  #<wx._stc.StyledTextEvent>
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
             ## Processing text selection, dragging, or dragging+
             evt.Skip()
@@ -2082,11 +2082,11 @@ class Buffer(EditorInterface, EditWindow):
         pos = evt.Position
         self.goto_char(pos)
         i = 2
-        if self.IndicatorValueAt(i, pos): # [C-indic click]
+        if self.IndicatorValueAt(i, pos):  # [C-indic click]
             p = self.IndicatorStart(i, pos)
             q = self.IndicatorEnd(i, pos)
             url = self.GetTextRange(p, q).strip()
-            if wx.GetKeyState(wx.WXK_SHIFT): # [C-S-indic click]
+            if wx.GetKeyState(wx.WXK_SHIFT):  # [C-S-indic click]
                 import webbrowser
                 return webbrowser.open(url)
             else:
@@ -2203,24 +2203,24 @@ class Buffer(EditorInterface, EditWindow):
     ## --------------------------------
 
     @property
-    def locals(self): # internal use only
+    def locals(self):  # internal use only
         try:
             return self.parent.parent.current_shell.locals
         except AttributeError:
             return None
 
     @property
-    def globals(self): # internal use only
+    def globals(self):  # internal use only
         try:
             return self.parent.parent.current_shell.globals
         except AttributeError:
             return None
 
     def eval(self, text):
-        return eval(text, self.globals, self.locals) # using current shell namespace
+        return eval(text, self.globals, self.locals)  # using current shell namespace
 
     def exec(self, text):
-        exec(text, self.globals, self.locals) # using current shell namespace
+        exec(text, self.globals, self.locals)  # using current shell namespace
         dispatcher.send(signal='Interpreter.push',
                         sender=self, command=None, more=False)
 
@@ -2273,7 +2273,7 @@ class Buffer(EditorInterface, EditWindow):
             self.message(e)
         else:
             self.code = code
-            del self.pointer # Reset pointer (debugger hook point).
+            del self.pointer  # Reset pointer (debugger hook point).
             del self.red_arrow
             self.handler('buffer_region_executed', self)
             self.message("Evaluated {!r} successfully.".format(self.filename))
@@ -2309,7 +2309,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.parent = parent #: parent<ShellFrame> is not Parent<AuiNotebook>
         self.Name = name
-        self.default_name = "*{}*".format(name.lower()) # e.g. '*scratch*'
+        self.default_name = "*{}*".format(name.lower())  # e.g. '*scratch*'
         self.default_buffer = self.create_buffer(self.default_name)
         
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
@@ -2350,7 +2350,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.handler('buffer_deleted', obj)
         evt.Skip()
 
-    def OnPageClose(self, evt): #<wx._aui.AuiNotebookEvent>
+    def OnPageClose(self, evt):  #<wx._aui.AuiNotebookEvent>
         buf = self.GetPage(evt.Selection)
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm closing the buffer.
@@ -2364,7 +2364,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return
         evt.Skip()
 
-    def OnPageClosed(self, evt): #<wx._aui.AuiNotebookEvent>
+    def OnPageClosed(self, evt):  #<wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
         evt.Skip()
@@ -2422,7 +2422,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     yield buf
         else:
             for buf in self.get_pages(Buffer):
-                if fn is buf or fn in buf: # check code
+                if fn is buf or fn in buf:  # check code
                     yield buf
 
     @property
@@ -2458,14 +2458,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.set_attributes(buf, **self.defaultBufferStyle)
             if index is None:
                 index = self.PageCount
-            self.InsertPage(index, buf, buf.name) # => [buffer_activated]
+            self.InsertPage(index, buf, buf.name)  # => [buffer_activated]
             self.handler('buffer_new', buf)
             return buf
 
     def new_buffer(self):
         """Create a new default buffer."""
         buf = self.default_buffer
-        if not buf or buf.mtdelta is not None: # is saved?
+        if not buf or buf.mtdelta is not None:  # is saved?
             buf = self.create_buffer(self.default_name)
             self.default_buffer = buf
         else:
@@ -2480,14 +2480,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
             buf = self.buffer
         j = self.GetPageIndex(buf)
         if j != -1:
-            self.DeletePage(j)  # the focus moves
-            if not self.buffer: # no buffers
-                wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
+            self.DeletePage(j)   # the focus moves
+            if not self.buffer:  # no buffers
+                wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
 
     def delete_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
-        wx.CallAfter(self.new_buffer) # Note: post-call to avoid a crash.
+        wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
 
     def next_buffer(self):
         if self.Selection < self.PageCount - 1:
@@ -2845,11 +2845,11 @@ class Nautilus(EditorInterface, Shell):
         return self.interp.locals
 
     @locals.setter
-    def locals(self, v): # internal use only
+    def locals(self, v):  # internal use only
         self.interp.locals = v
 
     @locals.deleter
-    def locals(self): # internal use only
+    def locals(self):  # internal use only
         self.interp.locals = self.__target.__dict__
 
     @property
@@ -2857,11 +2857,11 @@ class Nautilus(EditorInterface, Shell):
         return self.interp.globals
 
     @globals.setter
-    def globals(self, v): # internal use only
+    def globals(self, v):  # internal use only
         self.interp.globals = v
 
     @globals.deleter
-    def globals(self): # internal use only
+    def globals(self):  # internal use only
         self.interp.globals = self.__target.__dict__
         self.interp.globals.update(self.__globals)
 
@@ -2874,11 +2874,11 @@ class Nautilus(EditorInterface, Shell):
                  **kwargs):
         Shell.__init__(self, parent,
                  locals=target.__dict__,
-                 interpShell=self, # **kwds of InterpClass
+                 interpShell=self,  # **kwds of InterpClass
                  InterpClass=Interpreter,
                  introText=introText,
                  startupScript=startupScript,
-                 execStartupScript=execStartupScript, # executes ~/.py
+                 execStartupScript=execStartupScript,  # executes ~/.py
                  **kwargs)
         EditorInterface.__init__(self)
         
@@ -2887,9 +2887,9 @@ class Nautilus(EditorInterface, Shell):
         self.Name = name
         
         wx.py.shell.USE_MAGIC = True
-        wx.py.shell.magic = self.magic # called when USE_MAGIC
+        wx.py.shell.magic = self.magic  # called when USE_MAGIC
         
-        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate) # skip to brace matching
+        self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdate)  # skip to brace matching
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCallTipClick)
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
@@ -2952,15 +2952,15 @@ class Nautilus(EditorInterface, Shell):
                 'enter pressed' : (0, self.OnEnter),
               'C-enter pressed' : (0, _F(self.insertLineBreak)),
             'C-S-enter pressed' : (0, _F(self.insertLineBreak)),
-               '*enter pressed' : (0, ), # -> OnShowCompHistory 無効
+               '*enter pressed' : (0, ),  # -> OnShowCompHistory 無効
                   'C-[ pressed' : (0, _F(self.goto_previous_mark_arrow)),
                 'C-S-[ pressed' : (0, _F(self.goto_previous_mark_arrow, selection=1)),
                   'C-] pressed' : (0, _F(self.goto_next_mark_arrow)),
                 'C-S-] pressed' : (0, _F(self.goto_next_mark_arrow, selection=1)),
                  'M-up pressed' : (0, _F(self.goto_previous_white_arrow)),
                'M-down pressed' : (0, _F(self.goto_next_white_arrow)),
-                # 'C-c pressed' : (0, skip), # -> spec-map
-                'C-S-c pressed' : (0, skip), # -> Copy selected text, retaining prompts.
+                # 'C-c pressed' : (0, skip),  # -> spec-map
+                'C-S-c pressed' : (0, skip),  # -> Copy selected text, retaining prompts.
                   'C-v pressed' : (0, _F(self.Paste)),
                 'C-S-v pressed' : (0, _F(self.Paste, rectangle=1)),
              'S-insert pressed' : (0, _F(self.Paste)),
@@ -2992,8 +2992,8 @@ class Nautilus(EditorInterface, Shell):
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
              'S-right released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, _F(self._on_completion, step=1)), # 古いヒストリへ進む
-                'S-tab pressed' : (1, _F(self._on_completion, step=-1)), # 新しいヒストリへ戻る
+                  'tab pressed' : (1, _F(self._on_completion, step=1)),  # 古いヒストリへ進む
+                'S-tab pressed' : (1, _F(self._on_completion, step=-1)),  # 新しいヒストリへ戻る
                   'M-p pressed' : (1, _F(self._on_completion, step=1)),
                   'M-n pressed' : (1, _F(self._on_completion, step=-1)),
             '[a-z0-9_] pressed' : (1, skip),
@@ -3141,7 +3141,7 @@ class Nautilus(EditorInterface, Shell):
             self.handler('shell_deleted', self)
         evt.Skip()
 
-    def OnUpdate(self, evt): #<wx._stc.StyledTextEvent>
+    def OnUpdate(self, evt):  #<wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if self.handler.current_state == 0:
@@ -3150,7 +3150,7 @@ class Nautilus(EditorInterface, Shell):
                     name, argspec, tip = self.interp.getCallTip(text)
                     if tip:
                         tip = tip.splitlines()[0]
-                    self.message(tip) # clear if no tip
+                    self.message(tip)  # clear if no tip
                     self.__text = text
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('shell_modified', self)
@@ -3171,7 +3171,7 @@ class Nautilus(EditorInterface, Shell):
           or re.match(r"from\s*$", cmdl)\
           or re.match(r"from\s+([\w.]+)\s+import\s*", cmdl):
             self.ReplaceSelection(' ')
-            self.handler('M-m pressed', None) # => call_module_autocomp
+            self.handler('M-m pressed', None)  # => call_module_autocomp
             return
         evt.Skip()
 
@@ -3180,7 +3180,7 @@ class Nautilus(EditorInterface, Shell):
         Backspace-guard from autocomp eating over a prompt whitespace.
         """
         if self.cpos == self.bolc:
-            self.handler('quit', evt) # Don't eat backward prompt
+            self.handler('quit', evt)  # Don't eat backward prompt
             return
         evt.Skip()
 
@@ -3210,7 +3210,7 @@ class Nautilus(EditorInterface, Shell):
                 self.cpos -= lp        # Select ps2:prompt
                 self.WordLeftExtend()  # Select cr/lf chunks
             else:
-                q = max(self.bol, self.bolc) # for debugger mode: bol <= bolc
+                q = max(self.bol, self.bolc)  # for debugger mode: bol <= bolc
                 if self.cpos > q:
                     self.cpos = q
                 else:
@@ -3220,9 +3220,9 @@ class Nautilus(EditorInterface, Shell):
     def OnEnter(self, evt):
         """Called when enter pressed."""
         if not self.CanEdit():
-            self.goto_char(self.eolc) # go to end of command line
+            self.goto_char(self.eolc)  # go to end of command line
             return
-        if self.AutoCompActive(): # skip to auto completion
+        if self.AutoCompActive():  # skip to auto completion
             evt.Skip()
             return
         if self.CallTipActive():
@@ -3239,13 +3239,13 @@ class Nautilus(EditorInterface, Shell):
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
-                self.Execute(cmd) # => multi-line commands
+                self.Execute(cmd)  # => multi-line commands
             else:
-                self.run(cmd, verbose=0, prompt=0) # => push(cmd)
+                self.run(cmd, verbose=0, prompt=0)  # => push(cmd)
             return
         
         self.exec_cmdline()
-        ## evt.Skip() # => processLine
+        # evt.Skip()  # => processLine
 
     def OnEnterDot(self, evt):
         """Called when dot [.] pressed."""
@@ -3256,7 +3256,7 @@ class Nautilus(EditorInterface, Shell):
         lst = self.get_style(p-1)
         rst = self.get_style(p)
         if p == self.bolc:
-            self.ReplaceSelection('self') # replace [.] --> [self.]
+            self.ReplaceSelection('self')  # replace [.] --> [self.]
         elif lst in ('space', 'sep', 'lparen'):
             self.ReplaceSelection('self')
         elif lst not in ('moji', 'word', 'rparen') or rst == 'word':
@@ -3292,16 +3292,16 @@ class Nautilus(EditorInterface, Shell):
         self.message("")
 
     def goto_next_white_arrow(self):
-        self.goto_next_marker(0b010) # next white-arrow
+        self.goto_next_marker(0b010)  # next white-arrow
 
     def goto_previous_white_arrow(self):
-        self.goto_previous_marker(0b010) # previous white-arrow
+        self.goto_previous_marker(0b010)  # previous white-arrow
 
     def goto_next_mark_arrow(self, selection=False):
-        self.goto_next_marker(0b110, selection) # next white/red-arrow
+        self.goto_next_marker(0b110, selection)  # next white/red-arrow
 
     def goto_previous_mark_arrow(self, selection=False):
-        self.goto_previous_marker(0b110, selection) # previous white/red-arrow
+        self.goto_previous_marker(0b110, selection)  # previous white/red-arrow
 
     ## --------------------------------
     ## Magic caster of the shell
@@ -3333,8 +3333,8 @@ class Nautilus(EditorInterface, Shell):
         Note:
             This is called before run, execute, and original magic.
         """
-        sep1 = "`@=;\r\n#"                # [`] no ops, no spaces, no comma
-        sep2 = "`@=+-/*%<>&|^~,; \t\r\n#" # [@] ops, delims, and whitespaces
+        sep1 = "`@=;\r\n#"                 # [`] no ops, no spaces, no comma
+        sep2 = "`@=+-/*%<>&|^~,; \t\r\n#"  # [@] ops, delims, and whitespaces
         
         def _popiter(ls, f):
             pred = f if callable(f) else re.compile(f).match
@@ -3350,7 +3350,7 @@ class Nautilus(EditorInterface, Shell):
         for i, c in enumerate(tokens):
             rest = tokens[i+1:]
             
-            if c == '@' and not lhs.strip() and '\n' in rest: # @decor
+            if c == '@' and not lhs.strip() and '\n' in rest:  # @decor
                 pass
             
             elif c == '@':
@@ -3393,14 +3393,14 @@ class Nautilus(EditorInterface, Shell):
                 return lhs + c + self.magic_interpret(rest)
             
             if c == sys.ps2.strip():
-                rhs = ''.join(_popiter(rest, "[ \t\r\n]")) # feed
+                rhs = ''.join(_popiter(rest, "[ \t\r\n]"))  # feed
                 return lhs + c + rhs + self.magic_interpret(rest)
             
             if c.startswith('#'):
-                rhs = ''.join(_popiter(rest, "[^\r\n]")) # skip comment
+                rhs = ''.join(_popiter(rest, "[^\r\n]"))  # skip comment
                 return lhs + c + rhs + self.magic_interpret(rest)
             
-            lhs += c # store in lhs; no more processing
+            lhs += c  # store in lhs; no more processing
         return lhs
 
     def on_shell_deleted(self, shell):
@@ -3411,7 +3411,7 @@ class Nautilus(EditorInterface, Shell):
             obj = self.target
             try:
                 if not obj.shell:
-                    del obj.shell # delete the facade <wx.py.shell.ShellFacade>
+                    del obj.shell  # delete the facade <wx.py.shell.ShellFacade>
             except AttributeError:
                 pass
         wx.CallAfter(_del)
@@ -3459,7 +3459,7 @@ class Nautilus(EditorInterface, Shell):
         """
         ln = self.LineFromPosition(self.bolc)
         err = re.findall(py_error_re, text, re.M)
-        self.add_marker(ln, 1 if not err else 2) # 1:white-arrow 2:red-arrow
+        self.add_marker(ln, 1 if not err else 2)  # 1:white-arrow 2:red-arrow
         return (not err)
 
     def on_interp_error(self, e):
@@ -3509,7 +3509,7 @@ class Nautilus(EditorInterface, Shell):
         if region:
             p, q = (self.PositionFromLine(x) for x in region)
             p += len(sys.ps1)
-            command = self.GetTextRange(p, q).rstrip(os.linesep) # remove the last cr/lf
+            command = self.GetTextRange(p, q).rstrip(os.linesep)  # remove the last cr/lf
             if rstrip:
                 command = command.replace(os.linesep + sys.ps2, '\n')
                 command = command.rstrip()
@@ -3526,7 +3526,7 @@ class Nautilus(EditorInterface, Shell):
             if not text.startswith(sys.ps2):
                 break
             lc -= 1
-        if not text.startswith(sys.ps1): # bad region
+        if not text.startswith(sys.ps1):  # bad region
             return None
         while le < self.LineCount:
             text = self.GetLine(le)
@@ -3564,7 +3564,7 @@ class Nautilus(EditorInterface, Shell):
             output = self.GetTextRange(self.__eolc_mark, self.eolc)
             
             input = self.regulate_cmd(input)
-            Shell.addHistory(self, input) # => self.history
+            Shell.addHistory(self, input)  # => self.history
             
             noerr = self.on_text_output(output)
             if noerr:
@@ -3624,9 +3624,9 @@ class Nautilus(EditorInterface, Shell):
                 ps = sys.ps2
                 _text, lp = self.CurLine
                 if rectangle:
-                    ps += ' ' * (lp - len(ps)) # add offset
+                    ps += ' ' * (lp - len(ps))  # add offset
                 if lp == 0:
-                    command = ps + command # paste-line
+                    command = ps + command  # paste-line
                 command = command.replace('\n', os.linesep + ps)
                 self.ReplaceSelection(command)
             wx.TheClipboard.Close()
@@ -3639,7 +3639,7 @@ class Nautilus(EditorInterface, Shell):
             The eol-code (cr/lf) is not fixed.
             Call self.fixLineEndings in advance as necessary.
         """
-        text = self.lstripPrompt(text) # strip a leading prompt
+        text = self.lstripPrompt(text)  # strip a leading prompt
         lf = '\n'
         return (text.replace(os.linesep + sys.ps1, lf)
                     .replace(os.linesep + sys.ps2, lf)
@@ -3659,10 +3659,10 @@ class Nautilus(EditorInterface, Shell):
         """
         if pos is not None:
             if pos < 0:
-                pos += self.TextLength + 1 # Counts end-of-buffer (+1:\0)
+                pos += self.TextLength + 1  # Counts end-of-buffer (+1:\0)
             self.goto_char(pos)
         if self.CanEdit():
-            Shell.write(self, text) # => AddText
+            Shell.write(self, text)  # => AddText
 
     ## input = classmethod(Shell.ask)
 
@@ -3706,14 +3706,14 @@ class Nautilus(EditorInterface, Shell):
                 continue
             line = self.lstripPrompt(lines)
             lstr = line.lstrip()
-            if (lstr and lstr == line # no indent
-                and not lstr.startswith('#') # no comment
-                and not re.match(py_outdent_re, lstr)): # no outdent pattern
+            if (lstr and lstr == line  # no indent
+                and not lstr.startswith('#')  # no comment
+                and not re.match(py_outdent_re, lstr)):  # no outdent pattern
                 if cmd:
-                    commands.append(cmd) # Add stacked commands to the list
+                    commands.append(cmd)  # Add stacked commands to the list
                 cmd = line
             else:
-                cmd += lines # multi-line command
+                cmd += lines  # multi-line command
             lines = ''
         commands.append(cmd + lines)
         

@@ -141,7 +141,7 @@ class FillingTree(wx.TreeCtrl):
     def filter(self, obj, key):
         """Filter function that determines whether the item is displayed."""
         if wx.Platform == '__WXMSW__':
-            if key == 'DropTarget': # Windows bug fix.
+            if key == 'DropTarget':  # Windows bug fix.
                 return False
         return True
 
@@ -220,7 +220,7 @@ class FillingTree(wx.TreeCtrl):
         item = self.item
         if not item:
             return
-        parent = self.GetItemParent(item) # Check a parent one above.
+        parent = self.GetItemParent(item)  # Check a parent one above.
         if parent:
             def _roots(item):
                 """Retrace the root of parent/item data.
@@ -232,8 +232,8 @@ class FillingTree(wx.TreeCtrl):
                 obj = self.GetItemData(parent)
                 key = self.GetItemText(item)
                 try:
-                    # data = self.objGetChildren(obj)[key] # overheads...
-                    data = getattr(obj, key) # easier way to access here.
+                    # data = self.objGetChildren(obj)[key]  # overheads...
+                    data = getattr(obj, key)  # easier way to access here.
                     if self.GetItemData(item) is not data:
                         self.SetItemData(item, data)
                         return item
@@ -243,15 +243,15 @@ class FillingTree(wx.TreeCtrl):
             root = _roots(item)
             if rooting:
                 if root and self.IsExpanded(root):
-                    self.updateChildren(root) # Update roots items.
+                    self.updateChildren(root)  # Update roots items.
                 if parent != root:
-                    self.updateChildren(parent) # Update parent items.
+                    self.updateChildren(parent)  # Update parent items.
         if self.IsExpanded(item):
-            self.updateChildren(item) # Update the current item if necessary.
+            self.updateChildren(item)  # Update the current item if necessary.
         self.setText('')
         obj = self.GetItemData(item)
         if wx.Platform == '__WXMSW__':
-            if obj is None: # Windows bug fix.
+            if obj is None:  # Windows bug fix.
                 return
         self.SetItemHasChildren(item, self.objHasChildren(obj))
         otype = type(obj)

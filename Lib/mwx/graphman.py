@@ -134,7 +134,7 @@ class Thread:
         """Check the thread event flags."""
         if not self.running:
             return None
-        if not self.event.wait(timeout): # wait until set in time
+        if not self.event.wait(timeout):  # wait until set in time
             raise KeyboardInterrupt("timeout")
         if not self.active:
             raise KeyboardInterrupt("terminated by user")
@@ -159,15 +159,15 @@ class Thread:
             msg = ("The thread is running.\n\n"
                    "Do you want to terminate the thread?")
         try:
-            self.event.clear() # suspend
-            if wx.MessageBox(  # Confirm closing the thread.
+            self.event.clear()  # suspend
+            if wx.MessageBox(   # Confirm closing the thread.
                     msg, caption,
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
                 self.Stop()
                 return True
             return False
         finally:
-            self.event.set() # resume
+            self.event.set()  # resume
 
     def Start(self, f, *args, **kwargs):
         """Start the thread to run the specified function.
@@ -241,7 +241,7 @@ class LayerInterface(CtrlInterface):
         parent <Frame> is not always equal to Parent when floating.
         Parent type can be <Frame>, <AuiFloatingFrame>, or <AuiNotebook>.
     """
-    MENU = "Plugins" # default menu for Plugins
+    MENU = "Plugins"  # default menu for Plugins
     menukey = "Plugins/"
     caption = True
     category = None
@@ -589,7 +589,7 @@ class MyFileDropLoader(wx.FileDropTarget):
             elif ext == '.index':
                 self.loader.load_index(fn, self.view)
             else:
-                paths.append(fn) # image file just stacks to be loaded
+                paths.append(fn)  # image file just stacks to be loaded
         if paths:
             self.loader.load_frame(paths, self.view)
         return True
@@ -632,7 +632,7 @@ class Frame(mwx.Frame):
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
         
-        self.__plugins = {} # modules in the order of load/save
+        self.__plugins = {}  # modules in the order of load/save
         
         self.__graph = Graph(self, log=self.message, margin=None)
         self.__output = Graph(self, log=self.message, margin=None)
@@ -708,7 +708,7 @@ class Frame(mwx.Frame):
                     lambda v: self.save_session_as()),
                 )),
             (),
-            ("Options", []), # reserved for optional app settings
+            ("Options", []),  # reserved for optional app settings
             (),
             (mwx.ID_(13), "&Graph window\tF9", "Show graph window", wx.ITEM_CHECK,
                 lambda v: self.show_pane(self.graph, v.IsChecked()),
@@ -843,11 +843,11 @@ class Frame(mwx.Frame):
         name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
 
-    def OnActivate(self, evt): #<wx._core.ActivateEvent>
+    def OnActivate(self, evt):  #<wx._core.ActivateEvent>
         if self and evt.Active:
             self.set_title(self.selected_view.frame)
 
-    def OnClose(self, evt): #<wx._core.CloseEvent>
+    def OnClose(self, evt):  #<wx._core.CloseEvent>
         ssn = os.path.basename(self.session_file or '--')
         with wx.MessageDialog(None,
                 "Do you want to save session before closing program?",
@@ -997,7 +997,7 @@ class Frame(mwx.Frame):
         else:
             pane.Float()
 
-    def OnPaneClose(self, evt): #<wx.aui.AuiManagerEvent>
+    def OnPaneClose(self, evt):  #<wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
         win = pane.window
         if isinstance(win, aui.AuiNotebook):
@@ -1005,7 +1005,7 @@ class Frame(mwx.Frame):
                 plug.handler('page_closed', plug)
         else:
             win.handler('page_closed', win)
-        evt.Skip(False) # Don't skip to avoid being called twice.
+        evt.Skip(False)  # Don't skip to avoid being called twice.
 
     ## --------------------------------
     ## Plugin <Layer> interface
@@ -1272,19 +1272,19 @@ class Frame(mwx.Frame):
         if isinstance(plug.Parent, aui.AuiNotebook):
             nb = plug.Parent
             j = nb.GetPageIndex(plug)
-            nb.RemovePage(j) # just remove page
-            ## nb.DeletePage(j) # Destroys plug object too.
+            nb.RemovePage(j)  # just remove page
+            # nb.DeletePage(j)  # Destroys plug object too.
         else:
             nb = None
             self._mgr.DetachPane(plug)
             self._mgr.Update()
         
         self.handler('plug_unloaded', plug)
-        plug.handler('page_closed', plug) # (even if not shown)
+        plug.handler('page_closed', plug)  # (even if not shown)
         plug.Destroy()
         
         if nb and not nb.PageCount:
-            self._mgr.DetachPane(nb) # detach notebook pane
+            self._mgr.DetachPane(nb)  # detach notebook pane
             self._mgr.Update()
             nb.Destroy()
 
@@ -1329,7 +1329,7 @@ class Frame(mwx.Frame):
             plug = _plug
         init(shell)
         self.shellframe.Show()
-        if wx.GetKeyState(wx.WXK_SHIFT): # open the source code.
+        if wx.GetKeyState(wx.WXK_SHIFT):  # open the source code.
             self.shellframe.load(plug)
 
     def OnLoadPlugins(self, evt):
@@ -1418,13 +1418,13 @@ class Frame(mwx.Frame):
                 fn = frame.pathname
                 if not fn:
                     fn = os.path.join(savedir,
-                            re.sub(r'[\/:*?"<>|]', '_', frame.name)) # replace invalid chars
+                            re.sub(r'[\/:*?"<>|]', '_', frame.name))  # replace invalid chars
                 if not os.path.exists(fn):
                     if not fn.endswith('.tif'):
                         fn += '.tif'
                     self.write_buffer(fn, frame.buffer)
                     frame.pathname = fn
-                    frame.name = os.path.basename(fn) # new name and pathname
+                    frame.name = os.path.basename(fn)  # new name and pathname
                 output_frames.append(frame)
                 print(' ', self.message("\b done."))
             except OSError as e:
@@ -1454,19 +1454,19 @@ class Frame(mwx.Frame):
             mis = {}
             savedir = os.path.dirname(filename)
             with open(filename) as i:
-                res.update(eval(i.read())) # read res <dict>
+                res.update(eval(i.read()))  # read res <dict>
             
             for name, attr in tuple(res.items()):
-                fn = os.path.join(savedir, name) # search by relpath (dir / name)
+                fn = os.path.join(savedir, name)  # search by relpath (dir / name)
                 if os.path.exists(fn):
                     attr.update(pathname=fn)  # if found, update pathname
                 else:
-                    fn = attr.get('pathname') # if not found, try pathname
+                    fn = attr.get('pathname')  # if not found, try pathname
                     if fn.startswith(r'\\'):
                         warn(f"The pathname of {fn!r} contains network path, "
                              f"so the search may take long time.", stacklevel=3)
                     if not os.path.exists(fn):
-                        mis[name] = res.pop(name) # pop missing items
+                        mis[name] = res.pop(name)  # pop missing items
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -1483,8 +1483,8 @@ class Frame(mwx.Frame):
             
             ## `res` order may differ from that of given frames,
             ## so we take a few steps to merge `new` to be exported.
-            res.update(new) # res updates to new info,
-            new.update(res) # copy res back keeping new order.
+            res.update(new)  # res updates to new info,
+            new.update(res)  # copy res back keeping new order.
             
             with open(filename, 'w') as o:
                 print(pformat(tuple(new.items())), file=o)
@@ -1538,10 +1538,10 @@ class Frame(mwx.Frame):
         """Read buffer from a file (to be overridden)."""
         buf = Image.open(path)
         info = {}
-        if buf.mode[:3] == 'RGB':  # 今のところカラー画像には対応する気はない▼
-            buf = buf.convert('L') # ここでグレースケールに変換する
-        ## return np.asarray(buf), info # ref
-        ## return np.array(buf), info # copy
+        if buf.mode[:3] == 'RGB':   # 今のところカラー画像には対応する気はない▼
+            buf = buf.convert('L')  # ここでグレースケールに変換する
+        # return np.asarray(buf), info  # ref
+        # return np.array(buf), info  # copy
         return buf, info
 
     @staticmethod
@@ -1549,10 +1549,10 @@ class Frame(mwx.Frame):
         """Write buffer to a file (to be overridden)."""
         try:
             img = Image.fromarray(buf)
-            img.save(path) # PIL saves as L, I, F, and RGB.
+            img.save(path)  # PIL saves as L, I, F, and RGB.
         except PermissionError:
             raise
-        except OSError: # cannot write mode L, I, F as BMP, etc.
+        except OSError:  # cannot write mode L, I, F as BMP, etc.
             if os.path.exists(path):
                 os.remove(path)
             raise
@@ -1566,7 +1566,7 @@ class Frame(mwx.Frame):
         if not view:
             view = self.selected_view
         
-        if isinstance(paths, str): # for single frame
+        if isinstance(paths, str):  # for single frame
             paths = [paths]
         
         if paths is None:
@@ -1592,12 +1592,12 @@ class Frame(mwx.Frame):
                     retvals = self.handler('unknown_format', path)
                     if retvals and any(retvals):
                         continue
-                    raise # no context or no handlers or cannot identify image file
+                    raise  # no context or no handlers or cannot identify image file
                 except FileNotFoundError as e:
                     print(e)
                     continue
                 
-                if isinstance(buf, TiffImageFile) and buf.n_frames > 1: # multi-page tiff
+                if isinstance(buf, TiffImageFile) and buf.n_frames > 1:  # multi-page tiff
                     n = buf.n_frames
                     d = len(str(n))
                     for j in range(n):
@@ -1630,7 +1630,7 @@ class Frame(mwx.Frame):
             default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Save buffer as",
                     defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name), # replace invalid chars
+                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),  # replace invalid chars
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
@@ -1679,7 +1679,7 @@ class Frame(mwx.Frame):
                 stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
                 stack[0].save(path,
                               save_all=True,
-                              compression="tiff_deflate", # cf. tiff_lzw
+                              compression="tiff_deflate",  # cf. tiff_lzw
                               append_images=stack[1:])
             self.message("\b done.")
             wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))

@@ -73,12 +73,12 @@ def postcall(f):
 @contextmanager
 def save_focus_excursion():
     """Save window focus excursion."""
-    wnd = wx.Window.FindFocus() # original focus
+    wnd = wx.Window.FindFocus()  # original focus
     try:
         yield wnd
     finally:
         if wnd and wnd.IsShownOnScreen():
-            wnd.SetFocus() # restore focus
+            wnd.SetFocus()  # restore focus
 
 
 _speckeys = {
@@ -178,7 +178,7 @@ def hotkey(evt):
                  ## (wx.WXK_ALT,     'M-'),
                  ## (wx.WXK_SHIFT,   'S-')
                  ):
-        if key != k and wx.GetKeyState(k): # Note: lazy-eval state
+        if key != k and wx.GetKeyState(k):  # Note: lazy-eval state
             mod += v
     
     if key != wx.WXK_CONTROL and evt.controlDown: mod += "C-"
@@ -191,10 +191,10 @@ def hotkey(evt):
 
 
 def regulate_key(key):
-    return (key.replace("ctrl-",  "C-") # modifier keys abbreviation
+    return (key.replace("ctrl-",  "C-")  # modifier keys abbreviation
                .replace("alt-",   "M-")
                .replace("shift-", "S-")
-               .replace("M-C-", "C-M-") # modifier key regulation C-M-S-
+               .replace("M-C-", "C-M-")  # modifier key regulation C-M-S-
                .replace("S-M-", "M-S-")
                .replace("S-C-", "C-S-"))
 
@@ -209,7 +209,7 @@ class KeyCtrlInterfaceMixin:
         spec-map    : 'C-c'
         esc-map     : 'escape'
     """
-    message = print # override this in subclass
+    message = print  # override this in subclass
 
     @postcall
     def post_message(self, *args, **kwargs):
@@ -307,14 +307,14 @@ class KeyCtrlInterfaceMixin:
         
         if map not in self.handler:
             warn(f"New map to define_key {keymap!r} in {self}.")
-            self.make_keymap(map) # make new keymap
+            self.make_keymap(map)  # make new keymap
         
         transaction = self.handler[map].get(key, [state])
         if len(transaction) > 1:
             warn(f"Duplicate define_key {keymap!r} in {self}.")
         
         if action is None:
-            self.handler[map].pop(key, None) # cf. undefine_key
+            self.handler[map].pop(key, None)  # cf. undefine_key
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
         F = _F(action, *args, **kwargs)
@@ -397,11 +397,11 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _N('capture_lost', v))
         self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_changed', v))
 
-    def on_hotkey_press(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_press(self, evt):  #<wx._core.KeyEvent>
         """Called when a key is pressed."""
-        ## if evt.EventObject is not self:
-        ##     evt.Skip()
-        ##     return
+        # if evt.EventObject is not self:
+        #     evt.Skip()
+        #     return
         key = hotkey(evt)
         self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
@@ -416,14 +416,14 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         else:
             evt.Skip()
 
-    def on_hotkey_up(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_up(self, evt):  #<wx._core.KeyEvent>
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
 
-    def on_mousewheel(self, evt): #<wx._core.MouseEvent>
+    def on_mousewheel(self, evt):  #<wx._core.MouseEvent>
         """Called on mouse wheel events.
         Trigger event: 'key+wheel[up|down|right|left] pressed'
         """
@@ -435,7 +435,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler('{} pressed'.format(evt.key), evt) is None:
             evt.Skip()
 
-    def on_motion(self, evt): #<wx._core.MouseEvent>
+    def on_motion(self, evt):  #<wx._core.MouseEvent>
         """Called on mouse motion events.
         Trigger event: 'key+[LMR]drag begin/motion/end'
         """
@@ -450,7 +450,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.handler('motion', evt)
         evt.Skip()
 
-    def _mouse_handler(self, event, evt): #<wx._core.MouseEvent>
+    def _mouse_handler(self, event, evt):  #<wx._core.MouseEvent>
         """Called on mouse button events.
         Trigger event: 'key+[LMRX]button pressed/released/dblclick'
         """
@@ -462,7 +462,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
                 kbtn = self.__key + self.__button
                 self.handler('{}drag end'.format(kbtn), evt)
         
-        k = evt.GetButton() # {1:L, 2:M, 3:R, 4:X1, 5:X2}
+        k = evt.GetButton()  # {1:L, 2:M, 3:R, 4:X1, 5:X2}
         if action == 'pressed' and k in (1,2,3):
             self.__button = 'LMR'[k-1]
         else:
@@ -470,11 +470,11 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler(event, evt) is None:
             evt.Skip()
         try:
-            self.SetFocusIgnoringChildren() # let the panel accept keys
+            self.SetFocusIgnoringChildren()  # let the panel accept keys
         except AttributeError:
             pass
 
-    def _normal_handler(self, event, evt): #<wx._core.Event>
+    def _normal_handler(self, event, evt):  #<wx._core.Event>
         if self.handler(event, evt) is None:
             evt.Skip()
 
@@ -523,7 +523,7 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
                             ALIGN_CENTER_VERTICAL, ALIGN_CENTER_HORIZONTAL
     """
     if style is None:
-        style = (0, wx.EXPAND | wx.ALL, 0) # DEFALT_STYLE (prop, flag, border)
+        style = (0, wx.EXPAND | wx.ALL, 0)  # DEFALT_STYLE (prop, flag, border)
     if label is None:
         sizer = wx.BoxSizer(orient)
     else:
@@ -533,14 +533,14 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
         if not isinstance(item, (wx.Object, list, tuple, type(None))):
             warn(f"pack items must be a wx.Object, tuple or None, not {type(item)}")
         if item is None:
-            item = (0, 0), 0, 0, 0 # null space
+            item = (0, 0), 0, 0, 0  # null space
         elif not item:
-            item = (0, 0) # padding space
+            item = (0, 0)  # padding space
         try:
             try:
                 sizer.Add(item, *style)
             except TypeError:
-                sizer.Add(*item) # using item-specific style
+                sizer.Add(*item)  # using item-specific style
         except TypeError as e:
             traceback.print_exc()
             bmp = wx.StaticBitmap(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_ERROR))
@@ -579,7 +579,7 @@ class Menu(wx.Menu):
             icons = [x for x in item if isinstance(x, wx.Bitmap)]
             argv = [x for x in item if x not in handlers and x not in icons]
             if isinstance(id, int):
-                menu_item = wx.MenuItem(self, *argv) # <- menu_item.Id
+                menu_item = wx.MenuItem(self, *argv)  # <- menu_item.Id
                 if icons:
                     menu_item.SetBitmaps(*icons)
                 self.Append(menu_item)
@@ -590,15 +590,15 @@ class Menu(wx.Menu):
                 except IndexError:
                     pass
             else:
-                subitems = list(argv.pop()) # extract the last element as submenu
+                subitems = list(argv.pop())  # extract the last element as submenu
                 submenu = Menu(owner, subitems)
                 submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
                 submenu_item.SetSubMenu(submenu)
                 if icons:
                     submenu_item.SetBitmaps(*icons)
                 self.Append(submenu_item)
-                self.Enable(submenu_item.Id, len(subitems)) # Disable an empty menu.
-                submenu.Id = submenu_item.Id # <- ID_ANY (dummy to check empty sbumenu)
+                self.Enable(submenu_item.Id, len(subitems))  # Disable an empty menu.
+                submenu.Id = submenu_item.Id  # <- ID_ANY (dummy to check empty sbumenu)
 
     def _unbind(self):
         for item in self.MenuItems:
@@ -660,18 +660,18 @@ class MenuBar(wx.MenuBar, TreeList):
             return
         
         menu._unbind()
-        for item in menu.MenuItems: # delete all items
+        for item in menu.MenuItems:  # delete all items
             menu.Delete(item)
         
-        menu2 = Menu(self.Parent, self[key]) # new menu2 to swap menu
+        menu2 = Menu(self.Parent, self[key])  # new menu2 to swap menu
         for item in menu2.MenuItems:
-            menu.Append(menu2.Remove(item)) # 重複しないようにいったん切り離して追加する
+            menu.Append(menu2.Remove(item))  # 重複しないようにいったん切り離して追加する
         
         if hasattr(menu, 'Id'):
-            self.Enable(menu.Id, menu.MenuItemCount > 0) # Disable empty submenu.
+            self.Enable(menu.Id, menu.MenuItemCount > 0)  # Disable empty submenu.
         
         for j, (key, values) in enumerate(self):
-            self.EnableTop(j, bool(values)) # Disable empty main menu.
+            self.EnableTop(j, bool(values))  # Disable empty main menu.
 
     def reset(self):
         """Recreates the menubar if the Parent was attached.
@@ -681,14 +681,14 @@ class MenuBar(wx.MenuBar, TreeList):
             warn(f"No parents bound to {self}.")
             return
         
-        for j in range(self.GetMenuCount()): # remove and del all top-level menu
+        for j in range(self.GetMenuCount()):  # remove and del all top-level menu
             menu = self.Remove(0)
             menu.Destroy()
         
         for j, (key, values) in enumerate(self):
             menu = Menu(self.Parent, values)
             self.Append(menu, key)
-            self.EnableTop(j, bool(values)) # Disable empty main menu.
+            self.EnableTop(j, bool(values))  # Disable empty main menu.
 
 
 class StatusBar(wx.StatusBar):
@@ -708,7 +708,7 @@ class StatusBar(wx.StatusBar):
 
     def resize(self, field):
         self.SetFieldsCount(len(field))
-        self.SetStatusWidths(list(field)) # oldver requires list type
+        self.SetStatusWidths(list(field))  # oldver requires list type
 
     def write(self, text, pane=0):
         if text and text[0] == '\b':
@@ -767,7 +767,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         ## AcceleratorTable mimic
         def hook_char(evt):
             """Called when key down."""
-            if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
+            if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
                 evt.Skip()
             else:
                 if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
@@ -789,7 +789,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
 
     def Destroy(self):
         self.timer.Stop()
-        self.shellframe.Destroy() # shellframe is not my child
+        self.shellframe.Destroy()  # shellframe is not my child
         return wx.Frame.Destroy(self)
 
 
@@ -818,7 +818,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         ## AcceleratorTable mimic
         def hook_char(evt):
             """Called when key down."""
-            if isinstance(evt.EventObject, wx.TextEntry): # prior to handler
+            if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
                 evt.Skip()
             else:
                 if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
@@ -1126,12 +1126,12 @@ class ShellFrame(MiniFrame):
         @self.Scratch.define_key('C-j')
         def eval_line(evt):
             self.Scratch.buffer.eval_line()
-            evt.Skip(False) # Don't skip explicitly.
+            evt.Skip(False)  # Don't skip explicitly.
         
         @self.Scratch.define_key('M-j')
         def eval_buffer(evt):
             self.Scratch.buffer.exec_region()
-            evt.Skip(False) # Don't skip explicitly.
+            evt.Skip(False)  # Don't skip explicitly.
         
         from .wxpdb import Debugger
         from .wxwit import Inspector
@@ -1142,8 +1142,8 @@ class ShellFrame(MiniFrame):
         self.debugger = Debugger(self,
                                  stdin=self.__shell.interp.stdin,
                                  stdout=self.__shell.interp.stdout,
-                                 skip=[Debugger.__module__, # Don't enter debugger
-                                       EventMonitor.__module__, # Don't enter event-hook
+                                 skip=[Debugger.__module__,  # Don't enter debugger
+                                       EventMonitor.__module__,  # Don't enter event-hook
                                        FSM.__module__,
                                        'wx.core', 'wx.lib.eventwatcher',
                                        'fnmatch', 'warnings', 'bdb', 'pdb', 'contextlib',
@@ -1298,7 +1298,7 @@ class ShellFrame(MiniFrame):
             except Exception:
                 pass
         
-        _fload(self.Scratch, self.SCRATCH_FILE) # restore scratch
+        _fload(self.Scratch, self.SCRATCH_FILE)  # restore scratch
         
         ## Re-open the *log* file.
         self.add_log("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
@@ -1329,8 +1329,8 @@ class ShellFrame(MiniFrame):
             except Exception:
                 pass
         
-        _fsave(self.Scratch, self.SCRATCH_FILE) # save scratch
-        _fsave(self.Log,     self.LOGGING_FILE) # save log
+        _fsave(self.Scratch, self.SCRATCH_FILE)  # save scratch
+        _fsave(self.Log,     self.LOGGING_FILE)  # save log
         
         if not self.SESSION_FILE:
             return
@@ -1426,7 +1426,7 @@ class ShellFrame(MiniFrame):
         if self.debugger.tracing:
             wx.MessageBox("The debugger ends tracing.\n\n"
                           "The trace pointer will be cleared.")
-            self.debugger.unwatch() # cf. [pointer_unset] stop_trace
+            self.debugger.unwatch()  # cf. [pointer_unset] stop_trace
         
         for book in self.get_all_editors():
             for buf in book.get_all_buffers():
@@ -1442,11 +1442,11 @@ class ShellFrame(MiniFrame):
                         self.message("The close has been canceled.")
                         evt.Veto()
                         return
-                    break # Don't ask any more.
+                    break  # Don't ask any more.
         if self.__standalone:
-            evt.Skip() # Close the window
+            evt.Skip()  # Close the window
         else:
-            self.Show(0) # Don't destroy the window
+            self.Show(0)  # Don't destroy the window
 
     def OnActivate(self, evt):
         if not evt.Active:
@@ -1461,7 +1461,7 @@ class ShellFrame(MiniFrame):
                     if buf.need_buffer_load:
                         buf.update_caption()
                         if verbose:
-                            with wx.MessageDialog(self, # Confirm load.
+                            with wx.MessageDialog(self,  # Confirm load.
                                     "The file has been modified externally.\n\n"
                                     "The contents of the buffer will be overwritten.\n"
                                     "Continue loading {}/{}?".format(book.Name, buf.name),
@@ -1472,8 +1472,8 @@ class ShellFrame(MiniFrame):
                                 if ret == wx.ID_NO:
                                     continue
                                 if ret == wx.ID_CANCEL:
-                                    break # all
-                                if ret == wx.ID_HELP: # ID_YESTOALL
+                                    break  # all
+                                if ret == wx.ID_HELP:  # ID_YESTOALL
                                     verbose = 0
                         book.load_file(buf.filename, buf.markline+1)
             self.__autoload = False
@@ -1495,7 +1495,7 @@ class ShellFrame(MiniFrame):
             self.inspector.unwatch()
         evt.Skip()
 
-    def OnConsolePageChanged(self, evt): #<wx._aui.AuiNotebookEvent>
+    def OnConsolePageChanged(self, evt):  #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         win = nb.CurrentPage
         if win is self.rootshell:
@@ -1505,7 +1505,7 @@ class ShellFrame(MiniFrame):
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
 
-    def OnConsolePageClose(self, evt): #<wx._aui.AuiNotebookEvent>
+    def OnConsolePageClose(self, evt):  #<wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         win = list(nb.get_pages())[evt.Selection]
         if win is self.rootshell:
@@ -1535,7 +1535,7 @@ class ShellFrame(MiniFrame):
                 textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
                 ## --- Thanks are also due to <wx> ---
                 ## f"#{wx!r}".format(wx),
-                ## f"To show the credit, press [C-M-Mbutton].", # cf. wx.InfoMessageBox(None)
+                ## f"To show the credit, press [C-M-Mbutton].",  # cf. wx.InfoMessageBox(None)
                 ))
             )
 
@@ -1543,8 +1543,8 @@ class ShellFrame(MiniFrame):
         pane = self._mgr.GetPane(win)
         if pane.IsDocked():
             if not self.console.IsShown():
-                self._mgr.RestoreMaximizedPane() # いったん表示切替
-                self._mgr.Update()               # 更新後に best_size 取得
+                self._mgr.RestoreMaximizedPane()  # いったん表示切替
+                self._mgr.Update()                # 更新後に best_size 取得
         if pane.IsShown():
             pane.best_size = win.Size
         self.popup_window(win, not pane.IsShown())
@@ -1556,13 +1556,13 @@ class ShellFrame(MiniFrame):
             nb = pane.window
             if nb is win:
                 break
-            j = nb.GetPageIndex(win) # find and select page
+            j = nb.GetPageIndex(win)  # find and select page
             if j != -1:
                 if j != nb.Selection:
-                    nb.Selection = j # the focus moves
+                    nb.Selection = j  # the focus moves
                 break
         else:
-            return # no such pane.window
+            return  # no such pane.window
         
         ## Modify the floating position of the pane when displayed.
         ## Note: This is a known bug in wxWidgets 3.17 -- 3.20,
@@ -1582,8 +1582,8 @@ class ShellFrame(MiniFrame):
         """Stop debugger and monitor."""
         self.monitor.unwatch()
         self.debugger.unwatch()
-        self.debugger.send_input('\n') # terminates the reader of threading pdb
-        shell = self.debugger.interactive_shell # reset interp locals
+        self.debugger.send_input('\n')  # terminates the reader of threading pdb
+        shell = self.debugger.interactive_shell  # reset interp locals
         del shell.locals
         del shell.globals
         self.indicator.Value = 1
@@ -1770,7 +1770,7 @@ class ShellFrame(MiniFrame):
             self.debugger.unwatch()
             self.debugger.editor = editor
             self.debugger.watch((editor.buffer.filename, line+1))
-            self.debugger.send_input('') # clear input
+            self.debugger.send_input('')  # clear input
 
     def stop_trace(self, line, editor):
         if self.debugger.busy:
@@ -1814,11 +1814,11 @@ class ShellFrame(MiniFrame):
         """
         buf = self.Log.default_buffer or self.Log.new_buffer()
         with buf.off_readonly():
-            buf.goto_char(buf.TextLength) # line to set an arrow marker
+            buf.goto_char(buf.TextLength)  # line to set an arrow marker
             buf.write(text)
         if noerr is not None:
             ## Set a marker on the current line.
-            buf.add_marker(buf.cline, 1 if noerr else 2) # 1:white 2:red-arrow
+            buf.add_marker(buf.cline, 1 if noerr else 2)  # 1:white 2:red-arrow
             return
         
         ## Logging text every step in case of crash.
@@ -1868,7 +1868,7 @@ class ShellFrame(MiniFrame):
             return
         j = self.console.GetPageIndex(shell)
         if j != -1:
-            self.console.DeletePage(j) # Destroy the window
+            self.console.DeletePage(j)  # Destroy the window
 
     ## --------------------------------
     ## Attributes for notebook pages
@@ -1971,7 +1971,7 @@ class ShellFrame(MiniFrame):
     def repeat_backward_search(self, evt):
         self.OnFindNext(evt, backward=True)
 
-    def OnFindNext(self, evt, backward=None): #<wx._core.FindDialogEvent>
+    def OnFindNext(self, evt, backward=None):  #<wx._core.FindDialogEvent>
         if not self.findData.FindString:
             self.message("No last search.")
             return
@@ -2002,7 +2002,7 @@ class ShellFrame(MiniFrame):
         if loc < 0:
             self.message("Unable to find the search text.")
 
-    def OnFindClose(self, evt): #<wx._core.FindDialogEvent>
+    def OnFindClose(self, evt):  #<wx._core.FindDialogEvent>
         self.findDlg.Destroy()
         self.findDlg = None
 

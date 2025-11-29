@@ -116,9 +116,9 @@ class LinePlot(MatplotPanel):
             x = (b + a) / 2
             y = self.ylim[0] + 20/self.ddpu[1]
             if (b - a) > 60/self.ddpu[0]:
-                p = _A(b-a, (x,y), (-20,8), arrowstyle='-') # wide space
+                p = _A(b-a, (x,y), (-20,8), arrowstyle='-')  # wide space
             else:
-                p = _A(b-a, (x,y), (16,16), arrowstyle='-', # narrow space
+                p = _A(b-a, (x,y), (16,16), arrowstyle='-',  # narrow space
                         connectionstyle="angle,angleA=0,angleB=90,rad=8")
             self.__annotations = [
                 _A(a, (a,y), (-54,-3), arrowstyle='->'),
@@ -136,10 +136,10 @@ class LinePlot(MatplotPanel):
             x = evt.xdata
             a, b = self.region
             d = 4 / self.ddpu[0]
-            if   a+d < x < b-d: return 1 # insdie
-            elif a-d < x < a+d: return 2 # left-edge
-            elif b-d < x < b+d: return 3 # right-edge
-            else: return 0 # outside
+            if   a+d < x < b-d: return 1  # insdie
+            elif a-d < x < a+d: return 2  # left-edge
+            elif b-d < x < b+d: return 3  # right-edge
+            else: return 0  # outside
 
     def OnDraw(self, evt):
         """Called before canvas.draw."""
@@ -150,11 +150,11 @@ class LinePlot(MatplotPanel):
         
         v = self.region_test(evt)
         if v == 1:
-            self.set_wxcursor(wx.CURSOR_HAND) # insdie
+            self.set_wxcursor(wx.CURSOR_HAND)  # insdie
         elif v in (2,3):
-            self.set_wxcursor(wx.CURSOR_SIZEWE) # on-edge
+            self.set_wxcursor(wx.CURSOR_SIZEWE)  # on-edge
         else:
-            self.set_wxcursor(wx.CURSOR_ARROW) # outside or None
+            self.set_wxcursor(wx.CURSOR_ARROW)  # outside or None
 
     def OnDragLock(self, evt):
         self.__lastpoint = evt.xdata
@@ -163,15 +163,15 @@ class LinePlot(MatplotPanel):
     def OnDragBegin(self, evt):
         v = self.__selection
         if v == 1:
-            self.set_wxcursor(wx.CURSOR_HAND) # inside
+            self.set_wxcursor(wx.CURSOR_HAND)  # inside
         elif v == 2:
-            self.set_wxcursor(wx.CURSOR_SIZEWE) # left-edge
-            self.__lastpoint = self.region[1]   # set origin right
+            self.set_wxcursor(wx.CURSOR_SIZEWE)  # left-edge
+            self.__lastpoint = self.region[1]    # set origin right
         elif v == 3:
-            self.set_wxcursor(wx.CURSOR_SIZEWE) # right-edge
-            self.__lastpoint = self.region[0]   # set origin left
+            self.set_wxcursor(wx.CURSOR_SIZEWE)  # right-edge
+            self.__lastpoint = self.region[0]    # set origin left
         else:
-            self.set_wxcursor(wx.CURSOR_SIZEWE) # outside
+            self.set_wxcursor(wx.CURSOR_SIZEWE)  # outside
 
     def OnDragMove(self, evt):
         x = evt.xdata
@@ -196,7 +196,7 @@ class LinePlot(MatplotPanel):
                 self.region = (a+d, b+d)
                 self.__lastpoint = x
         else:
-            self.message("- No region.") #<FSM logic-error>
+            self.message("- No region.")  #<FSM logic-error>
         self.draw()
 
     def OnDragEnd(self, evt):
@@ -225,9 +225,9 @@ class Histogram(LinePlot):
         
         self.handler.update({ # DNA<Histogram>
             NORMAL : {
-                 'ctrl pressed' : (NORMAL, ), # Pan prohibits
-                'space pressed' : (NORMAL, ), # 〃
-                    'z pressed' : (NORMAL, ), # Zoom prohibits
+                 'ctrl pressed' : (NORMAL, ),  # Pan prohibits
+                'space pressed' : (NORMAL, ),  # 〃
+                    'z pressed' : (NORMAL, ),  # Zoom prohibits
             },
         })
         self.context = { # DNA<GraphPlot>
@@ -290,9 +290,9 @@ class Histogram(LinePlot):
         return bins, hist
 
     def hplot(self, frame):
-        self.__frame = frame # update reference of the frame
+        self.__frame = frame  # update reference of the frame
         if frame:
-            x, y = frame.__data = self.calc(frame) # histogram_data buffer
+            x, y = frame.__data = self.calc(frame)  # histogram_data buffer
             self.__plot.set_data(x, y)
             self.xlim = x.min(), x.max()
             self.ylim = 0, y.max()
@@ -302,12 +302,12 @@ class Histogram(LinePlot):
             self.draw()
 
     def hreplot(self, frame):
-        self.__frame = frame # update reference of the frame
+        self.__frame = frame  # update reference of the frame
         if frame:
             try:
-                x, y = frame.__data # reuse cached data
+                x, y = frame.__data  # reuse cached data
             except Exception:
-                x, y = frame.__data = self.calc(frame) # new histogram_data buffer
+                x, y = frame.__data = self.calc(frame)  # new histogram_data buffer
             
             self.__plot.set_data(x, y)
             self.xlim = x.min(), x.max()
@@ -367,7 +367,7 @@ class Histogram(LinePlot):
         LinePlot.OnDragEnd(self, evt)
         
         if self.__frame:
-            self.xbound = self.region # 拡大表示したのち region 消去
+            self.xbound = self.region  # 拡大表示したのち region 消去
             self.region = None
             self.toolbar.push_current()
             self.draw()
@@ -399,8 +399,8 @@ class LineProfile(LinePlot):
             None : {
                  'left pressed' : [ None, self.OnRegionShift ],
                 'right pressed' : [ None, self.OnRegionShift ],
-                 '[+-] pressed' : [ None, self.OnLineWidth ], # [+-] using numpad
-               'S-[;-] pressed' : [ None, self.OnLineWidth ], # [+-] using JP-keyboard
+                 '[+-] pressed' : [ None, self.OnLineWidth ],  # [+-] using numpad
+               'S-[;-] pressed' : [ None, self.OnLineWidth ],  # [+-] using JP-keyboard
             },
             NORMAL : {
             'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnRegionLock),
@@ -504,7 +504,7 @@ class LineProfile(LinePlot):
     def set_logic(self, p):
         prep = self.__logicp
         self.__logicp = p = bool(p)
-        if self.__frame and prep != p: # replot if toggled
+        if self.__frame and prep != p:  # replot if toggled
             u = self.__frame.unit
             ru = u if p else 1/u
             self.xlim *= ru
@@ -546,21 +546,21 @@ class LineProfile(LinePlot):
         if not force:
             if frame is self.__frame:
                 return
-        self.__frame = frame # update reference of the frame
+        self.__frame = frame  # update reference of the frame
         if frame:
             sel = frame.selector
             if sel.shape[1] < 2:
                 return
-            if len(frame.buffer.shape) > 2: # RGB image
+            if len(frame.buffer.shape) > 2:  # RGB image
                 return
             
-            xx, yy = sel[:,-2:] # get the last 2-selected line
-            nx, ny = frame.xytopixel(xx, yy) # converts to pixel [ny,nx]
+            xx, yy = sel[:,-2:]  # get the last 2-selected line
+            nx, ny = frame.xytopixel(xx, yy)  # converts to pixel [ny,nx]
             lx = nx[1] - nx[0]
             ly = ny[1] - ny[0]
             if lx or ly:
-                L = np.hypot(lx, ly) # pixel length
-                nv = (-ly/L, lx/L)   # and norm vector to L
+                L = np.hypot(lx, ly)  # pixel length
+                nv = (-ly/L, lx/L)    # and norm vector to L
             else:
                 L = 0
                 nv = (0, 0)
@@ -579,21 +579,21 @@ class LineProfile(LinePlot):
                 if any(mask):
                     x = x[mask]
                     y = y[mask]
-                    zi = frame.buffer[y.astype(int), x.astype(int)] # nearest: 速くてそこそこ正確
-                    ## zi = ndi.map_coordinates(frame.buffer, np.vstack((y, x))) # spline: 遅いが正確
+                    zi = frame.buffer[y.astype(int), x.astype(int)]  # nearest: 速くてそこそこ正確
+                    ## zi = ndi.map_coordinates(frame.buffer, np.vstack((y, x)))  # spline: 遅いが正確
                     if zi.dtype in (np.complex64, np.complex128):
                         zi = np.log(1 + abs(zi))
                     zs[mask] += zi
             zs /= lw
             
-            if self.__logicp: # axis to logical length # 論理長さ空間を使用する
+            if self.__logicp:  # axis to logical length  # 論理長さ空間を使用する
                 L = np.hypot(xx[1]-xx[0], yy[1]-yy[0])
             
             ls = np.linspace(0, L, N)
             self.__plot.set_data(ls, zs)
             self.__plot.set_visible(1)
             
-            if fit and len(ls) > 1: # drawing area
+            if fit and len(ls) > 1:  # drawing area
                 ly = self.ylim
                 self.xlim = ls[0], ls[-1]
                 self.ylim = ly[0], max(ly[1], max(zs))
@@ -685,15 +685,15 @@ class LineProfile(LinePlot):
         x, y = self.plotdata
         if x.size:
             xc, yc = evt.xdata, evt.ydata
-            u = x[1] - x[0] # != frame.unit (斜め線の場合 dx=unit とは限らない)
+            u = x[1] - x[0]  # != frame.unit (斜め線の場合 dx=unit とは限らない)
             v = (y < yc)
             if v.all():
-                self.region = None # all y < yc
+                self.region = None  # all y < yc
             elif v.any():
                 xa = x[(x < xc) & v]
                 xb = x[(x > xc) & v]
-                a = xa[-1] if xa.any() else x[ 0] # left-under bound
-                b = xb[ 0] if xb.any() else x[-1] # right-over bound
+                a = xa[-1] if xa.any() else x[ 0]  # left-under bound
+                b = xb[ 0] if xb.any() else x[-1]  # right-over bound
                 if (b-a-u)/u > 1e-3:
                     if a > x[0]:
                         n = np.where(x == a)[0][0]
@@ -707,7 +707,7 @@ class LineProfile(LinePlot):
                 else:
                     self.region = None
             else:
-                self.region = x[[0,-1]] # all y > yc
+                self.region = x[[0,-1]]  # all y > yc
             
             self.__hline.set_ydata([yc])
             self.__hline.set_visible(1)
@@ -755,7 +755,7 @@ class LineProfile(LinePlot):
         if xs.size:
             ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])
             j = np.argmin(ld)
-            if ld[j] < 20: # check display-dot distance, snap to the nearest mark
+            if ld[j] < 20:  # check display-dot distance, snap to the nearest mark
                 xc = xs[j]
             self.region = (self.__orgpoint, xc)
             self.draw()

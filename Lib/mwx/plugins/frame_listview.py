@@ -65,13 +65,13 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         for j, frame in enumerate(self.Target.all_frames):
             self.InsertItem(j, str(j))
-            self.UpdateInfo(frame) # update all --> 計算が入ると時間がかかる
+            self.UpdateInfo(frame)  # update all --> 計算が入ると時間がかかる
         
         self.handler.update({ # DNA<frame_listview>
             0 : {
-             'Lbutton dblclick' : (0, self.OnShowItems), # -> frame_shown
-                'enter pressed' : (0, self.OnShowItems), # -> frame_shown
-               'delete pressed' : (0, self.OnRemoveItems), # -> frame_removed/shown
+             'Lbutton dblclick' : (0, self.OnShowItems),  # -> frame_shown
+                'enter pressed' : (0, self.OnShowItems),  # -> frame_shown
+               'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
                   'C-o pressed' : (0, self.OnLoadItems),
                   'C-s pressed' : (0, self.OnSaveItems),
@@ -141,31 +141,31 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnRemoveItems(self, evt):
         del self.Target[self.selected_items]
 
-    def OnSortItems(self, evt): #<wx._controls.ListEvent>
+    def OnSortItems(self, evt):  #<wx._controls.ListEvent>
         col = evt.Column
-        if col == 0: # reverse the first column
+        if col == 0:  # reverse the first column
             self.__dir = False
-        self.__dir = not self.__dir # toggle 0:ascend/1:descend
+        self.__dir = not self.__dir  # toggle 0:ascend/1:descend
         
         frames = self.Target.all_frames
         if frames:
             def _eval(x):
                 try:
-                    return eval(x[col].replace('*', '')) # localunit* とか
+                    return eval(x[col].replace('*', ''))  # localunit* とか
                 except Exception:
                     return x[col]
             frame = self.Target.frame
             items = sorted(self.all_items, reverse=self.__dir, key=_eval)
-            frames[:] = [frames[int(c[0])] for c in items] # sort by new Id of items
+            frames[:] = [frames[int(c[0])] for c in items]  # sort by new Id of items
             
             lc = list(self.checked_items)
             
             for j, c in enumerate(items):
                 self.Select(j, False)
                 self.CheckItem(j, int(c[0]) in lc)
-                for k, v in enumerate(c[1:]): # update data except for id(0)
+                for k, v in enumerate(c[1:]):  # update data except for id(0)
                     self.SetItem(j, k+1, v)
-            self.Target.select(frame) # invokes [frame_shown] to select the item
+            self.Target.select(frame)  # invokes [frame_shown] to select the item
 
     def OnSelectAllItems(self, evt):
         for j in range(self.ItemCount):
@@ -220,7 +220,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def on_frame_loaded(self, frame):
         j = frame.index
         self.InsertItem(j, str(j))
-        for k in range(j+1, self.ItemCount): # id(0) を更新する
+        for k in range(j+1, self.ItemCount):  # id(0) を更新する
             self.SetItem(k, 0, str(k))
         self.UpdateInfo(frame)
 
@@ -239,7 +239,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         with wx.FrozenWindow(self):
             for j in reversed(indices):
                 self.DeleteItem(j)
-            for k in range(self.ItemCount): # id(0) を更新する
+            for k in range(self.ItemCount):  # id(0) を更新する
                 self.SetItem(k, 0, str(k))
 
 
