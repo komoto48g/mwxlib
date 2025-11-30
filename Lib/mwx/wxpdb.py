@@ -272,7 +272,7 @@ class Debugger(Pdb):
             self.set_quit()
 
     ## --------------------------------
-    ## Actions for handler
+    ## Actions for handler.
     ## --------------------------------
 
     def _markbp(self, lineno, style):
@@ -367,7 +367,7 @@ class Debugger(Pdb):
         self.message(where(frame.f_code), indent=0)
 
     ## --------------------------------
-    ## Override Bdb methods
+    ## Override Bdb methods.
     ## --------------------------------
 
     def break_anywhere(self, frame):
@@ -453,7 +453,7 @@ class Debugger(Pdb):
                 self.handler('debug_end', self.curframe)
 
     ## --------------------------------
-    ## Override Pdb methods
+    ## Override Pdb methods.
     ## --------------------------------
 
     @echo

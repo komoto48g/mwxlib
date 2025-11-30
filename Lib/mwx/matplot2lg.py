@@ -128,7 +128,7 @@ class LinePlot(MatplotPanel):
             ]
 
     ## --------------------------------
-    ## Region/Drag actions (override)
+    ## Region/Drag actions (override).
     ## --------------------------------
 
     def region_test(self, evt):
@@ -337,7 +337,7 @@ class Histogram(LinePlot):
             self.modeline.SetLabel("")
 
     ## --------------------------------
-    ## Region/Drag actions (override)
+    ## Region/Drag actions (override).
     ## --------------------------------
 
     def annotate(self):
@@ -623,7 +623,7 @@ class LineProfile(LinePlot):
         self.writeln()
 
     ## --------------------------------
-    ## Region/Drag actions (override)
+    ## Region/Drag actions (override).
     ## --------------------------------
 
     def OnHomePosition(self, evt):
@@ -666,7 +666,7 @@ class LineProfile(LinePlot):
         LinePlot.OnEscapeSelection(self, evt)
 
     ## --------------------------------
-    ## Region-(H)Line/Drag actions
+    ## Region-(H)Line/Drag actions.
     ## --------------------------------
 
     def OnDragLineBegin(self, evt):
@@ -713,7 +713,7 @@ class LineProfile(LinePlot):
             self.message(f"yc = {yc:g}")
 
     ## --------------------------------
-    ## Region-Mark/Drag actions
+    ## Region-Mark/Drag actions.
     ## --------------------------------
     peak_blur_ratio = 0.01
     peak_prominence_ratio = 0.1

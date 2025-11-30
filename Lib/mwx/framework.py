@@ -480,7 +480,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
 
 
 ## --------------------------------
-## wx Framework and Designer
+## wx Framework and Designer.
 ## --------------------------------
 
 def ID_(id):
@@ -1527,13 +1527,13 @@ class ShellFrame(MiniFrame):
                 f"Version: {__version__!s}",
                 self.__class__.__doc__,
                 self.rootshell.__class__.__doc__,
-                ## --- Thanks to <wx.py.shell> ---
+                ## <--- Thanks to <wx.py.shell> --->
                 f"#{wx.py!r}",
                 f"Author: {wx.py.version.__author__!r}",
                 f"Version: {wx.py.version.VERSION!s}",
                 wx.py.shell.Shell.__doc__,
                 textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
-                ## --- Thanks are also due to <wx> ---
+                ## <--- Thanks are also due to <wx> --->
                 ## f"#{wx!r}".format(wx),
                 ## f"To show the credit, press [C-M-Mbutton].",  # cf. wx.InfoMessageBox(None)
                 ))
@@ -1575,7 +1575,7 @@ class ShellFrame(MiniFrame):
         self._mgr.Update()
 
     ## --------------------------------
-    ## Actions for handler
+    ## Actions for handler.
     ## --------------------------------
 
     def Quit(self, evt=None):
@@ -1871,7 +1871,7 @@ class ShellFrame(MiniFrame):
             self.console.DeletePage(j)  # Destroy the window
 
     ## --------------------------------
-    ## Attributes for notebook pages
+    ## Attributes for notebook pages.
     ## --------------------------------
 
     def get_all_pages(self, type=None):
@@ -1940,7 +1940,7 @@ class ShellFrame(MiniFrame):
             return editor
 
     ## --------------------------------
-    ## Find / Replace text dialog
+    ## Find / Replace text dialog.
     ## --------------------------------
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
 

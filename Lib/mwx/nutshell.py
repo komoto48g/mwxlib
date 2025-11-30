@@ -727,7 +727,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         evt.Skip()
 
     ## --------------------------------
-    ## Marker attributes of the editor
+    ## Marker attributes of the editor.
     ## --------------------------------
     marker_names = {
         0: "mark",
@@ -857,7 +857,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.message("No marks")
 
     ## --------------------------------
-    ## Attributes of the editor
+    ## Attributes of the editor.
     ## --------------------------------
     py_styles = {
         stc.STC_P_DEFAULT       : 'nil',  # etc. space \r\n\\$\0 (non-identifier)
@@ -991,7 +991,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             return self.GetTextRange(p, q)
 
     ## --------------------------------
-    ## Python syntax and indentation
+    ## Python syntax and indentation.
     ## --------------------------------
 
     def on_indent_line(self, evt):
@@ -1085,7 +1085,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         return ''.join(split_tokens(text, comment=False))
 
     ## --------------------------------
-    ## Fold / Unfold functions
+    ## Fold / Unfold functions.
     ## --------------------------------
 
     def show_folder(self, show=True):
@@ -1189,7 +1189,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         evt.Skip()
 
     ## --------------------------------
-    ## Preferences / Appearance
+    ## Preferences / Appearance.
     ## --------------------------------
 
     def get_stylus(self):
@@ -1331,7 +1331,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.ScrollToLine(vl - n//2)
 
     ## --------------------------------
-    ## Search functions
+    ## Search functions.
     ## --------------------------------
 
     def DoFindNext(self, findData):
@@ -1699,7 +1699,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         return self.save_attributes(UndoCollection=False)
 
     ## --------------------------------
-    ## Edit: comment / insert / kill
+    ## Edit: comment / insert / kill.
     ## --------------------------------
     comment_prefix = "#"
 
@@ -2150,7 +2150,7 @@ class Buffer(EditorInterface, EditWindow):
         self.AnnotationClearAll()
 
     ## --------------------------------
-    ## File I/O
+    ## File I/O.
     ## --------------------------------
 
     def _load_textfile(self, text):
@@ -2199,7 +2199,7 @@ class Buffer(EditorInterface, EditWindow):
         return True
 
     ## --------------------------------
-    ## Python eval / exec
+    ## Python eval / exec.
     ## --------------------------------
 
     @property
@@ -2408,7 +2408,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         pass
 
     ## --------------------------------
-    ## Buffer list controls
+    ## Buffer list controls.
     ## --------------------------------
 
     def get_all_buffers(self, fn=None):
@@ -2512,7 +2512,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 other_editor.CurrentPage.SetFocus()
 
     ## --------------------------------
-    ## File I/O
+    ## File I/O.
     ## --------------------------------
     wildcards = [
         "PY files (*.py)|*.py",
@@ -3304,7 +3304,7 @@ class Nautilus(EditorInterface, Shell):
         self.goto_previous_marker(0b110, selection)  # previous white/red-arrow
 
     ## --------------------------------
-    ## Magic caster of the shell
+    ## Magic caster of the shell.
     ## --------------------------------
 
     @classmethod
@@ -3467,7 +3467,7 @@ class Nautilus(EditorInterface, Shell):
         self.red_pointer = ln + e.lineno - 1
 
     ## --------------------------------
-    ## Attributes of the shell
+    ## Attributes of the shell.
     ## --------------------------------
 
     @property
@@ -3536,7 +3536,7 @@ class Nautilus(EditorInterface, Shell):
         return lc, le
 
     ## --------------------------------
-    ## Execution methods of the shell
+    ## Execution methods of the shell.
     ## --------------------------------
 
     def push(self, command, **kwargs):

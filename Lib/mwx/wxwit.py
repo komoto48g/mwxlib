@@ -73,7 +73,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         evt.Skip()
 
     ## --------------------------------
-    ## InspectionTree wrapper interface
+    ## InspectionTree interface.
     ## --------------------------------
 
     def SetObj(self, obj):
@@ -130,7 +130,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.timer.Stop()
 
     ## --------------------------------
-    ## Actions on tree items
+    ## Actions on tree items.
     ## --------------------------------
 
     def OnTimer(self, evt):

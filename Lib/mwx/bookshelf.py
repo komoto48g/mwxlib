@@ -127,7 +127,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         evt.Skip()
 
     ## --------------------------------
-    ## TreeList/Ctrl wrapper interface
+    ## TreeList/Ctrl wrapper interface.
     ## --------------------------------
 
     def build_tree(self, clear=True):
@@ -176,7 +176,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         return item
 
     ## --------------------------------
-    ## Actions for bookshelf interfaces
+    ## Actions for bookshelf interface.
     ## --------------------------------
 
     def on_buffer_new(self, buf):

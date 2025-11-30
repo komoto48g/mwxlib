@@ -887,7 +887,7 @@ class Frame(mwx.Frame):
         return mwx.Frame.Destroy(self)
 
     ## --------------------------------
-    ## pane window interface
+    ## pane window interface.
     ## --------------------------------
 
     def get_pane(self, name):
@@ -1010,7 +1010,7 @@ class Frame(mwx.Frame):
         evt.Skip(False)  # Don't skip to avoid being called twice.
 
     ## --------------------------------
-    ## Plugin <Layer> interface
+    ## Plugin <Layer> interface.
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
 
@@ -1352,7 +1352,7 @@ class Frame(mwx.Frame):
                 thread.Stop()
 
     ## --------------------------------
-    ## load/save index file
+    ## load/save index file.
     ## --------------------------------
     ATTRIBUTESFILE = "results.index"
 
@@ -1443,7 +1443,7 @@ class Frame(mwx.Frame):
         return frames
 
     ## --------------------------------
-    ## load/save frames and attributes
+    ## load/save frames and attributes.
     ## --------------------------------
 
     @classmethod
@@ -1528,7 +1528,7 @@ class Frame(mwx.Frame):
         return frame
 
     ## --------------------------------
-    ## load/save images
+    ## load/save images.
     ## --------------------------------
     wildcards = [
         "TIF file (*.tif)|*.tif",
@@ -1692,7 +1692,7 @@ class Frame(mwx.Frame):
             return False
 
     ## --------------------------------
-    ## load/save session
+    ## load/save session.
     ## --------------------------------
     session_file = None
 

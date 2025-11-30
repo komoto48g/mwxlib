@@ -285,7 +285,7 @@ class LParam(Param):
 
 
 ## --------------------------------
-## Knob unit for Parameter Control
+## Knob unit for Parameter Control.
 ## --------------------------------
 
 class Knob(wx.Panel):
@@ -611,7 +611,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         evt.Skip()
 
     ## --------------------------------
-    ## Layout commands and attributes
+    ## Layout commands and attributes.
     ## --------------------------------
     @property
     def layout_groups(self):
@@ -860,7 +860,7 @@ class Clipboard:
 
 
 ## --------------------------------
-## Wx custom controls and bitmaps
+## Wx custom controls and bitmaps.
 ## --------------------------------
 
 class Icon(wx.Bitmap):

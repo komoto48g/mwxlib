@@ -463,7 +463,7 @@ def get_rootpath(fn):
 
 
 ## --------------------------------
-## Finite State Machine
+## Finite State Machine.
 ## --------------------------------
 
 class SSM(dict):

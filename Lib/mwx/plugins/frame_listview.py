@@ -214,7 +214,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         evt.Skip()
 
     ## --------------------------------
-    ## Actions of frame-handler
+    ## Actions of frame-handler.
     ## --------------------------------
 
     def on_frame_loaded(self, frame):

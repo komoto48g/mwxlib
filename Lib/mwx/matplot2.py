@@ -336,7 +336,7 @@ class MatplotPanel(wx.Panel):
         self.canvas.SetCursor(wx.Cursor(c))
 
     ## --------------------------------
-    ## Property of the current frame
+    ## Property of the current frame.
     ## --------------------------------
 
     ## to be overridden (referenced in draw).
@@ -384,7 +384,7 @@ class MatplotPanel(wx.Panel):
         return self.axes.transData.inverted().transform(v)
 
     ## --------------------------------
-    ## Property of the modeline
+    ## Property of the modeline.
     ## --------------------------------
 
     selectedModeLineBg = '#000000'
@@ -421,7 +421,7 @@ class MatplotPanel(wx.Panel):
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
 
     ## --------------------------------
-    ## External I/O file and clipboard
+    ## External I/O file and clipboard.
     ## --------------------------------
 
     def copy_to_clipboard(self):
@@ -440,7 +440,7 @@ class MatplotPanel(wx.Panel):
             self.canvas.draw()
 
     ## --------------------------------
-    ## Selector interface
+    ## Selector interface.
     ## --------------------------------
 
     def trace_point(self, x, y):
@@ -481,7 +481,7 @@ class MatplotPanel(wx.Panel):
         self.draw(self.selected)
 
     ## --------------------------------
-    ## matplotlib interfaces
+    ## matplotlib interface.
     ## --------------------------------
 
     @property
@@ -624,7 +624,7 @@ class MatplotPanel(wx.Panel):
         self.p_event = None
 
     ## --------------------------------
-    ## Pan/Zoom actions
+    ## Pan/Zoom actions.
     ## --------------------------------
 
     ZOOM_RATIO = 10 ** 0.2
@@ -764,7 +764,7 @@ class MatplotPanel(wx.Panel):
     ##     self.draw()
 
     ## --------------------------------
-    ## Axis actions
+    ## Axis actions.
     ## --------------------------------
 
     def OnHomeXPosition(self, evt):

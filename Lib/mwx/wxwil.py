@@ -91,7 +91,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target = None
 
     ## --------------------------------
-    ## Actions on list items
+    ## Actions on list items.
     ## --------------------------------
 
     def clear(self):

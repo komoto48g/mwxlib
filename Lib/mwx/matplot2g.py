@@ -845,7 +845,7 @@ class GraphPlot(MatplotPanel):
             yield from (art for art in self.__Arts if j is art.buffer)
 
     ## --------------------------------
-    ## Property of frame / drawer
+    ## Property of frame / drawer.
     ## --------------------------------
 
     ## image bytes max for loading matplotlib (with wxAgg backend)
@@ -1083,7 +1083,7 @@ class GraphPlot(MatplotPanel):
             self.message("- A frame must exist to create a colorbar.")
 
     ## --------------------------------
-    ## matplotlib interfaces
+    ## matplotlib interface.
     ## --------------------------------
 
     def on_pick(self, evt):  #<matplotlib.backend_bases.PickEvent>
@@ -1150,7 +1150,7 @@ class GraphPlot(MatplotPanel):
             return None  #<wx._core.KeyEvent>
 
     ## --------------------------------
-    ## Pan/Zoom actions (override)
+    ## Pan/Zoom actions (override).
     ## --------------------------------
     ## antialiased, nearest, bilinear, bicubic, spline16,
     ## spline36, hanning, hamming, hermite, kaiser, quadric,
@@ -1219,7 +1219,7 @@ class GraphPlot(MatplotPanel):
         self.draw()
 
     ## --------------------------------
-    ## Selector interface
+    ## Selector interface.
     ## --------------------------------
 
     def calc_point(self, x, y, centred=True, inaxes=False):
@@ -1303,7 +1303,7 @@ class GraphPlot(MatplotPanel):
         self.handler('line_drawn', self.frame)
 
     ## --------------------------------
-    ## Selector + Line interface
+    ## Selector + Line interface.
     ## --------------------------------
 
     def OnLineSelected(self, evt):
@@ -1377,7 +1377,7 @@ class GraphPlot(MatplotPanel):
         self.handler('line_moved', self.frame)
 
     ## --------------------------------
-    ## Marker interface
+    ## Marker interface.
     ## --------------------------------
 
     ## Limit number of markers to display 最大(表示)数を制限する
@@ -1557,7 +1557,7 @@ class GraphPlot(MatplotPanel):
             self.next_mark(-1)
 
     ## --------------------------------
-    ## Region interface
+    ## Region interface.
     ## --------------------------------
 
     @property

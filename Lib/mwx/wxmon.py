@@ -80,7 +80,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         evt.Skip()
 
     ## --------------------------------
-    ## EventWatcher wrapper interface
+    ## EventWatcher wrapper interface.
     ## --------------------------------
     ew.buildWxEventMap()  # build ew._eventBinders and ew._eventIdMap
 
@@ -162,7 +162,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return ssmap
 
     ## --------------------------------
-    ## Actions on list items
+    ## Actions on list items.
     ## --------------------------------
 
     def clear(self):
