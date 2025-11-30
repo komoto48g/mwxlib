@@ -99,7 +99,7 @@ class Param:
                 return
         elif isinstance(v, str):
             try:
-                v = self.__eval(v.replace(',', ''))  # eliminates commas
+                v = self.__eval(v.replace(',', ''))  # Eliminates commas.
             except Exception:
                 v = self.value
                 internal_callback = False
@@ -625,14 +625,14 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             win.Enable(p)
 
     def is_shown(self, groupid):
-        ## child = self.Sizer.Children[groupid]
-        ## return child.IsShown()
+        # child = self.Sizer.Children[groupid]
+        # return child.IsShown()
         return self.Sizer.IsShown(groupid % len(self.__groups))
 
     def show(self, groupid, p=True):
         """Show/hide all including the box."""
-        ## child = self.Sizer.Children[groupid]
-        ## child.Show(p)
+        # child = self.Sizer.Children[groupid]
+        # child.Show(p)
         self.Sizer.Show(groupid % len(self.__groups), p)
         self.Layout()
 
@@ -686,7 +686,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
-        ## Register objects and parameter groups
+        ## Register objects and parameter groups.
         def _flatiter(objects):
             for c in objects:
                 if isinstance(c, tuple):
@@ -704,7 +704,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                     yield c
         self.__params.append(list(_variter(objs)))
         
-        ## Set appearance of the layout group
+        ## Set appearance of the layout group.
         self.show(-1, visible)
         self.fold(-1, not show)
         self.Sizer.Fit(self)
@@ -712,7 +712,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         return self.__groups[-1]
 
     ## --------------------------------
-    ## 外部入出力／クリップボード通信
+    ## 外部入出力／クリップボード通信．
     ## --------------------------------
     @property
     def parameters(self):
@@ -824,9 +824,9 @@ class Clipboard:
             print("- Unable to open clipboard.")
             return None
         try:
-            ## Convert bmp --> buf
+            ## Convert bmp --> buf.
             img = bmp.ConvertToImage()
-            buf = np.array(img.GetDataBuffer())  # do copy, don't ref
+            buf = np.array(img.GetDataBuffer())  # Do copy, don't ref.
             if verbose:
                 print("From clipboard: {:.1f} Mb data read.".format(buf.nbytes/1e6))
             w, h = img.GetSize()
@@ -838,11 +838,11 @@ class Clipboard:
     @staticmethod
     def imwrite(buf, verbose=False):
         try:
-            ## Convert buf --> bmp
+            ## Convert buf --> bmp.
             h, w = buf.shape[:2]
             if buf.ndim < 3:
                 # buf = np.array([buf] * 3).transpose((1,2,0))  # convert to gray bitmap
-                buf = buf.repeat(3, axis=1)  # convert to gray bitmap
+                buf = buf.repeat(3, axis=1)  # Convert to gray bitmap.
             img = wx.Image(w, h, buf.tobytes())
             bmp = img.ConvertToBitmap()
         except Exception:
@@ -894,8 +894,8 @@ class Icon(wx.Bitmap):
             '!!!' : wx.ART_ERROR,
               '+' : wx.ART_PLUS,
               '-' : wx.ART_MINUS,
-              ## 'x' : wx.ART_DELETE,
-              ## 't' : wx.ART_TICK_MARK,
+              # 'x' : wx.ART_DELETE,
+              # 't' : wx.ART_TICK_MARK,
               '~' : wx.ART_GO_HOME,
            'undo' : wx.ART_UNDO,
            'redo' : wx.ART_REDO,
@@ -970,8 +970,8 @@ class Icon(wx.Bitmap):
         x = size[0] - subsize[0]
         y = size[1] - subsize[1]
         with wx.MemoryDC(back) as dc:
-            ## dc = wx.GCDC(dc)
-            ## dc.DrawBitmap(fore, x, y, useMask=True)
+            # dc = wx.GCDC(dc)
+            # dc.DrawBitmap(fore, x, y, useMask=True)
             gc = wx.GraphicsContext.Create(dc)
             gc.DrawBitmap(fore, x, y, *subsize)
         return back
@@ -992,7 +992,7 @@ class Icon(wx.Bitmap):
 
     @staticmethod
     def iconify(icon, w, h):
-        ## if wx.VERSION >= (4,1,0):
+        ## if wx.VERSION >= (4,1,0): ...
         try:
             import wx.svg
             import requests

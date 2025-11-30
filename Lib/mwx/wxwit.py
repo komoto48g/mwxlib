@@ -184,8 +184,8 @@ class Inspector(it.InspectionTree, CtrlInterface):
 
 
 def miniIcon(key, size=(16,16)):
-    ## if key == 'ShowFilling':
-    ##     return wx.py.filling.images.getPyImage().Scale(16,16).ConvertToBitmap()
+    # if key == 'ShowFilling':
+    #     return wx.py.filling.images.getPyImage().Scale(16,16).ConvertToBitmap()
     art = getattr(it, key)
     return art.GetImage().Scale(*size).ConvertToBitmap()
 

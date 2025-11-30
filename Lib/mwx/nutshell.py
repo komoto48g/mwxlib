@@ -32,25 +32,25 @@ from .utilus import split_words, split_parts, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
 
-## URL pattern (flag = re.M | re.A)
+## URL pattern (flag = re.M | re.A).
 ## url_re = r"https?://[\w/:%#$&?()~.=+-]+"
 url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
 
-## no-file pattern
+## no-file pattern.
 nofile_re = r'[\/:*?"<>|]'
 
-## Python syntax pattern
+## Python syntax pattern.
 py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
 py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
-## Python interp traceback pattern
+## Python interp traceback pattern.
 py_error_re = r' +File "(.*?)", line ([0-9]+)'
 py_frame_re = r" +file '(.*?)', line ([0-9]+)"
 py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
 py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
 
-## Custom constants in wx.stc
+## Custom constants in wx.stc.
 stc.STC_STYLE_CARETLINE = 40
 stc.STC_STYLE_ANNOTATION = 41
 
@@ -282,7 +282,7 @@ class AutoCompInterfaceMixin:
             self.message("No completion words")
 
     def _gen_autocomp(self, j, hint, words, sep=' ', mode=True):
-        ## Prepare on_completion_forward/backward
+        ## Prepare on_completion_forward/backward.
         self.__comp_ind = j
         self.__comp_hint = hint
         self.__comp_words = words
@@ -322,7 +322,7 @@ class AutoCompInterfaceMixin:
                 for x in self.history if x.startswith(hint)]  # case-sensitive match
         words = sorted(set(ls), key=ls.index, reverse=0)      # keep order, no duplication
         
-        ## the latest history stacks in the head of the list (time-descending)
+        ## The latest history stacks in the head of the list (time-descending).
         self._gen_autocomp(0, hint, words, mode=False)
         self.message("[history] {} candidates matched"
                      " with {!r}".format(len(words), hint))
@@ -554,7 +554,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             },
         })
         
-        ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching
+        ## cf. wx.py.editwindow.EditWindow.OnUpdateUI => Check for brace matching.
         self.Bind(stc.EVT_STC_UPDATEUI,
                   lambda v: self.match_paren())  # no skip
         
@@ -578,7 +578,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 ss |= set(x for x in dir(obj) if x.startswith('__'))
             return ss
         
-        ## Keyword(2) setting
+        ## Keyword(2) setting.
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
         self.SetKeyWords(1, ' '.join(builtins.__dict__)
@@ -586,13 +586,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                                               tuple, list, range, operator,))
                           + ' self this shell')
         
-        ## AutoComp setting
+        ## AutoComp setting.
         self.AutoCompSetAutoHide(False)
         self.AutoCompSetIgnoreCase(True)
         self.AutoCompSetMaxWidth(80)
         self.AutoCompSetMaxHeight(10)
         
-        ## To prevent @filling crash (Never access to DropTarget)
+        ## To prevent @filling crash (Never access to DropTarget).
         ## [BUG ver 4.1.1] Don't allow DnD of text, file, whatever.
         ## self.SetDropTarget(None)
         
@@ -600,13 +600,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragging)
         self.Bind(stc.EVT_STC_DO_DROP, self.OnDragged)
         
-        ## Global style for all languages
+        ## Global style for all languages.
         ## font = wx.Font(9, wx.MODERN, wx.NORMAL, wx.NORMAL, False, "MS Gothic")
         ## self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
         ## self.StyleClearAll()
-        ## => STC_STYLE_DEFAULT に設定したスタイルを他のスタイルに全適用する
+        ## => STC_STYLE_DEFAULT に設定したスタイルを他のスタイルに全適用する．
         
-        ## The magin style for line numbers and symbols
+        ## The magin style for line numbers and symbols.
         ## [0] for markers, 10 pixels wide, mask 0b11111
         ## [1] for numbers, 32 pixels wide, mask 0x01ffffff (~stc.STC_MASK_FOLDERS)
         ## [2] for borders,  1 pixels wide, mask 0xfe000000 ( stc.STC_MASK_FOLDERS)
@@ -642,7 +642,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         self.Bind(stc.EVT_STC_MARGIN_RIGHT_CLICK, self.OnMarginRClick)
         
-        ## Custom markers
+        ## Custom markers.
         self.MarkerDefine(0, stc.STC_MARK_CIRCLE, '#007ff0', '#007ff0')  # o mark
         self.MarkerDefine(1, stc.STC_MARK_ARROW,  '#000000', '#ffffff')  # > arrow
         self.MarkerDefine(2, stc.STC_MARK_ARROW,  '#7f0000', '#ff0000')  # > red-arrow
@@ -654,13 +654,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS,  *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,    *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_LCORNER,  *v)
-        ## self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_TCORNER, *v)
-        ## self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_TCORNER, *v)
+        # self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_TCORNER, *v)
+        # self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_TCORNER, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_VLINE, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_VLINE, *v)
         
-        ## Custom indicators ([BUG] indicator=1 is reset when the buffer is updated.)
+        ## Custom indicators ([BUG] indicator=1 is reset when the buffer is updated).
         ## [10-11] filter_text
         ## [2] URL
         ## [3] match_paren
@@ -670,8 +670,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.IndicatorSetStyle(11, stc.STC_INDIC_STRAIGHTBOX)
         self.IndicatorSetForeground(11, "yellow")
         self.IndicatorSetUnder(11, True)
-        ## self.IndicatorSetAlpha(11, 0xe8)
-        ## self.IndicatorSetOutlineAlpha(11, 0)
+        # self.IndicatorSetAlpha(11, 0xe8)
+        # self.IndicatorSetOutlineAlpha(11, 0)
         
         self.IndicatorSetStyle(2, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(2, "light gray")
@@ -684,15 +684,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.IndicatorSetStyle(3, stc.STC_INDIC_DOTS)
         self.IndicatorSetForeground(3, "light gray")
         
-        ## Custom annotation
+        ## Custom annotation.
         self.AnnotationSetVisible(stc.STC_ANNOTATION_BOXED)
         
-        ## Custom style of control-char, wrap-mode
-        ## self.UseTabs = False
-        ## self.ViewEOL = False
-        ## self.ViewWhiteSpace = False
-        ## self.TabWidth = 4
-        ## self.EOLMode = stc.STC_EOL_CRLF
+        ## Custom style of control-char, wrap-mode.
+        # self.UseTabs = False
+        # self.ViewEOL = False
+        # self.ViewWhiteSpace = False
+        # self.TabWidth = 4
+        # self.EOLMode = stc.STC_EOL_CRLF
         self.WrapMode = stc.STC_WRAP_NONE
         self.WrapIndentMode = stc.STC_WRAPINDENT_SAME
         self.IndentationGuides = stc.STC_IV_LOOKFORWARD
@@ -951,7 +951,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         lst = self.get_style(p-1)
         rst = self.get_style(p)
         if lst == rst == 'moji':  # inside string
-            ## styles = {'moji'}
+            # styles = {'moji'}
             return ''
         elif lst == 'suji' or rst == 'suji':
             styles = {'suji'}
@@ -1207,7 +1207,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(',') if kv)
         
-        ## Apply the default style first
+        ## Apply the default style first.
         default = spec.pop(stc.STC_STYLE_DEFAULT, '')
         if default:
             self.StyleSetSpec(stc.STC_STYLE_DEFAULT, default)
@@ -1216,27 +1216,27 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
         self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         
-        ## Add style to the folding margin
+        ## Add style to the folding margin.
         item = _map(spec.get(stc.STC_STYLE_LINENUMBER, ''))
         if item:
-            ## Set colors used as a chequeboard pattern,
-            ## lo (back) one of the colors
-            ## hi (fore) the other color
+            ## Set colors used as a chequeboard pattern.
+            ## - lo (back) one of the colors
+            ## - hi (fore) the other color
             self.BackgroundColour = item.get('back')
             self.ForegroundColour = item.get('fore')
             if self.GetMarginWidth(2) > 1:
-                ## 12 pixel chequeboard, fore being default colour
+                ## 12 pixel chequeboard, fore being default colour.
                 self.SetFoldMarginColour(True, item.get('back'))
                 self.SetFoldMarginHiColour(True, 'light gray')
             else:
-                ## one pixel solid line, the same colour as the line number
+                ## One pixel solid line, the same colour as the line number.
                 self.SetFoldMarginColour(True, item.get('fore'))
                 self.SetFoldMarginHiColour(True, item.get('fore'))
         
         self.SetCaretLineVisible(0)
         self.SetCaretForeground(_map(default).get('fore'))
         
-        ## Custom style for caret and line colour
+        ## Custom style for caret and line colour.
         item = _map(spec.pop(stc.STC_STYLE_CARETLINE, ''))
         if item:
             if 'fore' in item:
@@ -1250,7 +1250,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             if 'bold' in item:
                 self.SetCaretStyle(stc.STC_CARETSTYLE_BLOCK)
         
-        ## Apply the rest of the style
+        ## Apply the rest of the style.
         for key, value in spec.items():
             self.StyleSetSpec(key, value)
 
@@ -1365,8 +1365,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         ## Was it still not found?
         if loc == -1:
-            ## wx.MessageBox("Unable to find the search text any more.",
-            ##               "Not found!", wx.OK|wx.ICON_INFORMATION)
+            # wx.MessageBox("Unable to find the search text any more.",
+            #               "Not found!", wx.OK|wx.ICON_INFORMATION)
             wx.Bell()
             pass
         else:
@@ -1524,15 +1524,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         def _format(ln):
             return "{:4d} {}".format(ln+1, self.GetLine(ln).strip())
         
-        ## pts = self.StyleGetSize(stc.STC_STYLE_DEFAULT)
-        ## self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts-1)
+        # pts = self.StyleGetSize(stc.STC_STYLE_DEFAULT)
+        # self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts-1)
         
         self.AutoCompSetSeparator(ord('\n'))
         self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines)))
         self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
         
-        ## self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
+        # self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts)
 
     def on_itext_exit(self, evt):
         """Called when exiting filter_text mode."""
@@ -1570,7 +1570,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             
             if interactive:
                 ## Update the caret position/status manually.
-                ## To update caret status, shake L/R w/o modifier
+                ## To update caret status, shake L/R w/o modifier.
                 ## Don't do this if selection is active.
                 vk = wx.UIActionSimulator()
                 modkeys = [k for k in (wx.WXK_CONTROL, wx.WXK_ALT, wx.WXK_SHIFT)
@@ -1591,8 +1591,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         """Goto line with selection."""
         if ln is None or ln < 0:
             return
-        ## if ln < 0:
-        ##     ln += self.LineCount
+        # if ln < 0:
+        #     ln += self.LineCount
         if selection:
             self.cline = ln
         else:
@@ -1730,7 +1730,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if self.SelectedText:
             self.comment_out_selection()
         else:
-            ## align with current or previous indent position
+            ## Align with current or previous indent position.
             self.back_to_indentation()
             text = self.GetLine(self.cline - 1)
             lstr, j = self.py_strip_indents(text)
@@ -1779,7 +1779,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not self.SelectedText:
             p = self.cpos
             if p == self.eol:
-                ## self.WordRightEndExtend()  # Select cr/lf chunks
+                ## self.WordRightEndExtend()  # Select cr/lf chunks.
                 if self.get_char(p) == '\r': p += 1
                 if self.get_char(p) == '\n': p += 1
                 self.cpos = p
@@ -1792,7 +1792,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not self.SelectedText:
             p = self.cpos
             if p == self.bol:
-                ## self.WordLeftExtend()  # Select cr/lf chunks
+                ## self.WordLeftExtend()  # Select cr/lf chunks.
                 if self.get_char(p-1) == '\n': p -= 1
                 if self.get_char(p-1) == '\r': p -= 1
                 self.cpos = p
@@ -1945,7 +1945,7 @@ class Buffer(EditorInterface, EditWindow):
         
         def clear(evt):
             ## """Clear selection and message, no skip."""
-            ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
+            ## *DO NOT* clear autocomp, so that the event can skip to AutoComp properly.
             if self.CanEdit():
                 with self.off_undocollection():
                     self.ReplaceSelection('')
@@ -2075,7 +2075,7 @@ class Buffer(EditorInterface, EditWindow):
 
     def OnIndicatorClick(self, evt):  #<wx._stc.StyledTextEvent>
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
-            ## Processing text selection, dragging, or dragging+
+            ## Processing text selection or dragging.
             evt.Skip()
             return
         
@@ -2470,7 +2470,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.default_buffer = buf
         else:
             buf.ClearAll()
-            ## buf.EmptyUndoBuffer()
+            # buf.EmptyUndoBuffer()
         buf.SetFocus()
         return buf
 
@@ -2711,7 +2711,7 @@ class Interpreter(interpreter.Interpreter):
         except Exception:
             self.showtraceback()
         finally:
-            ## ex. KeyboardInterrupt:
+            ## ex. KeyboardInterrupt
             if wx.IsBusy():
                 wx.EndBusyCursor()
 
@@ -2908,7 +2908,7 @@ class Nautilus(EditorInterface, Shell):
         
         def clear(evt):
             ## """Clear selection and message, no skip."""
-            ## *do not* clear autocomp, so that the event can skip to AutoComp properly.
+            ## *DO NOT* clear autocomp, so that the event can skip to AutoComp properly.
             if self.CanEdit():
                 with self.off_undocollection():
                     self.ReplaceSelection('')
@@ -3126,7 +3126,7 @@ class Nautilus(EditorInterface, Shell):
         self.show_folder()
         self.set_stylus(Stylus.py_shell_mode)
         
-        ## delete unnecessary arrows at startup
+        ## Delete unnecessary arrows at startup.
         del self.white_arrow
         del self.red_arrow
         
@@ -3228,13 +3228,13 @@ class Nautilus(EditorInterface, Shell):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        ## skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help)
+        ## Skip to wx.py.magic if text begins with !(sx), ?(info), and ??(help).
         text = self.cmdline
         if not text or text[0] in '!?':
             evt.Skip()
             return
         
-        ## cast magic for `@? (Note: PY35 supports @(matmul)-operator)
+        ## Cast magic for `@? (Note: PY35 supports @(matmul)-operator).
         tokens = list(split_words(text))
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
@@ -3556,7 +3556,7 @@ class Nautilus(EditorInterface, Shell):
         if not command:
             return
         
-        ## この段階では push された直後で，次のようになっている
+        ## この段階では push された直後で，次のようになっている．
         ## bolc : beginning of command-line
         ## eolc : end of the output-buffer
         try:
@@ -3573,8 +3573,8 @@ class Nautilus(EditorInterface, Shell):
             command = self.fixLineEndings(command)
             self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:
-            ## execStartupScript 実行時は出力先 (owner) が存在しない
-            ## shell.__init__ よりも先に実行される
+            ## execStartupScript 実行時は出力先 (owner) が存在しない．
+            ## shell.__init__ よりも先に実行される．
             pass
 
     def setBuiltinKeywords(self):
@@ -3618,7 +3618,7 @@ class Nautilus(EditorInterface, Shell):
             data = wx.TextDataObject()
             if wx.TheClipboard.GetData(data):
                 command = data.GetText()
-                ## command = command.rstrip()
+                # command = command.rstrip()
                 command = self.fixLineEndings(command)
                 command = self.regulate_cmd(command)
                 ps = sys.ps2

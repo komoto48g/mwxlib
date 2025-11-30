@@ -14,7 +14,7 @@ from . import framework as mwx
 from .framework import hotkey, regulate_key, postcall, pack, Menu, FSM
 
 
-## state constants
+## State constants.
 NORMAL = 'Normal'
 DRAGGING = '-dragging'
 PAN, ZOOM = 'Pan', 'Zoom'
@@ -22,7 +22,7 @@ XAXIS, YAXIS = 'Xaxis', 'Yaxis'
 MARK, LINE, REGION = 'Mark', 'Line', 'Region'
 
 
-## Monkey-patch for matplotlib 3.4/WXAgg
+## Monkey-patch for matplotlib 3.4/WXAgg.
 if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     from matplotlib.backend_bases import Event
 
@@ -35,7 +35,7 @@ if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     del __init__
 
 
-## Monkey-patch (local) for matplotlib 3.8/WXAgg
+## Monkey-patch (local) for matplotlib 3.8/WXAgg.
 if 1:
     class Cursor(Cursor):
         def onmove(self, event):
@@ -49,7 +49,7 @@ if 1:
             if not self.canvas.widgetlock.available(self):
                 return
             
-            ## xdata, ydata = self._get_data_coords(event)  # >= 3.8 only
+            ## xdata, ydata = self._get_data_coords(event)  # >= 3.8 only.
             xdata, ydata = event.xdata, event.ydata
             self.linev.set_xdata((xdata, xdata))
             self.linev.set_visible(self.visible and self.vertOn)
@@ -91,9 +91,9 @@ class MatplotPanel(wx.Panel):
         #<matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
         self.canvas = FigureCanvas(self, -1, self.figure)
         
-        ## To avoid AssertionError('self._cachedRenderer is not None')
-        ## To avoid AttributeError("draw_artist can only be used after an "
-        ##                         "initial draw which caches the renderer")
+        ## To avoid AssertionError "self._cachedRenderer is not None"
+        ## To avoid AttributeError "draw_artist can only be used after an "
+        ##                         "initial draw which caches the renderer"
         self.canvas.draw()
         
         #<matplotlib.backends.backend_wxagg.NavigationToolbar2WxAgg>
@@ -128,8 +128,8 @@ class MatplotPanel(wx.Panel):
         ## mpl event handler
         self.canvas.mpl_connect('pick_event', self.on_pick)
         self.canvas.mpl_connect('scroll_event', self.on_scroll)
-        ## self.canvas.mpl_connect('key_press_event', self.on_key_press)
-        ## self.canvas.mpl_connect('key_release_event', self.on_key_release)
+        # self.canvas.mpl_connect('key_press_event', self.on_key_press)
+        # self.canvas.mpl_connect('key_release_event', self.on_key_release)
         self.canvas.mpl_connect('button_press_event', self.on_button_press)
         self.canvas.mpl_connect('button_release_event', self.on_button_release)
         self.canvas.mpl_connect('motion_notify_event', self.on_motion_notify)
@@ -138,8 +138,8 @@ class MatplotPanel(wx.Panel):
         self.canvas.mpl_connect('figure_leave_event', lambda v: self.handler('figure_leave', v))
         self.canvas.mpl_connect('axes_enter_event', lambda v: self.handler('axes_enter', v))
         self.canvas.mpl_connect('axes_leave_event', lambda v: self.handler('axes_leave', v))
-        ## self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
-        ## self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
+        # self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
+        # self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
@@ -291,8 +291,8 @@ class MatplotPanel(wx.Panel):
             (mwx.ID_(501), "&Copy image", "Copy canvas image to clipboard",
                 lambda v: self.copy_to_clipboard()),
                 
-            ## (mwx.ID_(502), "&Export image", "Save canvas image",
-            ##     lambda v: self.save_to_file()),
+            # (mwx.ID_(502), "&Export image", "Save canvas image",
+            #     lambda v: self.save_to_file()),
         ]
         
         self.__key = ''
@@ -324,7 +324,7 @@ class MatplotPanel(wx.Panel):
         if isinstance(art, matplotlib.artist.Artist):
             self.axes.draw_artist(art)
             self.canvas.blit(art.get_clip_box())
-            ## self.canvas.draw_idle()
+            # self.canvas.draw_idle()
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
@@ -339,7 +339,7 @@ class MatplotPanel(wx.Panel):
     ## Property of the current frame.
     ## --------------------------------
 
-    ## to be overridden (referenced in draw).
+    ## To be overridden (referenced in draw).
     frame = property(lambda self: self)
 
     axes = property(
@@ -369,8 +369,8 @@ class MatplotPanel(wx.Panel):
     @property
     def ddpu(self):
         """Display-dot resolution (x, y) [dots per arb.unit]."""
-        ## return self.mapxy2disp(1,1) - self.mapxy2disp(0,0)
-        a, b = self.mapxy2disp([0,1],[0,1])
+        # return self.mapxy2disp(1,1) - self.mapxy2disp(0,0)
+        a, b = self.mapxy2disp([0,1], [0,1])
         return b - a
 
     def mapxy2disp(self, x, y):
@@ -426,16 +426,16 @@ class MatplotPanel(wx.Panel):
 
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
-        ## b = self.selected.get_visible()
+        # b = self.selected.get_visible()
         c = self.cursor.visible
         try:
-            ## self.selected.set_visible(0)
+            # self.selected.set_visible(0)
             self.cursor.visible = 0
             self.canvas.draw()
             self.canvas.Copy_to_Clipboard()
             self.message("Copy image to clipboard.")
         finally:
-            ## self.selected.set_visible(b)
+            # self.selected.set_visible(b)
             self.cursor.visible = c
             self.canvas.draw()
 
@@ -690,13 +690,13 @@ class MatplotPanel(wx.Panel):
 
     def OnPanBegin(self, evt):
         """Toolbar pan - While panning, press x/y to constrain the direction."""
-        ## self.toolbar.set_cursor(2)
+        # self.toolbar.set_cursor(2)
         self.set_wxcursor(wx.CURSOR_HAND)
         self.toolbar.pan()
         self.__prev = self.handler.previous_state  # save previous state of PAN
 
     def OnPanEnd(self, evt):
-        ## self.toolbar.set_cursor(1)
+        # self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
         self.handler.current_state = self.__prev  # --> previous state of PAN
@@ -704,64 +704,64 @@ class MatplotPanel(wx.Panel):
 
     def OnZoomBegin(self, evt):
         """Toolbar zoom - While zooming, press x/y to constrain the direction."""
-        ## self.toolbar.set_cursor(3)
+        # self.toolbar.set_cursor(3)
         self.set_wxcursor(wx.CURSOR_CROSS)
         self.toolbar.zoom()
         self.__prev = self.handler.previous_state  # save previous state of ZOOM
 
     def OnZoomEnd(self, evt):
-        ## self.toolbar.set_cursor(1)
+        # self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
         self.handler.current_state = self.__prev  # --> previous state of ZOOM
         del self.__prev
 
-    ## def OnZoomMove(self, evt):
-    ##     """Zoom."""
-    ##     ## http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744
-    ##     ## matplotlib.backends.backend_wx - NavigationToolbar2Wx.draw_rubberband
-    ##     dc = wx.ClientDC(self.canvas)
-    ##     
-    ##     ## Set logical function to XOR for rubberbanding
-    ##     dc.SetLogicalFunction(wx.XOR)
-    ##     
-    ##     ## Set dc brush and pen
-    ##     wbrush = wx.Brush(wx.Colour(255,255,255), wx.TRANSPARENT)
-    ##     wpen = wx.Pen(wx.Colour(255,255,255), 1, wx.SOLID)
-    ##     dc.SetBrush(wbrush)
-    ##     dc.SetPen(wpen)
-    ##     dc.ResetBoundingBox()
-    ##     dc.BeginDrawing()
-    ##     
-    ##     height = self.canvas.figure.bbox.height
-    ##     org = self.p_event
-    ##     x0, y0 = org.x, org.y
-    ##     x1, y1 = evt.x, evt.y
-    ##     y0 = height - y0
-    ##     y1 = height - y1
-    ##     if y1 < y0: y0, y1 = y1, y0
-    ##     if x1 < y0: x0, x1 = x1, x0
-    ##     w = x1 - x0
-    ##     h = y1 - y0
-    ##     rect = int(x0), int(y0), int(w), int(h)
-    ##     try:
-    ##         dc.DrawRectangle(*self.__lastrect)  #erase last
-    ##     except AttributeError:
-    ##         pass
-    ##     
-    ##     self.__lastrect = rect
-    ##     dc.DrawRectangle(*rect)
-    ##     dc.EndDrawing()
-    ## 
-    ## def OnZoomEnd(self, evt):
-    ##     try:
-    ##         del self.__lastrect
-    ##         self.xbound = (self.p_event.xdata, evt.xdata)
-    ##         self.ybound = (self.p_event.ydata, evt.ydata)
-    ##     except AttributeError:
-    ##         pass
-    ##     self.toolbar.set_cursor(1)
-    ##     self.draw()
+    # def OnZoomMove(self, evt):
+    #     """Zoom."""
+    #     ## http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744
+    #     ## matplotlib.backends.backend_wx - NavigationToolbar2Wx.draw_rubberband
+    #     dc = wx.ClientDC(self.canvas)
+    #     
+    #     ## Set logical function to XOR for rubberbanding.
+    #     dc.SetLogicalFunction(wx.XOR)
+    #     
+    #     ## Set dc brush and pen.
+    #     wbrush = wx.Brush(wx.Colour(255,255,255), wx.TRANSPARENT)
+    #     wpen = wx.Pen(wx.Colour(255,255,255), 1, wx.SOLID)
+    #     dc.SetBrush(wbrush)
+    #     dc.SetPen(wpen)
+    #     dc.ResetBoundingBox()
+    #     dc.BeginDrawing()
+    #     
+    #     height = self.canvas.figure.bbox.height
+    #     org = self.p_event
+    #     x0, y0 = org.x, org.y
+    #     x1, y1 = evt.x, evt.y
+    #     y0 = height - y0
+    #     y1 = height - y1
+    #     if y1 < y0: y0, y1 = y1, y0
+    #     if x1 < y0: x0, x1 = x1, x0
+    #     w = x1 - x0
+    #     h = y1 - y0
+    #     rect = int(x0), int(y0), int(w), int(h)
+    #     try:
+    #         dc.DrawRectangle(*self.__lastrect)  #erase last
+    #     except AttributeError:
+    #         pass
+    #     
+    #     self.__lastrect = rect
+    #     dc.DrawRectangle(*rect)
+    #     dc.EndDrawing()
+    # 
+    # def OnZoomEnd(self, evt):
+    #     try:
+    #         del self.__lastrect
+    #         self.xbound = (self.p_event.xdata, evt.xdata)
+    #         self.ybound = (self.p_event.ydata, evt.ydata)
+    #     except AttributeError:
+    #         pass
+    #     self.toolbar.set_cursor(1)
+    #     self.draw()
 
     ## --------------------------------
     ## Axis actions.

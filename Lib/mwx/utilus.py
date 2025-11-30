@@ -233,8 +233,8 @@ def where(obj):
         name = obj.tb_frame.f_code.co_name
         return "{}:{}:{}".format(filename, lineno, name)
     
-    ## if inspect.isbuiltin(obj):
-    ##     return None
+    # if inspect.isbuiltin(obj):
+    #     return None
     
     def _where(obj):
         obj = inspect.unwrap(obj)
@@ -428,7 +428,7 @@ def find_modules(force=False, verbose=True):
         with open(fn, 'r') as o:
             lm = eval(o.read())  # read and evaluate module list
         
-        ## Check additional packages and modules
+        ## Check additional packages and modules.
         verbose = False
         for info in walk_packages_no_import(['.']):
             _callback('.', info.name)
@@ -787,7 +787,7 @@ class FSM(dict):
                         continue
                     for act in transaction[1:]:
                         self.unbind(event, act, k)
-        ## cleanup
+        ## Cleanup.
         for k, v in list(self.items()):  # self mutates during iteration
             if not v:
                 del self[k]

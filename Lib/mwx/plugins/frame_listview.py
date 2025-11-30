@@ -34,7 +34,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def all_items(self):
         rows = range(self.ItemCount)
         cols = range(self.ColumnCount)
-        ## return [[self.GetItemText(j, k) for k in cols] for j in rows]
+        # return [[self.GetItemText(j, k) for k in cols] for j in rows]
         for j in rows:
             yield [self.GetItemText(j, k) for k in cols]
 

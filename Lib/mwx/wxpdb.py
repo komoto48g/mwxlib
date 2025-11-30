@@ -63,7 +63,7 @@ class Debugger(Pdb):
     @interactive_shell.setter
     def interactive_shell(self, v):
         self.__shell = v
-        ## Don't use rawinput
+        ## Don't use rawinput.
         self.stdin = self.__shell.interp.stdin
         self.stdout = self.__shell.interp.stdout
 
@@ -98,7 +98,7 @@ class Debugger(Pdb):
         self.__hookpoint = None
         
         def _input(msg):
-            ## redirects input such as cl(ear)
+            ## Redirects input such as cl(ear).
             self.message(msg, indent=0)
             return self.stdin.readline()
         pdb.input = _input
@@ -211,13 +211,13 @@ class Debugger(Pdb):
         self.reset()
         sys.settrace(None)
         threading.settrace(None)
-        ## delete bp *after* setting dispatcher -> None
+        ## Delete bp *after* setting dispatcher -> None.
         self.__hookpoint = None
         if bp:
             self.handler('trace_end', bp)
         else:
-            ## Called to abort when the debugger is invalid status:
-            ## e.g., (self.handler.current_state > 0 but not busy)
+            ## Called to abort when the debugger is invalid status.
+            ## e.g., (self.handler.current_state > 0 but not busy).
             self.handler('abort')
 
     def debug(self, obj, *args, **kwargs):

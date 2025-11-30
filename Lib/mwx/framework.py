@@ -174,9 +174,9 @@ def hotkey(evt):
     mod = ""
     for k, v in ((wx.WXK_WINDOWS_LEFT, 'Lwin-'),
                  (wx.WXK_WINDOWS_RIGHT, 'Rwin-'),
-                 ## (wx.WXK_CONTROL, 'C-'),
-                 ## (wx.WXK_ALT,     'M-'),
-                 ## (wx.WXK_SHIFT,   'S-')
+                 # (wx.WXK_CONTROL, 'C-'),
+                 # (wx.WXK_ALT,     'M-'),
+                 # (wx.WXK_SHIFT,   'S-')
                  ):
         if key != k and wx.GetKeyState(k):  # Note: lazy-eval state
             mod += v
@@ -484,8 +484,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
 ## --------------------------------
 
 def ID_(id):
-    ## Free ID - どこで使っているか検索できるように
-    ## do not use [ID_LOWEST(4999):ID_HIGHEST(5999)]
+    ## Free ID - どこで使っているか検索できるように．
+    ## Do not use [ID_LOWEST(4999):ID_HIGHEST(5999)].
     id += wx.ID_HIGHEST
     assert not wx.ID_LOWEST <= id <= wx.ID_HIGHEST
     return id
@@ -807,7 +807,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
         
-        ## To disable, self.SetMenuBar(None)
+        ## To disable, call self.SetMenuBar(None).
         self.menubar = MenuBar()
         self.SetMenuBar(self.menubar)
         
@@ -815,7 +815,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.statusbar.Show(0)
         self.SetStatusBar(self.statusbar)
         
-        ## AcceleratorTable mimic
+        ## AcceleratorTable mimic.
         def hook_char(evt):
             """Called when key down."""
             if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
@@ -825,7 +825,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
-        ## To default close >>> self.Unbind(wx.EVT_CLOSE)
+        ## To default close >>> self.Unbind(wx.EVT_CLOSE).
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
         self.__handler = FSM({ # DNA<MiniFrame>
@@ -971,7 +971,7 @@ class AuiNotebook(aui.AuiNotebook):
         tabinfo = re.findall(r"pane\w+?=(.*?);(.*?)\|", tabs)
         try:
             self.Parent.Freeze()
-            ## Collapse all tabctrls to main tabctrl
+            ## Collapse all tabctrls to main tabctrl.
             for win in self.get_pages():
                 self.move_tab(win, 0)
             
@@ -1276,7 +1276,7 @@ class ShellFrame(MiniFrame):
             },
         })
         
-        ## Session files
+        ## Session files.
         self.SESSION_FILE = get_rootpath(".debrc")
         self.SCRATCH_FILE = get_rootpath("scratch.py")
         self.LOGGING_FILE = get_rootpath("deb-logging.log")
@@ -1364,7 +1364,7 @@ class ShellFrame(MiniFrame):
         try:
             builtins.dive
         except AttributeError:
-            ## Add useful built-in functions and methods
+            ## Add useful built-in functions and methods.
             builtins.apropos = apropos
             builtins.typename = typename
             builtins.reload = reload
@@ -1386,7 +1386,7 @@ class ShellFrame(MiniFrame):
 
     def Destroy(self):
         try:
-            ## Remove built-in self methods
+            ## Remove built-in self methods.
             del builtins.info
             del builtins.help
             del builtins.load
@@ -1509,7 +1509,7 @@ class ShellFrame(MiniFrame):
         nb = evt.EventObject
         win = list(nb.get_pages())[evt.Selection]
         if win is self.rootshell:
-            ## self.message("Don't close the root shell.")
+            # self.message("Don't close the root shell.")
             nb.WindowStyle &= ~aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             evt.Veto()
         elif self.debugger.busy and win is self.debugger.interactive_shell:
@@ -1674,7 +1674,7 @@ class ShellFrame(MiniFrame):
         else:
             print("- obj must be callable, or a string, bytes, or code object.")
 
-    ## Note: history に余計な文字列が入らないようにする
+    ## Note: history に余計な文字列が入らないようにする．
     @postcall
     def debug(self, obj, *args, **kwargs):
         shell = self.debugger.interactive_shell
@@ -1822,8 +1822,8 @@ class ShellFrame(MiniFrame):
             return
         
         ## Logging text every step in case of crash.
-        ## with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
-        ##     o.write(text)
+        # with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
+        #     o.write(text)
 
     def add_help(self, text, title=None):
         """Add text to the help buffer.
@@ -1860,7 +1860,7 @@ class ShellFrame(MiniFrame):
     def delete_shell(self, shell):
         """Close the current shell."""
         if shell is self.rootshell:
-            ## self.message("- Don't close the root shell.")
+            # self.message("- Don't close the root shell.")
             return
         if self.debugger.busy and shell is self.debugger.interactive_shell:
             wx.MessageBox("The debugger is running.\n\n"

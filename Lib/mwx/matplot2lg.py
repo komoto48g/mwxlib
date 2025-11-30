@@ -65,7 +65,7 @@ class LinePlot(MatplotPanel):
         self.__vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
 
-    ## the limit for dragging region
+    ## The limit for dragging region.
     boundary = None
 
     @property
@@ -269,18 +269,18 @@ class Histogram(LinePlot):
 
     @property
     def boundary(self):
-        return [0,255]
+        return [0, 255]
 
     def calc(self, frame):
         BINS = 256
         img = frame.image
         if img.dtype == np.uint8:
-            ## 整数ビット画像は，高速なビンづめ法で計算する
+            ## 整数ビット画像は，高速なビンづめ法で計算する．
             hist = np.bincount(img.ravel(), minlength=BINS)
             bins = np.arange(BINS)
         else:
-            ## hist は [min:max] 段階 (256 BINS) で保持されている
-            ## bins は 端数含め [0:BINS] (257 コ) あるので１個減す
+            ## hist は [min:max] 段階 (256 BINS) で保持されている．
+            ## bins は 端数含め [0:BINS] (257 コ) あるので１個減す．
             hist, bins = np.histogram(img, BINS)
             bins = np.linspace(img.min(), img.max(), BINS)
         return bins, hist
@@ -551,7 +551,7 @@ class LineProfile(LinePlot):
                 L = 0
                 nv = (0, 0)
             
-            ## ピクセル空間：長さ L, サイズ N 分割でラインプロファイルをとる
+            ## ピクセル空間：長さ L, サイズ N 分割でラインプロファイルをとる．
             lw = self.__linewidth
             N = int(L) + 1
             xs = np.linspace(nx[0], nx[1], N)

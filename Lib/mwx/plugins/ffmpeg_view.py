@@ -83,7 +83,7 @@ class Plugin(Layer):
         self.mc.Create(self, size=(300,300),
                        style=wx.SIMPLE_BORDER,
                        szBackend=wx.media.MEDIABACKEND_WMP10
-                       ## szBackend=wx.media.MEDIABACKEND_DIRECTSHOW
+                       # szBackend=wx.media.MEDIABACKEND_DIRECTSHOW
         )
         self.mc.ShowPlayerControls()
         self.mc.Bind(wx.media.EVT_MEDIA_LOADED, self.OnMediaLoaded)

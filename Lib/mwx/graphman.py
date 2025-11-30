@@ -20,7 +20,6 @@ from wx import stc
 
 from matplotlib import cm
 from matplotlib import colors
-## from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image
 from PIL.TiffImagePlugin import TiffImageFile
@@ -416,7 +415,7 @@ class LayerInterface(CtrlInterface):
     def OnDestroy(self, evt):
         if evt.EventObject is self:
             if self.thread and self.thread.active:
-                ## self.thread.active = 0
+                # self.thread.active = 0
                 self.thread.Stop()
             del self.Arts
         evt.Skip()
@@ -441,7 +440,7 @@ class LayerInterface(CtrlInterface):
         (override) Equivalent to ``IsShownOnScreen``.
                    Note: The instance could be a page within a notebook.
         """
-        ## return self.pane.IsShown()
+        # return self.pane.IsShown()
         return self.IsShownOnScreen()
 
     def Show(self, show=True, interactive=False):
@@ -490,7 +489,7 @@ class Layer(LayerInterface, KnobCtrlPanel):
 
 def _register__dummy_plug__(cls, module):
     if issubclass(cls, LayerInterface):
-        ## warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
+        # warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
         module.Plugin = cls
         return cls
 
@@ -532,7 +531,7 @@ class Graph(GraphPlot):
                    'f5 pressed' : [ None, _F(self.refresh) ],
             },
         })
-        ## ドロップターゲットを許可する
+        ## ドロップターゲットを許可する．
         self.SetDropTarget(MyFileDropLoader(self, self.loader))
 
     def refresh(self):
@@ -749,10 +748,10 @@ class Frame(mwx.Frame):
         
         self.menubar["Edit"] += [
             (),
-            ## (mwx.ID_(26), "Default Color", "gray", wx.ITEM_CHECK,
-            ##     lambda v: self.__view.set_cmapstr('gray'),
-            ##     lambda v: v.Check(self.__view.get_cmapstr()[:4] == "gray")),
-            ##     
+            # (mwx.ID_(26), "Default Color", "gray", wx.ITEM_CHECK,
+            #     lambda v: self.__view.set_cmapstr('gray'),
+            #     lambda v: v.Check(self.__view.get_cmapstr()[:4] == "gray")),
+            #     
             ("Standard colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
                 
@@ -792,7 +791,7 @@ class Frame(mwx.Frame):
             },
         })
         
-        ## Add main-menu to context-menu
+        ## Add main-menu to context-menu.
         self.graph.menu += self.menubar["Edit"][2:4]
         self.output.menu += self.menubar["Edit"][2:4]
         
@@ -813,7 +812,7 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_MOVE_START, lambda v: on_move(v, show=0))
         self.Bind(wx.EVT_MOVE_END, lambda v: on_move(v, show=1))
         
-        ## Custom Key Bindings
+        ## Custom Key Bindings.
         self.define_key('* C-g', self.Quit)
         
         @self.shellframe.define_key('* C-g')
@@ -821,7 +820,7 @@ class Frame(mwx.Frame):
             """Dispatch quit to the main Frame."""
             self.handler('C-g pressed', evt)
         
-        ## Accepts DnD
+        ## Accepts DnD.
         self.SetDropTarget(MyFileDropLoader(self.graph, self))
 
     SYNC_SWITCH = True
@@ -918,7 +917,7 @@ class Frame(mwx.Frame):
             return
         
         ## Set the graph and output window sizes to half & half.
-        ## ドッキング時に再計算される
+        ## ドッキング時に再計算される．
         if name == "output" or name is self.output:
             w, h = self.graph.GetClientSize()
             pane.best_size = (w//2 - 3, h)  # 分割線幅補正 -12pix (Windows only ?)
@@ -1043,7 +1042,7 @@ class Frame(mwx.Frame):
             if name in self.plugins:
                 return self.plugins[name].__plug__
         elif isinstance(name, LayerInterface):
-            ## return name
+            # return name
             return next((x for x in self.get_all_plugs() if x is name), None)
 
     def get_all_plugs(self):
@@ -1089,7 +1088,7 @@ class Frame(mwx.Frame):
             name = name[:-3]
         
         if not force:
-            ## 文字列参照 (full-path) による重複ロードを避ける
+            ## 文字列参照 (full-path) による重複ロードを避ける．
             module = next((v for v in self.plugins.values() if root == v.__file__), None)
             if module:
                 plug = module.__plug__
@@ -1306,7 +1305,7 @@ class Frame(mwx.Frame):
         
         self.load_plug(plug.__module__, force=1, session=session)
         
-        ## Update shell.target --> new plug
+        ## Update shell.target --> new plug.
         for shell in self.shellframe.get_all_shells():
             if shell.target is plug:
                 shell.handler('shell_activated', shell)
@@ -1348,7 +1347,7 @@ class Frame(mwx.Frame):
         for plug in self.get_all_plugs():
             thread = plug.thread  # Note: thread can be None or shared.
             if thread and thread.active:
-                ## thread.active = 0
+                # thread.active = 0
                 thread.Stop()
 
     ## --------------------------------

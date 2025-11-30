@@ -25,7 +25,7 @@ class MyDropTarget(wx.DropTarget):
         item, flags = self.tree.HitTest((x, y))
         items = list(self.tree._gen_items(self.tree.RootItem))  # first level items
         if self.datado.Format.Id != "TreeItem":
-            return wx.DragNone  # Don't drag and drop
+            return wx.DragNone  # Don't drag and drop.
         if not item:
             item = items[0]  # Select the first tree item.
         elif item not in items:
@@ -78,7 +78,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         
         self.parent = parent
         
-        ## self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
+        # self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -148,7 +148,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             if not key:
                 yield item
             else:
-                ## キャプション先頭の識別子 %* を除外して比較する
+                ## キャプション先頭の識別子 %* を除外して比較する．
                 caption = self.GetItemText(item)
                 if key == re.sub(r"^\W+\s+(.*)", r"\1", caption):
                     yield item
@@ -185,8 +185,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     def on_buffer_deleted(self, buf):
         self.Delete(buf.__itemId)
 
-    ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる
-    ##       buf.__itemId がない場合がある (delete_buffer 直後など)
+    ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる．
+    ##       buf.__itemId がない場合がある (delete_buffer 直後など).
     def on_buffer_selected(self, buf):
         if self and buf:
             wx.CallAfter(lambda: self.SelectItem(buf.__itemId))

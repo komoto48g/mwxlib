@@ -13,7 +13,7 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
-## from .utilus import warn
+# from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -101,7 +101,7 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
         b = src.max()
     
     r = (255 / (b - a)) if a < b else 1
-    ## img = cv2.convertScaleAbs(src, alpha=r, beta=-r*a)  # 負数は絶対値になるので以下に変更
+    ## img = cv2.convertScaleAbs(src, alpha=r, beta=-r*a)  # 負数は絶対値になるので以下に変更．
     img = np.uint8((src - a) * r)
     img[src < a] = 0
     img[src > b] = 255
@@ -363,7 +363,7 @@ class AxesImagePhantom:
         def _cast(n):
             return np.int32(np.floor(np.round(n, 1)))
         if y is None:
-            ## warn("Setting xy data with single tuple.", DeprecationWarning)
+            # warn("Setting xy data with single tuple.", DeprecationWarning)
             x, y = x
         x, y = _to_array(x), _to_array(y)
         l,r,b,t = self.__art.get_extent()
@@ -378,7 +378,7 @@ class AxesImagePhantom:
         """Convert pixel [nx,ny] -> (x,y) xydata (float number).
         """
         if ny is None:
-            ## warn("Setting xy data with single tuple.", DeprecationWarning)
+            # warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
         nx, ny = _to_array(nx), _to_array(ny)
         l,r,b,t = self.__art.get_extent()
@@ -622,7 +622,7 @@ class GraphPlot(MatplotPanel):
                 lambda v: v.Enable(self.frame is not None)),
         ]
         
-        ## modeline menu: バッファリストメニューを追加する
+        ## modeline menu: バッファリストメニューを追加する．
         def _menu(j, s):
             return (j, s, s, wx.ITEM_CHECK,
                 lambda v: self.select(s),
@@ -643,7 +643,7 @@ class GraphPlot(MatplotPanel):
         self.__Arts = []
         self.__index = None
         
-        ## cf. self.figure.dpi = 80dpi (0.3175mm/pix)
+        ## cf. self.figure.dpi = 80 dpi (0.3175 mm/pix)
         self.__unit = 1.0
         
         #<matplotlib.lines.Line2D>
@@ -708,7 +708,7 @@ class GraphPlot(MatplotPanel):
         
         name = self.get_uniqname(name)
         
-        ## The first load of axes.imshow (=> self.axes.axis 表示を更新する)
+        ## The first load of axes.imshow (=> self.axes.axis 表示を更新する).
         art = AxesImagePhantom(self, buf, name, show, **kwargs)
         
         j = len(self) if pos is None else pos
@@ -717,7 +717,7 @@ class GraphPlot(MatplotPanel):
         if show:
             u = self.frame and self.frame.unit  # current frame unit
             self.select(j)
-            ## Update view if the unit length is different from before selection
+            ## Update view if the unit length is different from before selection.
             if u != art.unit:
                 self.axes.axis(art.get_extent())
         return art
@@ -799,8 +799,8 @@ class GraphPlot(MatplotPanel):
                 self.__index = None if n==0 else j if j<n else n-1
             self.select(self.__index)
 
-    ## __len__ は bool() でも呼び出されるため，オブジェクト判定で偽を返すことがある (PY2)
-    ## __nonzero__ : bool() を追加しておく必要がある (PY2)
+    ## __len__ は bool() でも呼び出されるため，オブジェクト判定で偽を返すことがある (PY2).
+    ## __nonzero__ : bool() を追加しておく必要がある (PY2).
 
     def __len__(self):
         return len(self.__Arts)
@@ -848,10 +848,10 @@ class GraphPlot(MatplotPanel):
     ## Property of frame / drawer.
     ## --------------------------------
 
-    ## image bytes max for loading matplotlib (with wxAgg backend)
+    ## Image bytes max for loading matplotlib (with wxAgg backend).
     nbytes_threshold = 24e6
 
-    ## image cutoff score percentiles
+    ## Image cutoff score percentiles.
     score_percentile = 0.005
 
     @property
@@ -1017,7 +1017,7 @@ class GraphPlot(MatplotPanel):
                 unit = self.__unit))
 
     ## --------------------------------
-    ## 外部入出力／複合インターフェース
+    ## 外部入出力／複合インターフェース．
     ## --------------------------------
     ## GraphPlot 間共有のグローバル変数
     clipboard_name = None
@@ -1100,14 +1100,14 @@ class GraphPlot(MatplotPanel):
         if not evt.mouseevent.inaxes:
             return
         
-        ## 画像が選択された場合
+        ## 画像が選択された場合．
         if evt.artist in self.__Arts:
             if self.__isPicked:
                 self.__isPicked = None  # release pick guard
             else:
                 self.handler('image_picked', evt)
         
-        ## その他のプロットが選択された場合
+        ## その他のプロットが選択された場合．
         else:
             if evt.artist is self.marked:
                 self.__isPicked = 'mark'  # image pick gurad
@@ -1154,7 +1154,7 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     ## antialiased, nearest, bilinear, bicubic, spline16,
     ## spline36, hanning, hamming, hermite, kaiser, quadric,
-    ## catrom, gaussian, bessel, mitchell, sinc, lanczos, or none
+    ## catrom, gaussian, bessel, mitchell, sinc, lanczos, or none.
     interpolation_mode = 'bilinear'
 
     def OnDraw(self, evt):
@@ -1380,7 +1380,7 @@ class GraphPlot(MatplotPanel):
     ## Marker interface.
     ## --------------------------------
 
-    ## Limit number of markers to display 最大(表示)数を制限する
+    ## Limit number of markers to display 最大(表示)数を制限する．
     maxnum_markers = 1000
 
     @property
@@ -1565,8 +1565,8 @@ class GraphPlot(MatplotPanel):
         """Cropped rectangle points data array [l,r],[b,t]."""
         x, y = self.rected.get_data(orig=0)
         if len(x) and len(y):
-            xo, x = min(x), max(x) #= x[[0, 2]]
-            yo, y = min(y), max(y) #= y[[0, 2]]
+            xo, x = min(x), max(x)  # x[[0, 2]]
+            yo, y = min(y), max(y)  # y[[0, 2]]
             return np.array(((xo, x), (yo, y)))
         return np.resize(0., (2,0))
 
@@ -1597,9 +1597,9 @@ class GraphPlot(MatplotPanel):
             l,r,b,t = self.frame.get_extent()
             xa, xb = min(x), max(x)
             ya, yb = min(y), max(y)
-            ## if (xa < l or xb > r) or (ya < b or yb > t):
-            ##     return
-            ## Modify range so that it does not exceed the extent
+            # if (xa < l or xb > r) or (ya < b or yb > t):
+            #     return
+            ## Modify range so that it does not exceed the extent.
             w, h = xb-xa, yb-ya
             if xa < l: xa, xb = l, l+w
             if xb > r: xa, xb = r-w, r
