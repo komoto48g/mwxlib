@@ -238,14 +238,14 @@ class Histogram(LinePlot):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
     def OnDestroy(self, evt):
-        for graph in self.__graphs:
-            self.detach(graph)
+        for view in self.__views:
+            self.detach(view)
         evt.Skip()
 
     def clear(self):
         LinePlot.clear(self)
         
-        self.__graphs = []   # A list of attached view <matplot2g.GraphPlot>.
+        self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
         self.__frame = None  # Reference to the current frame.
         
         #<matplotlib.lines.Line2D>
@@ -255,17 +255,17 @@ class Histogram(LinePlot):
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
         self.axes.add_patch(self.__fil)
 
-    def attach(self, *graphs):
-        for graph in graphs:
-            if graph not in self.__graphs:
-                self.__graphs.append(graph)
-                graph.handler.append(self.context)
+    def attach(self, *views):
+        for view in views:
+            if view not in self.__views:
+                self.__views.append(view)
+                view.handler.append(self.context)
 
-    def detach(self, *graphs):
-        for graph in graphs:
-            if graph in self.__graphs:
-                self.__graphs.remove(graph)
-                graph.handler.remove(self.context)
+    def detach(self, *views):
+        for view in views:
+            if view in self.__views:
+                self.__views.remove(view)
+                view.handler.remove(self.context)
 
     @property
     def boundary(self):
@@ -448,14 +448,14 @@ class LineProfile(LinePlot):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
     def OnDestroy(self, evt):
-        for graph in self.__graphs:
-            self.detach(graph)
+        for view in self.__views:
+            self.detach(view)
         evt.Skip()
 
     def clear(self):
         LinePlot.clear(self)
         
-        self.__graphs = []   # A list of attached view <matplot2g.GraphPlot>.
+        self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
         self.__frame = None  # Reference to the current frame.
         
         #<matplotlib.lines.Line2D>
@@ -475,17 +475,17 @@ class LineProfile(LinePlot):
         
         self.selected.set_linestyle('')
 
-    def attach(self, *graphs):
-        for graph in graphs:
-            if graph not in self.__graphs:
-                self.__graphs.append(graph)
-                graph.handler.append(self.context)
+    def attach(self, *views):
+        for view in views:
+            if view not in self.__views:
+                self.__views.append(view)
+                view.handler.append(self.context)
 
-    def detach(self, *graphs):
-        for graph in graphs:
-            if graph in self.__graphs:
-                self.__graphs.remove(graph)
-                graph.handler.remove(self.context)
+    def detach(self, *views):
+        for view in views:
+            if view in self.__views:
+                self.__views.remove(view)
+                view.handler.remove(self.context)
 
     def set_logic(self, p):
         prep = self.__logicp
