@@ -12,7 +12,7 @@ Makefile
 exclude_files
 
 # Resources
-test*/
+test_*/
 !requirements.txt
 
 # Byte-compiled / optimized / DLL files

@@ -33,11 +33,11 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 
 
 ## URL pattern (flag = re.M | re.A).
-## url_re = r"https?://[\w/:%#$&?()~.=+-]+"
+# url_re = r"https?://[\w/:%#$&?()~.=+-]+"
 url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
 
-## no-file pattern.
-nofile_re = r'[\/:*?"<>|]'
+## Invalid filename chars pattern.
+invalid_fchars_re = r'[\/:*?"<>|]'
 
 ## Python syntax pattern.
 py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
@@ -2651,7 +2651,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         buf = buf or self.buffer
         with wx.FileDialog(self, "Save buffer as",
                 defaultDir=os.path.dirname(self.buffer.filename),
-                defaultFile=re.sub(r'[\/:*?"<>|]', '_', buf.name),
+                defaultFile=re.sub(invalid_fchars_re, '_', buf.name),
                 wildcard='|'.join(self.wildcards),
                 style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
