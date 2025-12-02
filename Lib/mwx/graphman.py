@@ -1480,7 +1480,7 @@ class Frame(mwx.Frame):
         """Write attributes file."""
         try:
             res, mis = self.read_attributes(filename)
-            new = dict((x.name, x.attributes) for x in frames)
+            new = dict((frame.name, frame.attributes) for frame in frames)
             
             ## `res` order may differ from that of given frames,
             ## so we take a few steps to merge `new` to be exported.
@@ -1677,11 +1677,13 @@ class Frame(mwx.Frame):
             self.message("Saving {!r}...".format(name))
             with wx.BusyInfo("One moment please, "
                              "now saving {!r}...".format(name)):
-                stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
+                stack = [Image.fromarray(frame.buffer) for frame in frames]
                 stack[0].save(path,
                               save_all=True,
                               compression="tiff_deflate",  # cf. tiff_lzw
                               append_images=stack[1:])
+            base, _ = os.path.splitext(path)
+            self.write_attributes(base + ".index", frames)
             self.message("\b done.")
             wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
             return True
@@ -1698,7 +1700,7 @@ class Frame(mwx.Frame):
     def load_session(self, filename=None, flush=True):
         """Load session from file."""
         if not filename:
-            with wx.FileDialog(self, 'Load session',
+            with wx.FileDialog(self, "Load session",
                     wildcard="Session file (*.jssn)|*.jssn",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_CHANGE_DIR) as dlg:
@@ -1783,7 +1785,7 @@ class Frame(mwx.Frame):
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
-                paths = [x.pathname for x in view.all_frames if x.pathname]
+                paths = [frame.pathname for frame in view.all_frames if frame.pathname]
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
