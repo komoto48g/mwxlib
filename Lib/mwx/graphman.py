@@ -1496,29 +1496,59 @@ class Frame(mwx.Frame):
         return new, mis
 
     def load_frame(self, paths=None, view=None):
-        """Load frames from files to the view window.
+        """Load frames and the attributes from files to the view window."""
+        if not view:
+            view = self.selected_view
         
-        Load buffer and the attributes of the frame.
-        If the file names duplicate, the latter takes priority.
-        """
+        if isinstance(paths, str):  # for single frame
+            paths = [paths]
+        
+        if paths is None:
+            default_path = view.frame.pathname if view.frame else None
+            with wx.FileDialog(self, "Open image files",
+                    defaultDir=os.path.dirname(default_path or ''),
+                    defaultFile='',
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
+                                    |wx.FD_MULTIPLE) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return None
+                paths = dlg.Paths
+        
         frames = self.load_buffer(paths, view)
         if frames:
-            savedirs = {}
+            saved_results = {}
             for frame in frames:
+                ## Integrate attributes from index files located in the frame paths.
                 savedir = os.path.dirname(frame.pathname)
-                if savedir not in savedirs:
+                if savedir not in saved_results:
                     fn = os.path.join(savedir, self.ATTRIBUTESFILE)
                     res, mis = self.read_attributes(fn)
-                    savedirs[savedir] = res
-                results = savedirs[savedir]
-                frame.update_attr(results.get(frame.name))
+                    saved_results[savedir] = res
+                res = saved_results[savedir]
+                frame.update_attr(res.get(frame.name))
         return frames
 
     def save_frame(self, path=None, frame=None):
-        """Save frame to a file.
+        """Save frame and the attributes to a file."""
+        view = self.selected_view
         
-        Save buffer and the attributes of the frame.
-        """
+        if not frame:
+            frame = view.frame
+            if not frame:
+                return None
+        
+        if not path:
+            default_path = view.frame.pathname if view.frame else None
+            with wx.FileDialog(self, "Save buffer as",
+                    defaultDir=os.path.dirname(default_path or ''),
+                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),  # replace invalid chars
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return None
+                path = dlg.Path
+        
         frame = self.save_buffer(path, frame)
         if frame:
             savedir = os.path.dirname(frame.pathname)
@@ -1559,28 +1589,9 @@ class Frame(mwx.Frame):
             raise
 
     @ignore(ResourceWarning)
-    def load_buffer(self, paths=None, view=None):
-        """Load buffers from paths to the view window.
-        
-        If no view given, the currently selected view is chosen.
+    def load_buffer(self, paths, view):
+        """Load buffers from paths to the view window (internal use only).
         """
-        if not view:
-            view = self.selected_view
-        
-        if isinstance(paths, str):  # for single frame
-            paths = [paths]
-        
-        if paths is None:
-            default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Open image files",
-                    defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile='',
-                    wildcard='|'.join(self.wildcards),
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                    |wx.FD_MULTIPLE) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return None
-                paths = dlg.Paths
         frames = []
         frame = None
         try:
@@ -1614,29 +1625,11 @@ class Frame(mwx.Frame):
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         
-        if frame:
-            view.select(frame)
+        view.select(frame)
         return frames
 
-    def save_buffer(self, path=None, frame=None):
-        """Save buffer of the frame to a file.
-        """
-        view = self.selected_view
-        if not frame:
-            frame = view.frame
-            if not frame:
-                return None
-        
-        if not path:
-            default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Save buffer as",
-                    defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),  # replace invalid chars
-                    wildcard='|'.join(self.wildcards),
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return None
-                path = dlg.Path
+    def save_buffer(self, path, frame):
+        """Save buffer of the frame to a file (internal use only)."""
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
