@@ -684,7 +684,7 @@ class Frame(mwx.Frame):
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
             (wx.ID_SAVEAS, "&Save as TIFFs", "Save buffers as a multi-page tiff", Icon('saveall'),
-                lambda v: self.save_buffers_as_tiffs(),
+                lambda v: self.save_frames_as_tiff(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
             ("Index", (
@@ -1556,6 +1556,41 @@ class Frame(mwx.Frame):
             res, mis = self.write_attributes(fn, [frame])
         return frame
 
+    def save_frames_as_tiff(self, path=None, frames=None):
+        """Save frames to a file as a multi-page tiff."""
+        if not frames:
+            frames = self.selected_view.all_frames
+            if not frames:
+                return None
+        
+        if not path:
+            with wx.FileDialog(self, "Save buffers as a multi-page tiff",
+                    defaultFile="Stack-image",
+                    wildcard="TIF file (*.tif)|*.tif",
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return None
+                path = dlg.Path
+        try:
+            name = os.path.basename(path)
+            self.message("Saving {!r}...".format(name))
+            with wx.BusyInfo("One moment please, "
+                             "now saving {!r}...".format(name)):
+                stack = [Image.fromarray(frame.buffer) for frame in frames]
+                stack[0].save(path,
+                              save_all=True,
+                              compression="tiff_deflate",  # cf. tiff_lzw
+                              append_images=stack[1:])
+            base, _ = os.path.splitext(path)
+            self.write_attributes(base + ".index", frames)
+            self.message("\b done.")
+            wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
+            return True
+        except Exception as e:
+            self.message("\b failed.")
+            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            return False
+
     ## --------------------------------
     ## load/save images.
     ## --------------------------------
@@ -1649,41 +1684,6 @@ class Frame(mwx.Frame):
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
             return None
-
-    def save_buffers_as_tiffs(self, path=None, frames=None):
-        """Save buffers to a file as a multi-page tiff."""
-        if not frames:
-            frames = self.selected_view.all_frames
-            if not frames:
-                return None
-        
-        if not path:
-            with wx.FileDialog(self, "Save buffers as a multi-page tiff",
-                    defaultFile="Stack-image",
-                    wildcard="TIF file (*.tif)|*.tif",
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return None
-                path = dlg.Path
-        try:
-            name = os.path.basename(path)
-            self.message("Saving {!r}...".format(name))
-            with wx.BusyInfo("One moment please, "
-                             "now saving {!r}...".format(name)):
-                stack = [Image.fromarray(frame.buffer) for frame in frames]
-                stack[0].save(path,
-                              save_all=True,
-                              compression="tiff_deflate",  # cf. tiff_lzw
-                              append_images=stack[1:])
-            base, _ = os.path.splitext(path)
-            self.write_attributes(base + ".index", frames)
-            self.message("\b done.")
-            wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
-            return True
-        except Exception as e:
-            self.message("\b failed.")
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
-            return False
 
     ## --------------------------------
     ## load/save session.
