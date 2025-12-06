@@ -1465,10 +1465,9 @@ class Frame(mwx.Frame):
                     attr.update(pathname=fn)  # if found, update pathname
                 else:
                     fn = attr.get('pathname')  # if not found, try pathname
-                    if fn.startswith(r'\\'):
-                        warn(f"The pathname of {fn!r} contains network path, "
-                             f"so the search may take long time.", stacklevel=3)
-                    if not os.path.exists(fn):
+                    if fn and fn.startswith(r'\\'):
+                        warn(f"{fn!r} contains network path, so reading may take a long time.", stacklevel=3)
+                    if not fn or not os.path.exists(fn):
                         mis[name] = res.pop(name)  # pop missing items
         except FileNotFoundError:
             pass
@@ -1478,19 +1477,20 @@ class Frame(mwx.Frame):
         return res, mis
 
     @classmethod
-    def write_attributes(self, filename, frames):
+    def write_attributes(self, filename, frames, overwrite=False):
         """Write attributes file."""
         def dt_converter(o):
             if isinstance(o, datetime.datetime):
                 return o.isoformat()
         try:
-            res, mis = self.read_attributes(filename)
             new = dict((frame.name, frame.attributes) for frame in frames)
-            
-            ## `res` order may differ from that of given frames,
-            ## so we take a few steps to merge `new` to be exported.
-            res.update(new)  # res updates to new info,
-            new.update(res)  # copy res back keeping new order.
+            mis = {}
+            if not overwrite:
+                res, mis = self.read_attributes(filename)
+                ## `res` order may differ from that of given frames,
+                ## so we take a few steps to merge `new` to be exported.
+                res.update(new)  # res updates to new info,
+                new.update(res)  # copy res back keeping new order.
             
             with open(filename, 'w') as o:
                 # print(pformat(tuple(new.items())), file=o)  # tuple with pformat is deprecated.
@@ -1524,7 +1524,10 @@ class Frame(mwx.Frame):
         if frames:
             saved_results = {}
             for frame in frames:
-                ## Integrate attributes from index files located in the frame paths.
+                if frame.pathname.endswith('>'):  # <dummy-path>
+                    ## Attributes are compiled in load_buffer.
+                    continue
+                ## Compile attributes from index files located in each frame path.
                 savedir = os.path.dirname(frame.pathname)
                 if savedir not in saved_results:
                     fn = os.path.join(savedir, self.ATTRIBUTESFILE)
@@ -1562,7 +1565,7 @@ class Frame(mwx.Frame):
         return frame
 
     def save_frames_as_tiff(self, path=None, frames=None):
-        """Save frames to a file as a multi-page tiff."""
+        """Save frames to a multi-page tiff."""
         if not frames:
             frames = self.selected_view.all_frames
             if not frames:
@@ -1586,8 +1589,11 @@ class Frame(mwx.Frame):
                               save_all=True,
                               compression="tiff_deflate",  # cf. tiff_lzw
                               append_images=stack[1:])
-            base, _ = os.path.splitext(path)
-            self.write_attributes(base + ".index", frames)
+            n = len(frames)
+            d = len(str(n))
+            for j, frame in enumerate(frames):
+                frame.pathname = path + f"<{j:0{d}}>"  # <dummy-path>
+            self.write_attributes(path[:-4] + ".index", frames, overwrite=True)
             self.message("\b done.")
             wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
             return True
@@ -1636,8 +1642,8 @@ class Frame(mwx.Frame):
         frame = None
         try:
             for i, path in enumerate(paths):
-                fn = os.path.basename(path)
-                self.message("Loading {!r} ({} of {})...".format(fn, i+1, len(paths)))
+                name = os.path.basename(path)
+                self.message("Loading {!r} ({} of {})...".format(name, i+1, len(paths)))
                 try:
                     buf, info = self.read_buffer(path)
                 except Image.UnidentifiedImageError:
@@ -1650,15 +1656,27 @@ class Frame(mwx.Frame):
                     continue
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1:  # multi-page tiff
+                    try:
+                        ## 同名のインデクスファイルから情報を読み出す．<== save_frames_as_tiff
+                        with open(path[:-4] + ".index") as i:
+                            res = json.load(i)
+                        items = list(res.items())
+                    except FileNotFoundError:
+                        items = []
                     n = buf.n_frames
                     d = len(str(n))
                     for j in range(n):
-                        self.message("Loading {!r} [{} of {} pages]...".format(fn, j+1, n))
+                        self.message("Loading {!r} [{} of {} pages]...".format(name, j+1, n))
                         buf.seek(j)
-                        name = "{:0{d}}-{}".format(j, fn, d=d)
-                        frame = view.load(buf, name, show=0)
+                        if items:
+                            page_name, info = items[j]  # original buffer name and attributes
+                        else:
+                            page_name = name + f"<{j:0{d}}>"  # default buffer name
+                        info['pathname'] = path + f"<{j:0{d}}>"  # <dummy-path>
+                        frame = view.load(buf, page_name, show=0, **info)
+                        frames.append(frame)
                 else:
-                    frame = view.load(buf, fn, show=0, pathname=path, **info)
+                    frame = view.load(buf, name, show=0, pathname=path, **info)
                     frames.append(frame)
             self.message("\b done.")
         except Exception as e:
@@ -1673,11 +1691,9 @@ class Frame(mwx.Frame):
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
-            
             self.write_buffer(path, frame.buffer)
             frame.name = name
             frame.pathname = path
-            
             self.message("\b done.")
             return frame
         except ValueError:
@@ -1784,6 +1800,7 @@ class Frame(mwx.Frame):
             
             def _save(view):
                 paths = [frame.pathname for frame in view.all_frames if frame.pathname]
+                paths = [fn for fn in paths if not fn.endswith('>')]  # <dummy-path> 除外
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
