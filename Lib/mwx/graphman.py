@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from functools import wraps
 from importlib import reload, import_module
 from bdb import BdbQuit
-from pprint import pformat
+import datetime
 import threading
 import traceback
 import inspect
@@ -14,13 +14,16 @@ import sys
 import os
 import platform
 import re
+import json
 import wx
 from wx import aui
 from wx import stc
 
+import numpy as np
+from numpy import nan, inf  # noqa # necessary to eval
+
 from matplotlib import cm
 from matplotlib import colors
-import numpy as np
 from PIL import Image
 from PIL.TiffImagePlugin import TiffImageFile
 
@@ -30,10 +33,7 @@ from .utilus import funcall as _F
 from .controls import KnobCtrlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
-from .matplot2 import MatplotPanel  # noqa
 from .matplot2g import GraphPlot
-from .matplot2lg import LinePlot  # noqa
-from .matplot2lg import LineProfile  # noqa
 from .matplot2lg import Histogram
 
 
@@ -684,7 +684,7 @@ class Frame(mwx.Frame):
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
             (wx.ID_SAVEAS, "&Save as TIFFs", "Save buffers as a multi-page tiff", Icon('saveall'),
-                lambda v: self.save_buffers_as_tiffs(),
+                lambda v: self.save_frames_as_tiff(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
             ("Index", (
@@ -1448,14 +1448,16 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, filename):
         """Read attributes file."""
-        from numpy import nan, inf  # noqa # necessary to eval
-        import datetime             # noqa # necessary to eval
         try:
             res = {}
             mis = {}
             savedir = os.path.dirname(filename)
             with open(filename) as i:
-                res.update(eval(i.read()))  # read res <dict>
+                s = i.read()
+                try:
+                    res.update(json.loads(s))  # Read res safely.
+                except json.decoder.JSONDecodeError:
+                    res.update(eval(s))  # Read res <dict> for backward compatibility.
             
             for name, attr in tuple(res.items()):
                 fn = os.path.join(savedir, name)  # search by relpath (dir / name)
@@ -1463,10 +1465,9 @@ class Frame(mwx.Frame):
                     attr.update(pathname=fn)  # if found, update pathname
                 else:
                     fn = attr.get('pathname')  # if not found, try pathname
-                    if fn.startswith(r'\\'):
-                        warn(f"The pathname of {fn!r} contains network path, "
-                             f"so the search may take long time.", stacklevel=3)
-                    if not os.path.exists(fn):
+                    if fn and fn.startswith(r'\\'):
+                        warn(f"{fn!r} contains network path, so reading may take a long time.", stacklevel=3)
+                    if not fn or not os.path.exists(fn):
                         mis[name] = res.pop(name)  # pop missing items
         except FileNotFoundError:
             pass
@@ -1476,55 +1477,130 @@ class Frame(mwx.Frame):
         return res, mis
 
     @classmethod
-    def write_attributes(self, filename, frames):
+    def write_attributes(self, filename, frames, overwrite=False):
         """Write attributes file."""
+        def dt_converter(o):
+            if isinstance(o, datetime.datetime):
+                return o.isoformat()
         try:
-            res, mis = self.read_attributes(filename)
-            new = dict((x.name, x.attributes) for x in frames)
-            
-            ## `res` order may differ from that of given frames,
-            ## so we take a few steps to merge `new` to be exported.
-            res.update(new)  # res updates to new info,
-            new.update(res)  # copy res back keeping new order.
+            new = dict((frame.name, frame.attributes) for frame in frames)
+            mis = {}
+            if not overwrite:
+                res, mis = self.read_attributes(filename)
+                ## `res` order may differ from that of given frames,
+                ## so we take a few steps to merge `new` to be exported.
+                res.update(new)  # res updates to new info,
+                new.update(res)  # copy res back keeping new order.
             
             with open(filename, 'w') as o:
-                print(pformat(tuple(new.items())), file=o)
-            
+                # print(pformat(tuple(new.items())), file=o)  # tuple with pformat is deprecated.
+                json.dump(new, o, indent=2, default=dt_converter)
         except Exception as e:
             print("- Failed to write attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         return new, mis
 
     def load_frame(self, paths=None, view=None):
-        """Load frames from files to the view window.
+        """Load frames and the attributes from files to the view window."""
+        if not view:
+            view = self.selected_view
         
-        Load buffer and the attributes of the frame.
-        If the file names duplicate, the latter takes priority.
-        """
+        if isinstance(paths, str):  # for single frame
+            paths = [paths]
+        
+        if paths is None:
+            default_path = view.frame.pathname if view.frame else None
+            with wx.FileDialog(self, "Open image files",
+                    defaultDir=os.path.dirname(default_path or ''),
+                    defaultFile='',
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
+                                    |wx.FD_MULTIPLE) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return None
+                paths = dlg.Paths
+        
         frames = self.load_buffer(paths, view)
         if frames:
-            savedirs = {}
+            saved_results = {}
             for frame in frames:
+                if frame.pathname.endswith('>'):  # <dummy-path>
+                    ## Attributes are compiled in load_buffer.
+                    continue
+                ## Compile attributes from index files located in each frame path.
                 savedir = os.path.dirname(frame.pathname)
-                if savedir not in savedirs:
+                if savedir not in saved_results:
                     fn = os.path.join(savedir, self.ATTRIBUTESFILE)
                     res, mis = self.read_attributes(fn)
-                    savedirs[savedir] = res
-                results = savedirs[savedir]
-                frame.update_attr(results.get(frame.name))
+                    saved_results[savedir] = res
+                res = saved_results[savedir]
+                frame.update_attr(res.get(frame.name))
         return frames
 
     def save_frame(self, path=None, frame=None):
-        """Save frame to a file.
+        """Save frame and the attributes to a file."""
+        view = self.selected_view
         
-        Save buffer and the attributes of the frame.
-        """
+        if not frame:
+            frame = view.frame
+            if not frame:
+                return None
+        
+        if not path:
+            default_path = view.frame.pathname if view.frame else None
+            with wx.FileDialog(self, "Save buffer as",
+                    defaultDir=os.path.dirname(default_path or ''),
+                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),  # replace invalid chars
+                    wildcard='|'.join(self.wildcards),
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return None
+                path = dlg.Path
+        
         frame = self.save_buffer(path, frame)
         if frame:
             savedir = os.path.dirname(frame.pathname)
             fn = os.path.join(savedir, self.ATTRIBUTESFILE)
             res, mis = self.write_attributes(fn, [frame])
         return frame
+
+    def save_frames_as_tiff(self, path=None, frames=None):
+        """Save frames to a multi-page tiff."""
+        if not frames:
+            frames = self.selected_view.all_frames
+            if not frames:
+                return None
+        
+        if not path:
+            with wx.FileDialog(self, "Save buffers as a multi-page tiff",
+                    defaultFile="Stack-image",
+                    wildcard="TIF file (*.tif)|*.tif",
+                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return None
+                path = dlg.Path
+        try:
+            name = os.path.basename(path)
+            self.message("Saving {!r}...".format(name))
+            with wx.BusyInfo("One moment please, "
+                             "now saving {!r}...".format(name)):
+                stack = [Image.fromarray(frame.buffer) for frame in frames]
+                stack[0].save(path,
+                              save_all=True,
+                              compression="tiff_deflate",  # cf. tiff_lzw
+                              append_images=stack[1:])
+            n = len(frames)
+            d = len(str(n))
+            for j, frame in enumerate(frames):
+                frame.pathname = path + f"<{j:0{d}}>"  # <dummy-path>
+            self.write_attributes(path[:-4] + ".index", frames, overwrite=True)
+            self.message("\b done.")
+            wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
+            return True
+        except Exception as e:
+            self.message("\b failed.")
+            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            return False
 
     ## --------------------------------
     ## load/save images.
@@ -1559,34 +1635,15 @@ class Frame(mwx.Frame):
             raise
 
     @ignore(ResourceWarning)
-    def load_buffer(self, paths=None, view=None):
-        """Load buffers from paths to the view window.
-        
-        If no view given, the currently selected view is chosen.
+    def load_buffer(self, paths, view):
+        """Load buffers from paths to the view window (internal use only).
         """
-        if not view:
-            view = self.selected_view
-        
-        if isinstance(paths, str):  # for single frame
-            paths = [paths]
-        
-        if paths is None:
-            default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Open image files",
-                    defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile='',
-                    wildcard='|'.join(self.wildcards),
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                    |wx.FD_MULTIPLE) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return None
-                paths = dlg.Paths
         frames = []
         frame = None
         try:
             for i, path in enumerate(paths):
-                fn = os.path.basename(path)
-                self.message("Loading {!r} ({} of {})...".format(fn, i+1, len(paths)))
+                name = os.path.basename(path)
+                self.message("Loading {!r} ({} of {})...".format(name, i+1, len(paths)))
                 try:
                     buf, info = self.read_buffer(path)
                 except Image.UnidentifiedImageError:
@@ -1599,52 +1656,44 @@ class Frame(mwx.Frame):
                     continue
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1:  # multi-page tiff
+                    try:
+                        ## 同名のインデクスファイルから情報を読み出す．<== save_frames_as_tiff
+                        with open(path[:-4] + ".index") as i:
+                            res = json.load(i)
+                        items = list(res.items())
+                    except FileNotFoundError:
+                        items = []
                     n = buf.n_frames
                     d = len(str(n))
                     for j in range(n):
-                        self.message("Loading {!r} [{} of {} pages]...".format(fn, j+1, n))
+                        self.message("Loading {!r} [{} of {} pages]...".format(name, j+1, n))
                         buf.seek(j)
-                        name = "{:0{d}}-{}".format(j, fn, d=d)
-                        frame = view.load(buf, name, show=0)
+                        if items:
+                            page_name, info = items[j]  # original buffer name and attributes
+                        else:
+                            page_name = name + f"<{j:0{d}}>"  # default buffer name
+                        info['pathname'] = path + f"<{j:0{d}}>"  # <dummy-path>
+                        frame = view.load(buf, page_name, show=0, **info)
+                        frames.append(frame)
                 else:
-                    frame = view.load(buf, fn, show=0, pathname=path, **info)
+                    frame = view.load(buf, name, show=0, pathname=path, **info)
                     frames.append(frame)
             self.message("\b done.")
         except Exception as e:
             self.message("\b failed.")
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         
-        if frame:
-            view.select(frame)
+        view.select(frame)
         return frames
 
-    def save_buffer(self, path=None, frame=None):
-        """Save buffer of the frame to a file.
-        """
-        view = self.selected_view
-        if not frame:
-            frame = view.frame
-            if not frame:
-                return None
-        
-        if not path:
-            default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Save buffer as",
-                    defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),  # replace invalid chars
-                    wildcard='|'.join(self.wildcards),
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return None
-                path = dlg.Path
+    def save_buffer(self, path, frame):
+        """Save buffer of the frame to a file (internal use only)."""
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
-            
             self.write_buffer(path, frame.buffer)
             frame.name = name
             frame.pathname = path
-            
             self.message("\b done.")
             return frame
         except ValueError:
@@ -1657,39 +1706,6 @@ class Frame(mwx.Frame):
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
             return None
 
-    def save_buffers_as_tiffs(self, path=None, frames=None):
-        """Save buffers to a file as a multi-page tiff."""
-        if not frames:
-            frames = self.selected_view.all_frames
-            if not frames:
-                return None
-        
-        if not path:
-            with wx.FileDialog(self, "Save buffers as a multi-page tiff",
-                    defaultFile="Stack-image",
-                    wildcard="TIF file (*.tif)|*.tif",
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return None
-                path = dlg.Path
-        try:
-            name = os.path.basename(path)
-            self.message("Saving {!r}...".format(name))
-            with wx.BusyInfo("One moment please, "
-                             "now saving {!r}...".format(name)):
-                stack = [Image.fromarray(x.buffer.astype(int)) for x in frames]
-                stack[0].save(path,
-                              save_all=True,
-                              compression="tiff_deflate",  # cf. tiff_lzw
-                              append_images=stack[1:])
-            self.message("\b done.")
-            wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
-            return True
-        except Exception as e:
-            self.message("\b failed.")
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
-            return False
-
     ## --------------------------------
     ## load/save session.
     ## --------------------------------
@@ -1698,7 +1714,7 @@ class Frame(mwx.Frame):
     def load_session(self, filename=None, flush=True):
         """Load session from file."""
         if not filename:
-            with wx.FileDialog(self, 'Load session',
+            with wx.FileDialog(self, "Load session",
                     wildcard="Session file (*.jssn)|*.jssn",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
                                     |wx.FD_CHANGE_DIR) as dlg:
@@ -1783,7 +1799,8 @@ class Frame(mwx.Frame):
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
-                paths = [x.pathname for x in view.all_frames if x.pathname]
+                paths = [frame.pathname for frame in view.all_frames if frame.pathname]
+                paths = [fn for fn in paths if not fn.endswith('>')]  # <dummy-path> 除外
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
