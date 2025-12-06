@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from functools import wraps
 from importlib import reload, import_module
 from bdb import BdbQuit
-from pprint import pformat
+import datetime
 import threading
 import traceback
 import inspect
@@ -14,13 +14,16 @@ import sys
 import os
 import platform
 import re
+import json
 import wx
 from wx import aui
 from wx import stc
 
+import numpy as np
+from numpy import nan, inf  # noqa # necessary to eval
+
 from matplotlib import cm
 from matplotlib import colors
-import numpy as np
 from PIL import Image
 from PIL.TiffImagePlugin import TiffImageFile
 
@@ -30,10 +33,7 @@ from .utilus import funcall as _F
 from .controls import KnobCtrlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 
-from .matplot2 import MatplotPanel  # noqa
 from .matplot2g import GraphPlot
-from .matplot2lg import LinePlot  # noqa
-from .matplot2lg import LineProfile  # noqa
 from .matplot2lg import Histogram
 
 
@@ -1448,14 +1448,16 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, filename):
         """Read attributes file."""
-        from numpy import nan, inf  # noqa # necessary to eval
-        import datetime             # noqa # necessary to eval
         try:
             res = {}
             mis = {}
             savedir = os.path.dirname(filename)
             with open(filename) as i:
-                res.update(eval(i.read()))  # read res <dict>
+                s = i.read()
+                try:
+                    res.update(json.loads(s))  # Read res safely.
+                except json.decoder.JSONDecodeError:
+                    res.update(eval(s))  # Read res <dict> for backward compatibility.
             
             for name, attr in tuple(res.items()):
                 fn = os.path.join(savedir, name)  # search by relpath (dir / name)
@@ -1478,6 +1480,9 @@ class Frame(mwx.Frame):
     @classmethod
     def write_attributes(self, filename, frames):
         """Write attributes file."""
+        def dt_converter(o):
+            if isinstance(o, datetime.datetime):
+                return o.isoformat()
         try:
             res, mis = self.read_attributes(filename)
             new = dict((frame.name, frame.attributes) for frame in frames)
@@ -1488,8 +1493,8 @@ class Frame(mwx.Frame):
             new.update(res)  # copy res back keeping new order.
             
             with open(filename, 'w') as o:
-                print(pformat(tuple(new.items())), file=o)
-            
+                # print(pformat(tuple(new.items())), file=o)  # tuple with pformat is deprecated.
+                json.dump(new, o, indent=2, default=dt_converter)
         except Exception as e:
             print("- Failed to write attributes.", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
