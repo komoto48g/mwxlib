@@ -769,7 +769,8 @@ class Frame(mwx.Frame):
         self.menubar.reset()
         
         def show_frameview(frame):
-            wx.CallAfter(self.show_pane, frame.parent)  # Show graph / output in the main thread.
+            if not frame.parent.IsShown():
+                wx.CallAfter(self.show_pane, frame.parent)
         
         self.graph.handler.append({ # DNA<Graph:Frame>
             None : {
