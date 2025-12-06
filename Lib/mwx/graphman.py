@@ -32,7 +32,6 @@ from .utilus import ignore, warn
 from .utilus import funcall as _F
 from .controls import KnobCtrlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
-
 from .matplot2g import GraphPlot
 from .matplot2lg import Histogram
 
@@ -578,7 +577,7 @@ class MyFileDropLoader(wx.FileDropTarget):
         pos = self.view.ScreenPosition + (x, y)
         paths = []
         for fn in filenames:
-            name, ext = os.path.splitext(fn)
+            _name, ext = os.path.splitext(fn)
             if ext == '.py' or os.path.isdir(fn):
                 self.loader.load_plug(fn, show=1,
                                           floating_pos=pos,
@@ -1353,7 +1352,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save index file.
     ## --------------------------------
-    ATTRIBUTESFILE = "results.index"
+    INDEXFILE = "results.index"
 
     def load_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
@@ -1367,7 +1366,7 @@ class Frame(mwx.Frame):
             default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Select index file to load",
                     defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=self.ATTRIBUTESFILE,
+                    defaultFile=self.INDEXFILE,
                     wildcard="Index (*.index)|*.index|"
                              "ALL files (*.*)|*.*",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
@@ -1384,11 +1383,11 @@ class Frame(mwx.Frame):
                 frame.update_attr(res.get(frame.name))
         
         n = len(frames)
-        self.message(
+        print(self.message(
             "{} frames were imported, "
             "{} files were skipped, "
-            "{} files are missing.".format(n, len(res)-n, len(mis)))
-        print(self.message.read())
+            "{} files are missing.".format(n, len(res)-n, len(mis))
+        ))
         return frames
 
     def save_index(self, filename=None, frames=None):
@@ -1404,7 +1403,7 @@ class Frame(mwx.Frame):
             default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Select index file to export",
                     defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=self.ATTRIBUTESFILE,
+                    defaultFile=self.INDEXFILE,
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
@@ -1434,11 +1433,11 @@ class Frame(mwx.Frame):
         frames = output_frames
         res, mis = self.write_attributes(filename, frames)
         n = len(frames)
-        self.message(
+        print(self.message(
             "{} frames were exported, "
             "{} files were skipped, "
-            "{} files are missing.".format(n, len(res)-n, len(mis)))
-        print(self.message.read())
+            "{} files are missing.".format(n, len(res)-n, len(mis))
+        ))
         return frames
 
     ## --------------------------------
@@ -1460,13 +1459,11 @@ class Frame(mwx.Frame):
                     res.update(eval(s))  # Read res <dict> for backward compatibility.
             
             for name, attr in tuple(res.items()):
-                fn = os.path.join(savedir, name)  # search by relpath (dir / name)
+                fn = os.path.join(savedir, name)  # search by relpath (saved dir/name)
                 if os.path.exists(fn):
-                    attr.update(pathname=fn)  # if found, update pathname
+                    attr['pathname'] = fn  # If found, update pathname.
                 else:
-                    fn = attr.get('pathname')  # if not found, try pathname
-                    if fn and fn.startswith(r'\\'):
-                        warn(f"{fn!r} contains network path, so reading may take a long time.", stacklevel=3)
+                    fn = attr.get('pathname')  # If not found, check for the recorded path.
                     if not fn or not os.path.exists(fn):
                         mis[name] = res.pop(name)  # pop missing items
         except FileNotFoundError:
@@ -1530,7 +1527,7 @@ class Frame(mwx.Frame):
                 ## Compile attributes from index files located in each frame path.
                 savedir = os.path.dirname(frame.pathname)
                 if savedir not in saved_results:
-                    fn = os.path.join(savedir, self.ATTRIBUTESFILE)
+                    fn = os.path.join(savedir, self.INDEXFILE)
                     res, mis = self.read_attributes(fn)
                     saved_results[savedir] = res
                 res = saved_results[savedir]
@@ -1560,7 +1557,7 @@ class Frame(mwx.Frame):
         frame = self.save_buffer(path, frame)
         if frame:
             savedir = os.path.dirname(frame.pathname)
-            fn = os.path.join(savedir, self.ATTRIBUTESFILE)
+            fn = os.path.join(savedir, self.INDEXFILE)
             res, mis = self.write_attributes(fn, [frame])
         return frame
 
@@ -1579,11 +1576,13 @@ class Frame(mwx.Frame):
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 path = dlg.Path
+        _name, ext = os.path.splitext(path)
+        if ext != ".tif":
+            path += ".tif"
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
-            with wx.BusyInfo("One moment please, "
-                             "now saving {!r}...".format(name)):
+            with wx.BusyInfo(f"One moment please, saving {name!r}..."):
                 stack = [Image.fromarray(frame.buffer) for frame in frames]
                 stack[0].save(path,
                               save_all=True,
@@ -1595,7 +1594,6 @@ class Frame(mwx.Frame):
                 frame.pathname = path + f"<{j:0{d}}>"  # <dummy-path>
             self.write_attributes(path[:-4] + ".index", frames, overwrite=True)
             self.message("\b done.")
-            wx.MessageBox("{} files successfully saved into\n{!r}.".format(len(stack), path))
             return True
         except Exception as e:
             self.message("\b failed.")
