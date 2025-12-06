@@ -47,7 +47,7 @@ class Debugger(Pdb):
         C-b     : Set a breakpoint at the current line.
         C-@     : Jump to the first lineno of the code.
         C-S-j   : Jump to the lineno of the code.
-        C-S-b   : Continue execution until the lineno of the code.
+        C-S-n   : Continue execution until the lineno of the code.
         C-w     : Stamp current where(frame) message.
     """
     verbose = False
@@ -129,7 +129,7 @@ class Debugger(Pdb):
                   'C-b pressed' : (1, lambda v: self.set_breakpoint()),
                   'C-@ pressed' : (1, lambda v: self.jump_to_entry()),
                 'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
-                'C-S-b pressed' : (1, lambda v: self.exec_until_lineno()),
+                'C-S-n pressed' : (1, lambda v: self.exec_until_lineno()),
                   'C-w pressed' : (1, lambda v: self.stamp_where()),
             },
             2 : {
