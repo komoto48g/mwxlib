@@ -292,6 +292,15 @@ if 1:
         pp.sort_dicts = False
 
 
+## --------------------------------
+## Shell internal helper functions.
+## --------------------------------
+
+def fix_fnchars(filename, substr='_'):
+    """Replace invalid chars to substr."""
+    return re.sub(r'[\/:*?"<>|]', substr, filename)
+
+
 def split_words(text, reverse=False):
     """Generates words (python phrase) extracted from text.
     If reverse is True, process from tail to head.

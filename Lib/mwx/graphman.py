@@ -28,8 +28,8 @@ from PIL import Image
 from PIL.TiffImagePlugin import TiffImageFile
 
 from . import framework as mwx
-from .utilus import ignore, warn
 from .utilus import funcall as _F
+from .utilus import ignore, warn, fix_fnchars
 from .controls import KnobCtrlPanel, Icon
 from .framework import CtrlInterface, AuiNotebook, Menu, FSM
 from .matplot2g import GraphPlot
@@ -1417,17 +1417,18 @@ class Frame(mwx.Frame):
             try:
                 self.message("Export index of {!r}...".format(frame.name))
                 fn = frame.pathname
-                if not fn:
-                    fn = os.path.join(savedir,
-                            re.sub(r'[\/:*?"<>|]', '_', frame.name))  # replace invalid chars
+                if not fn or fn.endswith('>'):  # <dummy-path>
+                    fn = os.path.join(savedir, fix_fnchars(frame.name))
                 if not os.path.exists(fn):
                     if not fn.endswith('.tif'):
                         fn += '.tif'
                     self.write_buffer(fn, frame.buffer)
-                    frame.pathname = fn
-                    frame.name = os.path.basename(fn)  # new name and pathname
+                    print(' ', self.message("\b done."))
+                else:
+                    print(' ', self.message("\b skipped."))
+                frame.pathname = fn
+                frame.name = os.path.basename(fn)  # new name and pathname
                 output_frames.append(frame)
-                print(' ', self.message("\b done."))
             except OSError as e:
                 print('-', self.message("\b failed.", e))
         
@@ -1548,7 +1549,7 @@ class Frame(mwx.Frame):
             default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Save buffer as",
                     defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=re.sub(r'[\/:*?"<>|]', '_', frame.name),  # replace invalid chars
+                    defaultFile=fix_fnchars(frame.name),
                     wildcard='|'.join(self.wildcards),
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
