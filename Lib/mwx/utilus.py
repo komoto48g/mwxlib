@@ -297,8 +297,13 @@ if 1:
 ## --------------------------------
 
 def fix_fnchars(filename, substr='_'):
-    """Replace invalid chars to substr."""
-    return re.sub(r'[\/:*?"<>|]', substr, filename)
+    """Replace invalid filename characters with substr."""
+    if os.name == 'nt':
+        ## Replace Windows-invalid chars [:*?"<>|] with substr.
+        ## Do not replace \\ or / to preserve folder structure.
+        return re.sub(r'[:*?"<>|]', substr, filename)
+    else:
+        return filename
 
 
 def split_words(text, reverse=False):
