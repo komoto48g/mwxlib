@@ -36,16 +36,13 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 # url_re = r"https?://[\w/:%#$&?()~.=+-]+"
 url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
 
-## Python syntax pattern.
+## Python syntax patterns.
 py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
 py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
-## Python interp traceback pattern.
-py_error_re = r' +File "(.*?)", line ([0-9]+)'
-py_frame_re = r" +file '(.*?)', line ([0-9]+)"
-py_where_re = r'> +([^*?"<>|\r\n]+?):([0-9]+)'
-py_break_re = r'at ([^*?"<>|\r\n]+?):([0-9]+)'
+## Python traceback pattern.
+py_trace_re = r' +File "(.*?)", line (\d+)'
 
 ## Custom constants in wx.stc.
 stc.STC_STYLE_CARETLINE = 40
@@ -2257,7 +2254,7 @@ class Buffer(EditorInterface, EditWindow):
             pass
         except Exception as e:
             msg = traceback.format_exc()
-            err = re.findall(py_error_re, msg, re.M)
+            err = re.findall(py_trace_re, msg, re.M)
             lines = [int(ln) for fn, ln in err if fn == self.filename]
             if lines:
                 lx = lines[-1] - 1
@@ -3455,7 +3452,7 @@ class Nautilus(EditorInterface, Shell):
             Argument `text` is raw output:str with no magic cast.
         """
         ln = self.LineFromPosition(self.bolc)
-        err = re.findall(py_error_re, text, re.M)
+        err = re.findall(py_trace_re, text, re.M)
         self.add_marker(ln, 1 if not err else 2)  # 1:white-arrow 2:red-arrow
         return (not err)
 
@@ -3779,7 +3776,7 @@ class Nautilus(EditorInterface, Shell):
                 self.exec(code)
             except Exception as e:
                 msg = traceback.format_exc()
-                err = re.findall(py_error_re, msg, re.M)
+                err = re.findall(py_trace_re, msg, re.M)
                 lines = [int(ln) for fn, ln in err if fn == filename]
                 if lines:
                     region = self.get_command_region(self.cline)
