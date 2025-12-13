@@ -268,16 +268,14 @@ class LayerInterface(CtrlInterface):
 
     @property
     def Arts(self):
-        """List of arts <matplotlib.artist.Artist>."""
+        """List of artists <matplotlib.artist.Artist>."""
         return self.__artists
 
     @Arts.setter
     def Arts(self, arts):
-        for art in self.__artists[:]:
-            if art not in arts:
-                art.remove()
-                self.__artists.remove(art)
-        self.__artists = arts
+        for art in (set(self.__artists) - set(arts)):
+            art.remove()
+        self.__artists = list(arts)
 
     @Arts.deleter
     def Arts(self):
@@ -292,16 +290,7 @@ class LayerInterface(CtrlInterface):
                 art.remove()
                 art._transformSet = False
             axes.add_artist(art)
-            if art not in self.__artists:
-                self.__artists.append(art)
-
-    def detach_artists(self, *artists):
-        """Detach artists (e.g., patches) from their axes."""
-        for art in artists:
-            if art.axes:
-                art.remove()
-                art._transformSet = False
-            self.__artists.remove(art)
+        self.Arts += [art for art in artists if art not in self.Arts]
 
     def __init__(self, parent, session=None):
         if hasattr(self, 'handler'):
