@@ -1839,16 +1839,14 @@ class Buffer(EditorInterface, EditWindow):
 
     def update_filestamp(self, fn):
         self.__path = Path(fn)
-        if self.__path.is_file():
-            self.__mtime = self.__path.stat().st_mtime  # update timestamp (modified time)
-        elif re.match(url_re, fn):
-            self.__mtime = -1
-        else:
-            try:
-                self.__path.resolve(True)  # Check if the path is valid.
-            except FileNotFoundError:
-                self.__mtime = False  # valid path (but not found)
-            except OSError:
+        try:
+            self.__mtime = os.path.getmtime(self.__path)  # update timestamp (modified time)
+        except FileNotFoundError:
+            self.__mtime = False  # valid path (but not found)
+        except OSError:
+            if re.match(url_re, fn):
+                self.__mtime = -1
+            else:
                 self.__mtime = None  # *invalid path*
         if self.__filename != fn:
             self.__filename = fn
@@ -1865,7 +1863,8 @@ class Buffer(EditorInterface, EditWindow):
             < 0:  a url file
         """
         try:
-            return self.__path.stat().st_mtime - self.__mtime
+            mtime = os.path.getmtime(self.__path)
+            return mtime - self.__mtime
         except FileNotFoundError:
             self.__mtime = False  # valid path (but not found)
         except OSError:
