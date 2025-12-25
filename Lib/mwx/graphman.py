@@ -1410,11 +1410,11 @@ class Frame(mwx.Frame):
                     if not fn.endswith('.tif'):
                         fn += '.tif'
                     self.write_buffer(fn, frame.buffer)
+                    frame.pathname = fn
+                    frame.name = os.path.basename(fn)  # new name and pathname
                     print(' ', self.message("\b done."))
                 else:
                     print(' ', self.message("\b skipped."))
-                frame.pathname = fn
-                frame.name = os.path.basename(fn)  # new name and pathname
                 output_frames.append(frame)
             except OSError as e:
                 print('-', self.message("\b failed.", e))
@@ -1647,6 +1647,7 @@ class Frame(mwx.Frame):
         """
         frames = []
         frame = None
+        paths = list(dict.fromkeys(paths))  # 順序を保って重複を除く．
         try:
             for i, path in enumerate(paths):
                 name = os.path.basename(path)
