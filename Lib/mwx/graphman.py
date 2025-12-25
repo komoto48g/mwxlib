@@ -1435,8 +1435,13 @@ class Frame(mwx.Frame):
     ## --------------------------------
 
     @classmethod
-    def read_attributes(self, filename):
-        """Read attributes file."""
+    def read_attributes(self, filename, check_path=True):
+        """Read attributes file.
+        
+        Returns:
+            res: <dict> Successfully loaded attribute information.
+            mis: <dict> Attributes whose file paths were missing.
+        """
         def dt_parser(dct):
             for k, v in dct.items():
                 if isinstance(v, str):
@@ -1456,14 +1461,15 @@ class Frame(mwx.Frame):
                 except json.decoder.JSONDecodeError:
                     res.update(eval(s))  # Read res <dict> for backward compatibility.
             
-            for name, attr in tuple(res.items()):
-                fn = os.path.join(savedir, name)  # search by relpath (saved dir/name)
-                if os.path.exists(fn):
-                    attr['pathname'] = fn  # If found, update pathname.
-                else:
-                    fn = attr.get('pathname')  # If not found, check for the recorded path.
-                    if not fn or not os.path.exists(fn):
-                        mis[name] = res.pop(name)  # pop missing items
+            if check_path:
+                for name, attr in tuple(res.items()):
+                    fn = os.path.join(savedir, name)  # search by relpath (saved dir/name)
+                    if os.path.exists(fn):
+                        attr['pathname'] = fn  # If found, update pathname.
+                    else:
+                        fn = attr.get('pathname')  # If not found, check for the recorded path.
+                        if not fn or not os.path.exists(fn):
+                            mis[name] = res.pop(name)  # pop missing items
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -1472,15 +1478,20 @@ class Frame(mwx.Frame):
         return res, mis
 
     @classmethod
-    def write_attributes(self, filename, frames, overwrite=False):
-        """Write attributes file."""
+    def write_attributes(self, filename, frames, merge_data=True):
+        """Write attributes file.
+        
+        Returns:
+            res: <dict> Successfully loaded attribute information.
+            mis: <dict> Attributes whose file paths were missing.
+        """
         def dt_converter(o):
             if isinstance(o, datetime):
                 return o.isoformat()
         try:
             new = dict((frame.name, frame.attributes) for frame in frames)
             mis = {}
-            if not overwrite:
+            if merge_data:
                 res, mis = self.read_attributes(filename)
                 ## `res` order may differ from that of given frames,
                 ## so we take a few steps to merge `new` to be exported.
@@ -1590,8 +1601,8 @@ class Frame(mwx.Frame):
             d = len(str(n))
             for j, frame in enumerate(frames):
                 frame.pathname = path + f"<{j:0{d}}>"  # <dummy-path>
-            ## 同名のインデクスファイルに出力する．
-            self.write_attributes(path[:-4] + ".index", frames, overwrite=True)
+            ## multi-page tiff: 同名のインデクスファイルに属性を書き出す．
+            self.write_attributes(path[:-4] + ".index", frames, merge_data=False)
             self.message("\b done.")
             return True
         except Exception as e:
@@ -1652,9 +1663,9 @@ class Frame(mwx.Frame):
                     print(e)
                     continue
                 
-                if isinstance(buf, TiffImageFile) and buf.n_frames > 1:  # multi-page tiff
-                    ## 同名のインデクスファイルから入力する．
-                    res, mis = self.read_attributes(path[:-4] + ".index")
+                if isinstance(buf, TiffImageFile) and buf.n_frames > 1:
+                    ## multi-page tiff: 同名のインデクスファイルから属性を読み出す．
+                    res, mis = self.read_attributes(path[:-4] + ".index", check_path=False)
                     items = list({**res, **mis}.items())
                     n = buf.n_frames
                     d = len(str(n))
