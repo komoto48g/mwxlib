@@ -5,11 +5,11 @@ __version__ = "1.7.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
+from datetime import datetime
 from functools import wraps, partial
 from importlib import reload
 import traceback
 import builtins
-import datetime
 import textwrap
 import time
 import os
@@ -1301,7 +1301,7 @@ class ShellFrame(MiniFrame):
         _fload(self.Scratch, self.SCRATCH_FILE)  # restore scratch
         
         ## Re-open the *log* file.
-        self.add_log("#! Opened: <{}>\r\n".format(datetime.datetime.now()))
+        self.add_log("#! Opened: <{}>\r\n".format(datetime.now()))
         
         session = os.path.abspath(filename)
         try:

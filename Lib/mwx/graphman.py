@@ -2,10 +2,10 @@
 """Graph manager.
 """
 from contextlib import contextmanager
+from datetime import datetime
 from functools import wraps
 from importlib import reload, import_module
 from bdb import BdbQuit
-import datetime
 import threading
 import traceback
 import inspect
@@ -13,7 +13,6 @@ import types
 import sys
 import os
 import platform
-import re
 import json
 import wx
 from wx import aui
@@ -1438,6 +1437,14 @@ class Frame(mwx.Frame):
     @classmethod
     def read_attributes(self, filename):
         """Read attributes file."""
+        def dt_parser(dct):
+            for k, v in dct.items():
+                if isinstance(v, str):
+                    try:
+                        dct[k] = datetime.fromisoformat(v)
+                    except Exception:
+                        pass
+            return dct
         try:
             res = {}
             mis = {}
@@ -1445,7 +1452,7 @@ class Frame(mwx.Frame):
             with open(filename) as i:
                 s = i.read()
                 try:
-                    res.update(json.loads(s))  # Read res safely.
+                    res.update(json.loads(s, object_hook=dt_parser))  # Read res safely.
                 except json.decoder.JSONDecodeError:
                     res.update(eval(s))  # Read res <dict> for backward compatibility.
             
@@ -1468,7 +1475,7 @@ class Frame(mwx.Frame):
     def write_attributes(self, filename, frames, overwrite=False):
         """Write attributes file."""
         def dt_converter(o):
-            if isinstance(o, datetime.datetime):
+            if isinstance(o, datetime):
                 return o.isoformat()
         try:
             new = dict((frame.name, frame.attributes) for frame in frames)
@@ -1583,6 +1590,7 @@ class Frame(mwx.Frame):
             d = len(str(n))
             for j, frame in enumerate(frames):
                 frame.pathname = path + f"<{j:0{d}}>"  # <dummy-path>
+            ## 同名のインデクスファイルに出力する．
             self.write_attributes(path[:-4] + ".index", frames, overwrite=True)
             self.message("\b done.")
             return True
@@ -1645,13 +1653,9 @@ class Frame(mwx.Frame):
                     continue
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1:  # multi-page tiff
-                    try:
-                        ## 同名のインデクスファイルから情報を読み出す．<== save_frames_as_tiff
-                        with open(path[:-4] + ".index") as i:
-                            res = json.load(i)
-                        items = list(res.items())
-                    except FileNotFoundError:
-                        items = []
+                    ## 同名のインデクスファイルから入力する．
+                    res, mis = self.read_attributes(path[:-4] + ".index")
+                    items = list({**res, **mis}.items())
                     n = buf.n_frames
                     d = len(str(n))
                     for j in range(n):
