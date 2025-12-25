@@ -1493,10 +1493,11 @@ class Frame(mwx.Frame):
             mis = {}
             if merge_data:
                 res, mis = self.read_attributes(filename)
-                ## `res` order may differ from that of given frames,
-                ## so we take a few steps to merge `new` to be exported.
-                res.update(new)  # res updates to new info,
-                new.update(res)  # copy res back keeping new order.
+                ## Merge existing attributes from `res` to `new`, 
+                ## while keeping the order and values from `frames` (new) priority.
+                for name, attr in res.items():
+                    if name not in new:
+                        new[name] = attr
             
             with open(filename, 'w') as o:
                 # print(pformat(tuple(new.items())), file=o)  # tuple with pformat is deprecated.
