@@ -1324,8 +1324,7 @@ class Frame(mwx.Frame):
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
                 wildcard="Python file (*.py)|*.py",
-                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                |wx.FD_MULTIPLE) as dlg:
+                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 for path in dlg.Paths:
                     self.load_plug(path)
@@ -1521,8 +1520,7 @@ class Frame(mwx.Frame):
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile='',
                     wildcard='|'.join(self.wildcards),
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                    |wx.FD_MULTIPLE) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 paths = dlg.Paths
@@ -1721,8 +1719,7 @@ class Frame(mwx.Frame):
         if not filename:
             with wx.FileDialog(self, "Load session",
                     wildcard="Session file (*.jssn)|*.jssn",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST
-                                    |wx.FD_CHANGE_DIR) as dlg:
+                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 filename = dlg.Path
@@ -1768,8 +1765,7 @@ class Frame(mwx.Frame):
                 defaultDir=os.path.dirname(self.session_file or ''),
                 defaultFile=os.path.basename(self.session_file or ''),
                 wildcard="Session file (*.jssn)|*.jssn",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT
-                                |wx.FD_CHANGE_DIR) as dlg:
+                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 self.session_file = dlg.Path
                 self.save_session()
