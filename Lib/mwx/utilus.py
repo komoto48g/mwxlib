@@ -282,14 +282,11 @@ def pp(obj):
     pprint(obj, **pp.__dict__)
 
 
-if 1:
-    pp.indent = 1
-    pp.width = 80  # default 80
-    pp.depth = None
-    if sys.version_info >= (3,6):
-        pp.compact = False
-    if sys.version_info >= (3,8):
-        pp.sort_dicts = False
+pp.indent = 1
+pp.width = 80  # default 80
+pp.depth = None
+pp.compact = False
+pp.sort_dicts = False
 
 
 ## --------------------------------
@@ -850,22 +847,6 @@ class FSM(dict):
                      f"  The transaction must be a list, not a tuple.")
         return action
 
-    def binds(self, event, action=None, state=None, state2=None):
-        """Append a one-time transaction to the context.
-        
-        Like `bind`, but unbinds itself after being called once.
-        """
-        if action is None:
-            return lambda f: self.binds(event, f, state, state2)
-        
-        @wraps(action)
-        def _act(*v, **kw):
-            try:
-                return action(*v, **kw)
-            finally:
-                self.unbind(event, _act, state)
-        return self.bind(event, _act, state, state2)
-
     def unbind(self, event, action=None, state=None):
         """Remove a transaction from the context.
         
@@ -899,6 +880,41 @@ class FSM(dict):
                 warn(f"- FSM removing action from context ({state!r} : {event!r}).\n"
                      f"  The transaction must be a list, not a tuple")
         return False
+
+    def binds(self, event, action=None, state=None, state2=None):
+        """Append a one-time transaction to the context.
+        
+        Like `bind`, but unbinds itself after being called once.
+        """
+        if action is None:
+            return lambda f: self.binds(event, f, state, state2)
+        
+        @wraps(action)
+        def _act(*v, **kw):
+            try:
+                return action(*v, **kw)
+            finally:
+                self.unbind(event, _act, state)
+        return self.bind(event, _act, state, state2)
+
+    def define(self, event, action=None, /, *args, **kwargs):
+        """Define event action.
+        
+        Note:
+            The funcall kwargs `doc` and `alias` are reserved as kw-only-args.
+        """
+        state = self.default_state
+        if action is None:
+            self[state].pop(event, None)  # cf. undefine
+            return lambda f: self.define(event, f, *args, **kwargs)
+        
+        f = funcall(action, *args, **kwargs)
+        self.update({state: {event: [state, f]}})
+        return action
+
+    def undefine(self, event):
+        """Delete event context."""
+        self.define(event, None)
 
 
 class TreeList:
