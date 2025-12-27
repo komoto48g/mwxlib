@@ -67,7 +67,7 @@ def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
         return isinstance(v, types)
-    _pred.__name__ = str("instance<{}>".format(','.join(p.__name__ for p in types)))
+    _pred.__name__ = "instance<{}>".format(','.join(p.__name__ for p in types))
     return _pred
 
 
@@ -75,7 +75,7 @@ def subclass(*types):
     ## return lambda v: issubclass(v, types)
     def _pred(v):
         return issubclass(v, types)
-    _pred.__name__ = str("subclass<{}>".format(','.join(p.__name__ for p in types)))
+    _pred.__name__ = "subclass<{}>".format(','.join(p.__name__ for p in types))
     return _pred
 
 
@@ -85,7 +85,7 @@ def _Not(p):
         p = instance(p)
     def _pred(v):
         return not p(v)
-    _pred.__name__ = str("not {}".format(p.__name__))
+    _pred.__name__ = "not {}".format(p.__name__)
     return _pred
 
 
@@ -97,7 +97,7 @@ def _And(p, q):
         q = instance(q)
     def _pred(v):
         return p(v) and q(v)
-    _pred.__name__ = str("{} and {}".format(p.__name__, q.__name__))
+    _pred.__name__ = "{} and {}".format(p.__name__, q.__name__)
     return _pred
 
 
@@ -109,7 +109,7 @@ def _Or(p, q):
         q = instance(q)
     def _pred(v):
         return p(v) or q(v)
-    _pred.__name__ = str("{} or {}".format(p.__name__, q.__name__))
+    _pred.__name__ = "{} or {}".format(p.__name__, q.__name__)
     return _pred
 
 
@@ -548,15 +548,16 @@ class FSM(dict):
         [8] +++ (max verbose level) to put all args and kwargs.
     
     Note:
-        A default=None is given as an argument of the init.
-        If there is only one state, that state will be the default.
+        default=None is given as an argument to ``__init__``.
+        If there is only one state, that state is used as the default.
     
     Note:
         There is no enter/exit event handler.
     """
     debug = 0
 
-    default_state = None
+    default_state = None  # Used for define/undefine methods.
+
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
 
@@ -818,10 +819,10 @@ class FSM(dict):
             warn(f"- FSM [{state!r}] context newly created.")
             self[state] = SSM()  # new context
         
-        context = self[state]
         if state2 is None:
             state2 = state
         
+        context = self[state]
         if event in context:
             if state2 != context[event][0]:
                 warn(f"- FSM transaction may conflict ({event!r} : {state!r} --> {state2!r}).\n"

@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.7.11"
+__version__ = "1.7.12"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -239,7 +239,7 @@ class KeyCtrlInterfaceMixin:
         
         def _Pass(evt):
             self.message("{} {}".format(keymap, evt.key))
-        _Pass.__name__ = str("pass")
+        _Pass.__name__ = "pass"
         
         state = self.handler.default_state
         event = keymap + ' pressed'
@@ -270,7 +270,7 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key + '-')
         evt.Skip()
-    pre_command_hook.__name__ = str("enter")
+    pre_command_hook.__name__ = "enter"
 
     def post_command_hook(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
@@ -283,7 +283,7 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key)
         evt.Skip()
-    post_command_hook.__name__ = str("exit")
+    post_command_hook.__name__ = "exit"
 
     def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.
@@ -292,7 +292,7 @@ class KeyCtrlInterfaceMixin:
         The key must be in C-M-S order (ctrl + alt(meta) + shift).
         
         Note:
-            kwargs `doc` and `alias` are reserved as kw-only-args.
+            The funcall kwargs `doc` and `alias` are reserved as kw-only-args.
         """
         assert isinstance(keymap, str)
         assert callable(action) or action is None
