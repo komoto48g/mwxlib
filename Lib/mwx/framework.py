@@ -274,14 +274,14 @@ class KeyCtrlInterfaceMixin:
 
     def post_command_hook(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
-        ## Check if the event has reached a top-level window.
-        if isinstance(self, wx.TopLevelWindow):
-            return
         keymap = self.handler.previous_state
         if keymap:
             self.message("{} {}".format(keymap, evt.key))
         else:
             self.message(evt.key)
+        ## Check if the event has reached a top-level window; Don't skip text event.
+        if isinstance(self, wx.TopLevelWindow):
+            return
         evt.Skip()
     post_command_hook.__name__ = "exit"
 
@@ -309,10 +309,6 @@ class KeyCtrlInterfaceMixin:
             warn(f"New map to define_key {keymap!r} in {self}.")
             self.make_keymap(map)  # make new keymap
         
-        transaction = self.handler[map].get(key, [state])
-        if len(transaction) > 1:
-            warn(f"Duplicate define_key {keymap!r} in {self}.")
-        
         if action is None:
             self.handler[map].pop(key, None)  # cf. undefine_key
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
@@ -321,13 +317,10 @@ class KeyCtrlInterfaceMixin:
         
         @wraps(F)
         def f(*v, **kw):
-            self.message(f.__name__)
+            self.message(f.__name__)  # echo message
             return F(*v, **kw)
         
-        if map != state:
-            self.handler.update({map: {key: [state, self.post_command_hook, f]}})
-        else:
-            self.handler.update({map: {key: [state, f]}})
+        self.handler.update({map: {key: [state, f]}})
         return action
 
     @ignore(UserWarning)
