@@ -1232,7 +1232,8 @@ class Frame(mwx.Frame):
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
                 module.ID_, text, hint, wx.ITEM_CHECK,
-                lambda v: self.show_pane(name, v.IsChecked(), interactive=1),
+                lambda v: (self.update_pane(name),
+                           self.show_pane(name, v.IsChecked(), interactive=1)),
                 lambda v: v.Check(plug.IsShown()),
             )
             if menu not in self.menubar:
