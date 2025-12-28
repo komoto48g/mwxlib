@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.7.11"
+__version__ = "1.7.12"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -239,7 +239,7 @@ class KeyCtrlInterfaceMixin:
         
         def _Pass(evt):
             self.message("{} {}".format(keymap, evt.key))
-        _Pass.__name__ = str("pass")
+        _Pass.__name__ = "pass"
         
         state = self.handler.default_state
         event = keymap + ' pressed'
@@ -270,20 +270,20 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key + '-')
         evt.Skip()
-    pre_command_hook.__name__ = str("enter")
+    pre_command_hook.__name__ = "enter"
 
     def post_command_hook(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
-        ## Check if the event has reached a top-level window.
-        if isinstance(self, wx.TopLevelWindow):
-            return
         keymap = self.handler.previous_state
         if keymap:
             self.message("{} {}".format(keymap, evt.key))
         else:
             self.message(evt.key)
+        ## Check if the event has reached a top-level window; Don't skip text event.
+        if isinstance(self, wx.TopLevelWindow):
+            return
         evt.Skip()
-    post_command_hook.__name__ = str("exit")
+    post_command_hook.__name__ = "exit"
 
     def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.
@@ -292,7 +292,7 @@ class KeyCtrlInterfaceMixin:
         The key must be in C-M-S order (ctrl + alt(meta) + shift).
         
         Note:
-            kwargs `doc` and `alias` are reserved as kw-only-args.
+            The funcall kwargs `doc` and `alias` are reserved as kw-only-args.
         """
         assert isinstance(keymap, str)
         assert callable(action) or action is None
@@ -309,10 +309,6 @@ class KeyCtrlInterfaceMixin:
             warn(f"New map to define_key {keymap!r} in {self}.")
             self.make_keymap(map)  # make new keymap
         
-        transaction = self.handler[map].get(key, [state])
-        if len(transaction) > 1:
-            warn(f"Duplicate define_key {keymap!r} in {self}.")
-        
         if action is None:
             self.handler[map].pop(key, None)  # cf. undefine_key
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
@@ -321,13 +317,10 @@ class KeyCtrlInterfaceMixin:
         
         @wraps(F)
         def f(*v, **kw):
-            self.message(f.__name__)
+            self.message(f.__name__)  # echo message
             return F(*v, **kw)
         
-        if map != state:
-            self.handler.update({map: {key: [state, self.post_command_hook, f]}})
-        else:
-            self.handler.update({map: {key: [state, f]}})
+        self.handler.update({map: {key: [state, f]}})
         return action
 
     @ignore(UserWarning)

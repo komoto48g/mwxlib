@@ -67,7 +67,7 @@ def instance(*types):
     ## return lambda v: isinstance(v, types)
     def _pred(v):
         return isinstance(v, types)
-    _pred.__name__ = str("instance<{}>".format(','.join(p.__name__ for p in types)))
+    _pred.__name__ = "instance<{}>".format(','.join(p.__name__ for p in types))
     return _pred
 
 
@@ -75,7 +75,7 @@ def subclass(*types):
     ## return lambda v: issubclass(v, types)
     def _pred(v):
         return issubclass(v, types)
-    _pred.__name__ = str("subclass<{}>".format(','.join(p.__name__ for p in types)))
+    _pred.__name__ = "subclass<{}>".format(','.join(p.__name__ for p in types))
     return _pred
 
 
@@ -85,7 +85,7 @@ def _Not(p):
         p = instance(p)
     def _pred(v):
         return not p(v)
-    _pred.__name__ = str("not {}".format(p.__name__))
+    _pred.__name__ = "not {}".format(p.__name__)
     return _pred
 
 
@@ -97,7 +97,7 @@ def _And(p, q):
         q = instance(q)
     def _pred(v):
         return p(v) and q(v)
-    _pred.__name__ = str("{} and {}".format(p.__name__, q.__name__))
+    _pred.__name__ = "{} and {}".format(p.__name__, q.__name__)
     return _pred
 
 
@@ -109,7 +109,7 @@ def _Or(p, q):
         q = instance(q)
     def _pred(v):
         return p(v) or q(v)
-    _pred.__name__ = str("{} or {}".format(p.__name__, q.__name__))
+    _pred.__name__ = "{} or {}".format(p.__name__, q.__name__)
     return _pred
 
 
@@ -282,14 +282,11 @@ def pp(obj):
     pprint(obj, **pp.__dict__)
 
 
-if 1:
-    pp.indent = 1
-    pp.width = 80  # default 80
-    pp.depth = None
-    if sys.version_info >= (3,6):
-        pp.compact = False
-    if sys.version_info >= (3,8):
-        pp.sort_dicts = False
+pp.indent = 1
+pp.width = 80  # default 80
+pp.depth = None
+pp.compact = False
+pp.sort_dicts = False
 
 
 ## --------------------------------
@@ -551,15 +548,16 @@ class FSM(dict):
         [8] +++ (max verbose level) to put all args and kwargs.
     
     Note:
-        A default=None is given as an argument of the init.
-        If there is only one state, that state will be the default.
+        default=None is given as an argument to ``__init__``.
+        If there is only one state, that state is used as the default.
     
     Note:
         There is no enter/exit event handler.
     """
     debug = 0
 
-    default_state = None
+    default_state = None  # Used for define/undefine methods.
+
     current_state = property(lambda self: self.__state)
     previous_state = property(lambda self: self.__prev_state)
 
@@ -821,10 +819,10 @@ class FSM(dict):
             warn(f"- FSM [{state!r}] context newly created.")
             self[state] = SSM()  # new context
         
-        context = self[state]
         if state2 is None:
             state2 = state
         
+        context = self[state]
         if event in context:
             if state2 != context[event][0]:
                 warn(f"- FSM transaction may conflict ({event!r} : {state!r} --> {state2!r}).\n"
@@ -849,22 +847,6 @@ class FSM(dict):
                 warn(f"- FSM cannot append new transaction ({state!r} : {event!r}).\n"
                      f"  The transaction must be a list, not a tuple.")
         return action
-
-    def binds(self, event, action=None, state=None, state2=None):
-        """Append a one-time transaction to the context.
-        
-        Like `bind`, but unbinds itself after being called once.
-        """
-        if action is None:
-            return lambda f: self.binds(event, f, state, state2)
-        
-        @wraps(action)
-        def _act(*v, **kw):
-            try:
-                return action(*v, **kw)
-            finally:
-                self.unbind(event, _act, state)
-        return self.bind(event, _act, state, state2)
 
     def unbind(self, event, action=None, state=None):
         """Remove a transaction from the context.
@@ -899,6 +881,41 @@ class FSM(dict):
                 warn(f"- FSM removing action from context ({state!r} : {event!r}).\n"
                      f"  The transaction must be a list, not a tuple")
         return False
+
+    def binds(self, event, action=None, state=None, state2=None):
+        """Append a one-time transaction to the context.
+        
+        Like `bind`, but unbinds itself after being called once.
+        """
+        if action is None:
+            return lambda f: self.binds(event, f, state, state2)
+        
+        @wraps(action)
+        def _act(*v, **kw):
+            try:
+                return action(*v, **kw)
+            finally:
+                self.unbind(event, _act, state)
+        return self.bind(event, _act, state, state2)
+
+    def define(self, event, action=None, /, *args, **kwargs):
+        """Define event action.
+        
+        Note:
+            The funcall kwargs `doc` and `alias` are reserved as kw-only-args.
+        """
+        state = self.default_state
+        if action is None:
+            self[state].pop(event, None)  # cf. undefine
+            return lambda f: self.define(event, f, *args, **kwargs)
+        
+        f = funcall(action, *args, **kwargs)
+        self.update({state: {event: [state, f]}})
+        return action
+
+    def undefine(self, event):
+        """Delete event context."""
+        self.define(event, None)
 
 
 class TreeList:
