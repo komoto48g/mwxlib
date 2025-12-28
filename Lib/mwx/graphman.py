@@ -547,6 +547,23 @@ class Graph(GraphPlot):
         del self.region
         self.draw()
 
+    ## --------------------------------
+    ## Overridden buffer methods.
+    ## --------------------------------
+
+    def kill_all_buffers(self):
+        """Delete all buffers; (override) confirm the action with a dialog."""
+        n = sum(frame.pathname is None for frame in self.all_frames)  # Check *need-save* frames.
+        if n:
+            s = 's' if n > 1 else ''
+            if wx.MessageBox( # Confirm closing the frame.
+                    f"You are closing {n} unsaved frame{s}.\n\n"
+                     "Continue closing?",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.message("The close has been canceled.")
+                return None
+        del self[:]
+
 
 class MyFileDropLoader(wx.FileDropTarget):
     """File Drop interface.
@@ -663,7 +680,7 @@ class Frame(mwx.Frame):
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
             (wx.ID_CLOSE_ALL, "&Close all\t(C-S-k)", "Kill all buffers", Icon('book_red'),
-                lambda v: self.__view.kill_buffer_all(),
+                lambda v: self.__view.kill_all_buffers(),
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
             (wx.ID_SAVE, "&Save as\tCtrl-s", "Save buffer as", Icon('save'),
@@ -857,7 +874,7 @@ class Frame(mwx.Frame):
                 evt.Veto()
                 return
             self.Quit()
-        n = sum(frame.pathname is None for frame in self.graph.all_frames)
+        n = sum(frame.pathname is None for frame in self.graph.all_frames)  # Check *need-save* frames.
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox( # Confirm closing the frame.

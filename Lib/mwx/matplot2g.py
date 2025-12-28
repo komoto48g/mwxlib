@@ -472,7 +472,7 @@ class GraphPlot(MatplotPanel):
                   'C-a pressed' : [ None, _F(self.fit_to_axes) ],
                   'C-i pressed' : [ None, _F(self.invert_cmap) ],
                   'C-k pressed' : [ None, _F(self.kill_buffer) ],
-                'C-S-k pressed' : [ None, _F(self.kill_buffer_all) ],
+                'C-S-k pressed' : [ None, _F(self.kill_all_buffers) ],
                   'C-c pressed' : [ None, _F(self.write_buffer_to_clipboard) ],
                   'C-v pressed' : [ None, _F(self.read_buffer_from_clipboard) ],
             },
@@ -618,7 +618,7 @@ class GraphPlot(MatplotPanel):
                 lambda v: v.Enable(self.frame is not None)),
                 
             (wx.ID_CLOSE_ALL, "&Kill all buffer\t(C-S-k)", "Kill buffers", _Icon(wx.ART_DELETE),
-                lambda v: self.kill_buffer_all(),
+                lambda v: self.kill_all_buffers(),
                 lambda v: v.Enable(self.frame is not None)),
         ]
         
@@ -902,7 +902,7 @@ class GraphPlot(MatplotPanel):
         if self.frame:
             del self[self.__index]
 
-    def kill_buffer_all(self):
+    def kill_all_buffers(self):
         del self[:]
 
     def fit_to_axes(self):
