@@ -1429,7 +1429,7 @@ class Frame(mwx.Frame):
                         fn += '.tif'
                     self.write_buffer(fn, frame.buffer)
                     frame.pathname = fn
-                    frame.name = os.path.basename(fn)  # new name and pathname
+                    frame.name = os.path.basename(fn)
                     print(' ', self.message("\b done."))
                 else:
                     print(' ', self.message("\b skipped."))
@@ -1480,9 +1480,9 @@ class Frame(mwx.Frame):
             
             if check_path:
                 for name, attr in tuple(res.items()):
-                    fn = os.path.join(savedir, name)  # search by relpath (saved dir/name)
+                    fn = os.path.join(savedir, name)  # Search by relpath (saved dir/name).
                     if os.path.exists(fn):
-                        attr['pathname'] = fn  # If found, update pathname.
+                        attr['pathname'] = fn  # If found, update the path.
                     else:
                         fn = attr.get('pathname')  # If not found, check for the recorded path.
                         if not fn or not os.path.exists(fn):

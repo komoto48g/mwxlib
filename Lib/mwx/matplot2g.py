@@ -205,9 +205,9 @@ class AxesImagePhantom:
             self.__buf = _to_buffer(buf)
         
         bins, vlim, img = _to_image(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-        )
+                                    cutoff = self.parent.score_percentile,
+                                    threshold = self.parent.nbytes_threshold,
+                                    )
         self.__bins = bins
         self.__cuts = vlim
         self.__art.set_array(img)
@@ -310,7 +310,7 @@ class AxesImagePhantom:
     @roi.setter
     def roi(self, v):
         if not self.parent.region.size:
-             raise ValueError("region is not selected.")
+            raise ValueError("region is not selected.")
         self.roi[:] = v  # cannot broadcast input array into different shape
         self.update_buffer()
 
@@ -1446,7 +1446,7 @@ class GraphPlot(MatplotPanel):
                     xy=(x,y), xycoords='data',
                     xytext=(6,6), textcoords='offset points',
                     bbox=dict(boxstyle="round", fc=(1,1,1,), ec=(1,0,0,)),
-                    color='red', size=7, #fontsize=8,
+                    color='red', size=7,  # fontsize=8,
                   )
                 )
             self.trace_point(*self.get_current_mark(), type=MARK)

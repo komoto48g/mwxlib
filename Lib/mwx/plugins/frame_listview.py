@@ -132,8 +132,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         j = frame.index
         for k, v in enumerate(ls):
             self.SetItem(j, k, v)
-        if frame.pathname:
-            self.CheckItem(j)
+        self.CheckItem(j, frame.pathname is not None)
 
     def OnShowItems(self, evt):
         self.Target.select(self.focused_item)
