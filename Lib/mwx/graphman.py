@@ -553,7 +553,7 @@ class Graph(GraphPlot):
 
     def kill_all_buffers(self):
         """Delete all buffers; (override) confirm the action with a dialog."""
-        n = sum(frame.pathname is None for frame in self.all_frames)  # Check *need-save* frames.
+        n = sum(not frame.pathname for frame in self.all_frames)  # Check *need-save* frames.
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox( # Confirm closing the frame.
@@ -874,7 +874,7 @@ class Frame(mwx.Frame):
                 evt.Veto()
                 return
             self.Quit()
-        n = sum(frame.pathname is None for frame in self.graph.all_frames)  # Check *need-save* frames.
+        n = sum(not frame.pathname for frame in self.graph.all_frames)  # Check *need-save* frames.
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox( # Confirm closing the frame.
@@ -1422,7 +1422,7 @@ class Frame(mwx.Frame):
             try:
                 self.message("Export index of {!r}...".format(frame.name))
                 fn = frame.pathname
-                if not fn or fn.endswith('>'):  # <dummy-path>
+                if not fn or fn.endswith('>'):  # *dummy-path* --> Use buffer name.
                     fn = os.path.join(savedir, fix_fnchars(frame.name))
                 if not os.path.exists(fn):
                     if not fn.endswith('.tif'):
@@ -1547,7 +1547,7 @@ class Frame(mwx.Frame):
         if frames:
             saved_results = {}
             for frame in frames:
-                if frame.pathname.endswith('>'):  # <dummy-path>
+                if frame.pathname.endswith('>'):  # *dummy-path*
                     ## Attributes are compiled in load_buffer.
                     continue
                 ## Compile attributes from index files located in each frame path.
@@ -1617,7 +1617,7 @@ class Frame(mwx.Frame):
             n = len(frames)
             d = len(str(n))
             for j, frame in enumerate(frames):
-                frame.pathname = path + f"<{j:0{d}}>"  # <dummy-path>
+                frame.pathname = path + f"<{j:0{d}}>"  # *dummy-path* in multi-page tiff
             ## multi-page tiff: 同名のインデクスファイルに属性を書き出す．
             self.write_attributes(path[:-4] + ".index", frames, merge_data=False)
             self.message("\b done.")
@@ -1694,7 +1694,7 @@ class Frame(mwx.Frame):
                             page_name, info = items[j]  # original buffer name and attributes
                         else:
                             page_name = name + f"<{j:0{d}}>"  # default buffer name
-                        info['pathname'] = path + f"<{j:0{d}}>"  # <dummy-path>
+                        info['pathname'] = path + f"<{j:0{d}}>"  # *dummy-path* in multi-page tiff
                         frame = view.load(buf, page_name, show=0, **info)
                         frames.append(frame)
                 else:
@@ -1820,7 +1820,7 @@ class Frame(mwx.Frame):
             
             def _save(view):
                 paths = [frame.pathname for frame in view.all_frames if frame.pathname]
-                paths = [fn for fn in paths if not fn.endswith('>')]  # <dummy-path> 除外
+                paths = [fn for fn in paths if not fn.endswith('>')]  # *dummy-path* 除外
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:

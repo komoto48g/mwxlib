@@ -133,6 +133,8 @@ class AxesImagePhantom:
         ## Properties of the frame/image.
         self.__name = name
         self.__attributes = kwargs
+        self.__pathname = kwargs.get('pathname')
+        self.__annotation = kwargs.get('annotation', '')
         self.__localunit = kwargs.get('localunit')
         self.__center = kwargs.get('center', [0, 0])
         
@@ -169,7 +171,12 @@ class AxesImagePhantom:
         FLAG_ANNOTATION = 1
         FLAG_UPDATE_EXTENT = 2
         flag = 0
+        if 'pathname' in attr:
+            self.__pathname = attr['pathname']
+            flag |= FLAG_ANNOTATION
+        
         if 'annotation' in attr:
+            self.__annotation = attr['annotation']
             if self.parent.frame is self:
                 self.parent.infobar.ShowMessage(attr['annotation'])
             flag |= FLAG_ANNOTATION
@@ -248,12 +255,12 @@ class AxesImagePhantom:
         doc="Auxiliary info about the frame.")
 
     pathname = property(
-        lambda self: self.__attributes.get('pathname'),
+        lambda self: self.__pathname,
         lambda self, v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
 
     annotation = property(
-        lambda self: self.__attributes.get('annotation', ''),
+        lambda self: self.__annotation,
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
 
@@ -656,13 +663,13 @@ class GraphPlot(MatplotPanel):
         if isinstance(buf, str):
             buf = Image.open(buf)
         
-        pathname = kwargs.get('pathname')
+        path = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
         j = -1
-        if pathname:
-            if pathname in paths:
-                j = paths.index(pathname)  # identical path
+        if path:
+            if path in paths:
+                j = paths.index(path)  # existing path
         elif name in names:
             j = names.index(name)  # existing frame
         if j != -1:
