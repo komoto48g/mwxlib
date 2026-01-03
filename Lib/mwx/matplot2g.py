@@ -266,15 +266,6 @@ class AxesImagePhantom:
         lambda self, v: self.update_attr({'center': list(v)}),
         doc="Center coordinates of the frame in logical units.")
 
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, v):
-        self.__name = v
-        self.parent.handler('frame_updated', self)
-
     localunit = property(
         lambda self: self.__localunit,
         lambda self, v: self.update_attr({'localunit': v}),
@@ -291,6 +282,15 @@ class AxesImagePhantom:
         u = self.__localunit or self.parent.unit
         r = self.__aspect_ratio
         return (u, u) if r == 1 else (u, u * r)
+
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, v):
+        self.__name = v
+        self.parent.handler('frame_updated', self)
 
     @property
     def index(self):
@@ -384,10 +384,6 @@ class AxesImagePhantom:
     def selector_pix(self, v):
         self.selector = self.xyfrompixel(v)
 
-    @selector_pix.deleter
-    def selector_pix(self):
-        del self.selector
-
     @property
     def markers_pix(self):
         """Marked points data array [[x],[y]] in pixels."""
@@ -397,10 +393,6 @@ class AxesImagePhantom:
     def markers_pix(self, v):
         self.markers = self.xyfrompixel(v)
 
-    @markers_pix.deleter
-    def markers_pix(self):
-        del self.markers
-
     @property
     def region_pix(self):
         """Cropped points data array [l,r],[b,t] in pixels."""
@@ -409,10 +401,6 @@ class AxesImagePhantom:
     @region_pix.setter
     def region_pix(self, v):
         self.region = self.xyfrompixel(v)
-
-    @region_pix.deleter
-    def region_pix(self):
-        del self.region
 
 
 class GraphPlot(MatplotPanel):
