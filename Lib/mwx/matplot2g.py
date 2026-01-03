@@ -125,30 +125,31 @@ class AxesImagePhantom:
         **kwargs: frame attributes
     
     Note:
-        Due to the problem of performance,
-        the image pixel size could be reduced by binning.
+        Due to the problem of performance, the image pixel size could be reduced by binning.
     """
     def __init__(self, parent, buf, name, show=True, **kwargs):
         self.parent = parent
+        ## Properties of the frame/image.
         self.__name = name
         self.__attributes = kwargs
         self.__localunit = kwargs.get('localunit')
-        self.__center = kwargs.get('center', (0, 0))
+        self.__center = kwargs.get('center', [0, 0])
         self.__aspect_ratio = 1
         self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-        )
+                                    cutoff=self.parent.score_percentile,
+                                    threshold=self.parent.nbytes_threshold,
+                                    )
+        ## Conditions for image loading.
         self.__bins = bins
         self.__cuts = vlim
         self.__art = parent.axes.imshow(img,
-                  cmap = cm.gray,
-                aspect = 'equal',
-         interpolation = 'nearest',
-               visible = show,
-                picker = True,
-        )
+                                        cmap=cm.gray,
+                                        aspect='equal',
+                                        interpolation='nearest',
+                                        visible=show,
+                                        picker=True,
+                                        )
         self.update_extent()
 
     def __getattr__(self, attr):
@@ -159,30 +160,28 @@ class AxesImagePhantom:
         return x is self.__art
 
     def update_attr(self, attr):
-        """Update frame-specifc attributes:
-        
-            annotation : aux info (also displayed as a message in the infobar)
-            center     : frame.center defaults to (0, 0)
-            localunit  : frame.unit
-            pathname   : full path of the buffer file
-        """
+        """Update frame-specifc attributes."""
         if not attr:
             return
         self.__attributes.update(attr)
         
+        if 'annotation' in attr:
+            if self.parent.frame is self:
+                self.parent.infobar.ShowMessage(attr['annotation'])
+        
+        if 'aspect_ratio' in attr:
+            self.__aspect_ratio = attr['aspect_ratio']
+            self.update_extent()
+        
+        if 'center' in attr:
+            self.__center = attr['center']
+            self.update_extent()
+        
         if 'localunit' in attr:
             self.unit = attr['localunit']  # => [frame_updated]
         
-        if 'center' in attr:
-            self.center = attr['center']  # => [frame_updated]
-        
-        if 'annotation' in attr:
-            v = attr['annotation']
-            if self.parent.frame is self:
-                self.parent.infobar.ShowMessage(v)
-        
-        if {'pathname', 'annotation'} & attr.keys():
-            self.parent.handler('frame_updated', self)
+        elif attr.keys() & {'annotation', 'aspect_ratio', 'center', 'pathname'}:
+            self.parent.handler('frame_updated', self)  # Call at once.
 
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
@@ -241,6 +240,16 @@ class AxesImagePhantom:
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
 
+    aspect_ratio = property(
+        lambda self: self.__aspect_ratio,
+        lambda self, v: self.update_attr({'aspect_ratio': v or 1}),
+        doc="Aspect ratio of logical units.")
+
+    center = property(
+        lambda self: self.__center,
+        lambda self, v: self.update_attr({'center': list(v)}),
+        doc="Center coordinates of the frame in logical units.")
+
     @property
     def name(self):
         return self.__name
@@ -284,29 +293,6 @@ class AxesImagePhantom:
     def xy_unit(self):
         u = self.__localunit or self.parent.unit
         return (u, u * self.__aspect_ratio)
-
-    @property
-    def center(self):
-        """Center of logical unit."""
-        return self.__center
-
-    @center.setter
-    def center(self, v):
-        self.__center = tuple(v)
-        self.__attributes['center'] = self.__center
-        self.update_extent()
-        self.parent.handler('frame_updated', self)
-
-    @property
-    def aspect_ratio(self):
-        """Aspect ratio of logical unit."""
-        return self.__aspect_ratio
-
-    @aspect_ratio.setter
-    def aspect_ratio(self, v):
-        self.__aspect_ratio = v or 1
-        self.update_extent()
-        self.parent.handler('frame_updated', self)
 
     @property
     def index(self):
