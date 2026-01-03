@@ -165,23 +165,39 @@ class AxesImagePhantom:
             return
         self.__attributes.update(attr)
         
+        FLAG_ANNOTATION = 1
+        FLAG_UPDATE_EXTENT = 2
+        flag = 0
         if 'annotation' in attr:
             if self.parent.frame is self:
                 self.parent.infobar.ShowMessage(attr['annotation'])
+            flag |= FLAG_ANNOTATION
         
         if 'aspect_ratio' in attr:
             self.__aspect_ratio = attr['aspect_ratio']
-            self.update_extent()
+            flag |= FLAG_UPDATE_EXTENT
         
         if 'center' in attr:
             self.__center = attr['center']
-            self.update_extent()
+            flag |= FLAG_UPDATE_EXTENT
         
         if 'localunit' in attr:
-            self.unit = attr['localunit']  # => [frame_updated]
+            v = attr['localunit']
+            if v is None or np.isnan(v):  # nan => None: undefined.
+                v = None
+            elif np.isinf(v):
+                raise ValueError("The unit value must not be inf")
+            elif v <= 0:
+                raise ValueError("The unit value must be greater than zero")
+            if v != self.__localunit:
+                flag |= FLAG_UPDATE_EXTENT
+            self.__localunit = v
         
-        elif attr.keys() & {'annotation', 'aspect_ratio', 'center', 'pathname'}:
-            self.parent.handler('frame_updated', self)  # Call at once.
+        if flag & FLAG_UPDATE_EXTENT:
+            self.update_extent()
+            self.parent.canvas.draw_idle()
+        if flag:
+            self.parent.handler('frame_updated', self)
 
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
@@ -259,40 +275,22 @@ class AxesImagePhantom:
         self.__name = v
         self.parent.handler('frame_updated', self)
 
-    @property
-    def localunit(self):
-        return self.__localunit
+    localunit = property(
+        lambda self: self.__localunit,
+        lambda self, v: self.update_attr({'localunit': v}),
+        doc="Logical length per pixel in arbitrary units [u/pix], or None if not assigned.")
 
-    @property
-    def unit(self):
-        """Logical length per pixel arb.unit [u/pix]."""
-        return self.__localunit or self.parent.unit
-
-    @unit.setter
-    def unit(self, v):
-        if v == self.__localunit:  # no effect
-            return
-        if v is None or np.isnan(v):  # nan => undefined
-            v = None
-        elif np.isinf(v):
-            raise ValueError("The unit value must not be inf")
-        elif v <= 0:
-            raise ValueError("The unit value must be greater than zero")
-        
-        self.__localunit = v
-        self.__attributes['localunit'] = self.__localunit
-        self.update_extent()
-        self.parent.handler('frame_updated', self)
-        self.parent.canvas.draw_idle()
-
-    @unit.deleter
-    def unit(self):
-        self.unit = None
+    unit = property(
+        lambda self: self.__localunit or self.parent.unit,
+        lambda self, v: self.update_attr({'localunit': v}),
+        doc="Logical length per pixel in arbitrary units [u/pix].")
 
     @property
     def xy_unit(self):
+        """Logical length per pixel in arbitrary units [u/pix] for (X, Y) directions."""
         u = self.__localunit or self.parent.unit
-        return (u, u * self.__aspect_ratio)
+        r = self.__aspect_ratio
+        return (u, u) if r == 1 else (u, u * r)
 
     @property
     def index(self):
@@ -866,12 +864,12 @@ class GraphPlot(MatplotPanel):
 
     @property
     def unit(self):
-        """Logical length per pixel arb.unit [u/pix]."""
+        """Logical length per pixel in arbitrary units [u/pix]."""
         return self.__unit
 
     @unit.setter
     def unit(self, v):
-        if v == self.__unit:  # no effect unless unit changes
+        if v == self.__unit:  # no effect
             return
         if v is None or np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value must not be nan or inf")
