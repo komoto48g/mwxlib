@@ -434,13 +434,13 @@ class Knob(wx.Panel):
     def update_range(self):
         """Called when range is being changed (internal use only)."""
         v = self.__par
-        if isinstance(self._ctrl, wx.Choice):  #<wx.Choice>
+        if isinstance(self._ctrl, wx.Choice):  # <wx.Choice>
             items = [v.__str__(x) for x in v.range]
             if items != self._ctrl.Items:
                 self._ctrl.SetItems(items)
                 self._ctrl.SetStringSelection(str(v))
         else:
-            self._ctrl.SetRange(0, len(v)-1)  #<wx.Slider> #<wx.SpinButton>
+            self._ctrl.SetRange(0, len(v)-1)  # <wx.Slider> <wx.SpinButton>
 
     def update_label(self):
         """Called when label is being changed (internal use only)."""
@@ -494,7 +494,7 @@ class Knob(wx.Panel):
             v.index = j
             v.reset(v.value)
 
-    def OnScroll(self, evt):  #<wx._core.ScrollEvent> #<wx._controls.SpinEvent> #<wx._core.CommandEvent>
+    def OnScroll(self, evt):  # <wx._core.ScrollEvent> <wx._controls.SpinEvent> <wx._core.CommandEvent>
         v = self.__par
         j = self._ctrl.GetValue()
         if j != v.index:
@@ -502,11 +502,11 @@ class Knob(wx.Panel):
             v.reset(v.value)
         evt.Skip()
 
-    def OnMouseWheel(self, evt):  #<wx._core.MouseEvent>
+    def OnMouseWheel(self, evt):  # <wx._core.MouseEvent>
         self._shift_control(evt, (1 if evt.WheelRotation > 0 else -1))
         evt.Skip(False)
 
-    def OnCtrlKeyDown(self, evt):  #<wx._core.KeyEvent>
+    def OnCtrlKeyDown(self, evt):  # <wx._core.KeyEvent>
         key = evt.GetKeyCode()
         if key == wx.WXK_LEFT: return self._shift_control(evt, -1)
         if key == wx.WXK_RIGHT: return self._shift_control(evt, 1)
@@ -521,10 +521,10 @@ class Knob(wx.Panel):
         if key == wx.WXK_DOWN: return any(_focus(c) for c in ls[i+1:])
         if key == wx.WXK_UP: return any(_focus(c) for c in ls[i-1::-1])
 
-    def OnTextKeyUp(self, evt):  #<wx._core.KeyEvent>
+    def OnTextKeyUp(self, evt):  # <wx._core.KeyEvent>
         evt.Skip()
 
-    def OnTextKeyDown(self, evt):  #<wx._core.KeyEvent>
+    def OnTextKeyDown(self, evt):  # <wx._core.KeyEvent>
         key = evt.GetKeyCode()
         if key == wx.WXK_DOWN: return self._shift_control(evt, -1)
         if key == wx.WXK_UP: return self._shift_control(evt, 1)
@@ -532,22 +532,22 @@ class Knob(wx.Panel):
             self.__par.reset(self.__par.value, internal_callback=None)  # restore value
         evt.Skip()
 
-    def OnTextEnter(self, evt):  #<wx._core.CommandEvent>
+    def OnTextEnter(self, evt):  # <wx._core.CommandEvent>
         evt.Skip()
         x = self._text.Value.strip()
         self.__par.reset(x)
 
-    def OnTextExit(self, evt):  #<wx._core.FocusEvent>
+    def OnTextExit(self, evt):  # <wx._core.FocusEvent>
         x = self._text.Value.strip()
         if x != str(self.__par):
             self.__par.reset(x)
         evt.Skip()
 
-    def OnCheck(self, evt):  #<wx._core.CommandEvent>
+    def OnCheck(self, evt):  # <wx._core.CommandEvent>
         self.__par.check = evt.IsChecked()
         evt.Skip()
 
-    def OnPress(self, evt):  #<wx._core.CommandEvent>
+    def OnPress(self, evt):  # <wx._core.CommandEvent>
         self.__par.callback('updated', self.__par)
         evt.Skip()
 
@@ -591,11 +591,11 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnRecalcLayout)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnRecalcLayout)
 
-    def OnRecalcLayout(self, evt):  #<wx._core.ScrollWinEvent>
+    def OnRecalcLayout(self, evt):  # <wx._core.ScrollWinEvent>
         self.Layout()
         evt.Skip()
 
-    def OnToggleFold(self, evt):  #<wx._core.MouseEvent>
+    def OnToggleFold(self, evt):  # <wx._core.MouseEvent>
         x, y = evt.Position
         for child in self.Sizer.Children:  # child <wx._core.SizerItem>
             if child.IsShown():
@@ -928,7 +928,7 @@ class Icon(wx.Bitmap):
                 key = (key.ConvertToImage()
                           .Scale(*size, wx.IMAGE_QUALITY_NEAREST)
                           .ConvertToBitmap())
-            return key  #<wx.Bitmap>
+            return key  # <wx.Bitmap>
         if size is None:
             size = (16, 16)
         if key:

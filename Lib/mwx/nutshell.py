@@ -696,14 +696,14 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     __dnd_flag = 0
 
-    def OnDrag(self, evt):  #<wx._core.StyledTextEvent>
+    def OnDrag(self, evt):  # <wx._core.StyledTextEvent>
         if isinstance(self, Shell):
             EditorInterface.__dnd_flag = (evt.Position < self.bolc)  # readonly
         else:
             EditorInterface.__dnd_flag = 0
         evt.Skip()
 
-    def OnDragging(self, evt):  #<wx._core.StyledTextEvent>
+    def OnDragging(self, evt):  # <wx._core.StyledTextEvent>
         if isinstance(self, Shell):
             if evt.Position < self.bolc:  # target is readonly
                 evt.DragResult = wx.DragNone
@@ -716,7 +716,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 evt.DragResult = wx.DragCopy if wx.GetKeyState(wx.WXK_CONTROL) else wx.DragNone
         evt.Skip()
 
-    def OnDragged(self, evt):  #<wx._core.StyledTextEvent>
+    def OnDragged(self, evt):  # <wx._core.StyledTextEvent>
         EditorInterface.__dnd_flag = 0
         evt.Skip()
 
@@ -1104,7 +1104,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.SetFoldMarginColour(True, 'black')
             self.SetFoldMarginHiColour(True, 'black')
 
-    def OnMarginClick(self, evt):  #<wx._stc.StyledTextEvent>
+    def OnMarginClick(self, evt):  # <wx._stc.StyledTextEvent>
         lc = self.LineFromPosition(evt.Position)
         level = self.GetFoldLevel(lc) ^ stc.STC_FOLDLEVELBASE
         ## `level` indicates indent-level number
@@ -1116,7 +1116,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         else:
             self.handler('select_line', evt)
 
-    def OnMarginRClick(self, evt):  #<wx._stc.StyledTextEvent>
+    def OnMarginRClick(self, evt):  # <wx._stc.StyledTextEvent>
         """Popup context menu."""
         def _Icon(key):
             return wx.ArtProvider.GetBitmap(key, size=(16,16))
@@ -1160,13 +1160,13 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     def on_linesel_begin(self, evt):
         """Called when a line of text selection begins."""
-        self.cpos = self.anchor = evt.Position  #<select_line>
+        self.cpos = self.anchor = evt.Position  # <select_line>
         self.CaptureMouse()
         evt.Skip()
 
     def on_linesel_next(self, evt):
         """Called when next line of text selection begins."""
-        self.cpos = evt.Position  #<select_lines>
+        self.cpos = evt.Position  # <select_lines>
         self.CaptureMouse()
         evt.Skip()
 
@@ -2048,14 +2048,14 @@ class Buffer(EditorInterface, EditWindow):
         _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
 
-    def OnUpdate(self, evt):  #<wx._stc.StyledTextEvent>
+    def OnUpdate(self, evt):  # <wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('buffer_modified', self)
         evt.Skip()
 
-    def OnCallTipClick(self, evt):  #<wx._stc.StyledTextEvent>
+    def OnCallTipClick(self, evt):  # <wx._stc.StyledTextEvent>
         if self.CallTipActive():
             self.CallTipCancel()
         pos, tip, more = self._calltips
@@ -2063,7 +2063,7 @@ class Buffer(EditorInterface, EditWindow):
             self.CallTipShow(pos, tip, N=None)
         evt.Skip()
 
-    def OnIndicatorClick(self, evt):  #<wx._stc.StyledTextEvent>
+    def OnIndicatorClick(self, evt):  # <wx._stc.StyledTextEvent>
         if self.SelectedText or not wx.GetKeyState(wx.WXK_CONTROL):
             ## Processing text selection or dragging.
             evt.Skip()
@@ -2340,7 +2340,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             self.handler('buffer_deleted', obj)
         evt.Skip()
 
-    def OnPageClose(self, evt):  #<wx._aui.AuiNotebookEvent>
+    def OnPageClose(self, evt):  # <wx._aui.AuiNotebookEvent>
         buf = self.GetPage(evt.Selection)
         if buf.need_buffer_save:
             if wx.MessageBox(  # Confirm closing the buffer.
@@ -2354,7 +2354,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return
         evt.Skip()
 
-    def OnPageClosed(self, evt):  #<wx._aui.AuiNotebookEvent>
+    def OnPageClosed(self, evt):  # <wx._aui.AuiNotebookEvent>
         if self.PageCount == 0:
             self.new_buffer()
         evt.Skip()
@@ -3134,7 +3134,7 @@ class Nautilus(EditorInterface, Shell):
             self.handler('shell_deleted', self)
         evt.Skip()
 
-    def OnUpdate(self, evt):  #<wx._stc.StyledTextEvent>
+    def OnUpdate(self, evt):  # <wx._stc.StyledTextEvent>
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if self.handler.current_state == 0:

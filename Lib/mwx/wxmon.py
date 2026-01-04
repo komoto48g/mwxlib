@@ -235,7 +235,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 text += "{}\t{}\n{}\n\n".format(event, name, attribs)
         Clipboard.write(text[:-1])
 
-    def OnSortItems(self, evt):  #<wx._controls.ListEvent>
+    def OnSortItems(self, evt):  # <wx._controls.ListEvent>
         n = self.ItemCount
         if n < 2:
             return
@@ -261,7 +261,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if item == fi:
                 self.Focus(i)
 
-    def OnItemDClick(self, evt):  #<wx._core.MouseEvent>
+    def OnItemDClick(self, evt):  # <wx._core.MouseEvent>
         i, flag = self.HitTest(evt.Position)
         if i >= 0:
             item = self.__items[i]

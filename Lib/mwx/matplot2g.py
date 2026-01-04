@@ -621,14 +621,14 @@ class GraphPlot(MatplotPanel):
         ## cf. self.figure.dpi = 80 dpi (0.3175 mm/pix)
         self.__unit = 1.0
         
-        #<matplotlib.lines.Line2D>
+        # <matplotlib.lines.Line2D>
         (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1,
                                         picker=8)
         self.__marksel = []
         self.__markarts = []
         self.marked.set_clip_on(False)
         
-        #<matplotlib.lines.Line2D>
+        # <matplotlib.lines.Line2D>
         (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4,
                                         picker=4, alpha=0.8)
         self.__rectsel = []
@@ -1061,7 +1061,7 @@ class GraphPlot(MatplotPanel):
     ## matplotlib interface.
     ## --------------------------------
 
-    def on_pick(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def on_pick(self, evt):  # <matplotlib.backend_bases.PickEvent>
         """Pickup image and other arts.
         Called (maybe) after mouse buttons are pressed.
         """
@@ -1110,7 +1110,7 @@ class GraphPlot(MatplotPanel):
     def on_picker_unlock(self, evt):
         self.__isPicked = False
 
-    def OnImagePicked(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def OnImagePicked(self, evt):  # <matplotlib.backend_bases.PickEvent>
         x = evt.mouseevent.xdata
         y = evt.mouseevent.ydata
         nx, ny = self.frame.xytopixel(x, y)
@@ -1120,9 +1120,9 @@ class GraphPlot(MatplotPanel):
 
     def _inaxes(self, evt):
         try:
-            return evt.inaxes is not self.axes  #<matplotlib.backend_bases.MouseEvent>
+            return evt.inaxes is not self.axes  # <matplotlib.backend_bases.MouseEvent>
         except AttributeError:
-            return None  #<wx._core.KeyEvent>
+            return None  # <wx._core.KeyEvent>
 
     ## --------------------------------
     ## Pan/Zoom actions (override).
@@ -1289,7 +1289,7 @@ class GraphPlot(MatplotPanel):
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
         self.__linesel = k if dots < 8 else None
 
-    def OnLineDeselected(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def OnLineDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__linesel = None
 
     def OnLineDragBegin(self, evt):
@@ -1433,7 +1433,7 @@ class GraphPlot(MatplotPanel):
             xm, ym = self.marked.get_data(orig=0)
             for k, (x, y) in enumerate(zip(xm[:N], ym[:N])):
                 self.__markarts.append(
-                  self.axes.annotate(k,  #<matplotlib.text.Annotation>
+                  self.axes.annotate(k,  # <matplotlib.text.Annotation>
                     xy=(x,y), xycoords='data',
                     xytext=(6,6), textcoords='offset points',
                     bbox=dict(boxstyle="round", fc=(1,1,1,), ec=(1,0,0,)),
@@ -1455,7 +1455,7 @@ class GraphPlot(MatplotPanel):
             self.del_current_mark()
             self.handler('mark_removed', self.frame)
 
-    def OnMarkSelected(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def OnMarkSelected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         k = evt.ind[0]
         if evt.mouseevent.key == 'shift':  # 多重マーカー選択
             if k not in self.__marksel:
@@ -1467,7 +1467,7 @@ class GraphPlot(MatplotPanel):
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame)  # 多重マーカー選択時
 
-    def OnMarkDeselected(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def OnMarkDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__marksel = []
         self.update_art_of_mark()
 
@@ -1629,7 +1629,7 @@ class GraphPlot(MatplotPanel):
             self.handler('region_removed', self.frame)
         self.set_wxcursor(wx.CURSOR_ARROW)
 
-    def OnRegionSelected(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def OnRegionSelected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         k = evt.ind[0]
         x = evt.mouseevent.xdata
         y = evt.mouseevent.ydata
@@ -1638,7 +1638,7 @@ class GraphPlot(MatplotPanel):
         self.__rectsel = [k] if dots < 8 else [0,1,2,3,4]  # リージョンの全選択
         self.update_art_of_region()
 
-    def OnRegionDeselected(self, evt):  #<matplotlib.backend_bases.PickEvent>
+    def OnRegionDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__rectsel = []
         self.update_art_of_region()
         self.set_wxcursor(wx.CURSOR_ARROW)

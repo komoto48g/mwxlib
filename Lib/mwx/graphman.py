@@ -847,11 +847,11 @@ class Frame(mwx.Frame):
         name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
 
-    def OnActivate(self, evt):  #<wx._core.ActivateEvent>
+    def OnActivate(self, evt):  # <wx._core.ActivateEvent>
         if self and evt.Active:
             self.set_title(self.selected_view.frame)
 
-    def OnClose(self, evt):  #<wx._core.CloseEvent>
+    def OnClose(self, evt):  # <wx._core.CloseEvent>
         ssn = os.path.basename(self.session_file or '--')
         with wx.MessageDialog(None,
                 "Do you want to save session before closing program?",
@@ -1003,7 +1003,7 @@ class Frame(mwx.Frame):
         else:
             pane.Float()
 
-    def OnPaneClose(self, evt):  #<wx.aui.AuiManagerEvent>
+    def OnPaneClose(self, evt):  # <wx.aui.AuiManagerEvent>
         pane = evt.GetPane()
         win = pane.window
         if isinstance(win, aui.AuiNotebook):

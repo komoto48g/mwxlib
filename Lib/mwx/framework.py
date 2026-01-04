@@ -390,7 +390,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _N('capture_lost', v))
         self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_changed', v))
 
-    def on_hotkey_press(self, evt):  #<wx._core.KeyEvent>
+    def on_hotkey_press(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed."""
         # if evt.EventObject is not self:
         #     evt.Skip()
@@ -400,7 +400,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
 
-    def on_hotkey_down(self, evt):  #<wx._core.KeyEvent>
+    def on_hotkey_down(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
         """
@@ -409,14 +409,14 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         else:
             evt.Skip()
 
-    def on_hotkey_up(self, evt):  #<wx._core.KeyEvent>
+    def on_hotkey_up(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
         if self.handler('{} released'.format(key), evt) is None:
             evt.Skip()
 
-    def on_mousewheel(self, evt):  #<wx._core.MouseEvent>
+    def on_mousewheel(self, evt):  # <wx._core.MouseEvent>
         """Called on mouse wheel events.
         Trigger event: 'key+wheel[up|down|right|left] pressed'
         """
@@ -428,7 +428,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler('{} pressed'.format(evt.key), evt) is None:
             evt.Skip()
 
-    def on_motion(self, evt):  #<wx._core.MouseEvent>
+    def on_motion(self, evt):  # <wx._core.MouseEvent>
         """Called on mouse motion events.
         Trigger event: 'key+[LMR]drag begin/motion/end'
         """
@@ -443,7 +443,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.handler('motion', evt)
         evt.Skip()
 
-    def _mouse_handler(self, event, evt):  #<wx._core.MouseEvent>
+    def _mouse_handler(self, event, evt):  # <wx._core.MouseEvent>
         """Called on mouse button events.
         Trigger event: 'key+[LMRX]button pressed/released/dblclick'
         """
@@ -467,7 +467,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         except AttributeError:
             pass
 
-    def _normal_handler(self, event, evt):  #<wx._core.Event>
+    def _normal_handler(self, event, evt):  # <wx._core.Event>
         if self.handler(event, evt) is None:
             evt.Skip()
 
@@ -847,7 +847,7 @@ class AuiNotebook(aui.AuiNotebook):
             self.Name = name
         
         def tab_menu(evt):
-            tabs = evt.EventObject  #<AuiTabCtrl>
+            tabs = evt.EventObject  # <AuiTabCtrl>
             page = tabs.Pages[evt.Selection]  # GetPage for split notebook.
             try:
                 Menu.Popup(self, page.window.menu)
@@ -906,8 +906,8 @@ class AuiNotebook(aui.AuiNotebook):
         Note:
             Argument `win` can also be page.window.Name (not page.caption).
         """
-        for tab in self._all_tabs:  #<aui.AuiTabCtrl>
-            for page in tab.Pages:  #<aui.AuiNotebookPage>
+        for tab in self._all_tabs:  # <aui.AuiTabCtrl>
+            for page in tab.Pages:  # <aui.AuiNotebookPage>
                 ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
                     return tab, page
@@ -1488,7 +1488,7 @@ class ShellFrame(MiniFrame):
             self.inspector.unwatch()
         evt.Skip()
 
-    def OnConsolePageChanged(self, evt):  #<wx._aui.AuiNotebookEvent>
+    def OnConsolePageChanged(self, evt):  # <wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         win = nb.CurrentPage
         if win is self.rootshell:
@@ -1498,7 +1498,7 @@ class ShellFrame(MiniFrame):
         nb.TabCtrlHeight = 0 if nb.PageCount == 1 else -1
         evt.Skip()
 
-    def OnConsolePageClose(self, evt):  #<wx._aui.AuiNotebookEvent>
+    def OnConsolePageClose(self, evt):  # <wx._aui.AuiNotebookEvent>
         nb = evt.EventObject
         win = list(nb.get_pages())[evt.Selection]
         if win is self.rootshell:
@@ -1515,20 +1515,20 @@ class ShellFrame(MiniFrame):
     def About(self, evt=None):
         self.add_help(
             '\n\n'.join((
-                f"#<module 'mwx' from {__file__!r}>",
+                f"# <module 'mwx' from {__file__!r}>",
                 f"Author: {__author__!r}",
                 f"Version: {__version__!s}",
                 self.__class__.__doc__,
                 self.rootshell.__class__.__doc__,
                 ## <--- Thanks to <wx.py.shell> --->
-                f"#{wx.py!r}",
+                f"# {wx.py!r}",
                 f"Author: {wx.py.version.__author__!r}",
                 f"Version: {wx.py.version.VERSION!s}",
                 wx.py.shell.Shell.__doc__,
                 textwrap.indent("*original" + wx.py.shell.HELP_TEXT, ' '*4),
                 ## <--- Thanks are also due to <wx> --->
-                ## f"#{wx!r}".format(wx),
-                ## f"To show the credit, press [C-M-Mbutton].",  # cf. wx.InfoMessageBox(None)
+                # f"#{wx!r}",
+                # f"To show the credit, press [C-M-Mbutton].",  # cf. wx.InfoMessageBox(None)
                 ))
             )
 
@@ -1700,7 +1700,7 @@ class ShellFrame(MiniFrame):
         if not self:
             return
         shell = self.debugger.interactive_shell
-        shell.write("#<-- Enter [n]ext to continue.\n", -1)
+        shell.write("# <-- Enter [n]ext to continue.\n", -1)
         shell.prompt()
         shell.SetFocus()
         self.Show()
@@ -1737,7 +1737,7 @@ class ShellFrame(MiniFrame):
         if not self:
             return
         shell = self.debugger.interactive_shell
-        shell.write("#--> Debugger closed successfully.\n", -1)
+        shell.write("# --> Debugger closed successfully.\n", -1)
         shell.prompt()
         self.add_log("--> End of debugger\r\n")
         self.linfo.unwatch()
@@ -1965,7 +1965,7 @@ class ShellFrame(MiniFrame):
     def repeat_backward_search(self, evt):
         self.OnFindNext(evt, backward=True)
 
-    def OnFindNext(self, evt, backward=None):  #<wx._core.FindDialogEvent>
+    def OnFindNext(self, evt, backward=None):  # <wx._core.FindDialogEvent>
         if not self.findData.FindString:
             self.message("No last search.")
             return
@@ -1996,7 +1996,7 @@ class ShellFrame(MiniFrame):
         if loc < 0:
             self.message("Unable to find the search text.")
 
-    def OnFindClose(self, evt):  #<wx._core.FindDialogEvent>
+    def OnFindClose(self, evt):  # <wx._core.FindDialogEvent>
         self.findDlg.Destroy()
         self.findDlg = None
 

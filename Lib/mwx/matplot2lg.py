@@ -60,8 +60,8 @@ class LinePlot(MatplotPanel):
         ## Note for matplotlib >= 3.9.0:
         ## axhspan and axvspan now return Rectangles, not Polygons.
         
-        #<matplotlib.patches.Polygon>
-        #<matplotlib.patches.Rectangle>
+        # <matplotlib.patches.Polygon>
+        # <matplotlib.patches.Rectangle>
         self.__vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
 
@@ -105,7 +105,7 @@ class LinePlot(MatplotPanel):
             art.remove()
         self.__annotations = []
         
-        #<matplotlib.text.Annotation>
+        # <matplotlib.text.Annotation>
         def _A(v, xy, xytext, xycoords='data', textcoords='offset points', **arrowprops):
             return self.axes.annotate(
                     '' if v is None else '{:g}'.format(v),
@@ -196,7 +196,7 @@ class LinePlot(MatplotPanel):
                 self.region = (a+d, b+d)
                 self.__lastpoint = x
         else:
-            self.message("- No region.")  #<FSM logic-error>
+            self.message("- No region.")  # <FSM logic-error>
         self.draw()
 
     def OnDragEnd(self, evt):
@@ -248,10 +248,10 @@ class Histogram(LinePlot):
         self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
         self.__frame = None  # Reference to the current frame.
         
-        #<matplotlib.lines.Line2D>
+        # <matplotlib.lines.Line2D>
         self.__plot, = self.axes.plot([], [], lw=1, color='c', alpha=1)
         
-        #<matplotlib.patches.Polygon>
+        # <matplotlib.patches.Polygon>
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
         self.axes.add_patch(self.__fil)
 
@@ -458,15 +458,15 @@ class LineProfile(LinePlot):
         self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
         self.__frame = None  # Reference to the current frame.
         
-        #<matplotlib.lines.Line2D>
+        # <matplotlib.lines.Line2D>
         self.__plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1,
                                       picker=True, pickradius=2)
         
-        #<matplotlib.patches.Polygon>
+        # <matplotlib.patches.Polygon>
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=0.8)
         self.axes.add_patch(self.__fil)
         
-        #<matplotlib.lines.Line2D>
+        # <matplotlib.lines.Line2D>
         self.__hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
                                          visible=0, zorder=2)
         

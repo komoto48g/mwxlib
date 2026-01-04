@@ -140,7 +140,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnRemoveItems(self, evt):
         del self.Target[self.selected_items]
 
-    def OnSortItems(self, evt):  #<wx._controls.ListEvent>
+    def OnSortItems(self, evt):  # <wx._controls.ListEvent>
         col = evt.Column
         if col == 0:  # reverse the first column
             self.__dir = False
