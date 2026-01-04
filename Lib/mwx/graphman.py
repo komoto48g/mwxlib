@@ -81,7 +81,7 @@ class Thread:
         try:
             self.handler = self.owner.handler
         except AttributeError:
-            self.handler = FSM({ # DNA<Thread>
+            self.handler = FSM({  # DNA<Thread>
                 None : {
                  'thread_begin' : [ None ],
                    'thread_end' : [ None ],
@@ -323,7 +323,7 @@ class LayerInterface(CtrlInterface):
             if self.parameters:
                 self.reset_params(checked_only)
         
-        self.handler.append({ # DNA<Layer>
+        self.handler.append({  # DNA<Layer>
             None : {
                    'page_shown' : [ None, _F(self.Draw, show=True)  ],
                   'page_closed' : [ None, _F(self.Draw, show=False) ],
@@ -508,7 +508,7 @@ class Graph(GraphPlot):
         self.parent = parent
         self.loader = loader or parent
         
-        self.handler.append({ # DNA<Graph>
+        self.handler.append({  # DNA<Graph>
             None : {
                     'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
                    'page_shown' : [ None, ],
@@ -556,7 +556,7 @@ class Graph(GraphPlot):
         n = sum(not frame.pathname for frame in self.all_frames)  # Check *need-save* frames.
         if n:
             s = 's' if n > 1 else ''
-            if wx.MessageBox( # Confirm closing the frame.
+            if wx.MessageBox(  # Confirm closing the frame.
                     f"You are closing {n} unsaved frame{s}.\n\n"
                      "Continue closing?",
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
@@ -777,7 +777,7 @@ class Frame(mwx.Frame):
             if not frame.parent.IsShown():
                 wx.CallAfter(self.show_pane, frame.parent)
         
-        self.graph.handler.append({ # DNA<Graph:Frame>
+        self.graph.handler.append({  # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
                  'frame_loaded' : [ None, show_frameview ],
@@ -786,7 +786,7 @@ class Frame(mwx.Frame):
                   'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
             },
         })
-        self.output.handler.append({ # DNA<Graph:Frame>
+        self.output.handler.append({  # DNA<Graph:Frame>
             None : {
                   'frame_shown' : [ None, self.set_title ],
                  'frame_loaded' : [ None, show_frameview ],
@@ -866,7 +866,7 @@ class Frame(mwx.Frame):
         n = sum(bool(plug.thread and plug.thread.active) for plug in self.get_all_plugs())
         if n:
             s = 's' if n > 1 else ''
-            if wx.MessageBox( # Confirm closing the thread.
+            if wx.MessageBox(  # Confirm closing the thread.
                     f"Currently  running {n} thread{s}.\n\n"
                     "Continue closing?",
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
@@ -877,7 +877,7 @@ class Frame(mwx.Frame):
         n = sum(not frame.pathname for frame in self.graph.all_frames)  # Check *need-save* frames.
         if n:
             s = 's' if n > 1 else ''
-            if wx.MessageBox( # Confirm closing the frame.
+            if wx.MessageBox(  # Confirm closing the frame.
                     f"You are closing {n} unsaved frame{s}.\n\n"
                      "Continue closing?",
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:

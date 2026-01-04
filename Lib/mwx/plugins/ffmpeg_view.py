@@ -7,7 +7,7 @@ import os
 import wx
 import wx.media
 
-from mwx.framework import _F, hotkey
+from mwx.framework import _F
 from mwx.graphman import Layer
 from mwx.controls import LParam, Icon, Button, TextBox
 
@@ -128,20 +128,20 @@ class Plugin(Layer):
         
         self.parent.handler.bind("unknown_format", self.load_media)
         
-        self.handler.update({ # DNA<ffmpeg_viewer>
-            0 : { # MEDIASTATE_STOPPED
+        self.handler.update({  # DNA<ffmpeg_viewer>
+            0 : {  # MEDIASTATE_STOPPED
                          'play' : (2, ),
                 'space pressed' : (2, _F(self.mc.Play)),
                  'left pressed' : (0, _F(self.seekd, -1000)),
                 'right pressed' : (0, _F(self.seekd,  1000)),
             },
-            1 : { # MEDIASTATE_PAUSED
+            1 : {  # MEDIASTATE_PAUSED
                          'stop' : (0, ),
                 'space pressed' : (2, _F(self.mc.Play)),
                  'left pressed' : (1, _F(self.seekd, -1000)),
                 'right pressed' : (1, _F(self.seekd,  1000)),
             },
-            2 : { # MEDIASTATE_PLAYING
+            2 : {  # MEDIASTATE_PLAYING
                          'stop' : (0, ),
                         'pause' : (1, ),
                 'space pressed' : (1, _F(self.mc.Pause)),

@@ -81,34 +81,34 @@ def subclass(*types):
 
 def _Not(p):
     ## return lambda v: not p(v)
-    if isinstance(p, type):
-        p = instance(p)
     def _pred(v):
         return not p(v)
+    if isinstance(p, type):
+        p = instance(p)
     _pred.__name__ = "not {}".format(p.__name__)
     return _pred
 
 
 def _And(p, q):
     ## return lambda v: p(v) and q(v)
+    def _pred(v):
+        return p(v) and q(v)
     if isinstance(p, type):
         p = instance(p)
     if isinstance(q, type):
         q = instance(q)
-    def _pred(v):
-        return p(v) and q(v)
     _pred.__name__ = "{} and {}".format(p.__name__, q.__name__)
     return _pred
 
 
 def _Or(p, q):
     ## return lambda v: p(v) or q(v)
+    def _pred(v):
+        return p(v) or q(v)
     if isinstance(p, type):
         p = instance(p)
     if isinstance(q, type):
         q = instance(q)
-    def _pred(v):
-        return p(v) or q(v)
     _pred.__name__ = "{} or {}".format(p.__name__, q.__name__)
     return _pred
 

@@ -415,7 +415,7 @@ class GraphPlot(MatplotPanel):
         def _draw(evt):
             self.canvas.draw_idle()
         
-        self.handler.update({ # DNA<GraphPlot>
+        self.handler.update({  # DNA<GraphPlot>
             None : {
                   'frame_shown' : [ None ],  # show
                  'frame_hidden' : [ None ],  # show

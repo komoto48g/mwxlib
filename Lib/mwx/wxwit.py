@@ -204,6 +204,7 @@ def dumptree(self):
 def dump(widget=None):
     if not widget:
         return [dump(w) for w in wx.GetTopLevelWindows()]
+    
     def _dump(w):
         for obj in w.Children:
             lc = list(_dump(obj))

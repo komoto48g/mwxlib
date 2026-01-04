@@ -489,7 +489,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.handler.update({ # DNA<EditorInterface>
+        self.handler.update({  # DNA<EditorInterface>
             None : {
                      'mark_set' : [ None, dispatch ],
                    'mark_unset' : [ None, dispatch ],
@@ -1951,7 +1951,7 @@ class Buffer(EditorInterface, EditWindow):
         ## Note: Mouse events are not propagated from Buffer to EditorBook.
         ## They are explicitly dispatched from buffer.handler to editor.handler.
         
-        self.handler.update({ # DNA<Buffer>
+        self.handler.update({  # DNA<Buffer>
             None : {
                  'buffer_saved' : [ None, dispatch ],
                 'buffer_loaded' : [ None, dispatch ],
@@ -1960,14 +1960,14 @@ class Buffer(EditorInterface, EditWindow):
            'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
        'buffer_region_executed' : [ None, dispatch ],
             },
-            -1 : { # original action of the EditWindow
+            -1 : {  # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
                  '*alt pressed' : (-1, ),
                 '*ctrl pressed' : (-1, ),
                '*shift pressed' : (-1, ),
              '*[LR]win pressed' : (-1, ),
             },
-            0 : { # Normal mode
+            0 : {  # Normal mode
                     '* pressed' : (0, skip),
                    '* released' : (0, skip, dispatch),
              '*button* pressed' : (0, skip, dispatch),
@@ -1980,7 +1980,7 @@ class Buffer(EditorInterface, EditWindow):
                   'M-. pressed' : (2, self.call_word_autocomp),
                   'M-/ pressed' : (3, self.call_apropos_autocomp),
             },
-            2 : { # word auto completion AS-mode
+            2 : {  # word auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
@@ -2007,7 +2007,7 @@ class Buffer(EditorInterface, EditWindow):
              '*[LR]win pressed' : (2, ),
              '*f[0-9]* pressed' : (2, ),
             },
-            3 : { # apropos auto completion AS-mode
+            3 : {  # apropos auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
@@ -2314,7 +2314,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
-        self.handler.update({ # DNA<EditorBook>
+        self.handler.update({  # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, dispatch ],
                  'buffer_saved' : [ None, dispatch ],
@@ -2325,7 +2325,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
            'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
        'buffer_caption_updated' : [ None, dispatch ],
             },
-            0 : { # Normal mode
+            0 : {  # Normal mode
                     '* pressed' : (0, skip),
                    '* released' : (0, skip, dispatch),
              '*button* pressed' : (0, skip, dispatch),
@@ -2343,7 +2343,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
     def OnPageClose(self, evt):  #<wx._aui.AuiNotebookEvent>
         buf = self.GetPage(evt.Selection)
         if buf.need_buffer_save:
-            if wx.MessageBox( # Confirm closing the buffer.
+            if wx.MessageBox(  # Confirm closing the buffer.
                     "You are closing unsaved content.\n\n"
                     "The changes will be discarded.\n"
                     "Continue closing?",
@@ -2539,7 +2539,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         if not buf:
             buf = self.create_buffer("*temp file*")
         elif buf.need_buffer_save and verbose:
-            if wx.MessageBox( # Confirm loading the buffer.
+            if wx.MessageBox(  # Confirm loading the buffer.
                     "You are leaving unsaved content.\n\n"
                     "The changes will be discarded.\n"
                     "Continue loading?",
@@ -2593,7 +2593,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         buf = buf or self.buffer
         if buf.need_buffer_load and verbose:
             self.swap_buffer(buf)
-            if wx.MessageBox( # Confirm saving the buffer.
+            if wx.MessageBox(  # Confirm saving the buffer.
                     "The file has been modified externally.\n\n"
                     "The contents of the file will be overwritten.\n"
                     "Continue saving?",
@@ -2658,7 +2658,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Delete the buffer; confirm the close with a dialog."""
         buf = buf or self.buffer
         if buf.need_buffer_save:
-            if wx.MessageBox( # Confirm closing the buffer.
+            if wx.MessageBox(  # Confirm closing the buffer.
                     "You are closing unsaved content.\n\n"
                     "The changes will be discarded.\n"
                     "Continue closing?",
@@ -2672,7 +2672,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         """Delete all buffers; confirm the close with a dialog."""
         for buf in self.get_all_buffers():
             if buf.need_buffer_save:
-                if wx.MessageBox( # Confirm closing the buffer.
+                if wx.MessageBox(  # Confirm closing the buffer.
                         "You are closing unsaved content.\n\n"
                         "The changes will be discarded.\n"
                         "Continue closing?",
@@ -2914,7 +2914,7 @@ class Nautilus(EditorInterface, Shell):
             """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, evt)
         
-        self.handler.update({ # DNA<Nautilus>
+        self.handler.update({  # DNA<Nautilus>
             None : {
                  'interp_error' : [ None, self.on_interp_error ],
                 'shell_deleted' : [ None, dispatch, self.on_shell_deleted ],
@@ -2922,7 +2922,7 @@ class Nautilus(EditorInterface, Shell):
               'shell_activated' : [ None, dispatch, self.on_shell_activated ],
             'shell_inactivated' : [ None, dispatch, self.on_shell_inactivated ],
             },
-            -1 : { # original action of the wx.py.shell
+            -1 : {  # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
                  '*alt pressed' : (-1, ),
                 '*ctrl pressed' : (-1, ),
@@ -2930,12 +2930,12 @@ class Nautilus(EditorInterface, Shell):
              '*[LR]win pressed' : (-1, ),
                  '*f12 pressed' : (-2, self.on_exit_escmap, self.on_enter_notemode),
             },
-            -2 : { # Note mode
+            -2 : {  # Note mode
                   'C-g pressed' : (0, self.on_exit_notemode),
                  '*f12 pressed' : (0, self.on_exit_notemode),
                'escape pressed' : (0, self.on_exit_notemode),
             },
-            0 : { # Normal mode
+            0 : {  # Normal mode
                     '* pressed' : (0, skip),
                    '* released' : (0, skip, dispatch),
              '*button* pressed' : (0, skip, dispatch),
@@ -2975,7 +2975,7 @@ class Nautilus(EditorInterface, Shell):
                   'M-, pressed' : (4, self.call_text_autocomp),
                   'M-m pressed' : (5, self.call_module_autocomp),
             },
-            1 : { # history auto completion S-mode
+            1 : {  # history auto completion S-mode
                          'quit' : (0, clear),
                          'skip' : (0, self.on_indent_line),
                     '* pressed' : (0, fork),
@@ -3000,7 +3000,7 @@ class Nautilus(EditorInterface, Shell):
              '*[LR]win pressed' : (1, ),
              '*f[0-9]* pressed' : (1, ),
             },
-            2 : { # word auto completion AS-mode
+            2 : {  # word auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
@@ -3028,7 +3028,7 @@ class Nautilus(EditorInterface, Shell):
              '*[LR]win pressed' : (2, ),
              '*f[0-9]* pressed' : (2, ),
             },
-            3 : { # apropos auto completion AS-mode
+            3 : {  # apropos auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
@@ -3056,7 +3056,7 @@ class Nautilus(EditorInterface, Shell):
              '*[LR]win pressed' : (3, ),
              '*f[0-9]* pressed' : (3, ),
             },
-            4 : { # text auto completion AS-mode
+            4 : {  # text auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),
@@ -3084,7 +3084,7 @@ class Nautilus(EditorInterface, Shell):
              '*[LR]win pressed' : (4, ),
              '*f[0-9]* pressed' : (4, ),
             },
-            5 : { # module auto completion AS-mode
+            5 : {  # module auto completion AS-mode
                          'quit' : (0, self.clear_autocomp),
                     '* pressed' : (0, self.clear_autocomp, fork),
                   'tab pressed' : (0, clear, skip),

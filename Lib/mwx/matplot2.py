@@ -167,7 +167,7 @@ class MatplotPanel(wx.Panel):
             except AttributeError:
                 pass
         
-        self.__handler = FSM({ # DNA<MatplotPanel>
+        self.__handler = FSM({  # DNA<MatplotPanel>
                 None : {
                   'canvas_draw' : [ None, self.OnDraw ],  # before canvas.draw
                 #'canvas_drawn' : [ None, ],              # after canvas.draw

@@ -219,6 +219,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def blink(self, i):
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             self.SetItemBackgroundColour(i, "yellow")
+            
             def _reset_color():
                 if self and i < self.ItemCount:
                     self.SetItemBackgroundColour(i, 'white')

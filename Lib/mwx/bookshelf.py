@@ -91,7 +91,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
             self.parent.handler(self.handler.current_event, evt)
             evt.Skip()
         
-        self.handler.update({ # DNA<EditorTreeCtrl>
+        self.handler.update({  # DNA<EditorTreeCtrl>
             None : {
              '*button* pressed' : [ None, dispatch ],
             '*button* released' : [ None, dispatch ],
@@ -100,7 +100,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                'delete pressed' : (0, self.on_delete_buffer),
             },
         })
-        self.context = { # DNA<EditorBook>
+        self.context = {  # DNA<EditorBook>
             None : {
                    'buffer_new' : [ None, self.on_buffer_new ],
                  'buffer_saved' : [ None, ],

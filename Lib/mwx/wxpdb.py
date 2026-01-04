@@ -111,7 +111,7 @@ class Debugger(Pdb):
             """Fork events to the parent."""
             self.parent.handler(self.handler.current_event, evt)
         
-        self.__handler = FSM({ # DNA<Debugger>
+        self.__handler = FSM({  # DNA<Debugger>
             0 : {
                   'debug_begin' : (1, self.on_debug_begin, dispatch),
                   'trace_begin' : (2, dispatch),
@@ -336,6 +336,7 @@ class Debugger(Pdb):
         """Called in preloop (cmdloop)."""
         shell = self.interactive_shell
         self.__cpos = shell.cpos
+        
         def _next():
             shell.goto_char(shell.eolc)
             pos = self.__cpos

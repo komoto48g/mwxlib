@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.7.17"
+__version__ = "1.7.18"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -246,7 +246,7 @@ class KeyCtrlInterfaceMixin:
         
         assert state is not None, "Don't make keymap for None:state"
         
-        self.handler.update({ # DNA<KeyCtrlInterfaceMixin>
+        self.handler.update({  # DNA<KeyCtrlInterfaceMixin>
             state : {
                           event : [ keymap, self.pre_command_hook ],
             },
@@ -338,7 +338,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__key = ''
         self.__button = ''
         self.__isDragging = False
-        self.__handler = FSM({ # DNA<CtrlInterface>
+        self.__handler = FSM({  # DNA<CtrlInterface>
                 None : {
                 },
                 0 : {
@@ -400,7 +400,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
 
-    def on_hotkey_down(self, evt): #<wx._core.KeyEvent>
+    def on_hotkey_down(self, evt):  #<wx._core.KeyEvent>
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
         """
@@ -767,7 +767,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
-        self.__handler = FSM({ # DNA<Frame>
+        self.__handler = FSM({  # DNA<Frame>
                 None : {
                 },
                 0 : {
@@ -821,7 +821,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         ## To default close >>> self.Unbind(wx.EVT_CLOSE).
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
-        self.__handler = FSM({ # DNA<MiniFrame>
+        self.__handler = FSM({  # DNA<MiniFrame>
                 None : {
                 },
                 0 : {
@@ -1237,7 +1237,7 @@ class ShellFrame(MiniFrame):
                     self.indicator.Value = 7
             evt.Skip()
         
-        self.handler.update({ # DNA<ShellFrame>
+        self.handler.update({  # DNA<ShellFrame>
             None : {
                   'debug_begin' : [ None, self.on_debug_begin ],
                    'debug_next' : [ None, self.on_debug_next ],
@@ -1405,7 +1405,7 @@ class ShellFrame(MiniFrame):
 
     def OnClose(self, evt):
         if self.debugger.busy:
-            if wx.MessageBox( # Confirm closing the debugger.
+            if wx.MessageBox(  # Confirm closing the debugger.
                     "The debugger is running.\n\n"
                     "Enter [q]uit to exit before closing.\n"
                     "Continue closing?",
@@ -1426,7 +1426,7 @@ class ShellFrame(MiniFrame):
                 if buf.need_buffer_save:
                     self.popup_window(book)
                     buf.SetFocus()
-                    if wx.MessageBox( # Confirm closing the buffer.
+                    if wx.MessageBox(  # Confirm closing the buffer.
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",
