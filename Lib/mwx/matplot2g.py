@@ -129,27 +129,29 @@ class AxesImagePhantom:
     """
     def __init__(self, parent, buf, name, show=True, **kwargs):
         self.parent = parent
+        
         ## Properties of the frame/image.
         self.__name = name
         self.__attributes = kwargs
         self.__localunit = kwargs.get('localunit')
         self.__center = kwargs.get('center', [0, 0])
-        self.__aspect_ratio = 1
+        
+        ## Conditions for image loading.
         self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
                                     cutoff=self.parent.score_percentile,
                                     threshold=self.parent.nbytes_threshold,
                                     )
-        ## Conditions for image loading.
         self.__bins = bins
         self.__cuts = vlim
         self.__art = parent.axes.imshow(img,
                                         cmap=cm.gray,
-                                        aspect='equal',
+                                        aspect='equal',  # cf. aspect_ratio => xy_unit
                                         interpolation='nearest',
                                         visible=show,
                                         picker=True,
                                         )
+        self.aspect_ratio = 1
         self.update_extent()
 
     def __getattr__(self, attr):
@@ -163,7 +165,6 @@ class AxesImagePhantom:
         """Update frame-specifc attributes."""
         if not attr:
             return
-        self.__attributes.update(attr)
         
         FLAG_ANNOTATION = 1
         FLAG_UPDATE_EXTENT = 2
@@ -173,13 +174,11 @@ class AxesImagePhantom:
                 self.parent.infobar.ShowMessage(attr['annotation'])
             flag |= FLAG_ANNOTATION
         
-        if 'aspect_ratio' in attr:
-            self.__aspect_ratio = attr['aspect_ratio']
-            flag |= FLAG_UPDATE_EXTENT
-        
         if 'center' in attr:
-            self.__center = attr['center']
-            flag |= FLAG_UPDATE_EXTENT
+            v = list(attr['center'])  # for json format
+            if v != self.__center:
+                self.__center = v
+                flag |= FLAG_UPDATE_EXTENT
         
         if 'localunit' in attr:
             v = attr['localunit']
@@ -190,8 +189,10 @@ class AxesImagePhantom:
             elif v <= 0:
                 raise ValueError("The unit value must be greater than zero")
             if v != self.__localunit:
+                self.__localunit = v
                 flag |= FLAG_UPDATE_EXTENT
-            self.__localunit = v
+        
+        self.__attributes.update(attr)
         
         if flag & FLAG_UPDATE_EXTENT:
             self.update_extent()
@@ -256,14 +257,9 @@ class AxesImagePhantom:
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
 
-    aspect_ratio = property(
-        lambda self: self.__aspect_ratio,
-        lambda self, v: self.update_attr({'aspect_ratio': v or 1}),
-        doc="Aspect ratio of logical units.")
-
     center = property(
         lambda self: self.__center,
-        lambda self, v: self.update_attr({'center': list(v)}),
+        lambda self, v: self.update_attr({'center': v}),
         doc="Center coordinates of the frame in logical units.")
 
     localunit = property(
@@ -279,8 +275,8 @@ class AxesImagePhantom:
     @property
     def xy_unit(self):
         """Logical length per pixel in arbitrary units [u/pix] for (X, Y) directions."""
-        u = self.__localunit or self.parent.unit
-        r = self.__aspect_ratio
+        u = self.unit
+        r = self.aspect_ratio
         return (u, u) if r == 1 else (u, u * r)
 
     @property
