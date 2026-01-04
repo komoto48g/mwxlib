@@ -3,8 +3,7 @@
 the local namespace or any object.
 """
 __author__ = "Patrick K. O'Brien <pobrien@orbtech.com>"
-__author__ += "Kazuya O'moto <komoto@jeol.co.jp>"
-# Tags: py3-port
+# Modified by Kazuya O'moto <komoto@jeol.co.jp>
 
 import wx
 import six
@@ -18,8 +17,8 @@ import types
 import warnings
 
 
-COMMONTYPES = [getattr(types, t) for t in dir(types) \
-               if not t.startswith('_') \
+COMMONTYPES = [getattr(types, t) for t in dir(types)
+               if not t.startswith('_')
                and t not in ('ClassType', 'InstanceType', 'ModuleType')]
 
 DOCTYPES = ('BuiltinFunctionType', 'BuiltinMethodType', 'ClassType',
@@ -27,7 +26,7 @@ DOCTYPES = ('BuiltinFunctionType', 'BuiltinMethodType', 'ClassType',
             'LambdaType', 'MethodType', 'ModuleType',
             'UnboundMethodType', 'method-wrapper')
 
-SIMPLETYPES = [getattr(types, t) for t in dir(types) \
+SIMPLETYPES = [getattr(types, t) for t in dir(types)
                if not t.startswith('_') and t not in DOCTYPES]
 
 #del t
@@ -402,7 +401,6 @@ class Filling(wx.SplitterWindow):
     def SaveSettings(self, config):
         config.WriteInt('Sash/FillingPos', self.GetSashPosition())
         config.WriteInt('View/Zoom/Filling', self.text.GetZoom())
-
 
 
 class FillingFrame(wx.Frame):

@@ -113,7 +113,7 @@ def _Or(p, q):
     return _pred
 
 
-def predicate(text, locals):
+def _Predicate(text, locals):
     tokens = [x for x in split_words(text.strip()) if not x.isspace()]
     j = 0
     while j < len(tokens):
@@ -144,7 +144,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
     name = alias or typename(obj)
     
     if isinstance(pred, str):
-        pred = predicate(pred, locals)
+        pred = _Predicate(pred, locals)
     
     if isinstance(pred, type):
         pred = instance(pred)
