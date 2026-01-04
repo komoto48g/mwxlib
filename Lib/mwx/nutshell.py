@@ -1863,10 +1863,7 @@ class Buffer(EditorInterface, EditWindow):
             < 0:  a url file
         """
         try:
-            mtime = os.path.getmtime(self.__path)
-            return mtime - self.__mtime
-        except FileNotFoundError:
-            self.__mtime = False  # valid path (but not found)
+            return os.path.getmtime(self.__path) - self.__mtime
         except OSError:
             pass
         return self.__mtime
@@ -2535,7 +2532,8 @@ class EditorBook(AuiNotebook, CtrlInterface):
 
     def load_file(self, filename, lineno=0, verbose=True, **kwargs):
         """Load a file into an existing or new buffer.
-        The requests module is required to use URL extension.
+        Note:
+            The 'requests' module is required to load from a URL.
         """
         buf = self.find_buffer(filename)
         if not buf:
@@ -2590,7 +2588,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         return retval
 
     def save_file(self, filename, buf=None, verbose=True):
-        """Save the current buffer to a file.
+        """Save the specified buffer to the given filename.
         """
         buf = buf or self.buffer
         if buf.need_buffer_load and verbose:
@@ -2614,7 +2612,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return False
 
     def load_buffer(self, buf=None):
-        """Confirm the load with the dialog."""
+        """Load the buffer; confirm the load with the dialog."""
         buf = buf or self.buffer
         dt = buf.mtdelta
         if dt is None:
@@ -2627,7 +2625,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return self.load_file(buf.filename, buf.markline+1)
 
     def save_buffer(self, buf=None):
-        """Confirm the save with the dialog."""
+        """Save the buffer."""
         buf = buf or self.buffer
         dt = buf.mtdelta
         if dt is None:
@@ -2640,7 +2638,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             return self.save_file(buf.filename, buf)
 
     def save_buffer_as(self, buf=None):
-        """Confirm the saveas with the dialog."""
+        """Save the buffer as a new file."""
         buf = buf or self.buffer
         with wx.FileDialog(self, "Save buffer as",
                 defaultDir=os.path.dirname(self.buffer.filename),
@@ -2651,12 +2649,13 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return self.save_file(dlg.Path, buf)
 
     def save_all_buffers(self):
+        """Save all buffers."""
         for buf in self.get_all_buffers():
             if buf.need_buffer_save:
                 self.save_buffer(buf)
 
     def kill_buffer(self, buf=None):
-        """Confirm the close with the dialog."""
+        """Delete the buffer; confirm the close with a dialog."""
         buf = buf or self.buffer
         if buf.need_buffer_save:
             if wx.MessageBox( # Confirm closing the buffer.
@@ -2670,6 +2669,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         self.delete_buffer(buf)
 
     def kill_all_buffers(self):
+        """Delete all buffers; confirm the close with a dialog."""
         for buf in self.get_all_buffers():
             if buf.need_buffer_save:
                 if wx.MessageBox( # Confirm closing the buffer.

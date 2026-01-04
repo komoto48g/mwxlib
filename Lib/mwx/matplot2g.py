@@ -125,30 +125,35 @@ class AxesImagePhantom:
         **kwargs: frame attributes
     
     Note:
-        Due to the problem of performance,
-        the image pixel size could be reduced by binning.
+        Due to the problem of performance, the image pixel size could be reduced by binning.
     """
     def __init__(self, parent, buf, name, show=True, **kwargs):
         self.parent = parent
+        
+        ## Properties of the frame/image.
         self.__name = name
         self.__attributes = kwargs
+        self.__pathname = kwargs.get('pathname')
+        self.__annotation = kwargs.get('annotation', '')
         self.__localunit = kwargs.get('localunit')
-        self.__center = kwargs.get('center', (0, 0))
-        self.__aspect_ratio = 1
+        self.__center = kwargs.get('center', [0, 0])
+        
+        ## Conditions for image loading.
         self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-        )
+                                    cutoff=self.parent.score_percentile,
+                                    threshold=self.parent.nbytes_threshold,
+                                    )
         self.__bins = bins
         self.__cuts = vlim
         self.__art = parent.axes.imshow(img,
-                  cmap = cm.gray,
-                aspect = 'equal',
-         interpolation = 'nearest',
-               visible = show,
-                picker = True,
-        )
+                                        cmap=cm.gray,
+                                        aspect='equal',  # cf. aspect_ratio => xy_unit
+                                        interpolation='nearest',
+                                        visible=show,
+                                        picker=True,
+                                        )
+        self.aspect_ratio = 1
         self.update_extent()
 
     def __getattr__(self, attr):
@@ -159,29 +164,47 @@ class AxesImagePhantom:
         return x is self.__art
 
     def update_attr(self, attr):
-        """Update frame-specifc attributes:
-        
-            annotation : aux info (also displayed as a message in the infobar)
-            center     : frame.center defaults to (0, 0)
-            localunit  : frame.unit
-            pathname   : full path of the buffer file
-        """
+        """Update frame-specifc attributes."""
         if not attr:
             return
-        self.__attributes.update(attr)
         
-        if 'localunit' in attr:
-            self.unit = attr['localunit']  # => [frame_updated]
-        
-        if 'center' in attr:
-            self.center = attr['center']  # => [frame_updated]
+        FLAG_ANNOTATION = 1
+        FLAG_UPDATE_EXTENT = 2
+        flag = 0
+        if 'pathname' in attr:
+            self.__pathname = attr['pathname']
+            flag |= FLAG_ANNOTATION
         
         if 'annotation' in attr:
-            v = attr['annotation']
+            self.__annotation = attr['annotation']
             if self.parent.frame is self:
-                self.parent.infobar.ShowMessage(v)
+                self.parent.infobar.ShowMessage(attr['annotation'])
+            flag |= FLAG_ANNOTATION
         
-        if {'pathname', 'annotation'} & attr.keys():
+        if 'center' in attr:
+            v = list(attr['center'])  # for json format
+            if v != self.__center:
+                self.__center = v
+                flag |= FLAG_UPDATE_EXTENT
+        
+        if 'localunit' in attr:
+            v = attr['localunit']
+            if v is None or np.isnan(v):  # nan => None: undefined.
+                v = None
+            elif np.isinf(v):
+                raise ValueError("The unit value must not be inf")
+            elif v <= 0:
+                raise ValueError("The unit value must be greater than zero")
+            if v != self.__localunit:
+                self.__localunit = v
+                flag |= FLAG_UPDATE_EXTENT
+        
+        self.__attributes.update(attr)
+        
+        if flag & FLAG_UPDATE_EXTENT:
+            self.update_extent()
+            self.parent.canvas.draw_idle()
+        if flag:
             self.parent.handler('frame_updated', self)
 
     def update_buffer(self, buf=None):
@@ -190,9 +213,9 @@ class AxesImagePhantom:
             self.__buf = _to_buffer(buf)
         
         bins, vlim, img = _to_image(self.__buf,
-                cutoff = self.parent.score_percentile,
-             threshold = self.parent.nbytes_threshold,
-        )
+                                    cutoff = self.parent.score_percentile,
+                                    threshold = self.parent.nbytes_threshold,
+                                    )
         self.__bins = bins
         self.__cuts = vlim
         self.__art.set_array(img)
@@ -232,14 +255,36 @@ class AxesImagePhantom:
         doc="Auxiliary info about the frame.")
 
     pathname = property(
-        lambda self: self.__attributes.get('pathname'),
+        lambda self: self.__pathname,
         lambda self, v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
 
     annotation = property(
-        lambda self: self.__attributes.get('annotation', ''),
+        lambda self: self.__annotation,
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
+
+    center = property(
+        lambda self: self.__center,
+        lambda self, v: self.update_attr({'center': v}),
+        doc="Center coordinates of the frame in logical units.")
+
+    localunit = property(
+        lambda self: self.__localunit,
+        lambda self, v: self.update_attr({'localunit': v}),
+        doc="Logical length per pixel in arbitrary units [u/pix], or None if not assigned.")
+
+    unit = property(
+        lambda self: self.__localunit or self.parent.unit,
+        lambda self, v: self.update_attr({'localunit': v}),
+        doc="Logical length per pixel in arbitrary units [u/pix].")
+
+    @property
+    def xy_unit(self):
+        """Logical length per pixel in arbitrary units [u/pix] for (X, Y) directions."""
+        u = self.unit
+        r = self.aspect_ratio
+        return (u, u) if r == 1 else (u, u * r)
 
     @property
     def name(self):
@@ -248,64 +293,6 @@ class AxesImagePhantom:
     @name.setter
     def name(self, v):
         self.__name = v
-        self.parent.handler('frame_updated', self)
-
-    @property
-    def localunit(self):
-        return self.__localunit
-
-    @property
-    def unit(self):
-        """Logical length per pixel arb.unit [u/pix]."""
-        return self.__localunit or self.parent.unit
-
-    @unit.setter
-    def unit(self, v):
-        if v == self.__localunit:  # no effect
-            return
-        if v is None or np.isnan(v):  # nan => undefined
-            v = None
-        elif np.isinf(v):
-            raise ValueError("The unit value must not be inf")
-        elif v <= 0:
-            raise ValueError("The unit value must be greater than zero")
-        
-        self.__localunit = v
-        self.__attributes['localunit'] = self.__localunit
-        self.update_extent()
-        self.parent.handler('frame_updated', self)
-        self.parent.canvas.draw_idle()
-
-    @unit.deleter
-    def unit(self):
-        self.unit = None
-
-    @property
-    def xy_unit(self):
-        u = self.__localunit or self.parent.unit
-        return (u, u * self.__aspect_ratio)
-
-    @property
-    def center(self):
-        """Center of logical unit."""
-        return self.__center
-
-    @center.setter
-    def center(self, v):
-        self.__center = tuple(v)
-        self.__attributes['center'] = self.__center
-        self.update_extent()
-        self.parent.handler('frame_updated', self)
-
-    @property
-    def aspect_ratio(self):
-        """Aspect ratio of logical unit."""
-        return self.__aspect_ratio
-
-    @aspect_ratio.setter
-    def aspect_ratio(self, v):
-        self.__aspect_ratio = v or 1
-        self.update_extent()
         self.parent.handler('frame_updated', self)
 
     @property
@@ -326,7 +313,7 @@ class AxesImagePhantom:
     @roi.setter
     def roi(self, v):
         if not self.parent.region.size:
-             raise ValueError("region is not selected.")
+            raise ValueError("region is not selected.")
         self.roi[:] = v  # cannot broadcast input array into different shape
         self.update_buffer()
 
@@ -400,10 +387,6 @@ class AxesImagePhantom:
     def selector_pix(self, v):
         self.selector = self.xyfrompixel(v)
 
-    @selector_pix.deleter
-    def selector_pix(self):
-        del self.selector
-
     @property
     def markers_pix(self):
         """Marked points data array [[x],[y]] in pixels."""
@@ -413,10 +396,6 @@ class AxesImagePhantom:
     def markers_pix(self, v):
         self.markers = self.xyfrompixel(v)
 
-    @markers_pix.deleter
-    def markers_pix(self):
-        del self.markers
-
     @property
     def region_pix(self):
         """Cropped points data array [l,r],[b,t] in pixels."""
@@ -425,10 +404,6 @@ class AxesImagePhantom:
     @region_pix.setter
     def region_pix(self, v):
         self.region = self.xyfrompixel(v)
-
-    @region_pix.deleter
-    def region_pix(self):
-        del self.region
 
 
 class GraphPlot(MatplotPanel):
@@ -472,7 +447,7 @@ class GraphPlot(MatplotPanel):
                   'C-a pressed' : [ None, _F(self.fit_to_axes) ],
                   'C-i pressed' : [ None, _F(self.invert_cmap) ],
                   'C-k pressed' : [ None, _F(self.kill_buffer) ],
-                'C-S-k pressed' : [ None, _F(self.kill_buffer_all) ],
+                'C-S-k pressed' : [ None, _F(self.kill_all_buffers) ],
                   'C-c pressed' : [ None, _F(self.write_buffer_to_clipboard) ],
                   'C-v pressed' : [ None, _F(self.read_buffer_from_clipboard) ],
             },
@@ -618,7 +593,7 @@ class GraphPlot(MatplotPanel):
                 lambda v: v.Enable(self.frame is not None)),
                 
             (wx.ID_CLOSE_ALL, "&Kill all buffer\t(C-S-k)", "Kill buffers", _Icon(wx.ART_DELETE),
-                lambda v: self.kill_buffer_all(),
+                lambda v: self.kill_all_buffers(),
                 lambda v: v.Enable(self.frame is not None)),
         ]
         
@@ -688,13 +663,13 @@ class GraphPlot(MatplotPanel):
         if isinstance(buf, str):
             buf = Image.open(buf)
         
-        pathname = kwargs.get('pathname')
+        path = kwargs.get('pathname')
         paths = [art.pathname for art in self.__Arts]
         names = [art.name for art in self.__Arts]
         j = -1
-        if pathname:
-            if pathname in paths:
-                j = paths.index(pathname)  # identical path
+        if path:
+            if path in paths:
+                j = paths.index(path)  # existing path
         elif name in names:
             j = names.index(name)  # existing frame
         if j != -1:
@@ -880,12 +855,12 @@ class GraphPlot(MatplotPanel):
 
     @property
     def unit(self):
-        """Logical length per pixel arb.unit [u/pix]."""
+        """Logical length per pixel in arbitrary units [u/pix]."""
         return self.__unit
 
     @unit.setter
     def unit(self, v):
-        if v == self.__unit:  # no effect unless unit changes
+        if v == self.__unit:  # no effect
             return
         if v is None or np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value must not be nan or inf")
@@ -902,7 +877,7 @@ class GraphPlot(MatplotPanel):
         if self.frame:
             del self[self.__index]
 
-    def kill_buffer_all(self):
+    def kill_all_buffers(self):
         del self[:]
 
     def fit_to_axes(self):
@@ -1462,7 +1437,7 @@ class GraphPlot(MatplotPanel):
                     xy=(x,y), xycoords='data',
                     xytext=(6,6), textcoords='offset points',
                     bbox=dict(boxstyle="round", fc=(1,1,1,), ec=(1,0,0,)),
-                    color='red', size=7, #fontsize=8,
+                    color='red', size=7,  # fontsize=8,
                   )
                 )
             self.trace_point(*self.get_current_mark(), type=MARK)

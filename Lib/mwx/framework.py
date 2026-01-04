@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.7.13"
+__version__ = "1.7.17"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1926,6 +1926,7 @@ class ShellFrame(MiniFrame):
                 self.ghost.AddPage(editor, bookname)
                 self.ghost.move_tab(editor, 0)
             self.handler('book_new', editor)
+            
             def _attach():
                 editor.handler.append(self.Bookshelf.context)
                 self.Bookshelf.build_tree(clear=0)
