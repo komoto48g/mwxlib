@@ -590,7 +590,7 @@ class MyFileDropLoader(wx.FileDropTarget):
             elif ext == '.jssn':
                 self.loader.load_session(fn)
             elif ext == '.index':
-                self.loader.load_index(fn, self.view)
+                self.loader.import_index(fn, self.view)
             else:
                 paths.append(fn)  # image file just stacks to be loaded
         if paths:
@@ -687,19 +687,19 @@ class Frame(mwx.Frame):
                 lambda v: self.save_frame(),
                 lambda v: v.Enable(self.__view.frame is not None)),
                 
-            (wx.ID_SAVEAS, "&Save as TIFFs", "Save buffers as a multi-page tiff", Icon('saveall'),
+            (wx.ID_SAVEAS, "&Save as TIFFs\tCtrl+Shift+s", "Save buffers as a multi-page tiff", Icon('saveall'),
                 lambda v: self.save_frames_as_tiff(),
                 lambda v: v.Enable(self.__view.frame is not None)),
             (),
-            ("Index", (
-                (mwx.ID_(11), "&Import index\tCtrl+Shift+o", "Import index file", Icon('open'),
-                    lambda v: self.load_index()),
-                    
-                (mwx.ID_(12), "&Export index\tCtrl+Shift+s", "Export index file", Icon('saveas'),
-                    lambda v: self.save_index(),
-                    lambda v: v.Enable(self.__view.frame is not None)),
-                )),
-            (),
+            # ("Index", (
+            #     (mwx.ID_(11), "&Import index", "Import index file", Icon('open'),
+            #         lambda v: self.import_index()),
+            #         
+            #     (mwx.ID_(12), "&Export index", "Export index file", Icon('saveas'),
+            #         lambda v: self.export_index(),
+            #         lambda v: v.Enable(self.__view.frame is not None)),
+            #     )),
+            # (),
             ("Session", (
                 (mwx.ID_(15), "&Open session", "Open session file",
                     lambda v: self.load_session()),
@@ -1358,7 +1358,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
     INDEXFILE = "results.index"
 
-    def load_index(self, filename=None, view=None):
+    def import_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
         
         If no view given, the currently selected view is chosen.
@@ -1394,7 +1394,7 @@ class Frame(mwx.Frame):
         ))
         return frames
 
-    def save_index(self, filename=None, frames=None):
+    def export_index(self, filename=None, frames=None):
         """Save frames :ref to the Index file.
         """
         view = self.selected_view

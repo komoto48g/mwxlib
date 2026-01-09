@@ -73,9 +73,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 'enter pressed' : (0, self.OnShowItems),  # -> frame_shown
                'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
-                  'C-o pressed' : (0, self.OnLoadItems),
-                  'C-s pressed' : (0, self.OnSaveItems),
-                'C-S-s pressed' : (0, self.OnSaveItems),
                   'C-c pressed' : (0, self.OnCopyInfo),
                   'C-l pressed' : (0, self.OnEditLocalUnit),
                    'f2 pressed' : (0, self.OnEditAnnotation),
@@ -169,17 +166,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnSelectAllItems(self, evt):
         for j in range(self.ItemCount):
             self.Select(j)
-
-    def OnLoadItems(self, evt):
-        self.parent.parent.load_index(view=self.Target)
-
-    def OnSaveItems(self, evt):
-        selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
-        if selected_frames:
-            self.parent.message("Exporting {} frames.".format(len(selected_frames)))
-            self.parent.parent.save_index(frames=selected_frames)
-        else:
-            self.parent.message("No frame selected.")
 
     def OnCopyInfo(self, evt):
         selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
