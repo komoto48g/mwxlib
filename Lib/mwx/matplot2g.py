@@ -13,7 +13,6 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
-# from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -949,10 +948,10 @@ class GraphPlot(MatplotPanel):
             if len(x) == 0:  # no selection
                 return
             
-            if len(x) == 1:  # 1-selector trace point (called from Marker:setter)
+            if len(x) == 1:  # 1-selector trace point (called from markers.setter)
                 return self.trace_point(x[0], y[0], type)
             
-            if len(x) == 2:  # 2-selector trace line (called from selector:setter)
+            if len(x) == 2:  # 2-selector trace line (called from selector.setter)
                 nx, ny = frame.xytopixel(x, y)
                 dx = x[1] - x[0]
                 dy = y[1] - y[0]
@@ -961,7 +960,7 @@ class GraphPlot(MatplotPanel):
                 li = np.hypot(nx[1]-nx[0], ny[1]-ny[0])
                 self.message(f"[Line] Length: {li:.1f} pixel ({lu:g}u) Angle: {a:.1f} deg")
             
-            elif type == REGION:  # N-selector trace polygon (called from region:setter)
+            elif type == REGION:  # N-selector trace polygon (called from region.setter)
                 nx, ny = frame.xytopixel(x, y)
                 xo, yo = min(nx), min(ny)  # top-left
                 xr, yr = max(nx), max(ny)  # bottom-right
@@ -1375,7 +1374,7 @@ class GraphPlot(MatplotPanel):
             return
         self.marked.set_data(x, y)
         self.__marksel = []
-        self.update_art_of_mark()
+        self.update_mark_art()
         self.handler('mark_drawn', self.frame)
 
     @markers.deleter
@@ -1383,7 +1382,7 @@ class GraphPlot(MatplotPanel):
         if self.markers.size:
             self.marked.set_data([], [])
             self.__marksel = []
-            self.update_art_of_mark()
+            self.update_mark_art()
             self.handler('mark_removed', self.frame)
 
     def get_current_mark(self):
@@ -1397,7 +1396,7 @@ class GraphPlot(MatplotPanel):
         if j:
             xm[j], ym[j] = x, y
             self.marked.set_data(xm, ym)
-            self.update_art_of_mark(j, xm[j], ym[j])
+            self.update_mark_art(j, xm[j], ym[j])
         else:
             n = len(xm)
             k = len(x) if hasattr(x, '__iter__') else 1
@@ -1405,7 +1404,7 @@ class GraphPlot(MatplotPanel):
             xm, ym = np.append(xm, x), np.append(ym, y)
             self.marked.set_data(xm, ym)
             self.marked.set_visible(1)
-            self.update_art_of_mark()
+            self.update_mark_art()
         self.selector = (x, y)
 
     def del_current_mark(self):
@@ -1417,9 +1416,9 @@ class GraphPlot(MatplotPanel):
             self.marked.set_data(xm, ym)
             n = len(xm)
             self.__marksel = [j[-1] % n] if n > 0 else []
-            self.update_art_of_mark()
+            self.update_mark_art()
 
-    def update_art_of_mark(self, *args):
+    def update_mark_art(self, *args):
         if args:
             for k, x, y in zip(*args):
                 art = self.__markarts[k]  # art の再描画処理をして終了
@@ -1449,7 +1448,7 @@ class GraphPlot(MatplotPanel):
         if not self.__marksel and len(xs) > 0:
             self.set_current_mark(xs, ys)
             self.handler('mark_drawn', self.frame)
-        self.update_art_of_mark()
+        self.update_mark_art()
 
     def OnMarkRemove(self, evt):
         if self.__marksel:
@@ -1463,14 +1462,14 @@ class GraphPlot(MatplotPanel):
                 self.__marksel += [k]
         else:
             self.__marksel = [k]
-        self.update_art_of_mark()
+        self.update_mark_art()
         self.selector = self.get_current_mark()
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame)  # 多重マーカー選択時
 
     def OnMarkDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__marksel = []
-        self.update_art_of_mark()
+        self.update_mark_art()
 
     def OnMarkDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
@@ -1573,8 +1572,6 @@ class GraphPlot(MatplotPanel):
             l,r,b,t = self.frame.get_extent()
             xa, xb = min(x), max(x)
             ya, yb = min(y), max(y)
-            # if (xa < l or xb > r) or (ya < b or yb > t):
-            #     return
             ## Modify range so that it does not exceed the extent.
             w, h = xb-xa, yb-ya
             if xa < l: xa, xb = l, l+w
@@ -1585,15 +1582,15 @@ class GraphPlot(MatplotPanel):
         y = [ya, ya, yb, yb, ya]
         self.rected.set_data(x, y)
         self.rected.set_visible(1)
-        self.update_art_of_region()
+        self.update_rect_art()
 
     def del_current_rect(self):
         self.__rectsel = []
         self.rected.set_data([], [])
         self.rected.set_visible(0)
-        self.update_art_of_region()
+        self.update_rect_art()
 
-    def update_art_of_region(self, *args):
+    def update_rect_art(self, *args):
         if args:
             art = self.__rectarts  # art の再描画処理をして終了
             art.xy = args
@@ -1627,7 +1624,7 @@ class GraphPlot(MatplotPanel):
             xs = (xs.min()-ux/2, xs.max()+ux/2)
             ys = (ys.max()+uy/2, ys.min()-uy/2)
             self.set_current_rect(xs, ys)
-            self.update_art_of_region()
+            self.update_rect_art()
             self.handler('region_drawn', self.frame)
 
     def OnRegionRemove(self, evt):
@@ -1643,11 +1640,11 @@ class GraphPlot(MatplotPanel):
         xs, ys = evt.artist.get_data(orig=0)
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
         self.__rectsel = [k] if dots < 8 else [0,1,2,3,4]  # リージョンの全選択
-        self.update_art_of_region()
+        self.update_rect_art()
 
     def OnRegionDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__rectsel = []
-        self.update_art_of_region()
+        self.update_rect_art()
         self.set_wxcursor(wx.CURSOR_ARROW)
 
     def OnRegionDragBegin(self, evt):
