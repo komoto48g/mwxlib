@@ -303,7 +303,7 @@ class AxesImagePhantom:
     def roi(self):
         """Current buffer ROI (region of interest)."""
         if self.parent.region.size:
-            nx, ny = self.xytopixel(*self.region)
+            nx, ny = self.xytopixel(self.region)
             sx = slice(max(0, nx[0]), nx[1])  # nx slice
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
             return self.__buf[sy, sx]
@@ -379,7 +379,7 @@ class AxesImagePhantom:
 
     @property
     def selector_pix(self):
-        """Selected points array [[x],[y]] in pixels."""
+        """Selected points array [[x], [y]] in pixels."""
         return self.xytopixel(self.selector)
 
     @selector_pix.setter
@@ -388,7 +388,7 @@ class AxesImagePhantom:
 
     @property
     def markers_pix(self):
-        """Marked points data array [[x],[y]] in pixels."""
+        """Marked points data array [[x], [y]] in pixels."""
         return self.xytopixel(self.markers)
 
     @markers_pix.setter
@@ -397,7 +397,7 @@ class AxesImagePhantom:
 
     @property
     def region_pix(self):
-        """Cropped points data array [l,r],[b,t] in pixels."""
+        """Cropped points data array [[l,r], [b,t]] in pixels."""
         return self.xytopixel(self.region)
 
     @region_pix.setter
@@ -937,19 +937,20 @@ class GraphPlot(MatplotPanel):
 
     def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
+        if not hasattr(x, '__iter__'):  # called from OnMotion
+            return self.trace_point([x], [y], type)
+        
         frame = self.frame
         if frame:
-            if not hasattr(x, '__iter__'):  # called from OnMotion
-                nx, ny = frame.xytopixel(x, y)
-                z = frame.xytoc(x, y)
-                self.message(f"[{nx:-4d},{ny:-4d}] ({x:-8.3f},{y:-8.3f}) value: {z}")
-                return
-            
             if len(x) == 0:  # no selection
                 return
             
             if len(x) == 1:  # 1-selector trace point (called from markers.setter)
-                return self.trace_point(x[0], y[0], type)
+                x, y = x[0], y[0]
+                z = frame.xytoc(x, y)
+                nx, ny = frame.xytopixel(x, y)
+                self.message(f"[{nx:-4d},{ny:-4d}] ({x:-8.3f},{y:-8.3f}) value: {z}")
+                return
             
             if len(x) == 2:  # 2-selector trace line (called from selector.setter)
                 nx, ny = frame.xytopixel(x, y)
@@ -962,9 +963,9 @@ class GraphPlot(MatplotPanel):
             
             elif type == REGION:  # N-selector trace polygon (called from region.setter)
                 nx, ny = frame.xytopixel(x, y)
-                xo, yo = min(nx), min(ny)  # top-left
-                xr, yr = max(nx), max(ny)  # bottom-right
-                self.message(f"[Region] crop={xr-xo}:{yr-yo}:{xo}:{yo}")  # (W:H:left:top)
+                xo, xp = min(nx), max(nx)
+                yo, yp = min(ny), max(ny)
+                self.message(f"[Region] crop={xp-xo}:{yp-yo}:{xo}:{yo}")  # (W:H:left:top)
 
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
@@ -1114,9 +1115,8 @@ class GraphPlot(MatplotPanel):
         x = evt.mouseevent.xdata
         y = evt.mouseevent.ydata
         nx, ny = self.frame.xytopixel(x, y)
-        x, y = self.frame.xyfrompixel(nx, ny)
         evt.ind = (ny, nx)
-        self.selector = (x, y)
+        self.selector = self.frame.xyfrompixel(nx, ny)
 
     def _inaxes(self, evt):
         try:
@@ -1537,13 +1537,13 @@ class GraphPlot(MatplotPanel):
 
     @property
     def region(self):
-        """Cropped rectangle points data array [l,r],[b,t]."""
+        """Cropped rectangle points data array [[l,r], [b,t]]."""
         x, y = self.rected.get_data(orig=0)
         if len(x) and len(y):
-            xo, x = min(x), max(x)  # x[[0, 2]]
-            yo, y = min(y), max(y)  # y[[0, 2]]
-            return np.array(((xo, x), (yo, y)))
-        return np.resize(0., (2,0))
+            l, r = min(x), max(x)
+            b, t = min(y), max(y)
+            return np.array(((l,r), (b,t)))
+        return np.resize(0., (2, 0))
 
     @region.setter
     def region(self, v):
