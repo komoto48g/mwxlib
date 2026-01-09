@@ -217,35 +217,30 @@ class Plugin(Layer):
 
     def set_crop(self):
         """Set crop area (W:H:Left:Top) to ROI."""
-        if not self._path:
-            return
         frame = self.graph.frame
         if frame:
             try:
-                w, h, xo, yo = eval(self.crop.Value.replace(':', ','))
-                xo -= 0.5  # Correction with half-pixel
-                yo -= 0.5  # to select left-top (not center) position
+                w, h, xo, yo = map(float, self.crop.Value.split(':'))
+                xo -= 0.5  # Correction with half-pixel offset.
+                yo -= 0.5  # Select left-top corner position.
                 nx = xo, xo+w
                 ny = yo, yo+h
                 frame.region = frame.xyfrompixel(nx, ny)
-            except Exception:
-                self.message("Failed to evaluate crop text.")
+            except Exception as e:
+                self.message("Failed to evaluate crop text;", e)
 
     def get_crop(self):
         """Get crop area (W:H:Left:Top) from ROI."""
-        if not self._path:
-            return
-        crop = ''
         frame = self.graph.frame
         if frame:
-            nx, ny = frame.xytopixel(*frame.region)
+            nx, ny = frame.xytopixel(frame.region)
             if nx.size:
-                xo, yo = nx[0], ny[1]
-                xp, yp = nx[1], ny[0]
-                crop = "{}:{}:{}:{}".format(xp-xo, yp-yo, xo, yo)
-        if not crop:
-            crop = "{}:{}:0:0".format(*self.video_size)
-        self.crop.Value = crop
+                xo, xp = nx
+                yp, yo = ny
+                self.crop.Value = f"{xp-xo}:{yp-yo}:{xo}:{yo}"  # (W:H:left:top)
+                return
+        if self._path:
+            self.crop.Value = "{}:{}:0:0".format(*self.video_size)
 
     def seekto(self, offset):
         """Seek position with offset [ms] from the `to` position."""
