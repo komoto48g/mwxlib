@@ -1051,7 +1051,7 @@ class Frame(mwx.Frame):
             return next((x for x in self.get_all_plugs() if x is name), None)
 
     def get_all_plugs(self):
-        for name, module in self.plugins.items():
+        for _name, module in self.plugins.items():
             yield module.__plug__
 
     def load_plug(self, root, session=None, force=False, show=False,
@@ -1235,9 +1235,7 @@ class Frame(mwx.Frame):
         
         if not hasattr(module, 'ID_'):  # give a unique index to the module
             global __plug_ID__          # cache ID *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
-            try:
-                __plug_ID__
-            except NameError:
+            if "__plug_ID__" not in globals():
                 __plug_ID__ = 10000
             __plug_ID__ += 1
             module.ID_ = __plug_ID__
@@ -1450,8 +1448,11 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save frames and attributes.
     ## --------------------------------
+    wildcards = [
+        "TIF file (*.tif)|*.tif",
+         "ALL files (*.*)|*.*",
+    ]
 
-    @classmethod
     def read_attributes(self, filename, check_path=True):
         """Read attributes file.
         
@@ -1476,7 +1477,7 @@ class Frame(mwx.Frame):
                 try:
                     res.update(json.loads(s, object_hook=dt_parser))  # Read res safely.
                 except json.decoder.JSONDecodeError:
-                    res.update(eval(s))  # Read res <dict> for backward compatibility.
+                    res.update(eval(s))  # Read as tuple (deprecated).
             
             if check_path:
                 for name, attr in tuple(res.items()):
@@ -1494,7 +1495,6 @@ class Frame(mwx.Frame):
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         return res, mis
 
-    @classmethod
     def write_attributes(self, filename, frames, merge_data=True):
         """Write attributes file.
         
@@ -1517,7 +1517,7 @@ class Frame(mwx.Frame):
                         new[name] = attr
             
             with open(filename, 'w') as o:
-                # print(pformat(tuple(new.items())), file=o)  # tuple with pformat is deprecated.
+                # print(pformat(tuple(new.items())), file=o)  # Write as tuple (deprecated).
                 json.dump(new, o, indent=2, default=dt_converter)
         except Exception as e:
             print("- Failed to write attributes.", e)
@@ -1547,8 +1547,7 @@ class Frame(mwx.Frame):
         if frames:
             saved_results = {}
             for frame in frames:
-                if frame.pathname.endswith('>'):  # *dummy-path*
-                    ## Attributes are compiled in load_buffer.
+                if frame.pathname.endswith('>'):  # *dummy-path* compiled in load_buffer
                     continue
                 ## Compile attributes from index files located in each frame path.
                 savedir = os.path.dirname(frame.pathname)
@@ -1605,6 +1604,7 @@ class Frame(mwx.Frame):
         _name, ext = os.path.splitext(path)
         if ext != ".tif":
             path += ".tif"
+        
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
@@ -1630,10 +1630,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save images.
     ## --------------------------------
-    wildcards = [
-        "TIF file (*.tif)|*.tif",
-         "ALL files (*.*)|*.*",
-    ]
 
     @staticmethod
     def read_buffer(path):
