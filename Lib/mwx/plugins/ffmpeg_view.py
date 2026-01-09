@@ -129,24 +129,22 @@ class Plugin(Layer):
         self.parent.handler.bind("unknown_format", self.load_media)
         
         self.handler.update({  # DNA<ffmpeg_viewer>
+            None : {
+               'C-left pressed' : (None, _F(self.seekd, -1000)),
+              'C-right pressed' : (None, _F(self.seekd,  1000)),
+            },
             0 : {  # MEDIASTATE_STOPPED
                          'play' : (2, ),
                 'space pressed' : (2, _F(self.mc.Play)),
-                 'left pressed' : (0, _F(self.seekd, -1000)),
-                'right pressed' : (0, _F(self.seekd,  1000)),
             },
             1 : {  # MEDIASTATE_PAUSED
                          'stop' : (0, ),
                 'space pressed' : (2, _F(self.mc.Play)),
-                 'left pressed' : (1, _F(self.seekd, -1000)),
-                'right pressed' : (1, _F(self.seekd,  1000)),
             },
             2 : {  # MEDIASTATE_PLAYING
                          'stop' : (0, ),
                         'pause' : (1, ),
                 'space pressed' : (1, _F(self.mc.Pause)),
-                 'left pressed' : (2, _F(self.seekd, -1000)),
-                'right pressed' : (2, _F(self.seekd,  1000)),
             },
         })
         
@@ -203,7 +201,10 @@ class Plugin(Layer):
             self.message(f"Failed to load file {path!r}.")
             return False
 
-    DELTA = 1000  # correction ▲理由は不明 (WMP10 backend only?)
+    ## Correction for seek position. ▲理由は不明 (WMP10 backend only?)
+    @property
+    def DELTA(self):
+        return int(1000 / self.mc.PlaybackRate)
 
     def set_offset(self, tc):
         """Set offset value by referring to ss/to value."""
