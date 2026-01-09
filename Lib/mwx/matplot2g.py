@@ -556,6 +556,7 @@ class GraphPlot(MatplotPanel):
                'delete pressed' : (NORMAL, self.OnRegionRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
+                    'c pressed' : (REGION, self.OnRegionCenter),
                     'z pressed' : (ZOOM, self.OnZoomBegin),
                  '*Ldrag begin' : (REGION+DRAGGING, self.OnRegionDragBegin),
               'Rbutton pressed' : (REGION, self.on_menu_lock),
@@ -1612,6 +1613,12 @@ class GraphPlot(MatplotPanel):
                 )
             self.trace_point(x, y, type=REGION)
         self.draw(self.rected)
+
+    def OnRegionCenter(self, evt):
+        if self.region.size and self.frame:
+            (l,r), (b,t) = self.region
+            c = np.array(((l+r)/2, (b+t)/2))
+            self.region += self.frame.center - c[:,None]
 
     def OnRegionAppend(self, evt):
         xs, ys = self.selector
