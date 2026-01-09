@@ -736,7 +736,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             except AttributeError:
                 p.value = v
             except Exception as e:
-                print(f"- Failed to eval {v}:", e)
+                print(f"- Failed to eval {v};", e)
 
     def reset_params(self, checked_only=False):
         params = self.get_params(checked_only)

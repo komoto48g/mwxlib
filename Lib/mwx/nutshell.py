@@ -369,7 +369,7 @@ class AutoCompInterfaceMixin:
                     self.message("[module]>>> loading {}...".format(text))
                     modules = set(dir(import_module(text)))
                 except ImportError as e:
-                    self.message("\b failed.", e)
+                    self.message("\b failed;", e)
                     return
                 else:
                     ## Add unimported module names (case-insensitive match).
@@ -2566,7 +2566,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return True
             return False
         except (OSError, UnicodeDecodeError, ModuleNotFoundError) as e:
-            self.post_message("Failed to load:", e)
+            self.post_message("Failed to load;", e)
             self.delete_buffer(buf)
             return False
 
@@ -2608,7 +2608,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 return True
             return False
         except (OSError, UnicodeDecodeError) as e:
-            self.post_message("Failed to save:", e)
+            self.post_message("Failed to save;", e)
             return False
 
     def load_buffer(self, buf=None):
@@ -3455,9 +3455,9 @@ class Nautilus(EditorInterface, Shell):
         self.add_marker(ln, 1 if not err else 2)  # 1:white-arrow 2:red-arrow
         return (not err)
 
-    def on_interp_error(self, e):
+    def on_interp_error(self, value):
         ln = self.LineFromPosition(self.bolc)
-        self.red_pointer = ln + e.lineno - 1
+        self.red_pointer = ln + value.lineno - 1
 
     ## --------------------------------
     ## Attributes of the shell.

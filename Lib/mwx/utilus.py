@@ -163,7 +163,7 @@ def apropos(obj, rexpr='', ignorecase=True, alias=None, pred=None, locals=None):
         try:
             p = re.compile(rexpr, re.I if ignorecase else 0)
         except re.error as e:
-            print("- re:miss compilation:", e)
+            print("- re:miss compilation;", e)
         else:
             keys = sorted(filter(p.search, dir(obj)), key=lambda s: s.upper())
             n = 0

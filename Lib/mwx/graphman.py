@@ -177,9 +177,9 @@ class Thread:
             except BdbQuit:
                 pass
             except KeyboardInterrupt as e:
-                print("- Thread terminated by user:", e)
+                print("- Thread terminated by user;", e)
             except Exception as e:
-                print("- Thread failed in error:", e)
+                print("- Thread failed in error;", e)
                 traceback.print_exc()
                 tbstr = traceback.format_tb(e.__traceback__)
                 wx.CallAfter(wx.MessageBox,
@@ -462,7 +462,7 @@ class LayerInterface(CtrlInterface):
             if canvas:
                 canvas.draw_idle()
         except Exception as e:
-            print(f"- Failed to draw Arts of {self.__module__}.", e)
+            print(f"- Failed to draw Arts of {self.__module__};", e)
             del self.Arts
 
 
@@ -1433,7 +1433,7 @@ class Frame(mwx.Frame):
                     print(' ', self.message("\b skipped."))
                 output_frames.append(frame)
             except OSError as e:
-                print('-', self.message("\b failed.", e))
+                print('-', self.message("\b failed;", e))
         
         frames = output_frames
         res, mis = self.write_attributes(filename, frames)
@@ -1491,7 +1491,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print("- Failed to read attributes.", e)
+            print("- Failed to read attributes;", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         return res, mis
 
@@ -1520,7 +1520,7 @@ class Frame(mwx.Frame):
                 # print(pformat(tuple(new.items())), file=o)  # Write as tuple (deprecated).
                 json.dump(new, o, indent=2, default=dt_converter)
         except Exception as e:
-            print("- Failed to write attributes.", e)
+            print("- Failed to write attributes;", e)
             wx.MessageBox(str(e), style=wx.ICON_ERROR)
         return new, mis
 

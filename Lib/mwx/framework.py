@@ -988,7 +988,7 @@ class AuiNotebook(aui.AuiNotebook):
             self._mgr.LoadPerspective(frames)
             self._mgr.Update()
         except Exception as e:
-            print("- Failed to load perspective.", e)
+            print("- Failed to load perspective;", e)
         finally:
             self.Parent.Thaw()
 
@@ -1303,7 +1303,7 @@ class ShellFrame(MiniFrame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print("- Failed to load session:", e)
+            print("- Failed to load session;", e)
         self.SESSION_FILE = session
         
         ## Reposition the window if it is not on the desktop.
