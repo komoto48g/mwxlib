@@ -13,7 +13,6 @@ from scipy import ndimage as ndi
 
 from . import framework as mwx
 from .framework import Menu
-# from .utilus import warn
 from .utilus import funcall as _F
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
@@ -304,7 +303,7 @@ class AxesImagePhantom:
     def roi(self):
         """Current buffer ROI (region of interest)."""
         if self.parent.region.size:
-            nx, ny = self.xytopixel(*self.region)
+            nx, ny = self.xytopixel(self.region)
             sx = slice(max(0, nx[0]), nx[1])  # nx slice
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
             return self.__buf[sy, sx]
@@ -380,7 +379,7 @@ class AxesImagePhantom:
 
     @property
     def selector_pix(self):
-        """Selected points array [[x],[y]] in pixels."""
+        """Selected points array [[x], [y]] in pixels."""
         return self.xytopixel(self.selector)
 
     @selector_pix.setter
@@ -389,7 +388,7 @@ class AxesImagePhantom:
 
     @property
     def markers_pix(self):
-        """Marked points data array [[x],[y]] in pixels."""
+        """Marked points data array [[x], [y]] in pixels."""
         return self.xytopixel(self.markers)
 
     @markers_pix.setter
@@ -398,7 +397,7 @@ class AxesImagePhantom:
 
     @property
     def region_pix(self):
-        """Cropped points data array [l,r],[b,t] in pixels."""
+        """Cropped points data array [[l,r], [b,t]] in pixels."""
         return self.xytopixel(self.region)
 
     @region_pix.setter
@@ -556,6 +555,7 @@ class GraphPlot(MatplotPanel):
                'delete pressed' : (NORMAL, self.OnRegionRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
+                    'c pressed' : (REGION, self.OnRegionCenter),
                     'z pressed' : (ZOOM, self.OnZoomBegin),
                  '*Ldrag begin' : (REGION+DRAGGING, self.OnRegionDragBegin),
               'Rbutton pressed' : (REGION, self.on_menu_lock),
@@ -937,21 +937,22 @@ class GraphPlot(MatplotPanel):
 
     def trace_point(self, x, y, type=NORMAL):
         """Puts (override) a message of points x and y."""
+        if not hasattr(x, '__iter__'):  # called from OnMotion
+            return self.trace_point([x], [y], type)
+        
         frame = self.frame
         if frame:
-            if not hasattr(x, '__iter__'):  # called from OnMotion
-                nx, ny = frame.xytopixel(x, y)
-                z = frame.xytoc(x, y)
-                self.message(f"[{nx:-4d},{ny:-4d}] ({x:-8.3f},{y:-8.3f}) value: {z}")
-                return
-            
             if len(x) == 0:  # no selection
                 return
             
-            if len(x) == 1:  # 1-selector trace point (called from Marker:setter)
-                return self.trace_point(x[0], y[0], type)
+            if len(x) == 1:  # 1-selector trace point (called from markers.setter)
+                x, y = x[0], y[0]
+                z = frame.xytoc(x, y)
+                nx, ny = frame.xytopixel(x, y)
+                self.message(f"[{nx:-4d},{ny:-4d}] ({x:-8.3f},{y:-8.3f}) value: {z}")
+                return
             
-            if len(x) == 2:  # 2-selector trace line (called from selector:setter)
+            if len(x) == 2:  # 2-selector trace line (called from selector.setter)
                 nx, ny = frame.xytopixel(x, y)
                 dx = x[1] - x[0]
                 dy = y[1] - y[0]
@@ -960,11 +961,11 @@ class GraphPlot(MatplotPanel):
                 li = np.hypot(nx[1]-nx[0], ny[1]-ny[0])
                 self.message(f"[Line] Length: {li:.1f} pixel ({lu:g}u) Angle: {a:.1f} deg")
             
-            elif type == REGION:  # N-selector trace polygon (called from region:setter)
+            elif type == REGION:  # N-selector trace polygon (called from region.setter)
                 nx, ny = frame.xytopixel(x, y)
-                xo, yo = min(nx), min(ny)  # top-left
-                xr, yr = max(nx), max(ny)  # bottom-right
-                self.message(f"[Region] crop={xr-xo}:{yr-yo}:{xo}:{yo}")  # (W:H:left:top)
+                xo, xp = min(nx), max(nx)
+                yo, yp = min(ny), max(ny)
+                self.message(f"[Region] crop={xp-xo}:{yp-yo}:{xo}:{yo}")  # (W:H:left:top)
 
     def writeln(self):
         """Puts (override) attributes of current frame to the modeline."""
@@ -1114,9 +1115,8 @@ class GraphPlot(MatplotPanel):
         x = evt.mouseevent.xdata
         y = evt.mouseevent.ydata
         nx, ny = self.frame.xytopixel(x, y)
-        x, y = self.frame.xyfrompixel(nx, ny)
         evt.ind = (ny, nx)
-        self.selector = (x, y)
+        self.selector = self.frame.xyfrompixel(nx, ny)
 
     def _inaxes(self, evt):
         try:
@@ -1374,7 +1374,7 @@ class GraphPlot(MatplotPanel):
             return
         self.marked.set_data(x, y)
         self.__marksel = []
-        self.update_art_of_mark()
+        self.update_mark_art()
         self.handler('mark_drawn', self.frame)
 
     @markers.deleter
@@ -1382,7 +1382,7 @@ class GraphPlot(MatplotPanel):
         if self.markers.size:
             self.marked.set_data([], [])
             self.__marksel = []
-            self.update_art_of_mark()
+            self.update_mark_art()
             self.handler('mark_removed', self.frame)
 
     def get_current_mark(self):
@@ -1396,7 +1396,7 @@ class GraphPlot(MatplotPanel):
         if j:
             xm[j], ym[j] = x, y
             self.marked.set_data(xm, ym)
-            self.update_art_of_mark(j, xm[j], ym[j])
+            self.update_mark_art(j, xm[j], ym[j])
         else:
             n = len(xm)
             k = len(x) if hasattr(x, '__iter__') else 1
@@ -1404,7 +1404,7 @@ class GraphPlot(MatplotPanel):
             xm, ym = np.append(xm, x), np.append(ym, y)
             self.marked.set_data(xm, ym)
             self.marked.set_visible(1)
-            self.update_art_of_mark()
+            self.update_mark_art()
         self.selector = (x, y)
 
     def del_current_mark(self):
@@ -1416,9 +1416,9 @@ class GraphPlot(MatplotPanel):
             self.marked.set_data(xm, ym)
             n = len(xm)
             self.__marksel = [j[-1] % n] if n > 0 else []
-            self.update_art_of_mark()
+            self.update_mark_art()
 
-    def update_art_of_mark(self, *args):
+    def update_mark_art(self, *args):
         if args:
             for k, x, y in zip(*args):
                 art = self.__markarts[k]  # art の再描画処理をして終了
@@ -1448,7 +1448,7 @@ class GraphPlot(MatplotPanel):
         if not self.__marksel and len(xs) > 0:
             self.set_current_mark(xs, ys)
             self.handler('mark_drawn', self.frame)
-        self.update_art_of_mark()
+        self.update_mark_art()
 
     def OnMarkRemove(self, evt):
         if self.__marksel:
@@ -1462,14 +1462,14 @@ class GraphPlot(MatplotPanel):
                 self.__marksel += [k]
         else:
             self.__marksel = [k]
-        self.update_art_of_mark()
+        self.update_mark_art()
         self.selector = self.get_current_mark()
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame)  # 多重マーカー選択時
 
     def OnMarkDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__marksel = []
-        self.update_art_of_mark()
+        self.update_mark_art()
 
     def OnMarkDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
@@ -1537,13 +1537,13 @@ class GraphPlot(MatplotPanel):
 
     @property
     def region(self):
-        """Cropped rectangle points data array [l,r],[b,t]."""
+        """Cropped rectangle points data array [[l,r], [b,t]]."""
         x, y = self.rected.get_data(orig=0)
         if len(x) and len(y):
-            xo, x = min(x), max(x)  # x[[0, 2]]
-            yo, y = min(y), max(y)  # y[[0, 2]]
-            return np.array(((xo, x), (yo, y)))
-        return np.resize(0., (2,0))
+            l, r = min(x), max(x)
+            b, t = min(y), max(y)
+            return np.array(((l,r), (b,t)))
+        return np.resize(0., (2, 0))
 
     @region.setter
     def region(self, v):
@@ -1572,8 +1572,6 @@ class GraphPlot(MatplotPanel):
             l,r,b,t = self.frame.get_extent()
             xa, xb = min(x), max(x)
             ya, yb = min(y), max(y)
-            # if (xa < l or xb > r) or (ya < b or yb > t):
-            #     return
             ## Modify range so that it does not exceed the extent.
             w, h = xb-xa, yb-ya
             if xa < l: xa, xb = l, l+w
@@ -1584,15 +1582,15 @@ class GraphPlot(MatplotPanel):
         y = [ya, ya, yb, yb, ya]
         self.rected.set_data(x, y)
         self.rected.set_visible(1)
-        self.update_art_of_region()
+        self.update_rect_art()
 
     def del_current_rect(self):
         self.__rectsel = []
         self.rected.set_data([], [])
         self.rected.set_visible(0)
-        self.update_art_of_region()
+        self.update_rect_art()
 
-    def update_art_of_region(self, *args):
+    def update_rect_art(self, *args):
         if args:
             art = self.__rectarts  # art の再描画処理をして終了
             art.xy = args
@@ -1613,6 +1611,12 @@ class GraphPlot(MatplotPanel):
             self.trace_point(x, y, type=REGION)
         self.draw(self.rected)
 
+    def OnRegionCenter(self, evt):
+        if self.region.size and self.frame:
+            (l,r), (b,t) = self.region
+            c = np.array(((l+r)/2, (b+t)/2))
+            self.region += self.frame.center - c[:,None]
+
     def OnRegionAppend(self, evt):
         xs, ys = self.selector
         if len(xs) > 0 and self.frame:
@@ -1620,7 +1624,7 @@ class GraphPlot(MatplotPanel):
             xs = (xs.min()-ux/2, xs.max()+ux/2)
             ys = (ys.max()+uy/2, ys.min()-uy/2)
             self.set_current_rect(xs, ys)
-            self.update_art_of_region()
+            self.update_rect_art()
             self.handler('region_drawn', self.frame)
 
     def OnRegionRemove(self, evt):
@@ -1636,11 +1640,11 @@ class GraphPlot(MatplotPanel):
         xs, ys = evt.artist.get_data(orig=0)
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
         self.__rectsel = [k] if dots < 8 else [0,1,2,3,4]  # リージョンの全選択
-        self.update_art_of_region()
+        self.update_rect_art()
 
     def OnRegionDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__rectsel = []
-        self.update_art_of_region()
+        self.update_rect_art()
         self.set_wxcursor(wx.CURSOR_ARROW)
 
     def OnRegionDragBegin(self, evt):
