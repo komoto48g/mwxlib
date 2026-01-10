@@ -6,7 +6,7 @@ import wx
 from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from mwx.framework import CtrlInterface, Menu, StatusBar
+from mwx.framework import CtrlInterface, Menu, StatusBar, pack
 from mwx.controls import Icon, Clipboard
 from mwx.graphman import Layer
 
@@ -170,10 +170,15 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def OnCopyInfo(self, evt):
         selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
         if selected_frames:
-            text = []
-            for frame in selected_frames:
-                text += [pformat(frame.attributes, sort_dicts=0)]  # ALL attributes
-            Clipboard.write('\n'.join(text))
+            text = '\n'.join(pformat(frame.attributes, sort_dicts=0)  # ALL attributes
+                             for frame in selected_frames)
+            Clipboard.write(text)
+            with wx.Dialog(self,
+                    title="Frame Properties",
+                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER) as dlg:
+                textctrl = wx.TextCtrl(dlg, value=text, style=wx.TE_MULTILINE|wx.TE_READONLY)
+                dlg.SetSizer(pack(dlg, [textctrl], style=(1, wx.ALL | wx.EXPAND, 10)))
+                dlg.ShowModal()
         else:
             self.parent.message("No frame selected.")
 
