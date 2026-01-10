@@ -9,7 +9,7 @@ import wx.media
 
 from mwx.framework import _F
 from mwx.graphman import Layer
-from mwx.controls import LParam, Icon, Button, TextBox
+from mwx.controls import Param, LParam, Icon, Button, TextBox
 
 
 def read_info(path):
@@ -100,9 +100,12 @@ class Plugin(Layer):
                         handler=self.set_offset,
                         updater=self.get_offset,
                         )
-        self.crop = TextBox(self, icon="cut", size=(130,-1),
+        self.crop = TextBox(self, icon="cut", size=(140,-1),
                         handler=self.set_crop,
                         updater=self.get_crop,
+                        )
+        self.rate = Param("rate", (1/8,1/4,1/2,1,2,4,8),
+                        handler=self.set_rate,
                         )
         
         self.snp = Button(self, handler=self.snapshot, icon='clip')
@@ -113,8 +116,8 @@ class Plugin(Layer):
         
         self.layout((self.mc,), expand=2)
         self.layout((self.ss, self.to, self.rw, self.fw,
-                     self.snp, self.crop, self.exp),
-                    expand=0, row=7, style='button', lw=28, cw=0, tw=64)
+                     self.snp, self.crop, self.rate, self.exp),
+                    expand=0, row=8, type='vspin', style='button', lw=32, cw=-1, tw=64)
         
         self.menu[0:5] = [
             (1, "&Load file", Icon('open'),
@@ -242,6 +245,14 @@ class Plugin(Layer):
                 return
         if self._path:
             self.crop.Value = "{}:{}:0:0".format(*self.video_size)
+
+    def set_rate(self, rate):
+        if self._path:
+            self.mc.PlaybackRate = rate
+
+    def get_rate(self):
+        if self._path:
+            return self.mc.PlaybackRate
 
     def seekto(self, offset):
         """Seek position with offset [ms] from the `to` position."""
