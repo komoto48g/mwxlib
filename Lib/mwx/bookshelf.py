@@ -93,8 +93,8 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         
         self.handler.update({  # DNA<EditorTreeCtrl>
             None : {
-             '*button* pressed' : [ None, dispatch ],
-            '*button* released' : [ None, dispatch ],
+             '*button* pressed' : [None, dispatch],
+            '*button* released' : [None, dispatch],
             },
             0 : {
                'delete pressed' : (0, self.on_delete_buffer),
@@ -102,13 +102,13 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         })
         self.context = {  # DNA<EditorBook>
             None : {
-                   'buffer_new' : [ None, self.on_buffer_new ],
-                 'buffer_saved' : [ None, ],
-                'buffer_loaded' : [ None, ],
-               'buffer_deleted' : [ None, self.on_buffer_deleted ],
-             'buffer_activated' : [ None, self.on_buffer_selected ],
-           'buffer_inactivated' : [ None, ],
-       'buffer_caption_updated' : [ None, self.on_buffer_filename ],
+                   'buffer_new' : [None, self.on_buffer_new],
+                 'buffer_saved' : [None, ],
+                'buffer_loaded' : [None, ],
+               'buffer_deleted' : [None, self.on_buffer_deleted],
+             'buffer_activated' : [None, self.on_buffer_selected],
+           'buffer_inactivated' : [None, ],
+       'buffer_caption_updated' : [None, self.on_buffer_filename],
             },
         }
         

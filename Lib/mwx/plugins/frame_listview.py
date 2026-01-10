@@ -87,12 +87,12 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.context = {  # DNA<GraphPlot>
             None: {
-                  'frame_shown' : [ None, self.on_frame_shown ],
-                 'frame_hidden' : [ None, self.on_frame_hidden ],
-                 'frame_loaded' : [ None, self.on_frame_loaded ],
-                'frame_removed' : [ None, self.on_frames_removed ],
-               'frame_modified' : [ None, self.UpdateInfo ],
-                'frame_updated' : [ None, self.UpdateInfo ],
+                  'frame_shown' : [None, self.on_frame_shown],
+                 'frame_hidden' : [None, self.on_frame_hidden],
+                 'frame_loaded' : [None, self.on_frame_loaded],
+                'frame_removed' : [None, self.on_frames_removed],
+               'frame_modified' : [None, self.UpdateInfo],
+                'frame_updated' : [None, self.UpdateInfo],
             }
         }
         self.Target.handler.append(self.context)

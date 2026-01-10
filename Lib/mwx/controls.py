@@ -64,9 +64,9 @@ class Param:
             if isinstance(fmt, str):  # support %-format:str (deprecated)
                 self.__format = lambda v: fmt % v
         self.callback = SSM({
-            'control' : [ _F(handler) ] if handler else [],
-            'updated' : [ _F(updater) ] if updater else [],
-            'checked' : [ _F(checker) ] if checker else [],
+            'control' : [_F(handler)] if handler else [],
+            'updated' : [_F(updater)] if updater else [],
+            'checked' : [_F(checker)] if checker else [],
            'notified' : [],
            'overflow' : [],
           'underflow' : [],

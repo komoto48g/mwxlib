@@ -181,7 +181,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         except Exception:
             attribs = ''  # Failed to get event attributes; possibly <BdbQuit>.
         data = self.__items
-        for i, item in enumerate(data):
+        for item in data:
             if item[0] == event:
                 stamp = item[2] + 1
                 item[1:] = [name, stamp, source, attribs]

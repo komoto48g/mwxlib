@@ -1031,7 +1031,7 @@ def get_fullargspec(f):
     varkwargs = None    # <**kwargs> 4:VAR_KEYWORD
     defaults = {}       # 
     kwonlyargs = []     # <after *>  3:KEYWORD_ONLY
-    kwonlydefaults = {} # 
+    kwonlydefaults = {}
     try:
         sig = inspect.signature(f)
         for k, v in sig.parameters.items():

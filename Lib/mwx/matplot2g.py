@@ -416,39 +416,39 @@ class GraphPlot(MatplotPanel):
         
         self.handler.update({  # DNA<GraphPlot>
             None : {
-                  'frame_shown' : [ None ],  # show
-                 'frame_hidden' : [ None ],  # show
-                 'frame_loaded' : [ None ],  # load
-                'frame_removed' : [ None ],  # del[] ! event arg is indices, not frames.
-               'frame_selected' : [ None ],  # = focus_set
-             'frame_deselected' : [ None ],  # = focus_kill
-               'frame_modified' : [ None, _F(self.writeln) ],  # set[],load,roi  => update_buffer
-                'frame_updated' : [ None, _F(self.writeln) ],  # unit,name,ratio => update_extent
-                'frame_cmapped' : [ None, _F(self.writeln) ],  # cmap
-                    'line_draw' : [ None ],
-                   'line_drawn' : [ None, _draw ],
-                    'line_move' : [ None ],
-                   'line_moved' : [ None, _draw ],
-                 'line_removed' : [ None, _draw ],
-                    'mark_draw' : [ None ],
-                   'mark_drawn' : [ None, _draw ],
-                 'mark_removed' : [ None, _draw ],
-                  'region_draw' : [ None ],
-                 'region_drawn' : [ None, _draw ],
-               'region_removed' : [ None, _draw ],
-                 'M-up pressed' : [ None, self.OnPageUp ],
-               'M-down pressed' : [ None, self.OnPageDown ],
-               'pageup pressed' : [ None, self.OnPageUp ],
-             'pagedown pressed' : [ None, self.OnPageDown ],
-                 'home pressed' : [ None, _F(self.select, index=0) ],
-                  'end pressed' : [ None, _F(self.select, index=-1) ],
-                  'M-a pressed' : [ None, _F(self.fit_to_canvas) ],
-                  'C-a pressed' : [ None, _F(self.fit_to_axes) ],
-                  'C-i pressed' : [ None, _F(self.invert_cmap) ],
-                  'C-k pressed' : [ None, _F(self.kill_buffer) ],
-                'C-S-k pressed' : [ None, _F(self.kill_all_buffers) ],
-                  'C-c pressed' : [ None, _F(self.write_buffer_to_clipboard) ],
-                  'C-v pressed' : [ None, _F(self.read_buffer_from_clipboard) ],
+                  'frame_shown' : [None, ],  # show
+                 'frame_hidden' : [None, ],  # show
+                 'frame_loaded' : [None, ],  # load
+                'frame_removed' : [None, ],  # del[] ! event arg is indices, not frames.
+               'frame_selected' : [None, ],  # = focus_set
+             'frame_deselected' : [None, ],  # = focus_kill
+               'frame_modified' : [None, _F(self.writeln)],  # set[],load,roi  => update_buffer
+                'frame_updated' : [None, _F(self.writeln)],  # unit,name,ratio => update_extent
+                'frame_cmapped' : [None, _F(self.writeln)],  # cmap
+                    'line_draw' : [None, ],
+                   'line_drawn' : [None, _draw],
+                    'line_move' : [None, ],
+                   'line_moved' : [None, _draw],
+                 'line_removed' : [None, _draw],
+                    'mark_draw' : [None, ],
+                   'mark_drawn' : [None, _draw],
+                 'mark_removed' : [None, _draw],
+                  'region_draw' : [None, ],
+                 'region_drawn' : [None, _draw],
+               'region_removed' : [None, _draw],
+                 'M-up pressed' : [None, self.OnPageUp],
+               'M-down pressed' : [None, self.OnPageDown],
+               'pageup pressed' : [None, self.OnPageUp],
+             'pagedown pressed' : [None, self.OnPageDown],
+                 'home pressed' : [None, _F(self.select, index=0)],
+                  'end pressed' : [None, _F(self.select, index=-1)],
+                  'M-a pressed' : [None, _F(self.fit_to_canvas)],
+                  'C-a pressed' : [None, _F(self.fit_to_axes)],
+                  'C-i pressed' : [None, _F(self.invert_cmap)],
+                  'C-k pressed' : [None, _F(self.kill_buffer)],
+                'C-S-k pressed' : [None, _F(self.kill_all_buffers)],
+                  'C-c pressed' : [None, _F(self.write_buffer_to_clipboard)],
+                  'C-v pressed' : [None, _F(self.read_buffer_from_clipboard)],
             },
             NORMAL : {
                  'image_picked' : (NORMAL, self.OnImagePicked),
@@ -603,14 +603,13 @@ class GraphPlot(MatplotPanel):
                 lambda v: self.select(s),
                 lambda v: v.Check(self.frame is not None and self.frame.name == s))
         
-        self.modeline.Bind(wx.EVT_CONTEXT_MENU, lambda v:
-            Menu.Popup(self,
-                (_menu(j, art.name) for j, art in enumerate(self.__Arts))))
+        self.modeline.Bind(wx.EVT_CONTEXT_MENU,
+                           lambda v: Menu.Popup(self, (_menu(j, art.name)
+                                                for j, art in enumerate(self.__Arts))))
         
-        self.modeline.Show(1)
-        self.Layout()
-        
+        self.modeline.Show()
         self.writeln()
+        self.Layout()
 
     def clear(self):
         MatplotPanel.clear(self)
@@ -1340,10 +1339,10 @@ class GraphPlot(MatplotPanel):
         if self.selector.size and self.frame:
             ux, uy = self.frame.xy_unit
             du = {
-                'up' : ( 0., uy),
-              'down' : ( 0.,-uy),
-              'left' : (-ux, 0.),
-             'right' : ( ux, 0.),
+                'up' : (0, +uy),
+              'down' : (0, -uy),
+              'left' : (-ux, 0),
+             'right' : (+ux, 0),
             }
             self.selector += np.resize(du[evt.key], (2,1))
             self.handler('line_move', self.frame)
@@ -1494,10 +1493,10 @@ class GraphPlot(MatplotPanel):
         if j and self.frame:
             ux, uy = self.frame.xy_unit
             du = {
-                'up' : ( 0., uy),
-              'down' : ( 0.,-uy),
-              'left' : (-ux, 0.),
-             'right' : ( ux, 0.),
+                'up' : (0,  uy),
+              'down' : (0, -uy),
+              'left' : (-ux, 0),
+             'right' : ( ux, 0),
             }
             p = self.get_current_mark() + np.resize(du[evt.key], (2,1))
             self.set_current_mark(*p)
@@ -1702,10 +1701,10 @@ class GraphPlot(MatplotPanel):
         if j and self.frame:
             ux, uy = self.frame.xy_unit
             du = {
-                'up' : ( 0., uy),
-              'down' : ( 0.,-uy),
-              'left' : (-ux, 0.),
-             'right' : ( ux, 0.),
+                'up' : (0,  uy),
+              'down' : (0, -uy),
+              'left' : (-ux, 0),
+             'right' : ( ux, 0),
             }
             dp = du[evt.key]
             p = self.get_current_rect().T

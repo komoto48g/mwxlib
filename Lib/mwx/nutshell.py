@@ -491,10 +491,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         self.handler.update({  # DNA<EditorInterface>
             None : {
-                     'mark_set' : [ None, dispatch ],
-                   'mark_unset' : [ None, dispatch ],
-                  'pointer_set' : [ None, dispatch ],
-                'pointer_unset' : [ None, dispatch ],
+                     'mark_set' : [None, dispatch],
+                   'mark_unset' : [None, dispatch],
+                  'pointer_set' : [None, dispatch],
+                'pointer_unset' : [None, dispatch],
             },
             0 : {
                'insert pressed' : (0, _F(self.over, mode=None, doc="toggle-over")),
@@ -1941,14 +1941,14 @@ class Buffer(EditorInterface, EditWindow):
         
         self.handler.update({  # DNA<Buffer>
             None : {
-                    'focus_set' : [ None, self.on_buffer_activate ],
-                   'focus_kill' : [ None, self.on_buffer_inactivate ],
-                 'buffer_saved' : [ None, dispatch ],
-                'buffer_loaded' : [ None, dispatch ],
-              'buffer_modified' : [ None, dispatch ],
-             'buffer_activated' : [ None, dispatch ],
-           'buffer_inactivated' : [ None, dispatch ],
-       'buffer_region_executed' : [ None, dispatch ],
+                    'focus_set' : [None, self.on_buffer_activate],
+                   'focus_kill' : [None, self.on_buffer_inactivate],
+                 'buffer_saved' : [None, dispatch],
+                'buffer_loaded' : [None, dispatch],
+              'buffer_modified' : [None, dispatch],
+             'buffer_activated' : [None, dispatch],
+           'buffer_inactivated' : [None, dispatch],
+       'buffer_region_executed' : [None, dispatch],
             },
             -1 : {  # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -2304,14 +2304,14 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.handler.update({  # DNA<EditorBook>
             None : {
-                   'buffer_new' : [ None, dispatch ],
-                 'buffer_saved' : [ None, dispatch ],
-                'buffer_loaded' : [ None, dispatch ],
-               'buffer_deleted' : [ None, dispatch ],
-              'buffer_modified' : [ None, dispatch ],
-             'buffer_activated' : [ None, dispatch, self.on_buffer_activated ],
-           'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
-       'buffer_caption_updated' : [ None, dispatch ],
+                   'buffer_new' : [None, dispatch],
+                 'buffer_saved' : [None, dispatch],
+                'buffer_loaded' : [None, dispatch],
+               'buffer_deleted' : [None, dispatch],
+              'buffer_modified' : [None, dispatch],
+             'buffer_activated' : [None, dispatch, self.on_buffer_activated],
+           'buffer_inactivated' : [None, dispatch, self.on_buffer_inactivated],
+       'buffer_caption_updated' : [None, dispatch],
             },
             0 : {  # Normal mode
                     '* pressed' : (0, skip),
@@ -2892,13 +2892,13 @@ class Nautilus(EditorInterface, Shell):
         
         self.handler.update({  # DNA<Nautilus>
             None : {
-                 'interp_error' : [ None, self.on_interp_error ],
-                    'focus_set' : [ None, self.on_shell_activate ],
-                   'focus_kill' : [ None, self.on_shell_inactivate ],
-                'shell_deleted' : [ None, dispatch, self.on_shell_deleted ],
-               'shell_modified' : [ None, dispatch ],
-              'shell_activated' : [ None, dispatch ],
-            'shell_inactivated' : [ None, dispatch ],
+                 'interp_error' : [None, self.on_interp_error],
+                    'focus_set' : [None, self.on_shell_activate],
+                   'focus_kill' : [None, self.on_shell_inactivate],
+                'shell_deleted' : [None, dispatch, self.on_shell_deleted],
+               'shell_modified' : [None, dispatch],
+              'shell_activated' : [None, dispatch],
+            'shell_inactivated' : [None, dispatch],
             },
             -1 : {  # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),

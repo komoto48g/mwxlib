@@ -27,8 +27,8 @@ class LinePlot(MatplotPanel):
         
         self.handler.update({  # DNA<LinePlot>
             None : {
-                   'region_set' : [ None ],
-                 'region_unset' : [ None ],
+                   'region_set' : [None],
+                 'region_unset' : [None],
             },
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
@@ -228,9 +228,9 @@ class Histogram(LinePlot):
         })
         self.context = {  # DNA<GraphPlot>
             None: {
-                 'frame_shown' : [ None, self.hreplot ],
-              'frame_selected' : [ None, self.hreplot ],
-              'frame_modified' : [ None, self.hplot ],
+                 'frame_shown' : [None, self.hreplot],
+              'frame_selected' : [None, self.hreplot],
+              'frame_modified' : [None, self.hplot],
             }
         }
         self.modeline.Show(0)
@@ -383,10 +383,10 @@ class LineProfile(LinePlot):
         
         self.handler.update({  # DNA<LineProfile>
             None : {
-                 'left pressed' : [ None, self.OnRegionShift ],
-                'right pressed' : [ None, self.OnRegionShift ],
-                 '[+-] pressed' : [ None, self.OnLineWidth ],  # [+-] using numpad
-               'S-[;-] pressed' : [ None, self.OnLineWidth ],  # [+-] using JP-keyboard
+                 'left pressed' : [None, self.OnRegionShift],
+                'right pressed' : [None, self.OnRegionShift],
+                 '[+-] pressed' : [None, self.OnLineWidth],  # [+-] using numpad
+               'S-[;-] pressed' : [None, self.OnLineWidth],  # [+-] using JP-keyboard
             },
             NORMAL : {
             'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnRegionLock),
@@ -421,13 +421,13 @@ class LineProfile(LinePlot):
         })
         self.context = {  # DNA<GraphPlot>
             None: {
-                    'line_draw' : [ None, self.linplot ],
-                   'line_drawn' : [ None, self.linplot ],
-                    'line_move' : [ None, _F(self.linplot, fit=0) ],
-                   'line_moved' : [ None, _F(self.linplot, fit=0) ],
-                  'frame_shown' : [ None, _F(self.linplot, fit=0) ],
-               'frame_modified' : [ None, _F(self.linplot, fit=0) ],
-               'frame_selected' : [ None, _F(self.linplot, fit=1, force=0) ],
+                    'line_draw' : [None, self.linplot],
+                   'line_drawn' : [None, self.linplot],
+                    'line_move' : [None, _F(self.linplot, fit=0)],
+                   'line_moved' : [None, _F(self.linplot, fit=0)],
+                  'frame_shown' : [None, _F(self.linplot, fit=0)],
+               'frame_modified' : [None, _F(self.linplot, fit=0)],
+               'frame_selected' : [None, _F(self.linplot, fit=1, force=0)],
             }
         }
         self.modeline.Show(1)
@@ -690,8 +690,8 @@ class LineProfile(LinePlot):
             elif v.any():
                 xa = x[(x < xc) & v]
                 xb = x[(x > xc) & v]
-                a = xa[-1] if xa.any() else x[ 0]  # left-under bound
-                b = xb[ 0] if xb.any() else x[-1]  # right-over bound
+                a = xa[-1] if xa.any() else x[0]  # left-under bound
+                b = xb[0] if xb.any() else x[-1]  # right-over bound
                 if (b-a-u)/u > 1e-3:
                     if a > x[0]:
                         n = np.where(x == a)[0][0]

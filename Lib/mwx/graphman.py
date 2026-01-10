@@ -83,8 +83,8 @@ class Thread:
         except AttributeError:
             self.handler = FSM({  # DNA<Thread>
                 None : {
-                 'thread_begin' : [ None ],
-                   'thread_end' : [ None ],
+                 'thread_begin' : [None],
+                   'thread_end' : [None],
                 },
             })
 
@@ -325,9 +325,9 @@ class LayerInterface(CtrlInterface):
         
         self.handler.append({  # DNA<Layer>
             None : {
-                   'page_shown' : [ None, _F(self.Draw, show=True)  ],
-                  'page_closed' : [ None, _F(self.Draw, show=False) ],
-                  'page_hidden' : [ None, _F(self.Draw, show=False) ],
+                   'page_shown' : [None, _F(self.Draw, show=True)],
+                  'page_closed' : [None, _F(self.Draw, show=False)],
+                  'page_hidden' : [None, _F(self.Draw, show=False)],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -510,12 +510,12 @@ class Graph(GraphPlot):
         
         self.handler.append({  # DNA<Graph>
             None : {
-                    'focus_set' : [ None, _F(self.loader.select_view, view=self) ],
-                   'page_shown' : [ None, ],
-                  'page_closed' : [ None, ],
-                  'frame_shown' : [ None, _F(self.update_infobar) ],
-                  'S-a pressed' : [ None, _F(self.toggle_infobar) ],
-                   'f5 pressed' : [ None, _F(self.refresh) ],
+                    'focus_set' : [None, _F(self.loader.select_view, view=self)],
+                   'page_shown' : [None, ],
+                  'page_closed' : [None, ],
+                  'frame_shown' : [None, _F(self.update_infobar)],
+                  'S-a pressed' : [None, _F(self.toggle_infobar)],
+                   'f5 pressed' : [None, _F(self.refresh)],
             },
         })
         ## ドロップターゲットを許可する．
@@ -779,20 +779,20 @@ class Frame(mwx.Frame):
         
         self.graph.handler.append({  # DNA<Graph:Frame>
             None : {
-                  'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, show_frameview ],
-               'frame_modified' : [ None, show_frameview ],
-               'frame_selected' : [ None, self.set_title ],
-                  'canvas_draw' : [ None, lambda v: self.sync(self.graph, self.output) ],
+                  'frame_shown' : [None, self.set_title],
+                 'frame_loaded' : [None, show_frameview],
+               'frame_modified' : [None, show_frameview],
+               'frame_selected' : [None, self.set_title],
+                  'canvas_draw' : [None, lambda v: self.sync(self.graph, self.output)],
             },
         })
         self.output.handler.append({  # DNA<Graph:Frame>
             None : {
-                  'frame_shown' : [ None, self.set_title ],
-                 'frame_loaded' : [ None, show_frameview ],
-               'frame_modified' : [ None, show_frameview ],
-               'frame_selected' : [ None, self.set_title ],
-                  'canvas_draw' : [ None, lambda v: self.sync(self.output, self.graph) ],
+                  'frame_shown' : [None, self.set_title],
+                 'frame_loaded' : [None, show_frameview],
+               'frame_modified' : [None, show_frameview],
+               'frame_selected' : [None, self.set_title],
+                  'canvas_draw' : [None, lambda v: self.sync(self.output, self.graph)],
             },
         })
         

@@ -169,20 +169,20 @@ class MatplotPanel(wx.Panel):
         
         self.__handler = FSM({  # DNA<MatplotPanel>
                 None : {
-                  'canvas_draw' : [ None, self.OnDraw ],  # before canvas.draw
-                #'canvas_drawn' : [ None, ],              # after canvas.draw
-              #'canvas_resized' : [ None, ],
-                    'focus_set' : [ None, self.on_focus_set ],
-                   'focus_kill' : [ None, self.on_focus_kill ],
-                 'figure_enter' : [ None, self.on_figure_enter ],
-                 'figure_leave' : [ None, self.on_figure_leave ],
-                   'axes_enter' : [ None, ],
-                   'axes_leave' : [ None, ],
-                 'home pressed' : [ None, self.OnHomePosition ],
-             'Xbutton1 pressed' : [ None, self.OnBackPosition ],
-             'Xbutton2 pressed' : [ None, self.OnForwardPosition ],
-               'M-left pressed' : [ None, self.OnBackPosition ],
-              'M-right pressed' : [ None, self.OnForwardPosition ],
+                  'canvas_draw' : [None, self.OnDraw],  # before canvas.draw
+                #'canvas_drawn' : [None, ],             # after canvas.draw
+              #'canvas_resized' : [None, ],
+                    'focus_set' : [None, self.on_focus_set],
+                   'focus_kill' : [None, self.on_focus_kill],
+                 'figure_enter' : [None, self.on_figure_enter],
+                 'figure_leave' : [None, self.on_figure_leave],
+                   'axes_enter' : [None, ],
+                   'axes_leave' : [None, ],
+                 'home pressed' : [None, self.OnHomePosition],
+             'Xbutton1 pressed' : [None, self.OnBackPosition],
+             'Xbutton2 pressed' : [None, self.OnForwardPosition],
+               'M-left pressed' : [None, self.OnBackPosition],
+              'M-right pressed' : [None, self.OnForwardPosition],
                 },
                 NORMAL : {
                    'art_picked' : (NORMAL, ),

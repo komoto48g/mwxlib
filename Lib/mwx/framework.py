@@ -248,15 +248,15 @@ class KeyCtrlInterfaceMixin:
         
         self.handler.update({  # DNA<KeyCtrlInterfaceMixin>
             state : {
-                          event : [ keymap, self.pre_command_hook ],
+                          event : [keymap, self.pre_command_hook],
             },
             keymap : {
-                         'quit' : [ state, ],
-                    '* pressed' : [ state, self.post_command_hook ],
-                 '*alt pressed' : [ keymap, _Pass ],
-                '*ctrl pressed' : [ keymap, _Pass ],
-               '*shift pressed' : [ keymap, _Pass ],
-             '*[LR]win pressed' : [ keymap, _Pass ],
+                         'quit' : [state, ],
+                    '* pressed' : [state, self.post_command_hook],
+                 '*alt pressed' : [keymap, _Pass],
+                '*ctrl pressed' : [keymap, _Pass],
+               '*shift pressed' : [keymap, _Pass],
+             '*[LR]win pressed' : [keymap, _Pass],
             },
         })
 
@@ -1241,19 +1241,19 @@ class ShellFrame(MiniFrame):
         
         self.handler.update({  # DNA<ShellFrame>
             None : {
-                  'debug_begin' : [ None, self.on_debug_begin ],
-                   'debug_next' : [ None, self.on_debug_next ],
-                    'debug_end' : [ None, self.on_debug_end ],
-                  'trace_begin' : [ None, self.on_trace_begin ],
-                   'trace_hook' : [ None, self.on_trace_hook ],
-                    'trace_end' : [ None, self.on_trace_end ],
-                'monitor_begin' : [ None, self.on_monitor_begin ],
-                  'monitor_end' : [ None, self.on_monitor_end ],
-                    'shell_new' : [ None, ],
-                     'book_new' : [ None, ],
-                      'add_log' : [ None, self.add_log ],
-                     'add_help' : [ None, self.add_help ],
-                 'title_window' : [ None, self.on_title_window ],
+                  'debug_begin' : [None, self.on_debug_begin],
+                   'debug_next' : [None, self.on_debug_next],
+                    'debug_end' : [None, self.on_debug_end],
+                  'trace_begin' : [None, self.on_trace_begin],
+                   'trace_hook' : [None, self.on_trace_hook],
+                    'trace_end' : [None, self.on_trace_end],
+                'monitor_begin' : [None, self.on_monitor_begin],
+                  'monitor_end' : [None, self.on_monitor_end],
+                    'shell_new' : [None, ],
+                     'book_new' : [None, ],
+                      'add_log' : [None, self.add_log],
+                     'add_help' : [None, self.add_help],
+                 'title_window' : [None, self.on_title_window],
             },
             0 : {
                     '* pressed' : (0, fork_debugger),
