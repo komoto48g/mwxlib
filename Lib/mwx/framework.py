@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.7.19"
+__version__ = "1.8.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -350,15 +350,17 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         _N = self._normal_handler
         
         def activate(evt):
-            self.handler('focus_set', evt)
+            if self:
+                self.handler('focus_set', evt)
             evt.Skip()
         self.Bind(wx.EVT_SET_FOCUS, activate)
         
         def inactivate(evt):
-            self.__key = ''
-            self.__button = ''
-            self.__isDragging = False
-            self.handler('focus_kill', evt)
+            if self:
+                self.__key = ''
+                self.__button = ''
+                self.__isDragging = False
+                self.handler('focus_kill', evt)
             evt.Skip()
         self.Bind(wx.EVT_KILL_FOCUS, inactivate)
         

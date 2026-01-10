@@ -1921,18 +1921,6 @@ class Buffer(EditorInterface, EditWindow):
         self.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         
-        def activate(evt):
-            if self:
-                self.handler('buffer_activated', self)
-            evt.Skip()
-        self.Bind(wx.EVT_SET_FOCUS, activate)
-        
-        def inactivate(evt):
-            if self:
-                self.handler('buffer_inactivated', self)
-            evt.Skip()
-        self.Bind(wx.EVT_KILL_FOCUS, inactivate)
-        
         def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *DO NOT* clear autocomp, so that the event can skip to AutoComp properly.
@@ -1953,11 +1941,13 @@ class Buffer(EditorInterface, EditWindow):
         
         self.handler.update({  # DNA<Buffer>
             None : {
+                    'focus_set' : [ None, self.on_buffer_activate ],
+                   'focus_kill' : [ None, self.on_buffer_inactivate ],
                  'buffer_saved' : [ None, dispatch ],
                 'buffer_loaded' : [ None, dispatch ],
-              'buffer_modified' : [ None, dispatch, self.on_buffer_modified ],
-             'buffer_activated' : [ None, dispatch, self.on_buffer_activated ],
-           'buffer_inactivated' : [ None, dispatch, self.on_buffer_inactivated ],
+              'buffer_modified' : [ None, dispatch ],
+             'buffer_activated' : [ None, dispatch ],
+           'buffer_inactivated' : [ None, dispatch ],
        'buffer_region_executed' : [ None, dispatch ],
             },
             -1 : {  # original action of the EditWindow
@@ -2052,6 +2042,11 @@ class Buffer(EditorInterface, EditWindow):
         if evt.Updated & (stc.STC_UPDATE_SELECTION | stc.STC_UPDATE_CONTENT):
             self.trace_position()
             if evt.Updated & stc.STC_UPDATE_CONTENT:
+                self.SetIndicatorCurrent(2)
+                self.IndicatorClearRange(0, self.TextLength)
+                for m in self.grep(url_re):
+                    p, q = m.span()
+                    self.IndicatorFillRange(p, q-p)
                 self.handler('buffer_modified', self)
         evt.Skip()
 
@@ -2083,14 +2078,6 @@ class Buffer(EditorInterface, EditWindow):
                 ## Note: post-call for the confirmation dialog.
                 wx.CallAfter(self.parent.load_file, url)
 
-    def on_buffer_modified(self, buf):
-        """Called when the buffer is modified."""
-        self.SetIndicatorCurrent(2)
-        self.IndicatorClearRange(0, self.TextLength)
-        for m in self.grep(url_re):
-            p, q = m.span()
-            self.IndicatorFillRange(p, q-p)
-
     def OnSavePointLeft(self, evt):
         self.update_caption()
         evt.Skip()
@@ -2110,14 +2097,15 @@ class Buffer(EditorInterface, EditWindow):
             self.handler('quit', evt)  # Don't enter autocomp
         evt.Skip()
 
-    def on_buffer_activated(self, buf):
-        """Called when the buffer is activated."""
+    def on_buffer_activate(self, evt):
+        """Called when the buffer (self) is activated."""
         self.update_caption()
         self.trace_position()
+        self.handler('buffer_activated', self)
 
-    def on_buffer_inactivated(self, buf):
-        """Called when the buffer is inactivated."""
-        pass
+    def on_buffer_inactivate(self, evt):
+        """Called when the buffer (self) is inactivated."""
+        self.handler('buffer_inactivated', self)
 
     def on_left_down(self, evt):
         pos = self.PositionFromPoint(evt.Position)
@@ -2887,18 +2875,6 @@ class Nautilus(EditorInterface, Shell):
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def activate(evt):
-            if self:
-                self.handler('shell_activated', self)
-            evt.Skip()
-        self.Bind(wx.EVT_SET_FOCUS, activate)
-        
-        def inactivate(evt):
-            if self:
-                self.handler('shell_inactivated', self)
-            evt.Skip()
-        self.Bind(wx.EVT_KILL_FOCUS, inactivate)
-        
         def clear(evt):
             ## """Clear selection and message, no skip."""
             ## *DO NOT* clear autocomp, so that the event can skip to AutoComp properly.
@@ -2917,10 +2893,12 @@ class Nautilus(EditorInterface, Shell):
         self.handler.update({  # DNA<Nautilus>
             None : {
                  'interp_error' : [ None, self.on_interp_error ],
+                    'focus_set' : [ None, self.on_shell_activate ],
+                   'focus_kill' : [ None, self.on_shell_inactivate ],
                 'shell_deleted' : [ None, dispatch, self.on_shell_deleted ],
                'shell_modified' : [ None, dispatch ],
-              'shell_activated' : [ None, dispatch, self.on_shell_activated ],
-            'shell_inactivated' : [ None, dispatch, self.on_shell_inactivated ],
+              'shell_activated' : [ None, dispatch ],
+            'shell_inactivated' : [ None, dispatch ],
             },
             -1 : {  # original action of the wx.py.shell
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -3409,8 +3387,8 @@ class Nautilus(EditorInterface, Shell):
                 pass
         wx.CallAfter(_del)
 
-    def on_shell_activated(self, shell):
-        """Called when the shell:self is activated.
+    def on_shell_activate(self, evt):
+        """Called when the shell (self) is activated.
         Reset localvars assigned for the shell target. cf. target.setter.
         """
         self.trace_position()
@@ -3421,16 +3399,18 @@ class Nautilus(EditorInterface, Shell):
             obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>
         except AttributeError:
             pass
+        self.handler('shell_activated', self)
         self.parent.handler('title_window', obj)
 
-    def on_shell_inactivated(self, shell):
-        """Called when shell:self is inactivated.
+    def on_shell_inactivate(self, evt):
+        """Called when the shell (self) is inactivated.
         Remove target localvars assigned for the shell target.
         """
         if self.AutoCompActive():
             self.AutoCompCancel()
         if self.CallTipActive():
             self.CallTipCancel()
+        self.handler('shell_inactivated', self)
 
     def on_text_input(self, text):
         """Called when [Enter] text (before push).
