@@ -46,8 +46,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
-        self.Bind(wx.EVT_LEFT_DCLICK, self.OnItemDClick)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
@@ -261,12 +261,9 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if item == fi:
                 self.Focus(i)
 
-    def OnItemDClick(self, evt):  # <wx._core.MouseEvent>
-        i, flag = self.HitTest(evt.Position)
-        if i >= 0:
-            item = self.__items[i]
-            wx.CallAfter(wx.TipWindow, self, item[-1], 512)  # attribs
-        evt.Skip()
+    def OnItemActivated(self, evt):  # <wx._controls.ListEvent>
+        item = self.__items[evt.Index]
+        wx.CallAfter(wx.TipWindow, self, item[-1], 512)  # attribs
 
     def OnContextMenu(self, evt):
         obj = self.target

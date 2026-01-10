@@ -33,7 +33,7 @@ class Inspector(it.InspectionTree, CtrlInterface):
                              self.TopLevelParent]
         
         self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.OnItemRightClick)
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
@@ -148,18 +148,13 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self._noWatchList = [w for w in self._noWatchList if w]
         evt.Skip()
 
-    def OnItemTooltip(self, evt):
-        item = evt.GetItem()
-        if item:
-            obj = self.GetItemData(item)
-            evt.SetToolTip("id=0x{:X}".format(id(obj)))
+    def OnItemTooltip(self, evt):  # <wx._core.TreeEvent>
+        obj = self.GetItemData(evt.Item)
+        evt.SetToolTip("id=0x{:X}".format(id(obj)))
         evt.Skip()
 
-    def OnRightDown(self, evt):
-        item, flags = self.HitTest(evt.Position)
-        if item:  # and flags & (0x10 | 0x20 | 0x40 | 0x80):
-            self.SelectItem(item)
-            self.SetFocus()
+    def OnItemRightClick(self, evt):  # <wx._core.TreeEvent>
+        self.SelectItem(evt.Item)
         obj = self.target
         Menu.Popup(self, [
             (1, "&Dive into {!r}".format(typename(obj)), Icon('core'),
