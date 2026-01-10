@@ -9,7 +9,7 @@ import wx.media
 
 from mwx.framework import _F
 from mwx.graphman import Layer
-from mwx.controls import LParam, Icon, Button, TextBox
+from mwx.controls import Param, LParam, Icon, Button, TextBox
 
 
 def read_info(path):
@@ -100,9 +100,12 @@ class Plugin(Layer):
                         handler=self.set_offset,
                         updater=self.get_offset,
                         )
-        self.crop = TextBox(self, icon="cut", size=(130,-1),
+        self.crop = TextBox(self, icon="cut", size=(140,-1),
                         handler=self.set_crop,
                         updater=self.get_crop,
+                        )
+        self.rate = Param("rate", (1/8,1/4,1/2,1,2,4,8),
+                        handler=self.set_rate,
                         )
         
         self.snp = Button(self, handler=self.snapshot, icon='clip')
@@ -113,8 +116,8 @@ class Plugin(Layer):
         
         self.layout((self.mc,), expand=2)
         self.layout((self.ss, self.to, self.rw, self.fw,
-                     self.snp, self.crop, self.exp),
-                    expand=0, row=7, style='button', lw=28, cw=0, tw=64)
+                     self.snp, self.crop, self.rate, self.exp),
+                    expand=0, row=8, type='vspin', style='button', lw=32, cw=-1, tw=64)
         
         self.menu[0:5] = [
             (1, "&Load file", Icon('open'),
@@ -129,24 +132,22 @@ class Plugin(Layer):
         self.parent.handler.bind("unknown_format", self.load_media)
         
         self.handler.update({  # DNA<ffmpeg_viewer>
+            None : {
+               'C-left pressed' : (None, _F(self.seekd, -1000)),
+              'C-right pressed' : (None, _F(self.seekd,  1000)),
+            },
             0 : {  # MEDIASTATE_STOPPED
                          'play' : (2, ),
                 'space pressed' : (2, _F(self.mc.Play)),
-                 'left pressed' : (0, _F(self.seekd, -1000)),
-                'right pressed' : (0, _F(self.seekd,  1000)),
             },
             1 : {  # MEDIASTATE_PAUSED
                          'stop' : (0, ),
                 'space pressed' : (2, _F(self.mc.Play)),
-                 'left pressed' : (1, _F(self.seekd, -1000)),
-                'right pressed' : (1, _F(self.seekd,  1000)),
             },
             2 : {  # MEDIASTATE_PLAYING
                          'stop' : (0, ),
                         'pause' : (1, ),
                 'space pressed' : (1, _F(self.mc.Pause)),
-                 'left pressed' : (2, _F(self.seekd, -1000)),
-                'right pressed' : (2, _F(self.seekd,  1000)),
             },
         })
         
@@ -203,7 +204,10 @@ class Plugin(Layer):
             self.message(f"Failed to load file {path!r}.")
             return False
 
-    DELTA = 1000  # correction ▲理由は不明 (WMP10 backend only?)
+    ## Correction for seek position. ▲理由は不明 (WMP10 backend only?)
+    @property
+    def DELTA(self):
+        return int(1000 / self.mc.PlaybackRate)
 
     def set_offset(self, tc):
         """Set offset value by referring to ss/to value."""
@@ -217,35 +221,38 @@ class Plugin(Layer):
 
     def set_crop(self):
         """Set crop area (W:H:Left:Top) to ROI."""
-        if not self._path:
-            return
         frame = self.graph.frame
         if frame:
             try:
-                w, h, xo, yo = eval(self.crop.Value.replace(':', ','))
-                xo -= 0.5  # Correction with half-pixel
-                yo -= 0.5  # to select left-top (not center) position
+                w, h, xo, yo = map(float, self.crop.Value.split(':'))
+                xo -= 0.5  # Correction with half-pixel offset.
+                yo -= 0.5  # Select left-top corner position.
                 nx = xo, xo+w
                 ny = yo, yo+h
                 frame.region = frame.xyfrompixel(nx, ny)
-            except Exception:
-                self.message("Failed to evaluate crop text.")
+            except Exception as e:
+                self.message("Failed to evaluate crop text;", e)
 
     def get_crop(self):
         """Get crop area (W:H:Left:Top) from ROI."""
-        if not self._path:
-            return
-        crop = ''
         frame = self.graph.frame
         if frame:
-            nx, ny = frame.xytopixel(*frame.region)
+            nx, ny = frame.xytopixel(frame.region)
             if nx.size:
-                xo, yo = nx[0], ny[1]
-                xp, yp = nx[1], ny[0]
-                crop = "{}:{}:{}:{}".format(xp-xo, yp-yo, xo, yo)
-        if not crop:
-            crop = "{}:{}:0:0".format(*self.video_size)
-        self.crop.Value = crop
+                xo, xp = nx
+                yp, yo = ny
+                self.crop.Value = f"{xp-xo}:{yp-yo}:{xo}:{yo}"  # (W:H:left:top)
+                return
+        if self._path:
+            self.crop.Value = "{}:{}:0:0".format(*self.video_size)
+
+    def set_rate(self, rate):
+        if self._path:
+            self.mc.PlaybackRate = rate
+
+    def get_rate(self):
+        if self._path:
+            return self.mc.PlaybackRate
 
     def seekto(self, offset):
         """Seek position with offset [ms] from the `to` position."""
