@@ -185,7 +185,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
     def on_buffer_deleted(self, buf):
         self.Delete(buf.__itemId)
 
-    ## Note: [buffer_activated][EVT_SET_FOCUS] > [buffer_new] の順で呼ばれる．
+    ## Note: [buffer_activated] > [buffer_new] の順で呼ばれる．
     ##       buf.__itemId がない場合がある (delete_buffer 直後など).
     def on_buffer_selected(self, buf):
         if self and buf:

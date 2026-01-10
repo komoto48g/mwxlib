@@ -840,7 +840,9 @@ class FSM(dict):
         if action is None:
             return lambda f: self.bind(event, f, state, state2)
         
-        if action not in transaction:
+        if action in transaction:
+            warn(f"- FSM duplicate transaction ({state!r} : {event!r}).")
+        else:
             try:
                 transaction.append(action)
             except AttributeError:
