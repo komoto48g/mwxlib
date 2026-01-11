@@ -4,7 +4,6 @@
 from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
-from pathlib import Path
 from pprint import pformat
 from bdb import BdbQuit
 import traceback
@@ -1841,16 +1840,15 @@ class Buffer(EditorInterface, EditWindow):
         return self.__filename
 
     def update_filestamp(self, fn):
-        self.__path = Path(fn)
         try:
-            self.__mtime = os.path.getmtime(self.__path)  # update timestamp (modified time)
+            self.__mtime = os.path.getmtime(fn)  # update timestamp (modified time)
         except FileNotFoundError:
             self.__mtime = False  # valid path (but not found)
         except OSError:
             if re.match(url_re, fn):
-                self.__mtime = -1
+                self.__mtime = -1  # URL path
             else:
-                self.__mtime = None  # *invalid path*
+                self.__mtime = None  # invalid path
         if self.__filename != fn:
             self.__filename = fn
             self.update_caption()
@@ -1860,16 +1858,15 @@ class Buffer(EditorInterface, EditWindow):
         """Timestamp delta (for checking external mod).
         
         Returns:
+            = 0: a file (or False if not found)
+            > 0: a file modified externally
+            < 0: a url file
             None: no file
-            = 0:  a file (even if not found)
-            > 0:  a file edited externally
-            < 0:  a url file
         """
         try:
-            return os.path.getmtime(self.__path) - self.__mtime
-        except OSError:
-            pass
-        return self.__mtime
+            return os.path.getmtime(self.__filename) - self.__mtime
+        except Exception:
+            return self.__mtime
 
     @property
     def need_buffer_save(self):
@@ -2190,7 +2187,7 @@ class Buffer(EditorInterface, EditWindow):
         return True
 
     ## --------------------------------
-    ## Python eval / exec.
+    ## Python eval/exec interface.
     ## --------------------------------
 
     @property

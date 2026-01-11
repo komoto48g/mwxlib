@@ -293,16 +293,6 @@ pp.sort_dicts = False
 ## Shell internal helper functions.
 ## --------------------------------
 
-def fix_fnchars(filename, substr='_'):
-    """Replace invalid filename characters with substr."""
-    if os.name == 'nt':
-        ## Replace Windows-invalid chars [:*?"<>|] with substr.
-        ## Do not replace \\ or / to preserve folder structure.
-        return re.sub(r'[:*?"<>|]', substr, filename)
-    else:
-        return filename
-
-
 def split_words(text, reverse=False):
     """Generates words (python phrase) extracted from text.
     If reverse is True, process from tail to head.
@@ -471,6 +461,16 @@ def get_rootpath(fn):
     if not os.path.exists(home):
         os.mkdir(home)
     return os.path.join(home, fn)
+
+
+def fix_fnchars(filename, substr='_'):
+    """Replace invalid filename characters with substr."""
+    if os.name == 'nt':
+        ## Replace Windows-invalid chars [:*?"<>|] with substr.
+        ## Do not replace \\ or / to preserve folder structure.
+        return re.sub(r'[:*?"<>|]', substr, filename)
+    else:
+        return filename
 
 
 ## --------------------------------
