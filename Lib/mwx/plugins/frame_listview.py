@@ -173,8 +173,10 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             text = '\n'.join(pformat(frame.attributes, sort_dicts=0)  # ALL attributes
                              for frame in selected_frames)
             Clipboard.write(text)
+            
+            ## Show the text window.
             with wx.Dialog(self,
-                    title="Frame Properties",
+                    title="Frame Properties", size=(480, -1),
                     style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER) as dlg:
                 textctrl = wx.TextCtrl(dlg, value=text, style=wx.TE_MULTILINE|wx.TE_READONLY)
                 dlg.SetSizer(pack(dlg, [textctrl], style=(1, wx.ALL | wx.EXPAND, 10)))

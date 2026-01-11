@@ -482,19 +482,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         AutoCompInterfaceMixin.__init__(self)
         CtrlInterface.__init__(self)
         
-        def dispatch(evt):
-            """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
-        
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
         self.handler.update({  # DNA<EditorInterface>
             None : {
-                     'mark_set' : [None, dispatch],
-                   'mark_unset' : [None, dispatch],
-                  'pointer_set' : [None, dispatch],
-                'pointer_unset' : [None, dispatch],
+                     'mark_set' : [None, ],
+                   'mark_unset' : [None, ],
+                  'pointer_set' : [None, ],
+                'pointer_unset' : [None, ],
             },
             0 : {
                'insert pressed' : (0, _F(self.over, mode=None, doc="toggle-over")),
@@ -1934,21 +1930,28 @@ class Buffer(EditorInterface, EditWindow):
         
         def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
+            try:
+                self.parent.handler(self.handler.current_event, evt)
+            except AttributeError:
+                pass
         
         ## Note: Mouse events are not propagated from Buffer to EditorBook.
         ## They are explicitly dispatched from buffer.handler to editor.handler.
         
         self.handler.update({  # DNA<Buffer>
             None : {
-                    'focus_set' : [None, self.on_buffer_activate],
-                   'focus_kill' : [None, self.on_buffer_inactivate],
+                    'focus_set' : [None, self.on_buffer_activate],    # => [buffer_activated]
+                   'focus_kill' : [None, self.on_buffer_inactivate],  # => [buffer_inactivated]
                  'buffer_saved' : [None, dispatch],
                 'buffer_loaded' : [None, dispatch],
               'buffer_modified' : [None, dispatch],
              'buffer_activated' : [None, dispatch],
            'buffer_inactivated' : [None, dispatch],
        'buffer_region_executed' : [None, dispatch],
+                     'mark_set' : [None, dispatch],
+                   'mark_unset' : [None, dispatch],
+                  'pointer_set' : [None, dispatch],
+                'pointer_unset' : [None, dispatch],
             },
             -1 : {  # original action of the EditWindow
                     '* pressed' : (0, skip, self.on_exit_escmap),
@@ -2075,8 +2078,11 @@ class Buffer(EditorInterface, EditWindow):
                 import webbrowser
                 return webbrowser.open(url)
             else:
-                ## Note: post-call for the confirmation dialog.
-                wx.CallAfter(self.parent.load_file, url)
+                try:
+                    ## Note: post-call for the confirmation dialog.
+                    wx.CallAfter(self.parent.load_file, url)
+                except AttributeError:
+                    pass
 
     def OnSavePointLeft(self, evt):
         self.update_caption()
@@ -2297,7 +2303,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
+            try:
+                self.parent.handler(self.handler.current_event, evt)
+            except AttributeError:
+                pass
         
         self.make_keymap('C-x')
         self.make_keymap('C-c')
@@ -2378,8 +2387,11 @@ class EditorBook(AuiNotebook, CtrlInterface):
 
     def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
-        title = "{} file: {}".format(self.Name, buf.filename)
-        self.parent.handler('title_window', title)
+        try:
+            title = "{} file: {}".format(self.Name, buf.filename)
+            self.parent.handler('title_window', title)
+        except AttributeError:
+            pass
 
     def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
@@ -2816,10 +2828,13 @@ class Nautilus(EditorInterface, Shell):
             obj.self = obj
             obj.this = inspect.getmodule(obj)
             obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>.
-            ## obj.__name__ = typename(obj)  # A namespace for ghost in the shell. cf. exec_region
+            ## obj.__name__ = typename(obj)  # Assign a namespace for ghost in the shell. cf. exec_region.
         except AttributeError:
             pass
-        self.parent.handler('title_window', obj)
+        try:
+            self.parent.handler('title_window', obj)
+        except AttributeError:
+            pass
 
     @property
     def locals(self):
@@ -2888,13 +2903,16 @@ class Nautilus(EditorInterface, Shell):
         
         def dispatch(evt):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
+            try:
+                self.parent.handler(self.handler.current_event, evt)
+            except AttributeError:
+                pass
         
         self.handler.update({  # DNA<Nautilus>
             None : {
                  'interp_error' : [None, self.on_interp_error],
-                    'focus_set' : [None, self.on_shell_activate],
-                   'focus_kill' : [None, self.on_shell_inactivate],
+                    'focus_set' : [None, self.on_shell_activate],    # => [shell_activated]
+                   'focus_kill' : [None, self.on_shell_inactivate],  # => [shell_inactivated]
                 'shell_deleted' : [None, dispatch, self.on_shell_deleted],
                'shell_modified' : [None, dispatch],
               'shell_activated' : [None, dispatch],
@@ -3130,7 +3148,10 @@ class Nautilus(EditorInterface, Shell):
     def OnCallTipClick(self, evt):
         if self.CallTipActive():
             self.CallTipCancel()
-        self.parent.handler('add_help', self._calltips[1])
+        try:
+            self.parent.handler('add_help', self._calltips[1])
+        except AttributeError:
+            pass
         evt.Skip()
 
     def OnSpace(self, evt):
@@ -3400,7 +3421,10 @@ class Nautilus(EditorInterface, Shell):
         except AttributeError:
             pass
         self.handler('shell_activated', self)
-        self.parent.handler('title_window', obj)
+        try:
+            self.parent.handler('title_window', obj)
+        except AttributeError:
+            pass
 
     def on_shell_inactivate(self, evt):
         """Called when the shell (self) is inactivated.
@@ -3643,13 +3667,19 @@ class Nautilus(EditorInterface, Shell):
         """Short information."""
         doc = inspect.getdoc(obj)\
                 or "No information about {}".format(obj)
-        self.parent.handler('add_help', doc, typename(obj)) or print(doc)
+        try:
+            self.parent.handler('add_help', doc, typename(obj)) or print(doc)
+        except AttributeError:
+            pass
 
     def help(self, obj):
         """Full description."""
         doc = pydoc.plain(pydoc.render_doc(obj))\
                 or "No description about {}".format(obj)
-        self.parent.handler('add_help', doc, typename(obj)) or print(doc)
+        try:
+            self.parent.handler('add_help', doc, typename(obj)) or print(doc)
+        except AttributeError:
+            pass
 
     def eval(self, text):
         return eval(text, self.globals, self.locals)

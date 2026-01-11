@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.0"
+__version__ = "1.8.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -238,7 +238,7 @@ class KeyCtrlInterfaceMixin:
         assert isinstance(keymap, str)
         
         def _Pass(evt):
-            self.message("{} {}".format(keymap, evt.key))
+            self.message(keymap, evt.key)
         _Pass.__name__ = "pass"
         
         state = self.handler.default_state
@@ -276,7 +276,7 @@ class KeyCtrlInterfaceMixin:
         ## """Called when exiting extension mode (internal use only)."""
         keymap = self.handler.previous_state
         if keymap:
-            self.message("{} {}".format(keymap, evt.key))
+            self.message(keymap, evt.key)
         else:
             self.message(evt.key)
         ## Check if the event has reached a top-level window; Don't skip text event.
