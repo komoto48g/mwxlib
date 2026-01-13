@@ -247,7 +247,7 @@ class Plugin(Layer):
         return [self.nb.GetPage(i) for i in range(self.nb.PageCount)]
 
     @property
-    def message(self):
+    def message(self):  # Overrides default message.
         return self.statusline
 
     def Init(self):

@@ -136,6 +136,10 @@ def skip(evt):
     evt.Skip()
 
 
+def noop(*v, **kw):  # (dummy) no operation
+    pass
+
+
 def editable(f):
     @wraps(f)
     def _f(self, *v, **kw):
@@ -1819,7 +1823,10 @@ class Buffer(EditorInterface, EditWindow):
     """
     @property
     def message(self):
-        return self.parent.message
+        try:
+            return self.parent.message  # statusbar
+        except AttributeError:
+            return noop
 
     @property
     def name(self):
@@ -2276,7 +2283,10 @@ class EditorBook(AuiNotebook, CtrlInterface):
     """
     @property
     def message(self):
-        return self.parent.message
+        try:
+            return self.parent.message  # statusbar
+        except AttributeError:
+            return noop
 
     def __init__(self, parent, name="book", **kwargs):
         kwargs.setdefault('style',
@@ -2807,7 +2817,10 @@ class Nautilus(EditorInterface, Shell):
     """
     @property
     def message(self):
-        return self.parent.message
+        try:
+            return self.parent.message  # statusbar
+        except AttributeError:
+            return noop
 
     @property
     def target(self):
