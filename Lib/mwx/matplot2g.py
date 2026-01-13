@@ -873,10 +873,12 @@ class GraphPlot(MatplotPanel):
             self.canvas.draw_idle()
 
     def kill_buffer(self):
+        """Delete a buffer."""
         if self.frame:
             del self[self.__index]
 
     def kill_all_buffers(self):
+        """Delete all buffers."""
         del self[:]
 
     def fit_to_axes(self):

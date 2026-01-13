@@ -551,6 +551,17 @@ class Graph(GraphPlot):
     ## Overridden buffer methods.
     ## --------------------------------
 
+    def kill_buffer(self):
+        """Delete a buffer; (override) confirm the action with a dialog."""
+        if self.frame and not self.frame.pathname:
+            if wx.MessageBox(  # Confirm closing the frame.
+                    "You are closing unsaved frame.\n\n"
+                    "Continue closing?",
+                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                self.message("The close has been canceled.")
+                return None
+        GraphPlot.kill_buffer(self)
+
     def kill_all_buffers(self):
         """Delete all buffers; (override) confirm the action with a dialog."""
         n = sum(not frame.pathname for frame in self.all_frames)  # Check *need-save* frames.
@@ -562,7 +573,7 @@ class Graph(GraphPlot):
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
                 return None
-        del self[:]
+        GraphPlot.kill_all_buffers(self)
 
 
 class MyFileDropLoader(wx.FileDropTarget):
