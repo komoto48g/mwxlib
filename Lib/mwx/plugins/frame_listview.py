@@ -135,7 +135,9 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Target.select(self.focused_item)
 
     def OnRemoveItems(self, evt):
-        del self.Target[self.selected_items]
+        # del self.Target[self.selected_items]
+        self.Target.kill_buffers(list(self.selected_items))
+        self.SetFocus()
 
     def OnSortItems(self, evt):  # <wx._controls.ListEvent>
         col = evt.Column

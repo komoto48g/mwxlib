@@ -551,20 +551,8 @@ class Graph(GraphPlot):
     ## Overridden buffer methods.
     ## --------------------------------
 
-    def kill_buffer(self):
-        """Delete a buffer; (override) confirm the action with a dialog."""
-        if self.frame and not self.frame.pathname:
-            if wx.MessageBox(  # Confirm closing the frame.
-                    "You are closing unsaved frame.\n\n"
-                    "Continue closing?",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
-                self.message("The close has been canceled.")
-                return None
-        GraphPlot.kill_buffer(self)
-
-    def kill_all_buffers(self):
-        """Delete all buffers; (override) confirm the action with a dialog."""
-        n = sum(not frame.pathname for frame in self.get_all_frames())
+    def confirm_close(self, frames):
+        n = sum(not frame.pathname for frame in frames)
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox(  # Confirm closing the frame.
@@ -572,8 +560,25 @@ class Graph(GraphPlot):
                      "Continue closing?",
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
-                return None
-        GraphPlot.kill_all_buffers(self)
+                return False
+        return True
+
+    def kill_buffer(self):
+        """Delete a buffer; (override) confirm the action with a dialog."""
+        if self.frame and self.confirm_close([self.frame]):
+            GraphPlot.kill_buffer(self)
+        self.SetFocus()
+
+    def kill_all_buffers(self):
+        """Delete all buffers; (override) confirm the action with a dialog."""
+        if self.confirm_close(self.get_all_frames()):
+            GraphPlot.kill_all_buffers(self)
+        self.SetFocus()
+
+    def kill_buffers(self, indices):
+        """Delete buffers specified by indices."""
+        if self.confirm_close([self.frames[i] for i in indices]):
+            del self[indices]
 
 
 class MyFileDropLoader(wx.FileDropTarget):
