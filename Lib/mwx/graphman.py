@@ -969,7 +969,7 @@ class Frame(mwx.Frame):
             else:
                 win.handler('page_shown', win)
             if plug:
-                plug.SetFocus()  # plugins only
+                plug.SetFocus()  # for plugins only (not for Graph)
         elif not show and shown:
             if isinstance(win, aui.AuiNotebook):
                 for plug in win.get_pages():
@@ -1268,7 +1268,7 @@ class Frame(mwx.Frame):
             self.menubar.update(menu)
         
         self.handler('plug_loaded', plug)
-        return None
+        return plug
 
     def unload_plug(self, name):
         """Unload plugin and detach the pane from UI manager."""
@@ -1318,12 +1318,13 @@ class Frame(mwx.Frame):
         except Exception:
             traceback.print_exc()  # Failed to save the plug session.
         
-        self.load_plug(plug.__module__, force=1, session=session)
+        new_plug = self.load_plug(plug.__module__, force=1, session=session)
         
         ## Update shell.target --> new plug.
         for shell in self.shellframe.get_all_shells():
             if shell.target is plug:
                 shell.handler('shell_activated', shell)
+        return new_plug
 
     def inspect_plug(self, name):
         """Dive into the process to inspect plugs in the shell."""
