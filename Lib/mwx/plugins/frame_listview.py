@@ -139,7 +139,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Target.kill_buffers(list(self.selected_items))
         self.SetFocus()
 
-    def OnSortItems(self, evt):  # <wx._controls.ListEvent>
+    def OnSortItems(self, evt):  # <wx._core.ListEvent>
         col = evt.Column
         if col == 0:  # reverse the first column
             self.__dir = False
