@@ -1,6 +1,8 @@
 #! python3
 """mwxlib graph plot for images.
 """
+import re
+import os
 import wx
 
 from matplotlib import cm
@@ -107,6 +109,29 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     return n, (a, b), img
 
 
+def _get_filestamp(filename):
+    """Check the modification timestamp of a file.
+    
+    Returns:
+        float: Modification time for an existing file.
+        False: If the file path is valid but the file does not exist.
+        None: If the path is invalid.
+        -1: If the input is a URL.
+    """
+    # url_re = r"https?://[\w/:%#$&?()~.=+-]+"
+    url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
+    try:
+        return os.path.getmtime(filename)  # timestamp (modified time)
+    except FileNotFoundError:
+        return False  # valid path (but not found)
+    except OSError:
+        if re.match(url_re, filename):
+            return -1  # URL path
+    except Exception:
+        pass
+    return None  # invalid path or any other unexpected error
+
+
 def _Property(name):
     return property(
         lambda self:    getattr(self.parent, name),
@@ -133,6 +158,7 @@ class AxesImagePhantom:
         self.__name = name
         self.__attributes = kwargs
         self.__pathname = kwargs.get('pathname')
+        self.__mtime = _get_filestamp(self.__pathname)
         self.__annotation = kwargs.get('annotation', '')
         self.__localunit = kwargs.get('localunit')
         self.__center = kwargs.get('center', [0, 0])
@@ -172,6 +198,7 @@ class AxesImagePhantom:
         flag = 0
         if 'pathname' in attr:
             self.__pathname = attr['pathname']
+            self.__mtime = _get_filestamp(self.__pathname)
             flag |= FLAG_ANNOTATION
         
         if 'annotation' in attr:
@@ -293,6 +320,21 @@ class AxesImagePhantom:
     def name(self, v):
         self.__name = v
         self.parent.handler('frame_updated', self)
+
+    @property
+    def mtdelta(self):
+        """Timestamp delta (for checking external mod).
+        
+        Returns:
+            = 0: a file (or False if not found)
+            > 0: a file modified externally
+            < 0: a url file
+            None: no file
+        """
+        try:
+            return os.path.getmtime(self.pathname) - self.__mtime
+        except Exception:
+            return self.__mtime
 
     @property
     def index(self):
