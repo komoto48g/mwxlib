@@ -48,7 +48,7 @@ class Param:
             - underflow -> when value underflows
     """
     def __init__(self, name, range=None, value=None, fmt=None,
-                 handler=None, updater=None, checker=None):
+                       handler=None, updater=None, checker=None):
         self.knobs = []
         self.name = name
         self.range = range
@@ -331,7 +331,7 @@ class Knob(wx.Panel):
         return self._ctrl
 
     def __init__(self, parent, param, type=None,
-                 style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
+                       style=None, cw=-1, lw=-1, tw=-1, h=22, **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
         assert isinstance(param, Param), "Argument `param` must be an instance of Param"
@@ -494,7 +494,7 @@ class Knob(wx.Panel):
             v.index = j
             v.reset(v.value)
 
-    def OnScroll(self, evt):  # <wx._core.ScrollEvent> <wx._controls.SpinEvent> <wx._core.CommandEvent>
+    def OnScroll(self, evt):  # <wx._core.ScrollEvent> <wx._core.SpinEvent> <wx._core.CommandEvent>
         v = self.__par
         j = self._ctrl.GetValue()
         if j != v.index:
@@ -649,8 +649,8 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             self.Layout()
 
     def layout(self, items, title=None,
-               row=0, expand=0, border=2, hspacing=1, vspacing=1,
-               show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):
+                     row=0, expand=0, border=2, hspacing=1, vspacing=1,
+                     show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):
         """Do layout (cf. Layout).
         
         Args:
@@ -1104,17 +1104,14 @@ class TextBox(wx.Control):
     control = property(lambda self: self._ctrl)
 
     def __init__(self, parent, label='', handler=None, updater=None,
-                 icon=None, readonly=False, size=(-1,-1), **kwargs):
+                       icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
-        kwargs['style'] = (kwargs.get('style', 0)
-                                    | wx.TE_PROCESS_ENTER
-                                    | (wx.TE_READONLY if readonly else 0))
-        
+        kwargs['style'] = (kwargs.get('style', 0) | wx.TE_PROCESS_ENTER
+                                                  | (wx.TE_READONLY if readonly else 0))
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1180,17 +1177,14 @@ class Choice(wx.Control):
     control = property(lambda self: self._ctrl)
 
     def __init__(self, parent, label='', handler=None, updater=None,
-                 icon=None, readonly=False, size=(-1,-1), **kwargs):
+                       icon=None, readonly=False, size=(-1,-1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
-        kwargs['style'] = (kwargs.get('style', 0)
-                                    | wx.TE_PROCESS_ENTER
-                                    | (wx.CB_READONLY if readonly else 0))
-        
+        kwargs['style'] = (kwargs.get('style', 0) | wx.TE_PROCESS_ENTER
+                                                  | (wx.CB_READONLY if readonly else 0))
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon,
                            size=(-1,-1) if label or icon else (0,0))
-        
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
@@ -1272,8 +1266,7 @@ class Indicator(wx.Control):
     radius = 4
     glow = 0
 
-    def __init__(self, parent, colors=None, value=0,
-                 style=wx.BORDER_NONE, **kwargs):
+    def __init__(self, parent, colors=None, value=0, style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__value = value
@@ -1377,8 +1370,7 @@ class Gauge(wx.Control):
         self.__range = int(v)
         self.Refresh()
 
-    def __init__(self, parent, range=24, value=0,
-                 style=wx.BORDER_NONE, **kwargs):
+    def __init__(self, parent, range=24, value=0, style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self.__range = range
