@@ -33,7 +33,7 @@ class Plugin(Layer):
                         )
         self.btn2 = ToggleButton(self, label="toggle-button",
                         handler=on_press,
-                        icon=('w','v'), # must be the same size icon
+                        icon=('w', 'v'), # must be the same size icon
                         size=(120,-1),
                         )
         self.text = TextBox(self, label="control",

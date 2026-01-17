@@ -1075,10 +1075,10 @@ class ToggleButton(wx.ToggleButton):
             self.Bind(wx.EVT_TOGGLEBUTTON, _F(handler))
             self.SetToolTip(_Tip(handler.__doc__))
         if icon:
-            try:
+            if isinstance(icon, (tuple, list)):
                 self.SetBitmap(Icon(icon[0]))
                 self.SetBitmapPressed(Icon(icon[1]))
-            except Exception:
+            else:
                 self.SetBitmap(Icon(icon))
 
 
