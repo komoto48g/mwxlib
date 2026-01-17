@@ -564,7 +564,7 @@ class Graph(GraphPlot):
 
     def kill_all_buffers(self):
         """Delete all buffers; (override) confirm the action with a dialog."""
-        n = sum(not frame.pathname for frame in self.all_frames)  # Check *need-save* frames.
+        n = sum(not frame.pathname for frame in self.get_all_frames())
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox(  # Confirm closing the frame.
@@ -885,7 +885,7 @@ class Frame(mwx.Frame):
                 evt.Veto()
                 return
             self.Quit()
-        n = sum(not frame.pathname for frame in self.graph.all_frames)  # Check *need-save* frames.
+        n = sum(not frame.pathname for frame in self.graph.get_all_frames())
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox(  # Confirm closing the frame.
@@ -1411,7 +1411,7 @@ class Frame(mwx.Frame):
         """
         view = self.selected_view
         if not frames:
-            frames = view.all_frames
+            frames = list(view.get_all_frames())
             if not frames:
                 return None
         
@@ -1601,7 +1601,7 @@ class Frame(mwx.Frame):
     def save_frames_as_tiff(self, path=None, frames=None):
         """Save frames to a multi-page tiff."""
         if not frames:
-            frames = self.selected_view.all_frames
+            frames = list(self.selected_view.get_all_frames())
             if not frames:
                 return None
         
@@ -1827,7 +1827,7 @@ class Frame(mwx.Frame):
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
-                paths = [frame.pathname for frame in view.all_frames if frame.pathname]
+                paths = [frame.pathname for frame in view.get_all_frames() if frame.pathname]
                 paths = [fn for fn in paths if not fn.endswith('>')]  # *dummy-path* 除外
                 o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")

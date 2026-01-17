@@ -63,7 +63,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         for k, (name, w) in enumerate(_alist):
             self.InsertColumn(k, name, width=w)
         
-        for j, frame in enumerate(self.Target.all_frames):
+        for j, frame in enumerate(self.Target.get_all_frames()):
             self.InsertItem(j, str(j))
             self.UpdateInfo(frame)  # update all --> 計算が入ると時間がかかる
         
@@ -143,7 +143,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.__dir = False
         self.__dir = not self.__dir  # toggle 0:ascend/1:descend
         
-        frames = self.Target.all_frames
+        frames = self.Target.frames  # an instance ref.
         if frames:
             def _eval(x):
                 try:
@@ -168,7 +168,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.Select(j)
 
     def OnCopyInfo(self, evt):
-        selected_frames = [self.Target.all_frames[j] for j in self.selected_items]
+        selected_frames = [self.Target.frames[j] for j in self.selected_items]
         if selected_frames:
             text = '\n'.join(pformat(frame.attributes, sort_dicts=0)  # ALL attributes
                              for frame in selected_frames)
@@ -185,7 +185,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.parent.message("No frame selected.")
 
     def OnEditLocalUnit(self, evt):
-        frame = self.Target.all_frames[self.focused_item]
+        frame = self.Target.frames[self.focused_item]
         with wx.TextEntryDialog(self, frame.name,
                 'Enter localunit', repr(frame.localunit)) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
@@ -193,7 +193,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.SetFocus()
 
     def OnEditAnnotation(self, evt):
-        frame = self.Target.all_frames[self.focused_item]
+        frame = self.Target.frames[self.focused_item]
         with wx.TextEntryDialog(self, frame.name,
                 'Enter an annotation', frame.annotation) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
@@ -201,7 +201,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.SetFocus()
 
     def OnItemSelected(self, evt):
-        frame = self.Target.all_frames[evt.Index]
+        frame = self.Target.frames[evt.Index]
         self.parent.message(frame.pathname)
         evt.Skip()
 

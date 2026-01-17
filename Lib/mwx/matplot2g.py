@@ -829,9 +829,11 @@ class GraphPlot(MatplotPanel):
     score_percentile = 0.005
 
     @property
-    def all_frames(self):
+    def frames(self):
         """List of arts <matplotlib.image.AxesImage>."""
         return self.__Arts
+
+    all_frames = frames  # for backward compatibility
 
     @property
     def frame(self):
