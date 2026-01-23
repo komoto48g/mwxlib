@@ -78,7 +78,8 @@ class Plugin(Layer):
         knobs[0].button.SetBitmap(Icon('+'))
         knobs[1].button.SetBitmap(Icon('-'))
         
-        self.textctrl = wx.TextCtrl(self,
+        self.textctrl = TextBox(self,
+                                icon="ghost",
                                 value=wx.TextCtrl.__doc__,
                                 style=wx.TE_MULTILINE
                                      |wx.TE_PROCESS_TAB

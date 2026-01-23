@@ -1114,7 +1114,7 @@ class TextBox(wx.Control):
                            size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
-                (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
+                (self._btn, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
                 (self._ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             ))
         )
@@ -1187,7 +1187,7 @@ class Choice(wx.Control):
                            size=(-1,-1) if label or icon else (0,0))
         self.SetSizer(
             pack(self, (
-                (self._btn, 0, wx.ALIGN_CENTER | wx.LEFT | wx.RIGHT, 0),
+                (self._btn, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
                 (self._ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
             ))
         )
