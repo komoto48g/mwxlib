@@ -433,14 +433,14 @@ class LineProfile(LinePlot):
         self.modeline.Show(1)
         
         self.menu += [
-            (mwx.ID_(510), "&Copy data", "Copy data to clipboard",
+            (mwx.ID_(210), "&Copy data", "Copy data to clipboard",
                 lambda v: self.write_data_to_clipboard()),
             (),
-            (mwx.ID_(511), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
+            (mwx.ID_(211), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),
                 lambda v: v.Check(self.__logicp)),
                 
-            (mwx.ID_(512), "Pixel length", "Set axis-unit in pxiel base", wx.ITEM_RADIO,
+            (mwx.ID_(212), "Pixel length", "Set axis-unit in pxiel base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(0),
                 lambda v: v.Check(not self.__logicp)),
         ]

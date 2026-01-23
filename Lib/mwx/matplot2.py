@@ -288,10 +288,10 @@ class MatplotPanel(wx.Panel):
         )
         
         self.menu = [
-            (mwx.ID_(501), "&Copy image", "Copy canvas image to clipboard",
+            (mwx.ID_(201), "&Copy image", "Copy canvas image to clipboard",
                 lambda v: self.copy_to_clipboard()),
                 
-            # (mwx.ID_(502), "&Export image", "Save canvas image",
+            # (mwx.ID_(202), "&Export image", "Save canvas image",
             #     lambda v: self.save_to_file()),
         ]
         

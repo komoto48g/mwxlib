@@ -626,7 +626,7 @@ class GraphPlot(MatplotPanel):
             (wx.ID_PASTE, "&Paste buffer\t(C-v)", "Paste from clipboard", _Icon(wx.ART_PASTE),
                 lambda v: self.read_buffer_from_clipboard()),
             (),
-            (mwx.ID_(500), "&Invert Color", "Invert colormap", wx.ITEM_CHECK,
+            (mwx.ID_(200), "&Invert Color", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.invert_cmap(),
                 lambda v: v.Check(self.get_cmapstr()[-2:] == "_r")),
             (),
@@ -641,7 +641,7 @@ class GraphPlot(MatplotPanel):
         
         ## modeline menu: バッファリストメニューを追加する．
         def _menu(j, s):
-            return (j, s, s, wx.ITEM_CHECK,
+            return (mwx.ID_(10000 + j), s, s, wx.ITEM_CHECK,
                 lambda v: self.select(s),
                 lambda v: v.Check(self.frame is not None and self.frame.name == s))
         

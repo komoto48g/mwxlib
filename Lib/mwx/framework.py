@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.3"
+__version__ = "1.8.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -479,7 +479,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
 ## --------------------------------
 
 def ID_(id):
-    ## Free ID - どこで使っているか検索できるように．
     ## Do not use [ID_LOWEST(4999):ID_HIGHEST(5999)].
     id += wx.ID_HIGHEST
     assert not wx.ID_LOWEST <= id <= wx.ID_HIGHEST
@@ -1052,7 +1051,7 @@ class ShellFrame(MiniFrame):
     Attributes:
         console:    Notebook of shells
         ghost:      Notebook of editors/buffers
-        watcher:    Notebook of global/locals watcher
+        watcher:    Notebook of globals/locals watcher
         Scratch:    Book of scratch (tooltip)
         Help:       Book of help
         Log:        Book of logging

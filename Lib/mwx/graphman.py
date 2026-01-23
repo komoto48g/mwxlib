@@ -351,17 +351,17 @@ class LayerInterface(CtrlInterface):
                 lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (mwx.ID_(201), "&Reload module", "Reload", Icon('load'),
+            (mwx.ID_(110), "&Reload module", "Reload", Icon('load'),
                 lambda v: self.parent.reload_plug(self),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.active))),
                 
-            (mwx.ID_(202), "&Unload module", "Unload", Icon('delete'),
+            (mwx.ID_(111), "&Unload module", "Unload", Icon('delete'),
                 lambda v: self.parent.unload_plug(self),
                 lambda v: v.Enable(self.unloadable
                             and not (self.thread and self.thread.active))),
             (),
-            (mwx.ID_(203), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
+            (mwx.ID_(112), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
                 lambda v: self.parent.inspect_plug(self)),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
