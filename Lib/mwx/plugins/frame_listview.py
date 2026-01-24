@@ -73,7 +73,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 'enter pressed' : (0, self.OnShowItems),  # -> frame_shown
                'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
-                  'C-c pressed' : (0, self.OnCopyInfo),
+                  'C-i pressed' : (0, self.OnCopyInfo),
                   'C-l pressed' : (0, self.OnEditLocalUnit),
                    'f2 pressed' : (0, self.OnEditAnnotation),
                  'M-up pressed' : (0, self.Target.OnPageUp),
@@ -98,15 +98,15 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Target.handler.append(self.context)
         
         self.menu = [
-            (100, "Edit localunit", Icon('image'),
+            (wx.ID_ANY, "Edit localunit\t(C-l)", Icon('image'),
                 self.OnEditLocalUnit,
                 lambda v: v.Enable(self.focused_item != -1)),
                 
-            (101, "Edit annotation", Icon('pencil'),
+            (wx.ID_ANY, "Edit annotation\t(f2)", Icon('pencil'),
                 self.OnEditAnnotation,
                 lambda v: v.Enable(self.focused_item != -1)),
             (),
-            (102, "Copy info", Icon('copy'),
+            (wx.ID_ANY, "Copy info\t(C-i)", Icon('copy'),
                 self.OnCopyInfo,
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]
@@ -181,7 +181,12 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     title="Frame Properties", size=(480, -1),
                     style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER) as dlg:
                 textctrl = wx.TextCtrl(dlg, value=text, style=wx.TE_MULTILINE|wx.TE_READONLY)
-                dlg.SetSizer(pack(dlg, [textctrl], style=(1, wx.ALL | wx.EXPAND, 10)))
+                dlg.SetSizer(
+                    pack(dlg, (
+                        (textctrl, 1, wx.ALL | wx.EXPAND, 10),
+                        wx.Button(dlg, wx.ID_CANCEL, size=(0,0)),  # for closing with [escape]
+                    ))
+                )
                 dlg.ShowModal()
         else:
             self.parent.message("No frame selected.")
