@@ -1461,7 +1461,8 @@ class ShellFrame(MiniFrame):
                                     "Continue loading {}/{}?".format(book.Name, buf.name),
                                     "Load {!r}".format(buf.name),
                                     style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
-                                dlg.SetHelpLabel("Yes to All")
+                                dlg.SetHelpLabel("Yes to &All")
+                                dlg.SetYesNoLabels("&Yes", "&No")
                                 ret = dlg.ShowModal()
                                 if ret == wx.ID_NO:
                                     continue
