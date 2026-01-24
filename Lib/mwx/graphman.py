@@ -1249,20 +1249,13 @@ class Frame(mwx.Frame):
         ## Create a menu.
         plug.__Menu_item = None
         
-        if not hasattr(module, 'ID_'):  # give a unique index to the module
-            global __plug_ID__          # cache ID *not* in [ID_LOWEST(4999):ID_HIGHEST(5999)]
-            if "__plug_ID__" not in globals():
-                __plug_ID__ = 10000
-            __plug_ID__ += 1
-            module.ID_ = __plug_ID__
-        
         if plug.menukey:
             menu, sep, tail = plug.menukey.rpartition('/')
             menu = menu or Layer.MENU
             text = tail or plug.__module__
             hint = (plug.__doc__ or name).strip().splitlines()[0]
             plug.__Menu_item = (
-                module.ID_, text, hint, wx.ITEM_CHECK,
+                wx.ID_ANY, text, hint, wx.ITEM_CHECK,
                 lambda v: (self.update_pane(name),
                            self.show_pane(name, v.IsChecked(), interactive=1)),
                 lambda v: v.Check(plug.IsShown()),
