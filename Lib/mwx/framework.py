@@ -245,11 +245,11 @@ class KeyCtrlInterfaceMixin:
         
         self.handler.update({  # DNA<KeyCtrlInterfaceMixin>
             state : {
-                          event : [map, self.pre_command_hook],
+                          event : [map, self.on_enter_keymap],
             },
             map : {
                          'quit' : [state, ],
-                    '* pressed' : [state, self.post_command_hook],
+                    '* pressed' : [state, self.on_exit_keymap],
                  '*alt pressed' : [map, _Pass],
                 '*ctrl pressed' : [map, _Pass],
                '*shift pressed' : [map, _Pass],
@@ -257,7 +257,7 @@ class KeyCtrlInterfaceMixin:
             },
         })
 
-    def pre_command_hook(self, evt):
+    def on_enter_keymap(self, evt):
         ## """Called when entering extension mode (internal use only)."""
         ## Escape when text is selected for [C-c/C-x] and skip events.
         wnd = wx.Window.FindFocus()
@@ -267,17 +267,15 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key + '-')
         evt.Skip()
-    pre_command_hook.__name__ = "enter"
 
-    def post_command_hook(self, evt):
+    def on_exit_keymap(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
         ## If the event has reached a top-level window, don't skip events.
-        if isinstance(self, wx.TopLevelWindow):
+        if isinstance(self, wx.TopLevelWindow):  # not isinstance(self, CtrlInterface):
             return
         map = self.handler.previous_state
         self.message(map, evt.key)
         evt.Skip()
-    post_command_hook.__name__ = "exit"
 
     def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.
@@ -340,9 +338,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             },
         )
         
-        _M = self._mouse_handler
-        _N = self._normal_handler
-        
         def activate(evt):
             if self:
                 self.handler('focus_set', evt)
@@ -366,40 +361,35 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         
         self.Bind(wx.EVT_MOTION, self.on_motion)
         
-        self.Bind(wx.EVT_LEFT_UP, lambda v: _M('Lbutton released', v))
-        self.Bind(wx.EVT_RIGHT_UP, lambda v: _M('Rbutton released', v))
-        self.Bind(wx.EVT_MIDDLE_UP, lambda v: _M('Mbutton released', v))
-        self.Bind(wx.EVT_LEFT_DOWN, lambda v: _M('Lbutton pressed', v))
-        self.Bind(wx.EVT_RIGHT_DOWN, lambda v: _M('Rbutton pressed', v))
-        self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: _M('Mbutton pressed', v))
-        self.Bind(wx.EVT_LEFT_DCLICK, lambda v: _M('Lbutton dblclick', v))
-        self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: _M('Rbutton dblclick', v))
-        self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: _M('Mbutton dblclick', v))
+        self.Bind(wx.EVT_LEFT_UP, self._mouse_handler('Lbutton released'))
+        self.Bind(wx.EVT_RIGHT_UP, self._mouse_handler('Rbutton released'))
+        self.Bind(wx.EVT_MIDDLE_UP, self._mouse_handler('Mbutton released'))
+        self.Bind(wx.EVT_LEFT_DOWN, self._mouse_handler('Lbutton pressed'))
+        self.Bind(wx.EVT_RIGHT_DOWN, self._mouse_handler('Rbutton pressed'))
+        self.Bind(wx.EVT_MIDDLE_DOWN, self._mouse_handler('Mbutton pressed'))
+        self.Bind(wx.EVT_LEFT_DCLICK, self._mouse_handler('Lbutton dblclick'))
+        self.Bind(wx.EVT_RIGHT_DCLICK, self._mouse_handler('Rbutton dblclick'))
+        self.Bind(wx.EVT_MIDDLE_DCLICK, self._mouse_handler('Mbutton dblclick'))
         
-        self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: _M('Xbutton1 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: _M('Xbutton2 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: _M('Xbutton1 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: _M('Xbutton2 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dblclick', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dblclick', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_UP, self._mouse_handler('Xbutton1 released'))
+        self.Bind(wx.EVT_MOUSE_AUX2_UP, self._mouse_handler('Xbutton2 released'))
+        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, self._mouse_handler('Xbutton1 pressed'))
+        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, self._mouse_handler('Xbutton2 pressed'))
+        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, self._mouse_handler('Xbutton1 dblclick'))
+        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, self._mouse_handler('Xbutton2 dblclick'))
         
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _N('capture_lost', v))
-        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_changed', v))
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._event_handler('capture_lost'))
+        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, self._event_handler('capture_changed'))
 
     def on_hotkey_press(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed."""
-        # if evt.EventObject is not self:
-        #     evt.Skip()
-        #     return
         key = hotkey(evt)
         self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
 
     def on_hotkey_down(self, evt):  # <wx._core.KeyEvent>
-        """Called when a key is pressed while dragging.
-        Specifically called when the mouse is being captured.
-        """
+        """Called when a key is pressed while dragging, specifically when the mouse is captured."""
         if self.__isDragging:
             self.on_hotkey_press(evt)
         else:
@@ -413,21 +403,17 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             evt.Skip()
 
     def on_mousewheel(self, evt):  # <wx._core.MouseEvent>
-        """Called on mouse wheel events.
-        Trigger event: 'key+wheel[up|down|right|left] pressed'
-        """
+        """Called on mouse wheel events."""
         if evt.GetWheelAxis():
             p = 'right' if evt.WheelRotation > 0 else 'left'
         else:
             p = 'up' if evt.WheelRotation > 0 else 'down'
-        evt.key = self.__key + "wheel{}".format(p)
+        evt.key = self.__key + f"wheel{p}"
         if self.handler('{} pressed'.format(evt.key), evt) is None:
             evt.Skip()
 
     def on_motion(self, evt):  # <wx._core.MouseEvent>
-        """Called on mouse motion events.
-        Trigger event: 'key+[LMR]drag begin/motion/end'
-        """
+        """Called on mouse motion events."""
         if self.__button:
             kbtn = self.__key + self.__button
             if not self.__isDragging:
@@ -439,33 +425,35 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             self.handler('motion', evt)
         evt.Skip()
 
-    def _mouse_handler(self, event, evt):  # <wx._core.MouseEvent>
-        """Called on mouse button events.
-        Trigger event: 'key+[LMRX]button pressed/released/dblclick'
-        """
-        event = self.__key + event
-        evt.key, action = event.split()
-        if action == 'released' and self.__button:
-            if self.__isDragging:
-                self.__isDragging = False
-                kbtn = self.__key + self.__button
-                self.handler('{}drag end'.format(kbtn), evt)
-        
-        k = evt.GetButton()  # {1:L, 2:M, 3:R, 4:X1, 5:X2}
-        if action == 'pressed' and k in (1,2,3):
-            self.__button = 'LMR'[k-1]
-        else:
-            self.__button = ''
-        if self.handler(event, evt) is None:
-            evt.Skip()
-        try:
-            self.SetFocusIgnoringChildren()  # let the panel accept keys
-        except AttributeError:
-            pass
+    def _mouse_handler(self, event):  # <wx._core.MouseEvent>
+        def _handler(evt):
+            """Called on mouse button events."""
+            key_event = self.__key + event
+            evt.key, action = key_event.split()
+            if action == 'released' and self.__button:
+                if self.__isDragging:
+                    self.__isDragging = False
+                    kbtn = self.__key + self.__button
+                    self.handler('{}drag end'.format(kbtn), evt)
+            
+            k = evt.GetButton()  # {1:L, 2:M, 3:R, 4:X1, 5:X2}
+            if action == 'pressed' and k in (1,2,3):
+                self.__button = 'LMR'[k-1]
+            else:
+                self.__button = ''
+            if self.handler(key_event, evt) is None:
+                evt.Skip()
+            try:
+                self.SetFocusIgnoringChildren()  # let the panel accept keys
+            except AttributeError:
+                pass
+        return _handler
 
-    def _normal_handler(self, event, evt):  # <wx._core.Event>
-        if self.handler(event, evt) is None:
-            evt.Skip()
+    def _event_handler(self, event):  # <wx._core.Event>
+        def _handler(evt):
+            if self.handler(event, evt) is None:
+                evt.Skip()
+        return _handler
 
 
 ## --------------------------------
