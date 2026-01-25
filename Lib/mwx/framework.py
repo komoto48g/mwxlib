@@ -245,11 +245,11 @@ class KeyCtrlInterfaceMixin:
         
         self.handler.update({  # DNA<KeyCtrlInterfaceMixin>
             state : {
-                          event : [map, self.pre_command_hook],
+                          event : [map, self.on_enter_keymap],
             },
             map : {
                          'quit' : [state, ],
-                    '* pressed' : [state, self.post_command_hook],
+                    '* pressed' : [state, self.on_exit_keymap],
                  '*alt pressed' : [map, _Pass],
                 '*ctrl pressed' : [map, _Pass],
                '*shift pressed' : [map, _Pass],
@@ -257,7 +257,7 @@ class KeyCtrlInterfaceMixin:
             },
         })
 
-    def pre_command_hook(self, evt):
+    def on_enter_keymap(self, evt):
         ## """Called when entering extension mode (internal use only)."""
         ## Escape when text is selected for [C-c/C-x] and skip events.
         wnd = wx.Window.FindFocus()
@@ -267,17 +267,15 @@ class KeyCtrlInterfaceMixin:
         else:
             self.message(evt.key + '-')
         evt.Skip()
-    pre_command_hook.__name__ = "enter"
 
-    def post_command_hook(self, evt):
+    def on_exit_keymap(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
         ## If the event has reached a top-level window, don't skip events.
-        if isinstance(self, wx.TopLevelWindow):
+        if isinstance(self, wx.TopLevelWindow):  # not isinstance(self, CtrlInterface):
             return
         map = self.handler.previous_state
         self.message(map, evt.key)
         evt.Skip()
-    post_command_hook.__name__ = "exit"
 
     def define_key(self, keymap, action=None, /, *args, **kwargs):
         """Define [map key (pressed)] action.
@@ -341,7 +339,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         )
         
         _M = self._mouse_handler
-        _N = self._normal_handler
+        _N = self._event_handler
         
         def activate(evt):
             if self:
@@ -388,18 +386,13 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
 
     def on_hotkey_press(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed."""
-        # if evt.EventObject is not self:
-        #     evt.Skip()
-        #     return
         key = hotkey(evt)
         self.__key = regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
 
     def on_hotkey_down(self, evt):  # <wx._core.KeyEvent>
-        """Called when a key is pressed while dragging.
-        Specifically called when the mouse is being captured.
-        """
+        """Called when a key is pressed while dragging, specifically when the mouse is captured."""
         if self.__isDragging:
             self.on_hotkey_press(evt)
         else:
@@ -413,21 +406,17 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             evt.Skip()
 
     def on_mousewheel(self, evt):  # <wx._core.MouseEvent>
-        """Called on mouse wheel events.
-        Trigger event: 'key+wheel[up|down|right|left] pressed'
-        """
+        """Called on mouse wheel events."""
         if evt.GetWheelAxis():
             p = 'right' if evt.WheelRotation > 0 else 'left'
         else:
             p = 'up' if evt.WheelRotation > 0 else 'down'
-        evt.key = self.__key + "wheel{}".format(p)
+        evt.key = self.__key + f"wheel{p}"
         if self.handler('{} pressed'.format(evt.key), evt) is None:
             evt.Skip()
 
     def on_motion(self, evt):  # <wx._core.MouseEvent>
-        """Called on mouse motion events.
-        Trigger event: 'key+[LMR]drag begin/motion/end'
-        """
+        """Called on mouse motion events."""
         if self.__button:
             kbtn = self.__key + self.__button
             if not self.__isDragging:
@@ -463,7 +452,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         except AttributeError:
             pass
 
-    def _normal_handler(self, event, evt):  # <wx._core.Event>
+    def _event_handler(self, event, evt):  # <wx._core.Event>
         if self.handler(event, evt) is None:
             evt.Skip()
 
