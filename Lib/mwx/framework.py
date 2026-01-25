@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.6"
+__version__ = "1.8.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -232,37 +232,34 @@ class KeyCtrlInterfaceMixin:
         else:
             vk.KeyUp(_speckeys_wxkmap[key])
 
-    def make_keymap(self, keymap):
-        """Make a basis of extension map in the handler.
-        """
-        assert isinstance(keymap, str)
-        
+    def make_keymap(self, map):
+        ## """Make a basis of extension map in the handler (internal use only)."""
         def _Pass(evt):
-            self.message(keymap, evt.key)
+            self.message(map, evt.key)
         _Pass.__name__ = "pass"
         
         state = self.handler.default_state
-        event = keymap + ' pressed'
+        event = map + ' pressed'
         
         assert state is not None, "Don't make keymap for None:state"
         
         self.handler.update({  # DNA<KeyCtrlInterfaceMixin>
             state : {
-                          event : [keymap, self.pre_command_hook],
+                          event : [map, self.pre_command_hook],
             },
-            keymap : {
+            map : {
                          'quit' : [state, ],
                     '* pressed' : [state, self.post_command_hook],
-                 '*alt pressed' : [keymap, _Pass],
-                '*ctrl pressed' : [keymap, _Pass],
-               '*shift pressed' : [keymap, _Pass],
-             '*[LR]win pressed' : [keymap, _Pass],
+                 '*alt pressed' : [map, _Pass],
+                '*ctrl pressed' : [map, _Pass],
+               '*shift pressed' : [map, _Pass],
+             '*[LR]win pressed' : [map, _Pass],
             },
         })
 
     def pre_command_hook(self, evt):
         ## """Called when entering extension mode (internal use only)."""
-        ## Check text selection for [C-c/C-x].
+        ## Escape when text is selected for [C-c/C-x] and skip events.
         wnd = wx.Window.FindFocus()
         if isinstance(wnd, wx.TextEntry) and wnd.StringSelection\
           or isinstance(wnd, stc.StyledTextCtrl) and wnd.SelectedText:
@@ -274,14 +271,11 @@ class KeyCtrlInterfaceMixin:
 
     def post_command_hook(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
-        keymap = self.handler.previous_state
-        if keymap:
-            self.message(keymap, evt.key)
-        else:
-            self.message(evt.key)
-        ## Check if the event has reached a top-level window; Don't skip text event.
+        ## If the event has reached a top-level window, don't skip events.
         if isinstance(self, wx.TopLevelWindow):
             return
+        map = self.handler.previous_state
+        self.message(map, evt.key)
         evt.Skip()
     post_command_hook.__name__ = "exit"
 
@@ -1256,7 +1250,7 @@ class ShellFrame(MiniFrame):
             },
             0 : {
                     '* pressed' : (0, fork_debugger),
-                   '* released' : (0, fork_debugger),
+                   '* released' : (0, ),
                   'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.on_search_dialog),
