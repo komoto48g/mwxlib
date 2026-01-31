@@ -1319,9 +1319,8 @@ class Frame(mwx.Frame):
         new_plug = self.load_plug(plug.__module__, force=1, session=session)
         
         ## Update shell.target --> new plug.
-        for shell in self.shellframe.get_all_shells():
-            if shell.target is plug:
-                shell.handler('shell_activated', shell)
+        for shell in self.shellframe.get_all_shells(plug):
+            shell.handler('shell_activated', shell)
         return new_plug
 
     def inspect_plug(self, name):
@@ -1331,18 +1330,20 @@ class Frame(mwx.Frame):
             print(f"- {name!r} is not listed in plugins.")
             return
         
+        others = list(self.shellframe.get_all_shells(plug))  # Check if the plug-shell exists.
         shell = self.shellframe.clone_shell(plug)
         name = plug.Name  # init(shell) で名前を参照するため再定義する
         
-        @shell.handler.bind("shell_activated")  # @TODO: init action が重複してバインドされてしまう．
-        def init(shell):
-            """Called when the plug shell is activated."""
-            nonlocal plug
-            _plug = self.get_plug(name)
-            if _plug is not plug:
-                shell.target = _plug or self  # Reset the target to the reloaded plug.
-            plug = _plug
-        init(shell)
+        if not others:
+            @shell.handler.bind("shell_activated")  # @TODO: init action が重複してバインドされてしまう．
+            def init(shell):
+                """Called when the plug shell is activated."""
+                nonlocal plug
+                _plug = self.get_plug(name)
+                if _plug is not plug:
+                    shell.target = _plug or self  # Reset the target to the reloaded plug.
+                plug = _plug
+            init(shell)
         self.shellframe.Show()
         if wx.GetKeyState(wx.WXK_SHIFT):  # open the source code.
             self.shellframe.load(plug)
