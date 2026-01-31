@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.7"
+__version__ = "1.8.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -338,8 +338,11 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             },
         )
         
-        _M = self._mouse_handler
-        _N = self._event_handler
+        def _M(event):
+            return partial(self._mouse_handler, event)
+        
+        def _N(event):
+            return partial(self._event_handler, event)
         
         def activate(evt):
             if self:
@@ -364,25 +367,25 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         
         self.Bind(wx.EVT_MOTION, self.on_motion)
         
-        self.Bind(wx.EVT_LEFT_UP, lambda v: _M('Lbutton released', v))
-        self.Bind(wx.EVT_RIGHT_UP, lambda v: _M('Rbutton released', v))
-        self.Bind(wx.EVT_MIDDLE_UP, lambda v: _M('Mbutton released', v))
-        self.Bind(wx.EVT_LEFT_DOWN, lambda v: _M('Lbutton pressed', v))
-        self.Bind(wx.EVT_RIGHT_DOWN, lambda v: _M('Rbutton pressed', v))
-        self.Bind(wx.EVT_MIDDLE_DOWN, lambda v: _M('Mbutton pressed', v))
-        self.Bind(wx.EVT_LEFT_DCLICK, lambda v: _M('Lbutton dblclick', v))
-        self.Bind(wx.EVT_RIGHT_DCLICK, lambda v: _M('Rbutton dblclick', v))
-        self.Bind(wx.EVT_MIDDLE_DCLICK, lambda v: _M('Mbutton dblclick', v))
+        self.Bind(wx.EVT_LEFT_UP, _M('Lbutton released'))
+        self.Bind(wx.EVT_RIGHT_UP, _M('Rbutton released'))
+        self.Bind(wx.EVT_MIDDLE_UP, _M('Mbutton released'))
+        self.Bind(wx.EVT_LEFT_DOWN, _M('Lbutton pressed'))
+        self.Bind(wx.EVT_RIGHT_DOWN, _M('Rbutton pressed'))
+        self.Bind(wx.EVT_MIDDLE_DOWN, _M('Mbutton pressed'))
+        self.Bind(wx.EVT_LEFT_DCLICK, _M('Lbutton dblclick'))
+        self.Bind(wx.EVT_RIGHT_DCLICK, _M('Rbutton dblclick'))
+        self.Bind(wx.EVT_MIDDLE_DCLICK, _M('Mbutton dblclick'))
         
-        self.Bind(wx.EVT_MOUSE_AUX1_UP, lambda v: _M('Xbutton1 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_UP, lambda v: _M('Xbutton2 released', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, lambda v: _M('Xbutton1 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, lambda v: _M('Xbutton2 pressed', v))
-        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, lambda v: _M('Xbutton1 dblclick', v))
-        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, lambda v: _M('Xbutton2 dblclick', v))
+        self.Bind(wx.EVT_MOUSE_AUX1_UP, _M('Xbutton1 released'))
+        self.Bind(wx.EVT_MOUSE_AUX2_UP, _M('Xbutton2 released'))
+        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, _M('Xbutton1 pressed'))
+        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, _M('Xbutton2 pressed'))
+        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, _M('Xbutton1 dblclick'))
+        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, _M('Xbutton2 dblclick'))
         
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda v: _N('capture_lost', v))
-        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, lambda v: _N('capture_changed', v))
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, _N('capture_lost'))
+        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, _N('capture_changed'))
 
     def on_hotkey_press(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed."""
