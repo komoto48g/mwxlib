@@ -1539,10 +1539,10 @@ class GraphPlot(MatplotPanel):
         if j and self.frame:
             ux, uy = self.frame.xy_unit
             du = {
-                'up' : (0,  uy),
+                'up' : (0, +uy),
               'down' : (0, -uy),
               'left' : (-ux, 0),
-             'right' : ( ux, 0),
+             'right' : (+ux, 0),
             }
             p = self.get_current_mark() + np.resize(du[evt.key], (2,1))
             self.set_current_mark(*p)
@@ -1747,10 +1747,10 @@ class GraphPlot(MatplotPanel):
         if j and self.frame:
             ux, uy = self.frame.xy_unit
             du = {
-                'up' : (0,  uy),
+                'up' : (0, +uy),
               'down' : (0, -uy),
               'left' : (-ux, 0),
-             'right' : ( ux, 0),
+             'right' : (+ux, 0),
             }
             dp = du[evt.key]
             p = self.get_current_rect().T

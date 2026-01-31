@@ -15,9 +15,9 @@ from mwx.controls import Param, LParam, Icon, Button, TextBox
 def read_info(path):
     command = ['ffprobe',
                '-i', path,
-               '-loglevel', 'quiet',    # no verbose
-               '-print_format', 'json', # -format json
-               '-show_streams',         # -streams info
+               '-loglevel', 'quiet',     # no verbose
+               '-print_format', 'json',  # -format json
+               '-show_streams',          # -streams info
                ]
     with Popen(command, stdout=PIPE, stderr=PIPE) as fp:
         ret, err = fp.communicate()
@@ -27,12 +27,12 @@ def read_info(path):
 
 def capture_video(path, ss=0):
     command = ['ffmpeg',
-               '-ss', f"{ss}",          # Note: placing -ss before -i will be faster,
-               '-i', path,              #       but maybe not accurate.
-               '-frames:v', '1',        # -frame one shot
-               '-f', 'rawvideo',        # -format raw
-               '-pix_fmt', 'rgb24',     # rgb24, gray, etc.
-               'pipe:'                  # pipe to stdout: '-'
+               '-ss', f"{ss}",       # Placing -ss before -i will be faster, but less accurate.
+               '-i', path,
+               '-frames:v', '1',     # -frame one shot
+               '-f', 'rawvideo',     # -format raw
+               '-pix_fmt', 'rgb24',  # rgb24, gray, etc.
+               'pipe:'               # pipe to stdout: '-'
                ]
     bufsize = 4096  # w * h * 3
     buf = b""

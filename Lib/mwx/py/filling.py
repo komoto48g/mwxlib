@@ -29,7 +29,7 @@ DOCTYPES = ('BuiltinFunctionType', 'BuiltinMethodType', 'ClassType',
 SIMPLETYPES = [getattr(types, t) for t in dir(types)
                if not t.startswith('_') and t not in DOCTYPES]
 
-#del t
+# del t
 
 try:
     COMMONTYPES.append(type(''.__repr__))  # Method-wrapper in version 2.2.x.
@@ -79,14 +79,14 @@ class FillingTree(wx.TreeCtrl):
         if self.IsExpanded(item):
             return
         self.addChildren(item)
-#        self.SelectItem(item)
+        # self.SelectItem(item)
 
     def OnItemCollapsed(self, event):
         """Remove all children from the item."""
-        item = event.GetItem()
-#        self.CollapseAndReset(item)
-#        self.DeleteChildren(item)
-#        self.SelectItem(item)
+        # item = event.GetItem()
+        # self.CollapseAndReset(item)
+        # self.DeleteChildren(item)
+        # self.SelectItem(item)
 
     def OnSelChanged(self, event):
         """Display information about the item."""
@@ -384,9 +384,9 @@ class Filling(wx.SplitterWindow):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnChanged)
 
     def OnChanged(self, event):
-        #this is important: do not evaluate this event=> otherwise,
-        # splitterwindow behaves strangely
-        #event.Skip()
+        # this is important: do not evaluate this event=> otherwise,
+        # splitterwindow behaves strangely.
+        # event.Skip()
         pass
 
     def LoadSettings(self, config):

@@ -122,7 +122,7 @@ class LinePlot(MatplotPanel):
                         connectionstyle="angle,angleA=0,angleB=90,rad=8")
             self.__annotations = [
                 _A(a, (a,y), (-54,-3), arrowstyle='->'),
-                _A(b, (b,y), ( 16,-3), arrowstyle='->'),
+                _A(b, (b,y), (+16,-3), arrowstyle='->'),
                 _A(None, (a,y), (b,y), textcoords='data', arrowstyle='<->'),
                 p,
             ]

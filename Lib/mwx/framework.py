@@ -570,7 +570,7 @@ class Menu(wx.Menu):
                 except IndexError:
                     pass
             else:
-                subitems = list(argv.pop())  # extract the last element as submenu
+                subitems = list(argv.pop())  # Extract the last element as submenu.
                 submenu = Menu(owner, subitems)
                 submenu_item = wx.MenuItem(self, wx.ID_ANY, *argv)
                 submenu_item.SetSubMenu(submenu)
@@ -640,10 +640,10 @@ class MenuBar(wx.MenuBar, TreeList):
             return
         
         menu._unbind()
-        for item in menu.MenuItems:  # delete all items
+        for item in menu.MenuItems:  # Delete all items.
             menu.Delete(item)
         
-        menu2 = Menu(self.Parent, self[key])  # new menu2 to swap menu
+        menu2 = Menu(self.Parent, self[key])  # New menu2 to swap menu.
         for item in menu2.MenuItems:
             menu.Append(menu2.Remove(item))  # 重複しないようにいったん切り離して追加する
         
@@ -661,7 +661,7 @@ class MenuBar(wx.MenuBar, TreeList):
             warn(f"No parents bound to {self}.")
             return
         
-        for j in range(self.GetMenuCount()):  # remove and del all top-level menu
+        for i in range(self.GetMenuCount()):  # Remove and delete all top-level menu.
             menu = self.Remove(0)
             menu.Destroy()
         
