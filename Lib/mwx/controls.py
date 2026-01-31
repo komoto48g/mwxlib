@@ -291,11 +291,6 @@ class LParam(Param):
 class Knob(wx.Panel):
     """Parameter controller unit.
     
-    In addition to direct key input to the textctrl,
-    [up][down][wheelup][wheeldown] keys can be used,
-    with modifiers S- 2x, C- 16x, and M- 256x steps.
-    [Mbutton] resets to the std. value if it exists.
-    
     Args:
         param: <Param> or <LParam> object
         type:  control type (slider[*], [hv]spin, choice, None)
@@ -481,12 +476,9 @@ class Knob(wx.Panel):
 
     def _shift_control(self, evt, bit):
         ## Called when a key/mouse wheel is pressed/scrolled (internal use only).
-        ## In addition to direct key input to the textctrl,
-        ## [up][down][wheelup][wheeldown] keys can be used,
-        ## with modifiers S- 2x, C- 16x, and M- 256x steps.
         if bit:
             if evt.ShiftDown():   bit *= 2
-            if evt.ControlDown(): bit *= 16
+            if evt.ControlDown(): bit *= 10
             if evt.AltDown():     bit *= 256
         v = self.__par
         j = self._ctrl.GetValue() + bit
