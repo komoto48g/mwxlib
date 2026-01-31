@@ -111,11 +111,8 @@ class Plugin(Layer):
         self.snp = Button(self, handler=self.snapshot, icon='clip')
         self.exp = Button(self, handler=self.export, icon='save')
         
-        self.rw = Button(self, handler=lambda v: self.seekto(-100), icon='|<-')
-        self.fw = Button(self, handler=lambda v: self.seekto(+100), icon='->|')
-        
         self.layout((self.mc,), expand=2)
-        self.layout((self.ss, self.to, self.rw, self.fw,
+        self.layout((self.ss, self.to,
                      self.snp, self.crop, self.rate, self.exp),
                     expand=0, row=8, type='vspin', style='button', lw=32, cw=-1, tw=64)
         
@@ -135,6 +132,7 @@ class Plugin(Layer):
             None : {
                'C-left pressed' : (None, _F(self.seekd, -1000)),
               'C-right pressed' : (None, _F(self.seekd,  1000)),
+                  'C-s pressed' : (None, _F(self.snapshot)),
             },
             0 : {  # MEDIASTATE_STOPPED
                          'play' : (2, ),
@@ -254,14 +252,6 @@ class Plugin(Layer):
         if self._path:
             return self.mc.PlaybackRate
 
-    def seekto(self, offset):
-        """Seek position with offset [ms] from the `to` position."""
-        if self._path:
-            t = self.to.value + offset/1000
-            if 0 <= t < self.video_dur:
-                self.to.value = round(t, 3)
-            self.set_offset(self.to)
-
     def seekd(self, offset):
         """Seek position with offset [ms] from the current position."""
         if self._path:
@@ -270,14 +260,12 @@ class Plugin(Layer):
                 self.mc.Seek(self.DELTA + t)
 
     def snapshot(self):
-        """Create a snapshot of the current frame.
-        Load the snapshot image into the graph window.
-        """
+        """Snapshot of the current frame and load the image into the graph window."""
         if not self._path:
             return
         t = self.mc.Tell()
         w, h = self.video_size
-        buf = capture_video(self._path, t/1000).reshape((h,w,3))
+        buf = capture_video(self._path, t/1000).reshape((h, w, 3))
         name = "{}-ss{}".format(os.path.basename(self._path), int(t))
         self.graph.load(buf, name)
 
