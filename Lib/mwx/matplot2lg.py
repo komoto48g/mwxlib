@@ -196,7 +196,7 @@ class LinePlot(MatplotPanel):
                 self.region = (a+d, b+d)
                 self.__lastpoint = x
         else:
-            self.message("- No region.")  # <FSM logic-error>
+            self.message("- No region.")
         self.draw()
 
     def OnDragEnd(self, evt):

@@ -1335,9 +1335,8 @@ class Frame(mwx.Frame):
         name = plug.Name  # init(shell) で名前を参照するため再定義する
         
         if not others:
-            @shell.handler.bind("shell_activated")  # @TODO: init action が重複してバインドされてしまう．
+            @shell.handler.bind("shell_activated")
             def init(shell):
-                """Called when the plug shell is activated."""
                 nonlocal plug
                 _plug = self.get_plug(name)
                 if _plug is not plug:

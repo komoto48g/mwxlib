@@ -331,10 +331,8 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         self.__button = ''
         self.__isDragging = False
         self.__handler = FSM({  # DNA<CtrlInterface>
-                None : {
-                },
-                0 : {
-                },
+                None : {},
+                0 : {},
             },
         )
         
@@ -755,10 +753,8 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
         self.__handler = FSM({  # DNA<Frame>
-                None : {
-                },
-                0 : {
-                },
+                None : {},
+                0 : {},
             },
         )
         self.make_keymap('C-x')
@@ -809,10 +805,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
         
         self.__handler = FSM({  # DNA<MiniFrame>
-                None : {
-                },
-                0 : {
-                },
+                None : {},
+                0 : {},
             },
         )
         self.make_keymap('C-x')
@@ -1246,7 +1240,7 @@ class ShellFrame(MiniFrame):
                   'C-g pressed' : (0, self.Quit, fork_debugger),
                    'f1 pressed' : (0, self.About),
                   'C-f pressed' : (0, self.on_search_dialog),
-                'C-S-f pressed' : (0, self.on_replace_dialog),
+                'C-S-f pressed' : (0, self.on_search_replace_dialog),
                    'f3 pressed' : (0, self.repeat_forward_search),
                  'S-f3 pressed' : (0, self.repeat_backward_search),
                   'f11 pressed' : (0, _F(self.toggle_window, win=self.ghost, alias='toggle_ghost')),
@@ -1944,7 +1938,7 @@ class ShellFrame(MiniFrame):
         self.findDlg = wx.FindReplaceDialog(wnd, self.findData, "Find", flags)
         self.findDlg.Show()
 
-    def on_replace_dialog(self, evt):
+    def on_search_replace_dialog(self, evt):
         self.on_search_dialog(evt, flags=wx.FR_REPLACEDIALOG)
 
     def repeat_forward_search(self, evt):
