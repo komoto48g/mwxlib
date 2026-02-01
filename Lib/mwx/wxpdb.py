@@ -3,6 +3,7 @@
    of the phoenix, by the phoenix, for the phoenix.
 """
 from functools import wraps
+from importlib import import_module
 from bdb import BdbQuit
 from pdb import Pdb
 import pdb
@@ -10,20 +11,9 @@ import sys
 import re
 import inspect
 import threading
-from importlib import import_module
 import wx
 
 from .utilus import FSM, where
-
-
-def echo(f):
-    @wraps(f)
-    def _f(*args, **kwargs):
-        if echo.verbose > 0:
-            print("<{!r}>".format(f.__name__))
-        return f(*args, **kwargs)
-    return _f
-echo.verbose = 0
 
 
 class Debugger(Pdb):
@@ -114,7 +104,9 @@ class Debugger(Pdb):
         self.__handler = FSM({  # DNA<Debugger>
             0 : {
                   'debug_begin' : (1, self.on_debug_begin, dispatch),
-                  'trace_begin' : (2, dispatch),
+                  'trace_begin' : (0, dispatch),
+                   'trace_hook' : (0, self.on_trace_hook, dispatch),
+                    'trace_end' : (0, dispatch),
             },
             1 : {
                         'abort' : (0, ),
@@ -131,11 +123,6 @@ class Debugger(Pdb):
                 'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
                 'C-S-n pressed' : (1, lambda v: self.exec_until_lineno()),
                   'C-w pressed' : (1, lambda v: self.stamp_where()),
-            },
-            2 : {
-                    'trace_end' : (0, dispatch),
-                   'trace_hook' : (2, self.on_trace_hook, dispatch),
-                  'debug_begin' : (1, self.on_debug_begin, dispatch),
             },
         })
 
@@ -457,7 +444,6 @@ class Debugger(Pdb):
     ## Override Pdb methods.
     ## --------------------------------
 
-    @echo
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         """Print the stack entry frame_lineno (frame, lineno).
         
@@ -469,7 +455,6 @@ class Debugger(Pdb):
                 prompt_prefix or "\n{}-> ".format(self.indents))
         self.handler('debug_mark', frame_lineno[0])
 
-    @echo
     def user_call(self, frame, argument_list):
         """--Call--
         
@@ -481,13 +466,11 @@ class Debugger(Pdb):
         self.indents += ' ' * 2
         Pdb.user_call(self, frame, argument_list)
 
-    @echo
     def user_line(self, frame):
         """--Next--
         """
         Pdb.user_line(self, frame)
 
-    @echo
     def user_return(self, frame, return_value):
         """--Return--
         
@@ -505,7 +488,6 @@ class Debugger(Pdb):
         self.interaction(frame, None)
         ## Pdb.user_return(self, frame, return_value)
 
-    @echo
     def user_exception(self, frame, exc_info):
         """--Exception--
         
@@ -516,7 +498,6 @@ class Debugger(Pdb):
         self.message(tb.tb_frame, indent=0)
         Pdb.user_exception(self, frame, exc_info)
 
-    @echo
     def bp_commands(self, frame):
         """--Break--
         
@@ -529,13 +510,11 @@ class Debugger(Pdb):
             self._markbp(lineno, 1)
         return Pdb.bp_commands(self, frame)
 
-    @echo
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called."""
         Pdb.preloop(self)
         self.handler('debug_next', self.curframe)
 
-    @echo
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to return."""
         Pdb.postloop(self)
