@@ -104,7 +104,9 @@ class Debugger(Pdb):
         self.__handler = FSM({  # DNA<Debugger>
             0 : {
                   'debug_begin' : (1, self.on_debug_begin, dispatch),
-                  'trace_begin' : (2, dispatch),
+                  'trace_begin' : (0, dispatch),
+                   'trace_hook' : (0, self.on_trace_hook, dispatch),
+                    'trace_end' : (0, dispatch),
             },
             1 : {
                         'abort' : (0, ),
@@ -121,11 +123,6 @@ class Debugger(Pdb):
                 'C-S-j pressed' : (1, lambda v: self.jump_to_lineno()),
                 'C-S-n pressed' : (1, lambda v: self.exec_until_lineno()),
                   'C-w pressed' : (1, lambda v: self.stamp_where()),
-            },
-            2 : {
-                    'trace_end' : (0, dispatch),
-                   'trace_hook' : (2, self.on_trace_hook, dispatch),
-                  'debug_begin' : (1, self.on_debug_begin, dispatch),
             },
         })
 

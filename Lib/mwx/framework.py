@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.10"
+__version__ = "1.8.11"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1220,14 +1220,6 @@ class ShellFrame(MiniFrame):
         
         self.handler.update({  # DNA<ShellFrame>
             None : {
-                  'debug_begin' : [None, self.on_debug_begin],
-                   'debug_next' : [None, self.on_debug_next],
-                    'debug_end' : [None, self.on_debug_end],
-                  'trace_begin' : [None, self.on_trace_begin],
-                   'trace_hook' : [None, self.on_trace_hook],
-                    'trace_end' : [None, self.on_trace_end],
-                'monitor_begin' : [None, self.on_monitor_begin],
-                  'monitor_end' : [None, self.on_monitor_end],
                     'shell_new' : [None, ],
                      'book_new' : [None, ],
                       'add_log' : [None, self.add_log],
@@ -1235,6 +1227,14 @@ class ShellFrame(MiniFrame):
                  'title_window' : [None, self.on_title_window],
             },
             0 : {
+                  'debug_begin' : (0, self.on_debug_begin),  # <= wxpdb.debug <= debug()
+                   'debug_next' : (0, self.on_debug_next),   # <= wxpdb.loop
+                    'debug_end' : (0, self.on_debug_end),    # <= wxpdb.quit
+                  'trace_begin' : (0, self.on_trace_begin),  # <= wxpdb.watch
+                   'trace_hook' : (0, self.on_trace_hook),   # <= wxpdb.dispatch_line (hook)
+                    'trace_end' : (0, self.on_trace_end),    # <= wxpdb.unwatch
+                'monitor_begin' : (0, self.on_monitor_begin),  # <= wxmon.watch
+                  'monitor_end' : (0, self.on_monitor_end),    # <= wxmon.unwatch
                     '* pressed' : (0, fork_debugger),
                    '* released' : (0, ),
                   'C-g pressed' : (0, self.Quit, fork_debugger),
@@ -1761,7 +1761,7 @@ class ShellFrame(MiniFrame):
 
     def on_trace_hook(self, frame):
         """Called when a breakpoint is reached."""
-        self.message("Debugger hooked {!r}.".format(frame))
+        pass
 
     def on_trace_end(self, frame):
         """Called when unset-trace."""
