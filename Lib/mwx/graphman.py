@@ -516,10 +516,12 @@ class Graph(GraphPlot):
                   'frame_shown' : [None, _F(self.update_infobar)],
                   'S-a pressed' : [None, _F(self.toggle_infobar)],
                    'f5 pressed' : [None, _F(self.refresh)],
+                 'text_dropped' : [None, ],
+                 'file_dropped' : [None, self.on_file_dropped],
             },
         })
-        ## ドロップターゲットを許可する．
-        self.SetDropTarget(MyFileDropLoader(self, self.loader))
+        ## Accepts DnD.
+        self.SetDropTarget(FileDropLoader(self))
 
     def refresh(self):
         if self.frame:
@@ -546,6 +548,24 @@ class Graph(GraphPlot):
         del self.markers
         del self.region
         self.draw()
+
+    def on_file_dropped(self, files, pos=None):
+        paths = []
+        for fn in files:
+            _name, ext = os.path.splitext(fn)
+            if ext == '.py' or os.path.isdir(fn):
+                self.parent.load_plug(fn, show=1,
+                                      floating_pos=pos,
+                                      force=wx.GetKeyState(wx.WXK_ALT))
+            elif ext == '.jssn':
+                self.parent.load_session(fn)
+            elif ext == '.index':
+                self.parent.import_index(fn, self)
+            else:
+                paths.append(fn)  # image file just stacks to be loaded
+        if paths:
+            self.parent.load_frame(paths, self)
+        return True
 
     ## --------------------------------
     ## Overridden buffer methods.
@@ -581,37 +601,35 @@ class Graph(GraphPlot):
             del self[indices]
 
 
-class MyFileDropLoader(wx.FileDropTarget):
-    """File Drop interface.
-    
-    Args:
-        target: target view to drop in, e.g. frame, graph, pane, etc.
-        loader: mainframe
+class FileDropLoader(wx.DropTarget):
+    """DnD loader for files and text.
     """
-    def __init__(self, target, loader):
-        wx.FileDropTarget.__init__(self)
+    def __init__(self, target):
+        wx.DropTarget.__init__(self)
         
-        self.view = target
-        self.loader = loader
+        self.target = target  # target view to drop in
+        self.textdo = wx.TextDataObject()
+        self.filedo = wx.FileDataObject()
+        self.do = wx.DataObjectComposite()
+        self.do.Add(self.textdo)
+        self.do.Add(self.filedo)
+        self.SetDataObject(self.do)
 
-    def OnDropFiles(self, x, y, filenames):
-        pos = self.view.ScreenPosition + (x, y)
-        paths = []
-        for fn in filenames:
-            _name, ext = os.path.splitext(fn)
-            if ext == '.py' or os.path.isdir(fn):
-                self.loader.load_plug(fn, show=1,
-                                          floating_pos=pos,
-                                          force=wx.GetKeyState(wx.WXK_ALT))
-            elif ext == '.jssn':
-                self.loader.load_session(fn)
-            elif ext == '.index':
-                self.loader.import_index(fn, self.view)
-            else:
-                paths.append(fn)  # image file just stacks to be loaded
-        if paths:
-            self.loader.load_frame(paths, self.view)
-        return True
+    def OnData(self, x, y, result):
+        pos = self.target.ScreenPosition + (x, y)
+        self.GetData()
+        if self.textdo.Text:
+            fn = self.textdo.Text.strip()
+            res = self.target.handler("text_dropped", fn, pos)
+            self.textdo.SetText("")
+        else:
+            fn = self.filedo.Filenames
+            res = self.target.handler("file_dropped", fn, pos)
+            self.filedo.SetData(wx.DF_FILENAME, None)
+        if res is None or not any(res):
+            wx.MessageBox("No action defined for the dropped target.\n\n"
+                         f"{fn!r}")
+        return result
 
 
 class Frame(mwx.Frame):
@@ -842,7 +860,7 @@ class Frame(mwx.Frame):
             self.handler('C-g pressed', evt)
         
         ## Accepts DnD.
-        self.SetDropTarget(MyFileDropLoader(self.graph, self))
+        self.SetDropTarget(FileDropLoader(self.graph))
 
     SYNC_SWITCH = True
 
@@ -884,7 +902,7 @@ class Frame(mwx.Frame):
             s = 's' if n > 1 else ''
             if wx.MessageBox(  # Confirm closing the thread.
                     f"Currently  running {n} thread{s}.\n\n"
-                    "Continue closing?",
+                     "Continue closing?",
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
                 evt.Veto()

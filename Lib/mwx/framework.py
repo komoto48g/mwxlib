@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.11"
+__version__ = "1.8.12"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -980,7 +980,7 @@ class FileDropLoader(wx.DropTarget):
     def __init__(self, target):
         wx.DropTarget.__init__(self)
         
-        self.target = target
+        self.target = target  # ghost
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.do = wx.DataObjectComposite()
@@ -1002,10 +1002,10 @@ class FileDropLoader(wx.DropTarget):
         self.GetData()
         if self.textdo.Text:
             fn = self.textdo.Text.strip()
-            res = editor.parent.handler("text_dropped", fn)
+            res = editor.parent.handler("text_dropped", fn)  # => ShellFrame
             if res is None or not any(res):
-                editor.load_file(fn)
-            result = wx.DragCopy
+                wx.MessageBox("Text dropped, but no action defined.\n\n"
+                             f"{fn!r}")
             self.textdo.SetText("")
         else:
             for fn in self.filedo.Filenames:
