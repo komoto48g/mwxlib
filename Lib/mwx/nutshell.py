@@ -2268,7 +2268,7 @@ class Buffer(EditorInterface, EditWindow):
             self.AnnotationClearAll()
 
 
-class EditorBook(AuiNotebook, CtrlInterface):
+class EditorBook(AuiNotebook):
     """Python code editor.
     
     Args:
@@ -2290,7 +2290,6 @@ class EditorBook(AuiNotebook, CtrlInterface):
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
         )
         AuiNotebook.__init__(self, parent, **kwargs)
-        CtrlInterface.__init__(self)
         
         ## The treeview of books will be displayed on the bookshelf.
         ## So we set the tabs' height to zero to hide them.
@@ -2298,7 +2297,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
         
         self.defaultBufferStyle = {}
         
-        self.parent = parent  # parent<ShellFrame> is not Parent<AuiNotebook>
+        self.parent = parent  # parent<ShellFrame>
         self.Name = name
         self.default_name = "*{}*".format(name.lower())  # e.g. '*scratch*'
         self.default_buffer = self.create_buffer(self.default_name)
@@ -2888,7 +2887,7 @@ class Nautilus(EditorInterface, Shell):
                  **kwargs)
         EditorInterface.__init__(self)
         
-        self.parent = parent  # parent<ShellFrame> is not Parent<AuiNotebook>
+        self.parent = parent  # parent<ShellFrame>
         self.target = target
         self.Name = name
         

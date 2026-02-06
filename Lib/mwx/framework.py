@@ -812,29 +812,24 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.make_keymap('C-x')
 
 
-class AuiNotebook(aui.AuiNotebook):
+class AuiNotebook(aui.AuiNotebook, CtrlInterface):
     """AuiNotebook extension class.
     """
-    def __init__(self, *args, name=None, **kwargs):
+    def __init__(self, parent, *args, name=None, **kwargs):
         kwargs.setdefault('style',
             (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
             ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
             ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
         )
-        aui.AuiNotebook.__init__(self, *args, **kwargs)
+        aui.AuiNotebook.__init__(self, parent, *args, **kwargs)
+        CtrlInterface.__init__(self)
         
+        self.parent = parent  # parent<ShellFrame>
         self._mgr = self.EventHandler
         if name:
             self.Name = name
         
-        def tab_menu(evt):
-            tabs = evt.EventObject  # <AuiTabCtrl>
-            page = tabs.Pages[evt.Selection]  # GetPage for split notebook.
-            try:
-                Menu.Popup(self, page.window.menu)
-            except AttributeError:
-                pass
-        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, tab_menu)
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_tab_menu)
 
     @property
     def _all_tabs(self):
@@ -912,6 +907,14 @@ class AuiNotebook(aui.AuiNotebook):
             tc1.Destroy()
             self._mgr.DetachPane(pane.window)
         self._mgr.Update()
+
+    def on_tab_menu(self, evt):
+        tabs = evt.EventObject  # <AuiTabCtrl>
+        page = tabs.Pages[evt.Selection]  # GetPage for split notebook.
+        try:
+            Menu.Popup(self, page.window.menu)
+        except AttributeError:
+            pass
 
     ## Methods to save / load the perspectives.
     ## *** Inspired by wx.lib.agw.aui.AuiNotebook ***
@@ -998,7 +1001,7 @@ class FileDropLoader(wx.DropTarget):
         return result
 
     def OnData(self, x, y, result):
-        editor = self.target.Parent.current_editor
+        editor = self.target.parent.current_editor
         self.GetData()
         if self.textdo.Text:
             fn = self.textdo.Text.strip()
