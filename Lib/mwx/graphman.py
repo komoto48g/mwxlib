@@ -508,6 +508,10 @@ class Graph(GraphPlot):
         self.parent = parent
         self.loader = loader or parent
         
+        def dispatch(*v, **kw):
+            """Fork events to the parent."""
+            return self.parent.handler(self.handler.current_event, *v, **kw)
+        
         self.handler.append({  # DNA<Graph>
             None : {
                     'focus_set' : [None, _F(self.loader.select_view, view=self)],
@@ -516,7 +520,7 @@ class Graph(GraphPlot):
                   'frame_shown' : [None, _F(self.update_infobar)],
                   'S-a pressed' : [None, _F(self.toggle_infobar)],
                    'f5 pressed' : [None, _F(self.refresh)],
-                 'text_dropped' : [None, ],
+                 'text_dropped' : [None, dispatch],
                  'file_dropped' : [None, self.on_file_dropped],
             },
         })

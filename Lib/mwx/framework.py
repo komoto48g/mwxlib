@@ -328,12 +328,12 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
 
     def fork(self, *args, **kwargs):
         """Fork events to the self handler."""
-        self.handler.fork(self.handler.current_event, *args, **kwargs)
+        return self.handler.fork(self.handler.current_event, *args, **kwargs)
 
     def dispatch(self, *args, **kwargs):
         """Fork events to the parent handler."""
         try:
-            self.parent.handler(self.handler.current_event, *args, **kwargs)
+            return self.parent.handler(self.handler.current_event, *args, **kwargs)
         except AttributeError:
             pass
 

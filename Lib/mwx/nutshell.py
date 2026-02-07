@@ -1929,8 +1929,8 @@ class Buffer(EditorInterface, EditWindow):
                     self.ReplaceSelection('')
             self.message("")
         
-        ## Note: Mouse events are not propagated from Buffer to EditorBook.
-        ## They are explicitly dispatched from buffer.handler to editor.handler.
+        ## Note: Mouse events are not automatically propagated to the parent.
+        ## Instead, they are explicitly dispatched to the parent handler from here.
         fork = self.fork
         dispatch = self.dispatch
         
@@ -2302,6 +2302,8 @@ class EditorBook(AuiNotebook):
         self.make_keymap('C-x')
         self.make_keymap('C-c')
         
+        ## Note: Mouse events are not automatically propagated to the parent.
+        ## Instead, they are explicitly dispatched to the parent handler from here.
         dispatch = self.dispatch
         
         self.handler.update({  # DNA<EditorBook>
@@ -2314,7 +2316,7 @@ class EditorBook(AuiNotebook):
              'buffer_activated' : [None, dispatch, self.on_buffer_activated],
            'buffer_inactivated' : [None, dispatch, self.on_buffer_inactivated],
        'buffer_caption_updated' : [None, dispatch],
-                 'text_dropped' : [None, ],
+                 'text_dropped' : [None, dispatch],
                  'file_dropped' : [None, self.on_file_dropped],
             },
             0 : {  # Normal mode

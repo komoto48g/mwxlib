@@ -97,9 +97,9 @@ class Debugger(Pdb):
             self.parent.handler('add_help', pdb.__doc__, "pdb")
         pdb.help = _help
         
-        def dispatch(evt):
+        def dispatch(*v, **kw):
             """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
+            return self.parent.handler(self.handler.current_event, *v, **kw)
         
         self.__handler = FSM({  # DNA<Debugger>
             0 : {
