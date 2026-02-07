@@ -42,13 +42,6 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.highlighter = it._InspectionHighlighter()
         self.highlighter.highlightTime = 2000
         
-        @self.handler.bind('*button* pressed')
-        @self.handler.bind('*button* released')
-        def dispatch(evt):
-            """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
-            evt.Skip()
-        
         @self.handler.bind('f3 pressed')
         def _watchit(evt):
             if self.target:

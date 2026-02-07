@@ -88,16 +88,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
         
-        def dispatch(evt):
-            """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
-            evt.Skip()
-        
         self.handler.update({  # DNA<EditorTreeCtrl>
-            None : {
-             '*button* pressed' : [None, dispatch],
-            '*button* released' : [None, dispatch],
-            },
             0 : {
                'delete pressed' : (0, self.on_delete_buffer),
             },

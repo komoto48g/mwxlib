@@ -55,13 +55,6 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         for module in (adv, aui, stc, media):
             ew.addModuleEvents(module)
         
-        @self.handler.bind('*button* pressed')
-        @self.handler.bind('*button* released')
-        def dispatch(evt):
-            """Fork events to the parent."""
-            self.parent.handler(self.handler.current_event, evt)
-            evt.Skip()
-        
         @self.handler.bind('C-c pressed')
         def copy(evt):
             self.copy()
