@@ -25,7 +25,7 @@ def read_info(path):
             return eval(ret)
 
 
-def capture_video(path, ss=0):
+def capture_video(path, ss):
     command = ['ffmpeg',
                '-ss', f"{ss}",       # Placing -ss before -i will be faster, but less accurate.
                '-i', path,
@@ -104,16 +104,13 @@ class Plugin(Layer):
                         handler=self.set_crop,
                         updater=self.get_crop,
                         )
-        self.rate = Param("rate", (1/8,1/4,1/2,1,2,4,8),
-                        handler=self.set_rate,
-                        )
         
         self.snap = Button(self, handler=self.snapshot, icon='clip')
         self.exp = Button(self, handler=self.export, icon='save')
         
         self.layout((self.mc,), expand=2)
         self.layout((self.ss, self.to,
-                     self.snap, self.crop, self.rate, self.exp),
+                     self.snap, self.crop, self.exp),
                     expand=0, row=8, type='vspin', style='button', lw=32, cw=-1, tw=64)
         
         self.menu[0:5] = [
@@ -182,9 +179,9 @@ class Plugin(Layer):
                     return None
                 path = dlg.Path
         self.mc.Load(path)  # -> True (always)
-        self.info = read_info(path)
-        if self.info:
-            v = next(x for x in self.info['streams'] if x['codec_type'] == 'video')
+        self._info = read_info(path)
+        if self._info:
+            v = next(x for x in self._info['streams'] if x['codec_type'] == 'video')
             # self.video_fps = eval(v['r_frame_rate'])  # real base frame rate
             self.video_fps = eval(v['avg_frame_rate'])  # averaged frame rate
             self.video_dur = eval(v['duration'])        # duration [s]
@@ -296,4 +293,6 @@ class Plugin(Layer):
             fout = dlg.Path
         export_video(self._path,
                      self.crop.Value or "{}:{}:0:0".format(*self.video_size),
-                     self.ss.value, self.to.value, fout)
+                     self.ss.value,
+                     self.to.value,
+                     fout)
