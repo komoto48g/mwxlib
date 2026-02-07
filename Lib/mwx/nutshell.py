@@ -2327,6 +2327,8 @@ class EditorBook(AuiNotebook):
              'buffer_activated' : [None, dispatch, self.on_buffer_activated],
            'buffer_inactivated' : [None, dispatch, self.on_buffer_inactivated],
        'buffer_caption_updated' : [None, dispatch],
+                 'text_dropped' : [None, ],
+                 'file_dropped' : [None, self.on_file_dropped],
             },
             0 : {  # Normal mode
                     '* pressed' : (0, skip),
@@ -2402,6 +2404,11 @@ class EditorBook(AuiNotebook):
     def on_buffer_inactivated(self, buf):
         """Called when the buffer is inactivated."""
         pass
+
+    def on_file_dropped(self, files, pos=None):
+        for fn in files:
+            self.load_file(fn)
+        return True
 
     ## --------------------------------
     ## Buffer list controls.

@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.12"
+__version__ = "1.8.14"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -978,12 +978,12 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
 
 
 class FileDropLoader(wx.DropTarget):
-    """DnD loader for files and URL text.
+    """DnD loader for files and text.
     """
     def __init__(self, target):
         wx.DropTarget.__init__(self)
         
-        self.target = target  # ghost
+        self.target = target
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.do = wx.DataObjectComposite()
@@ -994,25 +994,25 @@ class FileDropLoader(wx.DropTarget):
     def OnDragOver(self, x, y, result):
         index, flags = self.target.HitTest((x, y))
         if index != -1:
-            self.target.Selection = index
-            result = wx.DragCopy
+            # result = wx.DragCopy
+            self.target.Selection = index  # ghost/editor's selection
         else:
-            result = wx.DragNone
+            # result = wx.DragNone
+            pass
         return result
 
     def OnData(self, x, y, result):
         editor = self.target.parent.current_editor
+        pos = self.target.ScreenPosition + (x, y)
         self.GetData()
         if self.textdo.Text:
             fn = self.textdo.Text.strip()
-            res = editor.parent.handler("text_dropped", fn)  # => ShellFrame
-            if res is None or not any(res):
-                wx.MessageBox("Text dropped, but no action defined.\n\n"
-                             f"{fn!r}")
+            res = editor.handler("text_dropped", fn, pos)
+            result = wx.DragCopy
             self.textdo.SetText("")
         else:
-            for fn in self.filedo.Filenames:
-                editor.load_file(fn)
+            fn = self.filedo.Filenames
+            res = editor.handler("file_dropped", fn, pos)
             self.filedo.SetData(wx.DF_FILENAME, None)
         return result
 

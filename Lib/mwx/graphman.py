@@ -607,7 +607,7 @@ class FileDropLoader(wx.DropTarget):
     def __init__(self, target):
         wx.DropTarget.__init__(self)
         
-        self.target = target  # target view to drop in
+        self.target = target
         self.textdo = wx.TextDataObject()
         self.filedo = wx.FileDataObject()
         self.do = wx.DataObjectComposite()
@@ -621,6 +621,7 @@ class FileDropLoader(wx.DropTarget):
         if self.textdo.Text:
             fn = self.textdo.Text.strip()
             res = self.target.handler("text_dropped", fn, pos)
+            result = wx.DragCopy
             self.textdo.SetText("")
         else:
             fn = self.filedo.Filenames

@@ -38,6 +38,7 @@ class MyDropTarget(wx.DropTarget):
         item = self.tree.Selection
         name = self.tree.GetItemText(item)
         editor = self.tree._find_editor(name)
+        pos = self.tree.ScreenPosition + (x, y)
         self.GetData()
         if self.datado.Data:
             fn = self.datado.Data.tobytes().decode()
@@ -52,14 +53,12 @@ class MyDropTarget(wx.DropTarget):
             self.datado.SetData(b"")
         elif self.textdo.Text:
             fn = self.textdo.Text.strip()
-            res = editor.parent.handler("text_dropped", fn)  # => ShellFrame
-            if res is None or not any(res):
-                editor.load_file(fn)
+            res = editor.handler("text_dropped", fn, pos)
             result = wx.DragCopy
             self.textdo.SetText("")
         else:
-            for fn in self.filedo.Filenames:
-                editor.load_file(fn)
+            fn = self.filedo.Filenames
+            res = editor.handler("file_dropped", fn, pos)
             self.filedo.SetData(wx.DF_FILENAME, None)
         return result
 
