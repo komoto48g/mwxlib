@@ -1006,7 +1006,7 @@ class FileDropLoader(wx.DropTarget):
         pos = self.target.ScreenPosition + (x, y)
         self.GetData()
         if self.textdo.Text:
-            fn = self.textdo.Text.strip()
+            fn = self.textdo.Text
             res = editor.handler("text_dropped", fn, pos)
             result = wx.DragCopy
             self.textdo.SetText("")
@@ -1014,6 +1014,9 @@ class FileDropLoader(wx.DropTarget):
             fn = self.filedo.Filenames
             res = editor.handler("file_dropped", fn, pos)
             self.filedo.SetData(wx.DF_FILENAME, None)
+        if not res or not any(res):
+            wx.MessageBox("No action defined for the dropped target.\n\n"
+                         f"{fn!r}")
         return result
 
 

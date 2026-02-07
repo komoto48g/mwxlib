@@ -49,10 +49,10 @@ class MyDropTarget(wx.DropTarget):
                     wx.CallAfter(self.tree.SetFocus)
                 except AttributeError:
                     pass
-            editor.load_file(fn)
+            res = editor.handler("file_dropped", [fn], pos)
             self.datado.SetData(b"")
         elif self.textdo.Text:
-            fn = self.textdo.Text.strip()
+            fn = self.textdo.Text
             res = editor.handler("text_dropped", fn, pos)
             result = wx.DragCopy
             self.textdo.SetText("")
@@ -60,6 +60,9 @@ class MyDropTarget(wx.DropTarget):
             fn = self.filedo.Filenames
             res = editor.handler("file_dropped", fn, pos)
             self.filedo.SetData(wx.DF_FILENAME, None)
+        if not res or not any(res):
+            wx.MessageBox("No action defined for the dropped target.\n\n"
+                         f"{fn!r}")
         return result
 
 
