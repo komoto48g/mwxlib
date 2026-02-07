@@ -1929,18 +1929,10 @@ class Buffer(EditorInterface, EditWindow):
                     self.ReplaceSelection('')
             self.message("")
         
-        def fork(evt):
-            self.handler.fork(self.handler.current_event, evt)
-        
-        def dispatch(evt):
-            """Fork events to the parent."""
-            try:
-                self.parent.handler(self.handler.current_event, evt)
-            except AttributeError:
-                pass
-        
         ## Note: Mouse events are not propagated from Buffer to EditorBook.
         ## They are explicitly dispatched from buffer.handler to editor.handler.
+        fork = self.fork
+        dispatch = self.dispatch
         
         self.handler.update({  # DNA<Buffer>
             None : {
@@ -2307,15 +2299,10 @@ class EditorBook(AuiNotebook):
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        def dispatch(evt):
-            """Fork events to the parent."""
-            try:
-                self.parent.handler(self.handler.current_event, evt)
-            except AttributeError:
-                pass
-        
         self.make_keymap('C-x')
         self.make_keymap('C-c')
+        
+        dispatch = self.dispatch
         
         self.handler.update({  # DNA<EditorBook>
             None : {
@@ -2914,15 +2901,8 @@ class Nautilus(EditorInterface, Shell):
                     self.ReplaceSelection('')
             self.message("")
         
-        def fork(evt):
-            self.handler.fork(self.handler.current_event, evt)
-        
-        def dispatch(evt):
-            """Fork events to the parent."""
-            try:
-                self.parent.handler(self.handler.current_event, evt)
-            except AttributeError:
-                pass
+        fork = self.fork
+        dispatch = self.dispatch
         
         self.handler.update({  # DNA<Nautilus>
             None : {
