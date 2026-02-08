@@ -8,6 +8,7 @@ from importlib import import_module, reload
 from bdb import BdbQuit
 import threading
 import traceback
+import builtins
 import inspect
 import types
 import sys
@@ -876,12 +877,27 @@ class Frame(mwx.Frame):
         
         ## Accepts DnD.
         self.SetDropTarget(FileDropLoader(self.graph))
+        
+        self.Init()
 
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
         ssn, _ = os.path.splitext(ssn)
         name = (frame.pathname or frame.name) if frame else ''
         self.SetTitle("{}@{} - [{}] {}".format(self.Name, platform.node(), ssn, name))
+
+    def Init(self):
+        ## Add useful built-in functions and self methods.
+        builtins.require = self.require
+
+    def Destroy(self):
+        ## Remove built-in functions and self methods.
+        try:
+            del builtins.require
+        except AttributeError:
+            pass
+        self._mgr.UnInit()
+        return mwx.Frame.Destroy(self)
 
     def OnActivate(self, evt):  # <wx._core.ActivateEvent>
         if self and evt.Active:
@@ -921,10 +937,6 @@ class Frame(mwx.Frame):
                 evt.Veto()
                 return
         evt.Skip()
-
-    def Destroy(self):
-        self._mgr.UnInit()
-        return mwx.Frame.Destroy(self)
 
     ## --------------------------------
     ## pane window interface.
