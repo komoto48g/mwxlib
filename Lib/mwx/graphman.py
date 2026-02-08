@@ -571,6 +571,16 @@ class Graph(GraphPlot):
             self.parent.load_frame(paths, self)
         return True
 
+    def sync_from(self, other):
+        a = self.frame
+        b = other.frame
+        if (a and b
+              and a.unit == b.unit
+              and a.buffer.shape == b.buffer.shape):
+            self.xlim = other.xlim
+            self.ylim = other.ylim
+            self.canvas.draw()
+
     ## --------------------------------
     ## Overridden buffer methods.
     ## --------------------------------
@@ -822,7 +832,7 @@ class Frame(mwx.Frame):
                  'frame_loaded' : [None, show_frameview],
                'frame_modified' : [None, show_frameview],
                'frame_selected' : [None, self.set_title],
-                  'canvas_draw' : [None, lambda v: self.sync(self.graph, self.output)],
+                  'canvas_draw' : [None, lambda v: self.output.sync_from(self.graph)],
             },
         })
         self.output.handler.append({  # DNA<Graph:Frame>
@@ -831,7 +841,7 @@ class Frame(mwx.Frame):
                  'frame_loaded' : [None, show_frameview],
                'frame_modified' : [None, show_frameview],
                'frame_selected' : [None, self.set_title],
-                  'canvas_draw' : [None, lambda v: self.sync(self.output, self.graph)],
+                  'canvas_draw' : [None, lambda v: self.graph.sync_from(self.output)],
             },
         })
         
@@ -866,19 +876,6 @@ class Frame(mwx.Frame):
         
         ## Accepts DnD.
         self.SetDropTarget(FileDropLoader(self.graph))
-
-    SYNC_SWITCH = True
-
-    def sync(self, a, b):
-        """Synchronize b to a."""
-        if (self.SYNC_SWITCH
-                and a.frame and b.frame
-                and a.frame.unit == b.frame.unit
-                and a.buffer.shape == b.buffer.shape):
-            b.xlim = a.xlim
-            b.ylim = a.ylim
-            b.OnDraw(None)
-            b.canvas.draw_idle()
 
     def set_title(self, frame):
         ssn = os.path.basename(self.session_file or '--')
