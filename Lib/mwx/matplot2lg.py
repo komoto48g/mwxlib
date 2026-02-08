@@ -329,9 +329,10 @@ class Histogram(LinePlot):
             else:
                 i, j = np.uint8(self.xlim)
             self.modeline.SetLabel(
-                "[--] ---- {name} ({type}:) [{}:{}]".format(i, j,
-                name = frame.name,
-                type = frame.buffer.dtype,
+                "[--] ---- {name} ({type}:{mode}) [{}:{}]".format(i, j,
+                    name=frame.name,
+                    type=frame.buffer.dtype,
+                    mode='-',
                 ))
         else:
             self.modeline.SetLabel("")
@@ -594,14 +595,15 @@ class LineProfile(LinePlot):
             self.modeline.SetLabel(
                 "[--] -{a}- {name} ({type}:{mode}) "
                 "[{length}:{width}] {x} [{unit:g}/pix]".format(
-                name = frame.name,
-                type = frame.buffer.dtype,
-                mode = "logic" if self.__logicp else "pixel",
-               width = self.__linewidth,
-              length = len(self.plotdata[0]),
-                unit = frame.unit,
-                   x = '**' if frame.localunit else '--',
-                   a = '%%' if not frame.buffer.flags.writeable else '--'))
+                    name=frame.name,
+                    type=frame.buffer.dtype,
+                    mode="logic" if self.__logicp else "pixel",
+                    width=self.__linewidth,
+                    length=len(self.plotdata[0]),
+                    unit=frame.unit,
+                    x='**' if frame.localunit else '--',
+                    a='%%' if not frame.buffer.flags.writeable else '--'
+                ))
         else:
             self.modeline.SetLabel("")
 

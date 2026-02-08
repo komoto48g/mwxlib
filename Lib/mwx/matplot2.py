@@ -116,7 +116,7 @@ class MatplotPanel(wx.Panel):
                 (self.modeline, 0, wx.EXPAND | wx.ALL, 2),
                 (self.toolbar,  0, wx.EXPAND | wx.ALL, 2),
                 ),
-                orient = wx.VERTICAL,
+                orient=wx.VERTICAL,
             )
         )
         self.modeline.Show(0)
@@ -284,7 +284,7 @@ class MatplotPanel(wx.Panel):
                    '*Rdrag end' : (YAXIS, self.OnAxisDragEnd),
                 },
             },
-            default = NORMAL
+            default=NORMAL
         )
         
         self.menu = [

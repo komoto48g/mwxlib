@@ -302,7 +302,7 @@ if 0:
         assert callable(handler) or handler is None
         assert source is None or hasattr(source, 'GetId')
         if source is not None:
-            id  = source.GetId()
+            id = source.GetId()
         event.Bind(self, id, id2, handler)
         
         ## Record all handlers.
@@ -326,7 +326,7 @@ if 0:
         (override) Delete the handler from the list.
         """
         if source is not None:
-            id  = source.GetId()
+            id = source.GetId()
         retval = event.Unbind(self, id, id2, handler)
         
         ## Remove the specified handler or all handlers.

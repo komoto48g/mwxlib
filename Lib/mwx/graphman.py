@@ -1221,9 +1221,9 @@ class Frame(mwx.Frame):
         if pane.IsOk():
             show = show or pane.IsShown()
             props.update(
-                dock_direction = pane.IsDocked() and pane.dock_direction,
-                floating_pos = floating_pos or pane.floating_pos[:],  # copy unloading pane
-                floating_size = floating_size or pane.floating_size[:],  # copy unloading pane
+                dock_direction=pane.IsDocked() and pane.dock_direction,
+                floating_pos=floating_pos or pane.floating_pos[:],  # copy unloading pane
+                floating_size=floating_size or pane.floating_size[:],  # copy unloading pane
             )
             self.unload_plug(name)
         
@@ -1793,10 +1793,10 @@ class Frame(mwx.Frame):
         self.message("Loading session from {!r}...".format(self.session_file))
         
         shell = self.shellframe.rootshell
-        shell.locals.update(
-            nan = np.nan,
-            inf = np.inf,
-        )
+        shell.locals.update({
+            'nan': nan,
+            'inf': inf,
+        })
         with open(self.session_file) as i:
             shell.Execute(i.read())
         self._mgr.Update()
@@ -1835,7 +1835,7 @@ class Frame(mwx.Frame):
         self.message("Saving session to {!r}...".format(self.session_file))
         
         with open(self.session_file, 'w') as o,\
-          np.printoptions(threshold=np.inf):  # printing all(inf) elements
+          np.printoptions(threshold=inf):  # printing all(inf) elements
             o.write("#! Session file (This file is generated automatically)\n")
             o.write("self.SetSize({})\n".format(self.Size))
             o.write("self.SetPosition({})\n".format(self.Position))

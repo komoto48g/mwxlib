@@ -713,18 +713,18 @@ class FSM(dict):
              or v > 2 and actions
              or v > 3):
                 self.log("{c} {1} --> {2} [{0}] {a}".format(
-                    self.__event, self.__prev_state, self.__state,
-                    a = '' if not actions else ('=> ' + actions),
-                    c = '*' if self.__prev_state != self.__state else ' '))
-        
+                        self.__event, self.__prev_state, self.__state,
+                        a='' if not actions else ('=> ' + actions),
+                        c='*' if self.__prev_state != self.__state else ' '
+                    ))
         elif v > 3:  # state is None
             transaction = self[None].get(pattern) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
                 self.log("  None [{0}] {a}".format(
-                    self.__event,
-                    a = '' if not actions else ('=> ' + actions)))
-        
+                        self.__event,
+                        a='' if not actions else ('=> ' + actions)
+                    ))
         if v > 7:  # max verbose level puts all args
             self.log("\t:", args, kwargs)
 

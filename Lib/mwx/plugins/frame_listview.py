@@ -259,8 +259,8 @@ class Plugin(Layer):
 
     def Init(self):
         self.nb = aui.AuiNotebook(self, size=(400,150),
-            style = (aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_RIGHT)
-                  &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+                    style=(aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_RIGHT)
+                        &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.attach(self.graph, "graph")
         self.attach(self.output, "output")

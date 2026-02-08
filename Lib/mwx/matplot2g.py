@@ -239,8 +239,8 @@ class AxesImagePhantom:
             self.__buf = _to_buffer(buf)
         
         bins, vlim, img = _to_image(self.__buf,
-                                    cutoff = self.parent.score_percentile,
-                                    threshold = self.parent.nbytes_threshold,
+                                    cutoff=self.parent.score_percentile,
+                                    threshold=self.parent.nbytes_threshold,
                                     )
         self.__bins = bins
         self.__cuts = vlim
@@ -1021,21 +1021,23 @@ class GraphPlot(MatplotPanel):
             self.modeline.SetLabel(
                 "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
                 "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pix]".format(
-                page = self.__index,
-             maxpage = len(self),
-                name = frame.name,
-                data = frame.buffer,
-                cmap = frame.get_cmap().name,
-                bins = ' bin{}'.format(frame.binning) if frame.binning > 1 else '',
-                unit = frame.unit,
-                   x = '**' if frame.localunit else '--',
-                   a = '%%' if not frame.buffer.flags.writeable else '--'))
+                    page=self.__index,
+                    maxpage=len(self),
+                    name=frame.name,
+                    data=frame.buffer,
+                    cmap=frame.get_cmap().name,
+                    bins=' bin{}'.format(frame.binning) if frame.binning > 1 else '',
+                    unit=frame.unit,
+                    x='**' if frame.localunit else '--',
+                    a='%%' if not frame.buffer.flags.writeable else '--'
+                ))
         else:
             self.modeline.SetLabel(
                 "[{page}/{maxpage}] ---- No buffer (-:-) [-:-] -- [{unit:g}/pix]".format(
-                page = '-',
-             maxpage = len(self),
-                unit = self.__unit))
+                    page='-',
+                    maxpage=len(self),
+                    unit=self.unit
+                ))
 
     ## --------------------------------
     ## 外部入出力／複合インターフェース．

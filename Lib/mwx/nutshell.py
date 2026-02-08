@@ -36,7 +36,7 @@ from .framework import CtrlInterface, AuiNotebook, Menu
 url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
 
 ## Python syntax patterns.
-py_indent_re  = r"if|else|elif|for|while|with|def|class|try|except|finally"
+py_indent_re = r"if|else|elif|for|while|with|def|class|try|except|finally"
 py_outdent_re = r"else:|elif\s+.*:|except(\s+.*)?:|finally:"
 py_closing_re = r"break|pass|return|raise|continue"
 
@@ -644,9 +644,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         
         v = ('white', 'black')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS, *v)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS,  *v)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,    *v)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_LCORNER,  *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS, *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE, *v)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_LCORNER, *v)
         # self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_TCORNER, *v)
         # self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_TCORNER, *v)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_VLINE, *v)
