@@ -2,8 +2,8 @@
 """mwxlib Nautilus in the shell.
 """
 from contextlib import contextmanager
-from functools import wraps
-from importlib import import_module
+from functools import wraps, partial
+from importlib import import_module, reload
 from pprint import pformat
 from bdb import BdbQuit
 import traceback
@@ -3582,6 +3582,17 @@ class Nautilus(EditorInterface, Shell):
         builtins.ls = ls
         builtins.pwd = pwd
         builtins.sx = sx
+
+        ## Add useful built-in functions and methods.
+        from .utilus import apropos, typename, where, mro, pp
+        builtins.apropos = apropos
+        builtins.typename = typename
+        builtins.reload = reload
+        builtins.partial = partial
+        builtins.p = print
+        builtins.pp = pp
+        builtins.mro = mro
+        builtins.where = where
 
     def execStartupScript(self, su):
         """Execute the user's PYTHONSTARTUP script if they have one.

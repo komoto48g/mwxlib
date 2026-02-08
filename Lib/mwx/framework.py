@@ -1,13 +1,12 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.8.15"
+__version__ = "1.8.16"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps, partial
-from importlib import reload
 import traceback
 import builtins
 import textwrap
@@ -21,7 +20,7 @@ from wx.py import dispatcher
 
 from .utilus import funcall as _F
 from .utilus import get_rootpath, ignore, warn
-from .utilus import FSM, TreeList, apropos, typename, where, mro, pp
+from .utilus import FSM, TreeList, typename, where
 
 
 def deb(target=None, loop=True, locals=None, **kwargs):
@@ -1085,8 +1084,6 @@ class ShellFrame(MiniFrame):
         
         self.__standalone = bool(standalone)
         
-        self.Init()
-        
         from .nutshell import Nautilus, EditorBook, Stylus
         from .bookshelf import EditorTreeCtrl
         
@@ -1267,6 +1264,8 @@ class ShellFrame(MiniFrame):
             },
         })
         
+        self.Init()
+        
         ## Session files.
         self.SESSION_FILE = get_rootpath(".debrc")
         self.SCRATCH_FILE = get_rootpath("scratch.py")
@@ -1348,36 +1347,21 @@ class ShellFrame(MiniFrame):
             )))
 
     def Init(self):
-        """Initialize self-specific builtins.
-        Note:
-            This should be called before creating root shell.
-        """
-        try:
-            builtins.dive
-        except AttributeError:
-            ## Add useful built-in functions and methods.
-            builtins.apropos = apropos
-            builtins.typename = typename
-            builtins.reload = reload
-            builtins.partial = partial
-            builtins.p = print
-            builtins.pp = pp
-            builtins.mro = mro
-            builtins.where = where
-            builtins.info = self.info
-            builtins.help = self.help
-            builtins.load = self.load
-            builtins.dive = self.clone_shell
-            builtins.debug = self.debug
-            builtins.watch = self.watch
-            builtins.timeit = self.timeit
-            builtins.profile = self.profile
-            builtins.highlight = self.highlight
-            builtins.filling = filling
+        ## Add useful built-in functions and self methods.
+        builtins.info = self.info
+        builtins.help = self.help
+        builtins.load = self.load
+        builtins.dive = self.clone_shell
+        builtins.debug = self.debug
+        builtins.watch = self.watch
+        builtins.timeit = self.timeit
+        builtins.profile = self.profile
+        builtins.highlight = self.highlight
+        builtins.filling = filling
 
     def Destroy(self):
+        ## Remove built-in functions and self methods.
         try:
-            ## Remove built-in self methods.
             del builtins.info
             del builtins.help
             del builtins.load
@@ -1469,9 +1453,6 @@ class ShellFrame(MiniFrame):
                                     verbose = 0
                         book.load_file(buf.filename, buf.markline+1)
             self.__autoload = False
-        ## Reinitialize self-specific builtins if other instances are destroyed.
-        if evt.Active:
-            self.Init()
         evt.Skip()
 
     def OnShow(self, evt):

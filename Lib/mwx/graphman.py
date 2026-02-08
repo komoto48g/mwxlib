@@ -4,7 +4,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
-from importlib import reload, import_module
+from importlib import import_module, reload
 from bdb import BdbQuit
 import threading
 import traceback

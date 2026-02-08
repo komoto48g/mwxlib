@@ -2,7 +2,6 @@
 """Graphical debugger
    of the phoenix, by the phoenix, for the phoenix.
 """
-from functools import wraps
 from importlib import import_module
 from bdb import BdbQuit
 from pdb import Pdb

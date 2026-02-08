@@ -9,7 +9,7 @@ import wx.media
 
 from mwx.framework import _F
 from mwx.graphman import Layer
-from mwx.controls import Param, LParam, Icon, Button, TextBox
+from mwx.controls import LParam, Icon, Button, TextBox
 
 
 def read_info(path):
