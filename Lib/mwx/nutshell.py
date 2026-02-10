@@ -177,7 +177,7 @@ class AutoCompInterfaceMixin:
     """
     history = []     # used in history-comp mode
     modules = set()  # used in module-comp mode
-    fragmwords = set(keyword.kwlist + dir(builtins))  # used in text-comp mode
+    fragmwords = set(keyword.kwlist)  # used in text-comp mode
 
     def __init__(self):
         ## cf. sys.modules
@@ -565,19 +565,16 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## This avoids sending the `EVT_STC_NEEDSHOWN` notification.
         self.SetAutomaticFold(stc.STC_AUTOMATICFOLD_SHOW)
         
-        def _dunders(*objects):
-            ss = set()
-            for obj in objects:
-                ss |= set(x for x in dir(obj) if x.startswith('__'))
-            return ss
-        
         ## Keyword(2) setting.
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
-        self.SetKeyWords(1, ' '.join(builtins.__dict__)
-                          + ' '.join(_dunders(type, int, float, str, bytes,
-                                              tuple, list, range, operator,))
-                          + ' self this shell')
+        
+        def _set_keywords():
+            types = (type, int, float, str, bytes, tuple, list, range, operator)
+            self.SetKeyWords(1, ' '.join(dir(builtins))
+                              + ' '.join(set(x for obj in types for x in dir(obj) if x.startswith('__')))  # Add dunders.
+                              + ' self this shell')
+        wx.CallAfter(_set_keywords)
         
         ## AutoComp setting.
         self.AutoCompSetAutoHide(False)
