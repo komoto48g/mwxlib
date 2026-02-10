@@ -609,36 +609,48 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
     def layout_groups(self):
         return self.__groups
 
-    def is_enabled(self, groupid, pred=all):
+    def is_group_enabled(self, groupid, pred=all):
         return pred(win.Enabled for win in self.__groups[groupid])
 
-    def enable(self, groupid, p=True):
+    def enable_group(self, groupid, p=True):
         for win in self.__groups[groupid]:  # child could be deep nesting
             win.Enable(p)
 
-    def is_shown(self, groupid):
+    def disable_group(self, groupid):
+        for win in self.__groups[groupid]:  # child could be deep nesting
+            win.Disable()
+
+    def is_group_shown(self, groupid):
         # child = self.Sizer.Children[groupid]
         # return child.IsShown()
         return self.Sizer.IsShown(groupid % len(self.__groups))
 
-    def show(self, groupid, p=True):
+    def show_group(self, groupid, p=True):
         """Show/hide all including the box."""
         # child = self.Sizer.Children[groupid]
         # child.Show(p)
         self.Sizer.Show(groupid % len(self.__groups), p)
         self.Layout()
 
-    def is_folded(self, groupid):
+    def is_group_folded(self, groupid):
         child = self.Sizer.Children[groupid]
         return not any(cc.IsShown() for cc in child.Sizer.Children)
 
-    def fold(self, groupid, p=True):
+    def fold_group(self, groupid, p=True):
         """Fold/unfold the boxed group."""
         child = self.Sizer.Children[groupid]
         if isinstance(child.Sizer, wx.StaticBoxSizer) and child.IsShown():
             for cc in child.Sizer.Children:  # child of child <wx._core.SizerItem>
                 cc.Show(not p)
             self.Layout()
+
+    ## for backward compatibility
+    is_enabled = is_group_enabled
+    is_folded = is_group_folded
+    is_shown = is_group_shown
+    enable = enable_group
+    fold = fold_group
+    show = show_group
 
     def layout(self, items, title=None,
                      row=0, expand=0, border=2, hspacing=1, vspacing=1,
@@ -697,8 +709,8 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.__params.append(list(_variter(objs)))
         
         ## Set appearance of the layout group.
-        self.show(-1, visible)
-        self.fold(-1, not show)
+        self.show_group(-1, visible)
+        self.fold_group(-1, not show)
         self.Sizer.Fit(self)
         
         return self.__groups[-1]
