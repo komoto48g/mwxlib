@@ -889,6 +889,7 @@ class Frame(mwx.Frame):
     def Init(self):
         ## Add useful built-in functions and self methods.
         builtins.require = self.require
+        builtins.register = self.register
 
     def Destroy(self):
         ## Remove built-in functions and self methods.
