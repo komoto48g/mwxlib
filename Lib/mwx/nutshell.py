@@ -569,12 +569,10 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.SetLexer(stc.STC_LEX_PYTHON)
         self.SetKeyWords(0, ' '.join(keyword.kwlist))
         
-        def _set_keywords():
-            types = (type, int, float, str, bytes, tuple, list, range, operator)
-            self.SetKeyWords(1, ' '.join(dir(builtins))
-                              + ' '.join(set(x for obj in types for x in dir(obj) if x.startswith('__')))  # Add dunders.
-                              + ' self this shell')
-        wx.CallAfter(_set_keywords)
+        types = (type, int, float, str, bytes, tuple, list, range, operator)
+        self.SetKeyWords(1, ' '.join(dir(builtins))
+                          + ' '.join(set(x for obj in types for x in dir(obj) if x.startswith('__')))  # Add dunders.
+                          + ' self this shell')
         
         ## AutoComp setting.
         self.AutoCompSetAutoHide(False)
