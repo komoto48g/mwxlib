@@ -1194,12 +1194,11 @@ class Frame(mwx.Frame):
                     root.reloadable = loadable
                     _register__dummy_plug__(root, module)
         
-        ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
+        ## Check if the module has a class `Plugin`.
         try:
-            Plugin = module.Plugin   # Check if the module has a class `Plugin`.
-            title = Plugin.category  # Plugin <LayerInterface>
+            Plugin = module.Plugin
             
-            pane = self._mgr.GetPane(title)  # Check if <pane:title> is already registered.
+            pane = self._mgr.GetPane(Plugin.category)  # Check if <pane:title> is already registered.
             if pane.IsOk():
                 if not isinstance(pane.window, aui.AuiNotebook):
                     raise NameError("Notebook name must not be the same as any other plugin")
@@ -1842,18 +1841,21 @@ class Frame(mwx.Frame):
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                name = module.__file__  # Replace the name with full-path.
-                if not plug or not os.path.exists(name):
+                try:
+                    filename = module.__file__
+                except AttributeError:
+                    filename = ''
+                if not plug or not os.path.exists(filename):
                     print(f"Skipping dummy plugin {name!r}...")
                     continue
                 if hasattr(module, '__path__'):  # is the module a package?
-                    name = os.path.dirname(name)
+                    filename = os.path.dirname(filename)
                 session = {}
                 try:
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()  # Failed to save the plug session.
-                o.write("self.load_plug({!r}, session={})\n".format(name, session))
+                o.write("self.load_plug({!r}, session={})\n".format(filename, session))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
