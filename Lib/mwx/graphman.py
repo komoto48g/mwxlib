@@ -1167,10 +1167,9 @@ class Frame(mwx.Frame):
         
         ## Load or reload the module.
         try:
-            loadable = not name.startswith(("__main__", "builtins"))  # no __file__
-            if not loadable:
-                module = types.ModuleType(name)  # dummy module (cannot reload)
-                module.__file__ = "<scratch>"
+            reloadable = not name.startswith(("__main__", "builtins"))  # no __file__
+            if not reloadable:
+                module = types.ModuleType(name)  # dummy module for __main__ (cannot reload)
             elif name in sys.modules:
                 module = reload(sys.modules[name])
             else:
@@ -1183,13 +1182,13 @@ class Frame(mwx.Frame):
                 ## If the module does not contain plugin class, register it as a dummy plug.
                 if inspect.isclass(root):
                     module.__dummy_plug__ = root.__name__
-                    root.reloadable = loadable
+                    root.reloadable = reloadable
                     _register__dummy_plug__(root, module)
             else:
                 ## If it is already a dummy plug, register it again.
                 if hasattr(module, '__dummy_plug__'):
                     root = getattr(module, module.__dummy_plug__)
-                    root.reloadable = loadable
+                    root.reloadable = reloadable
                     _register__dummy_plug__(root, module)
         
         ## Ensure that the module plugin name is unique.
