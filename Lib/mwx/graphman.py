@@ -478,7 +478,6 @@ class Layer(LayerInterface, KnobCtrlPanel):
 def _register__dummy_plug__(cls, module):
     if issubclass(cls, LayerInterface):
         # warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
-        module.Plugin = cls
         return cls
 
     class _Plugin(cls, LayerInterface):
@@ -489,10 +488,9 @@ def _register__dummy_plug__(cls, module):
         IsShown = LayerInterface.IsShown
 
     _Plugin.__module__ = module.__name__
-    _Plugin.__qualname__ = cls.__qualname__ + "~"
-    _Plugin.__name__ = cls.__name__ + "~"
+    _Plugin.__qualname__ = cls.__qualname__
+    _Plugin.__name__ = cls.__name__
     _Plugin.__doc__ = cls.__doc__
-    module.Plugin = _Plugin
     return _Plugin
 
 
@@ -1167,7 +1165,7 @@ class Frame(mwx.Frame):
         
         ## Load or reload the module.
         try:
-            reloadable = not name.startswith(("__main__", "builtins"))  # no __file__
+            reloadable = name not in ("__main__", "builtins")
             if not reloadable:
                 module = types.ModuleType(name)  # dummy module for __main__ (cannot reload)
             elif name in sys.modules:
@@ -1177,23 +1175,19 @@ class Frame(mwx.Frame):
         except Exception:
             traceback.print_exc()  # Unable to load the module.
             return False
-        else:
-            if not hasattr(module, 'Plugin'):
-                ## If the module does not contain plugin class, register it as a dummy plug.
-                if inspect.isclass(root):
-                    module.__dummy_plug__ = root.__name__
-                    root.reloadable = reloadable
-                    _register__dummy_plug__(root, module)
-            else:
-                ## If it is already a dummy plug, register it again.
-                if hasattr(module, '__dummy_plug__'):
-                    root = getattr(module, module.__dummy_plug__)
-                    root.reloadable = reloadable
-                    _register__dummy_plug__(root, module)
         
         ## Ensure that the module plugin name is unique.
         try:
-            Plugin = module.Plugin
+            if inspect.isclass(root):
+                module.__dummy_plug__ = root.__name__
+                root.reloadable = reloadable
+                Plugin = _register__dummy_plug__(root, module)
+            elif hasattr(module, '__dummy_plug__'):
+                root = getattr(module, module.__dummy_plug__)
+                root.reloadable = reloadable
+                Plugin = _register__dummy_plug__(root, module)
+            else:
+                Plugin = module.Plugin  # <AttributeError>
             
             pane = self._mgr.GetPane(Plugin.category)  # Check if <pane:title> is already registered.
             if pane.IsOk():
