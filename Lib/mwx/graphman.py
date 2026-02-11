@@ -1062,7 +1062,7 @@ class Frame(mwx.Frame):
         evt.Skip(False)  # Don't skip to avoid being called twice.
 
     ## --------------------------------
-    ## Plugin <Layer> interface.
+    ## Plug-in interface.
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
 
@@ -1108,7 +1108,7 @@ class Frame(mwx.Frame):
         """Load plugin.
         
         Args:
-            root: Plugin <Layer> module, or name of the module.
+            root: plugin <Layer> module, or name of the module.
                   Any wx.Window object can be specified (as dummy-plug).
                   However, do not use this mode in release versions.
             session: Conditions for initializing the plug and starting session
@@ -1117,13 +1117,10 @@ class Frame(mwx.Frame):
             dock: dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             floating_pos: posision of floating window
             floating_size: size of floating window
-            **kwargs: keywords for Plugin <Layer>
+            **kwargs: keywords for plugin <Layer>
         
         Returns:
             None if succeeded else False
-        
-        Note:
-            The root module must contain a class Plugin <Layer>.
         """
         props = dict(dock_direction=dock,
                      floating_pos=floating_pos,
@@ -1167,9 +1164,8 @@ class Frame(mwx.Frame):
             print(f"- No such directory {dirname_!r}.")
             return False
         
-        ## Load or reload the module, and check whether it contains a class named `Plugin`.
+        ## Load or reload the module.
         try:
-            ## Check if the module is reloadable.
             loadable = not name.startswith(("__main__", "builtins"))  # no __file__
             if not loadable:
                 module = types.ModuleType(name)  # dummy module (cannot reload)
@@ -1182,31 +1178,32 @@ class Frame(mwx.Frame):
             traceback.print_exc()  # Unable to load the module.
             return False
         else:
-            ## Register dummy plug; Add module.Plugin <Layer>.
             if not hasattr(module, 'Plugin'):
+                ## If the module does not contain plugin class, register it as a dummy plug.
                 if inspect.isclass(root):
                     module.__dummy_plug__ = root.__name__
                     root.reloadable = loadable
                     _register__dummy_plug__(root, module)
             else:
+                ## If it is already a dummy plug, register it again.
                 if hasattr(module, '__dummy_plug__'):
                     root = getattr(module, module.__dummy_plug__)
                     root.reloadable = loadable
                     _register__dummy_plug__(root, module)
         
-        ## Check if the module has a class `Plugin`.
+        ## Ensure that the module plugin name is unique.
         try:
             Plugin = module.Plugin
             
             pane = self._mgr.GetPane(Plugin.category)  # Check if <pane:title> is already registered.
             if pane.IsOk():
                 if not isinstance(pane.window, aui.AuiNotebook):
-                    raise NameError("Notebook name must not be the same as any other plugin")
+                    raise NameError("notebook name must not be the same as any other plugin")
             
             pane = self.get_pane(name)  # Check if <pane:name> is already registered.
             if pane.IsOk():
                 if name not in self.plugins:
-                    raise NameError("Plugin name must not be the same as any other pane")
+                    raise NameError("plugin name must not be the same as any other pane")
             
         except (AttributeError, NameError) as e:
             traceback.print_exc()
