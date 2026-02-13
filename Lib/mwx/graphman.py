@@ -478,7 +478,6 @@ class Layer(LayerInterface, KnobCtrlPanel):
 def _register__dummy_plug__(cls, module):
     if issubclass(cls, LayerInterface):
         # warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
-        module.Plugin = cls
         return cls
 
     class _Plugin(cls, LayerInterface):
@@ -489,10 +488,9 @@ def _register__dummy_plug__(cls, module):
         IsShown = LayerInterface.IsShown
 
     _Plugin.__module__ = module.__name__
-    _Plugin.__qualname__ = cls.__qualname__ + "~"
-    _Plugin.__name__ = cls.__name__ + "~"
+    _Plugin.__qualname__ = cls.__qualname__
+    _Plugin.__name__ = cls.__name__
     _Plugin.__doc__ = cls.__doc__
-    module.Plugin = _Plugin
     return _Plugin
 
 
@@ -889,6 +887,7 @@ class Frame(mwx.Frame):
     def Init(self):
         ## Add useful built-in functions and self methods.
         builtins.require = self.require
+        builtins.register = self.register
 
     def Destroy(self):
         ## Remove built-in functions and self methods.
@@ -1062,7 +1061,7 @@ class Frame(mwx.Frame):
         evt.Skip(False)  # Don't skip to avoid being called twice.
 
     ## --------------------------------
-    ## Plugin <Layer> interface.
+    ## Plug-in interface.
     ## --------------------------------
     plugins = property(lambda self: self.__plugins)
 
@@ -1108,7 +1107,7 @@ class Frame(mwx.Frame):
         """Load plugin.
         
         Args:
-            root: Plugin <Layer> module, or name of the module.
+            root: plugin <Layer> module, or name of the module.
                   Any wx.Window object can be specified (as dummy-plug).
                   However, do not use this mode in release versions.
             session: Conditions for initializing the plug and starting session
@@ -1117,13 +1116,10 @@ class Frame(mwx.Frame):
             dock: dock_direction (1:top, 2:right, 3:bottom, 4:left, 5:center)
             floating_pos: posision of floating window
             floating_size: size of floating window
-            **kwargs: keywords for Plugin <Layer>
+            **kwargs: keywords for plugin <Layer>
         
         Returns:
             None if succeeded else False
-        
-        Note:
-            The root module must contain a class Plugin <Layer>.
         """
         props = dict(dock_direction=dock,
                      floating_pos=floating_pos,
@@ -1167,13 +1163,11 @@ class Frame(mwx.Frame):
             print(f"- No such directory {dirname_!r}.")
             return False
         
-        ## Load or reload the module, and check whether it contains a class named `Plugin`.
+        ## Load or reload the module.
         try:
-            ## Check if the module is reloadable.
-            loadable = not name.startswith(("__main__", "builtins"))  # no __file__
-            if not loadable:
-                module = types.ModuleType(name)  # dummy module (cannot reload)
-                module.__file__ = "<scratch>"
+            reloadable = name not in ("__main__", "builtins")
+            if not reloadable:
+                module = types.ModuleType(name)  # dummy module for __main__ (cannot reload)
             elif name in sys.modules:
                 module = reload(sys.modules[name])
             else:
@@ -1181,33 +1175,29 @@ class Frame(mwx.Frame):
         except Exception:
             traceback.print_exc()  # Unable to load the module.
             return False
-        else:
-            ## Register dummy plug; Add module.Plugin <Layer>.
-            if not hasattr(module, 'Plugin'):
-                if inspect.isclass(root):
-                    module.__dummy_plug__ = root.__name__
-                    root.reloadable = loadable
-                    _register__dummy_plug__(root, module)
-            else:
-                if hasattr(module, '__dummy_plug__'):
-                    root = getattr(module, module.__dummy_plug__)
-                    root.reloadable = loadable
-                    _register__dummy_plug__(root, module)
         
-        ## Note: name (module.__name__) != Plugin.__module__ if module is a package.
+        ## Ensure that the module plugin name is unique.
         try:
-            Plugin = module.Plugin   # Check if the module has a class `Plugin`.
-            title = Plugin.category  # Plugin <LayerInterface>
+            if inspect.isclass(root):
+                module.__dummy_plug__ = root.__name__
+                root.reloadable = reloadable
+                Plugin = _register__dummy_plug__(root, module)
+            elif hasattr(module, '__dummy_plug__'):
+                root = getattr(module, module.__dummy_plug__)
+                root.reloadable = reloadable
+                Plugin = _register__dummy_plug__(root, module)
+            else:
+                Plugin = module.Plugin  # <AttributeError>
             
-            pane = self._mgr.GetPane(title)  # Check if <pane:title> is already registered.
+            pane = self._mgr.GetPane(Plugin.category)  # Check if <pane:title> is already registered.
             if pane.IsOk():
                 if not isinstance(pane.window, aui.AuiNotebook):
-                    raise NameError("Notebook name must not be the same as any other plugin")
+                    raise NameError("notebook name must not be the same as any other plugin")
             
             pane = self.get_pane(name)  # Check if <pane:name> is already registered.
             if pane.IsOk():
                 if name not in self.plugins:
-                    raise NameError("Plugin name must not be the same as any other pane")
+                    raise NameError("plugin name must not be the same as any other pane")
             
         except (AttributeError, NameError) as e:
             traceback.print_exc()
@@ -1842,18 +1832,21 @@ class Frame(mwx.Frame):
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                name = module.__file__  # Replace the name with full-path.
-                if not plug or not os.path.exists(name):
+                try:
+                    filename = module.__file__
+                except AttributeError:
+                    filename = ''
+                if not plug or not os.path.exists(filename):
                     print(f"Skipping dummy plugin {name!r}...")
                     continue
                 if hasattr(module, '__path__'):  # is the module a package?
-                    name = os.path.dirname(name)
+                    filename = os.path.dirname(filename)
                 session = {}
                 try:
                     plug.save_session(session)
                 except Exception:
                     traceback.print_exc()  # Failed to save the plug session.
-                o.write("self.load_plug({!r}, session={})\n".format(name, session))
+                o.write("self.load_plug({!r}, session={})\n".format(filename, session))
             o.write("self._mgr.LoadPerspective({!r})\n".format(self._mgr.SavePerspective()))
             
             def _save(view):
