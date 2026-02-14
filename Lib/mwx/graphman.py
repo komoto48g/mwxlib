@@ -1366,8 +1366,6 @@ class Frame(mwx.Frame):
                 plug = _plug
             init(shell)
         self.shellframe.Show()
-        if wx.GetKeyState(wx.WXK_SHIFT):  # open the source code.
-            self.shellframe.load(plug)
 
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
