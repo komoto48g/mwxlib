@@ -780,19 +780,6 @@ class Clipboard:
     """
     verbose = False
 
-    @contextmanager
-    @staticmethod
-    def istrstream():
-        with io.StringIO(Clipboard.read()) as f:
-            yield f
-
-    @contextmanager
-    @staticmethod
-    def ostrstream():
-        with io.StringIO() as f:
-            yield f
-            Clipboard.write(f.getvalue())
-
     @staticmethod
     def read():
         do = wx.TextDataObject()
@@ -863,6 +850,21 @@ class Clipboard:
                 print("To clipboard: {:.1f} Mb data written.".format(buf.nbytes/1e6))
         else:
             print("- Unable to open clipboard.")
+
+
+class ClipboardTextIO(io.StringIO):
+    """Clipboard as a text file.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        if not self.closed:
+            Clipboard.write(self.getvalue())
+            super().close()
 
 
 ## --------------------------------
