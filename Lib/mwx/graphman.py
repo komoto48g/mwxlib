@@ -1045,9 +1045,7 @@ class Frame(mwx.Frame):
                 pane.Gripper(dock not in (0,5))  # show a grip when docked
             pane.Dockable(dock)
         
-        if pane.dock_direction:
-            pane.Dock()
-        else:
+        if not pane.dock_direction:
             pane.Float()
 
     def OnPaneClose(self, evt):  # <wx.aui.AuiManagerEvent>
