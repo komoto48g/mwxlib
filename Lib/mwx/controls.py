@@ -1,7 +1,6 @@
 #! python3
 """mwxlib param controller and wx custom controls.
 """
-from contextlib import contextmanager
 from itertools import chain
 import io
 import re
@@ -778,7 +777,19 @@ class Clipboard:
     This does not work unless wx.App instance exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
-    verbose = False
+    class TextIO(io.StringIO):
+        """Clipboard as a text file.
+        """
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+        
+        def __del__(self):
+            self.close()
+        
+        def close(self):
+            if not self.closed:
+                Clipboard.write(self.getvalue())
+                super().close()
 
     @staticmethod
     def read():
@@ -787,8 +798,6 @@ class Clipboard:
             wx.TheClipboard.GetData(do)
             wx.TheClipboard.Close()
             text = do.GetText()
-            if Clipboard.verbose:
-                print(f"From clipboard:\n{text}")
             return text
         else:
             print("- Unable to open clipboard.")
@@ -801,8 +810,6 @@ class Clipboard:
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
-            if Clipboard.verbose:
-                print(f"To clipboard:\n{text}")
         else:
             print("- Unable to open clipboard.")
 
@@ -820,8 +827,6 @@ class Clipboard:
             ## Convert bmp --> buf.
             img = bmp.ConvertToImage()
             buf = np.array(img.GetDataBuffer())  # Do copy, don't ref.
-            if Clipboard.verbose:
-                print("From clipboard: {:.1f} Mb data read.".format(buf.nbytes/1e6))
             w, h = img.GetSize()
             return buf.reshape(h, w, 3)
         except Exception:
@@ -846,25 +851,8 @@ class Clipboard:
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
-            if Clipboard.verbose:
-                print("To clipboard: {:.1f} Mb data written.".format(buf.nbytes/1e6))
         else:
             print("- Unable to open clipboard.")
-
-
-class ClipboardTextIO(io.StringIO):
-    """Clipboard as a text file.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def __del__(self):
-        self.close()
-
-    def close(self):
-        if not self.closed:
-            Clipboard.write(self.getvalue())
-            super().close()
 
 
 ## --------------------------------

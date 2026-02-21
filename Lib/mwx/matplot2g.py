@@ -1067,6 +1067,8 @@ class GraphPlot(MatplotPanel):
         GraphPlot.clipboard_data = data
         bins, vlim, img = _to_image(data, frame.cuts)
         Clipboard.imwrite(img)
+        # if verbose:
+        #     print("To clipboard: {:.1f} Mb written.".format(data.nbytes/1e6))
         self.message("Write buffer to clipboard.")
 
     def read_buffer_from_clipboard(self):
@@ -1080,6 +1082,8 @@ class GraphPlot(MatplotPanel):
         else:
             self.message("Read image from clipboard.")
             data = Clipboard.imread()
+            # if verbose:
+            #     print("From clipboard: {:.1f} Mb read.".format(data.nbytes/1e6))
         if data is not None:
             self.load(data)
 
