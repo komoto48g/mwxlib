@@ -1588,8 +1588,11 @@ class ShellFrame(MiniFrame):
                 lineno = int(ln)
         editor = next(self.get_all_editors(filename), self.Log)
         ret = editor.load_file(filename, lineno)
-        if ret and show:
-            self.popup_window(editor, show)
+        if ret:
+            if show:
+                self.popup_window(editor, show)
+        elif ret is False:
+            wx.MessageBox(f"Failed to load {filename!r}.", style=wx.ICON_ERROR)
         return ret
 
     def info(self, obj):
