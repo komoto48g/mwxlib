@@ -904,7 +904,7 @@ class Frame(mwx.Frame):
 
     def OnClose(self, evt):  # <wx._core.CloseEvent>
         ssn = os.path.basename(self.session_file or '--')
-        with wx.MessageDialog(None,
+        with wx.MessageDialog(self,  # Confirm close.
                 "Do you want to save session before closing program?",
                 "{}@{} - [{}]".format(self.Name, platform.node(), ssn),
                 style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
@@ -918,7 +918,7 @@ class Frame(mwx.Frame):
         if n:
             s = 's' if n > 1 else ''
             if wx.MessageBox(  # Confirm closing the thread.
-                    f"Currently  running {n} thread{s}.\n\n"
+                    f"Currently running {n} thread{s}.\n\n"
                      "Continue closing?",
                     style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")

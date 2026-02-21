@@ -7,8 +7,8 @@ from .framework import Menu, MenuBar, StatusBar  # noqa
 from .framework import Frame, MiniFrame, ShellFrame, deb  # noqa
 
 ## Controls
-from .controls import Param, LParam, Knob, ControlPanel, Clipboard, ClipboardTextIO, Icon  # noqa
-from .controls import Button, ToggleButton, ClassicButton, TextBox, Choice, Gauge, Indicator  # noqa
+from .controls import Param, LParam, ControlPanel  # noqa
+from .controls import Button, ToggleButton, TextBox, Choice, Gauge, Indicator  # noqa
 
 ## Plugman
 # from .graphman import Frame as GraphmanFrame, Layer, Thread, Graph

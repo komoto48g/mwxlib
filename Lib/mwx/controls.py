@@ -699,7 +699,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                     yield c
         self.__groups.append(list(_flatiter(objs)))
         
-        ## Parameters : Knob.param or widgets that have a `value`.
+        ## Parameters : Params or widgets that have a `value`.
         def _variter(objects):
             for c in objects:
                 if isinstance(c, Knob):
