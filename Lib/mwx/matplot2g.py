@@ -446,6 +446,14 @@ class AxesImagePhantom:
     def region_pix(self, v):
         self.region = self.xyfrompixel(v)
 
+    def concatenate_markers(self, v, attr='markers'):
+        """Concatenate new markers [[x], [y]] with existing ones."""
+        x, y = v
+        if not hasattr(x, '__iter__'):
+            v = [[x], [y]]
+        arr = getattr(self, attr)
+        setattr(self, attr, np.hstack((arr, v)))
+
 
 class GraphPlot(MatplotPanel):
     """Graph panel for 2D graph.
@@ -1407,7 +1415,7 @@ class GraphPlot(MatplotPanel):
 
     @property
     def markers(self):
-        """Marked points data array [[x],[y]]."""
+        """Marked points data array [[x], [y]]."""
         xm, ym = self.marked.get_data(orig=0)
         return np.array((xm, ym))
 

@@ -459,7 +459,7 @@ class MatplotPanel(wx.Panel):
 
     @property
     def selector(self):
-        """Selected points array [[x],[y]]."""
+        """Selected points array [[x], [y]]."""
         return np.array(self.selected.get_data(orig=0))
 
     @selector.setter

@@ -778,27 +778,16 @@ class Clipboard:
     This does not work unless wx.App instance exists.
     The clipboard data cannot be transferred unless wx.Frame exists.
     """
-    @contextmanager
-    @staticmethod
-    def istrstream():
-        with io.StringIO(Clipboard.read()) as f:
-            yield f
-
-    @contextmanager
-    @staticmethod
-    def ostrstream():
-        with io.StringIO() as f:
-            yield f
-            Clipboard.write(f.getvalue())
+    verbose = False
 
     @staticmethod
-    def read(verbose=False):
+    def read():
         do = wx.TextDataObject()
         if wx.TheClipboard.Open():
             wx.TheClipboard.GetData(do)
             wx.TheClipboard.Close()
             text = do.GetText()
-            if verbose:
+            if Clipboard.verbose:
                 print(f"From clipboard:\n{text}")
             return text
         else:
@@ -806,19 +795,19 @@ class Clipboard:
             return None
 
     @staticmethod
-    def write(text, verbose=False):
+    def write(text):
         do = wx.TextDataObject(str(text))
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
-            if verbose:
+            if Clipboard.verbose:
                 print(f"To clipboard:\n{text}")
         else:
             print("- Unable to open clipboard.")
 
     @staticmethod
-    def imread(verbose=False):
+    def imread():
         do = wx.BitmapDataObject()
         if wx.TheClipboard.Open():
             wx.TheClipboard.GetData(do)
@@ -831,7 +820,7 @@ class Clipboard:
             ## Convert bmp --> buf.
             img = bmp.ConvertToImage()
             buf = np.array(img.GetDataBuffer())  # Do copy, don't ref.
-            if verbose:
+            if Clipboard.verbose:
                 print("From clipboard: {:.1f} Mb data read.".format(buf.nbytes/1e6))
             w, h = img.GetSize()
             return buf.reshape(h, w, 3)
@@ -840,7 +829,7 @@ class Clipboard:
             return None
 
     @staticmethod
-    def imwrite(buf, verbose=False):
+    def imwrite(buf):
         try:
             ## Convert buf --> bmp.
             h, w = buf.shape[:2]
@@ -857,10 +846,25 @@ class Clipboard:
             wx.TheClipboard.SetData(do)
             wx.TheClipboard.Flush()
             wx.TheClipboard.Close()
-            if verbose:
+            if Clipboard.verbose:
                 print("To clipboard: {:.1f} Mb data written.".format(buf.nbytes/1e6))
         else:
             print("- Unable to open clipboard.")
+
+
+class ClipboardTextIO(io.StringIO):
+    """Clipboard as a text file.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        if not self.closed:
+            Clipboard.write(self.getvalue())
+            super().close()
 
 
 ## --------------------------------
