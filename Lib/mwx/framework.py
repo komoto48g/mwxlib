@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -236,6 +236,17 @@ class KeyCtrlInterfaceMixin:
         else:
             vk.KeyUp(_speckeys_wxkmap[key])
 
+    def fork(self, *args, **kwargs):
+        """Fork events to the self handler."""
+        return self.handler.fork(self.handler.current_event, *args, **kwargs)
+
+    def dispatch(self, *args, **kwargs):
+        """Fork events to the parent handler."""
+        try:
+            return self.parent.handler(self.handler.current_event, *args, **kwargs)
+        except AttributeError:
+            pass
+
     def make_keymap(self, map):
         ## """Make a basis of extension map in the handler (internal use only)."""
         def _Pass(evt):
@@ -254,6 +265,7 @@ class KeyCtrlInterfaceMixin:
             map : {
                          'quit' : [state, ],
                     '* pressed' : [state, self.on_exit_keymap],
+                   '* released' : [map, self.dispatch],
                  '*alt pressed' : [map, _Pass],
                 '*ctrl pressed' : [map, _Pass],
                '*shift pressed' : [map, _Pass],
@@ -329,17 +341,6 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     """Mouse/Key event interface mixin.
     """
     handler = property(lambda self: self.__handler)
-
-    def fork(self, *args, **kwargs):
-        """Fork events to the self handler."""
-        return self.handler.fork(self.handler.current_event, *args, **kwargs)
-
-    def dispatch(self, *args, **kwargs):
-        """Fork events to the parent handler."""
-        try:
-            return self.parent.handler(self.handler.current_event, *args, **kwargs)
-        except AttributeError:
-            pass
 
     def __init__(self):
         self.__key = ''
