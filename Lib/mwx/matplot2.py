@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from . import framework as mwx
-from .framework import hotkey, regulate_key, postcall, pack, Menu, FSM
+from .framework import hotkey, postcall, pack, Menu, FSM
 
 
 ## State constants.
@@ -20,6 +20,13 @@ DRAGGING = '-dragging'
 PAN, ZOOM = 'Pan', 'Zoom'
 XAXIS, YAXIS = 'Xaxis', 'Yaxis'
 MARK, LINE, REGION = 'Mark', 'Line', 'Region'
+
+
+def _regulate_key(key):
+    return (key.replace("ctrl-",  "C-")  # modifier keys abbreviation
+               .replace("alt-",   "M-")
+               .replace("shift-", "S-")
+               )
 
 
 ## Monkey-patch for matplotlib 3.4/WXAgg.
@@ -535,7 +542,7 @@ class MatplotPanel(wx.Panel):
     def on_hotkey_press(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed."""
         key = hotkey(evt)
-        self.__key = regulate_key(key + '-')
+        self.__key = _regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
 

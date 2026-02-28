@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.1"
+__version__ = "1.9.2"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -189,13 +189,11 @@ def hotkey(evt):
     return evt.key
 
 
-def regulate_key(key):
+def _regulate_key(key):
     return (key.replace("ctrl-",  "C-")  # modifier keys abbreviation
                .replace("alt-",   "M-")
                .replace("shift-", "S-")
-               .replace("M-C-", "C-M-")  # modifier key regulation C-M-S-
-               .replace("S-M-", "M-S-")
-               .replace("S-C-", "C-S-"))
+               )
 
 
 class KeyCtrlInterfaceMixin:
@@ -306,7 +304,9 @@ class KeyCtrlInterfaceMixin:
         assert callable(action) or action is None
         
         state = self.handler.default_state
-        map, sep, key = regulate_key(keymap).rpartition(' ')
+        map, sep, key = (keymap.replace("M-C-", "C-M-")  # modifier key regulation C-M-S-
+                               .replace("S-M-", "M-S-")
+                               .replace("S-C-", "C-S-").rpartition(' '))
         if not map:
             map = state
         elif map == '*':
@@ -404,7 +404,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     def on_hotkey_press(self, evt):  # <wx._core.KeyEvent>
         """Called when a key is pressed."""
         key = hotkey(evt)
-        self.__key = regulate_key(key + '-')
+        self.__key = _regulate_key(key + '-')
         if self.handler('{} pressed'.format(key), evt) is None:
             evt.Skip()
 
