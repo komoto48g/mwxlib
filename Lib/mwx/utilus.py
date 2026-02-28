@@ -645,7 +645,6 @@ class FSM(dict):
     def fork(self, event, *args, **kwargs):
         """Invoke the event handlers (internal use only).
         
-        Intended to fork events in the same handler.
         Similar to __call__, but ignore state: None.
         """
         self.__event = event
