@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.2"
+__version__ = "1.9.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1011,7 +1011,7 @@ class FileDropLoader(wx.DropTarget):
         index, flags = self.target.HitTest((x, y))
         if index != -1:
             # result = wx.DragCopy
-            self.target.Selection = index  # ghost/editor's selection
+            self.target.Selection = index
         else:
             # result = wx.DragNone
             pass
@@ -1336,15 +1336,15 @@ class ShellFrame(MiniFrame):
             o.write("self.SetSize({})\n".format(self.Size))
             o.write("self.SetPosition({})\n".format(self.Position))
             
-            for book in self.get_all_editors():
-                if book.Name not in ("Scratch", "Log", "Help"):  # Save default editors only.
+            for editor in self.get_all_editors():
+                if editor.Name not in ("Scratch", "Log", "Help"):  # Save default editors only.
                     continue
-                for buf in book.get_all_buffers():
+                for buf in editor.get_all_buffers():
                     if buf.mtdelta is not None:
                         o.write("self.{}.load_file({!r}, {})\n"
-                                .format(book.Name, buf.filename, buf.markline+1))
+                                .format(editor.Name, buf.filename, buf.markline+1))
                 o.write("self.{}.loadPerspective({!r})\n"
-                        .format(book.Name, book.savePerspective()))
+                        .format(editor.Name, editor.savePerspective()))
             o.write('\n'.join((
                 "self.ghost.loadPerspective({!r})".format(self.ghost.savePerspective()),
                 "self.watcher.loadPerspective({!r})".format(self.watcher.savePerspective()),
@@ -1409,16 +1409,16 @@ class ShellFrame(MiniFrame):
                           "The trace pointer will be cleared.")
             self.debugger.unwatch()  # cf. [pointer_unset] stop_trace
         
-        for book in self.get_all_editors():
-            for buf in book.get_all_buffers():
+        for editor in self.get_all_editors():
+            for buf in editor.get_all_buffers():
                 if buf.need_buffer_save:
-                    self.popup_window(book)
+                    self.popup_window(editor)
                     buf.SetFocus()
                     if wx.MessageBox(  # Confirm closing the buffer.
                             "You are closing unsaved content.\n\n"
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",
-                            "Close {!r}".format(book.Name),
+                            "Close {!r}".format(editor.Name),
                             style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
                         self.message("The close has been canceled.")
                         evt.Veto()
@@ -1437,15 +1437,15 @@ class ShellFrame(MiniFrame):
         elif self.__autoload:
             ## Check all buffers that need to be loaded.
             verbose = 1
-            for book in self.get_all_editors():
-                for buf in book.get_all_buffers():
+            for editor in self.get_all_editors():
+                for buf in editor.get_all_buffers():
                     if buf.need_buffer_load:
                         buf.update_caption()
                         if verbose:
                             with wx.MessageDialog(self,  # Confirm load.
                                     "The file has been modified externally.\n\n"
                                     "The contents of the buffer will be overwritten.\n"
-                                    "Continue loading {}/{}?".format(book.Name, buf.name),
+                                    "Continue loading {}/{}?".format(editor.Name, buf.name),
                                     "Load {!r}".format(buf.name),
                                     style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
                                 dlg.SetHelpLabel("Yes to &All")
@@ -1457,7 +1457,7 @@ class ShellFrame(MiniFrame):
                                     break  # all
                                 if ret == wx.ID_HELP:  # ID_YESTOALL
                                     verbose = 0
-                        book.load_file(buf.filename, buf.markline+1)
+                        editor.load_file(buf.filename, buf.markline+1)
             self.__autoload = False
         evt.Skip()
 
@@ -1802,10 +1802,6 @@ class ShellFrame(MiniFrame):
             ## Set a marker on the current line.
             buf.add_marker(buf.cline, 1 if noerr else 2)  # 1:white 2:red-arrow
             return
-        
-        ## Logging text every step in case of crash.
-        # with open(self.LOGGING_FILE, 'a', encoding='utf-8', newline='') as o:
-        #     o.write(text)
 
     def add_help(self, text, title=None):
         """Add text to the help buffer.
@@ -1884,11 +1880,11 @@ class ShellFrame(MiniFrame):
         if fn is None:
             yield from self.ghost.get_pages(type(self.Log))
         else:
-            for book in self.ghost.get_pages(type(self.Log)):
-                buf = book.find_buffer(fn)
+            for editor in self.ghost.get_pages(type(self.Log)):
+                buf = editor.find_buffer(fn)
                 if buf:
-                    book.swap_page(buf)
-                    yield book
+                    editor.swap_page(buf)
+                    yield editor
 
     @property
     def current_shell(self):
@@ -1901,14 +1897,14 @@ class ShellFrame(MiniFrame):
         editor = self.ghost.CurrentPage
         if isinstance(editor, type(self.Log)):
             return editor
-        return next((book for book in self.get_all_editors() if book.IsShown()), self.Scratch)
+        return next((editor for editor in self.get_all_editors() if editor.IsShown()), self.Scratch)
 
     def create_editor(self, bookname):
-        """Create a new editor (internal use only)..
+        """Create a new editor (internal use only).
         If such an editor already exists, no new editor is created.
         """
         try:
-            return next(book for book  in self.get_all_editors() if book.Name == bookname)
+            return next(editor for editor  in self.get_all_editors() if editor.Name == bookname)
         except StopIteration:
             with wx.FrozenWindow(self.ghost):
                 editor = self.Log.__class__(self, bookname)
