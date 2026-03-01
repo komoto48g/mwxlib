@@ -236,7 +236,7 @@ class KeyCtrlInterfaceMixin:
 
     def fork(self, *args, **kwargs):
         """Fork events to the self handler."""
-        return self.handler.fork(self.handler.current_event, *args, **kwargs)
+        return self.handler.call(self.handler.current_event, *args, **kwargs)
 
     def dispatch(self, *args, **kwargs):
         """Fork events to the parent handler."""

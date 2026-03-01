@@ -641,16 +641,6 @@ class FSM(dict):
         if recept:
             return retvals
 
-    def fork(self, event, *args, **kwargs):
-        """Invoke the event handlers (internal use only).
-        
-        Similar to __call__, but ignore state: None.
-        """
-        self.__event = event
-        ret = self.call(event, *args, **kwargs)
-        self.__prev_event = self.__event
-        return ret
-
     def call(self, event, *args, **kwargs):
         """Invoke the event handlers (internal use only).
         

@@ -165,7 +165,7 @@ class MatplotPanel(wx.Panel):
         self.canvas.Bind(wx.EVT_CONTEXT_MENU, lambda v: self.handler('context_menu', v))
         
         def fork(evt):
-            return self.handler.fork(self.handler.current_event, evt)
+            return self.handler.call(self.handler.current_event, evt)
         
         def skip(evt):  # <wx._core.KeyEvent> <matplotlib.backend_bases.MouseEvent>
             try:
