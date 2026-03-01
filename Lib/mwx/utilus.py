@@ -576,7 +576,6 @@ class FSM(dict):
         self.__prev_state = state
         self.__event = None
         self.__prev_event = None
-        self.__matched_pattern = None
 
     def __init__(self, contexts=None, default=None):
         dict.__init__(self)  # update dict, however, it does not clear
@@ -673,9 +672,6 @@ class FSM(dict):
             self.__debcall__(event, *args, **kwargs)  # check after transition
             retvals = []
             for act in transaction[1:]:
-                ## Save the event before each action (for nested call).
-                if self.__matched_pattern is None:
-                    self.__event = event
                 try:
                     ret = act(*args, **kwargs)  # call actions after transition
                     retvals.append(ret)
@@ -690,13 +686,11 @@ class FSM(dict):
                               "  args   : {}".format(args),
                               "  kwargs : {}".format(kwargs),
                               "")
-            self.__matched_pattern = None
             return retvals
         
         if isinstance(event, str):  # matching test using fnmatch
             for pat in context:
                 if fnmatch.fnmatchcase(event, pat):
-                    self.__matched_pattern = pat
                     return self.call(pat, *args, **kwargs)  # recursive call
         
         self.__debcall__(event, *args, **kwargs)  # check when no transition
