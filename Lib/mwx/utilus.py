@@ -568,7 +568,7 @@ class FSM(dict):
     def current_state(self, state):
         self.__state = state
         self.__event = '*forced*'
-        self.__debcall__(self.__event)
+        self.__debug_call__(self.__event)
 
     def clear(self, state):
         """Reset current and previous states."""
@@ -659,7 +659,7 @@ class FSM(dict):
             transaction = context[event]
             self.__prev_state = self.__state  # save previous state
             self.__state = transaction[0]     # the state transits here
-            self.__debcall__(event, *args, **kwargs)  # check after transition
+            self.__debug_call__(event, *args, **kwargs)  # check after transition
             retvals = []
             for act in transaction[1:]:
                 try:
@@ -683,13 +683,13 @@ class FSM(dict):
                 if fnmatch.fnmatchcase(event, pat):
                     return self.call(pat, *args, **kwargs)  # recursive call
         
-        self.__debcall__(event, *args, **kwargs)  # check when no transition
+        self.__debug_call__(event, *args, **kwargs)  # check when no transition
         return None  # no event, no action
 
-    def __debcall__(self, pattern, *args, **kwargs):
+    def __debug_call__(self, event, *args, **kwargs):
         v = self.debug
         if v and self.__state is not None:
-            transaction = self[self.__prev_state].get(pattern) or []
+            transaction = self[self.__prev_state].get(event) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if (v > 0 and self.__prev_state != self.__state
              or v > 1 and self.__prev_event != self.__event
@@ -701,7 +701,7 @@ class FSM(dict):
                         c='*' if self.__prev_state != self.__state else ' '
                     ))
         elif v > 3:  # state is None
-            transaction = self[None].get(pattern) or []
+            transaction = self[None].get(event) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if actions or v > 4:
                 self.log("  None [{0}] {a}".format(
