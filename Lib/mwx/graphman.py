@@ -10,7 +10,6 @@ import threading
 import traceback
 import builtins
 import inspect
-import types
 import sys
 import os
 import platform
@@ -475,7 +474,17 @@ class Layer(LayerInterface, KnobCtrlPanel):
         LayerInterface.__init__(self, parent, session)
 
 
-def _register__dummy_plug__(cls, module):
+def _reloadable(cls):
+    if cls.__module__ in ("__main__", "builtins"):
+        return False
+    module = sys.modules.get(cls.__module__)
+    spec = getattr(module, "__spec__", None)
+    return bool(spec and spec.origin not in ("built-in", "frozen"))
+
+
+def _register__dummy_plug__(cls):
+    cls.reloadable = _reloadable(cls)
+    
     if issubclass(cls, LayerInterface):
         # warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
         return cls
@@ -487,7 +496,7 @@ def _register__dummy_plug__(cls, module):
         Show = LayerInterface.Show
         IsShown = LayerInterface.IsShown
 
-    _Plugin.__module__ = module.__name__
+    _Plugin.__module__ = cls.__module__
     _Plugin.__qualname__ = cls.__qualname__
     _Plugin.__name__ = cls.__name__
     _Plugin.__doc__ = cls.__doc__
@@ -1136,7 +1145,8 @@ class Frame(mwx.Frame):
         
         if not force:
             ## 文字列参照 (full-path) による重複ロードを避ける．
-            module = next((v for v in self.plugins.values() if root == v.__file__), None)
+            module = next((v for v in self.plugins.values()
+                                   if root == getattr(v, "__file__", None)), None)
             if module:
                 plug = module.__plug__
             else:
@@ -1162,28 +1172,21 @@ class Frame(mwx.Frame):
             return False
         
         ## Load or reload the module.
-        try:
-            reloadable = name not in ("__main__", "builtins")
-            if not reloadable:
-                module = types.ModuleType(name)  # dummy module for __main__ (cannot reload)
-            elif name in sys.modules:
-                module = reload(sys.modules[name])
-            else:
-                module = import_module(name)
-        except Exception:
-            traceback.print_exc()  # Unable to load the module.
-            return False
+        if inspect.isclass(root):
+            module = sys.modules[name]  # The root module is already imported.
+        elif name in sys.modules:
+            module = reload(sys.modules[name])
+        else:
+            module = import_module(name)
         
         ## Ensure that the module plugin name is unique.
         try:
             if inspect.isclass(root):
-                module.__dummy_plug__ = root.__name__
-                root.reloadable = reloadable
-                Plugin = _register__dummy_plug__(root, module)
+                module.__dummy_plug__ = root.__name__  # Store the dummy plug name.
+                Plugin = _register__dummy_plug__(root)
             elif hasattr(module, '__dummy_plug__'):
-                root = getattr(module, module.__dummy_plug__)
-                root.reloadable = reloadable
-                Plugin = _register__dummy_plug__(root, module)
+                root = getattr(module, module.__dummy_plug__)  # Restore the dummy plug name.
+                Plugin = _register__dummy_plug__(root)
             else:
                 Plugin = module.Plugin  # <AttributeError>
             
@@ -1828,10 +1831,7 @@ class Frame(mwx.Frame):
             
             for name, module in self.plugins.items():
                 plug = self.get_plug(name)
-                try:
-                    filename = module.__file__
-                except AttributeError:
-                    filename = ''
+                filename = getattr(module, "__file__", "")
                 if not plug or not os.path.exists(filename):
                     print(f"Skipping dummy plugin {name!r}...")
                     continue
