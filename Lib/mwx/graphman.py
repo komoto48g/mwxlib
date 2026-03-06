@@ -108,17 +108,26 @@ class Thread:
         ## assert self.active, f"{self!r} must be activated to enter {name!r}."
         yield self
 
-    def enters(self, f):
+    def _binds(self, event, action):
+        @wraps(action)
+        def _act(*v, **kw):
+            try:
+                return action(*v, **kw)
+            finally:
+                self.handler.unbind(event, _act)
+        return self.handler.bind(event, _act)
+
+    def enters(self, f, /, *args, **kwargs):
         """Decorator to add a one-time handler for the enter event.
         The specified function will be called from the main thread.
         """
-        return self.handler.binds('thread_begin', _F(f))
+        return self._binds('thread_begin', _F(f, *args, **kwargs))
 
-    def exits(self, f):
+    def exits(self, f, /, *args, **kwargs):
         """Decorator to add a one-time handler for the exit event.
         The specified function will be called from the main thread.
         """
-        return self.handler.binds('thread_end', _F(f))
+        return self._binds('thread_end', _F(f, *args, **kwargs))
 
     def wraps(self, f, *args, **kwargs):
         """Decorator for a function that starts a new thread."""
