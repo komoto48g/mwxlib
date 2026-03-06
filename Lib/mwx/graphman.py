@@ -137,7 +137,7 @@ class Thread:
             raise KeyboardInterrupt("terminated by user")
         return True
 
-    def pause(self, msg=None, caption=wx.MessageBoxCaptionStr):
+    def pause(self, msg=None, caption=None):
         """Pause the thread.
         Confirm whether to terminate the thread.
         
@@ -158,13 +158,29 @@ class Thread:
         try:
             self.event.clear()  # suspend
             if wx.MessageBox(   # Confirm closing the thread.
-                    msg, caption,
+                    msg, caption or wx.MessageBoxCaptionStr,
                     style=wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
                 self.Stop()
                 return True
             return False
         finally:
             self.event.set()  # resume
+
+    def wait(self, timeout, sentinel=None):
+        """Halt the thread and wait for the sentinel."""
+        if not self.running:
+            # warn(f"{sentinel!r} should be awaited from within an active thread.")
+            return None
+        if sentinel:
+            _hook = _F(self.event.set)
+            self.handler.bind(sentinel, _hook)
+        try:
+            self.event.clear()
+            return self.event.wait(timeout)  # Wait the sentinel.
+        finally:
+            self.event.set()
+            if sentinel:
+                self.handler.unbind(sentinel, _hook)
 
     def Start(self, f, *args, **kwargs):
         """Start the thread to run the specified function.
