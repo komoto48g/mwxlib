@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.8"
+__version__ = "1.9.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -794,6 +794,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
     message = property(lambda self: self.statusbar)
 
+    ## Flag indicating whether the shell runs in standalone mode.
+    ## If True, the window is closed; otherwise, it is hidden.
+    standalone = False
+
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
         
@@ -815,15 +819,18 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
-        ## To default close >>> self.Unbind(wx.EVT_CLOSE).
-        self.Bind(wx.EVT_CLOSE, lambda v: self.Show(0))
-        
         self.__handler = FSM({  # DNA<MiniFrame>
                 None : {},
                 0 : {},
             },
         )
         self.make_keymap('C-x')
+
+    def Close(self):
+        if self.standalone:
+            wx.MiniFrame.Close(self)  # => [EVT_CLOSE]
+        else:
+            self.Hide()
 
 
 class AuiNotebook(aui.AuiNotebook, CtrlInterface):
@@ -1078,10 +1085,6 @@ class ShellFrame(MiniFrame):
     ## The root shell.
     rootshell = property(lambda self: self.__shell)
 
-    ## Flag indicating whether the shell runs standalone.
-    ## If True, EVT_CLOSE will close the window; otherwise, the window will only be hidden.
-    standalone = False
-
     def __init__(self, parent, target=None, session=None, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
@@ -1190,7 +1193,6 @@ class ShellFrame(MiniFrame):
         
         self._mgr.Update()
         
-        self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
@@ -1380,12 +1382,6 @@ class ShellFrame(MiniFrame):
         self._mgr.UnInit()
         return MiniFrame.Destroy(self)
 
-    def Close(self):
-        if self.standalone:
-            MiniFrame.Close(self)
-        else:
-            self.Show(not self.Shown)
-
     def OnClose(self, evt):
         if self.debugger.busy:
             if wx.MessageBox(  # Confirm closing the debugger.
@@ -1399,10 +1395,10 @@ class ShellFrame(MiniFrame):
             ## RuntimeError('wrapped C/C++ object ... has been deleted')
             self.Quit()
         
-        if self.debugger.tracing:
-            wx.MessageBox("The debugger ends tracing.\n\n"
-                          "The trace pointer will be cleared.")
-            self.debugger.unwatch()  # cf. [pointer_unset] stop_trace
+        # if self.debugger.tracing:
+        #     wx.MessageBox("The debugger ends tracing.\n\n"
+        #                   "The trace pointer will be cleared.")
+        #     self.debugger.unwatch()  # cf. [pointer_unset] stop_trace
         
         for editor in self.get_all_editors():
             for buf in editor.get_all_buffers():
@@ -1422,7 +1418,7 @@ class ShellFrame(MiniFrame):
         if self.standalone:
             evt.Skip()  # Close the window
         else:
-            self.Show(0)  # Don't destroy the window
+            self.Hide()  # Don't destroy the window
 
     def OnActivate(self, evt):
         if evt.Active and evt.GetActivationReason() == evt.Reason_Mouse:
