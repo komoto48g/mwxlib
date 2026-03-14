@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.6"
+__version__ = "1.9.7"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1195,9 +1195,6 @@ class ShellFrame(MiniFrame):
         self.Unbind(wx.EVT_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_SHOW, self.OnShow)
-        
-        self.__autoload = True
-        
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         
         self.findDlg = None
@@ -1430,11 +1427,7 @@ class ShellFrame(MiniFrame):
             self.Show(0)  # Don't destroy the window
 
     def OnActivate(self, evt):
-        if not evt.Active:
-            ## Reset autoload when active focus going outside.
-            self.__autoload = True
-        ## elif evt.GetActivationReason() == evt.Reason_Mouse and self.__autoload:
-        elif self.__autoload:
+        if evt.Active and evt.GetActivationReason() == evt.Reason_Mouse:
             ## Check all buffers that need to be loaded.
             verbose = 1
             for editor in self.get_all_editors():
@@ -1454,11 +1447,11 @@ class ShellFrame(MiniFrame):
                                 if ret == wx.ID_NO:
                                     continue
                                 if ret == wx.ID_CANCEL:
-                                    break  # all
+                                    break
                                 if ret == wx.ID_HELP:  # ID_YESTOALL
                                     verbose = 0
                         editor.load_file(buf.filename, buf.markline+1)
-            self.__autoload = False
+            wx.CallAfter(self.SetFocus)
         evt.Skip()
 
     def OnShow(self, evt):
