@@ -26,14 +26,10 @@ from wx.py.shell import Shell
 from wx.py.editwindow import EditWindow
 
 from .utilus import funcall as _F
-from .utilus import typename, fix_fnchars
+from .utilus import typename, fix_fnchars, is_url
 from .utilus import split_words, split_parts, split_tokens, find_modules
 from .framework import CtrlInterface, AuiNotebook, Menu
 
-
-## URL pattern (flag = re.M | re.A).
-# url_re = r"https?://[\w/:%#$&?()~.=+-]+"
-url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
 
 ## Python syntax patterns.
 py_indent_re = r"if|else|elif|for|while|with|def|class|try|except|finally"
@@ -1840,7 +1836,7 @@ class Buffer(EditorInterface, EditWindow):
         except FileNotFoundError:
             self.__mtime = False  # valid path (but not found)
         except OSError:
-            if re.match(url_re, fn):
+            if is_url(fn):
                 self.__mtime = -1  # URL path
             else:
                 self.__mtime = None  # invalid path
@@ -2038,7 +2034,7 @@ class Buffer(EditorInterface, EditWindow):
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.SetIndicatorCurrent(2)
                 self.IndicatorClearRange(0, self.TextLength)
-                for m in self.grep(url_re):
+                for m in self.grep(is_url.pattern):
                     p, q = m.span()
                     self.IndicatorFillRange(p, q-p)
                 self.handler('buffer_modified', self)
@@ -2548,7 +2544,7 @@ class EditorBook(AuiNotebook):
             self.swap_buffer(buf, lineno)
             return True
         try:
-            if re.match(url_re, filename):
+            if is_url(filename):
                 import requests
                 kwargs.setdefault('timeout', 3.0)
                 res = requests.get(filename, **kwargs)

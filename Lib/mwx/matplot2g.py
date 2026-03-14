@@ -1,7 +1,6 @@
 #! python3
 """mwxlib graph plot for images.
 """
-import re
 import os
 import wx
 
@@ -16,6 +15,7 @@ from scipy import ndimage as ndi
 from . import framework as mwx
 from .framework import Menu
 from .utilus import funcall as _F
+from .utilus import is_url
 from .controls import Clipboard
 from .matplot2 import MatplotPanel
 from .matplot2 import NORMAL, DRAGGING, PAN, ZOOM, MARK, LINE, REGION
@@ -118,14 +118,12 @@ def _get_filestamp(filename):
         None: If the path is invalid.
         -1: If the input is a URL.
     """
-    # url_re = r"https?://[\w/:%#$&?()~.=+-]+"
-    url_re = r"https?://[\w/:%#$&?!@~.,;=+-]+"  # excluding ()
     try:
         return os.path.getmtime(filename)  # timestamp (modified time)
     except FileNotFoundError:
         return False  # valid path (but not found)
     except OSError:
-        if re.match(url_re, filename):
+        if is_url(filename):
             return -1  # URL path
     except Exception:
         pass

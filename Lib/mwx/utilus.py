@@ -11,6 +11,7 @@ import sys
 import os
 import re
 import io
+import urllib
 import tokenize
 import fnmatch
 import pkgutil
@@ -471,6 +472,14 @@ def fix_fnchars(filename, substr='_'):
         return re.sub(r'[:*?"<>|]', substr, filename)
     else:
         return filename
+
+
+def is_url(url):
+    q = urllib.parse.urlsplit(url)
+    return q.scheme in ("http", "https") and bool(q.netloc)
+
+
+is_url.pattern = r"https?://[^\s<>()\"']+"
 
 
 ## --------------------------------
