@@ -693,10 +693,10 @@ class Frame(mwx.Frame):
     output = property(lambda self: self.__output)
     histogram = property(lambda self: self.__histgrm)
 
-    selected_view = property(lambda self: self.__view)
+    selected_view = property(lambda self: self.__selected_view)
 
     def select_view(self, view):
-        self.__view = view
+        self.__selected_view = view
         self.set_title(view.frame)
 
     @property
@@ -704,11 +704,11 @@ class Frame(mwx.Frame):
         """Graphic windows list.
         [0] graph [1] output [2:] others(user-defined)
         """
-        return self.__graphic_windows
+        return self.__graphic_views
 
     @property
     def graphic_windows_on_screen(self):
-        return [w for w in self.__graphic_windows if w.IsShownOnScreen()]
+        return [w for w in self.__graphic_views if w.IsShownOnScreen()]
 
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
@@ -726,7 +726,7 @@ class Frame(mwx.Frame):
         self.__histgrm.attach(self.graph)
         self.__histgrm.attach(self.output)
         
-        self.__graphic_windows = [
+        self.__graphic_views = [
             self.__graph,
             self.__output,
         ]
@@ -758,20 +758,20 @@ class Frame(mwx.Frame):
                 lambda v: self.load_frame()),
                 
             (wx.ID_CLOSE, "&Close\t(C-k)", "Kill buffer", Icon('book_blue'),
-                lambda v: self.__view.kill_buffer(),
-                lambda v: v.Enable(self.__view.frame is not None)),
+                lambda v: self.selected_view.kill_buffer(),
+                lambda v: v.Enable(self.selected_view.frame is not None)),
                 
             (wx.ID_CLOSE_ALL, "&Close all\t(C-S-k)", "Kill all buffers", Icon('book_red'),
-                lambda v: self.__view.kill_all_buffers(),
-                lambda v: v.Enable(self.__view.frame is not None)),
+                lambda v: self.selected_view.kill_all_buffers(),
+                lambda v: v.Enable(self.selected_view.frame is not None)),
                 
             (wx.ID_SAVE, "&Save as\tCtrl-s", "Save buffer as", Icon('save'),
                 lambda v: self.save_frame(),
-                lambda v: v.Enable(self.__view.frame is not None)),
+                lambda v: v.Enable(self.selected_view.frame is not None)),
                 
             (wx.ID_SAVEAS, "&Save as TIFFs\tCtrl+Shift+s", "Save buffers as a multi-page tiff", Icon('saveall'),
                 lambda v: self.save_frames_as_tiff(),
-                lambda v: v.Enable(self.__view.frame is not None)),
+                lambda v: v.Enable(self.selected_view.frame is not None)),
             (),
             # ("Index", (
             #     (mwx.ID_(11), "&Import index", "Import index file", Icon('open'),
@@ -779,7 +779,7 @@ class Frame(mwx.Frame):
             #         
             #     (mwx.ID_(12), "&Export index", "Export index file", Icon('saveas'),
             #         lambda v: self.export_index(),
-            #         lambda v: v.Enable(self.__view.frame is not None)),
+            #         lambda v: v.Enable(self.selected_view.frame is not None)),
             #     )),
             # (),
             ("Session", (
@@ -806,28 +806,28 @@ class Frame(mwx.Frame):
         ]
         self.menubar["Edit"] = [
             (wx.ID_COPY, "&Copy\t(C-c)", "Copy buffer to clipboard", Icon('copy'),
-                lambda v: self.__view.write_buffer_to_clipboard()),
+                lambda v: self.selected_view.write_buffer_to_clipboard()),
                 
             (wx.ID_PASTE, "&Paste\t(C-v)", "Paste buffer from clipboard", Icon('paste'),
-                lambda v: self.__view.read_buffer_from_clipboard()),
+                lambda v: self.selected_view.read_buffer_from_clipboard()),
             (),
             (mwx.ID_(23), "Hide all &layers", "Hide all layers", Icon('xr'),
-                lambda v: self.__view.hide_layers()),
+                lambda v: self.selected_view.hide_layers()),
             (),
             (mwx.ID_(24), "&Histogram\tCtrl-h", "Show histogram window", wx.ITEM_CHECK,
                 lambda v: self.show_pane(self.histogram, v.IsChecked()),
                 lambda v: v.Check(self.histogram.IsShownOnScreen())),
                 
             (mwx.ID_(25), "&Invert color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
-                lambda v: self.__view.invert_cmap(),
-                lambda v: v.Check(self.__view.get_cmapstr()[-2:] == "_r")),
+                lambda v: self.selected_view.invert_cmap(),
+                lambda v: v.Check(self.selected_view.get_cmapstr()[-2:] == "_r")),
         ]
         
         def _cmenu(i, name):
             return (mwx.ID_(30 + i), "&" + name, name, wx.ITEM_CHECK,
-                lambda v: self.__view.set_cmapstr(name),
-                lambda v: v.Check(self.__view.get_cmapstr() == name
-                               or self.__view.get_cmapstr() == name+"_r"),
+                lambda v: self.selected_view.set_cmapstr(name),
+                lambda v: v.Check(self.selected_view.get_cmapstr() == name
+                               or self.selected_view.get_cmapstr() == name+"_r"),
             )
         colours = [c for c in dir(cm) if c[-2:] != "_r"
                     and isinstance(getattr(cm, c), colors.LinearSegmentedColormap)]
@@ -835,8 +835,8 @@ class Frame(mwx.Frame):
         self.menubar["Edit"] += [
             (),
             # (mwx.ID_(26), "Default Color", "gray", wx.ITEM_CHECK,
-            #     lambda v: self.__view.set_cmapstr('gray'),
-            #     lambda v: v.Check(self.__view.get_cmapstr()[:4] == "gray")),
+            #     lambda v: self.selected_view.set_cmapstr('gray'),
+            #     lambda v: v.Check(self.selected_view.get_cmapstr()[:4] == "gray")),
             #     
             ("Standard colors",
                 [_cmenu(i, c) for i, c in enumerate(colours) if c.islower()]),
