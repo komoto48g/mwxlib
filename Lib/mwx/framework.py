@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.7"
+__version__ = "1.9.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -35,8 +35,6 @@ def deb(target=None, loop=True, locals=None, **kwargs):
         **kwargs: ShellFrame and Nautilus arguments
         
             - session: file name of the session. Defaults to None.
-            - standalone: True => EVT_CLOSE will close the window.
-                          False => EVT_CLOSE will hide the window.
             - introText: introductory of the shell
             - startupScript: startup script file (default None)
             - execStartupScript: True => Execute the startup script.
@@ -46,10 +44,10 @@ def deb(target=None, loop=True, locals=None, **kwargs):
     """
     kwargs.setdefault("introText", f"mwx {__version__}\n")
     kwargs.setdefault("execStartupScript", True)
-    kwargs.setdefault("standalone", True)
     
     app = wx.GetApp() or wx.App()
     frame = ShellFrame(None, target, **kwargs)
+    frame.standalone = True
     frame.Show()
     frame.rootshell.SetFocus()
     if locals:
@@ -1045,9 +1043,6 @@ class ShellFrame(MiniFrame):
         session: file name of the session. Defaults to None.
                  If None, no session will be created or saved.
                  If `''`, the default session (.debrc) will be loaded.
-        standalone: flag for the shell standalone.
-                    If True, EVT_CLOSE will close the window.
-                    Otherwise the window will be only hidden.
         **kwargs: Nautilus arguments
     
     Attributes:
@@ -1080,15 +1075,18 @@ class ShellFrame(MiniFrame):
         @highlight  : Highlight the widget.
         @filling    : Inspection using ``wx.lib.filling.Filling``.
     """
-    rootshell = property(lambda self: self.__shell)  # the root shell
+    ## The root shell.
+    rootshell = property(lambda self: self.__shell)
 
-    def __init__(self, parent, target=None, session=None, standalone=False, **kwargs):
+    ## Flag indicating whether the shell runs standalone.
+    ## If True, EVT_CLOSE will close the window; otherwise, the window will only be hidden.
+    standalone = False
+
+    def __init__(self, parent, target=None, session=None, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
         self.statusbar.resize((-1,120))
         self.statusbar.Show(1)
-        
-        self.__standalone = bool(standalone)
         
         from .nutshell import Nautilus, EditorBook, Stylus
         from .bookshelf import EditorTreeCtrl
@@ -1383,7 +1381,7 @@ class ShellFrame(MiniFrame):
         return MiniFrame.Destroy(self)
 
     def Close(self):
-        if self.__standalone:
+        if self.standalone:
             MiniFrame.Close(self)
         else:
             self.Show(not self.Shown)
@@ -1421,7 +1419,7 @@ class ShellFrame(MiniFrame):
                         evt.Veto()
                         return
                     break  # Don't ask any more.
-        if self.__standalone:
+        if self.standalone:
             evt.Skip()  # Close the window
         else:
             self.Show(0)  # Don't destroy the window
