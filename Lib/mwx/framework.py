@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.9"
+__version__ = "1.9.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -774,7 +774,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.make_keymap('C-x')
 
     def About(self):
-        wx.MessageBox(__import__("__main__").__doc__ or "no information",
+        wx.MessageBox(__import__("__main__").__doc__ or "No information.",
                       "About this software")
 
     def Destroy(self):
@@ -905,7 +905,6 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         """
         for tab in self._all_tabs:  # <aui.AuiTabCtrl>
             for page in tab.Pages:  # <aui.AuiNotebookPage>
-                ## if page.window is win or page.caption == win:
                 if page.window is win or page.window.Name == win:
                     return tab, page
 
@@ -952,8 +951,7 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
             pane.name = f"pane{j+1}"
         spec = ""
         for j, tabs in enumerate(self._all_tabs):
-            k = next(k for k, page in enumerate(tabs.Pages) if page.window.Shown)
-            ## names = [page.caption for page in tabs.Pages]
+            k = next(k for k, page in enumerate(tabs.Pages) if page.window.IsShown())
             names = [page.window.Name for page in tabs.Pages]
             spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
@@ -1885,25 +1883,6 @@ class ShellFrame(MiniFrame):
         if isinstance(editor, type(self.Log)):
             return editor
         return next((editor for editor in self.get_all_editors() if editor.IsShown()), self.Scratch)
-
-    def create_editor(self, bookname):
-        """Create a new editor (internal use only).
-        If such an editor already exists, no new editor is created.
-        """
-        try:
-            return next(editor for editor  in self.get_all_editors() if editor.Name == bookname)
-        except StopIteration:
-            with wx.FrozenWindow(self.ghost):
-                editor = self.Log.__class__(self, bookname)
-                self.ghost.AddPage(editor, bookname)
-                self.ghost.move_tab(editor, 0)
-            self.handler('book_new', editor)
-            
-            def _attach():
-                editor.handler.append(self.Bookshelf.context)
-                self.Bookshelf.build_tree(clear=0)
-            wx.CallAfter(_attach)
-            return editor
 
     ## --------------------------------
     ## Find / Replace text dialog.
