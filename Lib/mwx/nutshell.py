@@ -2448,7 +2448,7 @@ class EditorBook(AuiNotebook):
     def new_buffer(self):
         """Create a new default buffer."""
         buf = self.default_buffer
-        if not buf or buf.mtdelta is not None:  # is saved?
+        if not buf:
             buf = self.create_buffer(self.default_name)
             self.default_buffer = buf
         else:
@@ -2463,14 +2463,11 @@ class EditorBook(AuiNotebook):
             buf = self.buffer
         j = self.GetPageIndex(buf)
         if j != -1:
-            self.DeletePage(j)   # the focus moves
-            if not self.buffer:  # no buffers
-                wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
+            self.DeletePage(j)  # the focus moves
 
     def delete_all_buffers(self):
         """Initialize list of buffers."""
         self.DeleteAllPages()
-        wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
 
     def next_buffer(self):
         if self.Selection < self.PageCount - 1:
@@ -2560,7 +2557,7 @@ class EditorBook(AuiNotebook):
             return False
         except (OSError, UnicodeDecodeError, ModuleNotFoundError) as e:
             self.post_message("Failed to load;", e)
-            self.delete_buffer(buf)
+            self.kill_buffer(buf)
             return False
 
     def find_file(self, filename=None):
@@ -2660,6 +2657,8 @@ class EditorBook(AuiNotebook):
                 self.post_message("The close has been canceled.")
                 return None
         self.delete_buffer(buf)
+        if not self.buffer:  # no buffers
+            wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
 
     def kill_all_buffers(self):
         """Delete all buffers; confirm the close with a dialog."""
@@ -2674,6 +2673,7 @@ class EditorBook(AuiNotebook):
                     self.post_message("The close has been canceled.")
                     return None
         self.delete_all_buffers()
+        wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
 
 
 class Interpreter(interpreter.Interpreter):
