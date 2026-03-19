@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.10"
+__version__ = "1.9.11"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -852,6 +852,10 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_tab_menu)
 
+    def __iter__(self):
+        for i in range(self.PageCount):
+            yield self.GetPage(i)
+
     @property
     def _all_tabs(self):
         """Return all AuiTabCtrl objects (internal use only)."""
@@ -864,8 +868,7 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
 
     def get_pages(self, type=None):
         """Yields pages of the specified window type."""
-        for i in range(self.PageCount):
-            win = self.GetPage(i)
+        for win in self:
             if type is None or isinstance(win, type):
                 yield win
 
