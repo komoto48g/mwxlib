@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.12"
+__version__ = "1.9.13"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1095,7 +1095,6 @@ class ShellFrame(MiniFrame):
         
         self.__shell = Nautilus(self,
                                 target or __import__("__main__"),
-                                style=wx.CLIP_CHILDREN|wx.BORDER_NONE,
                                 **kwargs)
         
         self.Scratch = EditorBook(self, name="Scratch")
@@ -1237,7 +1236,8 @@ class ShellFrame(MiniFrame):
         self.handler.update({  # DNA<ShellFrame>
             None : {
                     'shell_new' : [None, ],
-                     'book_new' : [None, ],
+                   'buffer_new' : [None, ],
+                   'editor_new' : [None, ],
                       'add_log' : [None, self.add_log],
                      'add_help' : [None, self.add_help],
                  'title_window' : [None, self.on_title_window],
@@ -1813,8 +1813,7 @@ class ShellFrame(MiniFrame):
         try:
             shell = next(self.get_all_shells(target))  # Return it if it already exists.
         except StopIteration:
-            shell = Nautilus(self, target, name="clone",
-                             style=wx.CLIP_CHILDREN|wx.BORDER_NONE)  # Otherwise, clone it.
+            shell = Nautilus(self, target, name="clone")  # Otherwise, clone it.
             self.console.AddPage(shell, typename(shell.target))
             self.handler('shell_new', shell)
         self.popup_window(shell)

@@ -1892,11 +1892,12 @@ class Buffer(EditorInterface, EditWindow):
         caption = self.caption_prefix + self.name
         try:
             if self.parent.set_caption(self, caption):
-                self.parent.handler('buffer_caption_updated', self)
+                self.handler('buffer_caption_updated', self)
         except AttributeError:
             pass
 
     def __init__(self, parent, filename, **kwargs):
+        kwargs.setdefault('style', wx.BORDER_DEFAULT)
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
@@ -1934,6 +1935,7 @@ class Buffer(EditorInterface, EditWindow):
               'buffer_modified' : [None, dispatch],
              'buffer_activated' : [None, dispatch],
            'buffer_inactivated' : [None, dispatch],
+       'buffer_caption_updated' : [None, dispatch],
        'buffer_region_executed' : [None, dispatch],
                      'mark_set' : [None, dispatch],
                    'mark_unset' : [None, dispatch],
@@ -2318,6 +2320,11 @@ class EditorBook(AuiNotebook):
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
         })
+        
+        try:
+            self.parent.handler('editor_new', self)  # Invoke [new] event on self.
+        except AttributeError:
+            pass
 
     def OnDestroy(self, evt):
         obj = evt.EventObject
@@ -2376,8 +2383,7 @@ class EditorBook(AuiNotebook):
     def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         try:
-            title = "{} file: {}".format(self.Name, buf.filename)
-            self.parent.handler('title_window', title)
+            self.parent.handler('title_window', f"{self.Name} file: {buf.filename}")
         except AttributeError:
             pass
 
@@ -2437,7 +2443,7 @@ class EditorBook(AuiNotebook):
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         with wx.FrozenWindow(self):
-            buf = Buffer(self, filename, style=wx.BORDER_DEFAULT)
+            buf = Buffer(self, filename)
             self.set_attributes(buf, **self.defaultBufferStyle)
             if index is None:
                 index = self.PageCount
@@ -2864,6 +2870,7 @@ class Nautilus(EditorInterface, Shell):
                  startupScript=None,
                  execStartupScript=True,
                  **kwargs):
+        kwargs.setdefault('style', wx.BORDER_NONE)
         Shell.__init__(self, parent,
                  locals=target.__dict__,
                  interpShell=self,  # **kwds of InterpClass
