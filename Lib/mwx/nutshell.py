@@ -2842,7 +2842,7 @@ class Nautilus(EditorInterface, Shell):
 
     @locals.deleter
     def locals(self):  # internal use only
-        self.interp.locals = self.__target.__dict__
+        self.interp.locals = self.target.__dict__
 
     @property
     def globals(self):
@@ -2854,7 +2854,7 @@ class Nautilus(EditorInterface, Shell):
 
     @globals.deleter
     def globals(self):  # internal use only
-        self.interp.globals = self.__target.__dict__
+        self.interp.globals = self.target.__dict__
         self.interp.globals.update(self.__globals)
 
     __globals = {}

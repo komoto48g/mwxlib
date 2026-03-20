@@ -293,14 +293,14 @@ class Debugger(Pdb):
         
         editor = next(self.parent.get_all_editors(code),
                  next(self.parent.get_all_editors(filename), None))
-        if not editor:
+        if editor:
+            buf = editor.find_buffer(code) or editor.find_buffer(filename)
+            editor.swap_buffer(buf)
+        else:
             editor = self.parent.Log
             ## Note: Need a post-call for a thread debugging.
             wx.CallAfter(editor.load_cache, filename)
         self.editor = editor
-        
-        if not self.interactive_shell.HasFocus():
-            self.editor.buffer.SetFocus()
         
         for ln in self.get_file_breaks(filename):
             self._markbp(ln, 1)  # (>>) bp:white-arrow
