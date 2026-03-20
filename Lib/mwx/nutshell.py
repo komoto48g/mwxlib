@@ -2658,7 +2658,7 @@ class EditorBook(AuiNotebook):
                 return None
         self.delete_buffer(buf)
         if not self.buffer:  # no buffers
-            wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
+            self.new_buffer()
 
     def kill_all_buffers(self):
         """Delete all buffers; confirm the close with a dialog."""
@@ -2673,7 +2673,7 @@ class EditorBook(AuiNotebook):
                     self.post_message("The close has been canceled.")
                     return None
         self.delete_all_buffers()
-        wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
+        self.new_buffer()
 
 
 class Interpreter(interpreter.Interpreter):
