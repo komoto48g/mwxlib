@@ -2026,6 +2026,14 @@ class Buffer(EditorInterface, EditWindow):
             return code is self.code\
                 or code in self.code.co_consts
 
+    def update_attr(self, attr):
+        """Update buffer-specifc attributes."""
+        for k, v in attr.items():
+            if k == 'Style':
+                self.set_stylus(v)
+            else:
+                setattr(self, k, v)
+
     def trace_position(self):
         _text, lp = self.CurLine
         self.message("{:>6d}:{} ({})".format(self.cline, lp, self.cpos), pane=-1)
@@ -2351,13 +2359,13 @@ class EditorBook(AuiNotebook):
             self.new_buffer()
         evt.Skip()
 
-    def set_attributes(self, buf=None, **kwargs):
+    def set_attributes(self, **kwargs):
         """Set multiple properties at once to the buffer(s).
         
         Args:
-            buf: a buffer to apply (if None, applies to all buffers).
-            **kwargs: default style.
-            
+            **kwargs: Arbitrary keyword arguments corresponding to style options.
+            Possible keys:
+                Style           = Stylus.py_text_mode
                 ReadOnly        = False
                 UseTabs         = False
                 ViewEOL         = False
@@ -2368,17 +2376,9 @@ class EditorBook(AuiNotebook):
                 WrapIndentMode  = stc.STC_WRAPINDENT_SAME
                 IndentationGuides = stc.STC_IV_LOOKFORWARD
         """
-        def _setattribute(buf, attr):
-            for k, v in attr.items():
-                if k == 'Style':
-                    buf.set_stylus(v)
-                setattr(buf, k, v)
-        if buf:
-            _setattribute(buf, kwargs)
-        else:
-            self.defaultBufferStyle.update(kwargs)
-            for buf in self.get_all_buffers():
-                _setattribute(buf, self.defaultBufferStyle)
+        self.defaultBufferStyle.update(kwargs)
+        for buf in self.get_all_buffers():
+            buf.update_attr(self.defaultBufferStyle)
 
     def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
@@ -2444,7 +2444,7 @@ class EditorBook(AuiNotebook):
         """Create a new buffer (internal use only)."""
         with wx.FrozenWindow(self):
             buf = Buffer(self, filename)
-            self.set_attributes(buf, **self.defaultBufferStyle)
+            buf.update_attr(self.defaultBufferStyle)
             if index is None:
                 index = self.PageCount
             self.InsertPage(index, buf, buf.name)  # => [buffer_activated]
