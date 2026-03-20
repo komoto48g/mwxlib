@@ -876,24 +876,25 @@ class FSM(dict):
                      f"  The transaction must be a list, not a tuple")
         return False
 
-    def define(self, event, action=None, /, *args, **kwargs):
+    def define(self, event, action=None, state=None, /, *args, **kwargs):
         """Define event action.
         
         Note:
             The funcall kwargs `doc` and `alias` are reserved as kw-only-args.
         """
-        state = self.default_state
+        # state = self.default_state
         if action is None:
             self[state].pop(event, None)  # cf. undefine
-            return lambda f: self.define(event, f, *args, **kwargs)
+            return lambda f: self.define(event, f, state, *args, **kwargs)
         
         f = funcall(action, *args, **kwargs)
         self.update({state: {event: [state, f]}})
         return action
 
-    def undefine(self, event):
+    def undefine(self, event, state=None):
         """Delete event context."""
-        self.define(event, None)
+        # state = self.default_state
+        self.define(event, None, state)
 
 
 class TreeList:
