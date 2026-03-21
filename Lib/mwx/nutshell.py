@@ -2464,7 +2464,7 @@ class EditorBook(AuiNotebook):
         return buf
 
     def delete_buffer(self, buf=None):
-        """Pop the current buffer from the buffer list."""
+        """Pop the current buffer from the buffer list (internal use only)."""
         if not buf:
             buf = self.buffer
         j = self.GetPageIndex(buf)
@@ -2472,7 +2472,7 @@ class EditorBook(AuiNotebook):
             self.DeletePage(j)  # the focus moves
 
     def delete_all_buffers(self):
-        """Initialize list of buffers."""
+        """Initialize list of buffers (internal use only)."""
         self.DeleteAllPages()
 
     def next_buffer(self):
@@ -2554,16 +2554,15 @@ class EditorBook(AuiNotebook):
                 if res.status_code == requests.codes.OK:
                     buf._load_textfile(res.text)
                     buf.update_filestamp(filename)
-                    self.swap_buffer(buf, lineno)
-                    return True
-                res.raise_for_status()  # raise HTTP error; don't catch here.
-            if buf._load_file(filename):
-                self.swap_buffer(buf, lineno)
-                return True
-            return False
-        except (OSError, UnicodeDecodeError, ModuleNotFoundError) as e:
+                else:
+                    res.raise_for_status()  # raise HTTP error; don't catch here.
+            else:
+                buf._load_file(filename)
+            self.swap_buffer(buf, lineno)
+            return True
+        except (OSError, UnicodeError, ImportError) as e:
             self.post_message("Failed to load;", e)
-            self.kill_buffer(buf)
+            self.delete_buffer(buf)
             return False
 
     def find_file(self, filename=None):
@@ -2576,12 +2575,15 @@ class EditorBook(AuiNotebook):
                 if dlg.ShowModal() == wx.ID_OK:
                     return all([self.find_file(fn) for fn in dlg.Paths])
             return None
-        retval = self.load_file(filename)
-        if retval == False:  # noqa # to check if not None
-            buf = self.create_buffer(filename)
-            self.swap_buffer(buf)
-            self.post_message("New file.")
-        return retval
+        ret = self.load_file(filename, verbose=0)
+        if ret is False:
+            if os.path.exists(filename):
+                wx.MessageBox("The file is not a unicode text file.", style=wx.ICON_ERROR)
+            else:
+                buf = self.create_buffer(filename)
+                self.swap_buffer(buf)
+                self.post_message("New file.")
+        return ret
 
     def save_file(self, filename, buf=None, verbose=True):
         """Save the specified buffer to the given filename.
@@ -2598,12 +2600,11 @@ class EditorBook(AuiNotebook):
                 self.post_message("The save has been canceled.")
                 return None
         try:
-            if buf._save_file(filename):
-                if buf is self.default_buffer:
-                    self.default_buffer = None
-                return True
-            return False
-        except (OSError, UnicodeDecodeError) as e:
+            buf._save_file(filename)
+            if buf is self.default_buffer:
+                self.default_buffer = None
+            return True
+        except (OSError, UnicodeError) as e:
             self.post_message("Failed to save;", e)
             return False
 
