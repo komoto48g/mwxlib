@@ -1892,11 +1892,12 @@ class Buffer(EditorInterface, EditWindow):
         caption = self.caption_prefix + self.name
         try:
             if self.parent.set_caption(self, caption):
-                self.parent.handler('buffer_caption_updated', self)
+                self.handler('buffer_caption_updated', self)
         except AttributeError:
             pass
 
     def __init__(self, parent, filename, **kwargs):
+        kwargs.setdefault('style', wx.BORDER_DEFAULT)
         EditWindow.__init__(self, parent, **kwargs)
         EditorInterface.__init__(self)
         
@@ -1934,6 +1935,7 @@ class Buffer(EditorInterface, EditWindow):
               'buffer_modified' : [None, dispatch],
              'buffer_activated' : [None, dispatch],
            'buffer_inactivated' : [None, dispatch],
+       'buffer_caption_updated' : [None, dispatch],
        'buffer_region_executed' : [None, dispatch],
                      'mark_set' : [None, dispatch],
                    'mark_unset' : [None, dispatch],
@@ -2023,6 +2025,14 @@ class Buffer(EditorInterface, EditWindow):
         if inspect.iscode(code) and self.code:
             return code is self.code\
                 or code in self.code.co_consts
+
+    def update_attr(self, attr):
+        """Update buffer-specifc attributes."""
+        for k, v in attr.items():
+            if k == 'Style':
+                self.set_stylus(v)
+            else:
+                setattr(self, k, v)
 
     def trace_position(self):
         _text, lp = self.CurLine
@@ -2318,6 +2328,11 @@ class EditorBook(AuiNotebook):
                'M-down pressed' : (0, _F(self.next_buffer)),
             },
         })
+        
+        try:
+            self.parent.handler('editor_new', self)  # Invoke [new] event on self.
+        except AttributeError:
+            pass
 
     def OnDestroy(self, evt):
         obj = evt.EventObject
@@ -2344,13 +2359,13 @@ class EditorBook(AuiNotebook):
             self.new_buffer()
         evt.Skip()
 
-    def set_attributes(self, buf=None, **kwargs):
+    def set_attributes(self, **kwargs):
         """Set multiple properties at once to the buffer(s).
         
         Args:
-            buf: a buffer to apply (if None, applies to all buffers).
-            **kwargs: default style.
-            
+            **kwargs: Arbitrary keyword arguments corresponding to style options.
+            Possible keys:
+                Style           = Stylus.py_text_mode
                 ReadOnly        = False
                 UseTabs         = False
                 ViewEOL         = False
@@ -2361,23 +2376,14 @@ class EditorBook(AuiNotebook):
                 WrapIndentMode  = stc.STC_WRAPINDENT_SAME
                 IndentationGuides = stc.STC_IV_LOOKFORWARD
         """
-        def _setattribute(buf, attr):
-            for k, v in attr.items():
-                if k == 'Style':
-                    buf.set_stylus(v)
-                setattr(buf, k, v)
-        if buf:
-            _setattribute(buf, kwargs)
-        else:
-            self.defaultBufferStyle.update(kwargs)
-            for buf in self.get_all_buffers():
-                _setattribute(buf, self.defaultBufferStyle)
+        self.defaultBufferStyle.update(kwargs)
+        for buf in self.get_all_buffers():
+            buf.update_attr(self.defaultBufferStyle)
 
     def on_buffer_activated(self, buf):
         """Called when the buffer is activated."""
         try:
-            title = "{} file: {}".format(self.Name, buf.filename)
-            self.parent.handler('title_window', title)
+            self.parent.handler('title_window', f"{self.Name} file: {buf.filename}")
         except AttributeError:
             pass
 
@@ -2437,8 +2443,8 @@ class EditorBook(AuiNotebook):
     def create_buffer(self, filename, index=None):
         """Create a new buffer (internal use only)."""
         with wx.FrozenWindow(self):
-            buf = Buffer(self, filename, style=wx.BORDER_DEFAULT)
-            self.set_attributes(buf, **self.defaultBufferStyle)
+            buf = Buffer(self, filename)
+            buf.update_attr(self.defaultBufferStyle)
             if index is None:
                 index = self.PageCount
             self.InsertPage(index, buf, buf.name)  # => [buffer_activated]
@@ -2458,7 +2464,7 @@ class EditorBook(AuiNotebook):
         return buf
 
     def delete_buffer(self, buf=None):
-        """Pop the current buffer from the buffer list."""
+        """Pop the current buffer from the buffer list (internal use only)."""
         if not buf:
             buf = self.buffer
         j = self.GetPageIndex(buf)
@@ -2466,7 +2472,7 @@ class EditorBook(AuiNotebook):
             self.DeletePage(j)  # the focus moves
 
     def delete_all_buffers(self):
-        """Initialize list of buffers."""
+        """Initialize list of buffers (internal use only)."""
         self.DeleteAllPages()
 
     def next_buffer(self):
@@ -2548,16 +2554,15 @@ class EditorBook(AuiNotebook):
                 if res.status_code == requests.codes.OK:
                     buf._load_textfile(res.text)
                     buf.update_filestamp(filename)
-                    self.swap_buffer(buf, lineno)
-                    return True
-                res.raise_for_status()  # raise HTTP error; don't catch here.
-            if buf._load_file(filename):
-                self.swap_buffer(buf, lineno)
-                return True
-            return False
-        except (OSError, UnicodeDecodeError, ModuleNotFoundError) as e:
+                else:
+                    res.raise_for_status()  # raise HTTP error; don't catch here.
+            else:
+                buf._load_file(filename)
+            self.swap_buffer(buf, lineno)
+            return True
+        except (OSError, UnicodeError, ImportError) as e:
             self.post_message("Failed to load;", e)
-            self.kill_buffer(buf)
+            self.delete_buffer(buf)
             return False
 
     def find_file(self, filename=None):
@@ -2570,12 +2575,15 @@ class EditorBook(AuiNotebook):
                 if dlg.ShowModal() == wx.ID_OK:
                     return all([self.find_file(fn) for fn in dlg.Paths])
             return None
-        retval = self.load_file(filename)
-        if retval == False:  # noqa # to check if not None
-            buf = self.create_buffer(filename)
-            self.swap_buffer(buf)
-            self.post_message("New file.")
-        return retval
+        ret = self.load_file(filename, verbose=0)
+        if ret is False:
+            if os.path.exists(filename):
+                wx.MessageBox("The file is not a unicode text file.", style=wx.ICON_ERROR)
+            else:
+                buf = self.create_buffer(filename)
+                self.swap_buffer(buf)
+                self.post_message("New file.")
+        return ret
 
     def save_file(self, filename, buf=None, verbose=True):
         """Save the specified buffer to the given filename.
@@ -2592,12 +2600,11 @@ class EditorBook(AuiNotebook):
                 self.post_message("The save has been canceled.")
                 return None
         try:
-            if buf._save_file(filename):
-                if buf is self.default_buffer:
-                    self.default_buffer = None
-                return True
-            return False
-        except (OSError, UnicodeDecodeError) as e:
+            buf._save_file(filename)
+            if buf is self.default_buffer:
+                self.default_buffer = None
+            return True
+        except (OSError, UnicodeError) as e:
             self.post_message("Failed to save;", e)
             return False
 
@@ -2658,7 +2665,7 @@ class EditorBook(AuiNotebook):
                 return None
         self.delete_buffer(buf)
         if not self.buffer:  # no buffers
-            wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
+            self.new_buffer()
 
     def kill_all_buffers(self):
         """Delete all buffers; confirm the close with a dialog."""
@@ -2673,7 +2680,7 @@ class EditorBook(AuiNotebook):
                     self.post_message("The close has been canceled.")
                     return None
         self.delete_all_buffers()
-        wx.CallAfter(self.new_buffer)  # Note: post-call to avoid a crash.
+        self.new_buffer()
 
 
 class Interpreter(interpreter.Interpreter):
@@ -2842,7 +2849,7 @@ class Nautilus(EditorInterface, Shell):
 
     @locals.deleter
     def locals(self):  # internal use only
-        self.interp.locals = self.__target.__dict__
+        self.interp.locals = self.target.__dict__
 
     @property
     def globals(self):
@@ -2854,7 +2861,7 @@ class Nautilus(EditorInterface, Shell):
 
     @globals.deleter
     def globals(self):  # internal use only
-        self.interp.globals = self.__target.__dict__
+        self.interp.globals = self.target.__dict__
         self.interp.globals.update(self.__globals)
 
     __globals = {}
@@ -2864,6 +2871,7 @@ class Nautilus(EditorInterface, Shell):
                  startupScript=None,
                  execStartupScript=True,
                  **kwargs):
+        kwargs.setdefault('style', wx.BORDER_NONE)
         Shell.__init__(self, parent,
                  locals=target.__dict__,
                  interpShell=self,  # **kwds of InterpClass

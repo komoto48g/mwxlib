@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.10"
+__version__ = "1.9.14"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -852,6 +852,10 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_tab_menu)
 
+    def __iter__(self):
+        for i in range(self.PageCount):
+            yield self.GetPage(i)
+
     @property
     def _all_tabs(self):
         """Return all AuiTabCtrl objects (internal use only)."""
@@ -864,10 +868,7 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
 
     def get_pages(self, type=None):
         """Yields pages of the specified window type."""
-        for i in range(self.PageCount):
-            win = self.GetPage(i)
-            if type is None or isinstance(win, type):
-                yield win
+        return (x for x in self if type is None or isinstance(x, type))
 
     def swap_page(self, win):
         """Replace the page with the specified page w/o focusing."""
@@ -1094,7 +1095,6 @@ class ShellFrame(MiniFrame):
         
         self.__shell = Nautilus(self,
                                 target or __import__("__main__"),
-                                style=wx.CLIP_CHILDREN|wx.BORDER_NONE,
                                 **kwargs)
         
         self.Scratch = EditorBook(self, name="Scratch")
@@ -1236,7 +1236,8 @@ class ShellFrame(MiniFrame):
         self.handler.update({  # DNA<ShellFrame>
             None : {
                     'shell_new' : [None, ],
-                     'book_new' : [None, ],
+                   'buffer_new' : [None, ],
+                   'editor_new' : [None, ],
                       'add_log' : [None, self.add_log],
                      'add_help' : [None, self.add_help],
                  'title_window' : [None, self.on_title_window],
@@ -1428,8 +1429,8 @@ class ShellFrame(MiniFrame):
                         buf.update_caption()
                         if verbose:
                             with wx.MessageDialog(self,  # Confirm load.
-                                    "The file has been modified externally.\n\n"
-                                    "The contents of the buffer will be overwritten.\n"
+                                    "The file has been modified or deleted externally.\n\n"
+                                    "The contents of the buffer will be overwritten or lost.\n"
                                     "Continue loading {}/{}?".format(editor.Name, buf.name),
                                     "Load {!r}".format(buf.name),
                                     style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
@@ -1808,11 +1809,11 @@ class ShellFrame(MiniFrame):
         if not hasattr(target, '__dict__'):
             raise TypeError("primitive objects cannot be targeted")
         
+        Nautilus = self.rootshell.__class__
         try:
-            shell = next(self.get_all_shells(target))
+            shell = next(self.get_all_shells(target))  # Return it if it already exists.
         except StopIteration:
-            shell = self.rootshell.__class__(self, target, name="clone",
-                                             style=wx.CLIP_CHILDREN|wx.BORDER_NONE)
+            shell = Nautilus(self, target, name="clone")  # Otherwise, clone it.
             self.console.AddPage(shell, typename(shell.target))
             self.handler('shell_new', shell)
         self.popup_window(shell)
@@ -1842,34 +1843,13 @@ class ShellFrame(MiniFrame):
         yield from self.console.get_pages(type)
         yield from self.ghost.get_pages(type)
 
-    def get_all_shells(self, target=None):
-        """Yields all shells with specified target.
-        
-        If the shell is found, it switches to the corresponding page.
-        If `target` is not provided, it yields all shells in the notebooks.
-        """
-        if target is None:
-            yield from self.console.get_pages(type(self.rootshell))
-        else:
-            for shell in self.console.get_pages(type(self.rootshell)):
-                if shell.target is target:
-                    self.console.swap_page(shell)
-                    yield shell
+    def get_all_shells(self, obj=None):
+        """Yields all shells with specified obj:target."""
+        return (x for x in self.console.get_pages(type(self.rootshell)) if obj in (None, x.target))
 
-    def get_all_editors(self, fn=None):
-        """Yields all editors with specified fn:filename or code.
-        
-        If the editor is found, it switches to the corresponding page.
-        If `fn` is not provided, it yields all editors in the notebooks.
-        """
-        if fn is None:
-            yield from self.ghost.get_pages(type(self.Log))
-        else:
-            for editor in self.ghost.get_pages(type(self.Log)):
-                buf = editor.find_buffer(fn)
-                if buf:
-                    editor.swap_page(buf)
-                    yield editor
+    def get_all_editors(self, obj=None):
+        """Yields all editors with specified obj:filename or code."""
+        return (x for x in self.ghost.get_pages(type(self.Log)) if x.find_buffer(obj))
 
     @property
     def current_shell(self):
