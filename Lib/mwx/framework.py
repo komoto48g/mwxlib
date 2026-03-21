@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.13"
+__version__ = "1.9.14"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1429,8 +1429,8 @@ class ShellFrame(MiniFrame):
                         buf.update_caption()
                         if verbose:
                             with wx.MessageDialog(self,  # Confirm load.
-                                    "The file has been modified externally.\n\n"
-                                    "The contents of the buffer will be overwritten.\n"
+                                    "The file has been modified or deleted externally.\n\n"
+                                    "The contents of the buffer will be overwritten or lost.\n"
                                     "Continue loading {}/{}?".format(editor.Name, buf.name),
                                     "Load {!r}".format(buf.name),
                                     style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
