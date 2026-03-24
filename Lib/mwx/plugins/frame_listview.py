@@ -34,9 +34,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def all_items(self):
         rows = range(self.ItemCount)
         cols = range(self.ColumnCount)
-        # return [[self.GetItemText(j, k) for k in cols] for j in rows]
-        for j in rows:
-            yield [self.GetItemText(j, k) for k in cols]
+        return [[self.GetItemText(j, k) for k in cols] for j in rows]
 
     def __init__(self, parent, target, **kwargs):
         wx.ListCtrl.__init__(self, parent, size=(400,130),
@@ -145,19 +143,17 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.__dir = False
         self.__dir = not self.__dir  # toggle 0:ascend/1:descend
         
-        frames = self.Target.frames  # an instance ref.
-        if frames:
+        frame = self.Target.frame
+        if frame:
             def _eval(x):
                 try:
                     return eval(x[col].replace('*', ''))  # localunit* とか
                 except Exception:
                     return x[col]
-            frame = self.Target.frame
             items = sorted(self.all_items, reverse=self.__dir, key=_eval)
-            frames[:] = [frames[int(c[0])] for c in items]  # sort by new Id of items
+            self.Target.sort_frames(int(c[0]) for c in items)
             
             lc = list(self.checked_items)
-            
             for j, c in enumerate(items):
                 self.Select(j, False)
                 self.CheckItem(j, int(c[0]) in lc)

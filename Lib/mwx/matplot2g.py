@@ -839,7 +839,7 @@ class GraphPlot(MatplotPanel):
         elif isinstance(j, np.ndarray):
             return any(j is art.buffer for art in self.__Arts)
         else:
-            return j in self.__Arts
+            return (j in self.__Arts)
 
     def index(self, j):
         if isinstance(j, str):
@@ -858,13 +858,15 @@ class GraphPlot(MatplotPanel):
             return self.__Arts[j]  # j:int -> frame
 
     def get_all_frames(self, j=None):
-        """List of arts <matplotlib.image.AxesImage>."""
-        if j is None:
-            yield from self.__Arts
-        elif isinstance(j, str):
-            yield from (art for art in self.__Arts if j in art.name)
+        if isinstance(j, str):
+            return iter(art for art in self.__Arts if j == art.name)
         elif isinstance(j, np.ndarray):
-            yield from (art for art in self.__Arts if j is art.buffer)
+            return iter(art for art in self.__Arts if j is art.buffer)
+        else:
+            return iter(self.__Arts)  # j:any -> frames
+
+    def sort_frames(self, seq):
+        self.__Arts[:] = [self.__Arts[i] for i in seq]  # Sort arts by new sequence for IDs.
 
     ## --------------------------------
     ## Property of frame / drawer.
@@ -878,8 +880,8 @@ class GraphPlot(MatplotPanel):
 
     @property
     def frames(self):
-        """List of arts <matplotlib.image.AxesImage>."""
-        return self.__Arts
+        """List of frames <matplotlib.image.AxesImage>."""
+        return list(self.__Arts)
 
     all_frames = frames  # for backward compatibility
 
