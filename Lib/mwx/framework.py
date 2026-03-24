@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.15"
+__version__ = "1.9.16"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -209,11 +209,10 @@ class KeyCtrlInterfaceMixin:
     def post_message(self, *args, **kwargs):
         wx.CallAfter(self.message, *args, **kwargs)
 
-    msgbox = staticmethod(wx.MessageBox)
+    msgbox = wx.MessageBox
 
-    @staticmethod
-    def post_msgbox(*args, **kwargs):
-        wx.CallAfter(wx.MessageBox, *args, **kwargs)
+    def post_msgbox(self, *args, **kwargs):
+        wx.CallAfter(self.msgbox, *args, **kwargs)
 
     @staticmethod
     def getKeyState(key):

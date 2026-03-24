@@ -1197,14 +1197,19 @@ class Frame(mwx.Frame):
             return False
         
         ## Load or reload the module.
-        if inspect.isclass(root):
-            module = sys.modules[name]  # The root module is already imported.
-        elif name in sys.modules:
-            module = reload(sys.modules[name])
-        else:
-            module = import_module(name)
+        try:
+            if inspect.isclass(root):
+                module = sys.modules[name]  # The root module is already imported.
+            elif name in sys.modules:
+                module = reload(sys.modules[name])
+            else:
+                module = import_module(name)
+        except Exception as e:
+            traceback.print_exc()
+            self.post_msgbox(str(e), f"Failed to import {name!r}.", style=wx.ICON_ERROR)
+            return False
         
-        ## Ensure that the module plugin name is unique.
+        ## Check if the module has a Plugin attribute.
         try:
             if inspect.isclass(root):
                 module.__dummy_plug__ = root.__name__  # Store the dummy plug name.
@@ -1213,8 +1218,14 @@ class Frame(mwx.Frame):
                 root = getattr(module, module.__dummy_plug__)  # Restore the dummy plug name.
                 Plugin = _register__dummy_plug__(root)
             else:
-                Plugin = module.Plugin  # <AttributeError>
-            
+                Plugin = module.Plugin
+        except AttributeError as e:
+            traceback.print_exc()
+            self.post_msgbox(str(e), f"Failed to load {name!r}.", style=wx.ICON_ERROR)
+            return False
+        
+        ## Ensure that the module plugin name is unique.
+        try:
             pane = self._mgr.GetPane(Plugin.category)  # Check if <pane:title> is already registered.
             if pane.IsOk():
                 if not isinstance(pane.window, aui.AuiNotebook):
@@ -1224,13 +1235,9 @@ class Frame(mwx.Frame):
             if pane.IsOk():
                 if name not in self.plugins:
                     raise NameError("plugin name must not be the same as any other pane")
-            
-        except (AttributeError, NameError) as e:
+        except NameError as e:
             traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
-                         f"{e}\n\n" + traceback.format_exc(),
-                         f"Error in loading {module.__name__!r}",
-                         style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), f"Failed to plug in {name!r}.", style=wx.ICON_ERROR)
             return False
         
         ## Unload the plugin if loaded.
@@ -1248,17 +1255,11 @@ class Frame(mwx.Frame):
             plug = Plugin(self, session, **kwargs)
         except Exception as e:
             traceback.print_exc()
-            wx.CallAfter(wx.MessageBox,  # Show the message after load_session has finished.
-                         f"{e}\n\n" + traceback.format_exc(),
-                         f"Error in loading {name!r}",
-                         style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), f"Failed to create a Plugin for {name!r}.", style=wx.ICON_ERROR)
             return False
         
         ## Create pane or notebook pane.
-        caption = plug.caption
-        if not isinstance(caption, str):
-            caption = name
-        
+        caption = plug.caption if isinstance(plug.caption, str) else name
         title = plug.category
         if title:
             pane = self._mgr.GetPane(title)
@@ -1547,8 +1548,8 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            print("- Failed to read attributes;", e)
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            # print("- Failed to read attributes;", e)
+            wx.MessageBox(str(e), f"Failed to read attributes.", style=wx.ICON_ERROR)
         return res, mis
 
     def write_attributes(self, filename, frames, merge_data=True):
@@ -1576,8 +1577,8 @@ class Frame(mwx.Frame):
                 # print(pformat(tuple(new.items())), file=o)  # Write as tuple (deprecated).
                 json.dump(new, o, indent=2, default=dt_converter)
         except Exception as e:
-            print("- Failed to write attributes;", e)
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            # print("- Failed to write attributes;", e)
+            wx.MessageBox(str(e), "Failed to write attributes.", style=wx.ICON_ERROR)
         return new, mis
 
     def load_frame(self, paths=None, view=None):
