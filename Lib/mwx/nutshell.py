@@ -2279,9 +2279,7 @@ class EditorBook(AuiNotebook):
             return noop
 
     def __init__(self, parent, name="book", **kwargs):
-        kwargs.setdefault('style',
-            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
-        )
+        kwargs.setdefault('style', aui.AUI_NB_DEFAULT_STYLE)
         AuiNotebook.__init__(self, parent, **kwargs)
         
         ## The treeview of books will be displayed on the bookshelf.
@@ -2400,19 +2398,17 @@ class EditorBook(AuiNotebook):
     ## Buffer list controls.
     ## --------------------------------
 
-    def get_all_buffers(self, fn=None):
-        """Yields all buffers with specified fn:filename or code."""
-        if fn is None:
-            yield from self.get_pages(Buffer)
-        elif isinstance(fn, str):
-            g = os.path.realpath(fn)
-            for buf in self.get_pages(Buffer):
-                if fn == buf.filename or g == os.path.realpath(buf.filename):
-                    yield buf
+    def get_all_buffers(self, obj=None):
+        """Yields all buffers with specified obj:filename or code."""
+        buffers = self.get_pages(Buffer)
+        if obj is None:
+           return buffers
+        elif isinstance(obj, str):
+            rel = os.path.realpath(obj)
+            return (buf for buf in buffers if obj == buf.filename
+                                           or rel == os.path.realpath(buf.filename))
         else:
-            for buf in self.get_pages(Buffer):
-                if fn is buf or fn in buf:  # check code
-                    yield buf
+            return (buf for buf in buffers if obj is buf or obj in buf)
 
     @property
     def menu(self):
@@ -2430,9 +2426,9 @@ class EditorBook(AuiNotebook):
         """Return the currently selected page or None."""
         return self.CurrentPage
 
-    def find_buffer(self, fn):
-        """Find a buffer with specified fn:filename or code."""
-        return next(self.get_all_buffers(fn), None)
+    def find_buffer(self, obj):
+        """Find a buffer with specified obj:filename or code."""
+        return next(self.get_all_buffers(obj), None)
 
     def swap_buffer(self, buf, lineno=0):
         self.swap_page(buf)

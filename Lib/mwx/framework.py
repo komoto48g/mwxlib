@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.14"
+__version__ = "1.9.15"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -837,10 +837,10 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
     """AuiNotebook extension class.
     """
     def __init__(self, parent, *args, name=None, **kwargs):
-        kwargs.setdefault('style',
-            (aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_BOTTOM)
-            ^ aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
-            ^ aui.AUI_NB_MIDDLE_CLICK_CLOSE
+        kwargs.setdefault('style', aui.AUI_NB_BOTTOM
+                                 | aui.AUI_NB_TAB_MOVE
+                                 | aui.AUI_NB_TAB_SPLIT
+                                 | aui.AUI_NB_SCROLL_BUTTONS
         )
         aui.AuiNotebook.__init__(self, parent, *args, **kwargs)
         CtrlInterface.__init__(self)
