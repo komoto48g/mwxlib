@@ -2184,16 +2184,23 @@ class Buffer(EditorInterface, EditWindow):
     ## --------------------------------
 
     @property
+    def interactive_shell(self):
+        try:
+            return self.parent.parent.current_shell  # Buffer > Editor > ShellFrame
+        except AttributeError:
+            return None
+
+    @property
     def locals(self):  # internal use only
         try:
-            return self.parent.parent.current_shell.locals
+            return self.interactive_shell.locals
         except AttributeError:
             return None
 
     @property
     def globals(self):  # internal use only
         try:
-            return self.parent.parent.current_shell.globals
+            return self.interactive_shell.globals
         except AttributeError:
             return None
 
