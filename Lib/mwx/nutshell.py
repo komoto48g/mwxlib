@@ -182,6 +182,30 @@ class AutoCompInterfaceMixin:
                   & wx.GetKeyState(wx.WXK_SHIFT)
             AutoCompInterfaceMixin.modules = set(find_modules(force))
 
+    def info(self, obj):
+        """Short information."""
+        doc = inspect.getdoc(obj) or f"No information about {obj!r}"
+        try:
+            self.parent.handler('add_help', doc, typename(obj))
+        except AttributeError:
+            print(doc)
+
+    def help(self, obj):
+        """Full description."""
+        doc = pydoc.plain(pydoc.render_doc(obj)) or f"No description about {obj!r}"
+        try:
+            self.parent.handler('add_help', doc, typename(obj))
+        except AttributeError:
+            print(doc)
+
+    def eval(self, text):
+        return eval(text, self.globals, self.locals)
+
+    def exec(self, text):
+        exec(text, self.globals, self.locals)
+        dispatcher.send(signal='Interpreter.push',
+                        sender=self, command=None, more=False)
+
     def CallTipShow(self, pos, tip, N=11):
         """Show a call tip containing a definition near position pos.
         
@@ -1956,6 +1980,7 @@ class Buffer(EditorInterface, EditWindow):
               'Lbutton pressed' : (0, self.on_left_down),
                'escape pressed' : (-1, self.on_enter_escmap),
                   'C-h pressed' : (0, self.call_helpTip),
+                  'M-h pressed' : (0, self.call_helpDoc),
                     '. pressed' : (2, self.OnEnterDot),
                   'C-. pressed' : (2, self.call_word_autocomp),
                   'C-/ pressed' : (3, self.call_apropos_autocomp),
@@ -2204,14 +2229,6 @@ class Buffer(EditorInterface, EditWindow):
         except AttributeError:
             return None
 
-    def eval(self, text):
-        return eval(text, self.globals, self.locals)  # using current shell namespace
-
-    def exec(self, text):
-        exec(text, self.globals, self.locals)  # using current shell namespace
-        dispatcher.send(signal='Interpreter.push',
-                        sender=self, command=None, more=False)
-
     def eval_line(self):
         """Evaluate the selected word or line and show calltips."""
         if self.CallTipActive():
@@ -2227,7 +2244,7 @@ class Buffer(EditorInterface, EditWindow):
         
         for text in _gen_text():
             try:
-                obj = eval(text, self.globals, self.locals)
+                obj = self.eval(text)
             except Exception as e:
                 self.message(e)
             else:
@@ -2239,11 +2256,12 @@ class Buffer(EditorInterface, EditWindow):
 
     def exec_region(self):
         """Execute a region of code."""
+        if self.CallTipActive():
+            self.CallTipCancel()
+        
         try:
             code = compile(self.Text, self.filename, "exec")
-            exec(code, self.globals, self.locals)
-            dispatcher.send(signal='Interpreter.push',
-                            sender=self, command=None, more=False)
+            self.exec(code)
         except BdbQuit:
             pass
         except Exception as e:
@@ -2322,6 +2340,8 @@ class EditorBook(AuiNotebook):
              'buffer_activated' : [None, dispatch, self.on_buffer_activated],
            'buffer_inactivated' : [None, dispatch, self.on_buffer_inactivated],
        'buffer_caption_updated' : [None, dispatch],
+                      'add_log' : [None, dispatch],
+                     'add_help' : [None, dispatch],
                  'text_dropped' : [None, dispatch],
                  'file_dropped' : [None, self.on_file_dropped],
             },
@@ -3674,32 +3694,6 @@ class Nautilus(EditorInterface, Shell):
 
     ## input = classmethod(Shell.ask)
 
-    def info(self, obj):
-        """Short information."""
-        doc = inspect.getdoc(obj)\
-                or "No information about {}".format(obj)
-        try:
-            self.parent.handler('add_help', doc, typename(obj)) or print(doc)
-        except AttributeError:
-            pass
-
-    def help(self, obj):
-        """Full description."""
-        doc = pydoc.plain(pydoc.render_doc(obj))\
-                or "No description about {}".format(obj)
-        try:
-            self.parent.handler('add_help', doc, typename(obj)) or print(doc)
-        except AttributeError:
-            pass
-
-    def eval(self, text):
-        return eval(text, self.globals, self.locals)
-
-    def exec(self, text):
-        exec(text, self.globals, self.locals)
-        dispatcher.send(signal='Interpreter.push',
-                        sender=self, command=None, more=False)
-
     def exec_cmdline(self):
         """Execute command-line directly.
         
@@ -3766,8 +3760,8 @@ class Nautilus(EditorInterface, Shell):
                 yield self.expr_at_caret
         
         for text in _gen_text():
-            tokens = split_words(text)
             try:
+                tokens = split_words(text)
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 obj = self.eval(cmd)
@@ -3788,8 +3782,8 @@ class Nautilus(EditorInterface, Shell):
         filename = "<input>"
         text = self.getMultilineCommand()
         if text:
-            tokens = split_words(text)
             try:
+                tokens = split_words(text)
                 cmd = self.magic_interpret(tokens)
                 cmd = self.regulate_cmd(cmd)
                 code = compile(cmd, filename, "exec")
