@@ -310,7 +310,7 @@ class AutoCompInterfaceMixin:
             self.AutoCompSetSeparator(ord(sep))
             self.AutoCompShow(len(hint), sep.join(words))
 
-    def _get_words_hint(self):
+    def _gen_words_hint(self):
         cmdl = self.GetTextRange(self.bol, self.cpos)
         if cmdl.endswith(' '):  # 前の文字が空白の場合はスキップする
             text = ''
@@ -408,7 +408,7 @@ class AutoCompInterfaceMixin:
                 modules = self.modules
             ## Module X.Y.Z
             else:
-                text, sep, hint = self._get_words_hint()
+                text, sep, hint = self._gen_words_hint()
                 obj = self.eval(text)
                 modules = set(k for k, v in vars(obj).items() if inspect.ismodule(v))
             
@@ -436,7 +436,7 @@ class AutoCompInterfaceMixin:
             self.handler('quit', evt)
             return
         
-        text, sep, hint = self._get_words_hint()
+        text, sep, hint = self._gen_words_hint()
         if not text:
             self.handler('quit', evt)
             self.message("- No autocompletion candidates or hints found.")
@@ -468,7 +468,7 @@ class AutoCompInterfaceMixin:
             self.handler('quit', evt)
             return
         
-        text, sep, hint = self._get_words_hint()
+        text, sep, hint = self._gen_words_hint()
         if not text:
             self.handler('quit', evt)
             self.message("- No autocompletion candidates or hints found.")
@@ -997,6 +997,17 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
                 self.WordRightEnd()
                 q = self.cpos
             return self.GetTextRange(p, q)
+
+    def _gen_selection_or_expression(self):
+        """Yields the selected text, or if no selection exists, the current line
+        and expression at the caret (internal use only).
+        """
+        text = self.SelectedText
+        if text:
+            yield text
+        else:
+            yield self.line_at_caret
+            yield self.expr_at_caret
 
     ## --------------------------------
     ## Python syntax and indentation.
@@ -2234,15 +2245,7 @@ class Buffer(EditorInterface, EditWindow):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.line_at_caret
-                yield self.expr_at_caret
-        
-        for text in _gen_text():
+        for text in self._gen_selection_or_expression():
             try:
                 obj = self.eval(text)
             except Exception as e:
@@ -2429,7 +2432,7 @@ class EditorBook(AuiNotebook):
         """Yields all buffers with specified obj:filename or code."""
         buffers = self.get_pages(Buffer)
         if obj is None:
-           return buffers
+            return buffers
         elif isinstance(obj, str):
             rel = os.path.realpath(obj)
             return (buf for buf in buffers if obj == buf.filename
@@ -3751,15 +3754,7 @@ class Nautilus(EditorInterface, Shell):
         if self.CallTipActive():
             self.CallTipCancel()
         
-        def _gen_text():
-            text = self.SelectedText
-            if text:
-                yield text
-            else:
-                yield self.line_at_caret
-                yield self.expr_at_caret
-        
-        for text in _gen_text():
+        for text in self._gen_selection_or_expression():
             try:
                 tokens = split_words(text)
                 cmd = self.magic_interpret(tokens)
