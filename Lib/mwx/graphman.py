@@ -719,10 +719,11 @@ class Frame(mwx.Frame):
         
         self.__plugins = {}  # modules in the order of load/save
         
-        self.__graph = Graph(self, log=self.message, margin=None)
-        self.__output = Graph(self, log=self.message, margin=None)
+        self.__graph = Graph(self, log=self.message, margin=None, name="graph")
+        self.__output = Graph(self, log=self.message, margin=None, name="output")
         
-        self.__histgrm = Histogram(self, log=self.message, margin=None, size=(130,65))
+        self.__histgrm = Histogram(self, log=self.message, margin=None,
+                                         size=(130,65), name="histogram")
         self.__histgrm.attach(self.graph)
         self.__histgrm.attach(self.output)
         
@@ -731,11 +732,6 @@ class Frame(mwx.Frame):
             self.__output,
         ]
         self.select_view(self.graph)
-        
-        ## Set winow.Name for inspection.
-        self.graph.Name = "graph"
-        self.output.Name = "output"
-        self.histogram.Name = "histogram"
         
         self._mgr.AddPane(self.graph,
                           aui.AuiPaneInfo().CenterPane()
@@ -1252,7 +1248,7 @@ class Frame(mwx.Frame):
         
         ## Create the plugin object.
         try:
-            plug = Plugin(self, session, **kwargs)
+            plug = Plugin(self, session, name=name, **kwargs)
         except Exception as e:
             traceback.print_exc()
             self.post_msgbox(str(e), f"Failed to create a Plugin for {name!r}.", style=wx.ICON_ERROR)
@@ -1288,9 +1284,6 @@ class Frame(mwx.Frame):
         
         ## Set reference of a plug (one module, one plugin).
         module.__plug__ = plug
-        
-        ## Set winow.Name for inspection.
-        plug.Name = name
         
         self.update_pane(name, **props)
         self.show_pane(name, show)
