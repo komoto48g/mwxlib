@@ -2458,6 +2458,7 @@ class EditorBook(AuiNotebook):
 
     def find_buffer(self, obj):
         """Find a buffer with specified obj:filename or code."""
+        assert obj
         return next(self.get_all_buffers(obj), None)
 
     def swap_buffer(self, buf, lineno=0):

@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.17"
+__version__ = "1.9.18"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1848,7 +1848,7 @@ class ShellFrame(MiniFrame):
 
     def get_all_editors(self, obj=None):
         """Yields all editors with specified obj:filename or code."""
-        return (x for x in self.ghost.get_pages(type(self.Log)) if x.find_buffer(obj))
+        return (x for x in self.ghost.get_pages(type(self.Log)) if obj is None or x.find_buffer(obj))
 
     @property
     def current_shell(self):
