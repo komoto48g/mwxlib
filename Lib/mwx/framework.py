@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.18"
+__version__ = "1.9.19"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1102,6 +1102,12 @@ class ShellFrame(MiniFrame):
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
                                         style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+        def _attach():
+            for editor in self.get_all_editors():
+                self.Bookshelf.attach(editor)
+            self.Bookshelf.build_tree()
+            self.Bookshelf.ExpandAll()
+        wx.CallAfter(_attach)
         
         ## Set shell and editor styles.
         self.Scratch.set_attributes(Style=Stylus.py_shell_mode)

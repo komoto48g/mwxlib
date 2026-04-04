@@ -37,7 +37,7 @@ class MyDropTarget(wx.DropTarget):
     def OnData(self, x, y, result):
         item = self.tree.Selection
         name = self.tree.GetItemText(item)
-        editor = self.tree._find_editor(name)
+        editor = self.tree.find_editor(name)
         pos = self.tree.ScreenPosition + (x, y)
         self.GetData()
         if self.datado.Data:
@@ -79,6 +79,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.parent = parent
+        self.__targets = []
         
         # self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
@@ -104,20 +105,25 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
        'buffer_caption_updated' : [None, self.on_buffer_filename],
             },
         }
-        
-        def _attach():
-            if self and self.parent:
-                for editor in self.parent.get_all_editors():
-                    editor.handler.append(self.context)
-                self.build_tree()
-        wx.CallAfter(_attach)
-        wx.CallAfter(self.ExpandAll)
 
     def OnDestroy(self, evt):
         if self and self.parent:
-            for editor in self.parent.get_all_editors():
+            for editor in self.self.__targets:
                 editor.handler.remove(self.context)
         evt.Skip()
+
+    def attach(self, target):
+        if target not in self.__targets:
+            self.__targets.append(target)
+            target.handler.append(self.context)
+
+    def detach(self, target):
+        if target in self.__targets:
+            self.__targets.remove(target)
+            target.handler.remove(self.context)
+
+    def find_editor(self, name):
+        return next(editor for editor in self.__targets if editor.Name == name)
 
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface.
@@ -130,7 +136,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         if clear:
             self.DeleteAllItems()
             self.AddRoot(self.Name)
-        for editor in self.parent.get_all_editors():
+        for editor in self.__targets:
             self._set_item(self.RootItem, editor.Name, editor.get_all_buffers())
         self.Refresh()
 
@@ -196,9 +202,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 data.parent.kill_buffer(data)  # the focus moves
                 wx.CallAfter(self.SetFocus)
 
-    def _find_editor(self, name):
-        return next(editor for editor in self.parent.get_all_editors() if editor.Name == name)
-
     def OnSelChanged(self, evt):
         if self and self.HasFocus():
             data = self.GetItemData(evt.Item)
@@ -206,7 +209,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
                 data.SetFocus()
             else:
                 name = self.GetItemText(evt.Item)
-                editor = self._find_editor(name)
+                editor = self.find_editor(name)
                 if not editor.IsShown():
                     nb = self.Parent
                     nb.Selection = nb.FindPage(editor)
