@@ -45,9 +45,6 @@ class LinePlot(MatplotPanel):
             },
         })
         self.modeline.Show(0)
-
-    def clear(self):
-        MatplotPanel.clear(self)
         
         self.cursor.visible = 0
         
@@ -236,14 +233,6 @@ class Histogram(LinePlot):
         self.modeline.Show(0)
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-
-    def OnDestroy(self, evt):
-        for view in self.__views:
-            self.detach(view)
-        evt.Skip()
-
-    def clear(self):
-        LinePlot.clear(self)
         
         self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
         self.__frame = None  # Reference to the current frame.
@@ -254,6 +243,11 @@ class Histogram(LinePlot):
         # <matplotlib.patches.Polygon>
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
         self.axes.add_patch(self.__fil)
+
+    def OnDestroy(self, evt):
+        for view in self.__views:
+            self.detach(view)
+        evt.Skip()
 
     def attach(self, view):
         if view not in self.__views:
@@ -445,14 +439,6 @@ class LineProfile(LinePlot):
         ]
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-
-    def OnDestroy(self, evt):
-        for view in self.__views:
-            self.detach(view)
-        evt.Skip()
-
-    def clear(self):
-        LinePlot.clear(self)
         
         self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
         self.__frame = None  # Reference to the current frame.
@@ -473,6 +459,11 @@ class LineProfile(LinePlot):
         self.__logicp = True  # Line axis in logical unit.
         
         self.selected.set_linestyle('')
+
+    def OnDestroy(self, evt):
+        for view in self.__views:
+            self.detach(view)
+        evt.Skip()
 
     def attach(self, view):
         if view not in self.__views:
