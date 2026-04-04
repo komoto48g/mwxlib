@@ -255,17 +255,15 @@ class Histogram(LinePlot):
         self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
         self.axes.add_patch(self.__fil)
 
-    def attach(self, *views):
-        for view in views:
-            if view not in self.__views:
-                self.__views.append(view)
-                view.handler.append(self.context)
+    def attach(self, view):
+        if view not in self.__views:
+            self.__views.append(view)
+            view.handler.append(self.context)
 
-    def detach(self, *views):
-        for view in views:
-            if view in self.__views:
-                self.__views.remove(view)
-                view.handler.remove(self.context)
+    def detach(self, view):
+        if view in self.__views:
+            self.__views.remove(view)
+            view.handler.remove(self.context)
 
     @property
     def boundary(self):
@@ -476,17 +474,15 @@ class LineProfile(LinePlot):
         
         self.selected.set_linestyle('')
 
-    def attach(self, *views):
-        for view in views:
-            if view not in self.__views:
-                self.__views.append(view)
-                view.handler.append(self.context)
+    def attach(self, view):
+        if view not in self.__views:
+            self.__views.append(view)
+            view.handler.append(self.context)
 
-    def detach(self, *views):
-        for view in views:
-            if view in self.__views:
-                self.__views.remove(view)
-                view.handler.remove(self.context)
+    def detach(self, view):
+        if view in self.__views:
+            self.__views.remove(view)
+            view.handler.remove(self.context)
 
     def set_logic(self, p):
         prep = self.__logicp

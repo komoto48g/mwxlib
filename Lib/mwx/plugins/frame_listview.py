@@ -258,8 +258,8 @@ class Plugin(Layer):
                     style=(aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_RIGHT)
                         &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
-        self.attach(self.graph, "graph")
-        self.attach(self.output, "output")
+        self.attach(self.graph)
+        self.attach(self.output)
         
         self.statusline = StatusBar(self)
         self.layout((
@@ -274,10 +274,10 @@ class Plugin(Layer):
             evt.Skip()
         self.nb.Bind(wx.EVT_CHILD_FOCUS, on_focus_set)
 
-    def attach(self, target, caption):
+    def attach(self, target):
         if target not in [lc.Target for lc in self.all_pages]:
             lc = CheckList(self, target)
-            self.nb.AddPage(lc, caption)
+            self.nb.AddPage(lc, target.Name)
 
     def detach(self, target):
         for k, lc in enumerate(self.all_pages):
