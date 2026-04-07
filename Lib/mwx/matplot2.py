@@ -130,7 +130,6 @@ class MatplotPanel(wx.Panel):
         self.Layout()
         
         self.set_margin(margin or (0,0,1,1))  # if margin is None
-        self.clear()
         
         ## mpl event handler
         self.canvas.mpl_connect('pick_event', self.on_pick)
@@ -305,16 +304,14 @@ class MatplotPanel(wx.Panel):
         self.__isMenu = None
         self.__isPressed = None
         self.__isDragging = False  # True if dragging. (None if dblclicked)
-
-    def clear(self):
-        """Initialize the plot figure."""
+        
+        ## Initialize the plot figure.
         # <matplotlib.axes.Axes>
         self.figure.clear()
         self.figure.add_subplot(111)  # cf. add_axes(rect=(l,b,w,h))
         
         # <matplotlib.lines.Line2D>
-        (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75,
-                                          markeredgecolor='y', visible=0)
+        (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75, markeredgecolor='y')
         self.selected.set_data([], [])
         
         # <matplotlib.widgets.Cursor>

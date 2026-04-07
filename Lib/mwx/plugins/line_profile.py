@@ -19,9 +19,11 @@ class Plugin(Layer):
         
         @self.handler.bind('page_shown')
         def activate(evt):
-            self.plot.attach(*self.parent.graphic_windows)
+            for view in self.parent.graphic_windows:
+                self.plot.attach(view)
             self.plot.linplot(self.parent.selected_view.frame)
         
         @self.handler.bind('page_closed')
         def deactivate(evt):
-            self.plot.detach(*self.parent.graphic_windows)
+            for view in self.parent.graphic_windows:
+                self.plot.detach(view)

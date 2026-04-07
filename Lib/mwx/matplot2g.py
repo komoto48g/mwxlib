@@ -656,11 +656,7 @@ class GraphPlot(MatplotPanel):
                                                 for j, art in enumerate(self.__Arts))))
         
         self.modeline.Show()
-        self.writeln()
         self.Layout()
-
-    def clear(self):
-        MatplotPanel.clear(self)
         
         self.__Arts = []
         self.__index = None
@@ -669,15 +665,13 @@ class GraphPlot(MatplotPanel):
         self.__unit = 1.0
         
         # <matplotlib.lines.Line2D>
-        (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1,
-                                        picker=8)
+        (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1, picker=8)
         self.__marksel = []
         self.__markarts = []
         self.marked.set_clip_on(False)
         
         # <matplotlib.lines.Line2D>
-        (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4,
-                                        picker=4, alpha=0.8)
+        (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4, picker=4, alpha=0.8)
         self.__rectsel = []
         self.__rectarts = []
         self.rected.set_clip_on(False)
