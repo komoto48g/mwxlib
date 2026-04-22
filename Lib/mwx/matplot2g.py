@@ -28,10 +28,8 @@ def _to_array(x):
 
 
 def _to_cvtype(src):
-    """Convert the image to a type that can be applied to the cv2 function.
-    Note:
-        CV2 normally accepts uint8/16 and float32/64.
-    """
+    ## Convert the image to a type that can be applied to cv2 functions.
+    ## CV2 normally accepts uint8/16 and float32/64.
     if src.dtype in (np.uint32, np.int32): return src.astype(np.float32)
     if src.dtype in (np.uint64, np.int64): return src.astype(np.float64)
     return src
@@ -45,7 +43,7 @@ def _to_buffer(img):
     if isinstance(img, wx.Bitmap):  # bitmap to image
         img = img.ConvertToImage()
     
-    if isinstance(img, wx.Image):  # image to RGB array; RGB to grayscale
+    if isinstance(img, wx.Image):  # image to RGB array
         w, h = img.GetSize()
         img = np.frombuffer(img.GetDataBuffer(), dtype='uint8').reshape(h, w, 3)
     
@@ -55,21 +53,20 @@ def _to_buffer(img):
     if img.ndim < 2:
         raise ValueError("targets must be 2d arrays.")
     
-    if img.ndim > 2:
-        return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    # if img.ndim > 2:
+    #     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
 
 
 def _to_image(src, cutoff=0, threshold=None, binning=1):
-    """Convert buffer to image <uint8>.
+    """Convert buffer to image <uint8> with cutoff hi/lo %.
     
-    >>> dst = (src-a) * 255 / (b-a)
+        >>> dst = (src-a) * 255 / (b-a)
     
     cf. convertScaleAbs(src[, dst[, alpha[, beta]]]) -> dst <uint8>
-    
         >>> dst = |src * alpha + beta|
-            alpha = 255 / (b-a)
-            beta = -a * alpha
+            where alpha = 255 / (b-a),
+                  beta = -a * alpha,
     
     Args:
         cutoff: cutoff score [%] to cut the lo/hi limits

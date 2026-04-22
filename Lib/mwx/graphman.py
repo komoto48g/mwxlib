@@ -1686,8 +1686,8 @@ class Frame(mwx.Frame):
         """Read buffer from a file (to be overridden)."""
         buf = Image.open(path)
         info = {}
-        if buf.mode[:3] == 'RGB':   # 今のところカラー画像には対応する気はない▼
-            buf = buf.convert('L')  # ここでグレースケールに変換する
+        # if buf.mode[:3] == 'RGB':   # カラー画像には対応しない．
+        #     buf = buf.convert('L')  # ここでグレースケールに変換する．
         # return np.asarray(buf), info  # ref
         # return np.array(buf), info  # copy
         return buf, info
