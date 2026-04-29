@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.20"
+__version__ = "1.9.22"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1365,6 +1365,8 @@ class ShellFrame(MiniFrame):
         builtins.profile = self.profile
         builtins.highlight = self.highlight
         builtins.filling = filling
+        
+        self._reentrant_activate_lock = False
 
     def Destroy(self):
         ## Remove built-in functions and self methods.
@@ -1418,26 +1420,27 @@ class ShellFrame(MiniFrame):
                         self.message("The close has been canceled.")
                         evt.Veto()
                         return
-                    break  # Don't ask any more.
+                    break  # Don't ask any more for the editor currently being checked.
         if self.standalone:
             evt.Skip()  # Close the window
         else:
             self.Hide()  # Don't destroy the window
 
     def OnActivate(self, evt):
-        if evt.Active and evt.GetActivationReason() == evt.Reason_Mouse:
-            ## Check all buffers that need to be loaded.
+        # if evt.Active and evt.GetActivationReason() == evt.Reason_Mouse:
+        if evt.Active and not self._reentrant_activate_lock:
+            self._reentrant_activate_lock = True
             verbose = 1
             for editor in self.get_all_editors():
-                for buf in editor.get_all_buffers():
+                for buf in list(editor.get_all_buffers()):
                     if buf.need_buffer_load:
                         buf.update_caption()
                         if verbose:
                             with wx.MessageDialog(self,  # Confirm load.
                                     "The file has been modified or deleted externally.\n\n"
                                     "The contents of the buffer will be overwritten or lost.\n"
-                                    "Continue loading {}/{}?".format(editor.Name, buf.name),
-                                    "Load {!r}".format(buf.name),
+                                    "Continue loading?",
+                                    "Load {} file: {!r}".format(editor.Name, buf.name),
                                     style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
                                 dlg.SetHelpLabel("Yes to &All")
                                 dlg.SetYesNoLabels("&Yes", "&No")
@@ -1448,8 +1451,13 @@ class ShellFrame(MiniFrame):
                                     break
                                 if ret == wx.ID_HELP:  # ID_YESTOALL
                                     verbose = 0
+                        ## => delete_buffer を呼び出す可能性がある．
                         editor.load_file(buf.filename, buf.markline+1)
-            wx.CallAfter(self.SetFocus)
+            # wx.CallAfter(self.SetFocus)
+            def _focus():
+                self.SetFocus()
+                self._reentrant_activate_lock = False
+            wx.CallAfter(_focus)
         evt.Skip()
 
     def OnShow(self, evt):
