@@ -1552,9 +1552,16 @@ class Frame(mwx.Frame):
             res: <dict> Successfully loaded attribute information.
             mis: <dict> Attributes whose file paths were missing.
         """
-        def dt_converter(o):
-            if isinstance(o, datetime):
-                return o.isoformat()
+        def dt_converter(obj):
+            ## Convert non-JSON-serializable objects into JSON-friendly values.
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            if isinstance(obj, np.generic):
+                return obj.item()
+            raise TypeError(f"{type(obj).__name__} is not JSON serializable")
+        
         try:
             new = dict((frame.name, frame.attributes) for frame in frames)
             mis = {}
