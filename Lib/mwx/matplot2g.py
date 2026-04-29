@@ -874,8 +874,6 @@ class GraphPlot(MatplotPanel):
         """List of frames <matplotlib.image.AxesImage>."""
         return list(self.__Arts)
 
-    all_frames = frames  # for backward compatibility
-
     @property
     def frame(self):
         """Current art <matplotlib.image.AxesImage>."""
@@ -1300,12 +1298,12 @@ class GraphPlot(MatplotPanel):
             self.handler('quit', evt)
             return
         org = self.p_event  # the last pressed
-        self.__lastpoint = self.calc_point(org.xdata, org.ydata)
-        self.__orgpoints = self.selector
+        self._lastpoint = self.calc_point(org.xdata, org.ydata)
+        self._orgpoints = self.selector
 
     def OnDragMove(self, evt, shift=False):
         x, y = self.calc_point(evt.xdata, evt.ydata)
-        xo, yo = self.__lastpoint
+        xo, yo = self._lastpoint
         if shift:
             x, y = self.calc_shiftpoint(xo, yo, x, y)
         self.selector = np.append(xo, x), np.append(yo, y)
@@ -1315,12 +1313,12 @@ class GraphPlot(MatplotPanel):
         self.OnDragMove(evt, shift=True)
 
     def OnDragEscape(self, evt):
-        self.selector = self.__orgpoints
+        self.selector = self._orgpoints
         self.handler('line_draw', self.frame)
         
     def OnDragEnd(self, evt):
         x, y = self.calc_point(evt.xdata, evt.ydata)
-        xo, yo = self.__lastpoint
+        xo, yo = self._lastpoint
         if x == xo and y == yo:
             self.selector = ([x], [y])
         self.handler('line_drawn', self.frame)
@@ -1335,24 +1333,24 @@ class GraphPlot(MatplotPanel):
         y = evt.mouseevent.ydata
         xs, ys = evt.artist.get_data(orig=0)
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
-        self.__linesel = k if dots < 8 else None
+        self._linesel = k if dots < 8 else None
 
     def OnLineDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
-        self.__linesel = None
+        self._linesel = None
 
     def OnLineDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
         org = self.p_event  # the last pressed
-        self.__lastpoint = self.calc_point(org.xdata, org.ydata)
-        self.__orgpoints = self.selector
+        self._lastpoint = self.calc_point(org.xdata, org.ydata)
+        self._orgpoints = self.selector
 
     def OnLineDragMove(self, evt, shift=False):
         x, y = self.calc_point(evt.xdata, evt.ydata)
-        xc, yc = self.__lastpoint
-        xo, yo = self.__orgpoints
-        j = self.__linesel
+        xc, yc = self._lastpoint
+        xo, yo = self._orgpoints
+        j = self._linesel
         if j is not None:
             if shift:
                 i = j-1 if j else 1
@@ -1372,14 +1370,14 @@ class GraphPlot(MatplotPanel):
         self.OnLineDragMove(evt, shift=True)
 
     def OnLineDragEscape(self, evt):
-        self.selector = self.__orgpoints
-        if self.__linesel:
+        self.selector = self._orgpoints
+        if self._linesel:
             self.handler('line_drawn', self.frame)
         else:
             self.handler('line_moved', self.frame)
 
     def OnLineDragEnd(self, evt):
-        if self.__linesel:
+        if self._linesel:
             self.handler('line_drawn', self.frame)
         else:
             self.handler('line_moved', self.frame)
@@ -1523,7 +1521,7 @@ class GraphPlot(MatplotPanel):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
-        self.__orgpoints = self.get_current_mark()
+        self._orgpoints = self.get_current_mark()
 
     def OnMarkDragMove(self, evt):
         x, y = self.calc_point(evt.xdata, evt.ydata)
@@ -1531,7 +1529,7 @@ class GraphPlot(MatplotPanel):
         self.handler('mark_draw', self.frame)
 
     def OnMarkDragEscape(self, evt):
-        self.set_current_mark(*self.__orgpoints)
+        self.set_current_mark(*self._orgpoints)
         self.handler('mark_drawn', self.frame)
 
     def OnMarkDragEnd(self, evt):
@@ -1700,11 +1698,11 @@ class GraphPlot(MatplotPanel):
             self.handler('quit', evt)
             return
         org = self.p_event  # the last pressed
-        self.__lastpoint = self.calc_point(org.xdata, org.ydata, centred=False)
+        self._lastpoint = self.calc_point(org.xdata, org.ydata, centred=False)
         if not self.__rectsel:
-            x, y = self.__lastpoint
+            x, y = self._lastpoint
             self.set_current_rect((x, x), (y, y))  # start new region
-        self.__orgpoints = self.get_current_rect()
+        self._orgpoints = self.get_current_rect()
 
     def OnRegionDragMove(self, evt, shift=False, meta=False):
         x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
@@ -1724,8 +1722,8 @@ class GraphPlot(MatplotPanel):
                 y = yo + nn[i] * np.sign(y-yo) * uy
             self.set_current_rect((xo, x), (yo, y))
         else:
-            xc, yc = self.__lastpoint
-            xo, yo = self.__orgpoints
+            xc, yc = self._lastpoint
+            xo, yo = self._orgpoints
             xs = xo + (x - xc)
             ys = yo + (y - yc)
             self.set_current_rect(xs, ys)
@@ -1738,7 +1736,7 @@ class GraphPlot(MatplotPanel):
         self.OnRegionDragMove(evt, meta=True)
 
     def OnRegionDragEscape(self, evt):
-        self.set_current_rect(*self.__orgpoints)
+        self.set_current_rect(*self._orgpoints)
         self.handler('region_drawn', self.frame)
 
     def OnRegionDragEnd(self, evt):

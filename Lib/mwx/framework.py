@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.9.22"
+__version__ = "1.10.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1102,6 +1102,7 @@ class ShellFrame(MiniFrame):
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
                                         style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+        
         def _attach():
             for editor in self.get_all_editors():
                 self.Bookshelf.attach(editor)
@@ -1453,7 +1454,7 @@ class ShellFrame(MiniFrame):
                                     verbose = 0
                         ## => delete_buffer を呼び出す可能性がある．
                         editor.load_file(buf.filename, buf.markline+1)
-            # wx.CallAfter(self.SetFocus)
+            
             def _focus():
                 self.SetFocus()
                 self._reentrant_activate_lock = False

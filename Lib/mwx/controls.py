@@ -643,14 +643,6 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                 cc.Show(not p)
             self.Layout()
 
-    ## for backward compatibility
-    is_enabled = is_group_enabled
-    is_folded = is_group_folded
-    is_shown = is_group_shown
-    enable = enable_group
-    fold = fold_group
-    show = show_group
-
     def layout(self, items, title=None,
                      row=0, expand=0, border=2, hspacing=1, vspacing=1,
                      show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):

@@ -2453,7 +2453,7 @@ class EditorBook(AuiNotebook):
 
     @property
     def buffer(self):
-        """Return the currently selected page or None."""
+        """Currently selected buffer or None."""
         return self.CurrentPage
 
     def find_buffer(self, obj):

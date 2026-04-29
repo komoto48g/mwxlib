@@ -154,32 +154,32 @@ class LinePlot(MatplotPanel):
             self.set_wxcursor(wx.CURSOR_ARROW)  # outside or None
 
     def OnDragLock(self, evt):
-        self.__lastpoint = evt.xdata
-        self.__selection = self.region_test(evt)
+        self._lastpoint = evt.xdata
+        self._selection = self.region_test(evt)
 
     def OnDragBegin(self, evt):
-        v = self.__selection
+        v = self._selection
         if v == 1:
             self.set_wxcursor(wx.CURSOR_HAND)  # inside
         elif v == 2:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # left-edge
-            self.__lastpoint = self.region[1]    # set origin right
+            self._lastpoint = self.region[1]    # set origin right
         elif v == 3:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # right-edge
-            self.__lastpoint = self.region[0]    # set origin left
+            self._lastpoint = self.region[0]    # set origin left
         else:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # outside
 
     def OnDragMove(self, evt):
         x = evt.xdata
-        if self.__selection != 1:
+        if self._selection != 1:
             l, r = self.xbound
             if   x < l: x = l
             elif x > r: x = r
-            self.region = (self.__lastpoint, x)
+            self.region = (self._lastpoint, x)
         elif self.region is not None:
             a, b = self.region
-            d = x - self.__lastpoint
+            d = x - self._lastpoint
             if self.boundary is not None:
                 l, r = self.boundary
                 if a+d < l:
@@ -188,10 +188,10 @@ class LinePlot(MatplotPanel):
                     self.region = (r-b+a, r)
                 else:
                     self.region = (a+d, b+d)
-                    self.__lastpoint = x
+                    self._lastpoint = x
             else:
                 self.region = (a+d, b+d)
-                self.__lastpoint = x
+                self._lastpoint = x
         else:
             self.message("- No region.")
         self.draw()
@@ -741,7 +741,7 @@ class LineProfile(LinePlot):
         if xs.size:
             ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])
             j = np.argmin(ld)
-            self.__orgpoint = xs[j]
+            self._orgpoint = xs[j]
         self.set_wxcursor(wx.CURSOR_SIZEWE)
         self.draw()
 
@@ -755,5 +755,5 @@ class LineProfile(LinePlot):
                 xc = xs[j]
                 yc = ys[j]
                 self.message(f"({xc:g}, {yc:g})")
-            self.region = (self.__orgpoint, xc)
+            self.region = (self._orgpoint, xc)
             self.draw()

@@ -696,28 +696,28 @@ class MatplotPanel(wx.Panel):
         # self.toolbar.set_cursor(2)
         self.set_wxcursor(wx.CURSOR_HAND)
         self.toolbar.pan()
-        self.__prev = self.handler.previous_state  # save previous state of PAN
+        self._prev = self.handler.previous_state  # save previous state of PAN
 
     def OnPanEnd(self, evt):
         # self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.pan()
-        self.handler.current_state = self.__prev  # --> previous state of PAN
-        del self.__prev
+        self.handler.current_state = self._prev  # --> previous state of PAN
+        del self._prev
 
     def OnZoomBegin(self, evt):
         """Toolbar zoom - While zooming, press x/y to constrain the direction."""
         # self.toolbar.set_cursor(3)
         self.set_wxcursor(wx.CURSOR_CROSS)
         self.toolbar.zoom()
-        self.__prev = self.handler.previous_state  # save previous state of ZOOM
+        self._prev = self.handler.previous_state  # save previous state of ZOOM
 
     def OnZoomEnd(self, evt):
         # self.toolbar.set_cursor(1)
         self.set_wxcursor(wx.CURSOR_ARROW)
         self.toolbar.zoom()
-        self.handler.current_state = self.__prev  # --> previous state of ZOOM
-        del self.__prev
+        self.handler.current_state = self._prev  # --> previous state of ZOOM
+        del self._prev
 
     # def OnZoomMove(self, evt):
     #     """Zoom."""
@@ -748,17 +748,17 @@ class MatplotPanel(wx.Panel):
     #     h = y1 - y0
     #     rect = int(x0), int(y0), int(w), int(h)
     #     try:
-    #         dc.DrawRectangle(*self.__lastrect)  #erase last
+    #         dc.DrawRectangle(*self._lastrect)  #erase last
     #     except AttributeError:
     #         pass
     #     
-    #     self.__lastrect = rect
+    #     self._lastrect = rect
     #     dc.DrawRectangle(*rect)
     #     dc.EndDrawing()
     # 
     # def OnZoomEnd(self, evt):
     #     try:
-    #         del self.__lastrect
+    #         del self._lastrect
     #         self.xbound = (self.p_event.xdata, evt.xdata)
     #         self.ybound = (self.p_event.ydata, evt.ydata)
     #     except AttributeError:
