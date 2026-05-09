@@ -1435,6 +1435,8 @@ class Frame(mwx.Frame):
         if frames:
             for frame in frames:
                 frame.update_attr(res.get(frame.name))
+        else:
+            self.post_msgbox("Failed to import frames.", style=wx.ICON_ERROR)
         
         n = len(frames)
         print(self.message(
@@ -1541,8 +1543,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            # print("- Failed to read attributes;", e)
-            wx.MessageBox(str(e), f"Failed to read attributes.", style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), f"Failed to read attributes.", style=wx.ICON_ERROR)
         return res, mis
 
     def write_attributes(self, filename, frames, merge_data=True):
@@ -1577,8 +1578,7 @@ class Frame(mwx.Frame):
                 # print(pformat(tuple(new.items())), file=o)  # Write as tuple (deprecated).
                 json.dump(new, o, indent=2, default=dt_converter)
         except Exception as e:
-            # print("- Failed to write attributes;", e)
-            wx.MessageBox(str(e), "Failed to write attributes.", style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), "Failed to write attributes.", style=wx.ICON_ERROR)
         return new, mis
 
     def load_frame(self, paths=None, view=None):
@@ -1681,7 +1681,7 @@ class Frame(mwx.Frame):
             return True
         except Exception as e:
             self.message("\b failed.")
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), style=wx.ICON_ERROR)
             return False
 
     ## --------------------------------
@@ -1756,7 +1756,7 @@ class Frame(mwx.Frame):
             self.message("\b done.")
         except Exception as e:
             self.message("\b failed.")
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), style=wx.ICON_ERROR)
         
         view.select(frame)
         return frames
@@ -1778,7 +1778,7 @@ class Frame(mwx.Frame):
             raise
         except Exception as e:
             self.message("\b failed.")
-            wx.MessageBox(str(e), style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), style=wx.ICON_ERROR)
             return None
 
     ## --------------------------------
