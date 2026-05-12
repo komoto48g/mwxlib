@@ -1557,6 +1557,8 @@ class Frame(mwx.Frame):
             ## Convert non-JSON-serializable objects into JSON-friendly values.
             if isinstance(obj, datetime):
                 return obj.isoformat()
+            if isinstance(obj, (bytes, bytearray, memoryview)):
+                return bytes(obj).decode("utf-8", errors="replace")
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
             if isinstance(obj, np.generic):
