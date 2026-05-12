@@ -2,6 +2,7 @@
 """Property list of buffers.
 """
 from pprint import pformat
+import time
 import wx
 from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -56,6 +57,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             ("dtype", 60),
             ("Mb",   40),
             ("unit", 60),
+            ("timestamp", 120),
             ("annotation", 240),
         )
         for k, (name, w) in enumerate(_alist):
@@ -116,17 +118,19 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return wx.ListCtrl.Destroy(self)
 
     def UpdateInfo(self, frame):
-        ls = ("{}".format(frame.index),
-              "{}".format(frame.name),
-              "{}".format(frame.buffer.shape),
-              "{}".format(frame.buffer.dtype),
-          "{:.1f}".format(frame.buffer.nbytes/1e6),
-          "{:g}{}".format(frame.unit, '*' if frame.localunit else ''),
-              "{}".format(frame.annotation),
-        )
+        info = {
+            "id"    : frame.index,
+            "name"  : frame.name,
+            "shape" : frame.buffer.shape,
+            "dtype" : frame.buffer.dtype,
+            "Mb"    : "{:.1f}".format(frame.buffer.nbytes / 1e6),
+            "unit"  : "{:g}{}".format(frame.unit, '*' if frame.localunit else ''),
+            "timestamp": time.strftime("%y/%m/%d %H:%M:%S", time.localtime(frame.timestamp)),
+            "annotation": frame.annotation,
+        }
         j = frame.index
-        for k, v in enumerate(ls):
-            self.SetItem(j, k, v)
+        for k, v in enumerate(info.values()):
+            self.SetItem(j, k, str(v))
         self.CheckItem(j, frame.pathname is not None)
 
     def OnShowItems(self, evt):
