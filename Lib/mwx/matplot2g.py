@@ -106,14 +106,14 @@ def _to_image(src, cutoff=0, threshold=None, binning=1):
     return n, (a, b), img
 
 
-def _get_filestamp(filename):
+def _get_timestamp(filename):
     """Check the modification timestamp of a file.
     
     Returns:
         float: Modification time for an existing file.
-        False: If the file path is valid but the file does not exist.
-        None: If the path is invalid.
-        -1: If the input is a URL.
+        False: The path is valid but the file does not exist.
+        -1:    The path is a URL.
+        None:  The path is invalid.
     """
     try:
         return os.path.getmtime(filename)  # timestamp (modified time)
@@ -122,9 +122,10 @@ def _get_filestamp(filename):
     except OSError:
         if is_url(filename):
             return -1  # URL path
+        else:
+            return None  # invalid path
     except Exception:
-        pass
-    return None  # invalid path or any other unexpected error
+        return None
 
 
 def _Property(name):
@@ -153,7 +154,7 @@ class AxesImagePhantom:
         self.__name = name
         self.__attributes = kwargs
         self.__pathname = kwargs.get('pathname')
-        self.__mtime = _get_filestamp(self.__pathname)
+        self.__mtime = _get_timestamp(self.__pathname)
         self.__annotation = kwargs.get('annotation', '')
         self.__localunit = kwargs.get('localunit')
         self.__center = kwargs.get('center', [0, 0])
@@ -193,7 +194,7 @@ class AxesImagePhantom:
         flag = 0
         if 'pathname' in attr:
             self.__pathname = attr['pathname']
-            self.__mtime = _get_filestamp(self.__pathname)
+            self.__mtime = _get_timestamp(self.__pathname)
             flag |= FLAG_ANNOTATION
         
         if 'annotation' in attr:
@@ -315,6 +316,21 @@ class AxesImagePhantom:
     def name(self, v):
         self.__name = v
         self.parent.handler('frame_updated', self)
+
+    @property
+    def timestamp(self):
+        """Timestamp associated with this frame.
+        
+        Returns:
+            > 0: Modification time for an existing file.
+            = 0: The path is valid but the file does not exist.
+            < 0: The path refers to a URL.
+            None: If the path is invalid, or no file is associated with this frame.
+        """
+        try:
+            return self.attributes["acq_datetime"].timestamp()
+        except Exception:
+            return self.__mtime
 
     @property
     def mtdelta(self):
