@@ -1148,8 +1148,6 @@ class GraphPlot(MatplotPanel):
             else:
                 self.__isPicked = 'art'
                 MatplotPanel.on_pick(self, evt)  # [art_picked]
-        
-        self.canvas.draw_idle()
 
     def on_picker_lock(self, evt):
         self.__isPicked = True
@@ -1163,6 +1161,7 @@ class GraphPlot(MatplotPanel):
         nx, ny = self.frame.xytopixel(x, y)
         evt.ind = (ny, nx)
         self.selector = self.frame.xyfrompixel(nx, ny)
+        self.canvas.draw_idle()
 
     def _inaxes(self, evt):
         try:
