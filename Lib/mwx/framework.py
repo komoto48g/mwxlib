@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.0"
+__version__ = "1.10.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1274,6 +1274,8 @@ class ShellFrame(MiniFrame):
         
         self.Init()
         
+        self._reentrant_activate_lock = False
+        
         ## Session files.
         self.SESSION_FILE = get_rootpath(".debrc")
         self.SCRATCH_FILE = get_rootpath("scratch.py")
@@ -1366,8 +1368,6 @@ class ShellFrame(MiniFrame):
         builtins.profile = self.profile
         builtins.highlight = self.highlight
         builtins.filling = filling
-        
-        self._reentrant_activate_lock = False
 
     def Destroy(self):
         ## Remove built-in functions and self methods.
@@ -1455,10 +1455,9 @@ class ShellFrame(MiniFrame):
                         ## => delete_buffer を呼び出す可能性がある．
                         editor.load_file(buf.filename, buf.markline+1)
             
-            def _focus():
-                self.SetFocus()
+            def _unlock():
                 self._reentrant_activate_lock = False
-            wx.CallAfter(_focus)
+            wx.CallAfter(_unlock)
         evt.Skip()
 
     def OnShow(self, evt):
