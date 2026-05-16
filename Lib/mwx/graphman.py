@@ -1434,7 +1434,7 @@ class Frame(mwx.Frame):
             for frame in frames:
                 frame.update_attr(res.get(frame.name))
         else:
-            self.post_msgbox("Failed to import frames.", style=wx.ICON_ERROR)
+            self.post_msgbox("No frames were imported.")
         
         n = len(frames)
         print(self.message(
@@ -1468,27 +1468,20 @@ class Frame(mwx.Frame):
         savedir = os.path.dirname(filename)
         output_frames = []
         for frame in frames:
-            try:
-                self.message("Export index of {!r}...".format(frame.name))
-                fn = frame.pathname
-                if not fn or fn.endswith('>'):  # *dummy-path* --> Use buffer name.
-                    fn = os.path.join(savedir, fix_fnchars(frame.name))
+            fn = frame.pathname
+            if not fn or not os.path.exists(fn):
+                fn = os.path.join(savedir, fix_fnchars(frame.name))
+                if not fn.endswith('.tif'):
+                    fn += '.tif'
                 if not os.path.exists(fn):
-                    if not fn.endswith('.tif'):
-                        fn += '.tif'
-                    self.write_buffer(fn, frame.buffer)
-                    frame.pathname = fn
-                    frame.name = os.path.basename(fn)
-                    print(' ', self.message("\b done."))
-                else:
-                    print(' ', self.message("\b skipped."))
+                    frame = self.save_buffer(fn, frame)
+            if frame:
                 output_frames.append(frame)
-            except OSError as e:
-                print('-', self.message("\b failed;", e))
+        if not output_frames:
+            self.post_msgbox("No frames were exported.")
         
-        frames = output_frames
-        res, mis = self.write_attributes(filename, frames)
-        n = len(frames)
+        res, mis = self.write_attributes(filename, output_frames)
+        n = len(output_frames)
         print(self.message(
             "{} frames were exported, "
             "{} files were skipped, "
