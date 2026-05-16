@@ -1409,7 +1409,6 @@ class Frame(mwx.Frame):
 
     def import_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
-        
         If no view given, the currently selected view is chosen.
         """
         if not view:
@@ -1443,16 +1442,17 @@ class Frame(mwx.Frame):
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis))
         ))
-        return frames
 
-    def export_index(self, filename=None, frames=None):
+    def export_index(self, filename=None, view=None):
         """Save frames :ref to the Index file.
+        If no view given, the currently selected view is chosen.
         """
-        view = self.selected_view
+        if not view:
+            view = self.selected_view
+        
+        frames = list(view.get_all_frames())
         if not frames:
-            frames = list(view.get_all_frames())
-            if not frames:
-                return None
+            return None
         
         if not filename:
             default_path = view.frame.pathname if view.frame else None
@@ -1494,7 +1494,6 @@ class Frame(mwx.Frame):
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis))
         ))
-        return frames
 
     ## --------------------------------
     ## load/save frames and attributes.
@@ -1542,7 +1541,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            self.post_msgbox(str(e), f"Failed to read attributes.", style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), "Failed to read attributes.", style=wx.ICON_ERROR)
         return res, mis
 
     def write_attributes(self, filename, frames, merge_data=True):
