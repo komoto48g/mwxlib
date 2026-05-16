@@ -458,8 +458,9 @@ class MatplotPanel(wx.Panel):
         pass
 
     def on_figure_leave(self, evt):  # <matplotlib.backend_bases.MouseEvent>
+        if self.cursor.background is not None:
+            self.canvas.restore_region(self.cursor.background)
         self.cursor.clear(evt)
-        self.canvas.draw()
 
     @property
     def selector(self):
