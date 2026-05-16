@@ -53,7 +53,6 @@ def export_video(path, crop, ss, to, filename):
                '-to', f"{to}",
                '-y', filename,
                ]
-    print('>', ' '.join(command))
     with Popen(command) as fp:
         ret, err = fp.communicate()
 
@@ -65,9 +64,6 @@ class MyFileDropLoader(wx.FileDropTarget):
 
     def OnDropFiles(self, x, y, filenames):
         path = filenames[-1]  # Only the last one will be loaded.
-        if len(filenames) > 1:
-            print("- Drop only one file please."
-                  "Loading {!r} ...".format(path))
         self.target.load_media(path)
         return True
 

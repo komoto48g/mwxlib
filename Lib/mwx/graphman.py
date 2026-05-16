@@ -237,8 +237,7 @@ class Thread:
             does not suspend until check (or event.wait) is called.
         """
         def _stop():
-            with wx.BusyInfo("One moment please, "
-                             "waiting for threads to die..."):
+            with wx.BusyInfo("One moment please, waiting for threads to die..."):
                 self.worker.join(1)
         if self.running:
             self.active = 0
@@ -1665,15 +1664,15 @@ class Frame(mwx.Frame):
             path += ".tif"
         
         try:
+            n = len(frames)
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
-            with wx.BusyInfo(f"One moment please, saving {name!r}..."):
+            with wx.BusyInfo(f"One moment please, saving {n} frames to {name!r}..."):
                 stack = [Image.fromarray(frame.buffer) for frame in frames]
                 stack[0].save(path,
                               save_all=True,
                               compression="tiff_deflate",  # cf. tiff_lzw
                               append_images=stack[1:])
-            n = len(frames)
             d = len(str(n))
             for j, frame in enumerate(frames):
                 frame.pathname = path + f"<{j:0{d}}>"  # *dummy-path* in multi-page tiff
