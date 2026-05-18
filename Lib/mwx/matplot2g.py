@@ -2,6 +2,7 @@
 """mwxlib graph plot for images.
 """
 import os
+import re
 import wx
 
 from matplotlib import cm
@@ -325,6 +326,11 @@ class AxesImagePhantom:
     def name(self, v):
         self.__name = v
         self.parent.handler('frame_updated', self)
+
+    @property
+    def basename(self):
+        m = re.match(r"(.+)<\d+>$", self.__name)
+        return m.group(1) if m else self.__name
 
     @property
     def timestamp(self):

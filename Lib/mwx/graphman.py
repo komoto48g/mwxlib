@@ -1432,7 +1432,7 @@ class Frame(mwx.Frame):
         frames = self.load_buffer(paths, view)
         if frames:
             for frame in frames:
-                frame.update_attr(res.get(frame.name))
+                frame.update_attr(res.get(frame.name) or res.get(frame.basename))
         else:
             self.post_msgbox("No frames were imported.")
         
@@ -1606,7 +1606,7 @@ class Frame(mwx.Frame):
                     res, mis = self.read_attributes(fn)
                     saved_results[savedir] = res
                 res = saved_results[savedir]
-                frame.update_attr(res.get(frame.name))
+                frame.update_attr(res.get(frame.name) or res.get(frame.basename))
         return frames
 
     def save_frame(self, path=None, frame=None):
