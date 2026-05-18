@@ -2,6 +2,7 @@
 """mwxlib graph plot for images.
 """
 import os
+import re
 import wx
 
 from matplotlib import cm
@@ -126,6 +127,15 @@ def _get_timestamp(filename):
             return None  # invalid path
     except Exception:
         return None
+
+
+def _get_uniqname(name, namelist):
+    basename = name
+    i = 1
+    while name in namelist:
+        i += 1
+        name = f"{basename}<{i}>"
+    return name
 
 
 def _Property(name):
@@ -316,6 +326,11 @@ class AxesImagePhantom:
     def name(self, v):
         self.__name = v
         self.parent.handler('frame_updated', self)
+
+    @property
+    def basename(self):
+        m = re.match(r"(.+)<\d+>$", self.__name)
+        return m.group(1) if m else self.__name
 
     @property
     def timestamp(self):
@@ -693,15 +708,6 @@ class GraphPlot(MatplotPanel):
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
 
-    def get_uniqname(self, name):
-        base = name = name or "*temp*"
-        i = 1
-        names = [art.name for art in self.__Arts]
-        while name in names:
-            i += 1
-            name = "{}<{:d}>".format(base, i)
-        return name
-
     def load(self, buf, name=None, pos=None, show=True, **kwargs):
         """Load a buffer with a name.
         
@@ -735,7 +741,7 @@ class GraphPlot(MatplotPanel):
                 self.select(j)
             return art
         
-        name = self.get_uniqname(name)
+        name = _get_uniqname(name or "*temp*", names)
         
         ## The first load of axes.imshow (=> self.axes.axis 表示を更新する).
         art = AxesImagePhantom(self, buf, name, show, **kwargs)

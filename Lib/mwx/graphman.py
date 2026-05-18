@@ -1409,7 +1409,6 @@ class Frame(mwx.Frame):
 
     def import_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
-        
         If no view given, the currently selected view is chosen.
         """
         if not view:
@@ -1433,9 +1432,9 @@ class Frame(mwx.Frame):
         frames = self.load_buffer(paths, view)
         if frames:
             for frame in frames:
-                frame.update_attr(res.get(frame.name))
+                frame.update_attr(res.get(frame.name) or res.get(frame.basename))
         else:
-            self.post_msgbox("Failed to import frames.", style=wx.ICON_ERROR)
+            self.post_msgbox("No frames were imported.")
         
         n = len(frames)
         print(self.message(
@@ -1443,16 +1442,17 @@ class Frame(mwx.Frame):
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis))
         ))
-        return frames
 
-    def export_index(self, filename=None, frames=None):
+    def export_index(self, filename=None, view=None):
         """Save frames :ref to the Index file.
+        If no view given, the currently selected view is chosen.
         """
-        view = self.selected_view
+        if not view:
+            view = self.selected_view
+        
+        frames = list(view.get_all_frames())
         if not frames:
-            frames = list(view.get_all_frames())
-            if not frames:
-                return None
+            return None
         
         if not filename:
             default_path = view.frame.pathname if view.frame else None
@@ -1468,33 +1468,25 @@ class Frame(mwx.Frame):
         savedir = os.path.dirname(filename)
         output_frames = []
         for frame in frames:
-            try:
-                self.message("Export index of {!r}...".format(frame.name))
-                fn = frame.pathname
-                if not fn or fn.endswith('>'):  # *dummy-path* --> Use buffer name.
-                    fn = os.path.join(savedir, fix_fnchars(frame.name))
+            fn = frame.pathname
+            if not fn or not os.path.exists(fn):
+                fn = os.path.join(savedir, fix_fnchars(frame.name))
+                if not fn.endswith('.tif'):
+                    fn += '.tif'
                 if not os.path.exists(fn):
-                    if not fn.endswith('.tif'):
-                        fn += '.tif'
-                    self.write_buffer(fn, frame.buffer)
-                    frame.pathname = fn
-                    frame.name = os.path.basename(fn)
-                    print(' ', self.message("\b done."))
-                else:
-                    print(' ', self.message("\b skipped."))
+                    frame = self.save_buffer(fn, frame)
+            if frame:
                 output_frames.append(frame)
-            except OSError as e:
-                print('-', self.message("\b failed;", e))
+        if not output_frames:
+            self.post_msgbox("No frames were exported.")
         
-        frames = output_frames
-        res, mis = self.write_attributes(filename, frames)
-        n = len(frames)
+        res, mis = self.write_attributes(filename, output_frames)
+        n = len(output_frames)
         print(self.message(
             "{} frames were exported, "
             "{} files were skipped, "
             "{} files are missing.".format(n, len(res)-n, len(mis))
         ))
-        return frames
 
     ## --------------------------------
     ## load/save frames and attributes.
@@ -1542,7 +1534,7 @@ class Frame(mwx.Frame):
         except FileNotFoundError:
             pass
         except Exception as e:
-            self.post_msgbox(str(e), f"Failed to read attributes.", style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), "Failed to read attributes.", style=wx.ICON_ERROR)
         return res, mis
 
     def write_attributes(self, filename, frames, merge_data=True):
@@ -1614,7 +1606,7 @@ class Frame(mwx.Frame):
                     res, mis = self.read_attributes(fn)
                     saved_results[savedir] = res
                 res = saved_results[savedir]
-                frame.update_attr(res.get(frame.name))
+                frame.update_attr(res.get(frame.name) or res.get(frame.basename))
         return frames
 
     def save_frame(self, path=None, frame=None):
