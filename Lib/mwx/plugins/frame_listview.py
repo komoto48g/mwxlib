@@ -8,7 +8,7 @@ from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from mwx.framework import CtrlInterface, Menu, StatusBar, pack
-from mwx.controls import Icon, Clipboard
+from mwx.controls import Icon
 from mwx.graphman import Layer
 
 
@@ -85,8 +85,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 'enter pressed' : (0, self.OnShowItems),  # -> frame_shown
                'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
-                  'C-i pressed' : (0, self.OnCopyInfo),
-                  'C-l pressed' : (0, self.OnEditLocalUnit),
                    'f2 pressed' : (0, self.OnEditAnnotation),
                  'M-up pressed' : (0, self.target.OnPageUp),
                'M-down pressed' : (0, self.target.OnPageDown),
@@ -110,23 +108,19 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target.handler.append(self.context)
         
         self.menu = [
-            (wx.ID_ANY, "Edit localunit\t(C-l)", Icon('image'),
-                self.OnEditLocalUnit,
-                lambda v: v.Enable(self.focused_item != -1)),
-                
-            (wx.ID_ANY, "Edit annotation\t(f2)", Icon('pencil'),
+            (wx.ID_ANY, "Edit annotation\tF2", Icon('pencil'),
                 self.OnEditAnnotation,
                 lambda v: v.Enable(self.focused_item != -1)),
             (),
-            (wx.ID_ANY, "Copy info\t(C-i)", Icon('copy'),
-                self.OnCopyInfo,
+            (wx.ID_ANY, "Show attributes", Icon('copy'),
+                self.OnShowAttributes,
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: Menu.Popup(self, self.menu))
         
         self.info_dlg = InfoDialog(self,
-                            title="Frame Properties", size=(480, -1),
+                            title="Attributes", size=(480, -1),
                             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
 
     def Destroy(self):
@@ -181,26 +175,22 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     self.SetItem(j, k+1, v)
             self.target.select(frame)  # invokes [frame_shown] to select the item
 
+    def OnItemSelected(self, evt):
+        frame = self.target.frames[evt.Index]
+        self.parent.message(frame.pathname)
+        evt.Skip()
+
     def OnSelectAllItems(self, evt):
         for j in range(self.ItemCount):
             self.Select(j)
 
-    def OnCopyInfo(self, evt):
+    def OnShowAttributes(self, evt):
         selected_frames = [self.target.frames[j] for j in self.selected_items]
         if selected_frames:
-            text = '\n'.join(pformat(frame.attributes, sort_dicts=0)  # ALL attributes
+            text = '\n'.join(pformat(frame.attributes, sort_dicts=0)
                              for frame in selected_frames)
-            Clipboard.write(text)
             self.info_dlg.textctrl.Value = text
             self.info_dlg.ShowModal()
-        self.SetFocus()
-
-    def OnEditLocalUnit(self, evt):
-        frame = self.target.frames[self.focused_item]
-        with wx.TextEntryDialog(self, frame.name,
-                "Enter localunit", repr(frame.localunit)) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                frame.unit = eval(dlg.Value or 'None')
         self.SetFocus()
 
     def OnEditAnnotation(self, evt):
@@ -210,11 +200,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if dlg.ShowModal() == wx.ID_OK:
                 frame.annotation = dlg.Value
         self.SetFocus()
-
-    def OnItemSelected(self, evt):
-        frame = self.target.frames[evt.Index]
-        self.parent.message(frame.pathname)
-        evt.Skip()
 
     ## --------------------------------
     ## Actions of frame-handler.
