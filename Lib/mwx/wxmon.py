@@ -26,14 +26,12 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         CtrlInterface.__init__(self)
         
         self.EnableCheckBoxes()
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.parent = parent
         self.target = None
         self._target = None  # previous target
-        
-        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        
-        self.__dir = True  # sort direction
+        self._dir = True  # sort direction
         self.__items = []
         
         _alist = (
@@ -240,8 +238,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         lb = [data[i] for i in range(n) if self.GetItemTextColour(i) == 'blue']
         
         col = evt.Column
-        self.__dir = not self.__dir
-        data.sort(key=lambda v: v[col], reverse=self.__dir)
+        self._dir = not self._dir
+        data.sort(key=lambda v: v[col], reverse=self._dir)
         
         for i, item in enumerate(data):
             for j, v in enumerate(item[:-1]):

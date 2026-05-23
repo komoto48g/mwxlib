@@ -29,13 +29,12 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
-        self.parent = parent
-        self.target = None
-        
         self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
-        self.__dir = True  # sort direction
-        self.__items = []  # list of data:str
+        self.parent = parent
+        self.target = None
+        self._dir = True  # sort direction
+        self._items = []  # list of data:str
         
         _alist = (
             ("key", 140),
@@ -68,7 +67,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         try:
             self.Freeze()
             self.DeleteAllItems()
-            data = self.__items
+            data = self._items
             for key, value in self.target.items():
                 vstr = _repr(value)
                 i = len(data)
@@ -89,12 +88,12 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
     def clear(self):
         self.DeleteAllItems()
-        del self.__items[:]
+        del self._items[:]
 
     def update(self):
         if not self.target:
             return
-        data = self.__items
+        data = self._items
         n = len(data)
         for i, (k, v) in enumerate(data[::-1]):
             if k not in self.target:
@@ -134,7 +133,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         text = ''
         for i in range(self.ItemCount):
             if self.IsSelected(i):
-                key, vstr = self.__items[i]
+                key, vstr = self._items[i]
                 text += "{} = {}\n".format(key, vstr)
         Clipboard.write(text)
 
@@ -143,13 +142,13 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         if n < 2:
             return
         
-        data = self.__items
+        data = self._items
         fi = data[self.FocusedItem]
         ls = [data[i] for i in range(n) if self.IsSelected(i)]
         
         col = evt.Column
-        self.__dir = not self.__dir
-        data.sort(key=lambda v: v[col].upper(), reverse=self.__dir)
+        self._dir = not self._dir
+        data.sort(key=lambda v: v[col].upper(), reverse=self._dir)
         
         for i, item in enumerate(data):
             for j, v in enumerate(item):

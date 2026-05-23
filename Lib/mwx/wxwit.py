@@ -22,10 +22,10 @@ class Inspector(it.InspectionTree, CtrlInterface):
         it.InspectionTree.__init__(self, parent, *args, **kwargs)
         CtrlInterface.__init__(self)
         
+        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
+        
         self.parent = parent
         self.target = None
-        
-        self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         self.timer = wx.Timer(self)
         self.toolFrame = self
         
