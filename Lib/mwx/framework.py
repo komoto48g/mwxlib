@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.4"
+__version__ = "1.10.9"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -845,7 +845,7 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         CtrlInterface.__init__(self)
         
         self.parent = parent  # parent<ShellFrame>
-        self._mgr = self.EventHandler
+        self._mgr = self.EventHandler  # <wx._aui.AuiManager>
         if name:
             self.Name = name
         
@@ -863,7 +863,7 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
     @property
     def _all_panes(self):
         """Return all AuiPaneInfo excluding `dummy` one (internal use only)."""
-        return list(self._mgr.AllPanes)[1:]
+        return list(self._mgr.GetAllPanes())[1:]
 
     def get_pages(self, type=None):
         """Yields pages of the specified window type."""
