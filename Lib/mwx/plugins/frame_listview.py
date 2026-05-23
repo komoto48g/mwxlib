@@ -12,6 +12,19 @@ from mwx.controls import Icon, Clipboard
 from mwx.graphman import Layer
 
 
+class InfoDialog(wx.Dialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.textctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.SetSizer(
+            pack(self, (
+                (self.textctrl, 1, wx.ALL | wx.EXPAND, 10),
+                wx.Button(self, wx.ID_CANCEL, size=(0,0)),  # for closing with [escape]
+            ))
+        )
+
+
 class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     """CheckList of Graph buffers.
     
@@ -111,6 +124,10 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: Menu.Popup(self, self.menu))
+        
+        self.info_dlg = InfoDialog(self,
+                            title="Frame Properties", size=(480, -1),
+                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
 
     def Destroy(self):
         self.target.handler.remove(self.context)
@@ -174,21 +191,9 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             text = '\n'.join(pformat(frame.attributes, sort_dicts=0)  # ALL attributes
                              for frame in selected_frames)
             Clipboard.write(text)
-            
-            ## Show the text window.
-            with wx.Dialog(self,
-                    title="Frame Properties", size=(480, -1),
-                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER) as dlg:
-                textctrl = wx.TextCtrl(dlg, value=text, style=wx.TE_MULTILINE|wx.TE_READONLY)
-                dlg.SetSizer(
-                    pack(dlg, (
-                        (textctrl, 1, wx.ALL | wx.EXPAND, 10),
-                        wx.Button(dlg, wx.ID_CANCEL, size=(0,0)),  # for closing with [escape]
-                    ))
-                )
-                dlg.ShowModal()
-        else:
-            self.parent.message("No frame selected.")
+            self.info_dlg.textctrl.Value = text
+            self.info_dlg.ShowModal()
+        self.SetFocus()
 
     def OnEditLocalUnit(self, evt):
         frame = self.target.frames[self.focused_item]
