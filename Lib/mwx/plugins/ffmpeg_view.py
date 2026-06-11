@@ -53,8 +53,23 @@ def export_video(path, crop, ss, to, filename):
                '-to', f"{to}",
                '-y', filename,
                ]
+    print(">", ' '.join(command))
     with Popen(command) as fp:
         ret, err = fp.communicate()
+
+
+def _detect_rotation(v):
+    try:
+        return int(v['tags']['rotate'])
+    except KeyError:
+        pass
+    try:
+        for side_data in v["side_data_list"]:
+            if "rotation" in side_data:
+                return int(side_data.get("rotation"))
+    except KeyError:
+        pass
+    return 0
 
 
 class MyFileDropLoader(wx.FileDropTarget):
@@ -182,11 +197,8 @@ class Plugin(Layer):
             self.video_fps = eval(v['avg_frame_rate'])  # averaged frame rate
             self.video_dur = eval(v['duration'])        # duration [s]
             w, h = v['width'], v['height']
-            try:
-                if v['tags']['rotate'] in ('90', '270'):
-                    w, h = h, w  # transpose
-            except KeyError:
-                pass
+            if _detect_rotation(v) in (-270, -90, 90, 270):
+                w, h = h, w
             self.video_size = w, h
             self._path = path
             self.message(f"Loaded {path!r} successfully.")
