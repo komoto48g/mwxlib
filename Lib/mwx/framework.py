@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.9"
+__version__ = "1.10.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1605,7 +1605,7 @@ class ShellFrame(MiniFrame):
         if isinstance(obj, wx.Object):
             self.monitor.watch(obj)
             self.popup_window(self.monitor)
-        if hasattr(obj, '__dict__'):
+        elif hasattr(obj, '__dict__'):
             self.linfo.watch(obj.__dict__)
             self.ginfo.watch(None)
             self.popup_window(self.linfo)
