@@ -172,7 +172,7 @@ class AxesImagePhantom:
         ## Conditions for image loading.
         self.__buf = _to_buffer(buf)
         bins, vlim, img = _to_image(self.__buf,
-                                    cutoff=self.parent.score_percentile,
+                                    cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
         self.__bins = bins
@@ -245,7 +245,7 @@ class AxesImagePhantom:
             self.__buf = _to_buffer(buf)
         
         bins, vlim, img = _to_image(self.__buf,
-                                    cutoff=self.parent.score_percentile,
+                                    cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
         self.__bins = bins
@@ -267,7 +267,7 @@ class AxesImagePhantom:
 
     binning = property(
         lambda self: self.__bins,
-        doc="Binning value resulting from the score_percentile.")
+        doc="Binning value resulting from the image byte limit.")
 
     cuts = property(
         lambda self: self.__cuts,
@@ -885,11 +885,11 @@ class GraphPlot(MatplotPanel):
     ## Property of frame / drawer.
     ## --------------------------------
 
-    ## Image bytes max for loading matplotlib (with wxAgg backend).
+    ## Image byte limit for loading matplotlib (with wxAgg backend).
     nbytes_threshold = 24e6
 
-    ## Image cutoff score percentiles.
-    score_percentile = 0.005
+    ## Image cutoff limit percentiles.
+    cutoff_threshold = 0.005
 
     @property
     def frames(self):
@@ -1639,7 +1639,7 @@ class GraphPlot(MatplotPanel):
             l,r,b,t = self.frame.get_extent()
             xa, xb = min(x), max(x)
             ya, yb = min(y), max(y)
-            ## Modify range so that it does not exceed the extent.
+            ## Restrict the range to the image extent.
             w, h = xb-xa, yb-ya
             if xa < l: xa, xb = l, l+w
             if xb > r: xa, xb = r-w, r

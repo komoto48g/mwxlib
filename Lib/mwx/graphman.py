@@ -1659,7 +1659,7 @@ class Frame(mwx.Frame):
             n = len(frames)
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
-            with wx.BusyInfo(f"One moment please, saving {n} frames to {name!r}..."):
+            with wx.BusyInfo(f"One moment please, saving {n} frames to\n{path!r}..."):
                 stack = [Image.fromarray(frame.buffer) for frame in frames]
                 stack[0].save(path,
                               save_all=True,
