@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.10"
+__version__ = "1.10.11"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -845,7 +845,7 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         CtrlInterface.__init__(self)
         
         self.parent = parent  # parent<ShellFrame>
-        self._mgr = self.EventHandler  # <wx._aui.AuiManager>
+        self._mgr = aui.AuiManager.GetManager(self)  # <wx._aui.AuiManager>
         if name:
             self.Name = name
         
@@ -903,23 +903,26 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         Note:
             Argument `win` can also be page.window.Name (not page.caption).
         """
-        for tab in self._all_tabs:  # <aui.AuiTabCtrl>
-            for page in tab.Pages:  # <aui.AuiNotebookPage>
+        for tab in self._all_tabs:
+            for i in range(tab.GetPageCount()):
+                page = tab.GetPage(i)
                 if page.window is win or page.window.Name == win:
                     return tab, page
 
-    def move_tab(self, win, tab):
+    def move_tab(self, win, tab_idx):
         """Move the window page to the specified tab."""
-        if isinstance(tab, int):
-            tab = self._all_tabs[tab]
+        tab = self._all_tabs[tab_idx]
         try:
             tc1, nb1 = self.find_tab(win)
             win = nb1.window
         except Exception:  # object not found
             return
-        page = wx.aui.AuiNotebookPage(nb1)  # copy-ctor
+        page = aui.AuiNotebookPage(nb1)  # copy-ctor
         tc1.RemovePage(win)     # Accessing nb1 will crash at this point.
-        tab.AddPage(win, page)  # Add a page with the copied info.
+        if wx.VERSION < (4, 3, 0):
+            tab.AddPage(win, page)  # Add a page with the copied info.
+        else:
+            tab.AddPage(page)  # Add a page with the copied info.
         if tc1.PageCount == 0:
             ## Delete an empty tab and the corresponding pane.
             j = self._all_tabs.index(tc1)
@@ -929,8 +932,8 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         self._mgr.Update()
 
     def on_tab_menu(self, evt):
-        tabs = evt.EventObject  # <AuiTabCtrl>
-        page = tabs.Pages[evt.Selection]  # GetPage for split notebook.
+        tab = evt.EventObject
+        page = tab.GetPage(evt.Selection)  # GetPage for split notebook.
         try:
             Menu.Popup(self, page.window.menu)
         except AttributeError:
@@ -950,9 +953,10 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         for j, pane in enumerate(self._all_panes):
             pane.name = f"pane{j+1}"
         spec = ""
-        for j, tabs in enumerate(self._all_tabs):
-            k = next(k for k, page in enumerate(tabs.Pages) if page.window.IsShown())
-            names = [page.window.Name for page in tabs.Pages]
+        for j, tab in enumerate(self._all_tabs):
+            pages = [tab.GetPage(i) for i in range(tab.GetPageCount())]
+            k = next(k for k, page in enumerate(pages) if page.window.IsShown())
+            names = [page.window.Name for page in pages]
             spec += f"pane{j+1}={names};{k}|"
         return spec + '@' + self._mgr.SavePerspective()
 
