@@ -932,10 +932,14 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         self._mgr.Update()
 
     def on_tab_menu(self, evt):
-        tab = evt.EventObject
-        page = tab.GetPage(evt.Selection)  # GetPage for split notebook.
+        obj = evt.EventObject
+        if wx.VERSION < (4, 3, 0):
+            page = obj.GetPage(evt.Selection)  # <aui.AuiTabCtrl>
+            window = page.window
+        else:
+            window = obj.GetPage(evt.Selection)  # <aui.AuiNotebookPage>
         try:
-            Menu.Popup(self, page.window.menu)
+            Menu.Popup(self, window.menu)
         except AttributeError:
             pass
 
