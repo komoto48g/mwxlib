@@ -29,8 +29,10 @@ def _regulate_key(key):
                )
 
 
+MPL_VERSION = matplotlib.parse_version(matplotlib.__version__).release
+
 ## Monkey-patch for matplotlib 3.4/WXAgg.
-if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
+if MPL_VERSION < (3,8,0):
     from matplotlib.backend_bases import Event
 
     def __init__(self, name, canvas, guiEvent=None):
@@ -42,8 +44,8 @@ if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     del __init__
 
 
-## Monkey-patch (local) for matplotlib 3.8/WXAgg.
-if 1:
+## Monkey-patch (local) for matplotlib 3.10/WXAgg.
+if MPL_VERSION < (3,11,0):
     class Cursor(Cursor):
         def onmove(self, event):
             """Internal event handler to draw the cursor when the mouse moves.
@@ -461,9 +463,10 @@ class MatplotPanel(wx.Panel):
         pass
 
     def on_figure_leave(self, evt):  # <matplotlib.backend_bases.MouseEvent>
-        if self.cursor.background is not None:
-            self.canvas.restore_region(self.cursor.background)
-        self.cursor.clear(evt)
+        if MPL_VERSION < (3,11,0):
+            if self.cursor.background is not None:
+                self.canvas.restore_region(self.cursor.background)
+            self.cursor.clear(evt)
 
     @property
     def selector(self):
