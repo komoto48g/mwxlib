@@ -168,7 +168,10 @@ class MatplotPanel(wx.Panel):
         
         def skip(evt):  # <wx._core.KeyEvent> <matplotlib.backend_bases.MouseEvent>
             try:
-                evt.Skip()
+                ## Skip undefined events.
+                defined_events = self.handler[None] | self.handler[self.handler.current_state]
+                if self.handler.current_event not in defined_events:
+                    evt.Skip()
             except AttributeError:
                 pass
         

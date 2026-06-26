@@ -363,15 +363,15 @@ class LayerInterface(CtrlInterface):
             },
         })
         self.menu = [
-            (wx.ID_COPY, "&Copy params\t(C-c)", "Copy params",
+            (wx.ID_COPY, "&Copy params\tCtrl-c", "Copy params",
                 lambda v: copy_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
                 
-            (wx.ID_PASTE, "&Paste params\t(C-v)", "Read params",
+            (wx.ID_PASTE, "&Paste params\tCtrl-v", "Read params",
                 lambda v: paste_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
-            (wx.ID_RESET, "&Reset params\t(C-n)", "Reset params", Icon('-'),
+            (wx.ID_RESET, "&Reset params\tCtrl-n", "Reset params", Icon('-'),
                 lambda v: reset_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
             (),
@@ -752,11 +752,11 @@ class Frame(mwx.Frame):
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book'),
                 lambda v: self.load_frame()),
                 
-            (wx.ID_CLOSE, "&Close\t(C-k)", "Kill buffer", Icon('book_blue'),
+            (wx.ID_CLOSE, "&Close\tCtrl-k", "Kill buffer", Icon('book_blue'),
                 lambda v: self.selected_view.kill_buffer(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
                 
-            (wx.ID_CLOSE_ALL, "&Close all\t(C-S-k)", "Kill all buffers", Icon('book_red'),
+            (wx.ID_CLOSE_ALL, "&Close all\tCtrl-Shift-k", "Kill all buffers", Icon('book_red'),
                 lambda v: self.selected_view.kill_all_buffers(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
                 
@@ -764,7 +764,7 @@ class Frame(mwx.Frame):
                 lambda v: self.save_frame(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
                 
-            (wx.ID_SAVEAS, "&Save as TIFFs\tCtrl+Shift+s", "Save buffers as a multi-page tiff", Icon('saveall'),
+            (wx.ID_SAVEAS, "&Save as TIFFs\tCtrl-Shift-s", "Save buffers as a multi-page tiff", Icon('saveall'),
                 lambda v: self.save_frames_as_tiff(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
             (),
@@ -800,10 +800,10 @@ class Frame(mwx.Frame):
             (),
         ]
         self.menubar["Edit"] = [
-            (wx.ID_COPY, "&Copy\t(C-c)", "Copy buffer to clipboard", Icon('copy'),
+            (wx.ID_COPY, "&Copy\tCtrl-c", "Copy buffer to clipboard", Icon('copy'),
                 lambda v: self.selected_view.write_buffer_to_clipboard()),
                 
-            (wx.ID_PASTE, "&Paste\t(C-v)", "Paste buffer from clipboard", Icon('paste'),
+            (wx.ID_PASTE, "&Paste\tCtrl-v", "Paste buffer from clipboard", Icon('paste'),
                 lambda v: self.selected_view.read_buffer_from_clipboard()),
             (),
             (mwx.ID_(23), "Hide all &layers", "Hide all layers", Icon('xr'),
@@ -813,7 +813,7 @@ class Frame(mwx.Frame):
                 lambda v: self.show_pane(self.histogram, v.IsChecked()),
                 lambda v: v.Check(self.histogram.IsShownOnScreen())),
                 
-            (mwx.ID_(25), "&Invert color\t(C-i)", "Invert colormap", wx.ITEM_CHECK,
+            (mwx.ID_(25), "&Invert color\tCtrl-i", "Invert colormap", wx.ITEM_CHECK,
                 lambda v: self.selected_view.invert_cmap(),
                 lambda v: v.Check(self.selected_view.get_cmapstr()[-2:] == "_r")),
         ]
