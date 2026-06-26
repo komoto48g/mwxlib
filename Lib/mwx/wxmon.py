@@ -49,9 +49,10 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        from wx import adv, aui, stc, media
-        for module in (adv, aui, stc, media):
-            ew.addModuleEvents(module)
+        with wx.LogNull():
+            from wx import adv, aui, stc, media
+            for module in (adv, aui, stc, media):
+                ew.addModuleEvents(module)
         
         @self.handler.bind('C-c pressed')
         def copy(evt):
