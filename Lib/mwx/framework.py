@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.11"
+__version__ = "1.10.13"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -65,6 +65,13 @@ def postcall(f):
     def _f(*v, **kw):
         wx.CallAfter(f, *v, **kw)
     return _f
+
+
+@contextmanager
+def ignore_wxlog():
+    """Suppress wx logging message."""
+    with wx.LogNull():
+        yield
 
 
 @contextmanager
@@ -482,6 +489,7 @@ def ID_(id):
     return id
 
 
+@ignore_wxlog()
 def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     """Do layout.
     
@@ -489,8 +497,8 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
     
         self.SetSizer(
             pack(self, (
-                (label, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
-                ( ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
+                (text, 0, wx.ALIGN_CENTER | wx.LEFT, 4),
+                (ctrl, 1, wx.ALIGN_CENTER | wx.LEFT, 4),
             ))
         )
     
@@ -517,9 +525,18 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
         style = (0, wx.EXPAND | wx.ALL, 0)  # DEFALT_STYLE (prop, flag, border)
     if label is None:
         sizer = wx.BoxSizer(orient)
+    elif isinstance(label, wx.StaticBox):
+        sizer = wx.StaticBoxSizer(label, orient)
     else:
+        ## Note: Elements of StaticBoxSizer should be created as children of its wxStaticBox.
+        ##       This may be warned by wx.Log and should not be suppressed intentionally.
         box = wx.StaticBox(self, -1, label)
         sizer = wx.StaticBoxSizer(box, orient)
+        for obj in items:
+            try:
+                obj.Reparent(box)
+            except AttributeError:
+                pass
     for item in items:
         if not isinstance(item, (wx.Object, list, tuple, type(None))):
             warn(f"pack items must be a wx.Object, tuple or None, not {type(item)}")

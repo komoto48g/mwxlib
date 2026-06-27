@@ -11,7 +11,7 @@ import wx.lib.scrolledpanel as scrolled
 from . import images
 from .utilus import SSM
 from .utilus import funcall as _F
-from .framework import pack, Menu, CtrlInterface
+from .framework import pack, Menu, CtrlInterface, ignore_wxlog
 
 import numpy as np
 from numpy import nan, inf  # noqa # necessary to eval
@@ -643,6 +643,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                 cc.Show(not p)
             self.Layout()
 
+    @ignore_wxlog()
     def layout(self, items, title=None,
                      row=0, expand=0, border=2, hspacing=1, vspacing=1,
                      show=True, visible=True, align=wx.ALIGN_LEFT, **kwargs):
@@ -667,6 +668,17 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         objs = [Knob(self, c, **kwargs) if isinstance(c, Param)
                 else c for c in items]
         
+        ## Note: Elements of StaticBoxSizer should be created as children of its wxStaticBox.
+        ##       Reparent them here --> in pack() as a fallback.
+        # if title is not None:
+        #     box = wx.StaticBox(self, -1, title)
+        #     for obj in objs:
+        #         try:
+        #             obj.Reparent(box)
+        #         except AttributeError:
+        #             pass
+        #     title = box
+        
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 0:
             oblist = [pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
@@ -676,8 +688,9 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             oblist = objs
         
         p = wx.EXPAND if expand > 0 else align
-        sizer = pack(self, oblist, label=title, orient=wx.VERTICAL,
-                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing))
+        sizer = pack(self, oblist, orient=wx.VERTICAL,
+                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing),
+                     label=title)
         
         self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
         
