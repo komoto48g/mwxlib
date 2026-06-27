@@ -29,8 +29,10 @@ def _regulate_key(key):
                )
 
 
+MPL_VERSION = matplotlib.parse_version(matplotlib.__version__).release
+
 ## Monkey-patch for matplotlib 3.4/WXAgg.
-if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
+if MPL_VERSION < (3,8,0):
     from matplotlib.backend_bases import Event
 
     def __init__(self, name, canvas, guiEvent=None):
@@ -42,8 +44,8 @@ if matplotlib.parse_version(matplotlib.__version__).release < (3,8,0):
     del __init__
 
 
-## Monkey-patch (local) for matplotlib 3.8/WXAgg.
-if 1:
+## Monkey-patch (local) for matplotlib 3.10/WXAgg.
+if MPL_VERSION < (3,11,0):
     class Cursor(Cursor):
         def onmove(self, event):
             """Internal event handler to draw the cursor when the mouse moves.
@@ -77,6 +79,11 @@ if 1:
 
 class MatplotPanel(wx.Panel):
     """MPL panel for general graph.
+    
+    Args:
+        log:    Optional logger.
+        margin: Subplot margins as lbrt (left, bottom, right, top).
+        **kwargs: Additional arguments for `wx.Panel`.
     
     Attributes:
         figure:  <matplotlib.figure.Figure>
@@ -129,8 +136,6 @@ class MatplotPanel(wx.Panel):
         self.modeline.Show(0)
         self.Layout()
         
-        self.set_margin(margin or (0,0,1,1))  # if margin is None
-        
         ## mpl event handler
         self.canvas.mpl_connect('pick_event', self.on_pick)
         self.canvas.mpl_connect('scroll_event', self.on_scroll)
@@ -168,7 +173,10 @@ class MatplotPanel(wx.Panel):
         
         def skip(evt):  # <wx._core.KeyEvent> <matplotlib.backend_bases.MouseEvent>
             try:
-                evt.Skip()
+                ## Skip undefined events.
+                defined_events = self.handler[None] | self.handler[self.handler.current_state]
+                if self.handler.current_event not in defined_events:
+                    evt.Skip()
             except AttributeError:
                 pass
         
@@ -309,6 +317,7 @@ class MatplotPanel(wx.Panel):
         # <matplotlib.axes.Axes>
         self.figure.clear()
         self.figure.add_subplot(111)  # cf. add_axes(rect=(l,b,w,h))
+        self.figure.subplots_adjust(*(margin or (0, 0, 1, 1)))
         
         # <matplotlib.lines.Line2D>
         (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75, markeredgecolor='y')
@@ -332,9 +341,6 @@ class MatplotPanel(wx.Panel):
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
-
-    def set_margin(self, lbrt):
-        self.figure.subplots_adjust(*lbrt)
 
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))
@@ -458,9 +464,10 @@ class MatplotPanel(wx.Panel):
         pass
 
     def on_figure_leave(self, evt):  # <matplotlib.backend_bases.MouseEvent>
-        if self.cursor.background is not None:
-            self.canvas.restore_region(self.cursor.background)
-        self.cursor.clear(evt)
+        if MPL_VERSION < (3,11,0):
+            if self.cursor.background is not None:
+                self.canvas.restore_region(self.cursor.background)
+            self.cursor.clear(evt)
 
     @property
     def selector(self):

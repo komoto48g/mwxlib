@@ -158,15 +158,15 @@ class Inspector(it.InspectionTree, CtrlInterface):
                 lambda v: watch(obj),
                 lambda v: v.Enable(obj is not None)),
             (),
-            (10, "&Inspection Tool\tf3", Icon('inspect'),
+            (10, "&Inspection Tool\tF3", Icon('inspect'),
                 lambda v: watchit(obj),
                 lambda v: v.Enable(obj is not None)),
             (),
-            (11, "Highlight\tf4", miniIcon('HighlightItem'),
+            (11, "Highlight\tF4", miniIcon('HighlightItem'),
                 lambda v: self.highlighter.HighlightCurrentItem(self),
                 lambda v: v.Enable(obj is not None)),
                 
-            (12, "Refresh\tf5", miniIcon('Refresh'),
+            (12, "Refresh\tF5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
         ])
 

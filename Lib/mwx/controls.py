@@ -980,7 +980,7 @@ class Icon(wx.Bitmap):
 
     @staticmethod
     def iconify(icon, w, h):
-        ## if wx.VERSION >= (4,1,0): ...
+        ## if wx.VERSION >= (4, 1, 0): ...
         try:
             import wx.svg
             import requests
