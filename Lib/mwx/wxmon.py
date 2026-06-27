@@ -9,7 +9,7 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from .utilus import where, ignore
 from .controls import Icon, Clipboard
-from .framework import CtrlInterface, Menu
+from .framework import CtrlInterface, Menu, ignore_wxlog
 
 
 class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
@@ -49,7 +49,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        with wx.LogNull():
+        with ignore_wxlog():
             from wx import adv, aui, stc, media
             for module in (adv, aui, stc, media):
                 ew.addModuleEvents(module)
