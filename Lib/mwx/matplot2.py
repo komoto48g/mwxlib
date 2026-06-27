@@ -80,6 +80,11 @@ if MPL_VERSION < (3,11,0):
 class MatplotPanel(wx.Panel):
     """MPL panel for general graph.
     
+    Args:
+        log:    Optional logger.
+        margin: Subplot margins as lbrt (left, bottom, right, top).
+        **kwargs: Additional arguments for `wx.Panel`.
+    
     Attributes:
         figure:  <matplotlib.figure.Figure>
         canvas:  <matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
@@ -130,8 +135,6 @@ class MatplotPanel(wx.Panel):
         )
         self.modeline.Show(0)
         self.Layout()
-        
-        self.set_margin(margin or (0,0,1,1))  # if margin is None
         
         ## mpl event handler
         self.canvas.mpl_connect('pick_event', self.on_pick)
@@ -314,6 +317,7 @@ class MatplotPanel(wx.Panel):
         # <matplotlib.axes.Axes>
         self.figure.clear()
         self.figure.add_subplot(111)  # cf. add_axes(rect=(l,b,w,h))
+        self.figure.subplots_adjust(*(margin or (0, 0, 1, 1)))
         
         # <matplotlib.lines.Line2D>
         (self.selected,) = self.axes.plot([], [], "yo-", ms=6, lw=2, alpha=0.75, markeredgecolor='y')
@@ -337,9 +341,6 @@ class MatplotPanel(wx.Panel):
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
-
-    def set_margin(self, lbrt):
-        self.figure.subplots_adjust(*lbrt)
 
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))

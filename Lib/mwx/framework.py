@@ -30,9 +30,9 @@ def deb(target=None, loop=True, locals=None, **kwargs):
         target: Object or module (default None).
                 If None, the target is set to `__main__`.
         loop:   If True, the app and the mainloop will be created.
-        locals: Additional context of the shell
+        locals: Additional context of the shell.
         
-        **kwargs: ShellFrame and Nautilus arguments
+        **kwargs: ShellFrame and Nautilus arguments.
         
             - session: file name of the session. Defaults to None.
             - introText: introductory of the shell
