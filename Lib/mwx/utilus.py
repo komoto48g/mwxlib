@@ -22,15 +22,11 @@ from pprint import pprint
 
 
 @contextmanager
-def ignore(*category):
-    """Ignore warnings.
+def ignore(category=Warning):
+    """Ignore warnings of the given category.
     
-    It can be used as decorators as well as in with statements.
-    cf. contextlib.suppress
-    
-    Note:
-        ignore() does not ignore warnings.
-        ignore(Warning) ignores all warnings.
+    Args:
+        category: Warning category to ignore. Defaults to `Warning`.
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category)
