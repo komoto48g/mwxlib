@@ -1096,35 +1096,28 @@ class GraphPlot(MatplotPanel):
         if data is not None:
             self.load(data)
 
-    def destroy_colorbar(self):
-        if self.cbar:
-            self.cbar = None
-            cax = self.figure.axes[1]
-            self.figure.delaxes(cax)
-            self.canvas.draw_idle()
-            self.handler.unbind('frame_cmapped', self.update_colorbar)
-            self.handler.unbind('frame_shown', self.update_colorbar)
-
     def update_colorbar(self, frame):
         if self.cbar:
             self.cbar.update_normal(frame)
             self.canvas.draw_idle()
-            self.figure.draw_without_rendering()
 
     def create_colorbar(self):
-        """Make a colorbar.
-        The colorbar is plotted in self.figure.axes[1] (second axes)
-        """
         from mpl_toolkits.axes_grid1 import make_axes_locatable
         if self.frame:
             divider = make_axes_locatable(self.axes)
-            cax = divider.append_axes('right', size=0.1, pad=0.1)
+            cax = divider.append_axes('right', size=0.1, pad=0.1)  # -> self.figure.axes[1]
             self.cbar = self.figure.colorbar(self.frame, cax=cax)
-            self.update_colorbar(self.frame)
             self.handler.bind('frame_cmapped', self.update_colorbar)
             self.handler.bind('frame_shown', self.update_colorbar)
         else:
             self.message("- A frame must exist to create a colorbar.")
+
+    def destroy_colorbar(self):
+        if self.cbar:
+            self.figure.delaxes(self.cbar.ax)
+            self.cbar = None
+            self.handler.unbind('frame_cmapped', self.update_colorbar)
+            self.handler.unbind('frame_shown', self.update_colorbar)
 
     ## --------------------------------
     ## matplotlib interface.
