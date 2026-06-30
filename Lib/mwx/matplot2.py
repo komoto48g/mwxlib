@@ -438,25 +438,15 @@ class MatplotPanel(wx.Panel):
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
 
     ## --------------------------------
-    ## External I/O file and clipboard.
+    ## External I/O for clipboard.
     ## --------------------------------
 
     def copy_to_clipboard(self):
         """Copy canvas image to clipboard."""
-        # b = self.selected.get_visible()
-        # c = self.cursor.visible
-        try:
-            # self.selected.set_visible(0)
-            # self.cursor.visible = 0
-            # self.canvas.draw()
-            self.canvas.restore_region(self.background)
-            self.canvas.blit(self.axes.bbox)
-            self.canvas.Copy_to_Clipboard()
-            self.message("Copy image to clipboard.")
-        finally:
-            # self.selected.set_visible(b)
-            # self.cursor.visible = c
-            pass
+        self.canvas.restore_region(self.background)
+        self.canvas.blit(self.axes.bbox)
+        self.canvas.Copy_to_Clipboard()
+        self.message("Copy image to clipboard.")
 
     ## --------------------------------
     ## Selector interface.
