@@ -221,8 +221,10 @@ class MatplotPanel(wx.Panel):
            '*wheeldown pressed' : (PAN, self.OnScrollZoom),
               'C-[+;-] pressed' : (PAN, self.OnZoom),
             'C-S-[+;-] pressed' : (PAN, self.OnZoom),
-        'C-*[LR]button pressed' : (PAN+DRAGGING, ),
-     'space+[LR]button pressed' : (PAN+DRAGGING, ),
+        'C-*[LR]button pressed' : (PAN, ),
+       'C-*[LR]button released' : (NORMAL, self.OnPanEnd),
+     'space+[LR]button pressed' : (PAN, ),
+    'space+[LR]button released' : (NORMAL, self.OnPanEnd),
               '*[LR]drag begin' : (PAN+DRAGGING, ),
                '*ctrl released' : (NORMAL, self.OnPanEnd),
                'space released' : (NORMAL, self.OnPanEnd),
@@ -230,11 +232,11 @@ class MatplotPanel(wx.Panel):
                    'axes_leave' : (NORMAL, self.OnPanEnd),
                    'focus_kill' : (NORMAL, self.OnPanEnd),
                   'C-* pressed' : (NORMAL, fork, self.OnPanEnd),
-              'C-shift pressed' : (PAN, ),
+                    '* pressed' : (PAN, ),
                 },
                 PAN+DRAGGING : {
                 '*[LR]drag end' : (NORMAL, self.OnPanEnd, _draw_idle),
-         '*[LR]button released' : (NORMAL, self.OnPanEnd, _draw_idle),
+         '*[LR]button released' : (NORMAL, self.OnPanEnd),
                 },
                 ZOOM : {
               '*[LR]drag begin' : (ZOOM+DRAGGING, ),
@@ -244,7 +246,7 @@ class MatplotPanel(wx.Panel):
                 },
                 ZOOM+DRAGGING : {
                 '*[LR]drag end' : (NORMAL, self.OnZoomEnd, _draw_idle),
-         '*[LR]button released' : (NORMAL, self.OnZoomEnd, _draw_idle),
+         '*[LR]button released' : (NORMAL, self.OnZoomEnd),
                 },
                 XAXIS : {
                    'axes_enter' : (NORMAL, self.OnAxisLeave),

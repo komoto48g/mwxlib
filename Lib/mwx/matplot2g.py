@@ -1304,21 +1304,22 @@ class GraphPlot(MatplotPanel):
         return self.calc_point(x, y, centred)
 
     def OnSelectorAppend(self, evt):
-        xs, ys = self.selector
-        x, y = self.calc_point(evt.xdata, evt.ydata)
-        self.selector = np.append(xs, x), np.append(ys, y)
-        self.handler('line_drawn', self.frame)
+        if self.frame:
+            xs, ys = self.selector
+            x, y = self.calc_point(evt.xdata, evt.ydata)
+            self.selector = np.append(xs, x), np.append(ys, y)
+            self.handler('line_drawn', self.frame)
 
     def OnDragLock(self, evt):
-        pass
+        if self.frame:
+            org = self.p_event  # the last pressed
+            self._lastpoint = self.calc_point(org.xdata, org.ydata)
+            self._orgpoints = self.selector
 
     def OnDragBegin(self, evt):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
-        org = self.p_event  # the last pressed
-        self._lastpoint = self.calc_point(org.xdata, org.ydata)
-        self._orgpoints = self.selector
 
     def OnDragMove(self, evt, shift=False):
         x, y = self.calc_point(evt.xdata, evt.ydata)
