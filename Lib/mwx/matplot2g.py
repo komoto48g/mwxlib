@@ -487,7 +487,7 @@ class GraphPlot(MatplotPanel):
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        def _draw(evt):
+        def _draw_idle(evt):
             self.canvas.draw_idle()
         
         self.handler.update({  # DNA<GraphPlot>
@@ -501,17 +501,23 @@ class GraphPlot(MatplotPanel):
                'frame_modified' : [None, _F(self.writeln)],  # set[],load,roi  => update_buffer
                 'frame_updated' : [None, _F(self.writeln)],  # unit,name,ratio => update_extent
                 'frame_cmapped' : [None, _F(self.writeln)],  # cmap
+                 'image_picked' : [None, ],
                     'line_draw' : [None, ],
-                   'line_drawn' : [None, _draw],
+                   'line_drawn' : [None, _draw_idle],
                     'line_move' : [None, ],
-                   'line_moved' : [None, _draw],
-                 'line_removed' : [None, _draw],
+                   'line_moved' : [None, _draw_idle],
+                 'line_removed' : [None, _draw_idle],
+                  'line_picked' : [None, ],
                     'mark_draw' : [None, ],
-                   'mark_drawn' : [None, _draw],
-                 'mark_removed' : [None, _draw],
+                   'mark_drawn' : [None, _draw_idle],
+                  'mark_picked' : [None, _draw_idle],
+                 'mark_removed' : [None, _draw_idle],
                   'region_draw' : [None, ],
-                 'region_drawn' : [None, _draw],
-               'region_removed' : [None, _draw],
+                 'region_drawn' : [None, _draw_idle],
+                'region_picked' : [None, _draw_idle],
+               'region_removed' : [None, _draw_idle],
+               'selector_drawn' : [None, ],
+             'selector_removed' : [None, ],
                  'M-up pressed' : [None, self.OnPageUp],
                'M-down pressed' : [None, self.OnPageDown],
                'pageup pressed' : [None, self.OnPageUp],
@@ -527,7 +533,7 @@ class GraphPlot(MatplotPanel):
                   'C-v pressed' : [None, _F(self.read_buffer_from_clipboard)],
             },
             NORMAL : {
-                 'image_picked' : (NORMAL, self.OnImagePicked),
+                 'image_picked' : (NORMAL, self.OnImagePicked, _draw_idle),
                   'line_picked' : (LINE, self.OnLineSelected),
                   'mark_picked' : (MARK, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnRegionSelected),
@@ -536,7 +542,7 @@ class GraphPlot(MatplotPanel):
                     'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'r+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
             'M-Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
-               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw),
+               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw_idle),
                 'shift pressed' : (NORMAL, self.on_picker_lock),
                'shift released' : (NORMAL, self.on_picker_unlock),
               'Lbutton pressed' : (NORMAL, self.OnDragLock),
@@ -598,7 +604,7 @@ class GraphPlot(MatplotPanel):
                'right released' : (MARK, self.OnMarkShiftEnd),
                     'n pressed' : (MARK, self.OnMarkSkipNext),
                     'p pressed' : (MARK, self.OnMarkSkipPrevious),
-               'escape pressed' : (NORMAL, self.OnMarkDeselected, _draw),
+               'escape pressed' : (NORMAL, self.OnMarkDeselected, _draw_idle),
                'delete pressed' : (MARK, self.OnMarkRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -627,7 +633,7 @@ class GraphPlot(MatplotPanel):
                 'down released' : (REGION, self.OnRegionShiftEnd),
                 'left released' : (REGION, self.OnRegionShiftEnd),
                'right released' : (REGION, self.OnRegionShiftEnd),
-               'escape pressed' : (NORMAL, self.OnRegionDeselected, _draw),
+               'escape pressed' : (NORMAL, self.OnRegionDeselected, _draw_idle),
                'delete pressed' : (NORMAL, self.OnRegionRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -1176,7 +1182,6 @@ class GraphPlot(MatplotPanel):
         nx, ny = self.frame.xytopixel(x, y)
         evt.ind = (ny, nx)
         self.selector = self.frame.xyfrompixel(nx, ny)
-        self.canvas.draw_idle()
 
     def _inaxes(self, evt):
         try:
@@ -1233,7 +1238,7 @@ class GraphPlot(MatplotPanel):
         if len(xs) > 1:
             self.handler('line_removed', self.frame)
 
-    def OnXAxisPanZoom(self, evt, c=None):
+    def OnXAxisPanZoom(self, evt, c=None):  # (override)
         org = self.p_event
         M = np.exp(-(evt.x - org.x)/100)
         if c is None:
@@ -1243,7 +1248,7 @@ class GraphPlot(MatplotPanel):
         org.x, org.y = evt.x, evt.y
         self.draw()
 
-    def OnYAxisPanZoom(self, evt, c=None):
+    def OnYAxisPanZoom(self, evt, c=None):  # (override)
         org = self.p_event
         M = np.exp(-(evt.y - org.y)/100)
         if c is None:
