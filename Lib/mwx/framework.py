@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.13"
+__version__ = "1.10.14"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -240,6 +240,7 @@ class KeyCtrlInterfaceMixin:
 
     def fork(self, *args, **kwargs):
         """Fork events to the self handler."""
+        assert self.handler.current_state != self.handler.previous_state, "Recursive fork."
         return self.handler.call(self.handler.current_event, *args, **kwargs)
 
     def dispatch(self, *args, **kwargs):
