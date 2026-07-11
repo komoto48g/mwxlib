@@ -180,8 +180,8 @@ class MatplotPanel(wx.Panel):
             except AttributeError:
                 pass
         
-        def _draw_idle(evt):
-            self.canvas.draw_idle()
+        def _draw(evt):
+            self.draw()
         
         self.__handler = FSM({  # DNA<MatplotPanel>
                 None : {
@@ -203,9 +203,9 @@ class MatplotPanel(wx.Panel):
               'M-right pressed' : [None, self.OnForwardPosition],
                 },
                 NORMAL : {
-                   'art_picked' : (NORMAL, _draw_idle),
+                   'art_picked' : (NORMAL, _draw),
                   'axes motion' : (NORMAL, self.OnMotion),
-               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw_idle),
+               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw),
               'Rbutton pressed' : (NORMAL, self.on_menu_lock),
              'Rbutton released' : (NORMAL, self.on_menu),
                 'space pressed' : (PAN, self.OnPanBegin),
@@ -235,7 +235,7 @@ class MatplotPanel(wx.Panel):
                     '* pressed' : (PAN, ),
                 },
                 PAN+DRAGGING : {
-                '*[LR]drag end' : (NORMAL, self.OnPanEnd, _draw_idle),
+                '*[LR]drag end' : (NORMAL, self.OnPanEnd, _draw),
          '*[LR]button released' : (NORMAL, self.OnPanEnd),
                 },
                 ZOOM : {
@@ -245,7 +245,7 @@ class MatplotPanel(wx.Panel):
                     'z pressed' : (NORMAL, self.OnZoomEnd),
                 },
                 ZOOM+DRAGGING : {
-                '*[LR]drag end' : (NORMAL, self.OnZoomEnd, _draw_idle),
+                '*[LR]drag end' : (NORMAL, self.OnZoomEnd, _draw),
          '*[LR]button released' : (NORMAL, self.OnZoomEnd),
                 },
                 XAXIS : {
@@ -338,12 +338,15 @@ class MatplotPanel(wx.Panel):
 
     ## Note: To avoid a wxAssertionError when running in a thread.
     @postcall
-    def draw(self, art=None):
+    def draw(self, *artists):
         """Draw plots.
         Call each time the drawing should be updated.
         """
-        if isinstance(art, matplotlib.artist.Artist):
-            self.axes.draw_artist(art)
+        if artists:
+            if self.background is not None:
+                self.canvas.restore_region(self.background)
+            for art in artists:
+                self.axes.draw_artist(art)
             self.canvas.blit(self.axes.bbox)
         else:
             self.handler('canvas_draw', self.frame)
@@ -638,11 +641,11 @@ class MatplotPanel(wx.Panel):
     ZOOM_LIMIT = 0.1  # logical limit <= epsilon
 
     def OnDraw(self, evt):
-        """Called before canvas.draw."""
+        """Called before the canvas is drawn."""
         pass
 
     def OnDrawn(self, evt):
-        """Called after canvas.draw."""
+        """Called after the canvas is drawn."""
         self.background = self.canvas.copy_from_bbox(self.axes.bbox)
 
     def OnMotion(self, evt):
