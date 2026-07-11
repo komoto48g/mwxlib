@@ -349,6 +349,14 @@ class MatplotPanel(wx.Panel):
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
 
+    @postcall
+    def copy_to_clipboard(self):
+        """Copy canvas image to clipboard."""
+        self.canvas.restore_region(self.background)
+        self.canvas.blit(self.axes.bbox)
+        self.canvas.Copy_to_Clipboard()
+        self.message("Copy image to clipboard.")
+
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))
 
@@ -438,17 +446,6 @@ class MatplotPanel(wx.Panel):
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
 
     ## --------------------------------
-    ## External I/O for clipboard.
-    ## --------------------------------
-
-    def copy_to_clipboard(self):
-        """Copy canvas image to clipboard."""
-        self.canvas.restore_region(self.background)
-        self.canvas.blit(self.axes.bbox)
-        self.canvas.Copy_to_Clipboard()
-        self.message("Copy image to clipboard.")
-
-    ## --------------------------------
     ## Selector interface.
     ## --------------------------------
 
@@ -480,16 +477,16 @@ class MatplotPanel(wx.Panel):
             x, y = [x], [y]
         self.selected.set_visible(1)
         self.selected.set_data(x, y)
-        self.handler('selector_drawn', self.frame)
-        self.draw(self.selected)
         self.trace_point(*v)
+        self.draw(self.selected)
+        self.handler('selector_drawn', self.frame)
 
     @selector.deleter
     def selector(self):
         self.selected.set_visible(0)
         self.selected.set_data([], [])
-        self.handler('selector_removed', self.frame)
         self.draw(self.selected)
+        self.handler('selector_removed', self.frame)
 
     ## --------------------------------
     ## matplotlib interface.

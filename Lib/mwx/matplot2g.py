@@ -235,7 +235,7 @@ class AxesImagePhantom:
         
         if flag & FLAG_UPDATE_EXTENT:
             self.update_extent()
-            self.parent.canvas.draw_idle()
+            self.parent.draw()
         if flag:
             self.parent.handler('frame_updated', self)
 
@@ -501,13 +501,13 @@ class GraphPlot(MatplotPanel):
                'frame_modified' : [None, _F(self.writeln)],  # set[],load,roi  => update_buffer
                 'frame_updated' : [None, _F(self.writeln)],  # unit,name,ratio => update_extent
                 'frame_cmapped' : [None, _F(self.writeln)],  # cmap
-                 'image_picked' : [None, ],
+                 'image_picked' : [None, _draw_idle],
                     'line_draw' : [None, ],
                    'line_drawn' : [None, _draw_idle],
                     'line_move' : [None, ],
                    'line_moved' : [None, _draw_idle],
+                  'line_picked' : [None, _draw_idle],
                  'line_removed' : [None, _draw_idle],
-                  'line_picked' : [None, ],
                     'mark_draw' : [None, ],
                    'mark_drawn' : [None, _draw_idle],
                   'mark_picked' : [None, _draw_idle],
@@ -533,30 +533,30 @@ class GraphPlot(MatplotPanel):
                   'C-v pressed' : [None, _F(self.read_buffer_from_clipboard)],
             },
             NORMAL : {
-                 'image_picked' : (NORMAL, self.OnImagePicked, _draw_idle),
+                 'image_picked' : (NORMAL, self.OnImagePicked),
                   'line_picked' : (LINE, self.OnLineSelected),
                   'mark_picked' : (MARK, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnRegionSelected),
                     'c pressed' : (MARK, self.OnMarkAppend),
             'c+Lbutton pressed' : (MARK, self.OnMarkAppend),
-                    'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
-            'r+Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
-            'M-Lbutton pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
-               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw_idle),
+                    'r pressed' : (REGION, self.OnRegionAppend),
+            'r+Lbutton pressed' : (REGION, self.OnRegionAppend),
+            'M-Lbutton pressed' : (REGION, self.OnRegionAppend),
+               'escape pressed' : (NORMAL, self.OnEscapeSelection),
                 'shift pressed' : (NORMAL, self.on_picker_lock),
                'shift released' : (NORMAL, self.on_picker_unlock),
               'Lbutton pressed' : (NORMAL, self.OnDragLock),
-            'S-Lbutton pressed' : (NORMAL, self.OnDragLock, self.OnSelectorAppend),
+            'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnSelectorAppend),
                  '*Ldrag begin' : (NORMAL+DRAGGING, self.OnDragBegin),
             },
             NORMAL+DRAGGING : {
                          'quit' : (NORMAL, ),
-                    'r pressed' : (REGION+DRAGGING, self.OnRegionAppend, self.OnRegionDragBegin, self.OnEscapeSelection),
-                  'alt pressed' : (REGION+DRAGGING, self.OnRegionAppend, self.OnRegionDragBegin, self.OnEscapeSelection),
+                    'r pressed' : (REGION+DRAGGING, self.OnRegionAppend, self.OnRegionDragBegin),
+                  'alt pressed' : (REGION+DRAGGING, self.OnRegionAppend, self.OnRegionDragBegin),
                'escape pressed' : (NORMAL+DRAGGING, self.OnDragEscape),
                  'S-Ldrag move' : (NORMAL+DRAGGING, self.OnDragShiftMove),
                   '*Ldrag move' : (NORMAL+DRAGGING, self.OnDragMove),
-                   '*Ldrag end' : (NORMAL, self.OnDragEnd),
+                   '*Ldrag end' : (LINE, self.OnDragEnd),
             },
             LINE : {
                  'image_picked' : (NORMAL, self.OnLineDeselected),
@@ -564,7 +564,7 @@ class GraphPlot(MatplotPanel):
                   'mark_picked' : (MARK, self.OnLineDeselected, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnLineDeselected, self.OnRegionSelected),
                     'c pressed' : (MARK, self.OnMarkAppend),
-                    'r pressed' : (REGION, self.OnRegionAppend, self.OnEscapeSelection),
+                    'r pressed' : (REGION, self.OnRegionAppend),
                    'up pressed' : (LINE, self.OnLineShift),
                  'down pressed' : (LINE, self.OnLineShift),
                  'left pressed' : (LINE, self.OnLineShift),
@@ -573,13 +573,15 @@ class GraphPlot(MatplotPanel):
                 'down released' : (LINE, self.OnLineShiftEnd),
                 'left released' : (LINE, self.OnLineShiftEnd),
                'right released' : (LINE, self.OnLineShiftEnd),
-               'escape pressed' : (NORMAL, ),
+               'escape pressed' : (NORMAL, self.OnLineDeselected),
                'delete pressed' : (NORMAL, self.OnEscapeSelection),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
                     'z pressed' : (ZOOM, self.OnZoomBegin),
               'Rbutton pressed' : (LINE, self.on_menu_lock),
              'Rbutton released' : (LINE, self.on_menu),
+            'S-Lbutton pressed' : (LINE, self.OnSelectorAppend),
+           'S-Lbutton released' : (LINE, ),
                  '*Ldrag begin' : (LINE+DRAGGING, self.OnLineDragBegin),
             },
             LINE+DRAGGING : {
@@ -713,6 +715,10 @@ class GraphPlot(MatplotPanel):
         self.__isPicked = None
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
+
+    ## --------------------------------
+    ## External I/O support for frames.
+    ## --------------------------------
 
     def load(self, buf, name=None, pos=None, show=True, **kwargs):
         """Load a buffer with a name.
@@ -939,7 +945,7 @@ class GraphPlot(MatplotPanel):
             for art in self.__Arts:
                 art.update_extent()
                 self.handler('frame_updated', art)
-            self.canvas.draw_idle()
+            self.draw()
 
     def kill_buffer(self):
         """Delete a buffer."""
@@ -980,7 +986,6 @@ class GraphPlot(MatplotPanel):
         if self.frame:
             self.handler('frame_selected', self.frame)
             self.on_picker_unlock(evt)
-        self.trace_point(*self.selector)
 
     def on_focus_kill(self, evt):
         """Called when focus is killed (override)."""
@@ -1105,7 +1110,6 @@ class GraphPlot(MatplotPanel):
     def update_colorbar(self, frame):
         if self.cbar:
             self.cbar.update_normal(frame)
-            self.canvas.draw_idle()
 
     def create_colorbar(self):
         from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -1198,7 +1202,7 @@ class GraphPlot(MatplotPanel):
     interpolation_mode = 'bilinear'
 
     def OnDraw(self, evt):
-        """Called before canvas.draw (overridden)."""
+        """Called before canvas.draw (override)."""
         if not self.interpolation_mode:
             return
         frame = self.frame
@@ -1213,8 +1217,8 @@ class GraphPlot(MatplotPanel):
                 frame.set_interpolation('nearest')
 
     def OnMotion(self, evt):
-        """Called when mouse moves in axes (overridden)."""
-        if self.selector.shape[1] < 2:
+        """Called when mouse moves in axes (override)."""
+        if self.cursor.visible:
             self.trace_point(evt.xdata, evt.ydata)
 
     def OnPageDown(self, evt):
@@ -1491,7 +1495,7 @@ class GraphPlot(MatplotPanel):
                 art.xy = x, y
             self.draw(self.marked)
             return
-        for art in self.__markarts:  # or reset all arts
+        for art in self.__markarts:
             art.remove()
         self.__markarts = []
         if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
@@ -1514,7 +1518,8 @@ class GraphPlot(MatplotPanel):
         if not self.__marksel and len(xs) > 0:
             self.set_current_mark(xs, ys)
             self.handler('mark_drawn', self.frame)
-        self.update_mark_art()
+        else:
+            self.update_mark_art()
 
     def OnMarkRemove(self, evt):
         if self.__marksel:
@@ -1528,10 +1533,10 @@ class GraphPlot(MatplotPanel):
                 self.__marksel += [k]
         else:
             self.__marksel = [k]
-        self.update_mark_art()
         self.selector = self.get_current_mark()
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame)  # 多重マーカー選択時
+        self.update_mark_art()
 
     def OnMarkDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         self.__marksel = []
@@ -1656,10 +1661,10 @@ class GraphPlot(MatplotPanel):
         self.rected.set_visible(0)
         self.update_rect_art()
 
-    def update_rect_art(self, *args):
-        if args:
-            art = self.__rectarts  # art の再描画処理をして終了
-            art.xy = args
+    def update_rect_art(self, xy=None):
+        if xy is not None:
+            for art in self.__rectarts:  # art の再描画処理をして終了
+                art.xy = xy
             self.draw(self.rected)
             return
         for art in self.__rectarts:
@@ -1685,13 +1690,17 @@ class GraphPlot(MatplotPanel):
 
     def OnRegionAppend(self, evt):
         xs, ys = self.selector
+        ## cf. self.OnEscapeSelection(evt)  # ここで selector を消す．
+        del self.selector
+        if len(xs) > 1:
+            self.handler('line_removed', self.frame)
         if len(xs) > 0 and self.frame:
             ux, uy = self.frame.xy_unit
             xs = (xs.min()-ux/2, xs.max()+ux/2)
             ys = (ys.max()+uy/2, ys.min()-uy/2)
             self.set_current_rect(xs, ys)
-            self.update_rect_art()
             self.handler('region_drawn', self.frame)
+        self.update_rect_art()
 
     def OnRegionRemove(self, evt):
         if self.__rectsel:
@@ -1726,11 +1735,11 @@ class GraphPlot(MatplotPanel):
 
     def OnRegionDragMove(self, evt, shift=False, meta=False):
         x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
-        xs, ys = self.get_current_rect()
+        xr, yr = self.get_current_rect()
         j = self.__rectsel  # corner-drag[1] or region-drag[4]
         if len(j) == 1:
             k = (j[0] + 2) % 4  # 選択された一点の対角点
-            xo, yo = xs[k], ys[k]
+            xo, yo = xr[k], yr[k]
             if shift:
                 x, y = self.calc_shiftpoint(xo, yo, x, y, centred=False)
             elif meta:
@@ -1740,13 +1749,12 @@ class GraphPlot(MatplotPanel):
                 i = np.searchsorted(nn, n)
                 x = xo + nn[i] * np.sign(x-xo) * ux
                 y = yo + nn[i] * np.sign(y-yo) * uy
-            self.set_current_rect((xo, x), (yo, y))
+            xs, ys = (xo, x), (yo, y)
         else:
             xc, yc = self._lastpoint
             xo, yo = self._orgpoints
-            xs = xo + (x - xc)
-            ys = yo + (y - yc)
-            self.set_current_rect(xs, ys)
+            xs, ys = xo + (x - xc), yo + (y - yc)
+        self.set_current_rect(xs, ys)
         self.handler('region_draw', self.frame)
 
     def OnRegionDragShiftMove(self, evt):
