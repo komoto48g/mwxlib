@@ -501,13 +501,13 @@ class GraphPlot(MatplotPanel):
                'frame_modified' : [None, _F(self.writeln)],  # set[],load,roi  => update_buffer
                 'frame_updated' : [None, _F(self.writeln)],  # unit,name,ratio => update_extent
                 'frame_cmapped' : [None, _F(self.writeln)],  # cmap
-                 'image_picked' : [None, _draw_idle],
+                 'image_picked' : [None, ],
                     'line_draw' : [None, ],
-                   'line_drawn' : [None, _draw_idle],
+                   'line_drawn' : [None, ],
                     'line_move' : [None, ],
-                   'line_moved' : [None, _draw_idle],
-                  'line_picked' : [None, _draw_idle],
-                 'line_removed' : [None, _draw_idle],
+                   'line_moved' : [None, ],
+                  'line_picked' : [None, ],
+                 'line_removed' : [None, ],
                     'mark_draw' : [None, ],
                    'mark_drawn' : [None, _draw_idle],
                   'mark_picked' : [None, _draw_idle],
@@ -592,8 +592,8 @@ class GraphPlot(MatplotPanel):
                    '*Ldrag end' : (LINE, self.OnLineDragEnd),
             },
             MARK : {
-                 'image_picked' : (NORMAL, self.OnMarkDeselected, self.OnImagePicked),
-                  'line_picked' : (LINE, self.OnMarkDeselected, self.OnLineSelected),
+                 'image_picked' : (NORMAL, self.OnMarkDeselected, self.OnImagePicked, _draw_idle),
+                  'line_picked' : (LINE, self.OnMarkDeselected, self.OnLineSelected, _draw_idle),
                   'mark_picked' : (MARK, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnMarkDeselected, self.OnRegionSelected),
                    'up pressed' : (MARK, self.OnMarkShift),
@@ -622,8 +622,8 @@ class GraphPlot(MatplotPanel):
                    '*Ldrag end' : (MARK, self.OnMarkDragEnd),
             },
             REGION : {
-                 'image_picked' : (NORMAL, self.OnRegionDeselected, self.OnImagePicked),
-                  'line_picked' : (LINE, self.OnRegionDeselected, self.OnLineSelected),
+                 'image_picked' : (NORMAL, self.OnRegionDeselected, self.OnImagePicked, _draw_idle),
+                  'line_picked' : (LINE, self.OnRegionDeselected, self.OnLineSelected, _draw_idle),
                   'mark_picked' : (MARK, self.OnRegionDeselected, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnRegionSelected),
                   'axes motion' : (REGION, self.OnRegionMotion),
