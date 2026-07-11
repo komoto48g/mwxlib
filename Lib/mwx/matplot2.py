@@ -45,7 +45,8 @@ if MPL_VERSION < (3,8,0):
 
 
 ## Monkey-patch (local) for matplotlib 3.10/WXAgg.
-if MPL_VERSION < (3,11,0):
+# if MPL_VERSION < (3,11,0):
+if 1:
     class Cursor(Cursor):
         def onmove(self, event):
             """Internal event handler to draw the cursor when the mouse moves.
@@ -68,11 +69,7 @@ if MPL_VERSION < (3,11,0):
                 return
             ## Redraw.
             if self.useblit:
-                if self.background is not None:
-                    self.canvas.restore_region(self.background)
-                self.ax.draw_artist(self.linev)
-                self.ax.draw_artist(self.lineh)
-                self.canvas.blit(self.ax.bbox)
+                self.canvas.Parent.draw_overlay()
             else:
                 self.canvas.draw_idle()
 
@@ -203,9 +200,9 @@ class MatplotPanel(wx.Panel):
               'M-right pressed' : [None, self.OnForwardPosition],
                 },
                 NORMAL : {
-                   'art_picked' : (NORMAL, _draw),
+                   'art_picked' : (NORMAL, ),
                   'axes motion' : (NORMAL, self.OnMotion),
-               'escape pressed' : (NORMAL, self.OnEscapeSelection, _draw),
+               'escape pressed' : (NORMAL, self.OnEscapeSelection),
               'Rbutton pressed' : (NORMAL, self.on_menu_lock),
              'Rbutton released' : (NORMAL, self.on_menu),
                 'space pressed' : (PAN, self.OnPanBegin),
@@ -336,6 +333,12 @@ class MatplotPanel(wx.Panel):
         
         self.background = None
 
+    @property
+    def overlay_artists(self):
+        return [self.selected,
+                self.cursor.linev, self.cursor.lineh,
+                ]
+
     ## Note: To avoid a wxAssertionError when running in a thread.
     @postcall
     def draw(self, *artists):
@@ -351,6 +354,9 @@ class MatplotPanel(wx.Panel):
         else:
             self.handler('canvas_draw', self.frame)
             self.canvas.draw()
+
+    def draw_overlay(self):
+        self.draw(*self.overlay_artists)
 
     @postcall
     def copy_to_clipboard(self):
@@ -481,14 +487,14 @@ class MatplotPanel(wx.Panel):
         self.selected.set_visible(1)
         self.selected.set_data(x, y)
         self.trace_point(*v)
-        self.draw(self.selected)
+        self.draw_overlay()
         self.handler('selector_drawn', self.frame)
 
     @selector.deleter
     def selector(self):
         self.selected.set_visible(0)
         self.selected.set_data([], [])
-        self.draw(self.selected)
+        self.draw_overlay()
         self.handler('selector_removed', self.frame)
 
     ## --------------------------------
