@@ -1682,7 +1682,9 @@ class GraphPlot(MatplotPanel):
         if self.region.size and self.frame:
             (l,r), (b,t) = self.region
             c = np.array(((l+r)/2, (b+t)/2))
-            self.region += self.frame.center - c[:,None]
+            d = self.frame.center - c[:,None]
+            if np.any(d):
+                self.region += d
 
     def OnRegionAppend(self, evt):
         xs, ys = self.selector
