@@ -45,7 +45,8 @@ if MPL_VERSION < (3,8,0):
 
 
 ## Monkey-patch (local) for matplotlib 3.10/WXAgg.
-if MPL_VERSION < (3,11,0):
+# if MPL_VERSION < (3,11,0):
+if 1:
     class Cursor(Cursor):
         def onmove(self, event):
             """Internal event handler to draw the cursor when the mouse moves.
@@ -68,11 +69,7 @@ if MPL_VERSION < (3,11,0):
                 return
             ## Redraw.
             if self.useblit:
-                if self.background is not None:
-                    self.canvas.restore_region(self.background)
-                self.ax.draw_artist(self.linev)
-                self.ax.draw_artist(self.lineh)
-                self.canvas.blit(self.ax.bbox)
+                self.canvas.Parent.draw_overlay()
             else:
                 self.canvas.draw_idle()
 
@@ -149,8 +146,8 @@ class MatplotPanel(wx.Panel):
         self.canvas.mpl_connect('figure_leave_event', lambda v: self.handler('figure_leave', v))
         self.canvas.mpl_connect('axes_enter_event', lambda v: self.handler('axes_enter', v))
         self.canvas.mpl_connect('axes_leave_event', lambda v: self.handler('axes_leave', v))
-        # self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
-        # self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
+        self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
+        self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
         self.canvas.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
@@ -180,11 +177,16 @@ class MatplotPanel(wx.Panel):
             except AttributeError:
                 pass
         
+        def _draw(evt):
+            self.draw()
+        
         self.__handler = FSM({  # DNA<MatplotPanel>
                 None : {
                   'canvas_draw' : [None, self.OnDraw],  # before canvas.draw
-                 # 'canvas_drawn' : [None, ],             # after canvas.draw
-               # 'canvas_resized' : [None, ],
+                 'canvas_drawn' : [None, self.OnDrawn],  # after canvas.draw
+               'canvas_resized' : [None, ],
+               'selector_drawn' : [None, ],
+             'selector_removed' : [None, ],
                     'focus_set' : [None, self.on_focus_set],
                    'focus_kill' : [None, self.on_focus_kill],
                  'figure_enter' : [None, self.on_figure_enter],
@@ -216,8 +218,10 @@ class MatplotPanel(wx.Panel):
            '*wheeldown pressed' : (PAN, self.OnScrollZoom),
               'C-[+;-] pressed' : (PAN, self.OnZoom),
             'C-S-[+;-] pressed' : (PAN, self.OnZoom),
-        'C-*[LR]button pressed' : (PAN+DRAGGING, ),
-     'space+[LR]button pressed' : (PAN+DRAGGING, ),
+        'C-*[LR]button pressed' : (PAN, ),
+       'C-*[LR]button released' : (NORMAL, self.OnPanEnd),
+     'space+[LR]button pressed' : (PAN, ),
+    'space+[LR]button released' : (NORMAL, self.OnPanEnd),
               '*[LR]drag begin' : (PAN+DRAGGING, ),
                '*ctrl released' : (NORMAL, self.OnPanEnd),
                'space released' : (NORMAL, self.OnPanEnd),
@@ -225,11 +229,11 @@ class MatplotPanel(wx.Panel):
                    'axes_leave' : (NORMAL, self.OnPanEnd),
                    'focus_kill' : (NORMAL, self.OnPanEnd),
                   'C-* pressed' : (NORMAL, fork, self.OnPanEnd),
-              'C-shift pressed' : (PAN, ),
+                    '* pressed' : (PAN, ),
                 },
                 PAN+DRAGGING : {
-                '*[LR]drag end' : (NORMAL, self.OnPanEnd, self.draw),
-         '*[LR]button released' : (NORMAL, self.OnPanEnd, self.draw),
+                '*[LR]drag end' : (NORMAL, self.OnPanEnd, _draw),
+         '*[LR]button released' : (NORMAL, self.OnPanEnd),
                 },
                 ZOOM : {
               '*[LR]drag begin' : (ZOOM+DRAGGING, ),
@@ -238,8 +242,8 @@ class MatplotPanel(wx.Panel):
                     'z pressed' : (NORMAL, self.OnZoomEnd),
                 },
                 ZOOM+DRAGGING : {
-                '*[LR]drag end' : (NORMAL, self.OnZoomEnd, self.draw),
-         '*[LR]button released' : (NORMAL, self.OnZoomEnd, self.draw),
+                '*[LR]drag end' : (NORMAL, self.OnZoomEnd, _draw),
+         '*[LR]button released' : (NORMAL, self.OnZoomEnd),
                 },
                 XAXIS : {
                    'axes_enter' : (NORMAL, self.OnAxisLeave),
@@ -326,21 +330,50 @@ class MatplotPanel(wx.Panel):
         # <matplotlib.widgets.Cursor>
         self.cursor = Cursor(self.axes, useblit=True, color='grey', linewidth=1)
         self.cursor.visible = 1
+        
+        self.background = None
+
+    @property
+    def overlay_artists(self):
+        return [self.selected,
+                self.cursor.linev, self.cursor.lineh,
+                ]
 
     ## Note: To avoid a wxAssertionError when running in a thread.
     @postcall
-    def draw(self, art=None):
+    def draw(self, *artists, internal_callback=True):
         """Draw plots.
         Call each time the drawing should be updated.
         """
-        if isinstance(art, matplotlib.artist.Artist):
-            self.axes.draw_artist(art)
-            self.canvas.blit(self.axes.bbox)
-            # self.canvas.blit(art.get_clip_box())
-            # self.canvas.draw_idle()
-        else:
-            self.handler('canvas_draw', self.frame)
+        if not artists:
+            artists = self.overlay_artists
+            states = [art.get_visible() for art in artists]
+            for art in artists:     # オーバーレイを消して描画処理．
+                art.set_visible(0)
+            if internal_callback:
+                self.handler('canvas_draw', self.frame)
             self.canvas.draw()
+            for art, v in zip(artists, states):  # オーバーレイを戻して再描画処理↓
+                art.set_visible(v)
+        if artists:
+            if self.background is not None:
+                self.canvas.restore_region(self.background)
+            for art in artists:
+                ## postcall 時点で削除されている可能性があるため axes の有無をチェックする．
+                if art.axes:
+                    self.axes.draw_artist(art)
+            self.canvas.blit(self.axes.bbox)
+
+    def draw_overlay(self):
+        self.draw(*self.overlay_artists)
+
+    @postcall
+    def copy_to_clipboard(self):
+        """Copy canvas image to clipboard."""
+        self.canvas.restore_region(self.background)
+        self.canvas.blit(self.axes.bbox)
+        self.canvas.Copy_to_Clipboard()
+        self.message("Copy image to clipboard.")
 
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))
@@ -431,25 +464,6 @@ class MatplotPanel(wx.Panel):
         wx.UIActionSimulator().KeyUp(wx.WXK_ESCAPE)
 
     ## --------------------------------
-    ## External I/O file and clipboard.
-    ## --------------------------------
-
-    def copy_to_clipboard(self):
-        """Copy canvas image to clipboard."""
-        # b = self.selected.get_visible()
-        c = self.cursor.visible
-        try:
-            # self.selected.set_visible(0)
-            self.cursor.visible = 0
-            self.canvas.draw()
-            self.canvas.Copy_to_Clipboard()
-            self.message("Copy image to clipboard.")
-        finally:
-            # self.selected.set_visible(b)
-            self.cursor.visible = c
-            self.canvas.draw()
-
-    ## --------------------------------
     ## Selector interface.
     ## --------------------------------
 
@@ -481,16 +495,16 @@ class MatplotPanel(wx.Panel):
             x, y = [x], [y]
         self.selected.set_visible(1)
         self.selected.set_data(x, y)
-        self.handler('selector_drawn', self.frame)
-        self.draw(self.selected)
         self.trace_point(*v)
+        self.draw_overlay()
+        self.handler('selector_drawn', self.frame)
 
     @selector.deleter
     def selector(self):
         self.selected.set_visible(0)
         self.selected.set_data([], [])
+        self.draw_overlay()
         self.handler('selector_removed', self.frame)
-        self.draw(self.selected)
 
     ## --------------------------------
     ## matplotlib interface.
@@ -541,7 +555,6 @@ class MatplotPanel(wx.Panel):
             evt.xdata = x = xs[k]
             evt.ydata = y = ys[k]
             self.selector = ([x], [y])
-            self.canvas.draw_idle()
             self.handler('art_picked', evt)
             self.message("({:g}, {:g}) index {}".format(x, y, evt.index))
 
@@ -636,15 +649,19 @@ class MatplotPanel(wx.Panel):
         self.p_event = None
 
     ## --------------------------------
-    ## Pan/Zoom actions.
+    ## Draw and Pan/Zoom actions.
     ## --------------------------------
 
     ZOOM_RATIO = 10 ** 0.2
     ZOOM_LIMIT = 0.1  # logical limit <= epsilon
 
     def OnDraw(self, evt):
-        """Called before canvas.draw."""
+        """Called before the canvas is drawn."""
         pass
+
+    def OnDrawn(self, evt):
+        """Called after the canvas is drawn."""
+        self.background = self.canvas.copy_from_bbox(self.axes.bbox)
 
     def OnMotion(self, evt):
         """Called when mouse moves in axes."""
@@ -671,7 +688,6 @@ class MatplotPanel(wx.Panel):
     def OnEscapeSelection(self, evt):
         """Escape from selection."""
         del self.selector
-        self.canvas.draw_idle()
 
     def zoomlim(self, lim, M, c=None):
         ## The limitation of zoom is necessary; If the axes is enlarged too much,

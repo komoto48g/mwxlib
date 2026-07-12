@@ -484,7 +484,7 @@ class LayerInterface(CtrlInterface):
             ## To avoid RuntimeError, check if canvas object has been deleted.
             canvas = art.axes.figure.canvas
             if canvas:
-                canvas.draw_idle()
+                canvas.Parent.draw(internal_callback=False)
         except Exception as e:
             print(f"- Failed to draw Arts of {self.__module__};", e)
             del self.Arts
@@ -611,7 +611,7 @@ class Graph(GraphPlot):
               and a.buffer.shape == b.buffer.shape):
             self.xlim = other.xlim
             self.ylim = other.ylim
-            self.canvas.draw()
+            self.draw(internal_callback=False)
 
     ## --------------------------------
     ## Overridden buffer methods.
