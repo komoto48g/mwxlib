@@ -341,7 +341,7 @@ class MatplotPanel(wx.Panel):
 
     ## Note: To avoid a wxAssertionError when running in a thread.
     @postcall
-    def draw(self, *artists):
+    def draw(self, *artists, internal_callback=True):
         """Draw plots.
         Call each time the drawing should be updated.
         """
@@ -350,7 +350,8 @@ class MatplotPanel(wx.Panel):
             states = [art.get_visible() for art in artists]
             for art in artists:     # オーバーレイを消して描画処理．
                 art.set_visible(0)
-            self.handler('canvas_draw', self.frame)
+            if internal_callback:
+                self.handler('canvas_draw', self.frame)
             self.canvas.draw()
             for art, v in zip(artists, states):  # オーバーレイを戻して再描画処理↓
                 art.set_visible(v)
