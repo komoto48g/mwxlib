@@ -345,15 +345,23 @@ class MatplotPanel(wx.Panel):
         """Draw plots.
         Call each time the drawing should be updated.
         """
+        if not artists:
+            artists = self.overlay_artists
+            states = [art.get_visible() for art in artists]
+            for art in artists:     # オーバーレイを消して描画処理．
+                art.set_visible(0)
+            self.handler('canvas_draw', self.frame)
+            self.canvas.draw()
+            for art, v in zip(artists, states):  # オーバーレイを戻して再描画処理↓
+                art.set_visible(v)
         if artists:
             if self.background is not None:
                 self.canvas.restore_region(self.background)
             for art in artists:
-                self.axes.draw_artist(art)
+                ## postcall 時点で削除されている可能性があるため axes の有無をチェックする．
+                if art.axes:
+                    self.axes.draw_artist(art)
             self.canvas.blit(self.axes.bbox)
-        else:
-            self.handler('canvas_draw', self.frame)
-            self.canvas.draw()
 
     def draw_overlay(self):
         self.draw(*self.overlay_artists)

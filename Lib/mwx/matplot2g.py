@@ -1202,7 +1202,7 @@ class GraphPlot(MatplotPanel):
     interpolation_mode = 'bilinear'
 
     def OnDraw(self, evt):
-        """Called before canvas.draw (override)."""
+        """Called before the canvas is drawn (override)."""
         if not self.interpolation_mode:
             return
         frame = self.frame

@@ -139,7 +139,7 @@ class LinePlot(MatplotPanel):
             else: return 0  # outside
 
     def OnDraw(self, evt):
-        """Called before canvas.draw."""
+        """Called before the canvas is drawn (override)."""
         self.annotate()
 
     def OnMotion(self, evt):
