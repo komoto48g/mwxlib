@@ -487,9 +487,6 @@ class GraphPlot(MatplotPanel):
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
         
-        def _draw_idle(evt):
-            self.canvas.draw_idle()
-        
         self.handler.update({  # DNA<GraphPlot>
             None : {
                   'frame_shown' : [None, ],  # show
@@ -509,13 +506,13 @@ class GraphPlot(MatplotPanel):
                   'line_picked' : [None, ],
                  'line_removed' : [None, ],
                     'mark_draw' : [None, ],
-                   'mark_drawn' : [None, _draw_idle],
-                  'mark_picked' : [None, _draw_idle],
-                 'mark_removed' : [None, _draw_idle],
+                   'mark_drawn' : [None, ],
+                  'mark_picked' : [None, ],
+                 'mark_removed' : [None, ],
                   'region_draw' : [None, ],
-                 'region_drawn' : [None, _draw_idle],
-                'region_picked' : [None, _draw_idle],
-               'region_removed' : [None, _draw_idle],
+                 'region_drawn' : [None, ],
+                'region_picked' : [None, ],
+               'region_removed' : [None, ],
                'selector_drawn' : [None, ],
              'selector_removed' : [None, ],
                  'M-up pressed' : [None, self.OnPageUp],
@@ -592,8 +589,8 @@ class GraphPlot(MatplotPanel):
                    '*Ldrag end' : (LINE, self.OnLineDragEnd),
             },
             MARK : {
-                 'image_picked' : (NORMAL, self.OnMarkDeselected, self.OnImagePicked, _draw_idle),
-                  'line_picked' : (LINE, self.OnMarkDeselected, self.OnLineSelected, _draw_idle),
+                 'image_picked' : (NORMAL, self.OnMarkDeselected, self.OnImagePicked),
+                  'line_picked' : (LINE, self.OnMarkDeselected, self.OnLineSelected),
                   'mark_picked' : (MARK, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnMarkDeselected, self.OnRegionSelected),
                    'up pressed' : (MARK, self.OnMarkShift),
@@ -606,7 +603,7 @@ class GraphPlot(MatplotPanel):
                'right released' : (MARK, self.OnMarkShiftEnd),
                     'n pressed' : (MARK, self.OnMarkSkipNext),
                     'p pressed' : (MARK, self.OnMarkSkipPrevious),
-               'escape pressed' : (NORMAL, self.OnMarkDeselected, _draw_idle),
+               'escape pressed' : (NORMAL, self.OnMarkDeselected),
                'delete pressed' : (MARK, self.OnMarkRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -622,8 +619,8 @@ class GraphPlot(MatplotPanel):
                    '*Ldrag end' : (MARK, self.OnMarkDragEnd),
             },
             REGION : {
-                 'image_picked' : (NORMAL, self.OnRegionDeselected, self.OnImagePicked, _draw_idle),
-                  'line_picked' : (LINE, self.OnRegionDeselected, self.OnLineSelected, _draw_idle),
+                 'image_picked' : (NORMAL, self.OnRegionDeselected, self.OnImagePicked),
+                  'line_picked' : (LINE, self.OnRegionDeselected, self.OnLineSelected),
                   'mark_picked' : (MARK, self.OnRegionDeselected, self.OnMarkSelected),
                 'region_picked' : (REGION, self.OnRegionSelected),
                   'axes motion' : (REGION, self.OnRegionMotion),
@@ -635,7 +632,7 @@ class GraphPlot(MatplotPanel):
                 'down released' : (REGION, self.OnRegionShiftEnd),
                 'left released' : (REGION, self.OnRegionShiftEnd),
                'right released' : (REGION, self.OnRegionShiftEnd),
-               'escape pressed' : (NORMAL, self.OnRegionDeselected, _draw_idle),
+               'escape pressed' : (NORMAL, self.OnRegionDeselected),
                'delete pressed' : (NORMAL, self.OnRegionRemove),
                 'space pressed' : (PAN, self.OnPanBegin),
                  'ctrl pressed' : (PAN, self.OnPanBegin),
@@ -715,6 +712,14 @@ class GraphPlot(MatplotPanel):
         self.__isPicked = None
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
+
+    @property
+    def overlay_artists(self):
+        return [self.selected,
+                self.marked, *self.__markarts,
+                self.rected, *self.__rectarts,
+                self.cursor.linev, self.cursor.lineh,
+                ]
 
     ## --------------------------------
     ## External I/O support for frames.
@@ -1493,11 +1498,11 @@ class GraphPlot(MatplotPanel):
             for k, x, y in zip(*args):
                 art = self.__markarts[k]  # art の再描画処理をして終了
                 art.xy = x, y
-            self.draw(self.marked)
+            self.draw_overlay()
             return
         for art in self.__markarts:
             art.remove()
-        self.__markarts = []
+        del self.__markarts[:]
         if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
             N = self.maxnum_markers
             xm, ym = self.marked.get_data(orig=0)
@@ -1511,7 +1516,7 @@ class GraphPlot(MatplotPanel):
                   )
                 )
             self.trace_point(*self.get_current_mark(), type=MARK)
-        self.draw(self.marked)
+        self.draw_overlay()
 
     def OnMarkAppend(self, evt):
         xs, ys = self.selector
@@ -1665,11 +1670,11 @@ class GraphPlot(MatplotPanel):
         if xy is not None:
             for art in self.__rectarts:  # art の再描画処理をして終了
                 art.xy = xy
-            self.draw(self.rected)
+            self.draw_overlay()
             return
         for art in self.__rectarts:
             art.remove()
-        self.__rectarts = []
+        del self.__rectarts[:]
         if self.rected.get_visible() and self.handler.current_state in (REGION, REGION+DRAGGING):
             x, y = self.rected.get_data(orig=0)
             if x.size:
@@ -1680,7 +1685,7 @@ class GraphPlot(MatplotPanel):
                   )
                 )
             self.trace_point(x, y, type=REGION)
-        self.draw(self.rected)
+        self.draw_overlay()
 
     def OnRegionCenter(self, evt):
         if self.region.size and self.frame:
