@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.17"
+__version__ = "1.10.18"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1630,9 +1630,11 @@ class ShellFrame(MiniFrame):
     def watch(self, obj):
         if isinstance(obj, wx.Object):
             self.monitor.watch(obj)
+            self.linfo.watch(obj)
+            self.ginfo.watch(None)
             self.popup_window(self.monitor)
         elif hasattr(obj, '__dict__'):
-            self.linfo.watch(obj.__dict__)
+            self.linfo.watch(obj)
             self.ginfo.watch(None)
             self.popup_window(self.linfo)
         else:
@@ -1700,11 +1702,11 @@ class ShellFrame(MiniFrame):
                 with buf.off_readonly():
                     buf.Text = obj
                 self.debugger.run(obj, filename)
-            elif isinstance(obj, wx.Object):
-                self.watch(obj)
+            # elif isinstance(obj, wx.Object):
+            #     self.watch(obj)
             else:
                 wx.MessageBox("Unable to debug non-callable objects.\n\n"
-                              "Target must be callable or wx.Object.",
+                              "Target must be a callable object.",
                               style=wx.ICON_ERROR)
         finally:
             self.debugger.interactive_shell = shell

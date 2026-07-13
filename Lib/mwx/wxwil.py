@@ -1,6 +1,7 @@
 #! python3
-"""Watcher of locals info.
+"""Watcher of namespace info.
 """
+from collections.abc import Mapping
 import wx
 from wx.py import dispatcher
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -21,7 +22,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     
     Attributes:
         parent: shellframe
-        target: locals:dict to watch
+        target: namespace to watch
     """
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent,
@@ -58,12 +59,15 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         self.update()
 
-    def watch(self, locals):
+    def watch(self, namespace):
         self.clear()
-        if not isinstance(locals, dict):
+        if isinstance(namespace, (dict, Mapping)):  # for f_locals:Mapping type (>= PY313)
+            self.target = namespace
+        elif hasattr(namespace, '__dict__'):
+            self.target = vars(namespace)
+        else:
             self.unwatch()
             return
-        self.target = locals
         try:
             self.Freeze()
             self.DeleteAllItems()
@@ -108,7 +112,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if i is not None:
                 if data[i][1] == vstr:
                     continue
-                data[i][1] = vstr  # Update data to locals
+                data[i][1] = vstr
             else:
                 i = len(data)
                 item = [key, vstr]
