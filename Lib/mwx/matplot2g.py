@@ -718,7 +718,6 @@ class GraphPlot(MatplotPanel):
         return [self.selected,
                 self.marked, *self.__markarts,
                 self.rected, *self.__rectarts,
-                self.cursor.linev, self.cursor.lineh,
                 ]
 
     ## --------------------------------

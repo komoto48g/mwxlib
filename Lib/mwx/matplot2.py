@@ -335,9 +335,7 @@ class MatplotPanel(wx.Panel):
 
     @property
     def overlay_artists(self):
-        return [self.selected,
-                self.cursor.linev, self.cursor.lineh,
-                ]
+        return [self.selected]
 
     ## Note: To avoid a wxAssertionError when running in a thread.
     @postcall
@@ -364,8 +362,9 @@ class MatplotPanel(wx.Panel):
                     self.axes.draw_artist(art)
             self.canvas.blit(self.axes.bbox)
 
-    def draw_overlay(self):
-        self.draw(*self.overlay_artists)
+    def draw_overlay(self, cursor=True):
+        cursor_lines = [self.cursor.linev, self.cursor.lineh] if cursor else []
+        self.draw(*self.overlay_artists, *cursor_lines)
 
     @postcall
     def copy_to_clipboard(self):
@@ -478,10 +477,7 @@ class MatplotPanel(wx.Panel):
         pass
 
     def on_figure_leave(self, evt):  # <matplotlib.backend_bases.MouseEvent>
-        if MPL_VERSION < (3,11,0):
-            if self.cursor.background is not None:
-                self.canvas.restore_region(self.cursor.background)
-            self.cursor.clear(evt)
+        self.draw_overlay(cursor=False)
 
     @property
     def selector(self):
