@@ -705,8 +705,8 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         self.WrapIndentMode = stc.STC_WRAPINDENT_SAME
         self.IndentationGuides = stc.STC_IV_LOOKFORWARD
         
-        self.__mark = -1
-        self.__stylus = {}
+        self._mark = -1
+        self._stylus = {}
 
     __dnd_flag = 0
 
@@ -826,12 +826,12 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     @property
     def mark(self):
-        return self.__mark
+        return self._mark
 
     @mark.setter
     def mark(self, v):
         if v != -1:
-            self.__mark = v
+            self._mark = v
             ln = self.LineFromPosition(v)
             self.set_marker(ln, 0)  # [mark_set]
         else:
@@ -839,9 +839,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     @mark.deleter
     def mark(self):
-        v = self.__mark
+        v = self._mark
         if v != -1:
-            self.__mark = -1
+            self._mark = -1
             self.del_marker(0)  # [mark_unset]
 
     def set_mark(self):
@@ -1212,7 +1212,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     ## --------------------------------
 
     def get_stylus(self):
-        return self.__stylus
+        return self._stylus
 
     def set_stylus(self, spec=None, **kwargs):
         """Set style spec for wx.stc.StyleSetSpec."""
@@ -1221,7 +1221,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if not spec:
             return
         
-        self.__stylus.update(spec)
+        self._stylus.update(spec)
         
         def _map(sc):
             return dict(kv.partition(':')[::2] for kv in sc.split(',') if kv)
@@ -1503,7 +1503,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     def filter_text(self):
         """Show indicators for the selected text."""
-        self.__itextlines = []
+        self._itextlines = []
         for i in (10, 11,):
             self.SetIndicatorCurrent(i)
             self.IndicatorClearRange(0, self.TextLength)
@@ -1523,7 +1523,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             for i in (10, 11,):
                 self.SetIndicatorCurrent(i)
                 self.IndicatorFillRange(p, q-p)
-        self.__itextlines = sorted(set(lines))  # keep order, no duplication
+        self._itextlines = sorted(set(lines))  # keep order, no duplication
         self.message("{}: {} found".format(text, len(lines)))
         try:
             self.TopLevelParent.findData.FindString = text
@@ -1536,7 +1536,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     def on_itext_enter(self, evt):
         """Called when entering filter_text mode."""
-        if not self.__itextlines:
+        if not self._itextlines:
             self.handler('quit', evt)
             return
         
@@ -1547,7 +1547,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         # self.StyleSetSize(stc.STC_STYLE_DEFAULT, pts-1)
         
         self.AutoCompSetSeparator(ord('\n'))
-        self.AutoCompShow(0, '\n'.join(map(_format, self.__itextlines)))
+        self.AutoCompShow(0, '\n'.join(map(_format, self._itextlines)))
         self.AutoCompSelect("{:4d}".format(self.cline+1))
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.on_itext_selection)
         
@@ -1565,7 +1565,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         if i == -1:
             evt.Skip()
             return
-        line = self.__itextlines[i]
+        line = self._itextlines[i]
         self.EnsureVisible(line)  # expand if folded
         self.goto_line(line)
         self.recenter()
@@ -1856,27 +1856,22 @@ class Buffer(EditorInterface, EditWindow):
     @property
     def name(self):
         """buffer-name."""
-        return os.path.basename(self.__filename or '')
+        return os.path.basename(self.filename or '')
 
     Name = name  # page.window.Name for save/loadPerspective
 
-    @property
-    def filename(self):
-        """buffer-file-name."""
-        return self.__filename
-
     def update_filestamp(self, fn):
         try:
-            self.__mtime = os.path.getmtime(fn)  # update timestamp (modified time)
+            self.mtime = os.path.getmtime(fn)  # update timestamp (modified time)
         except FileNotFoundError:
-            self.__mtime = False  # valid path (but not found)
+            self.mtime = False  # valid path (but not found)
         except OSError:
             if is_url(fn):
-                self.__mtime = -1  # URL path
+                self.mtime = -1  # URL path
             else:
-                self.__mtime = None  # invalid path
-        if self.__filename != fn:
-            self.__filename = fn
+                self.mtime = None  # invalid path
+        if self.filename != fn:
+            self.filename = fn
             self.update_caption()
 
     @property
@@ -1890,9 +1885,9 @@ class Buffer(EditorInterface, EditWindow):
             None: no file
         """
         try:
-            return os.path.getmtime(self.__filename) - self.__mtime
+            return os.path.getmtime(self.filename) - self.mtime
         except Exception:
-            return self.__mtime
+            return self.mtime
 
     @property
     def need_buffer_save(self):
@@ -1937,7 +1932,7 @@ class Buffer(EditorInterface, EditWindow):
         EditorInterface.__init__(self)
         
         self.parent = parent
-        self.__filename = filename
+        self.filename = filename
         self.update_filestamp(filename)
         self.code = None
         
@@ -3143,7 +3138,8 @@ class Nautilus(EditorInterface, Shell):
         del self.white_arrow
         del self.red_arrow
         
-        self.__text = ''
+        self._prev_text = ''
+        self._eolc_mark = -1
 
     def trace_position(self):
         _text, lp = self.CurLine
@@ -3159,12 +3155,12 @@ class Nautilus(EditorInterface, Shell):
             self.trace_position()
             if self.handler.current_state == 0:
                 text = self.expr_at_caret
-                if text and text != self.__text:
+                if text and text != self._prev_text:
                     name, argspec, tip = self.interp.getCallTip(text)
                     if tip:
                         tip = tip.splitlines()[0]
                     self.message(tip)  # clear if no tip
-                    self.__text = text
+                    self._prev_text = text
             if evt.Updated & stc.STC_UPDATE_CONTENT:
                 self.handler('shell_modified', self)
         evt.Skip()
@@ -3280,12 +3276,12 @@ class Nautilus(EditorInterface, Shell):
         evt.Skip()
 
     def on_enter_escmap(self, evt):
-        self.__caret_mode = self.CaretPeriod
+        self._caret_mode = self.CaretPeriod
         self.CaretPeriod = 0
         self.message("ESC-")
 
     def on_exit_escmap(self, evt):
-        self.CaretPeriod = self.__caret_mode
+        self.CaretPeriod = self._caret_mode
         self.message("ESC {}".format(evt.key))
         if self.eolc < self.bolc:  # Check if prompt is in valid state.
             self.goto_char(self.eolc)
@@ -3295,13 +3291,13 @@ class Nautilus(EditorInterface, Shell):
 
     def on_enter_notemode(self, evt):
         self.noteMode = True
-        self.__caret_mode = self.CaretForeground
+        self._caret_mode = self.CaretForeground
         self.CaretForeground = 'red'
         self.message("Note mode")
 
     def on_exit_notemode(self, evt):
         self.noteMode = False
-        self.CaretForeground = self.__caret_mode
+        self.CaretForeground = self._caret_mode
         self.goto_char(self.eolc)
         self.promptPosEnd = 0  # Enabale write(prompt).
         self.prompt()
@@ -3468,7 +3464,7 @@ class Nautilus(EditorInterface, Shell):
             Argument `text` is raw input:str with no magic cast.
         """
         if text.rstrip():
-            self.__eolc_mark = self.eolc
+            self._eolc_mark = self.eolc
             self.historyIndex = -1
 
     def on_text_output(self, text):
@@ -3581,8 +3577,8 @@ class Nautilus(EditorInterface, Shell):
         ## bolc : beginning of command-line
         ## eolc : end of the output-buffer
         try:
-            input = self.GetTextRange(self.bolc, self.__eolc_mark)
-            output = self.GetTextRange(self.__eolc_mark, self.eolc)
+            input = self.GetTextRange(self.bolc, self._eolc_mark)
+            output = self.GetTextRange(self._eolc_mark, self.eolc)
             
             input = self.regulate_cmd(input)
             Shell.addHistory(self, input)  # => self.history

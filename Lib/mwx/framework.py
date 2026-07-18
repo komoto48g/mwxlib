@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.18"
+__version__ = "1.10.19"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -1106,9 +1106,6 @@ class ShellFrame(MiniFrame):
         @highlight  : Highlight the widget.
         @filling    : Inspection using ``wx.lib.filling.Filling``.
     """
-    ## The root shell.
-    rootshell = property(lambda self: self.__shell)
-
     def __init__(self, parent, target=None, session=None, **kwargs):
         MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
         
@@ -1118,9 +1115,7 @@ class ShellFrame(MiniFrame):
         from .nutshell import Nautilus, EditorBook, Stylus
         from .bookshelf import EditorTreeCtrl
         
-        self.__shell = Nautilus(self,
-                                target or __import__("__main__"),
-                                **kwargs)
+        self.rootshell = Nautilus(self, target or __import__("__main__"), **kwargs)
         
         self.Scratch = EditorBook(self, name="Scratch")
         self.Log = EditorBook(self, name="Log")
@@ -1165,8 +1160,8 @@ class ShellFrame(MiniFrame):
         from .controls import Icon, Indicator
         
         self.debugger = Debugger(self,
-                                 stdin=self.__shell.interp.stdin,
-                                 stdout=self.__shell.interp.stdout,
+                                 stdin=self.rootshell.interp.stdin,
+                                 stdout=self.rootshell.interp.stdout,
                                  skip=[Debugger.__module__,  # Don't enter debugger
                                        EventMonitor.__module__,  # Don't enter event-hook
                                        FSM.__module__,
@@ -1180,7 +1175,7 @@ class ShellFrame(MiniFrame):
         self.linfo = LocalsWatcher(self, name="locals")
         
         self.console = AuiNotebook(self, size=(600,400), name='console')
-        self.console.AddPage(self.__shell, "root", bitmap=Icon('core'))
+        self.console.AddPage(self.rootshell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnConsolePageClose)
@@ -1300,6 +1295,7 @@ class ShellFrame(MiniFrame):
         
         self.Init()
         
+        self._finder_target_window = None
         self._reentrant_activate_lock = False
         
         ## Session files.
@@ -1910,8 +1906,6 @@ class ShellFrame(MiniFrame):
     ## --------------------------------
     ## *** The following code is a modification of <wx.py.frame.Frame> ***
 
-    __find_target = None
-
     def on_search_dialog(self, evt, flags=0):
         if self.findDlg is not None:
             self.findDlg.SetFocus()
@@ -1920,7 +1914,7 @@ class ShellFrame(MiniFrame):
         wnd = wx.Window.FindFocus()
         if not isinstance(wnd, stc.StyledTextCtrl):
             return
-        self.__find_target = wnd
+        self._finder_target_window = wnd
         topic = wnd.topic_at_caret
         if topic:
             self.findData.FindString = topic
@@ -1946,7 +1940,7 @@ class ShellFrame(MiniFrame):
         else:
             wnd = evt.EventObject
             if not isinstance(wnd, stc.StyledTextCtrl):
-                wnd = self.__find_target
+                wnd = self._finder_target_window
             if backward:
                 self.findData.Flags &= ~wx.FR_DOWN
             else:

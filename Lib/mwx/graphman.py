@@ -689,10 +689,6 @@ class Frame(mwx.Frame):
         3. load/save images
         4. open/close session
     """
-    graph = property(lambda self: self.__graph)
-    output = property(lambda self: self.__output)
-    histogram = property(lambda self: self.__histgrm)
-
     selected_view = property(lambda self: self._selected_view)
 
     def select_view(self, view):
@@ -717,15 +713,15 @@ class Frame(mwx.Frame):
         self._mgr.SetManagedWindow(self)
         self._mgr.SetDockSizeConstraint(0.5, 0.5)
         
-        self.__plugins = {}  # modules in the order of load/save
+        self.plugins = {}  # modules in the order of load/save
         
-        self.__graph = Graph(self, log=self.message, margin=None, name="graph")
-        self.__output = Graph(self, log=self.message, margin=None, name="output")
+        self.graph = Graph(self, log=self.message, margin=None, name="graph")
+        self.output = Graph(self, log=self.message, margin=None, name="output")
         
-        self.__histgrm = Histogram(self, log=self.message, margin=None,
+        self.histogram = Histogram(self, log=self.message, margin=None,
                                          size=(130,65), name="histogram")
-        self.__histgrm.attach(self.graph)
-        self.__histgrm.attach(self.output)
+        self.histogram.attach(self.graph)
+        self.histogram.attach(self.output)
         
         self._graphic_views = [
             self.graph,
@@ -1091,7 +1087,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## Plug-in interface.
     ## --------------------------------
-    plugins = property(lambda self: self.__plugins)
 
     def register(self, cls=None, **kwargs):
         """Decorator of plugin class register."""
