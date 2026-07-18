@@ -161,8 +161,8 @@ class AxesImagePhantom:
         self.parent = parent
         
         ## Properties of the frame/image.
-        self.__name = name
-        self.__attributes = kwargs
+        self.name = name
+        self.attributes = kwargs
         self.__pathname = kwargs.get('pathname')
         self.__mtime = _get_timestamp(self.__pathname)
         self.__annotation = kwargs.get('annotation', '')
@@ -175,24 +175,24 @@ class AxesImagePhantom:
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
-        self.__bins = bins
-        self.__cuts = vlim
-        self.__art = parent.axes.imshow(img,
-                                        cmap=cm.gray,
-                                        aspect='equal',  # cf. aspect_ratio => xy_unit
-                                        interpolation='nearest',
-                                        visible=show,
-                                        picker=True,
-                                        )
+        self.artist = parent.axes.imshow(img,
+                                         cmap=cm.gray,
+                                         aspect='equal',  # cf. aspect_ratio => xy_unit
+                                         interpolation='nearest',
+                                         visible=show,
+                                         picker=True,
+                                         )
+        self.bins = bins  # Binning value resulting from the image byte limit.
+        self.cuts = vlim  # Lower/Upper cutoff values of the buffer.
         self.aspect_ratio = 1
         self.update_extent()
 
     def __getattr__(self, attr):
-        return getattr(self.__art, attr)
+        return getattr(self.artist, attr)
 
     def __eq__(self, x):
         ## Called in `on_pick` and `__contains__` to check objects in.
-        return x is self.__art
+        return x is self.artist
 
     def update_attr(self, attr):
         """Update frame-specifc attributes."""
@@ -231,7 +231,7 @@ class AxesImagePhantom:
                 self.__localunit = v
                 flag |= FLAG_UPDATE_EXTENT
         
-        self.__attributes.update(attr)
+        self.attributes.update(attr)
         
         if flag & FLAG_UPDATE_EXTENT:
             self.update_extent()
@@ -248,9 +248,9 @@ class AxesImagePhantom:
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
-        self.__bins = bins
-        self.__cuts = vlim
-        self.__art.set_array(img)
+        self.artist.set_array(img)
+        self.bins = bins
+        self.cuts = vlim
         self.parent.handler('frame_modified', self)
 
     def update_extent(self):
@@ -260,41 +260,26 @@ class AxesImagePhantom:
         w *= ux/2
         h *= uy/2
         cx, cy = self.center
-        self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
+        self.artist.set_extent((cx-w, cx+w, cy-h, cy+h))
 
     def update_interpolation_mode(self):
         """Called from parent.OnDraw."""
-        dots = self.xy_ddpx[0] * self.binning
-        if self.__art.get_interpolation() == 'nearest':
+        dots = self.xy_ddpx[0] * self.bins
+        if self.artist.get_interpolation() == 'nearest':
             if dots < 1:
-                self.__art.set_interpolation(self.parent.interpolation_mode)
+                self.artist.set_interpolation(self.parent.interpolation_mode)
         else:
             if dots > 1:
-                self.__art.set_interpolation('nearest')
-
-    artist = property(
-        lambda self: self.__art)
-
-    binning = property(
-        lambda self: self.__bins,
-        doc="Binning value resulting from the image byte limit.")
-
-    cuts = property(
-        lambda self: self.__cuts,
-        doc="Lower/Upper cutoff values of the buffer.")
+                self.artist.set_interpolation('nearest')
 
     image = property(
-        lambda self: self.__art.get_array(),
+        lambda self: self.artist.get_array(),
         doc="Displayed image array<uint8>.")
 
     clim = property(
-        lambda self: self.__art.get_clim(),
-        lambda self, v: self.__art.set_clim(v),
+        lambda self: self.artist.get_clim(),
+        lambda self, v: self.artist.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
-
-    attributes = property(
-        lambda self: self.__attributes,
-        doc="Auxiliary info about the frame.")
 
     pathname = property(
         lambda self: self.__pathname,
@@ -331,24 +316,15 @@ class AxesImagePhantom:
     @property
     def xy_ddpx(self):
         """Display-dot resolution (x, y) [dots per pix].
-        Note: The binning [pix/bin] value is not considered.
+        Note: The binning value [pix/bin] is not considered.
         """
         ## [dots/pix] = [dots/u] * [u/pix]
         return self.parent.ddpu * self.xy_unit
 
     @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, v):
-        self.__name = v
-        self.parent.handler('frame_updated', self)
-
-    @property
     def basename(self):
-        m = re.match(r"(.+)<\d+>$", self.__name)
-        return m.group(1) if m else self.__name
+        m = re.match(r"(.+)<\d+>$", self.name)
+        return m.group(1) if m else self.name
 
     @property
     def timestamp(self):
@@ -438,7 +414,7 @@ class AxesImagePhantom:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
             x, y = x
         x, y = _to_array(x), _to_array(y)
-        l,r,b,t = self.__art.get_extent()
+        l,r,b,t = self.artist.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
         ny = (t - y) / uy  # Y ピクセルインデクスは座標と逆
@@ -453,7 +429,7 @@ class AxesImagePhantom:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
         nx, ny = _to_array(nx), _to_array(ny)
-        l,r,b,t = self.__art.get_extent()
+        l,r,b,t = self.artist.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy  # Y ピクセルインデクスは座標と逆
@@ -1082,7 +1058,7 @@ class GraphPlot(MatplotPanel):
                     name=frame.name,
                     data=frame.buffer,
                     cmap=frame.get_cmap().name,
-                    bins=' bin{}'.format(frame.binning) if frame.binning > 1 else '',
+                    bins=' bin{}'.format(frame.bins) if frame.bins > 1 else '',
                     unit=frame.unit,
                     x='**' if frame.localunit else '--',
                     a='%%' if not frame.buffer.flags.writeable else '--'
