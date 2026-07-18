@@ -79,7 +79,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         # self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
         
         self.parent = parent
-        self.__targets = []
+        self._editors = []
         
         # self.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.OnItemTooltip)
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
@@ -108,22 +108,22 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
 
     def OnDestroy(self, evt):
         if self and self.parent:
-            for editor in self.self.__targets:
+            for editor in self.self._editors:
                 editor.handler.remove(self.context)
         evt.Skip()
 
     def attach(self, target):
-        if target not in self.__targets:
-            self.__targets.append(target)
+        if target not in self._editors:
+            self._editors.append(target)
             target.handler.append(self.context)
 
     def detach(self, target):
-        if target in self.__targets:
-            self.__targets.remove(target)
+        if target in self._editors:
+            self._editors.remove(target)
             target.handler.remove(self.context)
 
     def find_editor(self, name):
-        return next(editor for editor in self.__targets if editor.Name == name)
+        return next(editor for editor in self._editors if editor.Name == name)
 
     ## --------------------------------
     ## TreeList/Ctrl wrapper interface.
@@ -136,7 +136,7 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         if clear:
             self.DeleteAllItems()
             self.AddRoot(self.Name)
-        for editor in self.__targets:
+        for editor in self._editors:
             self._set_item(self.RootItem, editor.Name, editor.get_all_buffers())
         self.Refresh()
 

@@ -32,7 +32,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target = None
         self._target = None  # previous target
         self._dir = True  # sort direction
-        self.__items = []
+        self._items = []
         
         _alist = (
             ("typeId",    62),
@@ -159,7 +159,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
     def clear(self):
         self.DeleteAllItems()
-        del self.__items[:]
+        del self._items[:]
 
     def update(self, evt):
         event = evt.EventType
@@ -172,7 +172,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 attribs = ew._makeAttribString(evt)
         except Exception:
             attribs = ''  # Failed to get event attributes; possibly <BdbQuit>.
-        data = self.__items
+        data = self._items
         for i, item in enumerate(data):  # noqa # i used as a counter
             if item[0] == event:
                 stamp = item[2] + 1
@@ -194,7 +194,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.blink(i)
 
     def append(self, event):
-        data = self.__items
+        data = self._items
         if event in (item[0] for item in data):
             return
         
@@ -223,7 +223,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         text = ''
         for i in range(self.ItemCount):
             if self.IsSelected(i):
-                event, name, *_, attribs = self.__items[i]
+                event, name, *_, attribs = self._items[i]
                 text += "{}\t{}\n{}\n\n".format(event, name, attribs)
         Clipboard.write(text[:-1])
 
@@ -232,7 +232,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         if n < 2:
             return
         
-        data = self.__items
+        data = self._items
         fi = data[self.FocusedItem]
         ls = [data[i] for i in range(n) if self.IsSelected(i)]
         lc = [data[i] for i in range(n) if self.IsItemChecked(i)]
@@ -254,7 +254,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.Focus(i)
 
     def OnItemActivated(self, evt):  # <wx._core.ListEvent>
-        item = self.__items[evt.Index]
+        item = self._items[evt.Index]
         wx.CallAfter(wx.TipWindow, self, item[-1], 512)  # attribs
 
     def OnContextMenu(self, evt):

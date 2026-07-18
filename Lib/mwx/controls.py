@@ -305,13 +305,13 @@ class Knob(wx.Panel):
     @property
     def param(self):
         """Param object referred from knobs."""
-        return self.__par
+        return self._par
 
     @param.setter
     def param(self, v):
-        self.__par.knobs.remove(self)
-        self.__par = v
-        self.__par.knobs.append(self)
+        self._par.knobs.remove(self)
+        self._par = v
+        self._par.knobs.append(self)
         self.update_range()
         self.update_control()
 
@@ -330,8 +330,8 @@ class Knob(wx.Panel):
         
         assert isinstance(param, Param), "Argument `param` must be an instance of Param"
         
-        self.__par = param
-        self.__par.knobs.append(self)  # パラメータの関連付けを行う
+        self._par = param
+        self._par.knobs.append(self)  # パラメータの関連付けを行う
         
         if not type:
             type = 'slider'
@@ -343,7 +343,7 @@ class Knob(wx.Panel):
             cw += tw
             tw = 0
         
-        label = self.__par.name + '  '
+        label = self._par.name + '  '
         
         if style == 'chkbox' or style == 'checkbox':
             ## Keep margin for the checkbox: lw += 16
@@ -359,8 +359,8 @@ class Knob(wx.Panel):
         else:
             raise Exception(f"unknown style: {style!r}")
         
-        self._label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
-        self._label.SetToolTip(self.__par._tooltip)
+        self._label.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self._par.reset())
+        self._label.SetToolTip(self._par._tooltip)
         self._label.Enable(lw)  # skip focus
         
         self._text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
@@ -369,7 +369,7 @@ class Knob(wx.Panel):
         self._text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
         self._text.Bind(wx.EVT_KEY_UP, self.OnTextKeyUp)
         self._text.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
-        self._text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        self._text.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self._par.reset())
         
         self._text.Enable(tw)  # skip focus
         
@@ -405,7 +405,7 @@ class Knob(wx.Panel):
         else:
             raise Exception(f"unknown type: {type!r}")
         
-        self._ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self.__par.reset())
+        self._ctrl.Bind(wx.EVT_MIDDLE_DOWN, lambda v: self._par.reset())
         self._ctrl.Enable(cw)  # skip focus
         
         c = (cw and type != 'vspin')
@@ -422,12 +422,12 @@ class Knob(wx.Panel):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
     def OnDestroy(self, evt):
-        self.__par.knobs.remove(self)  # パラメータの関連付けを解除する
+        self._par.knobs.remove(self)  # パラメータの関連付けを解除する
         evt.Skip()
 
     def update_range(self):
         """Called when range is being changed (internal use only)."""
-        v = self.__par
+        v = self._par
         if isinstance(self._ctrl, wx.Choice):  # <wx.Choice>
             items = [v.__str__(x) for x in v.range]
             if items != self._ctrl.Items:
@@ -438,7 +438,7 @@ class Knob(wx.Panel):
 
     def update_label(self):
         """Called when label is being changed (internal use only)."""
-        v = self.__par
+        v = self._par
         if isinstance(self._label, wx.CheckBox):
             self._label.SetValue(v.check)
         
@@ -449,7 +449,7 @@ class Knob(wx.Panel):
 
     def update_control(self, valid=True, notify=False):
         """Called when value is being changed (internal use only)."""
-        v = self.__par
+        v = self._par
         self._ctrl.SetValue(v.index)
         wx.CallAfter(self._text.SetValue, str(v))  # for wxAssertionError
         if valid:
@@ -479,14 +479,14 @@ class Knob(wx.Panel):
             if evt.ShiftDown():   bit *= 2
             if evt.ControlDown(): bit *= 10
             if evt.AltDown():     bit *= 256
-        v = self.__par
+        v = self._par
         j = self._ctrl.GetValue() + bit
         if j != v.index:
             v.index = j
             v.reset(v.value)
 
     def OnScroll(self, evt):  # <wx._core.ScrollEvent> <wx._core.SpinEvent> <wx._core.CommandEvent>
-        v = self.__par
+        v = self._par
         j = self._ctrl.GetValue()
         if j != v.index:
             v.index = j
@@ -520,26 +520,26 @@ class Knob(wx.Panel):
         if key == wx.WXK_DOWN: return self._shift_control(evt, -1)
         if key == wx.WXK_UP: return self._shift_control(evt, 1)
         if key == wx.WXK_ESCAPE:
-            self.__par.reset(self.__par.value, internal_callback=None)  # restore value
+            self._par.reset(self._par.value, internal_callback=None)  # restore value
         evt.Skip()
 
     def OnTextEnter(self, evt):  # <wx._core.CommandEvent>
         evt.Skip()
         x = self._text.Value.strip()
-        self.__par.reset(x)
+        self._par.reset(x)
 
     def OnTextExit(self, evt):  # <wx._core.FocusEvent>
         x = self._text.Value.strip()
-        if x != str(self.__par):
-            self.__par.reset(x)
+        if x != str(self._par):
+            self._par.reset(x)
         evt.Skip()
 
     def OnCheck(self, evt):  # <wx._core.CommandEvent>
-        self.__par.check = evt.IsChecked()
+        self._par.check = evt.IsChecked()
         evt.Skip()
 
     def OnPress(self, evt):  # <wx._core.CommandEvent>
-        self.__par.callback('updated', self.__par)
+        self._par.callback('updated', self._par)
         evt.Skip()
 
     def Enable(self, p=True):
@@ -557,21 +557,21 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.SetSizer(pack(self, [], orient=wx.VERTICAL))
         self.SetupScrolling()
         
-        self.__groups = []
-        self.__params = []
+        self._groups = []
+        self._params = []
         
         self.menu = [
             (wx.ID_COPY, "&Copy params", "Copy params",
                 lambda v: self.copy_to_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
-                lambda v: v.Enable(self.__params != [])),
+                lambda v: v.Enable(self._params != [])),
                 
             (wx.ID_PASTE, "&Paste params", "Read params",
                 lambda v: self.paste_from_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
-                lambda v: v.Enable(self.__params != [])),
+                lambda v: v.Enable(self._params != [])),
             (),
             (wx.ID_RESET, "&Reset params", "Reset params",
                 lambda v: self.set_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
-                lambda v: v.Enable(self.__params != [])),
+                lambda v: v.Enable(self._params != [])),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU,
                   lambda v: Menu.Popup(self, self.menu))
@@ -606,29 +606,29 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
     ## --------------------------------
     @property
     def layout_groups(self):
-        return self.__groups
+        return self._groups
 
     def is_group_enabled(self, groupid, pred=all):
-        return pred(win.Enabled for win in self.__groups[groupid])
+        return pred(win.Enabled for win in self._groups[groupid])
 
     def enable_group(self, groupid, p=True):
-        for win in self.__groups[groupid]:  # child could be deep nesting
+        for win in self._groups[groupid]:  # child could be deep nesting
             win.Enable(p)
 
     def disable_group(self, groupid):
-        for win in self.__groups[groupid]:  # child could be deep nesting
+        for win in self._groups[groupid]:  # child could be deep nesting
             win.Disable()
 
     def is_group_shown(self, groupid):
         # child = self.Sizer.Children[groupid]
         # return child.IsShown()
-        return self.Sizer.IsShown(groupid % len(self.__groups))
+        return self.Sizer.IsShown(groupid % len(self._groups))
 
     def show_group(self, groupid, p=True):
         """Show/hide all including the box."""
         # child = self.Sizer.Children[groupid]
         # child.Show(p)
-        self.Sizer.Show(groupid % len(self.__groups), p)
+        self.Sizer.Show(groupid % len(self._groups), p)
         self.Layout()
 
     def is_group_folded(self, groupid):
@@ -701,7 +701,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                     yield from _flatiter(c)
                 elif isinstance(c, wx.Object):
                     yield c
-        self.__groups.append(list(_flatiter(objs)))
+        self._groups.append(list(_flatiter(objs)))
         
         ## Parameters : Params or widgets that have a `value`.
         def _variter(objects):
@@ -710,14 +710,14 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                     yield c.param
                 elif hasattr(c, 'value'):
                     yield c
-        self.__params.append(list(_variter(objs)))
+        self._params.append(list(_variter(objs)))
         
         ## Set appearance of the layout group.
         self.show_group(-1, visible)
         self.fold_group(-1, not show)
         self.Sizer.Fit(self)
         
-        return self.__groups[-1]
+        return self._groups[-1]
 
     ## --------------------------------
     ## 外部入出力／クリップボード通信．
@@ -731,7 +731,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         self.set_params(v)
 
     def get_params(self, checked_only=False):
-        params = chain(*self.__params)
+        params = chain(*self._params)
         if not checked_only:
             return params
         return filter(lambda c: getattr(c, 'check', None), params)
@@ -1238,11 +1238,11 @@ class Indicator(wx.Control):
     """
     @property
     def Value(self):
-        return self.__value
+        return self._value
 
     @Value.setter
     def Value(self, v):
-        self.__value = int(v)
+        self._value = int(v)
         self.Refresh()
 
     def redesign(self, **kwargs):
@@ -1270,7 +1270,7 @@ class Indicator(wx.Control):
     def __init__(self, parent, colors=None, value=0, style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
-        self.__value = value
+        self._value = value
         if colors is not None:
             self.colors = colors
         
@@ -1318,7 +1318,7 @@ class Indicator(wx.Control):
         
         dc.SetPen(wx.Pen(self.foregroundColour, style=wx.PENSTYLE_TRANSPARENT))
         for j, name in enumerate(self.colors):
-            b = self.__value & (1 << j)
+            b = self._value & (1 << j)
             x = ss*(N-1-j)+s
             y = h//2
             if b and self.glow:
@@ -1355,27 +1355,27 @@ class Gauge(wx.Control):
     """
     @property
     def Value(self):
-        return self.__value
+        return self._value
 
     @Value.setter
     def Value(self, v):
-        self.__value = int(v)
+        self._value = int(v)
         self.Refresh()
 
     @property
     def Range(self):
-        return self.__range
+        return self._range
 
     @Range.setter
     def Range(self, v):
-        self.__range = int(v)
+        self._range = int(v)
         self.Refresh()
 
     def __init__(self, parent, range=24, value=0, style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
-        self.__range = range
-        self.__value = value
+        self._range = range
+        self._value = value
         
         self.SetBackgroundStyle(wx.BG_STYLE_PAINT)  # to avoid flickering
         
@@ -1399,11 +1399,11 @@ class Gauge(wx.Control):
             return [int(255 * x) for x in rgb]
         
         w, h = self.ClientSize
-        N = self.__range
+        N = self._range
         d = max(w//N - 1, 1)
         for i in range(N):
             x = int(i * w / N)
-            if i < self.__value:
+            if i < self._value:
                 dc.SetBrush(wx.Brush(_gradients(i/N)))
             else:
                 dc.SetBrush(wx.Brush('white'))

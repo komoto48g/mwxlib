@@ -28,7 +28,7 @@ class Gnuplot:
 
     def __init__(self, startup="__init__.plt", debug=0):
         print("Launching new gnuplot...")
-        self.__gnuplot = Popen([self.PGNUPLOT],
+        self._gnuplot = Popen([self.PGNUPLOT],
                                shell=True, stdin=PIPE)
         
         self.data_format = "{:e}".format
@@ -45,10 +45,10 @@ class Gnuplot:
 
     def __call__(self, text):
         for cmd in filter(None, (t.strip() for t in text.splitlines())):
-            self.__gnuplot.stdin.write((cmd + '\n').encode())
+            self._gnuplot.stdin.write((cmd + '\n').encode())
             if self.debug:
                 print("pgnupot>", cmd)
-        self.__gnuplot.stdin.flush()
+        self._gnuplot.stdin.flush()
         return self
 
     def plot(self, *args):
@@ -93,14 +93,14 @@ class Gnuplot:
         self("plot " + ', '.join(pcmd))
 
     def terminate(self):
-        if self.__gnuplot is not None:
+        if self._gnuplot is not None:
             try:
                 self('q')
-                ## self.__gnuplot.kill()
-                outs, errs = self.__gnuplot.communicate()
+                ## self._gnuplot.kill()
+                outs, errs = self._gnuplot.communicate()
             except Exception:
                 pass
-            self.__gnuplot = None
+            self._gnuplot = None
 
     def restart(self):
         self.terminate()

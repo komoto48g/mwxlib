@@ -292,19 +292,19 @@ class LayerInterface(CtrlInterface):
     @property
     def Arts(self):
         """List of artists <matplotlib.artist.Artist>."""
-        return self.__artists
+        return self._arts
 
     @Arts.setter
     def Arts(self, arts):
-        for art in (set(self.__artists) - set(arts)):
+        for art in (set(self._arts) - set(arts)):
             art.remove()
-        self.__artists = list(arts)
+        self._arts = list(arts)
 
     @Arts.deleter
     def Arts(self):
-        for art in self.__artists:
+        for art in self._arts:
             art.remove()
-        self.__artists = []
+        self._arts = []
 
     def attach_artists(self, axes, *artists):
         """Attach artists (e.g., patches) to the given axes."""
@@ -322,7 +322,7 @@ class LayerInterface(CtrlInterface):
             CtrlInterface.__init__(self)
         
         self.parent = parent
-        self.__artists = []
+        self._arts = []
         
         try:
             ## Check if parameters exists without triggering dynamic lookup.
@@ -693,10 +693,10 @@ class Frame(mwx.Frame):
     output = property(lambda self: self.__output)
     histogram = property(lambda self: self.__histgrm)
 
-    selected_view = property(lambda self: self.__selected_view)
+    selected_view = property(lambda self: self._selected_view)
 
     def select_view(self, view):
-        self.__selected_view = view
+        self._selected_view = view
         self.set_title(view.frame)
 
     @property
@@ -704,11 +704,11 @@ class Frame(mwx.Frame):
         """Graphic windows list.
         [0] graph [1] output [2:] others(user-defined)
         """
-        return self.__graphic_views
+        return self._graphic_views
 
     @property
     def graphic_windows_on_screen(self):
-        return [w for w in self.__graphic_views if w.IsShownOnScreen()]
+        return [w for w in self._graphic_views if w.IsShownOnScreen()]
 
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
@@ -727,9 +727,9 @@ class Frame(mwx.Frame):
         self.__histgrm.attach(self.graph)
         self.__histgrm.attach(self.output)
         
-        self.__graphic_views = [
-            self.__graph,
-            self.__output,
+        self._graphic_views = [
+            self.graph,
+            self.output,
         ]
         self.select_view(self.graph)
         

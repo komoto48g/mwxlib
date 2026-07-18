@@ -49,15 +49,15 @@ class LinePlot(MatplotPanel):
         self.axes.grid(True)
         self.axes.tick_params(labelsize='x-small')
         
-        self.__region = None
-        self.__annotations = []
+        self._region = None
+        self._annotations = []
         
         ## MPL_VERSION >= (3,9,0)
         ## axhspan and axvspan now return Rectangles, not Polygons.
         
         # <matplotlib.patches.Polygon>
         # <matplotlib.patches.Rectangle>
-        self.__vspan = self.axes.axvspan(0, 0,
+        self._vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
 
     ## The limit for dragging region.
@@ -65,7 +65,7 @@ class LinePlot(MatplotPanel):
 
     @property
     def region(self):
-        return self.__region
+        return self._region
 
     @region.setter
     def region(self, v):
@@ -79,26 +79,26 @@ class LinePlot(MatplotPanel):
                 if   b < l: b = l
                 elif b > r: b = r
             v = np.array((a, b))
-            self.__vspan.set_visible(1)
+            self._vspan.set_visible(1)
             try:
-                self.__vspan.set_x(a)
-                self.__vspan.set_width(b-a)
+                self._vspan.set_x(a)
+                self._vspan.set_width(b-a)
             except AttributeError:
-                self.__vspan.set_xy(((a,0), (a,1), (b,1), (b,0)))
+                self._vspan.set_xy(((a,0), (a,1), (b,1), (b,0)))
             self.handler('region_set', self.frame)
         else:
-            self.__vspan.set_visible(0)
+            self._vspan.set_visible(0)
             self.handler('region_unset', self.frame)
-        self.__region = v
+        self._region = v
 
     @region.deleter
     def region(self):
         self.region = None
 
     def annotate(self):
-        for art in self.__annotations:
+        for art in self._annotations:
             art.remove()
-        del self.__annotations[:]
+        del self._annotations[:]
         
         # <matplotlib.text.Annotation>
         def _A(v, xy, xytext, xycoords='data', textcoords='offset points', **arrowprops):
@@ -115,7 +115,7 @@ class LinePlot(MatplotPanel):
             else:
                 p = _A(b-a, (x,y), (16,16), arrowstyle='-',  # narrow space
                        connectionstyle="angle,angleA=0,angleB=90,rad=8")
-            self.__annotations = [
+            self._annotations = [
                 _A(a, (a,y), (-54,-3), arrowstyle='->'),
                 _A(b, (b,y), (+16,-3), arrowstyle='->'),
                 _A(None, (a,y), (b,y), textcoords='data', arrowstyle='<->'),
@@ -232,29 +232,29 @@ class Histogram(LinePlot):
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
-        self.__frame = None  # Reference to the current frame.
+        self._views = []    # A list of attached view <matplot2g.GraphPlot>.
+        self._frame = None  # Reference to the current frame.
         
         # <matplotlib.lines.Line2D>
-        self.__plot, = self.axes.plot([], [], lw=1, color='c', alpha=1)
+        self._plot, = self.axes.plot([], [], lw=1, color='c', alpha=1)
         
         # <matplotlib.patches.Polygon>
-        self.__fill = patches.Polygon([(0,0)], color='c', alpha=1)
-        self.axes.add_patch(self.__fill)
+        self._fill = patches.Polygon([(0,0)], color='c', alpha=1)
+        self.axes.add_patch(self._fill)
 
     def OnDestroy(self, evt):
-        for view in self.__views:
+        for view in self._views:
             self.detach(view)
         evt.Skip()
 
     def attach(self, view):
-        if view not in self.__views:
-            self.__views.append(view)
+        if view not in self._views:
+            self._views.append(view)
             view.handler.append(self.context)
 
     def detach(self, view):
-        if view in self.__views:
-            self.__views.remove(view)
+        if view in self._views:
+            self._views.remove(view)
             view.handler.remove(self.context)
 
     @property
@@ -276,24 +276,24 @@ class Histogram(LinePlot):
         return bins, hist
 
     def hplot(self, frame):
-        self.__frame = frame  # Update reference of the frame.
+        self._frame = frame  # Update reference of the frame.
         if frame:
             x, y = frame.__data = self.calc(frame)  # histogram_data buffer
-            self.__plot.set_data(x, y)
+            self._plot.set_data(x, y)
             self.xlim = x.min(), x.max()
             self.ylim = 0, y.max()
             self.region = None
             self.draw()
 
     def hreplot(self, frame):
-        self.__frame = frame  # Update reference of the frame.
+        self._frame = frame  # Update reference of the frame.
         if frame:
             try:
                 x, y = frame.__data  # Reuse cached data.
             except Exception:
                 x, y = frame.__data = self.calc(frame)  # new histogram_data buffer
             
-            self.__plot.set_data(x, y)
+            self._plot.set_data(x, y)
             self.xlim = x.min(), x.max()
             self.ylim = 0, y.max()
             
@@ -303,14 +303,14 @@ class Histogram(LinePlot):
             else:
                 self.region = None
         else:
-            self.__plot.set_data([], [])
+            self._plot.set_data([], [])
             self.region = None
         self.draw()
 
     def writeln(self):
         if not self.modeline.IsShown():
             return
-        frame = self.__frame
+        frame = self._frame
         if frame:
             x, y = frame.__data
             if self.region is not None:
@@ -331,38 +331,38 @@ class Histogram(LinePlot):
     ## --------------------------------
 
     def annotate(self):
-        if self.__frame:
-            x, y = self.__frame.__data
+        if self._frame:
+            x, y = self._frame.__data
             if len(x) > 1:
                 if self.region is not None:
                     i, j = x.searchsorted(self.region)
                 else:
                     i, j = (0, -1)
-                self.__fill.set_xy(list(chain([(x[i], 0)], zip(x[i:j], y[i:j]), [(x[j-1], 0)])))
+                self._fill.set_xy(list(chain([(x[i], 0)], zip(x[i:j], y[i:j]), [(x[j-1], 0)])))
             else:
-                self.__fill.set_xy([(0, 0)])
+                self._fill.set_xy([(0, 0)])
         else:
-            self.__fill.set_xy([(0, 0)])
+            self._fill.set_xy([(0, 0)])
         self.writeln()
 
     def OnDragEnd(self, evt):
         LinePlot.OnDragEnd(self, evt)
         
-        if self.__frame:
+        if self._frame:
             self.xbound = self.region  # 拡大表示したのち region 消去
             self.region = None
             self.toolbar.push_current()
             self.draw()
-            self.__frame.clim = self.xlim
-            self.__frame.parent.draw()
+            self._frame.clim = self.xlim
+            self._frame.parent.draw()
 
     def OnEscapeSelection(self, evt):
         LinePlot.OnEscapeSelection(self, evt)
         
-        if self.__frame:
-            self.__frame.clim = self.xlim
-            self.__frame.parent.draw()
-            self.hreplot(self.__frame)
+        if self._frame:
+            self._frame.clim = self.xlim
+            self._frame.parent.draw()
+            self.hreplot(self._frame)
 
 
 class LineProfile(LinePlot):
@@ -428,59 +428,59 @@ class LineProfile(LinePlot):
             (),
             (mwx.ID_(211), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),
-                lambda v: v.Check(self.__logicp)),
+                lambda v: v.Check(self._logicp)),
                 
             (mwx.ID_(212), "Pixel length", "Set axis-unit in pxiel base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(0),
-                lambda v: v.Check(not self.__logicp)),
+                lambda v: v.Check(not self._logicp)),
         ]
         
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
-        self.__views = []    # A list of attached view <matplot2g.GraphPlot>.
-        self.__frame = None  # Reference to the current frame.
+        self._views = []    # A list of attached view <matplot2g.GraphPlot>.
+        self._frame = None  # Reference to the current frame.
         
         # <matplotlib.lines.Line2D>
-        self.__plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1,
+        self._plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1,
                                       picker=True, pickradius=2)
         
         # <matplotlib.patches.Polygon>
-        self.__fill = patches.Polygon([(0,0)], color='c', alpha=0.8)
-        self.axes.add_patch(self.__fill)
+        self._fill = patches.Polygon([(0,0)], color='c', alpha=0.8)
+        self.axes.add_patch(self._fill)
         
         # <matplotlib.lines.Line2D>
-        self.__hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
+        self._hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
                                          visible=0, zorder=2)
         
-        self.__linewidth = 1  # Line width to integrate [pixel].
-        self.__logicp = True  # Line axis in logical unit.
+        self._linewidth = 1  # Line width to integrate [pixel].
+        self._logicp = True  # Line axis in logical unit.
         
         self.selected.set_linestyle('')
 
     def OnDestroy(self, evt):
-        for view in self.__views:
+        for view in self._views:
             self.detach(view)
         evt.Skip()
 
     def attach(self, view):
-        if view not in self.__views:
-            self.__views.append(view)
+        if view not in self._views:
+            self._views.append(view)
             view.handler.append(self.context)
 
     def detach(self, view):
-        if view in self.__views:
-            self.__views.remove(view)
+        if view in self._views:
+            self._views.remove(view)
             view.handler.remove(self.context)
 
     def set_logic(self, p):
-        prep = self.__logicp
-        self.__logicp = p = bool(p)
-        if self.__frame and prep != p:  # Replot if toggled.
-            u = self.__frame.unit
+        prep = self._logicp
+        self._logicp = p = bool(p)
+        if self._frame and prep != p:  # Replot if toggled.
+            u = self._frame.unit
             ru = u if p else 1/u
             self.xlim *= ru
-            x = self.__plot.get_xdata(orig=0)
-            self.__plot.set_xdata(x * ru)
+            x = self._plot.get_xdata(orig=0)
+            self._plot.set_xdata(x * ru)
             if self.region is not None:
                 self.region *= ru
             sel = self.selector
@@ -489,21 +489,21 @@ class LineProfile(LinePlot):
 
     def set_linewidth(self, w):
         if 0 < w < 256:
-            self.__linewidth = w
-        if self.__frame:
-            self.linplot(self.__frame, fit=0)
+            self._linewidth = w
+        if self._frame:
+            self.linplot(self._frame, fit=0)
         self.writeln()
 
     @property
     def boundary(self):
-        x = self.__plot.get_xdata(orig=0)
+        x = self._plot.get_xdata(orig=0)
         if x.size:
             return x[[0,-1]]
 
     @property
     def plotdata(self):
         """Plotted (xdata, ydata) in single plot."""
-        return self.__plot.get_data(orig=0)
+        return self._plot.get_data(orig=0)
 
     def calc_average(self):
         x, y = self.plotdata
@@ -515,9 +515,9 @@ class LineProfile(LinePlot):
 
     def linplot(self, frame, fit=True, force=True):
         if not force:
-            if frame is self.__frame:
+            if frame is self._frame:
                 return
-        self.__frame = frame  # Update reference of the frame.
+        self._frame = frame  # Update reference of the frame.
         if frame:
             sel = frame.selector
             if sel.shape[1] < 2:
@@ -537,7 +537,7 @@ class LineProfile(LinePlot):
                 nv = (0, 0)
             
             ## ピクセル空間：長さ L, サイズ N 分割でラインプロファイルをとる．
-            lw = self.__linewidth
+            lw = self._linewidth
             N = int(L) + 1
             xs = np.linspace(nx[0], nx[1], N)
             ys = np.linspace(ny[0], ny[1], N)
@@ -557,12 +557,12 @@ class LineProfile(LinePlot):
                     zs[mask] += zi
             zs /= lw
             
-            if self.__logicp:  # axis to logical length  # 論理長さ空間を使用する
+            if self._logicp:  # axis to logical length  # 論理長さ空間を使用する
                 L = np.hypot(xx[1]-xx[0], yy[1]-yy[0])
             
             ls = np.linspace(0, L, N)
-            self.__plot.set_data(ls, zs)
-            self.__plot.set_visible(1)
+            self._plot.set_data(ls, zs)
+            self._plot.set_visible(1)
             
             if fit and len(ls) > 1:  # drawing area
                 ly = self.ylim
@@ -573,15 +573,15 @@ class LineProfile(LinePlot):
     def writeln(self):
         if not self.modeline.IsShown():
             return
-        frame = self.__frame
+        frame = self._frame
         if frame:
             self.modeline.SetLabel(
                 "[--] -{a}- {name} ({type}:{mode}) "
                 "[{length}:{width}] {x} [{unit:g}/pix]".format(
                     name=frame.name,
                     type=frame.buffer.dtype,
-                    mode="logic" if self.__logicp else "pixel",
-                    width=self.__linewidth,
+                    mode="logic" if self._logicp else "pixel",
+                    width=self._linewidth,
                     length=len(self.plotdata[0]),
                     unit=frame.unit,
                     x='**' if frame.localunit else '--',
@@ -604,7 +604,7 @@ class LineProfile(LinePlot):
         
         x, y = self.plotdata
         if x.size:
-            self.__fill.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
+            self._fill.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
         self.writeln()
 
     ## --------------------------------
@@ -637,17 +637,17 @@ class LineProfile(LinePlot):
 
     def OnLineWidth(self, evt):
         n = -2 if evt.key[-1] == '-' else 2
-        self.set_linewidth(self.__linewidth + n)
+        self.set_linewidth(self._linewidth + n)
 
     def OnRegionShift(self, evt):
-        if self.__frame and self.region is not None:
-            u = self.__frame.unit
+        if self._frame and self.region is not None:
+            u = self._frame.unit
             if evt.key == "left": self.region -= u
             if evt.key == "right": self.region += u
             self.draw()
 
     def OnEscapeSelection(self, evt):
-        self.__hline.set_visible(0)
+        self._hline.set_visible(0)
         LinePlot.OnEscapeSelection(self, evt)
 
     ## --------------------------------
@@ -670,8 +670,8 @@ class LineProfile(LinePlot):
             xc, yc = evt.xdata, evt.ydata
             u = x[1] - x[0]  # != frame.unit (斜め線の場合 dx=unit とは限らない)
             v = (y < yc)
-            self.__hline.set_ydata([yc])
-            self.__hline.set_visible(1)
+            self._hline.set_ydata([yc])
+            self._hline.set_visible(1)
             if v.all():
                 self.region = None  # all y < yc
             elif v.any():

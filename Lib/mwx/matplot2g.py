@@ -717,25 +717,26 @@ class GraphPlot(MatplotPanel):
         
         # <matplotlib.lines.Line2D>
         (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1, picker=8)
-        self.__marksel = []
-        self.__markarts = []
+        self._marksel = []
+        self._markarts = []
         self.marked.set_clip_on(False)
         
         # <matplotlib.lines.Line2D>
         (self.rected,) = self.axes.plot([], [], "r+--", ms=4, lw=3/4, picker=4, alpha=0.8)
-        self.__rectsel = []
-        self.__rectarts = []
+        self._rectsel = []
+        self._rectarts = []
         self.rected.set_clip_on(False)
         
-        self.__isPicked = None
+        self._isPicked = None
+        self._linesel = None
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
 
     @property
     def overlay_artists(self):
         return [self.selected,
-                self.marked, *self.__markarts,
-                self.rected, *self.__rectarts,
+                self.marked, *self._markarts,
+                self.rected, *self._rectarts,
                 ]
 
     ## --------------------------------
@@ -1164,7 +1165,7 @@ class GraphPlot(MatplotPanel):
         """
         ## canvas 全体に有効だが，分割された axes (colorbar 領域など) は無効．
         ## image - plot が重なっている場合，plot -> image の順に呼び出される．
-        ## 多重呼び出しが起きないように __isPicked フラグで排他制御する．
+        ## 多重呼び出しが起きないように _isPicked フラグで排他制御する．
         
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():
             return
@@ -1174,36 +1175,36 @@ class GraphPlot(MatplotPanel):
         
         ## 画像が選択された場合．
         if evt.artist in self.__Arts:
-            if self.__isPicked:
-                self.__isPicked = None  # release pick guard
+            if self._isPicked:
+                self._isPicked = None  # release pick guard
             else:
                 self.handler('image_picked', evt)
         
         ## その他のプロットが選択された場合．
         else:
             if evt.artist is self.marked:
-                self.__isPicked = 'mark'  # image pick gurad
+                self._isPicked = 'mark'  # image pick gurad
                 self.handler('mark_picked', evt)
                 
             elif evt.artist is self.rected:
-                self.__isPicked = 'region'  # image pick gurad
+                self._isPicked = 'region'  # image pick gurad
                 self.handler('region_picked', evt)
                 
             elif evt.artist is self.selected:
                 if (self.selector.shape[1] < 2       # single selector
                   or wx.GetKeyState(wx.WXK_SHIFT)):  # or polygon mode
                     return
-                self.__isPicked = 'line'  # image pick gurad
+                self._isPicked = 'line'  # image pick gurad
                 self.handler('line_picked', evt)
             else:
-                self.__isPicked = 'art'
+                self._isPicked = 'art'
                 MatplotPanel.on_pick(self, evt)  # [art_picked]
 
     def on_picker_lock(self, evt):
-        self.__isPicked = True
+        self._isPicked = True
 
     def on_picker_unlock(self, evt):
-        self.__isPicked = False
+        self._isPicked = False
 
     def OnImagePicked(self, evt):  # <matplotlib.backend_bases.PickEvent>
         x = evt.mouseevent.xdata
@@ -1454,7 +1455,7 @@ class GraphPlot(MatplotPanel):
             self.message("- Got too many markers ({}) to plot".format(len(x)))
             return
         self.marked.set_data(x, y)
-        self.__marksel = []
+        self._marksel = []
         self.update_mark_art()
         self.handler('mark_drawn', self.frame)
 
@@ -1462,18 +1463,18 @@ class GraphPlot(MatplotPanel):
     def markers(self):
         if self.markers.size:
             self.marked.set_data([], [])
-            self.__marksel = []
+            self._marksel = []
             self.update_mark_art()
             self.handler('mark_removed', self.frame)
 
     def get_current_mark(self):
         """Currently selected mark."""
         xm, ym = self.marked.get_data(orig=0)
-        return np.take((xm, ym), self.__marksel, axis=1)
+        return np.take((xm, ym), self._marksel, axis=1)
 
     def set_current_mark(self, x, y):
         xm, ym = self.marked.get_data(orig=0)
-        j = self.__marksel
+        j = self._marksel
         if j:
             xm[j], ym[j] = x, y
             self.marked.set_data(xm, ym)
@@ -1481,7 +1482,7 @@ class GraphPlot(MatplotPanel):
         else:
             n = len(xm)
             k = len(x) if hasattr(x, '__iter__') else 1
-            self.__marksel = list(range(n, n+k))
+            self._marksel = list(range(n, n+k))
             xm, ym = np.append(xm, x), np.append(ym, y)
             self.marked.set_data(xm, ym)
             self.marked.set_visible(1)
@@ -1489,31 +1490,31 @@ class GraphPlot(MatplotPanel):
         self.selector = (x, y)
 
     def del_current_mark(self):
-        j = self.__marksel
+        j = self._marksel
         if j:
             xm, ym = self.marked.get_data(orig=0)
             xm, ym = np.delete(xm, j), np.delete(ym, j)
-            self.__marksel = []
+            self._marksel = []
             self.marked.set_data(xm, ym)
             n = len(xm)
-            self.__marksel = [j[-1] % n] if n > 0 else []
+            self._marksel = [j[-1] % n] if n > 0 else []
             self.update_mark_art()
 
     def update_mark_art(self, *args):
         if args:
             for k, x, y in zip(*args):
-                art = self.__markarts[k]  # art の再描画処理をして終了
+                art = self._markarts[k]  # art の再描画処理をして終了
                 art.xy = x, y
             self.draw_overlay()
             return
-        for art in self.__markarts:
+        for art in self._markarts:
             art.remove()
-        del self.__markarts[:]
+        del self._markarts[:]
         if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
             N = self.maxnum_markers
             xm, ym = self.marked.get_data(orig=0)
             for k, (x, y) in enumerate(zip(xm[:N], ym[:N])):
-                self.__markarts.append(
+                self._markarts.append(
                   self.axes.annotate(k,  # <matplotlib.text.Annotation>
                     xy=(x,y), xycoords='data',
                     xytext=(6,6), textcoords='offset points',
@@ -1526,31 +1527,31 @@ class GraphPlot(MatplotPanel):
 
     def OnMarkAppend(self, evt):
         xs, ys = self.selector
-        if not self.__marksel and len(xs) > 0:
+        if not self._marksel and len(xs) > 0:
             self.set_current_mark(xs, ys)
             self.handler('mark_drawn', self.frame)
         else:
             self.update_mark_art()
 
     def OnMarkRemove(self, evt):
-        if self.__marksel:
+        if self._marksel:
             self.del_current_mark()
             self.handler('mark_removed', self.frame)
 
     def OnMarkSelected(self, evt):  # <matplotlib.backend_bases.PickEvent>
         k = evt.ind[0]
         if evt.mouseevent.key == 'shift':  # 多重マーカー選択
-            if k not in self.__marksel:
-                self.__marksel += [k]
+            if k not in self._marksel:
+                self._marksel += [k]
         else:
-            self.__marksel = [k]
+            self._marksel = [k]
         self.selector = self.get_current_mark()
         if self.selector.shape[1] > 1:
             self.handler('line_drawn', self.frame)  # 多重マーカー選択時
         self.update_mark_art()
 
     def OnMarkDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
-        self.__marksel = []
+        self._marksel = []
         self.update_mark_art()
 
     def OnMarkDragBegin(self, evt):
@@ -1572,7 +1573,7 @@ class GraphPlot(MatplotPanel):
         self.handler('mark_drawn', self.frame)
 
     def OnMarkShift(self, evt):
-        j = self.__marksel
+        j = self._marksel
         if j and self.frame:
             ux, uy = self.frame.xy_unit
             du = {
@@ -1589,7 +1590,7 @@ class GraphPlot(MatplotPanel):
         self.handler('mark_drawn', self.frame)
 
     def next_mark(self, j):
-        self.__marksel = [j]
+        self._marksel = [j]
         xs, ys = self.get_current_mark()
         self.xlim += xs[-1] - (self.xlim[1] + self.xlim[0]) / 2
         self.ylim += ys[-1] - (self.ylim[1] + self.ylim[0]) / 2
@@ -1599,7 +1600,7 @@ class GraphPlot(MatplotPanel):
 
     def OnMarkSkipNext(self, evt):
         n = self.markers.shape[1]
-        j = self.__marksel
+        j = self._marksel
         if j:
             self.next_mark((j[-1]+1) % n)
         elif n:
@@ -1607,7 +1608,7 @@ class GraphPlot(MatplotPanel):
 
     def OnMarkSkipPrevious(self, evt):
         n = self.markers.shape[1]
-        j = self.__marksel
+        j = self._marksel
         if j:
             self.next_mark((j[-1]-1) % n)
         elif n:
@@ -1642,14 +1643,14 @@ class GraphPlot(MatplotPanel):
 
     def get_current_rect(self):
         """Currently selected region."""
-        if self.__rectsel:
+        if self._rectsel:
             x, y = self.rected.get_data(orig=0)
             return np.array((x, y))
 
     def set_current_rect(self, x, y):
         if len(x) == 2:
             (xa,xb), (ya,yb) = x, y
-            self.__rectsel = [2]
+            self._rectsel = [2]
         else:
             l,r,b,t = self.frame.get_extent()
             xa, xb = min(x), max(x)
@@ -1667,24 +1668,24 @@ class GraphPlot(MatplotPanel):
         self.update_rect_art()
 
     def del_current_rect(self):
-        self.__rectsel = []
+        self._rectsel = []
         self.rected.set_data([], [])
         self.rected.set_visible(0)
         self.update_rect_art()
 
     def update_rect_art(self, xy=None):
         if xy is not None:
-            for art in self.__rectarts:  # art の再描画処理をして終了
+            for art in self._rectarts:  # art の再描画処理をして終了
                 art.xy = xy
             self.draw_overlay()
             return
-        for art in self.__rectarts:
+        for art in self._rectarts:
             art.remove()
-        del self.__rectarts[:]
+        del self._rectarts[:]
         if self.rected.get_visible() and self.handler.current_state in (REGION, REGION+DRAGGING):
             x, y = self.rected.get_data(orig=0)
             if x.size:
-                self.__rectarts.append(
+                self._rectarts.append(
                   self.axes.add_patch(
                     patches.Polygon(list(zip(x, y)),
                       color='red', ls='solid', lw=1/2, ec='white', alpha=0.2)
@@ -1716,7 +1717,7 @@ class GraphPlot(MatplotPanel):
         self.update_rect_art()
 
     def OnRegionRemove(self, evt):
-        if self.__rectsel:
+        if self._rectsel:
             self.del_current_rect()
             self.handler('region_removed', self.frame)
         self.set_wxcursor(wx.CURSOR_ARROW)
@@ -1727,11 +1728,11 @@ class GraphPlot(MatplotPanel):
         y = evt.mouseevent.ydata
         xs, ys = evt.artist.get_data(orig=0)
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
-        self.__rectsel = [k] if dots < 8 else [0,1,2,3,4]  # リージョンの全選択
+        self._rectsel = [k] if dots < 8 else [0,1,2,3,4]  # リージョンの全選択
         self.update_rect_art()
 
     def OnRegionDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
-        self.__rectsel = []
+        self._rectsel = []
         self.update_rect_art()
         self.set_wxcursor(wx.CURSOR_ARROW)
 
@@ -1741,7 +1742,7 @@ class GraphPlot(MatplotPanel):
             return
         org = self.p_event  # the last pressed
         self._lastpoint = self.calc_point(org.xdata, org.ydata, centred=False)
-        if not self.__rectsel:
+        if not self._rectsel:
             x, y = self._lastpoint
             self.set_current_rect((x, x), (y, y))  # start new region
         self._orgpoints = self.get_current_rect()
@@ -1749,7 +1750,7 @@ class GraphPlot(MatplotPanel):
     def OnRegionDragMove(self, evt, shift=False, meta=False):
         x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
         xr, yr = self.get_current_rect()
-        j = self.__rectsel  # corner-drag[1] or region-drag[4]
+        j = self._rectsel  # corner-drag[1] or region-drag[4]
         if len(j) == 1:
             k = (j[0] + 2) % 4  # 選択された一点の対角点
             xo, yo = xr[k], yr[k]
@@ -1781,11 +1782,11 @@ class GraphPlot(MatplotPanel):
         self.handler('region_drawn', self.frame)
 
     def OnRegionDragEnd(self, evt):
-        # self.__rectsel = [0,1,2,3,4]  # リージョンの全選択
+        # self._rectsel = [0,1,2,3,4]  # リージョンの全選択
         self.handler('region_drawn', self.frame)
 
     def OnRegionShift(self, evt):
-        j = self.__rectsel
+        j = self._rectsel
         if j and self.frame:
             ux, uy = self.frame.xy_unit
             du = {

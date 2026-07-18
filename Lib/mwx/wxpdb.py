@@ -47,14 +47,14 @@ class Debugger(Pdb):
 
     @property
     def interactive_shell(self):
-        return self.__shell
+        return self._shell
 
     @interactive_shell.setter
     def interactive_shell(self, v):
-        self.__shell = v
+        self._shell = v
         ## Don't use rawinput.
-        self.stdin = self.__shell.interp.stdin
-        self.stdout = self.__shell.interp.stdout
+        self.stdin = self._shell.interp.stdin
+        self.stdout = self._shell.interp.stdout
 
     @property
     def busy(self):

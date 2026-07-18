@@ -313,9 +313,9 @@ class MatplotPanel(wx.Panel):
         ]
         
         self.__key = ''
-        self.__isMenu = None
-        self.__isPressed = None
-        self.__isDragging = False  # True if dragging. (None if dblclicked)
+        self._isMenu = None
+        self._isPressed = None
+        self._isDragging = False  # True if dragging. (None if dblclicked)
         
         ## Initialize the plot figure.
         # <matplotlib.axes.Axes>
@@ -507,20 +507,20 @@ class MatplotPanel(wx.Panel):
     @property
     def p_event(self):
         """Last `pressed` event <matplotlib.backend_bases.MouseEvent>."""
-        return self.__isPressed
+        return self._isPressed
 
     @p_event.setter
     def p_event(self, v):
-        self.__isPressed = v
+        self._isPressed = v
 
     def on_menu_lock(self, evt):  # <matplotlib.backend_bases.MouseEvent>
-        self.__isMenu = 1
+        self._isMenu = 1
 
     def on_menu(self, evt):  # <matplotlib.backend_bases.MouseEvent>
-        if self.__isMenu:
+        if self._isMenu:
             self.canvas.SetFocus()
             Menu.Popup(self, self.menu)
-        self.__isMenu = 0
+        self._isMenu = 0
 
     def on_pick(self, evt):  # <matplotlib.backend_bases.PickEvent>
         """Find index near (x,y) and set the selector.
@@ -563,7 +563,7 @@ class MatplotPanel(wx.Panel):
         """Called when a key is pressed while dragging.
         Specifically called when the mouse is being captured.
         """
-        if self.__isDragging:
+        if self._isDragging:
             self.on_hotkey_press(evt)
         else:
             evt.Skip()
@@ -595,21 +595,21 @@ class MatplotPanel(wx.Panel):
         self.p_event = evt
         key = self._on_mouse_event(evt)
         if evt.dblclick:
-            self.__isDragging = None
+            self._isDragging = None
             self.handler('{}button dblclick'.format(key), evt)
         else:
-            self.__isDragging = False
+            self._isDragging = False
             self.handler('{}button pressed'.format(key), evt)
 
     def on_button_release(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is released."""
         key = self._on_mouse_event(evt)
-        if self.__isDragging:
-            self.__isDragging = False
+        if self._isDragging:
+            self._isDragging = False
             self.handler('{}drag end'.format(key), evt)
             self.handler('{}button released'.format(key), evt)
         else:
-            if self.__isDragging is None:  # dblclick end
+            if self._isDragging is None:  # dblclick end
                 return
             self.handler('{}button released'.format(key), evt)
         self.p_event = None
@@ -618,8 +618,8 @@ class MatplotPanel(wx.Panel):
         """Called when the mouse is moved."""
         key = self._on_mouse_event(evt)
         if evt.button in (1,2,3):
-            if not self.__isDragging:
-                self.__isDragging = True
+            if not self._isDragging:
+                self._isDragging = True
                 self.handler('{}drag begin'.format(key), evt)
             else:
                 self.handler('{}drag move'.format(key), evt)

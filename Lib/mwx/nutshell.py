@@ -281,11 +281,11 @@ class AutoCompInterfaceMixin:
     def _on_completion(self, step=0):
         """Show completion with selection."""
         try:
-            N = len(self.__comp_words)
-            j = self.__comp_ind + step
+            N = len(self._comp_words)
+            j = self._comp_ind + step
             j = 0 if j < 0 else j if j < N else N-1
-            word = self.__comp_words[j]
-            n = len(self.__comp_hint)
+            word = self._comp_words[j]
+            n = len(self._comp_hint)
             p = self.cpos
             if not self.SelectedText:
                 p, q, sty = self.get_following_atom(p)  # word-right-selection
@@ -294,15 +294,15 @@ class AutoCompInterfaceMixin:
             with self.off_undocollection():
                 self.ReplaceSelection(word[n:])
             self.cpos = p  # selection backward to the point
-            self.__comp_ind = j
+            self._comp_ind = j
         except IndexError:
             self.message("No completion words")
 
     def _gen_autocomp(self, j, hint, words, sep=' ', mode=True):
         ## Prepare on_completion_forward/backward.
-        self.__comp_ind = j
-        self.__comp_hint = hint
-        self.__comp_words = words
+        self._comp_ind = j
+        self._comp_hint = hint
+        self._comp_words = words
         if not mode:
             self.anchor = self.eolc  # selection to eol
             self._on_completion()    # show completion always
