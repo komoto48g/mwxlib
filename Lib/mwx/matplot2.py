@@ -329,7 +329,6 @@ class MatplotPanel(wx.Panel):
         
         # <matplotlib.widgets.Cursor>
         self.cursor = Cursor(self.axes, useblit=True, color='grey', linewidth=1)
-        self.cursor.visible = 1
         
         self.background = None
 
@@ -353,14 +352,14 @@ class MatplotPanel(wx.Panel):
             self.canvas.draw()
             for art, v in zip(artists, states):  # オーバーレイを戻して再描画処理↓
                 art.set_visible(v)
-        if artists:
-            if self.background is not None:
-                self.canvas.restore_region(self.background)
-            for art in artists:
-                ## postcall 時点で削除されている可能性があるため axes の有無をチェックする．
-                if art.axes:
-                    self.axes.draw_artist(art)
-            self.canvas.blit(self.axes.bbox)
+        
+        if self.background is not None:
+            self.canvas.restore_region(self.background)
+        for art in artists:
+            ## postcall 時点で削除されている可能性があるため axes の有無をチェックする．
+            if art.axes:
+                self.axes.draw_artist(art)
+        self.canvas.blit(self.axes.bbox)
 
     def draw_overlay(self, cursor=True):
         cursor_lines = [self.cursor.linev, self.cursor.lineh] if cursor else []
