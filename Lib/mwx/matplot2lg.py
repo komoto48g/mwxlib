@@ -46,15 +46,13 @@ class LinePlot(MatplotPanel):
         })
         self.modeline.Show(0)
         
-        self.cursor.visible = 0
-        
         self.axes.grid(True)
         self.axes.tick_params(labelsize='x-small')
         
         self.__region = None
         self.__annotations = []
         
-        ## Note for matplotlib >= 3.9.0:
+        ## MPL_VERSION >= (3,9,0)
         ## axhspan and axvspan now return Rectangles, not Polygons.
         
         # <matplotlib.patches.Polygon>
@@ -100,7 +98,7 @@ class LinePlot(MatplotPanel):
     def annotate(self):
         for art in self.__annotations:
             art.remove()
-        self.__annotations = []
+        del self.__annotations[:]
         
         # <matplotlib.text.Annotation>
         def _A(v, xy, xytext, xycoords='data', textcoords='offset points', **arrowprops):
@@ -116,7 +114,7 @@ class LinePlot(MatplotPanel):
                 p = _A(b-a, (x,y), (-20,8), arrowstyle='-')  # wide space
             else:
                 p = _A(b-a, (x,y), (16,16), arrowstyle='-',  # narrow space
-                        connectionstyle="angle,angleA=0,angleB=90,rad=8")
+                       connectionstyle="angle,angleA=0,angleB=90,rad=8")
             self.__annotations = [
                 _A(a, (a,y), (-54,-3), arrowstyle='->'),
                 _A(b, (b,y), (+16,-3), arrowstyle='->'),
@@ -163,10 +161,10 @@ class LinePlot(MatplotPanel):
             self.set_wxcursor(wx.CURSOR_HAND)  # inside
         elif v == 2:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # left-edge
-            self._lastpoint = self.region[1]    # set origin right
+            self._lastpoint = self.region[1]     # set origin right
         elif v == 3:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # right-edge
-            self._lastpoint = self.region[0]    # set origin left
+            self._lastpoint = self.region[0]     # set origin left
         else:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # outside
 
@@ -241,8 +239,8 @@ class Histogram(LinePlot):
         self.__plot, = self.axes.plot([], [], lw=1, color='c', alpha=1)
         
         # <matplotlib.patches.Polygon>
-        self.__fil = patches.Polygon([(0,0)], color='c', alpha=1)
-        self.axes.add_patch(self.__fil)
+        self.__fill = patches.Polygon([(0,0)], color='c', alpha=1)
+        self.axes.add_patch(self.__fill)
 
     def OnDestroy(self, evt):
         for view in self.__views:
@@ -307,7 +305,6 @@ class Histogram(LinePlot):
         else:
             self.__plot.set_data([], [])
             self.region = None
-        
         self.draw()
 
     def writeln(self):
@@ -341,11 +338,11 @@ class Histogram(LinePlot):
                     i, j = x.searchsorted(self.region)
                 else:
                     i, j = (0, -1)
-                self.__fil.set_xy(list(chain([(x[i], 0)], zip(x[i:j], y[i:j]), [(x[j-1], 0)])))
+                self.__fill.set_xy(list(chain([(x[i], 0)], zip(x[i:j], y[i:j]), [(x[j-1], 0)])))
             else:
-                self.__fil.set_xy([(0,0)])
+                self.__fill.set_xy([(0, 0)])
         else:
-            self.__fil.set_xy([(0,0)])
+            self.__fill.set_xy([(0, 0)])
         self.writeln()
 
     def OnDragEnd(self, evt):
@@ -448,8 +445,8 @@ class LineProfile(LinePlot):
                                       picker=True, pickradius=2)
         
         # <matplotlib.patches.Polygon>
-        self.__fil = patches.Polygon([(0,0)], color='c', alpha=0.8)
-        self.axes.add_patch(self.__fil)
+        self.__fill = patches.Polygon([(0,0)], color='c', alpha=0.8)
+        self.axes.add_patch(self.__fill)
         
         # <matplotlib.lines.Line2D>
         self.__hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
@@ -571,7 +568,6 @@ class LineProfile(LinePlot):
                 ly = self.ylim
                 self.xlim = ls[0], ls[-1]
                 self.ylim = ly[0], max(ly[1], max(zs))
-        
         self.draw()
 
     def writeln(self):
@@ -608,7 +604,7 @@ class LineProfile(LinePlot):
         
         x, y = self.plotdata
         if x.size:
-            self.__fil.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
+            self.__fill.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
         self.writeln()
 
     ## --------------------------------
@@ -674,6 +670,8 @@ class LineProfile(LinePlot):
             xc, yc = evt.xdata, evt.ydata
             u = x[1] - x[0]  # != frame.unit (斜め線の場合 dx=unit とは限らない)
             v = (y < yc)
+            self.__hline.set_ydata([yc])
+            self.__hline.set_visible(1)
             if v.all():
                 self.region = None  # all y < yc
             elif v.any():
@@ -695,9 +693,6 @@ class LineProfile(LinePlot):
                     self.region = None
             else:
                 self.region = x[[0,-1]]  # all y > yc
-            
-            self.__hline.set_ydata([yc])
-            self.__hline.set_visible(1)
             self.draw()
             self.message(f"yc = {yc:g}")
 
