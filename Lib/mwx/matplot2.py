@@ -411,16 +411,15 @@ class MatplotPanel(wx.Panel):
     @property
     def ddpu(self):
         """Display-dot resolution (x, y) [dots per arb.unit]."""
-        # return self.mapxy2disp(1,1) - self.mapxy2disp(0,0)
-        a, b = self.mapxy2disp([0,1], [0,1])
+        a, b = self.axes.transData.transform([[0,0], [1,1]])
         return b - a
 
-    def mapxy2disp(self, x, y):
+    def _mapxy2disp(self, x, y):
         """Map xydata --> display dot pixel coordinates."""
         v = np.array((x, y)).T
         return self.axes.transData.transform(v)
 
-    def mapdisp2xy(self, px, py):
+    def _mapdisp2xy(self, px, py):
         """Map display dot pixel coordinates --> xydata."""
         v = np.array((px, py)).T
         return self.axes.transData.inverted().transform(v)
@@ -580,7 +579,7 @@ class MatplotPanel(wx.Panel):
     def _on_mouse_event(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called in mouse event handlers."""
         if not evt.inaxes or evt.inaxes is not self.axes:
-            (evt.xdata, evt.ydata) = self.mapdisp2xy(evt.x, evt.y)
+            (evt.xdata, evt.ydata) = self._mapdisp2xy(evt.x, evt.y)
         
         ## Overwrite evt.key with modifiers.
         key = self.__key
@@ -808,7 +807,7 @@ class MatplotPanel(wx.Panel):
         w, h = self.canvas.Size
         p = self.canvas.ScreenToClient(wx.GetMousePosition())
         org.x, org.y = (p[0], h-p[1])
-        org.xdata, org.ydata = self.mapdisp2xy(org.x, org.y)  # p_event overwrites
+        org.xdata, org.ydata = self._mapdisp2xy(org.x, org.y)  # p_event overwrites
 
     def OnAxisDragEnd(self, evt):
         self.toolbar.push_current()

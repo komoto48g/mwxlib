@@ -609,6 +609,7 @@ class Graph(GraphPlot):
         if (a and b
               and a.unit == b.unit
               and a.buffer.shape == b.buffer.shape):
+            self.frame.update_interpolation_mode()  # Substitutes internal_callback.
             self.xlim = other.xlim
             self.ylim = other.ylim
             self.draw(internal_callback=False)

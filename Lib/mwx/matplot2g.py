@@ -262,6 +262,16 @@ class AxesImagePhantom:
         cx, cy = self.center
         self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
 
+    def update_interpolation_mode(self):
+        """Called from parent.OnDraw."""
+        dots = self.xy_ddpx[0] * self.binning
+        if self.__art.get_interpolation() == 'nearest':
+            if dots < 1:
+                self.__art.set_interpolation(self.parent.interpolation_mode)
+        else:
+            if dots > 1:
+                self.__art.set_interpolation('nearest')
+
     artist = property(
         lambda self: self.__art)
 
@@ -317,6 +327,14 @@ class AxesImagePhantom:
         u = self.unit
         r = self.aspect_ratio
         return (u, u) if r == 1 else (u, u * r)
+
+    @property
+    def xy_ddpx(self):
+        """Display-dot resolution (x, y) [dots per pix].
+        Note: The binning [pix/bin] value is not considered.
+        """
+        ## [dots/pix] = [dots/u] * [u/pix]
+        return self.parent.ddpu * self.xy_unit
 
     @property
     def name(self):
@@ -907,6 +925,9 @@ class GraphPlot(MatplotPanel):
     ## Image cutoff limit percentiles.
     cutoff_threshold = 0.005
 
+    ## Default interpolation mode for antialiasing.
+    interpolation_mode = 'bilinear'
+
     @property
     def frames(self):
         """List of frames <matplotlib.image.AxesImage>."""
@@ -1200,25 +1221,11 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     ## Pan/Zoom actions (override).
     ## --------------------------------
-    ## antialiased, nearest, bilinear, bicubic, spline16,
-    ## spline36, hanning, hamming, hermite, kaiser, quadric,
-    ## catrom, gaussian, bessel, mitchell, sinc, lanczos, or none.
-    interpolation_mode = 'bilinear'
 
     def OnDraw(self, evt):
         """Called before the canvas is drawn (override)."""
-        if not self.interpolation_mode:
-            return
-        frame = self.frame
-        if frame:
-            ## [dots/pix] = [dots/u] * [u/pix]
-            dots = self.ddpu[0] * frame.unit * frame.binning
-            
-            if frame.get_interpolation() == 'nearest' and dots < 1:
-                frame.set_interpolation(self.interpolation_mode)
-                
-            elif frame.get_interpolation() != 'nearest' and dots > 1:
-                frame.set_interpolation('nearest')
+        if self.frame:
+            self.frame.update_interpolation_mode()
 
     def OnMotion(self, evt):
         """Called when mouse moves in axes (override)."""
