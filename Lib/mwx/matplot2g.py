@@ -161,38 +161,39 @@ class AxesImagePhantom:
         self.parent = parent
         
         ## Properties of the frame/image.
-        self.__name = name
-        self.__attributes = kwargs
-        self.__pathname = kwargs.get('pathname')
-        self.__mtime = _get_timestamp(self.__pathname)
-        self.__annotation = kwargs.get('annotation', '')
-        self.__localunit = kwargs.get('localunit')
-        self.__center = kwargs.get('center', [0, 0])
+        self.name = name
+        self.attributes = kwargs
+        self._pathname = kwargs.get('pathname')
+        self._annotation = kwargs.get('annotation', '')
+        self._localunit = kwargs.get('localunit')
+        self._center = kwargs.get('center', [0, 0])
+        
+        self._mtime = _get_timestamp(self._pathname)
         
         ## Conditions for image loading.
-        self.__buf = _to_buffer(buf)
-        bins, vlim, img = _to_image(self.__buf,
+        self.buffer = _to_buffer(buf)
+        bins, vlim, img = _to_image(self.buffer,
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
-        self.__bins = bins
-        self.__cuts = vlim
-        self.__art = parent.axes.imshow(img,
-                                        cmap=cm.gray,
-                                        aspect='equal',  # cf. aspect_ratio => xy_unit
-                                        interpolation='nearest',
-                                        visible=show,
-                                        picker=True,
-                                        )
+        self.artist = parent.axes.imshow(img,
+                                         cmap=cm.gray,
+                                         aspect='equal',  # cf. aspect_ratio => xy_unit
+                                         interpolation='nearest',
+                                         visible=show,
+                                         picker=True,
+                                         )
+        self.bins = bins  # Binning value resulting from the image byte limit.
+        self.cuts = vlim  # Lower/Upper cutoff values of the buffer.
         self.aspect_ratio = 1
         self.update_extent()
 
     def __getattr__(self, attr):
-        return getattr(self.__art, attr)
+        return getattr(self.artist, attr)
 
     def __eq__(self, x):
         ## Called in `on_pick` and `__contains__` to check objects in.
-        return x is self.__art
+        return x is self.artist
 
     def update_attr(self, attr):
         """Update frame-specifc attributes."""
@@ -203,20 +204,20 @@ class AxesImagePhantom:
         FLAG_UPDATE_EXTENT = 2
         flag = 0
         if 'pathname' in attr:
-            self.__pathname = attr['pathname']
-            self.__mtime = _get_timestamp(self.__pathname)
+            self._pathname = attr['pathname']
+            self._mtime = _get_timestamp(self._pathname)
             flag |= FLAG_ANNOTATION
         
         if 'annotation' in attr:
-            self.__annotation = attr['annotation']
+            self._annotation = attr['annotation']
             if self.parent.frame is self:
                 self.parent.infobar.ShowMessage(attr['annotation'])
             flag |= FLAG_ANNOTATION
         
         if 'center' in attr:
             v = list(attr['center'])  # for json format
-            if v != self.__center:
-                self.__center = v
+            if v != self._center:
+                self._center = v
                 flag |= FLAG_UPDATE_EXTENT
         
         if 'localunit' in attr:
@@ -227,11 +228,11 @@ class AxesImagePhantom:
                 raise ValueError("The unit value must not be inf")
             elif v <= 0:
                 raise ValueError("The unit value must be greater than zero")
-            if v != self.__localunit:
-                self.__localunit = v
+            if v != self._localunit:
+                self._localunit = v
                 flag |= FLAG_UPDATE_EXTENT
         
-        self.__attributes.update(attr)
+        self.attributes.update(attr)
         
         if flag & FLAG_UPDATE_EXTENT:
             self.update_extent()
@@ -242,82 +243,67 @@ class AxesImagePhantom:
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
         if buf is not None:
-            self.__buf = _to_buffer(buf)
+            self.buffer = _to_buffer(buf)
         
-        bins, vlim, img = _to_image(self.__buf,
+        bins, vlim, img = _to_image(self.buffer,
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
-        self.__bins = bins
-        self.__cuts = vlim
-        self.__art.set_array(img)
+        self.artist.set_array(img)
+        self.bins = bins
+        self.cuts = vlim
         self.parent.handler('frame_modified', self)
 
     def update_extent(self):
         """Update logical extent of the image (internal use only)."""
-        h, w = self.__buf.shape[:2]
+        h, w = self.buffer.shape[:2]
         ux, uy = self.xy_unit
         w *= ux/2
         h *= uy/2
         cx, cy = self.center
-        self.__art.set_extent((cx-w, cx+w, cy-h, cy+h))
+        self.artist.set_extent((cx-w, cx+w, cy-h, cy+h))
 
     def update_interpolation_mode(self):
         """Called from parent.OnDraw."""
-        dots = self.xy_ddpx[0] * self.binning
-        if self.__art.get_interpolation() == 'nearest':
+        dots = self.xy_ddpx[0] * self.bins
+        if self.artist.get_interpolation() == 'nearest':
             if dots < 1:
-                self.__art.set_interpolation(self.parent.interpolation_mode)
+                self.artist.set_interpolation(self.parent.interpolation_mode)
         else:
             if dots > 1:
-                self.__art.set_interpolation('nearest')
-
-    artist = property(
-        lambda self: self.__art)
-
-    binning = property(
-        lambda self: self.__bins,
-        doc="Binning value resulting from the image byte limit.")
-
-    cuts = property(
-        lambda self: self.__cuts,
-        doc="Lower/Upper cutoff values of the buffer.")
+                self.artist.set_interpolation('nearest')
 
     image = property(
-        lambda self: self.__art.get_array(),
+        lambda self: self.artist.get_array(),
         doc="Displayed image array<uint8>.")
 
     clim = property(
-        lambda self: self.__art.get_clim(),
-        lambda self, v: self.__art.set_clim(v),
+        lambda self: self.artist.get_clim(),
+        lambda self, v: self.artist.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
 
-    attributes = property(
-        lambda self: self.__attributes,
-        doc="Auxiliary info about the frame.")
-
     pathname = property(
-        lambda self: self.__pathname,
+        lambda self: self._pathname,
         lambda self, v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
 
     annotation = property(
-        lambda self: self.__annotation,
+        lambda self: self._annotation,
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
 
     center = property(
-        lambda self: self.__center,
+        lambda self: self._center,
         lambda self, v: self.update_attr({'center': v}),
         doc="Center coordinates of the frame in logical units.")
 
     localunit = property(
-        lambda self: self.__localunit,
+        lambda self: self._localunit,
         lambda self, v: self.update_attr({'localunit': v}),
         doc="Logical length per pixel in arbitrary units [u/pix], or None if not assigned.")
 
     unit = property(
-        lambda self: self.__localunit or self.parent.unit,
+        lambda self: self._localunit or self.parent.unit,
         lambda self, v: self.update_attr({'localunit': v}),
         doc="Logical length per pixel in arbitrary units [u/pix].")
 
@@ -331,24 +317,15 @@ class AxesImagePhantom:
     @property
     def xy_ddpx(self):
         """Display-dot resolution (x, y) [dots per pix].
-        Note: The binning [pix/bin] value is not considered.
+        Note: The binning value [pix/bin] is not considered.
         """
         ## [dots/pix] = [dots/u] * [u/pix]
         return self.parent.ddpu * self.xy_unit
 
     @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, v):
-        self.__name = v
-        self.parent.handler('frame_updated', self)
-
-    @property
     def basename(self):
-        m = re.match(r"(.+)<\d+>$", self.__name)
-        return m.group(1) if m else self.__name
+        m = re.match(r"(.+)<\d+>$", self.name)
+        return m.group(1) if m else self.name
 
     @property
     def timestamp(self):
@@ -363,7 +340,7 @@ class AxesImagePhantom:
         try:
             return self.attributes["acq_datetime"].timestamp()
         except Exception:
-            return self.__mtime
+            return self._mtime
 
     @property
     def mtdelta(self):
@@ -376,9 +353,9 @@ class AxesImagePhantom:
             None: no file
         """
         try:
-            return os.path.getmtime(self.pathname) - self.__mtime
+            return os.path.getmtime(self.pathname) - self._mtime
         except Exception:
-            return self.__mtime
+            return self._mtime
 
     @property
     def index(self):
@@ -392,41 +369,25 @@ class AxesImagePhantom:
             nx, ny = self.xytopixel(self.region)
             sx = slice(max(0, nx[0]), nx[1])  # nx slice
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
-            return self.__buf[sy, sx]
+            return self.buffer[sy, sx]
         return None
-
-    @roi.setter
-    def roi(self, v):
-        if not self.parent.region.size:
-            raise ValueError("region is not selected.")
-        self.roi[:] = v  # cannot broadcast input array into different shape
-        self.update_buffer()
 
     @property
     def roi_or_buffer(self):
         return self.roi if self.parent.region.size else self.buffer
 
-    @property
-    def buffer(self):
-        return self.__buf
-
-    @buffer.setter
-    def buffer(self, v):
-        self.update_buffer(v)
-        self.update_extent()
-
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
         If `nearest` is False, the return value is interpolated with spline.
         """
-        h, w = self.__buf.shape[:2]
+        h, w = self.buffer.shape[:2]
         nx, ny = self.xytopixel(x, y, cast=nearest)
         ## if np.any((nx<0) | (nx>=w) | (ny<0) | (ny>=h)):
         if np.any(nx<0) or np.any(nx>=w) or np.any(ny<0) or np.any(ny>=h):
             return
         if nearest:
-            return self.__buf[ny, nx]  # nearest value
-        return ndi.map_coordinates(self.__buf, np.vstack((ny, nx)))  # spline value
+            return self.buffer[ny, nx]  # nearest value
+        return ndi.map_coordinates(self.buffer, np.vstack((ny, nx)))  # spline value
 
     def xytopixel(self, x, y=None, cast=True):
         """Convert xydata (x,y) -> [nx,ny] pixel.
@@ -438,7 +399,7 @@ class AxesImagePhantom:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
             x, y = x
         x, y = _to_array(x), _to_array(y)
-        l,r,b,t = self.__art.get_extent()
+        l,r,b,t = self.artist.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
         ny = (t - y) / uy  # Y ピクセルインデクスは座標と逆
@@ -453,7 +414,7 @@ class AxesImagePhantom:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
         nx, ny = _to_array(nx), _to_array(ny)
-        l,r,b,t = self.__art.get_extent()
+        l,r,b,t = self.artist.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy  # Y ピクセルインデクスは座標と逆
@@ -704,16 +665,16 @@ class GraphPlot(MatplotPanel):
         
         self.modeline.Bind(wx.EVT_CONTEXT_MENU,
                            lambda v: Menu.Popup(self, (_menu(j, art.name)
-                                                for j, art in enumerate(self.__Arts))))
+                                                for j, art in enumerate(self._frames))))
         
         self.modeline.Show()
         self.Layout()
         
-        self.__Arts = []
-        self.__index = None
+        self._frames = []
+        self._index = None
         
         ## cf. self.figure.dpi = 80 dpi (0.3175 mm/pix)
-        self.__unit = 1.0
+        self._unit = 1.0
         
         # <matplotlib.lines.Line2D>
         (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1, picker=8)
@@ -759,8 +720,8 @@ class GraphPlot(MatplotPanel):
             buf = Image.open(buf)
         
         path = kwargs.get('pathname')
-        paths = [art.pathname for art in self.__Arts]
-        names = [art.name for art in self.__Arts]
+        paths = [art.pathname for art in self._frames]
+        names = [art.name for art in self._frames]
         j = -1
         if path:
             if path in paths:
@@ -768,7 +729,7 @@ class GraphPlot(MatplotPanel):
         elif name in names:
             j = names.index(name)  # existing frame
         if j != -1:
-            art = self.__Arts[j]
+            art = self._frames[j]
             art.update_buffer(buf)   # => [frame_modified]
             art.update_attr(kwargs)  # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
@@ -782,7 +743,7 @@ class GraphPlot(MatplotPanel):
         art = AxesImagePhantom(self, buf, name, show, **kwargs)
         
         j = len(self) if pos is None else pos
-        self.__Arts.insert(j, art)
+        self._frames.insert(j, art)
         self.handler('frame_loaded', art)
         if show:
             u = self.frame and self.frame.unit  # current frame unit
@@ -798,19 +759,19 @@ class GraphPlot(MatplotPanel):
         else:
             j = index
         
-        for art in self.__Arts:  # Hide all frames
+        for art in self._frames:  # Hide all frames
             art.set_visible(0)
         
-        if j != self.__index and self.__index is not None:
+        if j != self._index and self._index is not None:
             self.handler('frame_hidden', self.frame)
         
-        if j is not None and self.__Arts:
-            art = self.__Arts[j]
+        if j is not None and self._frames:
+            art = self._frames[j]
             art.set_visible(1)
-            self.__index = j % len(self)
+            self._index = j % len(self)
             self.handler('frame_shown', art)
         else:
-            self.__index = None
+            self._index = None
         
         self.draw()
         self.writeln()
@@ -818,14 +779,14 @@ class GraphPlot(MatplotPanel):
         return self.frame
 
     def __iter__(self):
-        for art in self.__Arts:
+        for art in self._frames:
             yield art.buffer
 
     def __getitem__(self, j):
         if isinstance(j, str):
             j = self.index(j)
         
-        buffers = [art.buffer for art in self.__Arts]
+        buffers = [art.buffer for art in self._frames]
         if hasattr(j, '__iter__'):
             return [buffers[i] for i in j]
         return buffers[j]  # j can also be slicing
@@ -840,7 +801,7 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, slice) or hasattr(j, '__iter__'):
             raise ValueError("attempt to assign buffers via slicing or iterator")
         
-        art = self.__Arts[j]
+        art = self._frames[j]
         art.update_buffer(v)  # update buffer
         art.update_extent()
         self.select(j)
@@ -850,30 +811,30 @@ class GraphPlot(MatplotPanel):
             j = self.index(j)
         
         if hasattr(j, '__iter__'):
-            arts = [self.__Arts[i] for i in j]
+            arts = [self._frames[i] for i in j]
         elif isinstance(j, slice):
-            arts = self.__Arts[j]
+            arts = self._frames[j]
         else:
-            arts = [self.__Arts[j]]
+            arts = [self._frames[j]]
         
         if arts:
             indices = [art.index for art in arts]  # frames to be removed
             for art in arts:
                 art.remove()
-                self.__Arts.remove(art)
+                self._frames.remove(art)
             self.handler('frame_removed', indices)
             
-            j = self.__index
+            j = self._index
             if j is not None:
                 n = len(self)
-                self.__index = None if n==0 else j if j<n else n-1
-            self.select(self.__index)
+                self._index = None if n==0 else j if j<n else n-1
+            self.select(self._index)
 
     ## __len__ は bool() でも呼び出されるため，オブジェクト判定で偽を返すことがある (PY2).
     ## __nonzero__ : bool() を追加しておく必要がある (PY2).
 
     def __len__(self):
-        return len(self.__Arts)
+        return len(self._frames)
 
     def __nonzero__(self):
         return True
@@ -883,38 +844,38 @@ class GraphPlot(MatplotPanel):
 
     def __contains__(self, j):
         if isinstance(j, str):
-            return j in (art.name for art in self.__Arts)
+            return j in (art.name for art in self._frames)
         elif isinstance(j, np.ndarray):
-            return any(j is art.buffer for art in self.__Arts)
+            return any(j is art.buffer for art in self._frames)
         else:
-            return (j in self.__Arts)
+            return (j in self._frames)
 
     def index(self, j):
         if isinstance(j, str):
-            return next(i for i, art in enumerate(self.__Arts) if j == art.name)
+            return next(i for i, art in enumerate(self._frames) if j == art.name)
         elif isinstance(j, np.ndarray):
-            return next(i for i, art in enumerate(self.__Arts) if j is art.buffer)
+            return next(i for i, art in enumerate(self._frames) if j is art.buffer)
         else:
-            return self.__Arts.index(j)  # j:frame -> int
+            return self._frames.index(j)  # j:frame -> int
 
     def find_frame(self, j):
         if isinstance(j, str):
-            return next((art for art in self.__Arts if j == art.name), None)
+            return next((art for art in self._frames if j == art.name), None)
         elif isinstance(j, np.ndarray):
-            return next((art for art in self.__Arts if j is art.buffer), None)
+            return next((art for art in self._frames if j is art.buffer), None)
         else:
-            return self.__Arts[j]  # j:int -> frame
+            return self._frames[j]  # j:int -> frame
 
     def get_all_frames(self, j=None):
         if isinstance(j, str):
-            return iter(art for art in self.__Arts if j == art.name)
+            return iter(art for art in self._frames if j == art.name)
         elif isinstance(j, np.ndarray):
-            return iter(art for art in self.__Arts if j is art.buffer)
+            return iter(art for art in self._frames if j is art.buffer)
         else:
-            return iter(self.__Arts)  # j:any -> frames
+            return iter(self._frames)  # j:any -> frames
 
     def sort_frames(self, seq):
-        self.__Arts[:] = [self.__Arts[i] for i in seq]  # Sort arts by new sequence for IDs.
+        self._frames[:] = [self._frames[i] for i in seq]  # Sort arts by new sequence for IDs.
 
     ## --------------------------------
     ## Property of frame / drawer.
@@ -932,13 +893,13 @@ class GraphPlot(MatplotPanel):
     @property
     def frames(self):
         """List of frames <matplotlib.image.AxesImage>."""
-        return list(self.__Arts)
+        return list(self._frames)
 
     @property
     def frame(self):
         """Current art <matplotlib.image.AxesImage>."""
-        if self.__Arts and self.__index is not None:
-            return self.__Arts[self.__index]
+        if self._frames and self._index is not None:
+            return self._frames[self._index]
 
     @property
     def buffer(self):
@@ -949,26 +910,26 @@ class GraphPlot(MatplotPanel):
     @buffer.setter
     def buffer(self, v):
         if self.frame:
-            self.__setitem__(self.__index, v)
+            self.__setitem__(self._index, v)
         else:
             self.load(v)
 
     @property
     def unit(self):
         """Logical length per pixel in arbitrary units [u/pix]."""
-        return self.__unit
+        return self._unit
 
     @unit.setter
     def unit(self, v):
-        if v == self.__unit:  # no effect
+        if v == self._unit:  # no effect
             return
         if v is None or np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value must not be nan or inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
         else:
-            self.__unit = v
-            for art in self.__Arts:
+            self._unit = v
+            for art in self._frames:
                 art.update_extent()
                 self.handler('frame_updated', art)
             self.draw()
@@ -976,7 +937,7 @@ class GraphPlot(MatplotPanel):
     def kill_buffer(self):
         """Delete a buffer."""
         if self.frame:
-            del self[self.__index]
+            del self[self._index]
 
     def kill_all_buffers(self):
         """Delete all buffers."""
@@ -1077,12 +1038,12 @@ class GraphPlot(MatplotPanel):
             self.modeline.SetLabel(
                 "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
                 "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pix]".format(
-                    page=self.__index,
+                    page=self._index,
                     maxpage=len(self),
                     name=frame.name,
                     data=frame.buffer,
                     cmap=frame.get_cmap().name,
-                    bins=' bin{}'.format(frame.binning) if frame.binning > 1 else '',
+                    bins=' bin{}'.format(frame.bins) if frame.bins > 1 else '',
                     unit=frame.unit,
                     x='**' if frame.localunit else '--',
                     a='%%' if not frame.buffer.flags.writeable else '--'
@@ -1174,7 +1135,7 @@ class GraphPlot(MatplotPanel):
             return
         
         ## 画像が選択された場合．
-        if evt.artist in self.__Arts:
+        if evt.artist in self._frames:
             if self._isPicked:
                 self._isPicked = None  # release pick guard
             else:
@@ -1235,13 +1196,13 @@ class GraphPlot(MatplotPanel):
 
     def OnPageDown(self, evt):
         """Next page."""
-        i = self.__index
+        i = self._index
         if i is not None and i < len(self)-1:
             self.select(i + 1)
 
     def OnPageUp(self, evt):
         """Previous page."""
-        i = self.__index
+        i = self._index
         if i is not None and i > 0:
             self.select(i - 1)
 

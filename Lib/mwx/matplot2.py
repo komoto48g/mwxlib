@@ -366,10 +366,11 @@ class MatplotPanel(wx.Panel):
         self.draw(*self.overlay_artists, *cursor_lines)
 
     @postcall
-    def copy_to_clipboard(self):
+    def copy_to_clipboard(self, background_only=False):
         """Copy canvas image to clipboard."""
-        self.canvas.restore_region(self.background)
-        self.canvas.blit(self.axes.bbox)
+        if background_only:
+            self.canvas.restore_region(self.background)
+            self.canvas.blit(self.axes.bbox)
         self.canvas.Copy_to_Clipboard()
         self.message("Copy image to clipboard.")
 
