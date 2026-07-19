@@ -2853,7 +2853,6 @@ class Nautilus(EditorInterface, Shell):
             obj.self = obj
             obj.this = inspect.getmodule(obj)
             obj.shell = self  # Overwrite the facade <wx.py.shell.ShellFacade>.
-            ## obj.__name__ = typename(obj)  # Assign a namespace for ghost in the shell. cf. exec_region.
         except AttributeError:
             pass
         try:
@@ -3430,7 +3429,8 @@ class Nautilus(EditorInterface, Shell):
 
     def on_shell_activate(self, evt):
         """Called when the shell (self) is activated.
-        Reset localvars assigned for the shell target. cf. target.setter.
+        Reset localvars assigned for the shell target.
+        See also `target.setter`.
         """
         self.trace_position()
         obj = self.target

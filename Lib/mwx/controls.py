@@ -399,8 +399,8 @@ class Knob(wx.Panel):
         elif type == 'choice':
             self._ctrl = wx.Choice(self, size=(cw,h))
             self._ctrl.Bind(wx.EVT_CHOICE, self.OnScroll)
-            self._ctrl.SetValue = self._ctrl.SetSelection  # setter of choice
-            self._ctrl.GetValue = self._ctrl.GetSelection  # getter (ditto)
+            self._ctrl.SetValue = self._ctrl.SetSelection
+            self._ctrl.GetValue = self._ctrl.GetSelection
             
         else:
             raise Exception(f"unknown type: {type!r}")
