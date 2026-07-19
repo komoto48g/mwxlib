@@ -170,8 +170,8 @@ class AxesImagePhantom:
         self.__center = kwargs.get('center', [0, 0])
         
         ## Conditions for image loading.
-        self.__buf = _to_buffer(buf)
-        bins, vlim, img = _to_image(self.__buf,
+        self.buffer = _to_buffer(buf)
+        bins, vlim, img = _to_image(self.buffer,
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
@@ -242,9 +242,9 @@ class AxesImagePhantom:
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
         if buf is not None:
-            self.__buf = _to_buffer(buf)
+            self.buffer = _to_buffer(buf)
         
-        bins, vlim, img = _to_image(self.__buf,
+        bins, vlim, img = _to_image(self.buffer,
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
                                     )
@@ -255,7 +255,7 @@ class AxesImagePhantom:
 
     def update_extent(self):
         """Update logical extent of the image (internal use only)."""
-        h, w = self.__buf.shape[:2]
+        h, w = self.buffer.shape[:2]
         ux, uy = self.xy_unit
         w *= ux/2
         h *= uy/2
@@ -368,41 +368,25 @@ class AxesImagePhantom:
             nx, ny = self.xytopixel(self.region)
             sx = slice(max(0, nx[0]), nx[1])  # nx slice
             sy = slice(max(0, ny[1]), ny[0])  # ny slice 反転 (降順)
-            return self.__buf[sy, sx]
+            return self.buffer[sy, sx]
         return None
-
-    @roi.setter
-    def roi(self, v):
-        if not self.parent.region.size:
-            raise ValueError("region is not selected.")
-        self.roi[:] = v  # cannot broadcast input array into different shape
-        self.update_buffer()
 
     @property
     def roi_or_buffer(self):
         return self.roi if self.parent.region.size else self.buffer
 
-    @property
-    def buffer(self):
-        return self.__buf
-
-    @buffer.setter
-    def buffer(self, v):
-        self.update_buffer(v)
-        self.update_extent()
-
     def xytoc(self, x, y=None, nearest=True):
         """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
         If `nearest` is False, the return value is interpolated with spline.
         """
-        h, w = self.__buf.shape[:2]
+        h, w = self.buffer.shape[:2]
         nx, ny = self.xytopixel(x, y, cast=nearest)
         ## if np.any((nx<0) | (nx>=w) | (ny<0) | (ny>=h)):
         if np.any(nx<0) or np.any(nx>=w) or np.any(ny<0) or np.any(ny>=h):
             return
         if nearest:
-            return self.__buf[ny, nx]  # nearest value
-        return ndi.map_coordinates(self.__buf, np.vstack((ny, nx)))  # spline value
+            return self.buffer[ny, nx]  # nearest value
+        return ndi.map_coordinates(self.buffer, np.vstack((ny, nx)))  # spline value
 
     def xytopixel(self, x, y=None, cast=True):
         """Convert xydata (x,y) -> [nx,ny] pixel.
