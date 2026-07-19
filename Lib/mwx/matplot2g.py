@@ -664,16 +664,16 @@ class GraphPlot(MatplotPanel):
         
         self.modeline.Bind(wx.EVT_CONTEXT_MENU,
                            lambda v: Menu.Popup(self, (_menu(j, art.name)
-                                                for j, art in enumerate(self.__Arts))))
+                                                for j, art in enumerate(self._frames))))
         
         self.modeline.Show()
         self.Layout()
         
-        self.__Arts = []
-        self.__index = None
+        self._frames = []
+        self._index = None
         
         ## cf. self.figure.dpi = 80 dpi (0.3175 mm/pix)
-        self.__unit = 1.0
+        self._unit = 1.0
         
         # <matplotlib.lines.Line2D>
         (self.marked,) = self.axes.plot([], [], "r+", ms=8, mew=1, picker=8)
@@ -719,8 +719,8 @@ class GraphPlot(MatplotPanel):
             buf = Image.open(buf)
         
         path = kwargs.get('pathname')
-        paths = [art.pathname for art in self.__Arts]
-        names = [art.name for art in self.__Arts]
+        paths = [art.pathname for art in self._frames]
+        names = [art.name for art in self._frames]
         j = -1
         if path:
             if path in paths:
@@ -728,7 +728,7 @@ class GraphPlot(MatplotPanel):
         elif name in names:
             j = names.index(name)  # existing frame
         if j != -1:
-            art = self.__Arts[j]
+            art = self._frames[j]
             art.update_buffer(buf)   # => [frame_modified]
             art.update_attr(kwargs)  # => [frame_updated] localunit => [canvas_draw]
             art.update_extent()
@@ -742,7 +742,7 @@ class GraphPlot(MatplotPanel):
         art = AxesImagePhantom(self, buf, name, show, **kwargs)
         
         j = len(self) if pos is None else pos
-        self.__Arts.insert(j, art)
+        self._frames.insert(j, art)
         self.handler('frame_loaded', art)
         if show:
             u = self.frame and self.frame.unit  # current frame unit
@@ -758,19 +758,19 @@ class GraphPlot(MatplotPanel):
         else:
             j = index
         
-        for art in self.__Arts:  # Hide all frames
+        for art in self._frames:  # Hide all frames
             art.set_visible(0)
         
-        if j != self.__index and self.__index is not None:
+        if j != self._index and self._index is not None:
             self.handler('frame_hidden', self.frame)
         
-        if j is not None and self.__Arts:
-            art = self.__Arts[j]
+        if j is not None and self._frames:
+            art = self._frames[j]
             art.set_visible(1)
-            self.__index = j % len(self)
+            self._index = j % len(self)
             self.handler('frame_shown', art)
         else:
-            self.__index = None
+            self._index = None
         
         self.draw()
         self.writeln()
@@ -778,14 +778,14 @@ class GraphPlot(MatplotPanel):
         return self.frame
 
     def __iter__(self):
-        for art in self.__Arts:
+        for art in self._frames:
             yield art.buffer
 
     def __getitem__(self, j):
         if isinstance(j, str):
             j = self.index(j)
         
-        buffers = [art.buffer for art in self.__Arts]
+        buffers = [art.buffer for art in self._frames]
         if hasattr(j, '__iter__'):
             return [buffers[i] for i in j]
         return buffers[j]  # j can also be slicing
@@ -800,7 +800,7 @@ class GraphPlot(MatplotPanel):
         if isinstance(j, slice) or hasattr(j, '__iter__'):
             raise ValueError("attempt to assign buffers via slicing or iterator")
         
-        art = self.__Arts[j]
+        art = self._frames[j]
         art.update_buffer(v)  # update buffer
         art.update_extent()
         self.select(j)
@@ -810,30 +810,30 @@ class GraphPlot(MatplotPanel):
             j = self.index(j)
         
         if hasattr(j, '__iter__'):
-            arts = [self.__Arts[i] for i in j]
+            arts = [self._frames[i] for i in j]
         elif isinstance(j, slice):
-            arts = self.__Arts[j]
+            arts = self._frames[j]
         else:
-            arts = [self.__Arts[j]]
+            arts = [self._frames[j]]
         
         if arts:
             indices = [art.index for art in arts]  # frames to be removed
             for art in arts:
                 art.remove()
-                self.__Arts.remove(art)
+                self._frames.remove(art)
             self.handler('frame_removed', indices)
             
-            j = self.__index
+            j = self._index
             if j is not None:
                 n = len(self)
-                self.__index = None if n==0 else j if j<n else n-1
-            self.select(self.__index)
+                self._index = None if n==0 else j if j<n else n-1
+            self.select(self._index)
 
     ## __len__ は bool() でも呼び出されるため，オブジェクト判定で偽を返すことがある (PY2).
     ## __nonzero__ : bool() を追加しておく必要がある (PY2).
 
     def __len__(self):
-        return len(self.__Arts)
+        return len(self._frames)
 
     def __nonzero__(self):
         return True
@@ -843,38 +843,38 @@ class GraphPlot(MatplotPanel):
 
     def __contains__(self, j):
         if isinstance(j, str):
-            return j in (art.name for art in self.__Arts)
+            return j in (art.name for art in self._frames)
         elif isinstance(j, np.ndarray):
-            return any(j is art.buffer for art in self.__Arts)
+            return any(j is art.buffer for art in self._frames)
         else:
-            return (j in self.__Arts)
+            return (j in self._frames)
 
     def index(self, j):
         if isinstance(j, str):
-            return next(i for i, art in enumerate(self.__Arts) if j == art.name)
+            return next(i for i, art in enumerate(self._frames) if j == art.name)
         elif isinstance(j, np.ndarray):
-            return next(i for i, art in enumerate(self.__Arts) if j is art.buffer)
+            return next(i for i, art in enumerate(self._frames) if j is art.buffer)
         else:
-            return self.__Arts.index(j)  # j:frame -> int
+            return self._frames.index(j)  # j:frame -> int
 
     def find_frame(self, j):
         if isinstance(j, str):
-            return next((art for art in self.__Arts if j == art.name), None)
+            return next((art for art in self._frames if j == art.name), None)
         elif isinstance(j, np.ndarray):
-            return next((art for art in self.__Arts if j is art.buffer), None)
+            return next((art for art in self._frames if j is art.buffer), None)
         else:
-            return self.__Arts[j]  # j:int -> frame
+            return self._frames[j]  # j:int -> frame
 
     def get_all_frames(self, j=None):
         if isinstance(j, str):
-            return iter(art for art in self.__Arts if j == art.name)
+            return iter(art for art in self._frames if j == art.name)
         elif isinstance(j, np.ndarray):
-            return iter(art for art in self.__Arts if j is art.buffer)
+            return iter(art for art in self._frames if j is art.buffer)
         else:
-            return iter(self.__Arts)  # j:any -> frames
+            return iter(self._frames)  # j:any -> frames
 
     def sort_frames(self, seq):
-        self.__Arts[:] = [self.__Arts[i] for i in seq]  # Sort arts by new sequence for IDs.
+        self._frames[:] = [self._frames[i] for i in seq]  # Sort arts by new sequence for IDs.
 
     ## --------------------------------
     ## Property of frame / drawer.
@@ -892,13 +892,13 @@ class GraphPlot(MatplotPanel):
     @property
     def frames(self):
         """List of frames <matplotlib.image.AxesImage>."""
-        return list(self.__Arts)
+        return list(self._frames)
 
     @property
     def frame(self):
         """Current art <matplotlib.image.AxesImage>."""
-        if self.__Arts and self.__index is not None:
-            return self.__Arts[self.__index]
+        if self._frames and self._index is not None:
+            return self._frames[self._index]
 
     @property
     def buffer(self):
@@ -909,26 +909,26 @@ class GraphPlot(MatplotPanel):
     @buffer.setter
     def buffer(self, v):
         if self.frame:
-            self.__setitem__(self.__index, v)
+            self.__setitem__(self._index, v)
         else:
             self.load(v)
 
     @property
     def unit(self):
         """Logical length per pixel in arbitrary units [u/pix]."""
-        return self.__unit
+        return self._unit
 
     @unit.setter
     def unit(self, v):
-        if v == self.__unit:  # no effect
+        if v == self._unit:  # no effect
             return
         if v is None or np.isnan(v) or np.isinf(v):
             raise ValueError("The unit value must not be nan or inf")
         elif v <= 0:
             raise ValueError("The unit value must be greater than zero")
         else:
-            self.__unit = v
-            for art in self.__Arts:
+            self._unit = v
+            for art in self._frames:
                 art.update_extent()
                 self.handler('frame_updated', art)
             self.draw()
@@ -936,7 +936,7 @@ class GraphPlot(MatplotPanel):
     def kill_buffer(self):
         """Delete a buffer."""
         if self.frame:
-            del self[self.__index]
+            del self[self._index]
 
     def kill_all_buffers(self):
         """Delete all buffers."""
@@ -1037,7 +1037,7 @@ class GraphPlot(MatplotPanel):
             self.modeline.SetLabel(
                 "[{page}/{maxpage}] -{a}- {name} ({data.dtype}:{cmap}{bins}) "
                 "[{data.shape[1]}:{data.shape[0]}] {x} [{unit:g}/pix]".format(
-                    page=self.__index,
+                    page=self._index,
                     maxpage=len(self),
                     name=frame.name,
                     data=frame.buffer,
@@ -1134,7 +1134,7 @@ class GraphPlot(MatplotPanel):
             return
         
         ## 画像が選択された場合．
-        if evt.artist in self.__Arts:
+        if evt.artist in self._frames:
             if self._isPicked:
                 self._isPicked = None  # release pick guard
             else:
@@ -1195,13 +1195,13 @@ class GraphPlot(MatplotPanel):
 
     def OnPageDown(self, evt):
         """Next page."""
-        i = self.__index
+        i = self._index
         if i is not None and i < len(self)-1:
             self.select(i + 1)
 
     def OnPageUp(self, evt):
         """Previous page."""
-        i = self.__index
+        i = self._index
         if i is not None and i > 0:
             self.select(i - 1)
 
