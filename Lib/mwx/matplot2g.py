@@ -163,11 +163,12 @@ class AxesImagePhantom:
         ## Properties of the frame/image.
         self.name = name
         self.attributes = kwargs
-        self.__pathname = kwargs.get('pathname')
-        self.__mtime = _get_timestamp(self.__pathname)
-        self.__annotation = kwargs.get('annotation', '')
-        self.__localunit = kwargs.get('localunit')
-        self.__center = kwargs.get('center', [0, 0])
+        self._pathname = kwargs.get('pathname')
+        self._annotation = kwargs.get('annotation', '')
+        self._localunit = kwargs.get('localunit')
+        self._center = kwargs.get('center', [0, 0])
+        
+        self._mtime = _get_timestamp(self._pathname)
         
         ## Conditions for image loading.
         self.buffer = _to_buffer(buf)
@@ -203,20 +204,20 @@ class AxesImagePhantom:
         FLAG_UPDATE_EXTENT = 2
         flag = 0
         if 'pathname' in attr:
-            self.__pathname = attr['pathname']
-            self.__mtime = _get_timestamp(self.__pathname)
+            self._pathname = attr['pathname']
+            self._mtime = _get_timestamp(self._pathname)
             flag |= FLAG_ANNOTATION
         
         if 'annotation' in attr:
-            self.__annotation = attr['annotation']
+            self._annotation = attr['annotation']
             if self.parent.frame is self:
                 self.parent.infobar.ShowMessage(attr['annotation'])
             flag |= FLAG_ANNOTATION
         
         if 'center' in attr:
             v = list(attr['center'])  # for json format
-            if v != self.__center:
-                self.__center = v
+            if v != self._center:
+                self._center = v
                 flag |= FLAG_UPDATE_EXTENT
         
         if 'localunit' in attr:
@@ -227,8 +228,8 @@ class AxesImagePhantom:
                 raise ValueError("The unit value must not be inf")
             elif v <= 0:
                 raise ValueError("The unit value must be greater than zero")
-            if v != self.__localunit:
-                self.__localunit = v
+            if v != self._localunit:
+                self._localunit = v
                 flag |= FLAG_UPDATE_EXTENT
         
         self.attributes.update(attr)
@@ -282,27 +283,27 @@ class AxesImagePhantom:
         doc="Lower/Upper color limit values of the buffer.")
 
     pathname = property(
-        lambda self: self.__pathname,
+        lambda self: self._pathname,
         lambda self, v: self.update_attr({'pathname': v}),
         doc="Fullpath of the buffer, if bound to a file.")
 
     annotation = property(
-        lambda self: self.__annotation,
+        lambda self: self._annotation,
         lambda self, v: self.update_attr({'annotation': v}),
         doc="Annotation of the buffer.")
 
     center = property(
-        lambda self: self.__center,
+        lambda self: self._center,
         lambda self, v: self.update_attr({'center': v}),
         doc="Center coordinates of the frame in logical units.")
 
     localunit = property(
-        lambda self: self.__localunit,
+        lambda self: self._localunit,
         lambda self, v: self.update_attr({'localunit': v}),
         doc="Logical length per pixel in arbitrary units [u/pix], or None if not assigned.")
 
     unit = property(
-        lambda self: self.__localunit or self.parent.unit,
+        lambda self: self._localunit or self.parent.unit,
         lambda self, v: self.update_attr({'localunit': v}),
         doc="Logical length per pixel in arbitrary units [u/pix].")
 
@@ -339,7 +340,7 @@ class AxesImagePhantom:
         try:
             return self.attributes["acq_datetime"].timestamp()
         except Exception:
-            return self.__mtime
+            return self._mtime
 
     @property
     def mtdelta(self):
@@ -352,9 +353,9 @@ class AxesImagePhantom:
             None: no file
         """
         try:
-            return os.path.getmtime(self.pathname) - self.__mtime
+            return os.path.getmtime(self.pathname) - self._mtime
         except Exception:
-            return self.__mtime
+            return self._mtime
 
     @property
     def index(self):
