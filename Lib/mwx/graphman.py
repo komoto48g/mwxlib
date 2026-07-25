@@ -507,7 +507,7 @@ def _reloadable(cls):
 
 
 def _register__dummy_plug__(cls):
-    cls.reloadable = _reloadable(cls)
+    cls.reloadable = _reloadable(cls)  # *scratch* の場合があるので先に判定する．
     
     if issubclass(cls, LayerInterface):
         # warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
@@ -571,10 +571,10 @@ class Graph(GraphPlot):
         elif self.frame:
             self.infobar.ShowMessage(self.frame.annotation)
 
-    def update_infobar(self, frame):
+    def update_infobar(self):
         """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
-            self.infobar.ShowMessage(frame.annotation)
+            self.infobar.ShowMessage(self.frame.annotation)
 
     def hide_layers(self):
         for plug in self.parent.get_all_plugs():
@@ -697,9 +697,7 @@ class Frame(mwx.Frame):
 
     @property
     def graphic_windows(self):
-        """Graphic windows list.
-        [0] graph [1] output [2:] others(user-defined)
-        """
+        """View list [0] graph [1] output [2:] others (user-defined)."""
         return self._graphic_views
 
     @property
@@ -919,6 +917,7 @@ class Frame(mwx.Frame):
         ## Remove built-in functions and self methods.
         try:
             del builtins.require
+            del builtins.register
         except AttributeError:
             pass
         self._mgr.UnInit()
