@@ -718,13 +718,16 @@ class Frame(mwx.Frame):
         self.set_title(view.frame)
 
     @property
-    def graphic_windows(self):
+    def graphic_views(self):
         """View list [0] graph [1] output [2:] others (user-defined)."""
         return self._graphic_views
 
     @property
-    def graphic_windows_on_screen(self):
+    def graphic_views_on_screen(self):
         return [w for w in self._graphic_views if w.IsShownOnScreen()]
+
+    graphic_windows = graphic_views  # for backward compatibility
+    graphic_windows_on_screen = graphic_views_on_screen  # for backward compatibility
 
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
