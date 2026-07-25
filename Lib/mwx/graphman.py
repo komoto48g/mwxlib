@@ -549,6 +549,8 @@ class Graph(GraphPlot):
                     'focus_set' : [None, _F(self.loader.select_view, view=self)],
                    'page_shown' : [None, ],
                   'page_closed' : [None, ],
+                 'resize_start' : [None, self.on_resize_start],
+                   'resize_end' : [None, self.on_resize_end],
                   'frame_shown' : [None, _F(self.update_infobar)],
                   'S-a pressed' : [None, _F(self.toggle_infobar)],
                    'f5 pressed' : [None, _F(self.refresh)],
@@ -612,6 +614,15 @@ class Graph(GraphPlot):
             self.frame.update_interpolation_mode()  # Substitutes internal_callback.
             self.xlim = other.xlim
             self.ylim = other.ylim
+            self.draw(internal_callback=False)
+
+    def on_resize_start(self):
+        if self.frame:
+            self.frame.set_visible(0)
+
+    def on_resize_end(self):
+        if self.frame:
+            self.frame.set_visible(1)
             self.draw(internal_callback=False)
 
     ## --------------------------------
@@ -877,17 +888,15 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
-        def on_move(evt, show):
-            def _display(view, show):
-                if view.frame:
-                    view.frame.set_visible(show)
-                    if show:
-                        view.draw()
-            _display(self.graph, show)
-            _display(self.output, show)
-            evt.Skip()
-        self.Bind(wx.EVT_MOVE_START, lambda v: on_move(v, show=0))
-        self.Bind(wx.EVT_MOVE_END, lambda v: on_move(v, show=1))
+        def on_move_start(evt):
+            for view in self.graphic_windows_on_screen:
+                view.handler('resize_start')
+        self.Bind(wx.EVT_MOVE_START, on_move_start)
+        
+        def on_move_end(evt):
+            for view in self.graphic_windows_on_screen:
+                view.handler('resize_end')
+        self.Bind(wx.EVT_MOVE_END, on_move_end)
         
         ## Custom Key Bindings.
         self.define_key('* C-g', self.Quit)
