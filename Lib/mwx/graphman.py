@@ -629,12 +629,12 @@ class Graph(GraphPlot):
             self.frame.set_visible(1)
             self.draw(internal_callback=False)
 
-    def on_pane_docked(self):
+    def on_pane_docked(self, parent):
         pass
 
-    def on_pane_undocked(self):
-        self.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: self.handler('resize_start'))
-        self.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: self.handler('resize_end'))
+    def on_pane_undocked(self, parent):
+        parent.Bind(wx.EVT_MOVE_START, lambda v: self.handler('resize_start'))
+        parent.Bind(wx.EVT_MOVE_END, lambda v: self.handler('resize_end'))
 
     ## --------------------------------
     ## Overridden buffer methods.
@@ -957,7 +957,8 @@ class Frame(mwx.Frame):
             status = docking_status[pane.name]
             prev = self._prev_docking_status.get(pane.name)
             if prev is not None and prev != status:
-                pane.window.handler("pane_docked" if status else "pane_undocked")
+                pane.window.handler("pane_docked" if status else "pane_undocked",
+                                    pane.window.TopLevelParent)
         self._prev_docking_status.update(docking_status)
 
     def OnCreate(self, evt):

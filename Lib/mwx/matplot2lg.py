@@ -90,6 +90,7 @@ class LinePlot(MatplotPanel):
             self._vspan.set_visible(0)
             self.handler('region_unset', self.frame)
         self._region = v
+        self.annotate()
 
     @region.deleter
     def region(self):
@@ -126,7 +127,7 @@ class LinePlot(MatplotPanel):
     ## Region/Drag actions (override).
     ## --------------------------------
 
-    def region_test(self, evt):
+    def _test_region(self, evt):
         if self.region is not None:
             x = evt.xdata
             a, b = self.region
@@ -136,14 +137,10 @@ class LinePlot(MatplotPanel):
             elif b-d < x < b+d: return 3  # right-edge
             else: return 0  # outside
 
-    def OnDraw(self, evt):
-        """Called before the canvas is drawn (override)."""
-        self.annotate()
-
     def OnMotion(self, evt):
         MatplotPanel.OnMotion(self, evt)
         
-        v = self.region_test(evt)
+        v = self._test_region(evt)
         if v == 1:
             self.set_wxcursor(wx.CURSOR_HAND)  # insdie
         elif v in (2,3):
@@ -153,7 +150,7 @@ class LinePlot(MatplotPanel):
 
     def OnDragLock(self, evt):
         self._lastpoint = evt.xdata
-        self._selection = self.region_test(evt)
+        self._selection = self._test_region(evt)
 
     def OnDragBegin(self, evt):
         v = self._selection
@@ -326,11 +323,18 @@ class Histogram(LinePlot):
         else:
             self.modeline.SetLabel("")
 
+    def annotate(self):
+        """Do nothing (override)."""
+        pass
+
     ## --------------------------------
     ## Region/Drag actions (override).
     ## --------------------------------
 
-    def annotate(self):
+    def OnDraw(self, evt):
+        """Draw plots and fills (override).
+        Call each time the drawing should be updated.
+        """
         if self._frame:
             x, y = self._frame.__data
             if len(x) > 1:
@@ -599,17 +603,18 @@ class LineProfile(LinePlot):
             Clipboard.write(o.getvalue())
             self.message("Write data to clipboard.")
 
-    def annotate(self):
-        LinePlot.annotate(self)
-        
+    ## --------------------------------
+    ## Region/Drag actions (override).
+    ## --------------------------------
+
+    def OnDraw(self, evt):
+        """Draw plots and fills (override).
+        Call each time the drawing should be updated.
+        """
         x, y = self.plotdata
         if x.size:
             self._fill.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
         self.writeln()
-
-    ## --------------------------------
-    ## Region/Drag actions (override).
-    ## --------------------------------
 
     def OnHomePosition(self, evt):
         """Go back to home position."""

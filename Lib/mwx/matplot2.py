@@ -152,7 +152,7 @@ class MatplotPanel(wx.Panel):
         self.canvas.mpl_connect('figure_leave_event', lambda v: self.handler('figure_leave', v))
         self.canvas.mpl_connect('axes_enter_event', lambda v: self.handler('axes_enter', v))
         self.canvas.mpl_connect('axes_leave_event', lambda v: self.handler('axes_leave', v))
-        self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resized', v))
+        self.canvas.mpl_connect('resize_event', lambda v: self.handler('canvas_resize', v))
         self.canvas.mpl_connect('draw_event', lambda v: self.handler('canvas_drawn', v))
         
         self.canvas.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
@@ -190,7 +190,7 @@ class MatplotPanel(wx.Panel):
                 None : {
                   'canvas_draw' : [None, self.OnDraw],  # before canvas.draw
                  'canvas_drawn' : [None, self.OnDrawn],  # after canvas.draw
-               'canvas_resized' : [None, ],
+                'canvas_resize' : [None, ],
                'selector_drawn' : [None, ],
              'selector_removed' : [None, ],
                     'focus_set' : [None, self.on_focus_set],
