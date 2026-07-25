@@ -74,6 +74,12 @@ if 1:
                 self.canvas.draw_idle()
 
 
+class _MouseEventData:
+    def __init__(self, evt):  # <matplotlib.backend_bases.MouseEvent>
+        self.xdata = evt.xdata
+        self.ydata = evt.ydata
+
+
 class MatplotPanel(wx.Panel):
     """MPL panel for general graph.
     
@@ -512,7 +518,7 @@ class MatplotPanel(wx.Panel):
 
     @p_event.setter
     def p_event(self, v):
-        self._isPressed = v
+        self._isPressed = _MouseEventData(v) if v else None
 
     def on_menu_lock(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         self._isMenu = 1
