@@ -352,6 +352,8 @@ class LayerInterface(CtrlInterface):
                    'page_shown' : [None, _F(self.Draw, show=True)],
                   'page_closed' : [None, _F(self.Draw, show=False)],
                   'page_hidden' : [None, _F(self.Draw, show=False)],
+                  'pane_docked' : [None, ],
+                'pane_undocked' : [None, ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -549,6 +551,8 @@ class Graph(GraphPlot):
                     'focus_set' : [None, _F(self.loader.select_view, view=self)],
                    'page_shown' : [None, ],
                   'page_closed' : [None, ],
+                  'pane_docked' : [None, self.on_pane_docked],
+                'pane_undocked' : [None, self.on_pane_undocked],
                  'resize_start' : [None, self.on_resize_start],
                    'resize_end' : [None, self.on_resize_end],
                   'frame_shown' : [None, _F(self.update_infobar)],
@@ -624,6 +628,13 @@ class Graph(GraphPlot):
         if self.frame:
             self.frame.set_visible(1)
             self.draw(internal_callback=False)
+
+    def on_pane_docked(self):
+        pass
+
+    def on_pane_undocked(self):
+        self.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: self.handler('resize_start'))
+        self.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: self.handler('resize_end'))
 
     ## --------------------------------
     ## Overridden buffer methods.
@@ -753,6 +764,9 @@ class Frame(mwx.Frame):
                              .FloatingSize(size).MinSize(size).Left().Show(0))
         
         self._mgr.Update()
+        
+        self._prev_docking_status = {}  # docking status of panes
+        self._update_docking_status()
         
         self.menubar["File"][0:0] = [
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book'),
@@ -885,6 +899,8 @@ class Frame(mwx.Frame):
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
+        self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
@@ -931,6 +947,25 @@ class Frame(mwx.Frame):
             pass
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
+
+    def _update_docking_status(self):
+        docking_status = {pane.name: pane.IsDocked() for pane in self._mgr.GetAllPanes()}
+        for pane in self._mgr.GetAllPanes():
+            status = docking_status[pane.name]
+            prev = self._prev_docking_status.get(pane.name)
+            if prev is not None and prev != status:
+                pane.window.handler("pane_docked" if status else "pane_undocked")
+        self._prev_docking_status.update(docking_status)
+
+    def OnCreate(self, evt):
+        if evt.EventObject is not self:
+            wx.CallAfter(self._update_docking_status)
+        evt.Skip()
+
+    def OnDestroy(self, evt):
+        if evt.EventObject is not self:
+            wx.CallAfter(self._update_docking_status)
+        evt.Skip()
 
     def OnActivate(self, evt):  # <wx._core.ActivateEvent>
         if self and evt.Active:
