@@ -646,7 +646,7 @@ class LineProfile(LinePlot):
 
     def OnRegionShift(self, evt):
         if self._frame and self.region is not None:
-            u = self._frame.unit
+            u = self._frame.unit if self._logicp else 1
             if evt.key == "left": self.region -= u
             if evt.key == "right": self.region += u
             self.draw()
