@@ -550,7 +550,6 @@ class FSM(dict):
         [3] + trace all events and actions
         [4] ++ all events (+ including state:None)
         [5] ++ all events (even if no actions + state:None)
-        [8] +++ (max verbose level) to put all args and kwargs.
     
     Note:
         default=None is given as an argument to ``__init__``.
@@ -695,7 +694,7 @@ class FSM(dict):
         v = self.debug
         if not v:
             return
-        elif v and self.__state is not None:
+        if v and self.__state is not None:
             transaction = self[self.__prev_state].get(event) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if (v > 0 and self.__prev_state != self.__state
@@ -715,8 +714,8 @@ class FSM(dict):
                         self.__event,
                         a='' if not actions else ('=> ' + actions)
                     ))
-        if v > 7:  # max verbose level puts all args
-            self.log("\t:", args, kwargs)
+        # if v > 7:  # max verbose level puts all args
+        #     self.log("\t:", args, kwargs)
 
     @staticmethod
     def log(*args):
