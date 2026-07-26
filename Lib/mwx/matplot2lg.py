@@ -385,40 +385,30 @@ class LineProfile(LinePlot):
         LinePlot.__init__(self, *args, **kwargs)
         
         self.handler.update({  # DNA<LineProfile>
-            None : {
-                 'left pressed' : [None, self.OnRegionShift],
-                'right pressed' : [None, self.OnRegionShift],
-                 '[+-] pressed' : [None, self.OnLineWidth],  # [+-] using numpad
-               'S-[;-] pressed' : [None, self.OnLineWidth],  # [+-] using JP-keyboard
-            },
             NORMAL : {
-            'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnRegionLock),
-            'M-Lbutton pressed' : (MARK, self.OnDragLock, self.OnMarkPeaks),
+                 'left pressed' : (NORMAL, self.OnRegionShift),
+                'right pressed' : (NORMAL, self.OnRegionShift),
+                 '[+-] pressed' : (NORMAL, self.OnLineWidth),  # [+-] using numpad
+               'S-[;-] pressed' : (NORMAL, self.OnLineWidth),  # [+-] using JP-keyboard
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
+            'S-Lbutton pressed' : (NORMAL, self.OnDragLock),
+            'M-Lbutton pressed' : (NORMAL, self.OnDragLock, self.OnMarkPeaks),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
+                'S-Ldrag begin' : (LINE, self.OnDragBegin, self.OnDragLineBegin),
+                'M-Ldrag begin' : (MARK, self.OnDragBegin, self.OnMarkSelectionBegin),
             },
             REGION : {
-                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock, self.OnDragLineBegin),
-                 'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
-                  '*Ldrag move' : (REGION, self.OnDragMove, self.OnDragTrace),
+                'shift pressed' : (LINE, self.OnDragLineBegin),
+                  'alt pressed' : (MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
+                  '*Ldrag move' : (REGION, self.OnDragMove, self.OnRegionTrace),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             LINE: {
-                   '* released' : (NORMAL, ),
-                'S-Ldrag begin' : (REGION+LINE, self.OnDragLineBegin),
-            },
-            REGION+LINE : {
-                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
-                  '*Ldrag move' : (REGION, self.OnDragMove),
+                  '*Ldrag move' : (LINE, self.OnDragLineMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             MARK : {
-                   '* released' : (NORMAL, self.OnMarkErase),
-                'M-Ldrag begin' : (REGION+MARK, self.OnMarkSelectionBegin),
-            },
-            REGION+MARK : {
-                 'M-Ldrag move' : (REGION+MARK, self.OnMarkSelectionMove),
-                  '*Ldrag move' : (REGION, self.OnDragMove),
+                  '*Ldrag move' : (MARK, self.OnMarkSelectionMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
         })
@@ -666,6 +656,12 @@ class LineProfile(LinePlot):
             if evt.key == "right": self.region += u
             self.draw_overlay()
 
+    def OnRegionTrace(self, evt):
+        """Show average value."""
+        y = self.calc_average()
+        if y is not None:
+            self.message(f"ya = {y:g}")
+
     def OnEscapeSelection(self, evt):
         self._hline.set_visible(0)
         LinePlot.OnEscapeSelection(self, evt)
@@ -677,13 +673,7 @@ class LineProfile(LinePlot):
     def OnDragLineBegin(self, evt):
         self.set_wxcursor(wx.CURSOR_SIZENS)
 
-    def OnDragTrace(self, evt):
-        """Show average value."""
-        y = self.calc_average()
-        if y is not None:
-            self.message(f"ya = {y:g}")
-
-    def OnRegionLock(self, evt):
+    def OnDragLineMove(self, evt):
         """Show FWHM region."""
         x, y = self.plotdata
         if x.size:
@@ -742,11 +732,6 @@ class LineProfile(LinePlot):
             if peaks.size:
                 self.selector = x[peaks], y[peaks]
             self.message(f"Peak detection: blur {lw=:g}, prom {lp=:g}")
-
-    def OnMarkErase(self, evt):
-        """Erase markers on peaks."""
-        ## del self.selector
-        self.OnEscapeSelection(evt)
 
     def OnMarkSelectionBegin(self, evt):
         org = self.p_event
