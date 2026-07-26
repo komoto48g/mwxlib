@@ -758,13 +758,15 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def add_marker(self, line, n):
         if self.MarkerAdd(line, n):
             self.EnsureVisible(line)  # expand if folded
-            self.handler('{}_set'.format(self.marker_names[n]), line)
+            marker = self.marker_names[n]
+            self.handler(f'{marker}_set', line)
 
     def del_marker(self, n):
         line = self.MarkerNext(0, 1<<n)
         if line != -1:
             self.MarkerDeleteAll(n)
-            self.handler('{}_unset'.format(self.marker_names[n]), line)
+            marker = self.marker_names[n]
+            self.handler(f'{marker}_unset', line)
 
     def goto_marker(self, markerMask, selection=False):
         line = self.MarkerNext(0, markerMask)

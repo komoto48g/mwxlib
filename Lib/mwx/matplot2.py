@@ -563,7 +563,7 @@ class MatplotPanel(wx.Panel):
         """Called when a key is pressed."""
         key = hotkey(evt)
         self.__key = _regulate_key(key + '-')
-        if self.handler('{} pressed'.format(key), evt) is None:
+        if self.handler(f'{key} pressed', evt) is None:
             evt.Skip()
 
     def on_hotkey_down(self, evt):  # <wx._core.KeyEvent>
@@ -579,7 +579,7 @@ class MatplotPanel(wx.Panel):
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
-        if self.handler('{} released'.format(key), evt) is None:
+        if self.handler(f'{key} released', evt) is None:
             evt.Skip()
 
     def _on_mouse_event(self, evt):  # <matplotlib.backend_bases.MouseEvent>
@@ -603,22 +603,22 @@ class MatplotPanel(wx.Panel):
         key = self._on_mouse_event(evt)
         if evt.dblclick:
             self._isDragging = None
-            self.handler('{}button dblclick'.format(key), evt)
+            self.handler(f'{key}button dblclick', evt)
         else:
             self._isDragging = False
-            self.handler('{}button pressed'.format(key), evt)
+            self.handler(f'{key}button pressed', evt)
 
     def on_button_release(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is released."""
         key = self._on_mouse_event(evt)
         if self._isDragging:
             self._isDragging = False
-            self.handler('{}drag end'.format(key), evt)
-            self.handler('{}button released'.format(key), evt)
+            self.handler(f'{key}drag end', evt)
+            self.handler(f'{key}button released', evt)
         else:
             if self._isDragging is None:  # dblclick end
                 return
-            self.handler('{}button released'.format(key), evt)
+            self.handler(f'{key}button released', evt)
         self.p_event = None
 
     def on_motion_notify(self, evt):  # <matplotlib.backend_bases.MouseEvent>
@@ -627,26 +627,26 @@ class MatplotPanel(wx.Panel):
         if evt.button in (1,2,3):
             if not self._isDragging:
                 self._isDragging = True
-                self.handler('{}drag begin'.format(key), evt)
+                self.handler(f'{key}drag begin', evt)
             else:
-                self.handler('{}drag move'.format(key), evt)
+                self.handler(f'{key}drag move', evt)
         elif evt.inaxes is self.axes:
             self.handler('axes motion', evt)
         else:
             lx, ly = self.xlim, self.ylim
-            if   evt.xdata < lx[0]: event = 'yaxis'
-            elif evt.xdata > lx[1]: event = 'y2axis'
-            elif evt.ydata < ly[0]: event = 'xaxis'
-            elif evt.ydata > ly[1]: event = 'x2axis'
+            if   evt.xdata < lx[0]: axis = 'yaxis'
+            elif evt.xdata > lx[1]: axis = 'y2axis'
+            elif evt.ydata < ly[0]: axis = 'xaxis'
+            elif evt.ydata > ly[1]: axis = 'x2axis'
             else:
                 return
-            self.handler('{} motion'.format(event), evt)
+            self.handler(f'{axis} motion', evt)
 
     def on_scroll(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called when scrolling the mouse wheel."""
         self.p_event = evt
         key = self._on_mouse_event(evt)
-        self.handler('{} pressed'.format(key), evt)
+        self.handler(f'{key} pressed', evt)
         self.p_event = None
 
     ## --------------------------------

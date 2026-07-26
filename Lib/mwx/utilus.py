@@ -693,7 +693,9 @@ class FSM(dict):
 
     def __debug_call__(self, event, *args, **kwargs):
         v = self.debug
-        if v and self.__state is not None:
+        if not v:
+            return
+        elif v and self.__state is not None:
             transaction = self[self.__prev_state].get(event) or []
             actions = ', '.join(typename(a, qualp=0) for a in transaction[1:])
             if (v > 0 and self.__prev_state != self.__state

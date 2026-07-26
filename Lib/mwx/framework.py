@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.10.20"
+__version__ = "1.11.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -410,7 +410,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         """Called when a key is pressed."""
         key = hotkey(evt)
         self.__key = _regulate_key(key + '-')
-        if self.handler('{} pressed'.format(key), evt) is None:
+        if self.handler(f'{key} pressed', evt) is None:
             evt.Skip()
 
     def on_hotkey_down(self, evt):  # <wx._core.KeyEvent>
@@ -424,7 +424,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         """Called when a key is released."""
         key = hotkey(evt)
         self.__key = ''
-        if self.handler('{} released'.format(key), evt) is None:
+        if self.handler(f'{key} released', evt) is None:
             evt.Skip()
 
     def on_mousewheel(self, evt):  # <wx._core.MouseEvent>
@@ -434,7 +434,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         else:
             p = 'up' if evt.WheelRotation > 0 else 'down'
         evt.key = self.__key + f"wheel{p}"
-        if self.handler('{} pressed'.format(evt.key), evt) is None:
+        if self.handler(f'{evt.key} pressed', evt) is None:
             evt.Skip()
 
     def on_motion(self, evt):  # <wx._core.MouseEvent>
@@ -443,9 +443,9 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             kbtn = self.__key + self.__button
             if not self.__isDragging:
                 self.__isDragging = True
-                self.handler('{}drag begin'.format(kbtn), evt)
+                self.handler(f'{kbtn}drag begin', evt)
             else:
-                self.handler('{}drag move'.format(kbtn), evt)
+                self.handler(f'{kbtn}drag move', evt)
         else:
             self.handler('motion', evt)
         evt.Skip()
@@ -460,7 +460,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
             if self.__isDragging:
                 self.__isDragging = False
                 kbtn = self.__key + self.__button
-                self.handler('{}drag end'.format(kbtn), evt)
+                self.handler(f'{kbtn}drag end', evt)
         
         k = evt.GetButton()  # {1:L, 2:M, 3:R, 4:X1, 5:X2}
         if action == 'pressed' and k in (1,2,3):
@@ -779,7 +779,8 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
             if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
                 evt.Skip()
             else:
-                if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
+                key = hotkey(evt)
+                if self.handler('{key} pressed', evt) is None:
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
@@ -832,7 +833,8 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
                 evt.Skip()
             else:
-                if self.handler('{} pressed'.format(hotkey(evt)), evt) is None:
+                key = hotkey(evt)
+                if self.handler(f'{key} pressed', evt) is None:
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
