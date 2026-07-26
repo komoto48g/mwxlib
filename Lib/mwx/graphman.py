@@ -352,6 +352,8 @@ class LayerInterface(CtrlInterface):
                    'page_shown' : [None, _F(self.Draw, show=True)],
                   'page_closed' : [None, _F(self.Draw, show=False)],
                   'page_hidden' : [None, _F(self.Draw, show=False)],
+                  'pane_docked' : [None, ],
+                'pane_undocked' : [None, ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -507,7 +509,7 @@ def _reloadable(cls):
 
 
 def _register__dummy_plug__(cls):
-    cls.reloadable = _reloadable(cls)
+    cls.reloadable = _reloadable(cls)  # *scratch* の場合があるので先に判定する．
     
     if issubclass(cls, LayerInterface):
         # warn(f"Duplicate iniheritance of LayerInterface by {cls}.")
@@ -549,6 +551,10 @@ class Graph(GraphPlot):
                     'focus_set' : [None, _F(self.loader.select_view, view=self)],
                    'page_shown' : [None, ],
                   'page_closed' : [None, ],
+                  'pane_docked' : [None, self.on_pane_docked],
+                'pane_undocked' : [None, self.on_pane_undocked],
+                 'resize_start' : [None, self.on_resize_start],
+                   'resize_end' : [None, self.on_resize_end],
                   'frame_shown' : [None, _F(self.update_infobar)],
                   'S-a pressed' : [None, _F(self.toggle_infobar)],
                    'f5 pressed' : [None, _F(self.refresh)],
@@ -571,10 +577,10 @@ class Graph(GraphPlot):
         elif self.frame:
             self.infobar.ShowMessage(self.frame.annotation)
 
-    def update_infobar(self, frame):
+    def update_infobar(self):
         """Show infobar (frame.annotation)."""
         if self.infobar.IsShown():
-            self.infobar.ShowMessage(frame.annotation)
+            self.infobar.ShowMessage(self.frame.annotation)
 
     def hide_layers(self):
         for plug in self.parent.get_all_plugs():
@@ -613,6 +619,22 @@ class Graph(GraphPlot):
             self.xlim = other.xlim
             self.ylim = other.ylim
             self.draw(internal_callback=False)
+
+    def on_resize_start(self):
+        if self.frame:
+            self.frame.set_visible(0)
+
+    def on_resize_end(self):
+        if self.frame:
+            self.frame.set_visible(1)
+            self.draw(internal_callback=False)
+
+    def on_pane_docked(self, parent):
+        pass
+
+    def on_pane_undocked(self, parent):
+        parent.Bind(wx.EVT_MOVE_START, lambda v: self.handler('resize_start'))
+        parent.Bind(wx.EVT_MOVE_END, lambda v: self.handler('resize_end'))
 
     ## --------------------------------
     ## Overridden buffer methods.
@@ -696,15 +718,16 @@ class Frame(mwx.Frame):
         self.set_title(view.frame)
 
     @property
-    def graphic_windows(self):
-        """Graphic windows list.
-        [0] graph [1] output [2:] others(user-defined)
-        """
+    def graphic_views(self):
+        """View list [0] graph [1] output [2:] others (user-defined)."""
         return self._graphic_views
 
     @property
-    def graphic_windows_on_screen(self):
+    def graphic_views_on_screen(self):
         return [w for w in self._graphic_views if w.IsShownOnScreen()]
+
+    graphic_windows = graphic_views  # for backward compatibility
+    graphic_windows_on_screen = graphic_views_on_screen  # for backward compatibility
 
     def __init__(self, *args, **kwargs):
         mwx.Frame.__init__(self, *args, **kwargs)
@@ -744,6 +767,9 @@ class Frame(mwx.Frame):
                              .FloatingSize(size).MinSize(size).Left().Show(0))
         
         self._mgr.Update()
+        
+        self._prev_docking_status = {}  # docking status of panes
+        self._update_docking_status()
         
         self.menubar["File"][0:0] = [
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book'),
@@ -876,20 +902,20 @@ class Frame(mwx.Frame):
         
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         
+        self.Bind(wx.EVT_WINDOW_CREATE, self.OnCreate)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
-        def on_move(evt, show):
-            def _display(view, show):
-                if view.frame:
-                    view.frame.set_visible(show)
-                    if show:
-                        view.draw()
-            _display(self.graph, show)
-            _display(self.output, show)
-            evt.Skip()
-        self.Bind(wx.EVT_MOVE_START, lambda v: on_move(v, show=0))
-        self.Bind(wx.EVT_MOVE_END, lambda v: on_move(v, show=1))
+        def on_move_start(evt):
+            for view in self.graphic_windows_on_screen:
+                view.handler('resize_start')
+        self.Bind(wx.EVT_MOVE_START, on_move_start)
+        
+        def on_move_end(evt):
+            for view in self.graphic_windows_on_screen:
+                view.handler('resize_end')
+        self.Bind(wx.EVT_MOVE_END, on_move_end)
         
         ## Custom Key Bindings.
         self.define_key('* C-g', self.Quit)
@@ -919,10 +945,31 @@ class Frame(mwx.Frame):
         ## Remove built-in functions and self methods.
         try:
             del builtins.require
+            del builtins.register
         except AttributeError:
             pass
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
+
+    def _update_docking_status(self):
+        docking_status = {pane.name: pane.IsDocked() for pane in self._mgr.GetAllPanes()}
+        for pane in self._mgr.GetAllPanes():
+            status = docking_status[pane.name]
+            prev = self._prev_docking_status.get(pane.name)
+            if prev is not None and prev != status:
+                pane.window.handler("pane_docked" if status else "pane_undocked",
+                                    pane.window.TopLevelParent)
+        self._prev_docking_status.update(docking_status)
+
+    def OnCreate(self, evt):
+        if evt.EventObject is not self:
+            wx.CallAfter(self._update_docking_status)
+        evt.Skip()
+
+    def OnDestroy(self, evt):
+        if evt.EventObject is not self:
+            wx.CallAfter(self._update_docking_status)
+        evt.Skip()
 
     def OnActivate(self, evt):  # <wx._core.ActivateEvent>
         if self and evt.Active:

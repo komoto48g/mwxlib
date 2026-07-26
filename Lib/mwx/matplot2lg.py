@@ -29,6 +29,7 @@ class LinePlot(MatplotPanel):
             None : {
                    'region_set' : [None],
                  'region_unset' : [None],
+                'canvas_resize' : [None, lambda v: self.draw()]
             },
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
@@ -60,6 +61,12 @@ class LinePlot(MatplotPanel):
         self._vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
 
+    @property
+    def overlay_artists(self):
+        return [self.selected,
+                self._vspan, *self._annotations,
+                ]
+
     ## The limit for dragging region.
     boundary = None
 
@@ -90,6 +97,7 @@ class LinePlot(MatplotPanel):
             self._vspan.set_visible(0)
             self.handler('region_unset', self.frame)
         self._region = v
+        self.annotate()
 
     @region.deleter
     def region(self):
@@ -126,7 +134,7 @@ class LinePlot(MatplotPanel):
     ## Region/Drag actions (override).
     ## --------------------------------
 
-    def region_test(self, evt):
+    def _test_region(self, evt):
         if self.region is not None:
             x = evt.xdata
             a, b = self.region
@@ -136,14 +144,10 @@ class LinePlot(MatplotPanel):
             elif b-d < x < b+d: return 3  # right-edge
             else: return 0  # outside
 
-    def OnDraw(self, evt):
-        """Called before the canvas is drawn (override)."""
-        self.annotate()
-
     def OnMotion(self, evt):
         MatplotPanel.OnMotion(self, evt)
         
-        v = self.region_test(evt)
+        v = self._test_region(evt)
         if v == 1:
             self.set_wxcursor(wx.CURSOR_HAND)  # insdie
         elif v in (2,3):
@@ -153,7 +157,7 @@ class LinePlot(MatplotPanel):
 
     def OnDragLock(self, evt):
         self._lastpoint = evt.xdata
-        self._selection = self.region_test(evt)
+        self._selection = self._test_region(evt)
 
     def OnDragBegin(self, evt):
         v = self._selection
@@ -167,6 +171,7 @@ class LinePlot(MatplotPanel):
             self._lastpoint = self.region[0]     # set origin left
         else:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # outside
+        self.cursor.visible = False
 
     def OnDragMove(self, evt):
         x = evt.xdata
@@ -192,17 +197,18 @@ class LinePlot(MatplotPanel):
                 self._lastpoint = x
         else:
             self.message("- No region.")
-        self.draw()
+        self.draw_overlay()  # Callback instead of invisible cursor.
 
     def OnDragEnd(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
+        self.cursor.visible = True
 
     def OnEscapeSelection(self, evt):
         MatplotPanel.OnEscapeSelection(self, evt)
         
         self.set_wxcursor(wx.CURSOR_ARROW)
+        self.cursor.visible = True
         self.region = None
-        self.draw()
 
 
 class Histogram(LinePlot):
@@ -326,11 +332,18 @@ class Histogram(LinePlot):
         else:
             self.modeline.SetLabel("")
 
+    def annotate(self):
+        """Do nothing (override)."""
+        pass
+
     ## --------------------------------
     ## Region/Drag actions (override).
     ## --------------------------------
 
-    def annotate(self):
+    def OnDraw(self, evt):
+        """Draw plots and fills (override).
+        Call each time the drawing should be updated.
+        """
         if self._frame:
             x, y = self._frame.__data
             if len(x) > 1:
@@ -372,40 +385,30 @@ class LineProfile(LinePlot):
         LinePlot.__init__(self, *args, **kwargs)
         
         self.handler.update({  # DNA<LineProfile>
-            None : {
-                 'left pressed' : [None, self.OnRegionShift],
-                'right pressed' : [None, self.OnRegionShift],
-                 '[+-] pressed' : [None, self.OnLineWidth],  # [+-] using numpad
-               'S-[;-] pressed' : [None, self.OnLineWidth],  # [+-] using JP-keyboard
-            },
             NORMAL : {
-            'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnRegionLock),
-            'M-Lbutton pressed' : (MARK, self.OnDragLock, self.OnMarkPeaks),
+                 'left pressed' : (NORMAL, self.OnRegionShift),
+                'right pressed' : (NORMAL, self.OnRegionShift),
+                 '[+-] pressed' : (NORMAL, self.OnLineWidth),  # [+-] using numpad
+               'S-[;-] pressed' : (NORMAL, self.OnLineWidth),  # [+-] using JP-keyboard
              '*Lbutton pressed' : (NORMAL, self.OnDragLock),
+            'S-Lbutton pressed' : (NORMAL, self.OnDragLock),
+            'M-Lbutton pressed' : (NORMAL, self.OnDragLock, self.OnMarkPeaks),
                  '*Ldrag begin' : (REGION, self.OnDragBegin),
+                'S-Ldrag begin' : (LINE, self.OnDragBegin, self.OnDragLineBegin),
+                'M-Ldrag begin' : (MARK, self.OnDragBegin, self.OnMarkSelectionBegin),
             },
             REGION : {
-                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock, self.OnDragLineBegin),
-                 'M-Ldrag move' : (REGION+MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
-                  '*Ldrag move' : (REGION, self.OnDragMove, self.OnDragTrace),
+                'shift pressed' : (LINE, self.OnDragLineBegin),
+                  'alt pressed' : (MARK, self.OnMarkPeaks, self.OnMarkSelectionBegin),
+                  '*Ldrag move' : (REGION, self.OnDragMove, self.OnRegionTrace),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             LINE: {
-                   '* released' : (NORMAL, ),
-                'S-Ldrag begin' : (REGION+LINE, self.OnDragLineBegin),
-            },
-            REGION+LINE : {
-                 'S-Ldrag move' : (REGION+LINE, self.OnRegionLock),
-                  '*Ldrag move' : (REGION, self.OnDragMove),
+                  '*Ldrag move' : (LINE, self.OnDragLineMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
             MARK : {
-                   '* released' : (NORMAL, self.OnMarkErase),
-                'M-Ldrag begin' : (REGION+MARK, self.OnMarkSelectionBegin),
-            },
-            REGION+MARK : {
-                 'M-Ldrag move' : (REGION+MARK, self.OnMarkSelectionMove),
-                  '*Ldrag move' : (REGION, self.OnDragMove),
+                  '*Ldrag move' : (MARK, self.OnMarkSelectionMove),
                    '*Ldrag end' : (NORMAL, self.OnDragEnd),
             },
         })
@@ -457,6 +460,12 @@ class LineProfile(LinePlot):
         
         self.selected.set_linestyle('')
 
+    @property
+    def overlay_artists(self):
+        return [self.selected, self._hline,
+                self._vspan, *self._annotations,
+                ]
+
     def OnDestroy(self, evt):
         for view in self._views:
             self.detach(view)
@@ -504,14 +513,6 @@ class LineProfile(LinePlot):
     def plotdata(self):
         """Plotted (xdata, ydata) in single plot."""
         return self._plot.get_data(orig=0)
-
-    def calc_average(self):
-        x, y = self.plotdata
-        if self.region is not None:
-            a, b = self.region
-            y = y[(a <= x) & (x <= b)]
-        if y.size:
-            return y.mean()
 
     def linplot(self, frame, fit=True, force=True):
         if not force:
@@ -599,17 +600,18 @@ class LineProfile(LinePlot):
             Clipboard.write(o.getvalue())
             self.message("Write data to clipboard.")
 
-    def annotate(self):
-        LinePlot.annotate(self)
-        
+    ## --------------------------------
+    ## Region/Drag actions (override).
+    ## --------------------------------
+
+    def OnDraw(self, evt):
+        """Draw plots and fills (override).
+        Call each time the drawing should be updated.
+        """
         x, y = self.plotdata
         if x.size:
             self._fill.set_xy(list(chain([(x[0], 0)], zip(x, y), [(x[-1], 0)])))
         self.writeln()
-
-    ## --------------------------------
-    ## Region/Drag actions (override).
-    ## --------------------------------
 
     def OnHomePosition(self, evt):
         """Go back to home position."""
@@ -641,10 +643,19 @@ class LineProfile(LinePlot):
 
     def OnRegionShift(self, evt):
         if self._frame and self.region is not None:
-            u = self._frame.unit
+            u = self._frame.unit if self._logicp else 1
             if evt.key == "left": self.region -= u
             if evt.key == "right": self.region += u
-            self.draw()
+            self.draw_overlay()
+
+    def OnRegionTrace(self, evt):
+        """Show average value."""
+        a, b = self.region
+        x, y = self.plotdata
+        yy = y[(a <= x) & (x <= b)]
+        if yy.size:
+            ya = yy.mean()
+            self.message(f"ya = {ya:g}")
 
     def OnEscapeSelection(self, evt):
         self._hline.set_visible(0)
@@ -657,13 +668,7 @@ class LineProfile(LinePlot):
     def OnDragLineBegin(self, evt):
         self.set_wxcursor(wx.CURSOR_SIZENS)
 
-    def OnDragTrace(self, evt):
-        """Show average value."""
-        y = self.calc_average()
-        if y is not None:
-            self.message(f"ya = {y:g}")
-
-    def OnRegionLock(self, evt):
+    def OnDragLineMove(self, evt):
         """Show FWHM region."""
         x, y = self.plotdata
         if x.size:
@@ -693,8 +698,8 @@ class LineProfile(LinePlot):
                     self.region = None
             else:
                 self.region = x[[0,-1]]  # all y > yc
-            self.draw()
             self.message(f"yc = {yc:g}")
+            self.draw_overlay()  # Callback instead of invisible cursor.
 
     ## --------------------------------
     ## Region-Mark/Drag actions.
@@ -723,11 +728,6 @@ class LineProfile(LinePlot):
                 self.selector = x[peaks], y[peaks]
             self.message(f"Peak detection: blur {lw=:g}, prom {lp=:g}")
 
-    def OnMarkErase(self, evt):
-        """Erase markers on peaks."""
-        ## del self.selector
-        self.OnEscapeSelection(evt)
-
     def OnMarkSelectionBegin(self, evt):
         org = self.p_event
         xs, ys = self.selector
@@ -738,17 +738,17 @@ class LineProfile(LinePlot):
             j = np.argmin(ld)
             self._orgpoint = xs[j]
         self.set_wxcursor(wx.CURSOR_SIZEWE)
-        self.draw()
 
     def OnMarkSelectionMove(self, evt):
         xs, ys = self.selector
         xc, yc = evt.xdata, evt.ydata
         if xs.size:
-            ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])
+            # ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])
+            ld = abs((xs-xc) * self.ddpu[0])
             j = np.argmin(ld)
             if ld[j] < 20:  # check display-dot distance, snap to the nearest mark
                 xc = xs[j]
                 yc = ys[j]
                 self.message(f"({xc:g}, {yc:g})")
             self.region = (self._orgpoint, xc)
-            self.draw()
+            self.draw_overlay()  # Callback instead of invisible cursor.
