@@ -522,7 +522,7 @@ class GraphPlot(MatplotPanel):
                 'shift pressed' : (NORMAL, self.on_picker_lock),
                'shift released' : (NORMAL, self.on_picker_unlock),
               'Lbutton pressed' : (NORMAL, self.OnDragLock),
-            'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnSelectorAppend),
+            'S-Lbutton pressed' : (LINE, self.OnDragLock, self.OnLineAppend),  # escape to NORMAL
                  '*Ldrag begin' : (NORMAL+DRAGGING, self.OnDragBegin),
             },
             NORMAL+DRAGGING : {
@@ -556,7 +556,7 @@ class GraphPlot(MatplotPanel):
                     'z pressed' : (ZOOM, self.OnZoomBegin),
               'Rbutton pressed' : (LINE, self.on_menu_lock),
              'Rbutton released' : (LINE, self.on_menu),
-            'S-Lbutton pressed' : (LINE, self.OnSelectorAppend),
+            'S-Lbutton pressed' : (LINE, self.OnLineAppend),
            'S-Lbutton released' : (LINE, ),
                  '*Ldrag begin' : (LINE+DRAGGING, self.OnLineDragBegin),
             },
@@ -1280,13 +1280,6 @@ class GraphPlot(MatplotPanel):
         y = yo + L * np.sin(aa[k] - pi/8)
         return self.calc_point(x, y, centred)
 
-    def OnSelectorAppend(self, evt):
-        if self.frame:
-            xs, ys = self.selector
-            x, y = self.calc_point(evt.xdata, evt.ydata)
-            self.selector = np.append(xs, x), np.append(ys, y)
-            self.handler('line_drawn', self.frame)
-
     def OnDragLock(self, evt):
         if self.frame:
             org = self.p_event  # the last pressed
@@ -1323,6 +1316,17 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     ## Selector + Line interface.
     ## --------------------------------
+
+    def OnLineAppend(self, evt):
+        if self.frame:
+            xs, ys = self.selector
+            x, y = self.calc_point(evt.xdata, evt.ydata)
+            self.selector = np.append(xs, x), np.append(ys, y)
+            self.handler('line_drawn', self.frame)
+            if self.selector.shape[1] > 1:
+                self._linesel = -1
+            else:
+                self.handler('escape pressed', evt)  # escape to NORMAL
 
     def OnLineSelected(self, evt):
         k = evt.ind[0]
@@ -1368,13 +1372,13 @@ class GraphPlot(MatplotPanel):
 
     def OnLineDragEscape(self, evt):
         self.selector = self._orgpoints
-        if self._linesel:
+        if self._linesel is not None:
             self.handler('line_drawn', self.frame)
         else:
             self.handler('line_moved', self.frame)
 
     def OnLineDragEnd(self, evt):
-        if self._linesel:
+        if self._linesel is not None:
             self.handler('line_drawn', self.frame)
         else:
             self.handler('line_moved', self.frame)
