@@ -514,14 +514,6 @@ class LineProfile(LinePlot):
         """Plotted (xdata, ydata) in single plot."""
         return self._plot.get_data(orig=0)
 
-    def calc_average(self):
-        x, y = self.plotdata
-        if self.region is not None:
-            a, b = self.region
-            y = y[(a <= x) & (x <= b)]
-        if y.size:
-            return y.mean()
-
     def linplot(self, frame, fit=True, force=True):
         if not force:
             if frame is self._frame:
@@ -658,9 +650,12 @@ class LineProfile(LinePlot):
 
     def OnRegionTrace(self, evt):
         """Show average value."""
-        y = self.calc_average()
-        if y is not None:
-            self.message(f"ya = {y:g}")
+        a, b = self.region
+        x, y = self.plotdata
+        yy = y[(a <= x) & (x <= b)]
+        if yy.size:
+            ya = yy.mean()
+            self.message(f"ya = {ya:g}")
 
     def OnEscapeSelection(self, evt):
         self._hline.set_visible(0)
@@ -748,7 +743,8 @@ class LineProfile(LinePlot):
         xs, ys = self.selector
         xc, yc = evt.xdata, evt.ydata
         if xs.size:
-            ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])
+            # ld = np.hypot((xs-xc)*self.ddpu[0], (ys-yc)*self.ddpu[1])
+            ld = abs((xs-xc) * self.ddpu[0])
             j = np.argmin(ld)
             if ld[j] < 20:  # check display-dot distance, snap to the nearest mark
                 xc = xs[j]
