@@ -29,6 +29,7 @@ class LinePlot(MatplotPanel):
             None : {
                    'region_set' : [None],
                  'region_unset' : [None],
+                'canvas_resize' : [None, lambda v: self.draw()]
             },
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
@@ -59,6 +60,12 @@ class LinePlot(MatplotPanel):
         # <matplotlib.patches.Rectangle>
         self._vspan = self.axes.axvspan(0, 0,
             color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
+
+    @property
+    def overlay_artists(self):
+        return [self.selected,
+                self._vspan, *self._annotations,
+                ]
 
     ## The limit for dragging region.
     boundary = None
@@ -164,6 +171,7 @@ class LinePlot(MatplotPanel):
             self._lastpoint = self.region[0]     # set origin left
         else:
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # outside
+        self.cursor.visible = False
 
     def OnDragMove(self, evt):
         x = evt.xdata
@@ -189,17 +197,18 @@ class LinePlot(MatplotPanel):
                 self._lastpoint = x
         else:
             self.message("- No region.")
-        self.draw()
+        self.draw_overlay()  # Callback instead of invisible cursor.
 
     def OnDragEnd(self, evt):
         self.set_wxcursor(wx.CURSOR_ARROW)
+        self.cursor.visible = True
 
     def OnEscapeSelection(self, evt):
         MatplotPanel.OnEscapeSelection(self, evt)
         
         self.set_wxcursor(wx.CURSOR_ARROW)
+        self.cursor.visible = True
         self.region = None
-        self.draw()
 
 
 class Histogram(LinePlot):
@@ -461,6 +470,12 @@ class LineProfile(LinePlot):
         
         self.selected.set_linestyle('')
 
+    @property
+    def overlay_artists(self):
+        return [self.selected, self._hline,
+                self._vspan, *self._annotations,
+                ]
+
     def OnDestroy(self, evt):
         for view in self._views:
             self.detach(view)
@@ -649,7 +664,7 @@ class LineProfile(LinePlot):
             u = self._frame.unit if self._logicp else 1
             if evt.key == "left": self.region -= u
             if evt.key == "right": self.region += u
-            self.draw()
+            self.draw_overlay()
 
     def OnEscapeSelection(self, evt):
         self._hline.set_visible(0)
@@ -698,8 +713,8 @@ class LineProfile(LinePlot):
                     self.region = None
             else:
                 self.region = x[[0,-1]]  # all y > yc
-            self.draw()
             self.message(f"yc = {yc:g}")
+            self.draw_overlay()  # Callback instead of invisible cursor.
 
     ## --------------------------------
     ## Region-Mark/Drag actions.
@@ -743,7 +758,6 @@ class LineProfile(LinePlot):
             j = np.argmin(ld)
             self._orgpoint = xs[j]
         self.set_wxcursor(wx.CURSOR_SIZEWE)
-        self.draw()
 
     def OnMarkSelectionMove(self, evt):
         xs, ys = self.selector
@@ -756,4 +770,4 @@ class LineProfile(LinePlot):
                 yc = ys[j]
                 self.message(f"({xc:g}, {yc:g})")
             self.region = (self._orgpoint, xc)
-            self.draw()
+            self.draw_overlay()  # Callback instead of invisible cursor.
