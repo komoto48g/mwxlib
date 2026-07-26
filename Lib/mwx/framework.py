@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.11.0"
+__version__ = "1.11.1"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -780,7 +780,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                 evt.Skip()
             else:
                 key = hotkey(evt)
-                if self.handler('{key} pressed', evt) is None:
+                if self.handler(f'{key} pressed', evt) is None:
                     evt.Skip()
         self.Bind(wx.EVT_CHAR_HOOK, hook_char)
         
