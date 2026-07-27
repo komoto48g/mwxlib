@@ -354,6 +354,8 @@ class LayerInterface(CtrlInterface):
                   'page_hidden' : [None, _F(self.Draw, show=False)],
                   'pane_docked' : [None, ],
                 'pane_undocked' : [None, ],
+                 'resize_start' : [None, ],
+                   'resize_end' : [None, ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -536,6 +538,9 @@ class Graph(GraphPlot):
         parent: Parent window (usually mainframe)
         loader: mainframe
     """
+    ## for debug (internal use only)
+    pane = property(lambda self: self.parent.get_pane(self))
+
     def __init__(self, parent, loader=None, **kwargs):
         GraphPlot.__init__(self, parent, **kwargs)
         
@@ -633,8 +638,6 @@ class Graph(GraphPlot):
         self.draw(internal_callback=False)
 
     def on_pane_undocked(self):
-        self.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: self.handler('resize_start'))
-        self.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: self.handler('resize_end'))
         self.draw(internal_callback=False)
 
     ## --------------------------------
@@ -770,7 +773,6 @@ class Frame(mwx.Frame):
         self._mgr.Update()
         
         self._prev_docking_status = {}  # docking status of panes
-        self._update_docking_status()
         
         self.menubar["File"][0:0] = [
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book'),
@@ -957,6 +959,13 @@ class Frame(mwx.Frame):
             if prev is None or prev != status:
                 pane.window.handler("pane_docked" if status else "pane_undocked")
                 self._prev_docking_status[pane.name] = status
+                if not status:
+                    ## The pane is undocked and reparented to a new AuiFloatingFrame.
+                    def _bind_move_handlers(win):
+                        assert isinstance(win.TopLevelParent, aui.AuiFloatingFrame)
+                        win.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: win.handler('resize_start'))
+                        win.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: win.handler('resize_end'))
+                    _bind_move_handlers(pane.window)
 
     def OnMoveStart(self, evt):
         self._update_moving_status(True)
