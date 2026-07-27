@@ -29,7 +29,6 @@ class LinePlot(MatplotPanel):
             None : {
                    'region_set' : [None],
                  'region_unset' : [None],
-                'canvas_resize' : [None, lambda v: self.draw()]
             },
             NORMAL : {
                'escape pressed' : (NORMAL, self.OnEscapeSelection),
@@ -501,7 +500,6 @@ class LineProfile(LinePlot):
             self._linewidth = w
         if self._frame:
             self.linplot(self._frame, fit=0)
-        self.writeln()
 
     @property
     def boundary(self):
