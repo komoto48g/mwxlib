@@ -570,9 +570,6 @@ class Graph(GraphPlot):
                 'pane_undocked' : [None, self.on_pane_undocked],
                  'resize_start' : [None, self.on_resize_start],
                    'resize_end' : [None, self.on_resize_end],
-                  'frame_shown' : [None, _F(self.update_infobar)],
-                  'S-a pressed' : [None, _F(self.toggle_infobar)],
-                   'f5 pressed' : [None, _F(self.refresh)],
                  'text_dropped' : [None, dispatch],
                  'file_dropped' : [None, self.on_file_dropped],
             },
@@ -587,23 +584,6 @@ class Graph(GraphPlot):
         extra = [art for artists in self.extra_artists.values()
                      for art in artists]
         return super().overlay_artists + extra
-
-    def refresh(self):
-        if self.frame:
-            self.frame.update_buffer()
-            self.draw()
-
-    def toggle_infobar(self):
-        """Toggle infobar (frame.annotation)."""
-        if self.infobar.IsShown():
-            self.infobar.Dismiss()
-        elif self.frame:
-            self.infobar.ShowMessage(self.frame.annotation)
-
-    def update_infobar(self):
-        """Show infobar (frame.annotation)."""
-        if self.infobar.IsShown():
-            self.infobar.ShowMessage(self.frame.annotation)
 
     def hide_layers(self):
         for plug in self.parent.get_all_plugs():
