@@ -1618,7 +1618,7 @@ class Frame(mwx.Frame):
             mis = {}
             if merge_data:
                 res, mis = self.read_attributes(filename)
-                ## Merge existing attributes from `res` to `new`, 
+                ## Merge existing attributes from `res` to `new`,
                 ## while keeping the order and values from `frames` (new) priority.
                 for name, attr in res.items():
                     if name not in new:

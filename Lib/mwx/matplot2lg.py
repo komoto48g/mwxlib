@@ -57,8 +57,8 @@ class LinePlot(MatplotPanel):
         
         # <matplotlib.patches.Polygon>
         # <matplotlib.patches.Rectangle>
-        self._vspan = self.axes.axvspan(0, 0,
-            color='none', ls='dashed', lw=1, ec='black', visible=0, zorder=2)
+        self._vspan = self.axes.axvspan(0, 0, color='none', ls='dashed', lw=1, ec='black',
+                                        visible=0, zorder=2)
 
     @property
     def overlay_artists(self):
@@ -244,7 +244,7 @@ class Histogram(LinePlot):
         self._plot, = self.axes.plot([], [], lw=1, color='c', alpha=1)
         
         # <matplotlib.patches.Polygon>
-        self._fill = patches.Polygon([(0,0)], color='c', alpha=1)
+        self._fill = patches.Polygon([(0, 0)], color='c', alpha=1)
         self.axes.add_patch(self._fill)
 
     def OnDestroy(self, evt):
@@ -444,7 +444,7 @@ class LineProfile(LinePlot):
         
         # <matplotlib.lines.Line2D>
         self._plot, = self.axes.plot([], [], lw=0.1, color='c', alpha=1,
-                                      picker=True, pickradius=2)
+                                     picker=True, pickradius=2)
         
         # <matplotlib.patches.Polygon>
         self._fill = patches.Polygon([(0,0)], color='c', alpha=0.8)
@@ -452,7 +452,7 @@ class LineProfile(LinePlot):
         
         # <matplotlib.lines.Line2D>
         self._hline = self.axes.axhline(0, color='gray', ls='dashed', lw=1,
-                                         visible=0, zorder=2)
+                                        visible=0, zorder=2)
         
         self._linewidth = 1  # Line width to integrate [pixel].
         self._logicp = True  # Line axis in logical unit.
