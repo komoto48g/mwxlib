@@ -27,3 +27,7 @@ class Plugin(Layer):
         def deactivate(evt):
             for view in self.parent.graphic_views:
                 self.plot.detach(view)
+        
+        @self.handler.bind('resize_end')
+        def _draw():
+            self.plot.draw()

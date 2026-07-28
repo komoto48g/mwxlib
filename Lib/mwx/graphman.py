@@ -354,6 +354,8 @@ class LayerInterface(CtrlInterface):
                   'page_hidden' : [None, _F(self.Draw, show=False)],
                   'pane_docked' : [None, ],
                 'pane_undocked' : [None, ],
+                 'resize_start' : [None, ],
+                   'resize_end' : [None, ],
             },
             0 : {
                   'C-c pressed' : (0, _F(copy_params)),
@@ -534,6 +536,9 @@ class Graph(GraphPlot):
         parent: Parent window (usually mainframe)
         loader: mainframe
     """
+    ## for debug (internal use only)
+    pane = property(lambda self: self.parent.get_pane(self))
+
     def __init__(self, parent, loader=None, **kwargs):
         GraphPlot.__init__(self, parent, **kwargs)
         
@@ -627,12 +632,11 @@ class Graph(GraphPlot):
             self.frame.set_visible(1)
             self.draw(internal_callback=False)
 
-    def on_pane_docked(self, parent):
-        pass
+    def on_pane_docked(self):
+        self.draw(internal_callback=False)
 
-    def on_pane_undocked(self, parent):
-        parent.Bind(wx.EVT_MOVE_START, lambda v: self.handler('resize_start'))
-        parent.Bind(wx.EVT_MOVE_END, lambda v: self.handler('resize_end'))
+    def on_pane_undocked(self):
+        self.draw(internal_callback=False)
 
     ## --------------------------------
     ## Overridden buffer methods.
@@ -767,7 +771,6 @@ class Frame(mwx.Frame):
         self._mgr.Update()
         
         self._prev_docking_status = {}  # docking status of panes
-        self._update_docking_status()
         
         self.menubar["File"][0:0] = [
             (wx.ID_OPEN, "&Open\tCtrl-o", "Open file", Icon('book'),
@@ -905,15 +908,8 @@ class Frame(mwx.Frame):
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         
-        def on_move_start(evt):
-            for view in self.graphic_windows_on_screen:
-                view.handler('resize_start')
-        self.Bind(wx.EVT_MOVE_START, on_move_start)
-        
-        def on_move_end(evt):
-            for view in self.graphic_windows_on_screen:
-                view.handler('resize_end')
-        self.Bind(wx.EVT_MOVE_END, on_move_end)
+        self.Bind(wx.EVT_MOVE_START, self.OnMoveStart)
+        self.Bind(wx.EVT_MOVE_END, self.OnMoveEnd)
         
         ## Custom Key Bindings.
         self.define_key('* C-g', self.Quit)
@@ -949,24 +945,42 @@ class Frame(mwx.Frame):
         self._mgr.UnInit()
         return mwx.Frame.Destroy(self)
 
-    def _update_docking_status(self):
-        docking_status = {pane.name: pane.IsDocked() for pane in self._mgr.GetAllPanes()}
+    def _update_moving_status(self, status):
         for pane in self._mgr.GetAllPanes():
-            status = docking_status[pane.name]
+            if pane.IsDocked() and pane.IsShown():
+                pane.window.handler('resize_start' if status else 'resize_end')
+
+    def _update_docking_status(self):
+        for pane in self._mgr.GetAllPanes():
+            status = pane.IsDocked()
             prev = self._prev_docking_status.get(pane.name)
-            if prev is not None and prev != status:
-                pane.window.handler("pane_docked" if status else "pane_undocked",
-                                    pane.window.TopLevelParent)
-        self._prev_docking_status.update(docking_status)
+            if prev is None or prev != status:
+                pane.window.handler("pane_docked" if status else "pane_undocked")
+                self._prev_docking_status[pane.name] = status
+                if not status:
+                    ## The pane is undocked and reparented to a new AuiFloatingFrame.
+                    def _bind_move_handlers(win):
+                        assert isinstance(win.TopLevelParent, aui.AuiFloatingFrame)
+                        win.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: win.handler('resize_start'))
+                        win.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: win.handler('resize_end'))
+                    _bind_move_handlers(pane.window)
+
+    def OnMoveStart(self, evt):
+        self._update_moving_status(True)
+        evt.Skip()
+
+    def OnMoveEnd(self, evt):
+        self._update_moving_status(False)
+        evt.Skip()
 
     def OnCreate(self, evt):
         if evt.EventObject is not self:
-            wx.CallAfter(self._update_docking_status)
+            wx.CallAfter(self._update_docking_status)  # Use post-call to acccess TopLevelParent
         evt.Skip()
 
     def OnDestroy(self, evt):
         if evt.EventObject is not self:
-            wx.CallAfter(self._update_docking_status)
+            wx.CallAfter(self._update_docking_status)  # Use post-call to acccess TopLevelParent
         evt.Skip()
 
     def OnActivate(self, evt):  # <wx._core.ActivateEvent>
@@ -1602,7 +1616,7 @@ class Frame(mwx.Frame):
             mis = {}
             if merge_data:
                 res, mis = self.read_attributes(filename)
-                ## Merge existing attributes from `res` to `new`, 
+                ## Merge existing attributes from `res` to `new`,
                 ## while keeping the order and values from `frames` (new) priority.
                 for name, attr in res.items():
                     if name not in new:
