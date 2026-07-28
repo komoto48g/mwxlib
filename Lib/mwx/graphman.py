@@ -299,15 +299,27 @@ class LayerInterface(CtrlInterface):
         for art in (set(self._arts) - set(arts)):
             art.remove()
         self._arts = list(arts)
+        try:
+            ## @TODO: Multiple views are not assumed here.
+            view = self._arts[0].figure.canvas.Parent
+            view.extra_artists[self.Name] = self._arts
+        except Exception:
+            pass
 
     @Arts.deleter
     def Arts(self):
         for art in self._arts:
             art.remove()
+        try:
+            ## @TODO: Multiple views are not assumed here.
+            view = self._arts[0].figure.canvas.Parent
+            view.extra_artists[self.Name] = []
+        except Exception:
+            pass
         self._arts = []
 
     def attach_artists(self, axes, *artists):
-        """Attach artists (e.g., patches) to the given axes."""
+        """Attach artists (e.g., patches) to the target axes."""
         for art in artists:
             if art.axes:
                 art.remove()
@@ -343,7 +355,7 @@ class LayerInterface(CtrlInterface):
                 self.paste_from_clipboard(checked_only)
         
         def reset_params(evt, checked_only=False):
-            self.Draw(None)
+            self.Draw()
             if self.parameters:
                 self.reset_params(checked_only)
         
@@ -475,18 +487,18 @@ class LayerInterface(CtrlInterface):
         """Draw artists.
         If show is None:default, draw only when the pane is visible.
         """
-        if not self.Arts:
-            return
         if show is None:
             show = self.IsShown()
+        if not self.Arts:
+            return
+        ## Arts may be belonging to graph, output, and any other windows.
+        for art in self.Arts:
+            art.set_visible(show)
         try:
-            ## Arts may be belonging to graph, output, and any other windows.
-            for art in self.Arts:
-                art.set_visible(show)
             ## To avoid RuntimeError, check if canvas object has been deleted.
-            canvas = art.axes.figure.canvas
-            if canvas:
-                canvas.Parent.draw(internal_callback=False)
+            ## @TODO: Multiple views are not assumed here.
+            view = art.axes.figure.canvas.Parent
+            view.draw_overlay()
         except Exception as e:
             print(f"- Failed to draw Arts of {self.__module__};", e)
             del self.Arts
@@ -567,6 +579,14 @@ class Graph(GraphPlot):
         })
         ## Accepts DnD.
         self.SetDropTarget(FileDropLoader(self))
+        
+        self.extra_artists = {}
+
+    @property
+    def overlay_artists(self):
+        extra = [art for artists in self.extra_artists.values()
+                     for art in artists]
+        return super().overlay_artists + extra
 
     def refresh(self):
         if self.frame:
@@ -1302,7 +1322,7 @@ class Frame(mwx.Frame):
         
         ## Create the plugin object.
         try:
-            plug = Plugin(self, session, name=name, **kwargs)
+            plug = Plugin(self, session, name=name, **kwargs)  # name => plug.Name
         except Exception as e:
             traceback.print_exc()
             self.post_msgbox(str(e), f"Failed to create a Plugin for {name!r}.", style=wx.ICON_ERROR)
