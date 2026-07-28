@@ -2443,9 +2443,8 @@ class EditorBook(AuiNotebook):
         def _menu(j, buf):
             caption = "{}:{}".format(buf.filename, buf.markline+1)
             return (j, caption, '', wx.ITEM_CHECK,
-                lambda v: buf.SetFocus(),
-                lambda v: v.Check(buf is self.buffer))
-        
+                    lambda v: buf.SetFocus(),
+                    lambda v: v.Check(buf is self.buffer))
         return (_menu(j+1, x) for j, x in enumerate(self.get_all_buffers()))
 
     @property

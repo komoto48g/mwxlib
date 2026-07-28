@@ -390,9 +390,7 @@ class LayerInterface(CtrlInterface):
             (mwx.ID_(112), "&Dive into {!r}".format(self.__module__), "dive", Icon('core'),
                 lambda v: self.parent.inspect_plug(self)),
         ]
-        self.Bind(wx.EVT_CONTEXT_MENU,
-                  lambda v: Menu.Popup(self, self.menu))
-        
+        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.Bind(wx.EVT_SHOW, self.OnShow)
         

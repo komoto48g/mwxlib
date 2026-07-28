@@ -573,9 +573,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
                 lambda v: self.set_params(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self._params != [])),
         ]
-        self.Bind(wx.EVT_CONTEXT_MENU,
-                  lambda v: Menu.Popup(self, self.menu))
-        
+        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))
         self.Bind(wx.EVT_LEFT_DOWN, self.OnToggleFold)
         
         self.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnRecalcLayout)
