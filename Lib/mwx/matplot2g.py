@@ -211,7 +211,7 @@ class AxesImagePhantom:
         if 'annotation' in attr:
             self._annotation = attr['annotation']
             if self.parent.frame is self:
-                self.parent.infobar.ShowMessage(attr['annotation'])
+                self.parent.infobar.ShowMessage(self._annotation)
             flag |= FLAG_ANNOTATION
         
         if 'center' in attr:
@@ -468,9 +468,9 @@ class GraphPlot(MatplotPanel):
         
         self.handler.update({  # DNA<GraphPlot>
             None : {
-                  'frame_shown' : [None, ],  # show
-                 'frame_hidden' : [None, ],  # show
-                 'frame_loaded' : [None, ],  # load
+                  'frame_shown' : [None, _F(self.update_infobar)],
+                 'frame_hidden' : [None, ],
+                 'frame_loaded' : [None, ],
                 'frame_removed' : [None, ],  # del[] ! event arg is indices, not frames.
                'frame_selected' : [None, ],  # = focus_set
              'frame_deselected' : [None, ],  # = focus_kill
@@ -500,6 +500,8 @@ class GraphPlot(MatplotPanel):
              'pagedown pressed' : [None, self.OnPageDown],
                  'home pressed' : [None, _F(self.select, index=0)],
                   'end pressed' : [None, _F(self.select, index=-1)],
+                   'f5 pressed' : [None, _F(self.refresh)],
+                  'S-a pressed' : [None, _F(self.toggle_infobar)],
                   'M-a pressed' : [None, _F(self.fit_to_canvas)],
                   'C-a pressed' : [None, _F(self.fit_to_axes)],
                   'C-i pressed' : [None, _F(self.invert_cmap)],
@@ -1054,6 +1056,24 @@ class GraphPlot(MatplotPanel):
                     maxpage=len(self),
                     unit=self.unit
                 ))
+
+    def refresh(self):
+        if self.frame:
+            self.frame.update_buffer()
+            self.draw()
+
+    def toggle_infobar(self):
+        """Toggle infobar (frame.annotation)."""
+        if self.infobar.IsShown():
+            self.infobar.Dismiss()
+        elif self.frame:
+            self.infobar.ShowMessage(self.frame.annotation)
+        self.draw(internal_callback=False)
+
+    def update_infobar(self):
+        """Show infobar (frame.annotation)."""
+        if self.infobar.IsShown():
+            self.infobar.ShowMessage(self.frame.annotation)
 
     ## --------------------------------
     ## 外部入出力／複合インターフェース．

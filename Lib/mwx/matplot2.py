@@ -184,7 +184,7 @@ class MatplotPanel(wx.Panel):
                 pass
         
         def _draw(evt):
-            self.draw()
+            self.draw(internal_callback=False)
         
         self.__handler = FSM({  # DNA<MatplotPanel>
                 None : {
@@ -351,13 +351,15 @@ class MatplotPanel(wx.Panel):
         if not artists:
             artists = self.overlay_artists
             states = [art.get_visible() for art in artists]
-            for art in artists:     # オーバーレイを消して描画処理．
-                art.set_visible(0)
-            if internal_callback:
-                self.handler('canvas_draw', self.frame)
-            self.canvas.draw()
-            for art, v in zip(artists, states):  # オーバーレイを戻して再描画処理↓
-                art.set_visible(v)
+            try:
+                for art in artists:  # オーバーレイを消して描画処理．
+                    art.set_visible(0)
+                if internal_callback:
+                    self.handler('canvas_draw', self.frame)
+                self.canvas.draw()
+            finally:
+                for art, v in zip(artists, states):  # オーバーレイを戻して再描画処理↓
+                    art.set_visible(v)
         
         if self.background is not None:
             self.canvas.restore_region(self.background)
@@ -377,7 +379,14 @@ class MatplotPanel(wx.Panel):
         if background_only:
             self.canvas.restore_region(self.background)
             self.canvas.blit(self.axes.bbox)
-        self.canvas.Copy_to_Clipboard()
+        states = [art.get_animated() for art in self.overlay_artists]
+        try:
+            for art in self.overlay_artists:
+                art.set_animated(False)
+            self.canvas.Copy_to_Clipboard()
+        finally:
+            for art, st in zip(self.overlay_artists, states):
+                art.set_animated(st)
         self.message("Copy image to clipboard.")
 
     def set_wxcursor(self, c):

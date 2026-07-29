@@ -299,15 +299,27 @@ class LayerInterface(CtrlInterface):
         for art in (set(self._arts) - set(arts)):
             art.remove()
         self._arts = list(arts)
+        try:
+            ## @TODO: Multiple views are not assumed here.
+            view = self._arts[0].figure.canvas.Parent
+            view.extra_artists[self.Name] = self._arts
+        except Exception:
+            pass
 
     @Arts.deleter
     def Arts(self):
         for art in self._arts:
             art.remove()
+        try:
+            ## @TODO: Multiple views are not assumed here.
+            view = self._arts[0].figure.canvas.Parent
+            view.extra_artists[self.Name] = []
+        except Exception:
+            pass
         self._arts = []
 
     def attach_artists(self, axes, *artists):
-        """Attach artists (e.g., patches) to the given axes."""
+        """Attach artists (e.g., patches) to the target axes."""
         for art in artists:
             if art.axes:
                 art.remove()
@@ -343,7 +355,7 @@ class LayerInterface(CtrlInterface):
                 self.paste_from_clipboard(checked_only)
         
         def reset_params(evt, checked_only=False):
-            self.Draw(None)
+            self.Draw()
             if self.parameters:
                 self.reset_params(checked_only)
         
@@ -475,18 +487,18 @@ class LayerInterface(CtrlInterface):
         """Draw artists.
         If show is None:default, draw only when the pane is visible.
         """
-        if not self.Arts:
-            return
         if show is None:
             show = self.IsShown()
+        if not self.Arts:
+            return
+        ## Arts may be belonging to graph, output, and any other windows.
+        for art in self.Arts:
+            art.set_visible(show)
         try:
-            ## Arts may be belonging to graph, output, and any other windows.
-            for art in self.Arts:
-                art.set_visible(show)
             ## To avoid RuntimeError, check if canvas object has been deleted.
-            canvas = art.axes.figure.canvas
-            if canvas:
-                canvas.Parent.draw(internal_callback=False)
+            ## @TODO: Multiple views are not assumed here.
+            view = art.axes.figure.canvas.Parent
+            view.draw_overlay()
         except Exception as e:
             print(f"- Failed to draw Arts of {self.__module__};", e)
             del self.Arts
@@ -549,41 +561,32 @@ class Graph(GraphPlot):
             """Fork events to the parent."""
             return self.parent.handler(self.handler.current_event, *v, **kw)
         
+        def _draw():
+            self.draw(internal_callback=False)
+        
         self.handler.append({  # DNA<Graph>
             None : {
                     'focus_set' : [None, _F(self.loader.select_view, view=self)],
                    'page_shown' : [None, ],
                   'page_closed' : [None, ],
-                  'pane_docked' : [None, self.on_pane_docked],
-                'pane_undocked' : [None, self.on_pane_undocked],
+                  'pane_docked' : [None, _draw],
+                'pane_undocked' : [None, _draw],
                  'resize_start' : [None, self.on_resize_start],
                    'resize_end' : [None, self.on_resize_end],
-                  'frame_shown' : [None, _F(self.update_infobar)],
-                  'S-a pressed' : [None, _F(self.toggle_infobar)],
-                   'f5 pressed' : [None, _F(self.refresh)],
                  'text_dropped' : [None, dispatch],
                  'file_dropped' : [None, self.on_file_dropped],
             },
         })
         ## Accepts DnD.
         self.SetDropTarget(FileDropLoader(self))
+        
+        self.extra_artists = {}
 
-    def refresh(self):
-        if self.frame:
-            self.frame.update_buffer()
-            self.draw()
-
-    def toggle_infobar(self):
-        """Toggle infobar (frame.annotation)."""
-        if self.infobar.IsShown():
-            self.infobar.Dismiss()
-        elif self.frame:
-            self.infobar.ShowMessage(self.frame.annotation)
-
-    def update_infobar(self):
-        """Show infobar (frame.annotation)."""
-        if self.infobar.IsShown():
-            self.infobar.ShowMessage(self.frame.annotation)
+    @property
+    def overlay_artists(self):
+        extra = [art for artists in self.extra_artists.values()
+                     for art in artists]
+        return super().overlay_artists + extra
 
     def hide_layers(self):
         for plug in self.parent.get_all_plugs():
@@ -621,7 +624,7 @@ class Graph(GraphPlot):
             self.frame.update_interpolation_mode()  # Substitutes internal_callback.
             self.xlim = other.xlim
             self.ylim = other.ylim
-            self.draw(internal_callback=False)
+            self.draw(internal_callback=False)  # To avoid recursive calls.
 
     def on_resize_start(self):
         if self.frame:
@@ -630,12 +633,6 @@ class Graph(GraphPlot):
     def on_resize_end(self):
         if self.frame:
             self.frame.set_visible(1)
-            self.draw(internal_callback=False)
-
-    def on_pane_docked(self):
-        self.draw(internal_callback=False)
-
-    def on_pane_undocked(self):
         self.draw(internal_callback=False)
 
     ## --------------------------------
@@ -1302,7 +1299,7 @@ class Frame(mwx.Frame):
         
         ## Create the plugin object.
         try:
-            plug = Plugin(self, session, name=name, **kwargs)
+            plug = Plugin(self, session, name=name, **kwargs)  # name => plug.Name
         except Exception as e:
             traceback.print_exc()
             self.post_msgbox(str(e), f"Failed to create a Plugin for {name!r}.", style=wx.ICON_ERROR)
