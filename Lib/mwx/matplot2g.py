@@ -1068,6 +1068,7 @@ class GraphPlot(MatplotPanel):
             self.infobar.Dismiss()
         elif self.frame:
             self.infobar.ShowMessage(self.frame.annotation)
+        self.draw(internal_callback=False)
 
     def update_infobar(self):
         """Show infobar (frame.annotation)."""

@@ -561,13 +561,16 @@ class Graph(GraphPlot):
             """Fork events to the parent."""
             return self.parent.handler(self.handler.current_event, *v, **kw)
         
+        def _draw():
+            self.draw(internal_callback=False)
+        
         self.handler.append({  # DNA<Graph>
             None : {
                     'focus_set' : [None, _F(self.loader.select_view, view=self)],
                    'page_shown' : [None, ],
                   'page_closed' : [None, ],
-                  'pane_docked' : [None, self.on_pane_docked],
-                'pane_undocked' : [None, self.on_pane_undocked],
+                  'pane_docked' : [None, _draw],
+                'pane_undocked' : [None, _draw],
                  'resize_start' : [None, self.on_resize_start],
                    'resize_end' : [None, self.on_resize_end],
                  'text_dropped' : [None, dispatch],
@@ -621,7 +624,7 @@ class Graph(GraphPlot):
             self.frame.update_interpolation_mode()  # Substitutes internal_callback.
             self.xlim = other.xlim
             self.ylim = other.ylim
-            self.draw(internal_callback=False)
+            self.draw(internal_callback=False)  # To avoid recursive calls.
 
     def on_resize_start(self):
         if self.frame:
@@ -630,12 +633,6 @@ class Graph(GraphPlot):
     def on_resize_end(self):
         if self.frame:
             self.frame.set_visible(1)
-            self.draw(internal_callback=False)
-
-    def on_pane_docked(self):
-        self.draw(internal_callback=False)
-
-    def on_pane_undocked(self):
         self.draw(internal_callback=False)
 
     ## --------------------------------

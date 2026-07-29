@@ -29,5 +29,7 @@ class Plugin(Layer):
                 self.plot.detach(view)
         
         @self.handler.bind('resize_end')
+        @self.handler.bind('pane_docked')
+        @self.handler.bind('pane_undocked')
         def _draw():
-            self.plot.draw()
+            self.plot.draw(internal_callback=False)
