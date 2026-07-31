@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.11.3"
+__version__ = "1.11.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -875,6 +875,18 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
         for i in range(self.PageCount):
             yield self.GetPage(i)
 
+    def AddPage(self, page, *args, **kwargs):
+        """Adds a page.
+        
+        If the select parameter is True, calling this will generate a page change event.
+        (override) Unlike aui.AuiNotebook.AddPage(...), reparents the page
+                   to the notebook if necessary before adding it.
+        """
+        if page.GetParent() is not self:
+            if not page.Reparent(self):
+                raise RuntimeError("Failed to reparent page")
+        return aui.AuiNotebook.AddPage(self, page, *args, **kwargs)
+
     @property
     def _all_tabs(self):
         """Return all AuiTabCtrl objects (internal use only)."""
@@ -919,9 +931,9 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
     def find_tab(self, win):
         """Return AuiTabCtrl and AuiNotebookPage for the window.
         
-        cf. aui.AuiNotebook.FindTab -> bool, tab, idx
+        cf. aui.AuiNotebook.FindTab(win) -> bool, tab, idx
         Note:
-            Argument `win` can also be page.window.Name (not page.caption).
+            Argument `win` can also be `page.window.Name` (not `page.caption`).
         """
         for tab in self._all_tabs:
             for i in range(tab.GetPageCount()):

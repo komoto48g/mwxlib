@@ -7,7 +7,7 @@ import wx
 from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from mwx.framework import CtrlInterface, Menu, StatusBar, pack
+from mwx.framework import CtrlInterface, AuiNotebook, Menu, StatusBar, pack
 from mwx.controls import Icon
 from mwx.graphman import Layer
 
@@ -247,7 +247,7 @@ class Plugin(Layer):
         return self.statusline
 
     def Init(self):
-        self.nb = aui.AuiNotebook(self, size=(400,150),
+        self.nb = AuiNotebook(self, size=(400,150),
                     style=(aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_RIGHT)
                         &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
