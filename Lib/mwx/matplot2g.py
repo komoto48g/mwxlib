@@ -161,8 +161,8 @@ class AxesImagePhantom:
         self.parent = parent
         
         ## Properties of the frame/image.
-        self.name = name
-        self.attributes = kwargs
+        self._name = name
+        self._attributes = kwargs
         self._pathname = kwargs.get('pathname')
         self._annotation = kwargs.get('annotation', '')
         self._localunit = kwargs.get('localunit')
@@ -281,6 +281,19 @@ class AxesImagePhantom:
         lambda self: self.artist.get_clim(),
         lambda self, v: self.artist.set_clim(v),
         doc="Lower/Upper color limit values of the buffer.")
+
+    attributes = property(
+        lambda self: self._attributes,
+        doc="Auxiliary info about the frame.")
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, v):
+        self._name = v
+        self.parent.handler('frame_updated', self)
 
     pathname = property(
         lambda self: self._pathname,
