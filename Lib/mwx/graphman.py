@@ -499,8 +499,8 @@ class LayerInterface(CtrlInterface):
             ## @TODO: Multiple views are not assumed here.
             view = art.axes.figure.canvas.Parent
             view.draw_overlay()
-        except Exception as e:
-            print(f"- Failed to draw Arts of {self.__module__};", e)
+        except Exception:
+            # print(f"- Failed to draw Arts of {self.__module__};", e)
             del self.Arts
 
 
