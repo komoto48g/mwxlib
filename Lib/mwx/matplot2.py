@@ -184,7 +184,7 @@ class MatplotPanel(wx.Panel):
                 pass
         
         def _draw(evt):
-            self.draw(internal_callback=False)
+            self.draw()
         
         self.__handler = FSM({  # DNA<MatplotPanel>
                 None : {
