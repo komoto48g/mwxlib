@@ -1240,9 +1240,9 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
         ## Add style to the folding margin.
         item = _map(spec.get(stc.STC_STYLE_LINENUMBER, ''))
         if item:
-            ## Set colors used as a chequeboard pattern.
-            ## - lo (back) one of the colors
-            ## - hi (fore) the other color
+            ## Set colours used as a chequeboard pattern.
+            ## - lo (back) one of the colours
+            ## - hi (fore) the other colour
             self.BackgroundColour = item.get('back')
             self.ForegroundColour = item.get('fore')
             if self.GetMarginWidth(2) > 1:

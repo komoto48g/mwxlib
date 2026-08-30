@@ -212,10 +212,10 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         if self.GetItemBackgroundColour(i) != wx.Colour('yellow'):
             self.SetItemBackgroundColour(i, "yellow")
             
-            def _reset_color():
+            def _reset():
                 if self and i < self.ItemCount:
                     self.SetItemBackgroundColour(i, 'white')
-            wx.CallAfter(wx.CallLater, 1000, _reset_color)
+            wx.CallAfter(wx.CallLater, 1000, _reset)
 
     def copy(self):
         if not self.SelectedItemCount:
