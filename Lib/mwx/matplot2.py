@@ -336,6 +336,13 @@ class MatplotPanel(wx.Panel):
         # <matplotlib.widgets.Cursor>
         self.cursor = Cursor(self.axes, useblit=True, color='grey', linewidth=1)
         
+        ## Modeline colour styles.
+        self.selectedModeLineBg = '#000000'
+        self.selectedModeLineFg = '#f0f0f0'
+        self.unselectedModeLineBg = 'auto'
+        self.unselectedModeLineFg = 'auto'
+        
+        ## Cached image of canvas.
         self.background = None
 
     @property
@@ -442,11 +449,6 @@ class MatplotPanel(wx.Panel):
     ## --------------------------------
     ## Property of the modeline.
     ## --------------------------------
-
-    selectedModeLineBg = '#000000'
-    selectedModeLineFg = '#f0f0f0'
-    unselectedModeLineBg = 'auto'
-    unselectedModeLineFg = 'auto'
 
     def on_modeline_tip(self, evt):  # <wx._core.MouseEvent>
         flag = self.modeline.HitTest(evt.Position)

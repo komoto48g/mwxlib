@@ -36,7 +36,7 @@ def _to_cvtype(src):
     return src
 
 
-def _to_buffer(img):
+def _to_buffer(img, colour=True):
     if isinstance(img, Image.Image):
         # return np.asarray(img)  # ref
         return np.array(img)  # copy
@@ -54,8 +54,8 @@ def _to_buffer(img):
     if img.ndim < 2:
         raise ValueError("targets must be 2d arrays.")
     
-    # if img.ndim > 2:
-    #     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    if img.ndim > 2 and not colour:
+        return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return img
 
 
@@ -171,7 +171,7 @@ class AxesImagePhantom:
         self._mtime = _get_timestamp(self._pathname)
         
         ## Conditions for image loading.
-        self.buffer = _to_buffer(buf)
+        self.buffer = _to_buffer(buf, self.parent.enable_colour)
         bins, vlim, img = _to_image(self.buffer,
                                     cutoff=self.parent.cutoff_threshold,
                                     threshold=self.parent.nbytes_threshold,
@@ -243,7 +243,7 @@ class AxesImagePhantom:
     def update_buffer(self, buf=None):
         """Update buffer and the image (internal use only)."""
         if buf is not None:
-            self.buffer = _to_buffer(buf)
+            self.buffer = _to_buffer(buf, self.parent.enable_colour)
         
         bins, vlim, img = _to_image(self.buffer,
                                     cutoff=self.parent.cutoff_threshold,
@@ -706,6 +706,21 @@ class GraphPlot(MatplotPanel):
         self._linesel = None
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
+        
+        ## Image byte limit for loading matplotlib (with wxAgg backend).
+        self.nbytes_threshold = 24e6
+        
+        ## Image cutoff limit percentiles.
+        self.cutoff_threshold = 0.005
+        
+        ## Default interpolation mode for antialiasing.
+        self.interpolation_mode = 'bilinear'
+        
+        ## Enable colour for images.
+        self.enable_colour = True
+        
+        ## Limit number of markers to display. 負荷低減のため最大(表示)数を制限する．
+        self.maxnum_markers = 1000
 
     @property
     def overlay_artists(self):
@@ -895,15 +910,6 @@ class GraphPlot(MatplotPanel):
     ## Property of frame / drawer.
     ## --------------------------------
 
-    ## Image byte limit for loading matplotlib (with wxAgg backend).
-    nbytes_threshold = 24e6
-
-    ## Image cutoff limit percentiles.
-    cutoff_threshold = 0.005
-
-    ## Default interpolation mode for antialiasing.
-    interpolation_mode = 'bilinear'
-
     @property
     def frames(self):
         """List of frames <matplotlib.image.AxesImage>."""
@@ -1092,8 +1098,8 @@ class GraphPlot(MatplotPanel):
     ## 外部入出力／複合インターフェース．
     ## --------------------------------
     ## GraphPlot 間共有のグローバル変数
-    clipboard_name = None
-    clipboard_data = None
+    CLIPBOARD_NAME = None
+    CLIPBOARD_DATA = None
 
     def write_buffer_to_clipboard(self):
         """Write buffer data to clipboard."""
@@ -1104,8 +1110,8 @@ class GraphPlot(MatplotPanel):
         
         name = frame.name
         data = frame.roi_or_buffer
-        GraphPlot.clipboard_name = name
-        GraphPlot.clipboard_data = data
+        GraphPlot.CLIPBOARD_NAME = name
+        GraphPlot.CLIPBOARD_DATA = data
         bins, vlim, img = _to_image(data, frame.cuts)
         Clipboard.imwrite(img)
         # print("To clipboard: {:.1f} Mb written.".format(data.nbytes/1e6))
@@ -1113,12 +1119,12 @@ class GraphPlot(MatplotPanel):
 
     def read_buffer_from_clipboard(self):
         """Read buffer data from clipboard."""
-        name = GraphPlot.clipboard_name
-        data = GraphPlot.clipboard_data
+        name = GraphPlot.CLIPBOARD_NAME
+        data = GraphPlot.CLIPBOARD_DATA
         if name:
             self.message("Read buffer from clipboard.")
-            GraphPlot.clipboard_name = None
-            GraphPlot.clipboard_data = None
+            GraphPlot.CLIPBOARD_NAME = None
+            GraphPlot.CLIPBOARD_DATA = None
         else:
             self.message("Read image from clipboard.")
             data = Clipboard.imread()
@@ -1433,9 +1439,6 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     ## Marker interface.
     ## --------------------------------
-
-    ## Limit number of markers to display 最大(表示)数を制限する．
-    maxnum_markers = 1000
 
     @property
     def markers(self):
