@@ -1230,7 +1230,6 @@ class Indicator(wx.Control):
     """Traffic light indicator.
     
     Args:
-        colors:   list of colors (default is tricolour) cf. wx.ColourDatabase
         value:    initial value
         **kwargs: keywords for wx.Control
     """
@@ -1243,34 +1242,16 @@ class Indicator(wx.Control):
         self._value = int(v)
         self.Refresh()
 
-    def redesign(self, **kwargs):
-        """Update multiple design properties at once.
-        
-        This method is useful for changing colors, spacing, radius, etc.
-        The best size will be automatically invalidated and recalculated.
-        
-        Args:
-            **kwargs: class attributes, e.g. colors, spacing, radius.
-        
-        Note:
-            This method has no effect on properties such as Value.
-        """
-        self.__dict__.update(kwargs)
-        self.InvalidateBestSize()
-
-    colors = ('green', 'yellow', 'red')  # default tricolor style
-    backgroundColour = 'dark gray'
-    foregroundColour = 'light gray'
-    spacing = 7
-    radius = 4
-    glow = 0
-
-    def __init__(self, parent, colors=None, value=0, style=wx.BORDER_NONE, **kwargs):
+    def __init__(self, parent, value=0, style=wx.BORDER_NONE, **kwargs):
         wx.Control.__init__(self, parent, style=style, **kwargs)
         
         self._value = value
-        if colors is not None:
-            self.colors = colors
+        self.colours = ('green', 'yellow', 'red')  # default tricolour style
+        self.backgroundColour = 'dark gray'
+        self.foregroundColour = 'light gray'
+        self.spacing = 7
+        self.radius = 4
+        self.glow = False
         
         ## Sizes the window to fit its best size.
         ## May be needed if sizer is not defined.
@@ -1283,7 +1264,7 @@ class Indicator(wx.Control):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
     def DoGetBestSize(self):
-        N = len(self.colors)
+        N = len(self.colours)
         s = self.spacing
         return wx.Size((2*s-1)*N+3, 2*s+2)
 
@@ -1293,7 +1274,7 @@ class Indicator(wx.Control):
     def OnPaint(self, evt):
         dc = wx.BufferedPaintDC(self)
         dc.Clear()
-        N = len(self.colors)
+        N = len(self.colours)
         r = self.radius
         s = self.spacing
         ss = 2*s-1
@@ -1315,7 +1296,7 @@ class Indicator(wx.Control):
             stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 1.0))
         
         dc.SetPen(wx.Pen(self.foregroundColour, style=wx.PENSTYLE_TRANSPARENT))
-        for j, name in enumerate(self.colors):
+        for j, name in enumerate(self.colours):
             b = self._value & (1 << j)
             x = ss*(N-1-j)+s
             y = h//2
