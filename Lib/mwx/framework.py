@@ -812,10 +812,6 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
     message = property(lambda self: self.statusbar)
 
-    ## Flag indicating whether the shell runs in standalone mode.
-    ## If True, the window is closed; otherwise, it is hidden.
-    standalone = False
-
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
         
@@ -844,6 +840,10 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             },
         )
         self.make_keymap('C-x')
+        
+        ## Flag indicating whether the frmae runs in standalone mode.
+        ## If True, the window is closed; otherwise, it is hidden.
+        self.standalone = False
         
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 

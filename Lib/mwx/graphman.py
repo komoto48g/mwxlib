@@ -737,6 +737,9 @@ class Frame(mwx.Frame):
         
         self.plugins = {}  # modules in the order of load/save
         
+        self.session_file = None           # current session filename
+        self.index_file = "results.index"  # default index filename
+        
         self.graph = Graph(self, log=self.message, margin=None, name="graph")
         self.output = Graph(self, log=self.message, margin=None, name="output")
         
@@ -1457,7 +1460,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save index file.
     ## --------------------------------
-    INDEXFILE = "results.index"
 
     def import_index(self, filename=None, view=None):
         """Load frames :ref to the Index file.
@@ -1470,7 +1472,7 @@ class Frame(mwx.Frame):
             default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Select index file to load",
                     defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=self.INDEXFILE,
+                    defaultFile=self.index_file,
                     wildcard="Index (*.index)|*.index|"
                              "ALL files (*.*)|*.*",
                     style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
@@ -1510,7 +1512,7 @@ class Frame(mwx.Frame):
             default_path = view.frame.pathname if view.frame else None
             with wx.FileDialog(self, "Select index file to export",
                     defaultDir=os.path.dirname(default_path or ''),
-                    defaultFile=self.INDEXFILE,
+                    defaultFile=self.index_file,
                     wildcard="Index (*.index)|*.index",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
@@ -1654,7 +1656,7 @@ class Frame(mwx.Frame):
                 ## Compile attributes from index files located in each frame path.
                 savedir = os.path.dirname(frame.pathname)
                 if savedir not in saved_results:
-                    fn = os.path.join(savedir, self.INDEXFILE)
+                    fn = os.path.join(savedir, self.index_file)
                     res, mis = self.read_attributes(fn)
                     saved_results[savedir] = res
                 res = saved_results[savedir]
@@ -1684,7 +1686,7 @@ class Frame(mwx.Frame):
         frame = self.save_buffer(path, frame)
         if frame:
             savedir = os.path.dirname(frame.pathname)
-            fn = os.path.join(savedir, self.INDEXFILE)
+            fn = os.path.join(savedir, self.index_file)
             res, mis = self.write_attributes(fn, [frame])
         return frame
 
@@ -1829,7 +1831,6 @@ class Frame(mwx.Frame):
     ## --------------------------------
     ## load/save session.
     ## --------------------------------
-    session_file = None
 
     def load_session(self, filename=None, flush=True):
         """Load session from file."""
