@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.11.9"
+__version__ = "1.11.10"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -844,12 +844,14 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             },
         )
         self.make_keymap('C-x')
+        
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
-    def Close(self):
+    def OnClose(self, evt):
         if self.standalone:
-            wx.MiniFrame.Close(self)  # => [EVT_CLOSE]
+            evt.Skip()  # Close the window
         else:
-            self.Hide()
+            self.Hide()  # Don't destroy the window
 
 
 class AuiNotebook(aui.AuiNotebook, CtrlInterface):
@@ -1232,7 +1234,7 @@ class ShellFrame(MiniFrame):
         
         self._mgr.Update()
         
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        # self.Bind(wx.EVT_CLOSE, self.OnClose)  # MiniFrame.OnClose
         self.Bind(wx.EVT_SHOW, self.OnShow)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         
