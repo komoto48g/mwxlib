@@ -247,7 +247,7 @@ class Thread:
 class LayerInterface(CtrlInterface):
     """Graphman.Layer interface mixin.
     
-    The layer properties can be switched by the following classvars::
+    The layer properties can be configured using the following class variables::
     
         menukey:  menu item key:str in parent menubar
         category: title of notebook holder, otherwise None for single pane

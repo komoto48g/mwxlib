@@ -706,21 +706,25 @@ class GraphPlot(MatplotPanel):
         self._linesel = None
         self.selected.set_picker(8)
         self.selected.set_clip_on(False)
-        
-        ## Image byte limit for loading matplotlib (with wxAgg backend).
-        self.nbytes_threshold = 24e6
-        
-        ## Image cutoff limit percentiles.
-        self.cutoff_threshold = 0.005
-        
-        ## Default interpolation mode for antialiasing.
-        self.interpolation_mode = 'bilinear'
-        
-        ## Enable colour for images.
-        self.enable_colour = True
-        
-        ## Limit number of markers to display. 負荷低減のため最大(表示)数を制限する．
-        self.maxnum_markers = 1000
+
+    ## Image byte limit for loading matplotlib (with wxAgg backend).
+    nbytes_threshold = 24e6
+
+    ## Image cutoff limit percentiles.
+    cutoff_threshold = 0.005
+
+    ## Default interpolation mode for antialiasing.
+    interpolation_mode = 'bilinear'
+
+    ## Enable colour for images.
+    enable_colour = True
+
+    ## Limit number of markers to display. 負荷低減のため最大(表示)数を制限する．
+    maxnum_markers = 1000
+
+    ## Global variables shared between GraphPlot instances. GraphPlot 間共有のグローバル変数．
+    CLIPBOARD_NAME = None
+    CLIPBOARD_DATA = None
 
     @property
     def overlay_artists(self):
@@ -1097,9 +1101,6 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     ## 外部入出力／複合インターフェース．
     ## --------------------------------
-    ## GraphPlot 間共有のグローバル変数
-    CLIPBOARD_NAME = None
-    CLIPBOARD_DATA = None
 
     def write_buffer_to_clipboard(self):
         """Write buffer data to clipboard."""

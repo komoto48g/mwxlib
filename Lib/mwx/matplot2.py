@@ -345,6 +345,10 @@ class MatplotPanel(wx.Panel):
         ## Cached image of canvas.
         self.background = None
 
+    ## Global settings for the zoom step and limit.
+    ZOOM_RATIO = 10 ** 0.2
+    ZOOM_LIMIT = 0.1  # Logical lower limit <= epsilon.
+
     @property
     def overlay_artists(self):
         return [self.selected]
@@ -663,9 +667,6 @@ class MatplotPanel(wx.Panel):
     ## --------------------------------
     ## Draw and Pan/Zoom actions.
     ## --------------------------------
-
-    ZOOM_RATIO = 10 ** 0.2
-    ZOOM_LIMIT = 0.1  # logical limit <= epsilon
 
     def OnDraw(self, evt):
         """Called before the canvas is drawn."""
