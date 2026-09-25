@@ -2976,7 +2976,6 @@ class Nautilus(EditorInterface, Shell):
                   'M-j pressed' : (0, _F(self.exec_region)),
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpDoc),
-                  'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
                     '. pressed' : (2, self.OnEnterDot),
@@ -2999,8 +2998,6 @@ class Nautilus(EditorInterface, Shell):
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
              'S-right released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, _F(self._on_completion, step=1)),  # 古いヒストリへ進む
-                'S-tab pressed' : (1, _F(self._on_completion, step=-1)),  # 新しいヒストリへ戻る
                   'M-p pressed' : (1, _F(self._on_completion, step=1)),
                   'M-n pressed' : (1, _F(self._on_completion, step=-1)),
             '[a-z0-9_] pressed' : (1, skip),
