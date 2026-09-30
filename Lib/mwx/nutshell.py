@@ -2286,7 +2286,7 @@ class Buffer(EditorInterface, EditWindow):
             self.AnnotationClearAll()
 
 
-class EditorBook(AuiNotebook):
+class EditorBook(AuiNotebook, CtrlInterface):
     """Python code editor.
     
     Args:
@@ -2306,6 +2306,7 @@ class EditorBook(AuiNotebook):
     def __init__(self, parent, name="book", **kwargs):
         kwargs.setdefault('style', aui.AUI_NB_DEFAULT_STYLE)
         AuiNotebook.__init__(self, parent, **kwargs)
+        CtrlInterface.__init__(self)
         
         ## The treeview of books will be displayed on the bookshelf.
         ## So we set the tabs' height to zero to hide them.

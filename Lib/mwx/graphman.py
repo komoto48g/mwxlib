@@ -109,6 +109,7 @@ class Thread:
         yield self
 
     def _binds(self, event, action):
+        ## Append a one-time transaction to the context.
         @wraps(action)
         def _act(*v, **kw):
             try:
@@ -946,24 +947,34 @@ class Frame(mwx.Frame):
         return mwx.Frame.Destroy(self)
 
     def _update_moving_status(self, status):
+        ## リサイズイベントを送出する．
         for pane in self._mgr.GetAllPanes():
-            if pane.IsDocked() and pane.IsShown():
-                pane.window.handler('resize_start' if status else 'resize_end')
+            try:
+                if pane.IsDocked() and pane.IsShown():
+                    pane.window.handler('resize_start' if status else 'resize_end')
+            except AttributeError:
+                pass
 
     def _update_docking_status(self):
+        ## ドッキング状態を更新し，ドッキングイベントを送出する．
+        ## フローティングウィンドウにリサイズイベントをバインドする．
         for pane in self._mgr.GetAllPanes():
             status = pane.IsDocked()
             prev = self._prev_docking_status.get(pane.name)
             if prev is None or prev != status:
-                pane.window.handler("pane_docked" if status else "pane_undocked")
                 self._prev_docking_status[pane.name] = status
-                if not status:
-                    ## The pane is undocked and reparented to a new AuiFloatingFrame.
-                    def _bind_move_handlers(win):
-                        assert isinstance(win.TopLevelParent, aui.AuiFloatingFrame)
-                        win.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: win.handler('resize_start'))
-                        win.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: win.handler('resize_end'))
-                    _bind_move_handlers(pane.window)
+                try:
+                    pane.window.handler("pane_docked" if status else "pane_undocked")
+                    if not status:
+                        ## The pane is undocked and reparented to a new AuiFloatingFrame.
+                        ## Late binding of closure variable `win` in lambdas.
+                        def _bind_move_events(win):
+                            assert isinstance(win.TopLevelParent, aui.AuiFloatingFrame)
+                            win.TopLevelParent.Bind(wx.EVT_MOVE_START, lambda v: win.handler('resize_start'))
+                            win.TopLevelParent.Bind(wx.EVT_MOVE_END, lambda v: win.handler('resize_end'))
+                        _bind_move_events(pane.window)
+                except AttributeError:
+                    pass
 
     def OnMoveStart(self, evt):
         self._update_moving_status(True)

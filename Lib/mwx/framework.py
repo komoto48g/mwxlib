@@ -857,7 +857,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
             self.Hide()  # Don't destroy the window
 
 
-class AuiNotebook(aui.AuiNotebook, CtrlInterface):
+class AuiNotebook(aui.AuiNotebook):
     """AuiNotebook extension class.
     """
     def __init__(self, parent, *args, name=None, **kwargs):
@@ -867,7 +867,6 @@ class AuiNotebook(aui.AuiNotebook, CtrlInterface):
                                  | aui.AUI_NB_SCROLL_BUTTONS
         )
         aui.AuiNotebook.__init__(self, parent, *args, **kwargs)
-        CtrlInterface.__init__(self)
         
         self.parent = parent  # parent<ShellFrame>
         self._mgr = aui.AuiManager.GetManager(self)  # <wx._aui.AuiManager>
