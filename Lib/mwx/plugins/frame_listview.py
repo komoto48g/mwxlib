@@ -45,10 +45,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return filter(self.IsItemChecked, range(self.ItemCount))
 
     @property
-    def focused_item(self):
-        return self.FocusedItem
-
-    @property
     def all_items(self):
         rows = range(self.ItemCount)
         cols = range(self.ColumnCount)
@@ -88,6 +84,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
                   'M-a pressed' : (0, self.OnEditAnnotation),
+                  'M-u pressed' : (0, self.OnEditUnit),
                  'M-up pressed' : (0, self.target.OnPageUp),
                'M-down pressed' : (0, self.target.OnPageDown),
               'M-enter pressed' : (0, self.OnShowAttributes),
@@ -112,9 +109,13 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target.handler.append(self.context)
         
         self.menu = [
+            (wx.ID_ANY, "Edit unit\tM-u", Icon('calc'),
+                self.OnEditUnit,
+                lambda v: v.Enable(self.FocusedItem != -1)),
+            
             (wx.ID_ANY, "Edit annotation\tM-a", Icon('pencil'),
                 self.OnEditAnnotation,
-                lambda v: v.Enable(self.focused_item != -1)),
+                lambda v: v.Enable(self.FocusedItem != -1)),
             (),
             (wx.ID_ANY, "Show attributes\tM-enter", Icon('copy'),
                 self.OnShowAttributes,
@@ -148,7 +149,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.CheckItem(j, frame.pathname is not None)
 
     def OnShowItems(self, evt):
-        self.target.select(self.focused_item)
+        self.target.select(self.FocusedItem)
 
     def OnRemoveItems(self, evt):
         # del self.target[self.selected_items]
@@ -201,10 +202,12 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             if x > pos.x:
                 break
             col += 1
-        if col == 7:
+        if col == 5:
+            self.OnEditUnit(evt)
+        elif col == 7:
             self.OnEditAnnotation(evt)
         else:
-            self.OnShowAttributes(evt)
+            self.OnShowItems(evt)
 
     def OnShowAttributes(self, evt):
         def _pf(frame):
@@ -216,14 +219,43 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.info_dlg.ShowModal()
         self.SetFocus()
 
+    def OnEditUnit(self, evt):
+        indices = list(self.selected_items) or [self.FocusedItem]
+        selected_frames = [self.target.frames[j] for j in indices]
+        value = self.Edit(self.FocusedItem, 5)
+        if value is not None:
+            try:
+                u = float(value.strip('*'))
+            except ValueError as e:
+                self.parent.message("Reset to global unit.")
+                u = None
+            for frame in selected_frames:
+                if u != frame.parent.unit or value.endswith('*'):
+                    frame.unit = u
+                else:
+                    frame.unit = None
+
     def OnEditAnnotation(self, evt):
-        frame = self.target.frames[self.focused_item]
-        with wx.TextEntryDialog(self, frame.name,
-                "Enter an annotation", frame.annotation,
-                style=wx.TextEntryDialogStyle | wx.TE_MULTILINE) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                frame.annotation = dlg.Value
-        self.SetFocus()
+        frame = self.target.frames[self.FocusedItem]
+        value = self.Edit(self.FocusedItem, 7)
+        if value is not None:
+            frame.annotation = value
+
+    def Edit(self, row, col):
+        lw = [self.GetColumnWidth(c) for c in range(len(self._alist))]
+        rect = self.GetItemRect(row)
+        text = self.GetItemText(row, col)
+        try:
+            with InfoDialog(self,
+                    title="Annotation",
+                    pos=self.ClientToScreen((sum(lw[:col]), rect.y)),
+                    size=(lw[col], rect.height * max(2, text.count('\n'))),
+                    style=wx.BORDER_STATIC) as dlg:
+                dlg.Value = text
+                if dlg.ShowModal() == wx.ID_OK:
+                    return dlg.Value
+        finally:
+            self.SetFocus()
 
     ## --------------------------------
     ## Actions of frame-handler.
