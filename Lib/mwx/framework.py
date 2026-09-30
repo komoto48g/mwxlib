@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.11.10"
+__version__ = "1.12.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -216,10 +216,15 @@ class KeyCtrlInterfaceMixin:
     def post_message(self, *args, **kwargs):
         wx.CallAfter(self.message, *args, **kwargs)
 
-    msgbox = wx.MessageBox
-
     def post_msgbox(self, *args, **kwargs):
-        wx.CallAfter(self.msgbox, *args, **kwargs)
+        wx.CallAfter(wx.MessageBox, *args, **kwargs)
+
+    def __echo(self, *args):
+        if self.__verbose:
+            self.message(*args)
+
+    def __init__(self, verbose=True):
+        self.__verbose = verbose
 
     @staticmethod
     def getKeyState(key):
@@ -251,11 +256,7 @@ class KeyCtrlInterfaceMixin:
             pass
 
     def make_keymap(self, map):
-        ## """Make a basis of extension map in the handler (internal use only)."""
-        def _Pass(evt):
-            self.message(map, evt.key)
-        _Pass.__name__ = "pass"
-        
+        ## """Make an extension map in the handler (internal use only)."""
         state = self.handler.default_state
         event = map + ' pressed'
         
@@ -269,10 +270,10 @@ class KeyCtrlInterfaceMixin:
                          'quit' : [state, ],
                     '* pressed' : [state, self.on_exit_keymap],
                    '* released' : [map, self.dispatch],
-                 '*alt pressed' : [map, _Pass],
-                '*ctrl pressed' : [map, _Pass],
-               '*shift pressed' : [map, _Pass],
-             '*[LR]win pressed' : [map, _Pass],
+                 '*alt pressed' : [map, ],
+                '*ctrl pressed' : [map, ],
+               '*shift pressed' : [map, ],
+             '*[LR]win pressed' : [map, ],
             },
         })
 
@@ -284,7 +285,7 @@ class KeyCtrlInterfaceMixin:
           or isinstance(wnd, stc.StyledTextCtrl) and wnd.SelectedText:
             self.handler('quit', evt)
         else:
-            self.message(evt.key + '-')
+            self.__echo(evt.key + '-')
         evt.Skip()
 
     def on_exit_keymap(self, evt):
@@ -293,7 +294,7 @@ class KeyCtrlInterfaceMixin:
         if isinstance(self, wx.TopLevelWindow):  # not isinstance(self, CtrlInterface):
             return
         map = self.handler.previous_state
-        self.message(map, evt.key)
+        self.__echo(map, evt.key)
         evt.Skip()
 
     def define_key(self, keymap, action=None, /, *args, **kwargs):
@@ -326,14 +327,12 @@ class KeyCtrlInterfaceMixin:
             self.handler[map].pop(key, None)  # cf. undefine_key
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
-        F = _F(action, *args, **kwargs)
+        def _(*v, **kw):
+            self.dispatch(*v, **kw)
+            self.__echo(action.__name__)
         
-        @wraps(F)
-        def f(*v, **kw):
-            self.message(f.__name__)  # echo message
-            return F(*v, **kw)
-        
-        self.handler.update({map: {key: [state, f]}})
+        f = _F(action, *args, **kwargs)
+        self.handler.update({map: {key: [state, _, f]}})
         return action
 
     @ignore(UserWarning)
@@ -347,7 +346,9 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
     """
     handler = property(lambda self: self.__handler)
 
-    def __init__(self):
+    def __init__(self, verbose=True):
+        KeyCtrlInterfaceMixin.__init__(self, verbose)
+        
         self.__key = ''
         self.__button = ''
         self.__isDragging = False
@@ -743,6 +744,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
 
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
+        KeyCtrlInterfaceMixin.__init__(self)
         
         self.shellframe = ShellFrame(None, target=self, session='')
         
@@ -814,6 +816,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
 
     def __init__(self, *args, **kwargs):
         wx.MiniFrame.__init__(self, *args, **kwargs)
+        KeyCtrlInterfaceMixin.__init__(self)
         
         ## To disable, call self.SetMenuBar(None).
         self.menubar = MenuBar()
