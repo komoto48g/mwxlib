@@ -39,10 +39,12 @@ class Debugger(Pdb):
         C-S-n   : Continue execution until the lineno of the code.
         C-w     : Stamp current where(frame) message.
     """
-    verbose = False
-    use_rawinput = False
+    verbose = False  # Interactive shell verbosity.
+    use_rawinput = False  # cf. Pdb
+
     prompt = property(lambda self: self.indents + '(Pdb) ',
                       lambda self, v: None)  # fake setter
+
     handler = property(lambda self: self.__handler)
 
     @property
