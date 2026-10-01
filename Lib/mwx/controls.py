@@ -766,7 +766,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             self.set_params(text.split('\t'), checked_only)
 
 
-class ControlPanel(CtrlInterface, KnobCtrlPanel):
+class ControlPanel(KnobCtrlPanel, CtrlInterface):
     """Control panel with mouse/key event interface.
     """
     def __init__(self, *args, **kwargs):

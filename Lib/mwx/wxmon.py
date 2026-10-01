@@ -20,8 +20,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         target: widget to monitor
     """
     def __init__(self, parent, **kwargs):
-        wx.ListCtrl.__init__(self, parent,
-                             style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
@@ -103,13 +102,13 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         self._target = widget
         self.target = widget
-        ssmap = self.dump(widget, verbose=0)
+        ssmap = self._dump(widget, verbose=0)  # Currently deprecated.
         for binder in self.get_watchlist():
             event = binder.typeId
             try:
                 widget.Bind(binder, self.onWatchedEvent)
                 if event in ssmap:
-                    self.append(event)
+                    self._append(event)  # Currently deprecated.
             except Exception as e:
                 name = self.get_name(event)
                 print(" #{:6d}:{:32s}{!s}".format(event, name, e))
@@ -132,7 +131,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.update(evt)
         evt.Skip()
 
-    def dump(self, widget, verbose=True):
+    def _dump(self, widget, verbose=True):
         """Dump all event handlers bound to the widget."""
         ## Note: This will not work unless [Monkey-patch for wx.core] is applied.
         ##       This is currently deprecated (see below).
@@ -171,16 +170,16 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 attribs = ew._makeAttribString(evt)
         except Exception:
             attribs = ''  # Failed to get event attributes; possibly <BdbQuit>.
-        data = self._items
-        for i, item in enumerate(data):  # noqa # i used as a counter
+        
+        for i, item in enumerate(self._items):  # noqa # i used as a counter
             if item[0] == event:
                 stamp = item[2] + 1
                 item[1:] = [name, stamp, source, attribs]
                 break
         else:
-            i = len(data)
+            i = len(self._items)
             item = [event, name, stamp, source, attribs]
-            data.append(item)
+            self._items.append(item)
             self.InsertItem(i, event)
         
         for j, v in enumerate(item[:-1]):
@@ -192,15 +191,14 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         self.blink(i)
 
-    def append(self, event):
-        data = self._items
-        if event in (item[0] for item in data):
+    def _append(self, event):
+        if event in (item[0] for item in self._items):
             return
         
-        i = len(data)
+        i = len(self._items)
         name = self.get_name(event)
         item = [event, name, 0, '-', 'no data']
-        data.append(item)
+        self._items.append(item)
         self.InsertItem(i, event)
         for j, v in enumerate(item[:-1]):
             self.SetItem(i, j, str(v))

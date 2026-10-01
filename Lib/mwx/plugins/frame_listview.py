@@ -51,8 +51,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return [[self.GetItemText(j, k) for k in cols] for j in rows]
 
     def __init__(self, parent, target, **kwargs):
-        wx.ListCtrl.__init__(self, parent, size=(400,130),
-                             style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
@@ -121,8 +120,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.OnShowAttributes,
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]
-        self.Bind(wx.EVT_CONTEXT_MENU,
-                  lambda v: Menu.Popup(self, self.menu))
+        self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))
         
         self.info_dlg = InfoDialog(self,
                             title="Attributes", size=(480, -1),
