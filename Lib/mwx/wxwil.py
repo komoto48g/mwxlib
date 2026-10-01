@@ -36,12 +36,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target = None
         self._dir = True  # sort direction
         self._items = []  # list of data:str
-        
-        _alist = (
+        self._alist = (
             ("key", 140),
             ("value", 0),
         )
-        for k, (header, w) in enumerate(_alist):
+        for k, (header, w) in enumerate(self._alist):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)

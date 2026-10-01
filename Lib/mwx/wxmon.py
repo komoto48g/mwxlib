@@ -33,14 +33,13 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self._target = None  # previous target
         self._dir = True  # sort direction
         self._items = []
-        
-        _alist = (
+        self._alist = (
             ("typeId",    62),
             ("typeName", 200),
             ("stamp",     40),
             ("source",     0),
         )
-        for k, (header, w) in enumerate(_alist):
+        for k, (header, w) in enumerate(self._alist):
             self.InsertColumn(k, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)

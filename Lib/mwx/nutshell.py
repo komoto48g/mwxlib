@@ -162,7 +162,7 @@ class AutoCompInterfaceMixin:
     
     Mode name           Mode vars.
     --------------------------------
-    [1] history-comp    history (an instance variable of the Shell)
+    [1] history-comp    history     (Shell only)
     [2] word-comp       -
     [3] apropos-comp    -
     [4] text-comp       fragmwords
@@ -171,16 +171,15 @@ class AutoCompInterfaceMixin:
     Note:
         This class is mixed-in ``wx.py.editwindow.EditWindow``.
     """
-    history = []     # used in history-comp mode
-    modules = set()  # used in module-comp mode
-    fragmwords = set(keyword.kwlist)  # used in text-comp mode
+    _modules = set()  # used in module-comp mode
+    _fragmwords = set(keyword.kwlist)  # used in text-comp mode
 
     def __init__(self):
         ## cf. sys.modules
-        if not self.modules:
+        if not self._modules:
             force = wx.GetKeyState(wx.WXK_CONTROL)\
                   & wx.GetKeyState(wx.WXK_SHIFT)
-            AutoCompInterfaceMixin.modules = set(find_modules(force))
+            AutoCompInterfaceMixin._modules = set(find_modules(force))
 
     def info(self, obj):
         """Short information."""
@@ -353,9 +352,9 @@ class AutoCompInterfaceMixin:
         cmdl = self.GetTextRange(self.bol, self.cpos)
         hint = re.search(r"[\w.]*$", cmdl).group(0)  # extract the last word
         
-        ## ls = [x for x in self.fragmwords if x.startswith(hint)]  # case-sensitive match
+        ## ls = [x for x in self._fragmwords if x.startswith(hint)]  # case-sensitive match
         q = hint.lower()
-        ls = [x for x in self.fragmwords if x.lower().startswith(q)]  # case-insensitive match
+        ls = [x for x in self._fragmwords if x.lower().startswith(q)]  # case-insensitive match
         words = sorted(ls, key=lambda s: s.upper())
         
         self._gen_autocomp(0, hint, words)
@@ -397,7 +396,7 @@ class AutoCompInterfaceMixin:
                 else:
                     ## Add unimported module names (case-insensitive match).
                     q = f"{text}.{hint}".lower()
-                    keys = [x[len(text)+1:] for x in self.modules if x.lower().startswith(q)]
+                    keys = [x[len(text)+1:] for x in self._modules if x.lower().startswith(q)]
                     modules.update(k for k in keys if '.' not in k)
             ## import ...
             elif (m := re.match(r"(import|from)\s+(.*)", cmdl)):
@@ -405,7 +404,7 @@ class AutoCompInterfaceMixin:
                 if not _continue(hints) and not force:
                     self.message("[module]>>> waiting for key input...")
                     return
-                modules = self.modules
+                modules = self._modules
             ## Module X.Y.Z
             else:
                 text, sep, hint = self._gen_words_hint()
@@ -2978,7 +2977,6 @@ class Nautilus(EditorInterface, Shell):
                   'M-j pressed' : (0, _F(self.exec_region)),
                   'C-h pressed' : (0, self.call_helpTip),
                   'M-h pressed' : (0, self.call_helpDoc),
-                  'tab pressed' : (1, self.call_history_comp),
                   'M-p pressed' : (1, self.call_history_comp),
                   'M-n pressed' : (1, self.call_history_comp),
                     '. pressed' : (2, self.OnEnterDot),
@@ -3001,8 +2999,6 @@ class Nautilus(EditorInterface, Shell):
               'S-left released' : (1, self.call_history_comp),
               'S-right pressed' : (1, skip),
              'S-right released' : (1, self.call_history_comp),
-                  'tab pressed' : (1, _F(self._on_completion, step=1)),  # 古いヒストリへ進む
-                'S-tab pressed' : (1, _F(self._on_completion, step=-1)),  # 新しいヒストリへ戻る
                   'M-p pressed' : (1, _F(self._on_completion, step=1)),
                   'M-n pressed' : (1, _F(self._on_completion, step=-1)),
             '[a-z0-9_] pressed' : (1, skip),
@@ -3588,7 +3584,7 @@ class Nautilus(EditorInterface, Shell):
             noerr = self.on_text_output(output)
             if noerr:
                 words = re.findall(r"\b[a-zA-Z_][\w.]+", input + output)
-                self.fragmwords |= set(words)
+                self._fragmwords |= set(words)
             command = self.fixLineEndings(command)
             self.parent.handler('add_log', command + os.linesep, noerr)
         except AttributeError:

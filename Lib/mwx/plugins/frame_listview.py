@@ -12,17 +12,21 @@ from mwx.controls import Icon
 from mwx.graphman import Layer
 
 
-class InfoDialog(wx.Dialog):
+class InfoDialog(wx.Dialog, CtrlInterface):
+    """Modal dialog for displaying text information.
+    """
+    Value = property(
+        lambda self: self._ctrl.GetValue(),
+        lambda self, v: self._ctrl.SetValue(v))
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        wx.Dialog.__init__(self, *args, **kwargs)
+        CtrlInterface.__init__(self)
         
-        self.textctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.TE_READONLY)
-        self.SetSizer(
-            pack(self, (
-                (self.textctrl, 1, wx.ALL | wx.EXPAND, 10),
-                wx.Button(self, wx.ID_CANCEL, size=(0,0)),  # for closing with [escape]
-            ))
-        )
+        self._ctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.BORDER_NONE)
+        
+        self.handler.bind('enter pressed', lambda v: self.EndModal(wx.ID_OK))
+        self.handler.bind('escape pressed', lambda v: self.EndModal(wx.ID_CANCEL))
 
 
 class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
@@ -41,10 +45,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return filter(self.IsItemChecked, range(self.ItemCount))
 
     @property
-    def focused_item(self):
-        return self.FocusedItem
-
-    @property
     def all_items(self):
         rows = range(self.ItemCount)
         cols = range(self.ColumnCount)
@@ -61,8 +61,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.parent = parent
         self.target = target
         self._dir = True
-        
-        _alist = (  # assoc-list of column names
+        self._alist = (
             ("id", 45),
             ("name", 160),
             ("shape", 90),
@@ -72,8 +71,8 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             ("timestamp", 120),
             ("annotation", 240),
         )
-        for k, (name, w) in enumerate(_alist):
-            self.InsertColumn(k, name, width=w)
+        for col, (name, w) in enumerate(self._alist):
+            self.InsertColumn(col, name, width=w)
         
         for j, frame in enumerate(self.target.get_all_frames()):
             self.InsertItem(j, str(j))
@@ -81,13 +80,15 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.handler.update({  # DNA<frame_listview>
             0 : {
-             'Lbutton dblclick' : (0, self.OnShowItems),  # -> frame_shown
                 'enter pressed' : (0, self.OnShowItems),  # -> frame_shown
                'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
-                   'f2 pressed' : (0, self.OnEditAnnotation),
+                  'M-a pressed' : (0, self.OnEditAnnotation),
+                  'M-u pressed' : (0, self.OnEditUnit),
                  'M-up pressed' : (0, self.target.OnPageUp),
                'M-down pressed' : (0, self.target.OnPageDown),
+              'M-enter pressed' : (0, self.OnShowAttributes),
+             'Lbutton dblclick' : (0, self.OnLeftDClick),
             },
         })
         self.handler.clear(0)
@@ -108,11 +109,15 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target.handler.append(self.context)
         
         self.menu = [
-            (wx.ID_ANY, "Edit annotation\tF2", Icon('pencil'),
+            (wx.ID_ANY, "Edit unit\tM-u", Icon('calc'),
+                self.OnEditUnit,
+                lambda v: v.Enable(self.FocusedItem != -1)),
+            
+            (wx.ID_ANY, "Edit annotation\tM-a", Icon('pencil'),
                 self.OnEditAnnotation,
-                lambda v: v.Enable(self.focused_item != -1)),
+                lambda v: v.Enable(self.FocusedItem != -1)),
             (),
-            (wx.ID_ANY, "Show attributes", Icon('copy'),
+            (wx.ID_ANY, "Show attributes\tM-enter", Icon('copy'),
                 self.OnShowAttributes,
                 lambda v: v.Enable(len(list(self.selected_items)))),
         ]
@@ -144,7 +149,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.CheckItem(j, frame.pathname is not None)
 
     def OnShowItems(self, evt):
-        self.target.select(self.focused_item)
+        self.target.select(self.FocusedItem)
 
     def OnRemoveItems(self, evt):
         # del self.target[self.selected_items]
@@ -184,22 +189,73 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         for j in range(self.ItemCount):
             self.Select(j)
 
+    def OnLeftDClick(self, evt):
+        pos = evt.Position
+        row, flags = self.HitTest(pos)
+        if row < 0:
+            evt.Skip()
+            return
+        col = 0
+        x = 0
+        while 1:
+            x += self.GetColumnWidth(col)
+            if x > pos.x:
+                break
+            col += 1
+        if col == 5:
+            self.OnEditUnit(evt)
+        elif col == 7:
+            self.OnEditAnnotation(evt)
+        else:
+            self.OnShowItems(evt)
+
     def OnShowAttributes(self, evt):
+        def _pf(frame):
+            return f"# {frame.name}\n" + pformat(frame.attributes, sort_dicts=0)
+        
         selected_frames = [self.target.frames[j] for j in self.selected_items]
         if selected_frames:
-            text = '\n'.join(pformat(frame.attributes, sort_dicts=0)
-                             for frame in selected_frames)
-            self.info_dlg.textctrl.Value = text
+            self.info_dlg.Value = '\n\n'.join(_pf(frame) for frame in selected_frames)
             self.info_dlg.ShowModal()
         self.SetFocus()
 
+    def OnEditUnit(self, evt):
+        indices = list(self.selected_items) or [self.FocusedItem]
+        selected_frames = [self.target.frames[j] for j in indices]
+        value = self.Edit(self.FocusedItem, 5)
+        if value is not None:
+            try:
+                u = float(value.strip('*'))
+            except ValueError as e:
+                self.parent.message("Reset to global unit.")
+                u = None
+            for frame in selected_frames:
+                if u != frame.parent.unit or value.endswith('*'):
+                    frame.unit = u
+                else:
+                    frame.unit = None
+
     def OnEditAnnotation(self, evt):
-        frame = self.target.frames[self.focused_item]
-        with wx.TextEntryDialog(self, frame.name,
-                "Enter an annotation", frame.annotation) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                frame.annotation = dlg.Value
-        self.SetFocus()
+        frame = self.target.frames[self.FocusedItem]
+        value = self.Edit(self.FocusedItem, 7)
+        if value is not None:
+            frame.annotation = value
+
+    def Edit(self, row, col):
+        lw = [self.GetColumnWidth(c) for c in range(len(self._alist))]
+        rect = self.GetItemRect(row)
+        text = self.GetItemText(row, col)
+        try:
+            with InfoDialog(self,
+                    title="Annotation",
+                    pos=self.ClientToScreen((sum(lw[:col]), rect.y)),
+                    size=(lw[col], rect.height * max(2, text.count('\n'))),
+                    style=wx.BORDER_STATIC) as dlg:
+                dlg.Value = text
+                if dlg.ShowModal() == wx.ID_OK:
+                    return dlg.Value
+        finally:
+            self.SetFocus()
 
     ## --------------------------------
     ## Actions of frame-handler.
