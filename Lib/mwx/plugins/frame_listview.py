@@ -44,12 +44,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def checked_items(self):
         return filter(self.IsItemChecked, range(self.ItemCount))
 
-    @property
-    def all_items(self):
-        rows = range(self.ItemCount)
-        cols = range(self.ColumnCount)
-        return [[self.GetItemText(j, k) for k in cols] for j in rows]
-
     def __init__(self, parent, target, **kwargs):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
@@ -75,7 +69,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         for j, frame in enumerate(self.target.get_all_frames()):
             self.InsertItem(j, str(j))
-            self.UpdateInfo(frame)  # update all --> 計算が入ると時間がかかる
+            self.update_items(frame)  # update all --> 計算が入ると時間がかかる
         
         self.handler.update({  # DNA<frame_listview>
             0 : {
@@ -101,8 +95,8 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                  'frame_hidden' : [None, self.on_frame_hidden],
                  'frame_loaded' : [None, self.on_frame_loaded],
                 'frame_removed' : [None, self.on_frames_removed],
-               'frame_modified' : [None, self.UpdateInfo],
-                'frame_updated' : [None, self.UpdateInfo],
+               'frame_modified' : [None, self.update_items],
+                'frame_updated' : [None, self.update_items],
             }
         }
         self.target.handler.append(self.context)
@@ -130,7 +124,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target.handler.remove(self.context)
         return wx.ListCtrl.Destroy(self)
 
-    def UpdateInfo(self, frame):
+    def update_items(self, frame):
         info = {
             "id"    : frame.index,
             "name"  : frame.name,
@@ -146,6 +140,28 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetItem(j, k, str(v))
         self.CheckItem(j, frame.pathname is not None)
 
+    def sort_items(self, col):
+        def _eval(r):
+            try:
+                return eval(r[col].rstrip('*'))  # float(localunit*) 文字列ソート用
+            except Exception:
+                return r[col]
+        
+        if col == 0:  # always reverse the first column
+            self._dir = False
+        self._dir = not self._dir  # toggle 0:ascend/1:descend
+        
+        items = [[self.GetItemText(i, j) for j in range(self.ColumnCount)]
+                                        for i in range(self.ItemCount)]
+        items.sort(key=_eval, reverse=self._dir)
+        self.target.sort_frames(int(c[0]) for c in items)
+        lc = list(self.checked_items)
+        for i, c in enumerate(items):
+            for j, v in enumerate(c[1:]):  # update data except for id(0)
+                self.SetItem(i, j+1, v)
+            self.Select(i, False)
+            self.CheckItem(i, int(c[0]) in lc)
+
     def OnShowItems(self, evt):
         self.target.select(self.FocusedItem)
 
@@ -155,30 +171,12 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.SetFocus()
 
     def OnSortItems(self, evt):  # <wx._core.ListEvent>
-        col = evt.Column
-        if col == 0:  # reverse the first column
-            self._dir = False
-        self._dir = not self._dir  # toggle 0:ascend/1:descend
-        
         frame = self.target.frame
         if frame:
-            def _eval(x):
-                try:
-                    return eval(x[col].replace('*', ''))  # localunit* とか
-                except Exception:
-                    return x[col]
-            items = sorted(self.all_items, reverse=self._dir, key=_eval)
-            self.target.sort_frames(int(c[0]) for c in items)
-            
-            lc = list(self.checked_items)
-            for j, c in enumerate(items):
-                self.Select(j, False)
-                self.CheckItem(j, int(c[0]) in lc)
-                for k, v in enumerate(c[1:]):  # update data except for id(0)
-                    self.SetItem(j, k+1, v)
+            self.sort_items(evt.Column)
             self.target.select(frame)  # invokes [frame_shown] to select the item
 
-    def OnItemSelected(self, evt):
+    def OnItemSelected(self, evt):  # <wx._core.ListEvent>
         frame = self.target.frames[evt.Index]
         self.parent.message(frame.pathname)
         evt.Skip()
@@ -264,7 +262,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.InsertItem(j, str(j))
         for k in range(j+1, self.ItemCount):  # id(0) を更新する
             self.SetItem(k, 0, str(k))
-        self.UpdateInfo(frame)
+        self.update_items(frame)
 
     def on_frame_shown(self, frame):
         j = frame.index
