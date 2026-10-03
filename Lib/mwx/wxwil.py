@@ -47,7 +47,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         @self.handler.bind('C-c pressed')
         def copy(evt):
-            self.copy()
+            self.copy_items()
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
 
@@ -69,12 +69,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         try:
             self.Freeze()
             self.DeleteAllItems()
-            data = self._items
             for key, value in self.target.items():
                 vstr = _repr(value)
-                i = len(data)
+                i = len(self._items)
                 item = [key, vstr]
-                data.append(item)
+                self._items.append(item)
                 self.InsertItem(i, key)
                 self.SetItem(i, 1, vstr)
                 self.blink(i)
@@ -129,7 +128,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallAfter(wx.CallLater, 1000, _reset)
 
-    def copy(self):
+    def copy_items(self):
         if not self.SelectedItemCount:
             return
         text = ''
@@ -139,29 +138,27 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 text += "{} = {}\n".format(key, vstr)
         Clipboard.write(text)
 
-    def OnSortItems(self, evt):  # <wx._core.ListEvent>
-        n = self.ItemCount
-        if n < 2:
-            return
-        
-        data = self._items
-        fi = data[self.FocusedItem]
-        ls = [data[i] for i in range(n) if self.IsSelected(i)]
-        
-        col = evt.Column
+    def sort_items(self, col):
         self._dir = not self._dir
-        data.sort(key=lambda v: v[col].upper(), reverse=self._dir)
+        rows = [(item, self.IsSelected(i),
+                       self.FocusedItem == i) for i, item in enumerate(self._items)]
+        rows.sort(key=lambda r: r[0][col], reverse=self._dir)
+        self._items[:] = [r[0] for r in rows]
         
-        for i, item in enumerate(data):
+        for i, (item, sel, focused) in enumerate(rows):
             for j, v in enumerate(item):
                 self.SetItem(i, j, v)
-            self.Select(i, item in ls)
-            if item == fi:
+            self.Select(i, sel)
+            if focused:
                 self.Focus(i)
+
+    def OnSortItems(self, evt):  # <wx._core.ListEvent>
+        if self.ItemCount > 1:
+            self.sort_items(evt.Column)
 
     def OnContextMenu(self, evt):
         Menu.Popup(self, [
             (1, "Copy data", Icon('copy'),
-                lambda v: self.copy(),
+                lambda v: self.copy_items(),
                 lambda v: v.Enable(self.SelectedItemCount)),
         ])
