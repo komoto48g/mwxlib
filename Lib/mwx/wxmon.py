@@ -32,6 +32,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self._target = None  # previous target
         self._dir = True  # sort direction
         self._items = []
+        self._attribs = {}
         self._alist = (
             ("typeId",    62),
             ("typeName", 200),
@@ -157,7 +158,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
     def clear(self):
         self.DeleteAllItems()
-        del self._items[:]
+        self._items.clear()
+        self._attribs.clear()
 
     def update(self, evt):
         event = evt.EventType
@@ -169,20 +171,21 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 attribs = ew._makeAttribString(evt)
         except Exception:
             attribs = ''  # Failed to get event attributes; possibly <BdbQuit>.
+        self._attribs[event] = attribs
         
         for i, item in enumerate(self._items):  # noqa # i used as a counter
             if item[0] == event:
                 stamp = item[2] + 1
-                item[1:] = [name, stamp, source, attribs]
+                item[1:] = [name, stamp, source]
                 break
         else:
             stamp = 1
             i = len(self._items)
-            item = [event, name, stamp, source, attribs]
+            item = [event, name, stamp, source]
             self._items.append(item)
             self.InsertItem(i, event)
         
-        for j, v in enumerate(item[:-1]):
+        for j, v in enumerate(item):
             self.SetItem(i, j, str(v))
         
         if self.IsItemChecked(i):
@@ -200,7 +203,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         item = [event, name, 0, '-', 'no data']
         self._items.append(item)
         self.InsertItem(i, event)
-        for j, v in enumerate(item[:-1]):
+        for j, v in enumerate(item):
             self.SetItem(i, j, str(v))
         self.SetItemTextColour(i, 'blue')
         self.blink(i)
@@ -220,7 +223,8 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         text = ''
         for i in range(self.ItemCount):
             if self.IsSelected(i):
-                event, name, *_, attribs = self._items[i]
+                event, name, *_ = self._items[i]
+                attribs = self._attribs[event]
                 text += "{}\t{}\n{}\n\n".format(event, name, attribs)
         Clipboard.write(text[:-1])
 
@@ -234,7 +238,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self._items[:] = [r[0] for r in rows]
         
         for i, (item, sel, chk, color, focused) in enumerate(rows):
-            for j, v in enumerate(item[:-1]):  # exclude attribs
+            for j, v in enumerate(item):
                 self.SetItem(i, j, str(v))
             self.Select(i, sel)
             self.CheckItem(i, chk)
@@ -250,7 +254,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
     def OnItemActivated(self, evt):  # <wx._core.ListEvent>
         item = self._items[evt.Index]
-        wx.CallAfter(wx.TipWindow, self, item[-1], 512)  # display attribs
+        wx.CallAfter(wx.TipWindow, self, self._attribs[item[0]], 512)
 
     def OnContextMenu(self, evt):
         obj = self.target

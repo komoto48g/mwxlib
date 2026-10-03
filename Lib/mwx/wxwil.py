@@ -89,7 +89,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
     def clear(self):
         self.DeleteAllItems()
-        del self._items[:]
+        self._items.clear()
 
     def update(self):
         if not self.target:
