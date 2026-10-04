@@ -24,6 +24,14 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         parent: shellframe
         target: namespace to watch
     """
+    @property
+    def selected_items(self):
+        return filter(self.IsSelected, range(self.ItemCount))
+
+    @property
+    def checked_items(self):
+        return filter(self.IsItemChecked, range(self.ItemCount))
+
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
@@ -44,10 +52,6 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
-        
-        @self.handler.bind('C-c pressed')
-        def copy(evt):
-            self.copy_items()
         
         dispatcher.connect(receiver=self._update, signal='Interpreter.push')
 
@@ -131,12 +135,11 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def copy_items(self):
         if not self.SelectedItemCount:
             return
-        text = ''
-        for i in range(self.ItemCount):
-            if self.IsSelected(i):
-                key, vstr = self._items[i]
-                text += "{} = {}\n".format(key, vstr)
-        Clipboard.write(text)
+        lines = []
+        for i in self.selected_items:
+            key, vstr = self._items[i]
+            lines.append(f"{key} = {vstr}")
+        Clipboard.write('\n'.join(lines))
 
     def sort_items(self, col):
         self._dir = not self._dir

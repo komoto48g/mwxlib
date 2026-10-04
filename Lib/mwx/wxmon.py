@@ -19,6 +19,14 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         parent: shellframe
         target: widget to monitor
     """
+    @property
+    def selected_items(self):
+        return filter(self.IsSelected, range(self.ItemCount))
+
+    @property
+    def checked_items(self):
+        return filter(self.IsItemChecked, range(self.ItemCount))
+
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
@@ -52,10 +60,6 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             from wx import adv, aui, stc, media
             for module in (adv, aui, stc, media):
                 ew.addModuleEvents(module)
-        
-        @self.handler.bind('C-c pressed')
-        def copy(evt):
-            self.copy_items()
 
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -220,13 +224,12 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def copy_items(self):
         if not self.SelectedItemCount:
             return
-        text = ''
-        for i in range(self.ItemCount):
-            if self.IsSelected(i):
-                event, name, *_ = self._items[i]
-                attribs = self._attribs[event]
-                text += "{}\t{}\n{}\n\n".format(event, name, attribs)
-        Clipboard.write(text[:-1])
+        lines = []
+        for i in self.selected_items:
+            event, name, *_ = self._items[i]
+            attribs = self._attribs[event]
+            lines.append(f"{event}\t{name}\n{attribs}")
+        Clipboard.write("\n\n".join(lines))
 
     def sort_items(self, col):
         self._dir = not self._dir
