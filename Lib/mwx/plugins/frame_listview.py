@@ -53,19 +53,19 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.parent = parent
         self.target = target
-        self._dir = True
-        self._alist = (
-            ("id", 45),
-            ("name", 160),
-            ("shape", 90),
-            ("dtype", 60),
-            ("Mb",   40),
-            ("unit", 60),
-            ("timestamp", 120),
-            ("annotation", 240),
-        )
-        for col, (name, w) in enumerate(self._alist):
-            self.InsertColumn(col, name, width=w)
+        self._dir = True  # sort direction
+        self._alist = {
+            "id"    : 45,
+            "name"  : 160,
+            "shape" : 90,
+            "dtype" : 60,
+            "Mb"    : 40,
+            "unit"  : 60,
+            "timestamp": 120,
+            "annotation": 240,
+        }
+        for col, (header, w) in enumerate(self._alist.items()):
+            self.InsertColumn(col, header, width=w)
         
         for j, frame in enumerate(self.target.get_all_frames()):
             self.InsertItem(j, str(j))
@@ -150,12 +150,12 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self._dir = False
         self._dir = not self._dir  # toggle 0:ascend/1:descend
         
-        items = [[self.GetItemText(i, j) for j in range(self.ColumnCount)]
+        rows = [[self.GetItemText(i, j) for j in range(self.ColumnCount)]
                                         for i in range(self.ItemCount)]
-        items.sort(key=_eval, reverse=self._dir)
-        self.target.sort_frames(int(c[0]) for c in items)
+        rows.sort(key=_eval, reverse=self._dir)
+        self.target.sort_frames(int(c[0]) for c in rows)
         lc = list(self.checked_items)
-        for i, c in enumerate(items):
+        for i, c in enumerate(rows):
             for j, v in enumerate(c[1:]):  # update data except for id(0)
                 self.SetItem(i, j+1, v)
             self.Select(i, False)

@@ -42,13 +42,13 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.parent = parent
         self.target = None
         self._dir = True  # sort direction
-        self._items = []  # list of data:str
-        self._alist = (
-            ("key", 140),
-            ("value", 0),
-        )
-        for k, (header, w) in enumerate(self._alist):
-            self.InsertColumn(k, header, width=w)
+        self._items = []
+        self._alist = {
+            "key"   : 140,
+            "value" : 0,
+        }
+        for col, (header, w) in enumerate(self._alist.items()):
+            self.InsertColumn(col, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
@@ -98,26 +98,24 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def update(self):
         if not self.target:
             return
-        data = self._items
-        n = len(data)
-        for i, (k, v) in enumerate(data[::-1]):
-            if k not in self.target:
+        n = len(self._items)
+        for i, item in enumerate(self._items[::-1]):
+            if item[0] not in self.target:
                 j = n-i-1
                 self.DeleteItem(j)
-                del data[j]
+                del self._items[j]
         
         for key, value in self.target.items():
             vstr = _repr(value)
-            i = next((i for i, item in enumerate(data)
-                                    if item[0] == key), None)
+            i = next((i for i, item in enumerate(self._items) if item[0] == key), None)
             if i is not None:
-                if data[i][1] == vstr:
+                if self._items[i][1] == vstr:
                     continue
-                data[i][1] = vstr
+                self._items[i][1] = vstr
             else:
-                i = len(data)
+                i = len(self._items)
                 item = [key, vstr]
-                data.append(item)
+                self._items.append(item)
                 self.InsertItem(i, key)
             self.SetItem(i, 1, vstr)
             self.blink(i)
