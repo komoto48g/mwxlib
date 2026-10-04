@@ -105,7 +105,7 @@ class LinePlot(MatplotPanel):
     def annotate(self):
         for art in self._annotations:
             art.remove()
-        del self._annotations[:]
+        self._annotations.clear()
         
         # <matplotlib.text.Annotation>
         def _A(v, xy, xytext, xycoords='data', textcoords='offset points', **arrowprops):

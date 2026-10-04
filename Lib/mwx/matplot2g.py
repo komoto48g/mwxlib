@@ -1510,7 +1510,7 @@ class GraphPlot(MatplotPanel):
             return
         for art in self._markarts:
             art.remove()
-        del self._markarts[:]
+        self._markarts.clear()
         if self.marked.get_visible() and self.handler.current_state in (MARK, MARK+DRAGGING):
             N = self.maxnum_markers
             xm, ym = self.marked.get_data(orig=0)
@@ -1682,7 +1682,7 @@ class GraphPlot(MatplotPanel):
             return
         for art in self._rectarts:
             art.remove()
-        del self._rectarts[:]
+        self._rectarts.clear()
         if self.rected.get_visible() and self.handler.current_state in (REGION, REGION+DRAGGING):
             x, y = self.rected.get_data(orig=0)
             if x.size:

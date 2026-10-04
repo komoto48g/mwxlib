@@ -84,7 +84,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
              'Lbutton dblclick' : (0, self.OnLeftDClick),
             },
         })
-        self.handler.clear(0)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
