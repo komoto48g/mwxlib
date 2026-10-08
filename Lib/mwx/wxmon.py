@@ -19,6 +19,14 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         parent: shellframe
         target: widget to monitor
     """
+    @property
+    def selected_items(self):
+        return filter(self.IsSelected, range(self.ItemCount))
+
+    @property
+    def checked_items(self):
+        return filter(self.IsItemChecked, range(self.ItemCount))
+
     def __init__(self, parent, **kwargs):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
@@ -32,14 +40,15 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self._target = None  # previous target
         self._dir = True  # sort direction
         self._items = []
-        self._alist = (
-            ("typeId",    62),
-            ("typeName", 200),
-            ("stamp",     40),
-            ("source",     0),
-        )
-        for k, (header, w) in enumerate(self._alist):
-            self.InsertColumn(k, header, width=w)
+        self._attribs = {}
+        self._alist = {
+            "typeId"   : 62,
+            "typeName" : 200,
+            "stamp"    : 40,
+            "source"   : 0,
+        }
+        for col, (header, w) in enumerate(self._alist.items()):
+            self.InsertColumn(col, header, width=w)
         
         self.Bind(wx.EVT_LIST_COL_CLICK, self.OnSortItems)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
@@ -51,10 +60,6 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             from wx import adv, aui, stc, media
             for module in (adv, aui, stc, media):
                 ew.addModuleEvents(module)
-        
-        @self.handler.bind('C-c pressed')
-        def copy(evt):
-            self.copy()
 
     def OnDestroy(self, evt):
         if evt.EventObject is self:
@@ -157,32 +162,34 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
 
     def clear(self):
         self.DeleteAllItems()
-        del self._items[:]
+        self._items.clear()
+        self._attribs.clear()
 
     def update(self, evt):
         event = evt.EventType
         obj = evt.EventObject
         name = self.get_name(event)
         source = ew._makeSourceString(obj) + " id=0x{:X}".format(id(evt))
-        stamp = 1
         try:
             with ignore(DeprecationWarning):
                 attribs = ew._makeAttribString(evt)
         except Exception:
             attribs = ''  # Failed to get event attributes; possibly <BdbQuit>.
+        self._attribs[event] = attribs
         
         for i, item in enumerate(self._items):  # noqa # i used as a counter
             if item[0] == event:
                 stamp = item[2] + 1
-                item[1:] = [name, stamp, source, attribs]
+                item[1:] = [name, stamp, source]
                 break
         else:
+            stamp = 1
             i = len(self._items)
-            item = [event, name, stamp, source, attribs]
+            item = [event, name, stamp, source]
             self._items.append(item)
             self.InsertItem(i, event)
         
-        for j, v in enumerate(item[:-1]):
+        for j, v in enumerate(item):
             self.SetItem(i, j, str(v))
         
         if self.IsItemChecked(i):
@@ -200,7 +207,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         item = [event, name, 0, '-', 'no data']
         self._items.append(item)
         self.InsertItem(i, event)
-        for j, v in enumerate(item[:-1]):
+        for j, v in enumerate(item):
             self.SetItem(i, j, str(v))
         self.SetItemTextColour(i, 'blue')
         self.blink(i)
@@ -214,52 +221,50 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     self.SetItemBackgroundColour(i, 'white')
             wx.CallAfter(wx.CallLater, 1000, _reset)
 
-    def copy(self):
+    def copy_items(self):
         if not self.SelectedItemCount:
             return
-        text = ''
-        for i in range(self.ItemCount):
-            if self.IsSelected(i):
-                event, name, *_, attribs = self._items[i]
-                text += "{}\t{}\n{}\n\n".format(event, name, attribs)
-        Clipboard.write(text[:-1])
+        lines = []
+        for i in self.selected_items:
+            event, name, *_ = self._items[i]
+            attribs = self._attribs[event]
+            lines.append(f"{event}\t{name}\n{attribs}")
+        Clipboard.write("\n\n".join(lines))
+
+    def sort_items(self, col):
+        self._dir = not self._dir
+        rows = [(item, self.IsSelected(i),
+                       self.IsItemChecked(i),
+                       self.GetItemTextColour(i),
+                       self.FocusedItem == i) for i, item in enumerate(self._items)]
+        rows.sort(key=lambda r: r[0][col], reverse=self._dir)
+        self._items[:] = [r[0] for r in rows]
+        
+        for i, (item, sel, chk, color, focused) in enumerate(rows):
+            for j, v in enumerate(item):
+                self.SetItem(i, j, str(v))
+            self.Select(i, sel)
+            self.CheckItem(i, chk)
+            self.SetItemTextColour(i,
+                    color if color.IsOk() else
+                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+            if focused:
+                self.Focus(i)
 
     def OnSortItems(self, evt):  # <wx._core.ListEvent>
-        n = self.ItemCount
-        if n < 2:
-            return
-        
-        data = self._items
-        fi = data[self.FocusedItem]
-        ls = [data[i] for i in range(n) if self.IsSelected(i)]
-        lc = [data[i] for i in range(n) if self.IsItemChecked(i)]
-        lb = [data[i] for i in range(n) if self.GetItemTextColour(i) == 'blue']
-        
-        col = evt.Column
-        self._dir = not self._dir
-        data.sort(key=lambda v: v[col], reverse=self._dir)
-        
-        for i, item in enumerate(data):
-            for j, v in enumerate(item[:-1]):
-                self.SetItem(i, j, str(v))
-            self.Select(i, item in ls)
-            self.CheckItem(i, item in lc)
-            self.SetItemTextColour(i, 'black')  # reset font
-            if item in lb:
-                self.SetItemTextColour(i, 'blue')
-            if item == fi:
-                self.Focus(i)
+        if self.ItemCount > 1:
+            self.sort_items(evt.Column)
 
     def OnItemActivated(self, evt):  # <wx._core.ListEvent>
         item = self._items[evt.Index]
-        wx.CallAfter(wx.TipWindow, self, item[-1], 512)  # attribs
+        wx.CallAfter(wx.TipWindow, self, self._attribs[item[0]], 512)
 
     def OnContextMenu(self, evt):
         obj = self.target
         wnd = self._target
         Menu.Popup(self, [
             (1, "Copy data", Icon('copy'),
-                lambda v: self.copy(),
+                lambda v: self.copy_items(),
                 lambda v: v.Enable(self.SelectedItemCount)),
             (),
             (11, "Restart watching {}".format(wnd.__class__.__name__), Icon('ghost'),
