@@ -8,7 +8,7 @@ from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from mwx.framework import CtrlInterface, AuiNotebook, Menu, StatusBar, pack
-from mwx.controls import Icon
+from mwx.controls import Icon, Clipboard
 from mwx.graphman import Layer
 
 
@@ -138,6 +138,14 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         for k, v in enumerate(info.values()):
             self.SetItem(j, k, str(v))
         self.CheckItem(j, frame.pathname is not None)
+
+    def copy_items(self):
+        if not self.SelectedItemCount:
+            return
+        items = [[self.GetItemText(i, j) for j in range(self.ColumnCount)]
+                                         for i in self.selected_items]
+        lines = ['\t'.join(row).replace('\n', '/') for row in items]
+        Clipboard.write('\n'.join(lines))
 
     def sort_items(self, col):
         def _eval(r):
