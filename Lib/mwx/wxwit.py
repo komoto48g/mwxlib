@@ -150,23 +150,23 @@ class Inspector(it.InspectionTree, CtrlInterface):
         self.SelectItem(evt.Item)
         obj = self.target
         Menu.Popup(self, [
-            (1, "&Dive into {!r}".format(typename(obj)), Icon('core'),
+            (wx.ID_ANY, "&Dive into {!r}".format(typename(obj)), Icon('core'),
                 lambda v: dive(obj),
                 lambda v: v.Enable(obj is not None)),
                 
-            (2, "&Watch event", Icon('tv'),
+            (wx.ID_ANY, "&Watch event", Icon('tv'),
                 lambda v: watch(obj),
                 lambda v: v.Enable(obj is not None)),
             (),
-            (10, "&Inspection Tool\tF3", Icon('inspect'),
+            (wx.ID_ANY, "&Inspection Tool\tF3", Icon('inspect'),
                 lambda v: watchit(obj),
                 lambda v: v.Enable(obj is not None)),
             (),
-            (11, "Highlight\tF4", miniIcon('HighlightItem'),
+            (wx.ID_ANY, "Highlight\tF4", miniIcon('HighlightItem'),
                 lambda v: self.highlighter.HighlightCurrentItem(self),
                 lambda v: v.Enable(obj is not None)),
                 
-            (12, "Refresh\tF5", miniIcon('Refresh'),
+            (wx.ID_ANY, "Refresh\tF5", miniIcon('Refresh'),
                 lambda v: self.BuildTree(obj)),
         ])
 

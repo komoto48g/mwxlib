@@ -263,15 +263,15 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         obj = self.target
         wnd = self._target
         Menu.Popup(self, [
-            (1, "Copy data", Icon('copy'),
+            (wx.ID_ANY, "Copy data", Icon('copy'),
                 lambda v: self.copy_items(),
                 lambda v: v.Enable(self.SelectedItemCount)),
             (),
-            (11, "Restart watching {}".format(wnd.__class__.__name__), Icon('ghost'),
+            (wx.ID_ANY, "Restart watching {}".format(wnd.__class__.__name__), Icon('ghost'),
                  lambda v: self.watch(wnd),
                  lambda v: v.Enable(wnd is not None)),
              
-            (12, "Stop watching {}".format(obj.__class__.__name__), Icon('exit'),
+            (wx.ID_ANY, "Stop watching {}".format(obj.__class__.__name__), Icon('exit'),
                  lambda v: self.unwatch(),
                  lambda v: v.Enable(obj is not None)),
         ])
