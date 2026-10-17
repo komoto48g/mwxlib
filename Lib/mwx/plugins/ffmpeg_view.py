@@ -2,8 +2,10 @@
 """FFmpeg wrapper.
 """
 from subprocess import Popen, PIPE
+from fractions import Fraction
 import numpy as np
 import os
+import json
 import wx
 import wx.media
 
@@ -19,10 +21,12 @@ def read_info(path):
                '-print_format', 'json',
                '-show_streams',
                ]
-    with Popen(command, stdout=PIPE, stderr=PIPE) as fp:
+    with Popen(command, stdout=PIPE) as fp:
         ret, err = fp.communicate()
-        if not err:
-            return eval(ret)
+        # if not err:
+        #     return eval(ret)
+    if fp.returncode == 0 and ret:
+        return json.loads(ret.decode("utf-8"))
 
 
 def capture_video(path, ss):
@@ -34,14 +38,12 @@ def capture_video(path, ss):
                '-pix_fmt', 'rgb24',  # rgb24, gray, etc.
                'pipe:'               # pipe to stdout: '-'
                ]
-    bufsize = 4096  # w * h * 3
-    buf = b""
     with Popen(command, stdout=PIPE) as fp:
-        while 1:
-            s = fp.stdout.read(bufsize)
-            buf += s
-            if len(s) < bufsize:
-                break
+        buf, err = fp.communicate()
+    if fp.returncode != 0:
+        raise RuntimeError(f"ffmpeg failed with code {fp.returncode}")
+    if not buf:
+        raise ValueError(f"No video frame was obtained at {ss!r}")
     return np.frombuffer(buf, np.uint8)
 
 
@@ -193,9 +195,9 @@ class Plugin(Layer):
         self._info = read_info(path)
         if self._info:
             v = next(x for x in self._info['streams'] if x['codec_type'] == 'video')
-            # self.video_fps = eval(v['r_frame_rate'])  # real base frame rate
-            self.video_fps = eval(v['avg_frame_rate'])  # averaged frame rate
-            self.video_dur = eval(v['duration'])        # duration [s]
+            # self.video_fps = float(Fraction(v['r_frame_rate']))  # real base frame rate
+            self.video_fps = float(Fraction(v["avg_frame_rate"]))  # averaged frame rate
+            self.video_dur = float(v.get('duration', 0))           # duration [s]
             w, h = v['width'], v['height']
             if _detect_rotation(v) in (-270, -90, 90, 270):
                 w, h = h, w
