@@ -4,6 +4,7 @@
 from contextlib import contextmanager
 from functools import wraps
 from bdb import BdbQuit
+import ast
 import traceback
 import warnings
 import time
@@ -423,8 +424,9 @@ def find_modules(force=False, verbose=True):
             print("- Failed: {}".format(modname))
     
     if not force and os.path.exists(fn):
-        with open(fn, 'r') as o:
-            lm = eval(o.read())  # read and evaluate module list
+        with open(fn, 'r') as i:
+            # lm = eval(i.read())  # read and evaluate module list
+            lm = ast.literal_eval(i.read())  # read and evaluate module list
         
         ## Check additional packages and modules.
         verbose = False
@@ -456,7 +458,7 @@ def get_rootpath(fn):
     """
     home = os.path.normpath(os.path.expanduser("~/.mwxlib"))
     if not os.path.exists(home):
-        os.mkdir(home)
+        os.mkdir(home, exist_ok=True)  # exists - mkdir 間に別プロセスが作ると FileExistsError.
     return os.path.join(home, fn)
 
 
@@ -978,7 +980,11 @@ class TreeList:
         if '/' in key:
             p, key = key.rsplit('/', 1)
             ls = self._getf(ls, p)
-        ls.remove(next(x for x in ls if x and x[0] == key))
+        # ls.remove(next(x for x in ls if x and x[0] == key))
+        target = next((x for x in ls if x and x[0] == key), None)
+        if target is None:
+            raise KeyError(key)
+        ls.remove(target)
 
 
 def get_fullargspec(f):

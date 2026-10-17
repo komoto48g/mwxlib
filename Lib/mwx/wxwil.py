@@ -72,7 +72,6 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             return
         try:
             self.Freeze()
-            self.DeleteAllItems()
             for key, value in self.target.items():
                 vstr = _repr(value)
                 i = len(self._items)
@@ -83,6 +82,7 @@ class LocalsWatcher(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                 self.blink(i)
         finally:
             self.Thaw()
+            self.Refresh()
 
     def unwatch(self):
         self.target = None
