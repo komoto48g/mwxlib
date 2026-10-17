@@ -165,6 +165,8 @@ class Plugin(Layer):
         
         self.mc.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
         self.mc.Bind(wx.EVT_KEY_UP, self.on_hotkey_up)
+        
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def Destroy(self):
         self.parent.handler.unbind("unknown_format", self.load_media)
@@ -172,11 +174,15 @@ class Plugin(Layer):
             self.mc.Destroy()
         return Layer.Destroy(self)
 
-    def OnShow(self, evt):
-        if not evt.IsShown():
-            if self.mc:
-                self.mc.Stop()
-        Layer.OnShow(self, evt)
+    # def OnShow(self, evt):
+    #     if self and not evt.IsShown():  # -> False when destroying the window.
+    #         if self.mc:
+    #             self.mc.Stop()
+    #     Layer.OnShow(self, evt)
+
+    def OnSize(self, evt):
+        self.Refresh()
+        evt.Skip()
 
     def OnMediaLoaded(self, evt):
         self.ss.range = (0, self.video_dur, 0.01)
