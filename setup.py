@@ -1,18 +1,22 @@
 #! python3
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
+import re
 
 
 def get_version(rel_path):
     here = os.path.abspath(os.path.dirname(__file__))
     fn = os.path.join(here, rel_path)
+    pattern = re.compile(r"^__version__\s*=\s*['\"]([^'\"]+)['\"]")
+    
     with open(fn, encoding='utf-8', newline='') as fp:
         for line in fp:
-            if line.startswith('__version__'):
-                delim = '"' if '"' in line else "'"
-                return line.split(delim)[1]
+            m = pattern.match(line)
+            if m:
+                return m.group(1)
         else:
             raise RuntimeError("Unable to find version string.")
+
 
 ## __version__ = "1.0rc"  # TestPyPI
 __version__ = get_version("Lib/mwx/framework.py")
@@ -31,16 +35,11 @@ setup(
     long_description_content_type = "text/markdown",
     
     ## Description of the package in the distribution
-    package_dir = {
-        "" : "Lib" # root packages is `Lib`, i.e., mwx package is in ./Lib
-    },
+    ## The root packages is `Lib`, i.e., mwx package is in ./Lib
+    package_dir = {"": "Lib"},
     
-    ## Packing all modules in mwx package
-    packages = [
-        "mwx",
-        "mwx.py",
-        "mwx.plugins",
-    ],
+    ## Packing all modules in Lib/mwx/
+    packages = find_packages("Lib", include=["mwx", "mwx.*"]),
     
     install_requires = open("requirements.txt").read().splitlines(),
     
