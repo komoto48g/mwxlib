@@ -447,9 +447,7 @@ class LayerInterface(CtrlInterface):
         evt.Skip()
 
     def OnShow(self, evt):
-        if not self:
-            return
-        if isinstance(self.Parent, aui.AuiNotebook):
+        if self and isinstance(self.Parent, aui.AuiNotebook):
             if evt.IsShown():
                 self.handler('page_shown', self)
             else:
