@@ -118,6 +118,10 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.info_dlg = InfoDialog(self,
                             title="Attributes", size=(480, -1),
                             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        # Prefer a generic modern fixed-width font.
+        self.info_dlg._ctrl.Font = wx.Font(
+            wx.FontInfo(9).Family(wx.FONTFAMILY_TELETYPE)  # fixed-width
+        )
 
     def Destroy(self):
         self.target.handler.remove(self.context)

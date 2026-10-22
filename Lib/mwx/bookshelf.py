@@ -76,8 +76,6 @@ class EditorTreeCtrl(wx.TreeCtrl, CtrlInterface):
         wx.TreeCtrl.__init__(self, parent, *args, **kwargs)
         CtrlInterface.__init__(self)
         
-        # self.Font = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL)
-        
         self.parent = parent
         self._editors = []
         
