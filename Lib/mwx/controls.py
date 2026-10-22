@@ -116,6 +116,8 @@ class Param:
         self.__check = bool(v)
         self.callback('checked', self)
 
+    flag = check  # for backward compatibility
+
     @property
     def name(self):
         return self.__name
