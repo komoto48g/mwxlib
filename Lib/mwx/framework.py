@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.12.5"
+__version__ = "1.12.6"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -291,7 +291,7 @@ class KeyCtrlInterfaceMixin:
     def on_exit_keymap(self, evt):
         ## """Called when exiting extension mode (internal use only)."""
         ## If the event has reached a top-level window, don't skip events.
-        if isinstance(self, wx.TopLevelWindow):  # not isinstance(self, CtrlInterface):
+        if isinstance(self, wx.TopLevelWindow):
             return
         map = self.handler.previous_state
         self.__echo(map, evt.key)
@@ -313,6 +313,7 @@ class KeyCtrlInterfaceMixin:
         map, sep, key = (keymap.replace("M-C-", "C-M-")  # modifier key regulation C-M-S-
                                .replace("S-M-", "M-S-")
                                .replace("S-C-", "C-S-").rpartition(' '))
+        extension_mode = map
         if not map:
             map = state
         elif map == '*':
@@ -328,7 +329,8 @@ class KeyCtrlInterfaceMixin:
             return lambda f: self.define_key(keymap, f, *args, **kwargs)
         
         def _(*v, **kw):
-            self.dispatch(*v, **kw)
+            if extension_mode:
+                self.dispatch(*v, **kw)
             self.__echo(action.__name__)
         
         f = _F(action, *args, **kwargs)
