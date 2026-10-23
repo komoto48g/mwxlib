@@ -44,6 +44,9 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def checked_items(self):
         return filter(self.IsItemChecked, range(self.ItemCount))
 
+    def get_selected_frames(self):
+        return [self.target.frames[j] for j in self.selected_items]
+
     def __init__(self, parent, target, **kwargs):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
@@ -325,10 +328,8 @@ class Plugin(Layer):
             expand=2, border=0, vspacing=0,
         )
         
-        def on_focus_set(evt):
-            self.parent.select_view(self.nb.CurrentPage.target)
-            evt.Skip()
-        self.nb.Bind(wx.EVT_CHILD_FOCUS, on_focus_set)
+        self.define_key('C-s', self.save_selected_frames)
+        self.define_key('C-S-s', self.save_selected_frames_as_tiff)
 
     def attach(self, target):
         if target not in [lc.target for lc in self.all_pages]:
@@ -339,3 +340,15 @@ class Plugin(Layer):
         for k, lc in enumerate(self.all_pages):
             if target is lc.target:
                 self.nb.DeletePage(k)
+
+    def save_selected_frames(self):
+        lc = self.nb.CurrentPage
+        self.parent.export_frames_index(
+            frames=lc.get_selected_frames() or list(lc.target.get_all_frames())
+        )
+
+    def save_selected_frames_as_tiff(self):
+        lc = self.nb.CurrentPage
+        self.parent.save_frames_as_tiff(
+            frames=lc.get_selected_frames() or list(lc.target.get_all_frames())
+        )
