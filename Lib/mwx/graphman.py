@@ -984,12 +984,12 @@ class Frame(mwx.Frame):
 
     def OnCreate(self, evt):
         if evt.EventObject is not self:
-            wx.CallAfter(self._update_docking_status)  # Use post-call to acccess TopLevelParent
+            wx.CallAfter(self._update_docking_status)  # Use post-call to access TopLevelParent
         evt.Skip()
 
     def OnDestroy(self, evt):
         if evt.EventObject is not self:
-            wx.CallAfter(self._update_docking_status)  # Use post-call to acccess TopLevelParent
+            wx.CallAfter(self._update_docking_status)  # Use post-call to access TopLevelParent
         evt.Skip()
 
     def OnActivate(self, evt):  # <wx._core.ActivateEvent>
