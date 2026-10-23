@@ -1479,7 +1479,7 @@ class Frame(mwx.Frame):
         
         if not filename:
             default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Select index file to load",
+            with wx.FileDialog(self, f"Import frames into {view.Name} view from an index file.",
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.index_file,
                     wildcard="Index (*.index)|*.index|"
@@ -1506,20 +1506,18 @@ class Frame(mwx.Frame):
             "{} files are missing.".format(n, len(res)-n, len(mis))
         ))
 
-    def export_index(self, filename=None, view=None):
+    def export_index(self, filename=None, frames=None):
         """Save frames :ref to the Index file.
         If no view given, the currently selected view is chosen.
         """
-        if not view:
-            view = self.selected_view
-        
-        frames = list(view.get_all_frames())
         if not frames:
-            return None
+            frames = list(self.selected_view.get_all_frames())
+            if not frames:
+                return None
         
         if not filename:
-            default_path = view.frame.pathname if view.frame else None
-            with wx.FileDialog(self, "Select index file to export",
+            default_path = frames[0].pathname
+            with wx.FileDialog(self, f"Export {len(frames)} frames to an index file.",
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.index_file,
                     wildcard="Index (*.index)|*.index",
@@ -1674,15 +1672,13 @@ class Frame(mwx.Frame):
 
     def save_frame(self, path=None, frame=None):
         """Save frame and the attributes to a file."""
-        view = self.selected_view
-        
         if not frame:
-            frame = view.frame
+            frame = self.selected_view.frame
             if not frame:
                 return None
         
         if not path:
-            default_path = view.frame.pathname if view.frame else None
+            default_path = frame.pathname
             with wx.FileDialog(self, "Save buffer as",
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=fix_fnchars(frame.name),
@@ -1707,7 +1703,7 @@ class Frame(mwx.Frame):
                 return None
         
         if not path:
-            with wx.FileDialog(self, "Save buffers as a multi-page tiff",
+            with wx.FileDialog(self, f"Save {len(frames)} frames to a multi-page TIFF file...",
                     defaultFile="Stack-image",
                     wildcard="TIF file (*.tif)|*.tif",
                     style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
