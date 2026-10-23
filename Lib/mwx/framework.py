@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.12.7"
+__version__ = "1.12.8"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -59,7 +59,7 @@ def deb(target=None, loop=True, locals=None, **kwargs):
 
 def postcall(f):
     """A decorator of wx.CallAfter.
-    Wx posts the message that forces `f` to take place in the main thread.
+    Wx posts the message so that `f` runs in the main thread.
     """
     @wraps(f)
     def _f(*v, **kw):
@@ -69,7 +69,7 @@ def postcall(f):
 
 @contextmanager
 def ignore_wxlog():
-    """Suppress wx logging message."""
+    """Suppress wx log message."""
     with wx.LogNull():
         yield
 
@@ -1329,7 +1329,7 @@ class ShellFrame(MiniFrame):
             self.SESSION_FILE = None
 
     def load_session(self, filename):
-        """Load session from file.
+        """Load session from a file.
         Buffers, pointers, and the entire layout are loaded.
         """
         def _fload(editor, filename):
@@ -1360,7 +1360,7 @@ class ShellFrame(MiniFrame):
             self.Position = (0, 0)
 
     def save_session(self):
-        """Save session to file.
+        """Save session to a file.
         Buffers, pointers, and the entire layout are saved.
         """
         def _fsave(editor, filename):

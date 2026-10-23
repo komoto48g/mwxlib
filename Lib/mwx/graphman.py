@@ -787,7 +787,7 @@ class Frame(mwx.Frame):
                 lambda v: self.save_frame(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
                 
-            (wx.ID_SAVEAS, "&Save as TIFFs\tCtrl-Shift-s", "Save buffers as a multi-page tiff", Icon('saveall'),
+            (wx.ID_SAVEAS, "&Save as TIFFs\tCtrl-Shift-s", "Save buffers as a multi-page TIFF file", Icon('saveall'),
                 lambda v: self.save_frames_as_tiff(),
                 lambda v: v.Enable(self.selected_view.frame is not None)),
             (),
@@ -1471,8 +1471,8 @@ class Frame(mwx.Frame):
     ## --------------------------------
 
     def import_index(self, filename=None, view=None):
-        """Load frames :ref to the Index file.
-        If no view given, the currently selected view is chosen.
+        """Load frames from the index file.
+        If no view is given, the currently selected view is used.
         """
         if not view:
             view = self.selected_view
@@ -1507,8 +1507,8 @@ class Frame(mwx.Frame):
         ))
 
     def export_index(self, filename=None, frames=None):
-        """Save frames :ref to the Index file.
-        If no view given, the currently selected view is chosen.
+        """Save frames to the index file.
+        If no frames are given, all frames in the currently selected view are used.
         """
         if not frames:
             frames = list(self.selected_view.get_all_frames())
@@ -1558,7 +1558,7 @@ class Frame(mwx.Frame):
     ]
 
     def read_attributes(self, filename, check_path=True):
-        """Read attributes file.
+        """Read attributes from a file (internal use only).
         
         Returns:
             res: <dict> Successfully loaded attribute information.
@@ -1599,7 +1599,7 @@ class Frame(mwx.Frame):
         return res, mis
 
     def write_attributes(self, filename, frames, merge_data=True):
-        """Write attributes file.
+        """Write attributes to a file (internal use only).
         
         Returns:
             res: <dict> Successfully loaded attribute information.
@@ -1636,7 +1636,7 @@ class Frame(mwx.Frame):
         return new, mis
 
     def load_frame(self, paths=None, view=None):
-        """Load frames and the attributes from files to the view window."""
+        """Load frames and their attributes from files into the view window."""
         if not view:
             view = self.selected_view
         
@@ -1671,7 +1671,7 @@ class Frame(mwx.Frame):
         return frames
 
     def save_frame(self, path=None, frame=None):
-        """Save frame and the attributes to a file."""
+        """Save the frame and its attributes to a file."""
         if not frame:
             frame = self.selected_view.frame
             if not frame:
@@ -1696,7 +1696,7 @@ class Frame(mwx.Frame):
         return frame
 
     def save_frames_as_tiff(self, path=None, frames=None):
-        """Save frames to a multi-page tiff."""
+        """Save frames to a multi-page TIFF file."""
         if not frames:
             frames = list(self.selected_view.get_all_frames())
             if not frames:
@@ -1766,8 +1766,7 @@ class Frame(mwx.Frame):
 
     @ignore(ResourceWarning)
     def load_buffer(self, paths, view):
-        """Load buffers from paths to the view window (internal use only).
-        """
+        """Load frame buffers from paths into the view window (internal use only)."""
         frames = []
         frame = None
         paths = list(dict.fromkeys(paths))  # 順序を保って重複を除く．
@@ -1814,7 +1813,7 @@ class Frame(mwx.Frame):
         return frames
 
     def save_buffer(self, path, frame):
-        """Save buffer of the frame to a file (internal use only)."""
+        """Save frame buffer to a file (internal use only)."""
         try:
             name = os.path.basename(path)
             self.message("Saving {!r}...".format(name))
@@ -1838,7 +1837,7 @@ class Frame(mwx.Frame):
     ## --------------------------------
 
     def load_session(self, filename=None, flush=True):
-        """Load session from file."""
+        """Load session from a file."""
         if not filename:
             with wx.FileDialog(self, "Load session",
                     wildcard="Session file (*.jssn)|*.jssn",
@@ -1894,7 +1893,7 @@ class Frame(mwx.Frame):
                 self.save_session()
 
     def save_session(self):
-        """Save session to file."""
+        """Save session to a file."""
         if not self.session_file:
             return self.save_session_as()
         
