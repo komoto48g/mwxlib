@@ -458,7 +458,8 @@ def get_rootpath(fn):
     """
     home = os.path.normpath(os.path.expanduser("~/.mwxlib"))
     if not os.path.exists(home):
-        os.mkdir(home, exist_ok=True)  # exists - mkdir 間に別プロセスが作ると FileExistsError.
+        # os.mkdir(home)  # FileExistsError if another process between exists() and mkdir().
+        os.makedirs(home, exist_ok=True)
     return os.path.join(home, fn)
 
 
