@@ -7,7 +7,7 @@ import wx
 from wx import aui
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from mwx.framework import CtrlInterface, AuiNotebook, Menu, StatusBar, pack
+from mwx.framework import CtrlInterface, AuiNotebook, Menu, StatusBar
 from mwx.controls import Icon, Clipboard
 from mwx.graphman import Layer
 
@@ -43,6 +43,9 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     @property
     def checked_items(self):
         return filter(self.IsItemChecked, range(self.ItemCount))
+
+    def get_selected_frames(self):
+        return [self.target.frames[j] for j in self.selected_items]
 
     def __init__(self, parent, target, **kwargs):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT | wx.LC_HRULES, **kwargs)
@@ -111,7 +114,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             (),
             (wx.ID_ANY, "Show attributes\tM-enter", Icon('copy'),
                 self.OnShowAttributes,
-                lambda v: v.Enable(len(list(self.selected_items)))),
+                lambda v: v.Enable(self.FocusedItem != -1)),
         ]
         self.Bind(wx.EVT_CONTEXT_MENU, lambda v: Menu.Popup(self, self.menu))
         
@@ -193,7 +196,6 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         self.target.select(self.FocusedItem)
 
     def OnRemoveItems(self, evt):
-        # del self.target[self.selected_items]
         self.target.kill_buffers(list(self.selected_items))
         self.SetFocus()
 
@@ -233,23 +235,23 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.OnShowItems(evt)
 
     def OnShowAttributes(self, evt):
-        def _pf(frame):
-            return f"# {frame.name}\n" + pformat(frame.attributes, sort_dicts=0)
-        
-        selected_frames = [self.target.frames[j] for j in self.selected_items]
-        if selected_frames:
-            self.info_dlg.Value = '\n\n'.join(_pf(frame) for frame in selected_frames)
-            self.info_dlg.ShowModal()
+        if self.FocusedItem == -1:
+            return
+        selected_frames = self.get_selected_frames() or [self.target.frames[self.FocusedItem]]
+        self.info_dlg.Value = '\n\n'.join(f"# {frame.name}\n" + pformat(frame.attributes, sort_dicts=False)
+                                          for frame in selected_frames)
+        self.info_dlg.ShowModal()
         self.SetFocus()
 
     def OnEditUnit(self, evt):
-        indices = list(self.selected_items) or [self.FocusedItem]
-        selected_frames = [self.target.frames[j] for j in indices]
+        if self.FocusedItem == -1:
+            return
+        selected_frames = self.get_selected_frames() or [self.target.frames[self.FocusedItem]]
         value = self.edit_item(self.FocusedItem, 5)
         if value is not None:
             try:
                 u = float(value.strip('*'))
-            except ValueError as e:
+            except ValueError:
                 self.parent.message("Reset to global unit.")
                 u = None
             for frame in selected_frames:
@@ -259,6 +261,8 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     frame.unit = None
 
     def OnEditAnnotation(self, evt):
+        if self.FocusedItem == -1:
+            return
         frame = self.target.frames[self.FocusedItem]
         value = self.edit_item(self.FocusedItem, 7)
         if value is not None:
@@ -325,10 +329,8 @@ class Plugin(Layer):
             expand=2, border=0, vspacing=0,
         )
         
-        def on_focus_set(evt):
-            self.parent.select_view(self.nb.CurrentPage.target)
-            evt.Skip()
-        self.nb.Bind(wx.EVT_CHILD_FOCUS, on_focus_set)
+        self.define_key('C-s', self.save_selected_frames)
+        self.define_key('C-S-s', self.save_selected_frames_as_tiff)
 
     def attach(self, target):
         if target not in [lc.target for lc in self.all_pages]:
@@ -339,3 +341,15 @@ class Plugin(Layer):
         for k, lc in enumerate(self.all_pages):
             if target is lc.target:
                 self.nb.DeletePage(k)
+
+    def save_selected_frames(self):
+        lc = self.nb.CurrentPage
+        self.parent.export_frames_index(
+            frames=lc.get_selected_frames() or list(lc.target.get_all_frames())
+        )
+
+    def save_selected_frames_as_tiff(self):
+        lc = self.nb.CurrentPage
+        self.parent.save_frames_as_tiff(
+            frames=lc.get_selected_frames() or list(lc.target.get_all_frames())
+        )
