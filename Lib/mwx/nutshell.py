@@ -812,7 +812,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
 
     @property
     def markline(self):
-        return self.MarkerNext(0, 1<<0)
+        return self.get_marker(0)
 
     @markline.setter
     def markline(self, v):

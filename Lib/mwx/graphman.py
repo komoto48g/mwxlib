@@ -1735,7 +1735,7 @@ class Frame(mwx.Frame):
             return True
         except Exception as e:
             self.message("\b failed.")
-            self.post_msgbox(str(e), style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), "Failed to save frames to a multi-page TIFF file", style=wx.ICON_ERROR)
             return False
 
     ## --------------------------------
@@ -1809,7 +1809,7 @@ class Frame(mwx.Frame):
             self.message("\b done.")
         except Exception as e:
             self.message("\b failed.")
-            self.post_msgbox(str(e), style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), "Failed to load buffer", style=wx.ICON_ERROR)
         
         view.select(frame)
         return frames
@@ -1831,7 +1831,7 @@ class Frame(mwx.Frame):
             raise
         except Exception as e:
             self.message("\b failed.")
-            self.post_msgbox(str(e), style=wx.ICON_ERROR)
+            self.post_msgbox(str(e), "Failed to save buffer", style=wx.ICON_ERROR)
             return None
 
     ## --------------------------------
