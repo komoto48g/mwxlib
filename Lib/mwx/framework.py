@@ -1142,7 +1142,7 @@ class ShellFrame(MiniFrame):
         self.Help = EditorBook(self, name="Help")
         
         self.Bookshelf = EditorTreeCtrl(self, name="Bookshelf",
-                                        style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
+                                        style=wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT)
         
         def _attach():
             for editor in self.get_all_editors():
@@ -1437,7 +1437,7 @@ class ShellFrame(MiniFrame):
                     "The debugger is running.\n\n"
                     "Enter [q]uit to exit before closing.\n"
                     "Continue closing?",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
                 evt.Veto()
                 return
@@ -1459,7 +1459,7 @@ class ShellFrame(MiniFrame):
                             "Changes to the content will be discarded.\n"
                             "Continue closing?",
                             "Close {!r}".format(editor.Name),
-                            style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                            style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                         self.message("The close has been canceled.")
                         evt.Veto()
                         return
@@ -1484,7 +1484,7 @@ class ShellFrame(MiniFrame):
                                     "The contents of the buffer will be overwritten or lost.\n"
                                     "Continue loading?",
                                     "Load {} file: {!r}".format(editor.Name, buf.name),
-                                    style=wx.YES_NO|wx.CANCEL|wx.HELP|wx.ICON_INFORMATION) as dlg:
+                                    style=wx.YES_NO | wx.CANCEL | wx.HELP | wx.ICON_INFORMATION) as dlg:
                                 dlg.SetHelpLabel("Yes to &All")
                                 dlg.SetYesNoLabels("&Yes", "&No")
                                 ret = dlg.ShowModal()

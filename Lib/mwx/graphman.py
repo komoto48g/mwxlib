@@ -169,7 +169,7 @@ class Thread:
             self.event.clear()  # suspend
             if wx.MessageBox(   # Confirm closing the thread.
                     msg, caption or wx.MessageBoxCaptionStr,
-                    style=wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
+                    style=wx.OK | wx.CANCEL | wx.ICON_WARNING) == wx.OK:
                 self.Stop()
                 return True
             return False
@@ -645,7 +645,7 @@ class Graph(GraphPlot):
             if wx.MessageBox(  # Confirm closing the frame.
                     f"You are closing {n} unsaved frame{s}.\n\n"
                      "Continue closing?",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
                 return False
         return True
@@ -1001,7 +1001,7 @@ class Frame(mwx.Frame):
         with wx.MessageDialog(self,  # Confirm close.
                 "Do you want to save session before closing program?",
                 "{}@{} - [{}]".format(self.Name, platform.node(), ssn),
-                style=wx.YES_NO|wx.CANCEL|wx.ICON_INFORMATION) as dlg:
+                style=wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION) as dlg:
             ret = dlg.ShowModal()
             if ret == wx.ID_YES:
                 self.save_session()
@@ -1014,7 +1014,7 @@ class Frame(mwx.Frame):
             if wx.MessageBox(  # Confirm closing the thread.
                     f"Currently running {n} thread{s}.\n\n"
                      "Continue closing?",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
                 evt.Veto()
                 return
@@ -1025,7 +1025,7 @@ class Frame(mwx.Frame):
             if wx.MessageBox(  # Confirm closing the frame.
                     f"You are closing {n} unsaved frame{s}.\n\n"
                      "Continue closing?",
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.message("The close has been canceled.")
                 evt.Veto()
                 return
@@ -1453,7 +1453,7 @@ class Frame(mwx.Frame):
     def OnLoadPlugins(self, evt):
         with wx.FileDialog(self, "Load a plugin file",
                 wildcard="Python file (*.py)|*.py",
-                style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE) as dlg:
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 for path in dlg.Paths:
                     self.load_plug(path)
@@ -1484,7 +1484,7 @@ class Frame(mwx.Frame):
                     defaultFile=self.index_file,
                     wildcard="Index (*.index)|*.index|"
                              "ALL files (*.*)|*.*",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
+                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 filename = dlg.Path
@@ -1521,7 +1521,7 @@ class Frame(mwx.Frame):
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=self.index_file,
                     wildcard="Index (*.index)|*.index",
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                    style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 filename = dlg.Path
@@ -1651,7 +1651,7 @@ class Frame(mwx.Frame):
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile='',
                     wildcard='|'.join(self.wildcards),
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_MULTIPLE) as dlg:
+                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 paths = dlg.Paths
@@ -1685,7 +1685,7 @@ class Frame(mwx.Frame):
                     defaultDir=os.path.dirname(default_path or ''),
                     defaultFile=fix_fnchars(frame.name),
                     wildcard='|'.join(self.wildcards),
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                    style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 path = dlg.Path
@@ -1708,7 +1708,7 @@ class Frame(mwx.Frame):
             with wx.FileDialog(self, f"Save {len(frames)} frames to a multi-page TIFF file...",
                     defaultFile="Stack-image",
                     wildcard="TIF file (*.tif)|*.tif",
-                    style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                    style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 path = dlg.Path
@@ -1843,7 +1843,7 @@ class Frame(mwx.Frame):
         if not filename:
             with wx.FileDialog(self, "Load session",
                     wildcard="Session file (*.jssn)|*.jssn",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST|wx.FD_CHANGE_DIR) as dlg:
+                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_CHANGE_DIR) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return
                 filename = dlg.Path
@@ -1889,7 +1889,7 @@ class Frame(mwx.Frame):
                 defaultDir=os.path.dirname(self.session_file or ''),
                 defaultFile=os.path.basename(self.session_file or ''),
                 wildcard="Session file (*.jssn)|*.jssn",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.FD_CHANGE_DIR) as dlg:
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 self.session_file = dlg.Path
                 self.save_session()

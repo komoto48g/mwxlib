@@ -354,7 +354,7 @@ class Knob(wx.Panel):
         elif style == 'button':
             ## Keep margin for the button: lw += 16
             self._label = pb.PlateButton(self, label=label, size=(lw,-1),
-                                         style=pb.PB_STYLE_DEFAULT|pb.PB_STYLE_SQUARE)
+                                         style=pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
             self._label.Bind(wx.EVT_BUTTON, self.OnPress)
         elif not style:
             self._label = wx.StaticText(self, label=label, size=(lw,-1))

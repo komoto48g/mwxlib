@@ -2373,7 +2373,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     "The changes will be discarded.\n"
                     "Continue closing?",
                     "Close {!r}".format(buf.name),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 evt.Veto()
                 return
@@ -2563,7 +2563,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     "The changes will be discarded.\n"
                     "Continue loading?",
                     "Load {!r}".format(buf.name),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The load has been canceled.")
                 return None
         elif not buf.need_buffer_load:
@@ -2594,7 +2594,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
             with wx.FileDialog(self, "Open buffer",
                     defaultDir=os.path.dirname(self.buffer.filename),
                     wildcard='|'.join(self.wildcards),
-                    style=wx.FD_OPEN|wx.FD_MULTIPLE) as dlg:
+                    style=wx.FD_OPEN | wx.FD_MULTIPLE) as dlg:
                 if dlg.ShowModal() == wx.ID_OK:
                     return all([self.find_file(fn) for fn in dlg.Paths])
             return None
@@ -2619,7 +2619,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     "The contents of the file will be overwritten.\n"
                     "Continue saving?",
                     "Save {!r}".format(buf.name),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The save has been canceled.")
                 return None
         try:
@@ -2664,7 +2664,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                 defaultDir=os.path.dirname(self.buffer.filename),
                 defaultFile=fix_fnchars(buf.name),
                 wildcard='|'.join(self.wildcards),
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 return self.save_file(dlg.Path, buf)
 
@@ -2683,7 +2683,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                     "The changes will be discarded.\n"
                     "Continue closing?",
                     "Close {!r}".format(buf.name),
-                    style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                    style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                 self.post_message("The close has been canceled.")
                 return None
         self.delete_buffer(buf)
@@ -2699,7 +2699,7 @@ class EditorBook(AuiNotebook, CtrlInterface):
                         "The changes will be discarded.\n"
                         "Continue closing?",
                         "Close {!r}".format(buf.name),
-                        style=wx.YES_NO|wx.ICON_INFORMATION) != wx.YES:
+                        style=wx.YES_NO | wx.ICON_INFORMATION) != wx.YES:
                     self.post_message("The close has been canceled.")
                     return None
         self.delete_all_buffers()

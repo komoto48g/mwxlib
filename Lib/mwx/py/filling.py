@@ -358,7 +358,7 @@ class Filling(wx.SplitterWindow):
     name = 'Filling'
 
     def __init__(self, parent, id=-1, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=wx.SP_3D|wx.SP_LIVE_UPDATE,
+                 size=wx.DefaultSize, style=wx.SP_3D | wx.SP_LIVE_UPDATE,
                  name='Filling Window', rootObject=None,
                  rootLabel=None, rootIsNamespace=False, static=False):
         """Create a Filling instance."""

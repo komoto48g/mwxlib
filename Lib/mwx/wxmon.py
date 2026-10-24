@@ -28,7 +28,7 @@ class EventMonitor(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return filter(self.IsItemChecked, range(self.ItemCount))
 
     def __init__(self, parent, **kwargs):
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT | wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         

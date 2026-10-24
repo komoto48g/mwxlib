@@ -23,7 +23,7 @@ class InfoDialog(wx.Dialog, CtrlInterface):
         wx.Dialog.__init__(self, *args, **kwargs)
         CtrlInterface.__init__(self)
         
-        self._ctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE|wx.BORDER_NONE)
+        self._ctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.BORDER_NONE)
         
         self.handler.bind('enter pressed', lambda v: self.EndModal(wx.ID_OK))
         self.handler.bind('escape pressed', lambda v: self.EndModal(wx.ID_CANCEL))
@@ -45,7 +45,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         return filter(self.IsItemChecked, range(self.ItemCount))
 
     def __init__(self, parent, target, **kwargs):
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT|wx.LC_HRULES, **kwargs)
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT | wx.LC_HRULES, **kwargs)
         ListCtrlAutoWidthMixin.__init__(self)
         CtrlInterface.__init__(self)
         
@@ -117,7 +117,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
         
         self.info_dlg = InfoDialog(self,
                             title="Attributes", size=(480, -1),
-                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         # Prefer a generic modern fixed-width font.
         self.info_dlg._ctrl.Font = wx.Font(
             wx.FontInfo(9).Family(wx.FONTFAMILY_TELETYPE)  # fixed-width
@@ -311,8 +311,8 @@ class Plugin(Layer):
 
     def Init(self):
         self.nb = AuiNotebook(self, size=(400,150),
-                    style=(aui.AUI_NB_DEFAULT_STYLE|aui.AUI_NB_RIGHT)
-                        &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB|aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+                    style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
+                        &~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )
         self.attach(self.graph)
         self.attach(self.output)

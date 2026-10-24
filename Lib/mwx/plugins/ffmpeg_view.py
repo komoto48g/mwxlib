@@ -193,7 +193,7 @@ class Plugin(Layer):
     def load_media(self, path=None):
         if path is None:
             with wx.FileDialog(self, "Choose a media file",
-                    style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST) as dlg:
+                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dlg:
                 if dlg.ShowModal() != wx.ID_OK:
                     return None
                 path = dlg.Path
@@ -303,7 +303,7 @@ class Plugin(Layer):
                 defaultFile=os.path.basename(fout),
                 wildcard="Media file (*.mp4)|*.mp4|"
                          "Animiation (*.gif)|*.gif",
-                style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT) as dlg:
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() != wx.ID_OK:
                 return
             fout = dlg.Path
