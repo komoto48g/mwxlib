@@ -607,7 +607,7 @@ class Graph(GraphPlot):
             elif ext == '.jssn':
                 self.parent.load_session(fn)
             elif ext == '.index':
-                self.parent.import_index(fn, self)
+                self.parent.import_frames_index(fn, self)
             else:
                 paths.append(fn)  # image file just stacks to be loaded
         if paths:
@@ -793,10 +793,10 @@ class Frame(mwx.Frame):
             (),
             # ("Index", (
             #     (mwx.ID_(11), "&Import index", "Import index file", Icon('open'),
-            #         lambda v: self.import_index()),
+            #         lambda v: self.import_frames_index()),
             #         
             #     (mwx.ID_(12), "&Export index", "Export index file", Icon('saveas'),
-            #         lambda v: self.export_index(),
+            #         lambda v: self.export_frames_index(),
             #         lambda v: v.Enable(self.selected_view.frame is not None)),
             #     )),
             # (),
@@ -1470,7 +1470,7 @@ class Frame(mwx.Frame):
     ## load/save index file.
     ## --------------------------------
 
-    def import_index(self, filename=None, view=None):
+    def import_frames_index(self, filename=None, view=None):
         """Load frames from the index file.
         If no view is given, the currently selected view is used.
         """
@@ -1506,7 +1506,7 @@ class Frame(mwx.Frame):
             "{} files are missing.".format(n, len(res)-n, len(mis))
         ))
 
-    def export_index(self, filename=None, frames=None):
+    def export_frames_index(self, filename=None, frames=None):
         """Save frames to the index file.
         If no frames are given, all frames in the currently selected view are used.
         """
@@ -1534,7 +1534,9 @@ class Frame(mwx.Frame):
                 fn = os.path.join(savedir, fix_fnchars(frame.name))
                 if not fn.endswith('.tif'):
                     fn += '.tif'
-                if not os.path.exists(fn):
+                ## ファイルが存在しなければ新規作成，
+                ## 存在していてもファイルに関連付けられていなければ上書き．
+                if not os.path.exists(fn) or not frame.pathname:
                     frame = self.save_buffer(fn, frame)
             if frame:
                 output_frames.append(frame)
@@ -1658,7 +1660,7 @@ class Frame(mwx.Frame):
         if frames:
             saved_results = {}
             for frame in frames:
-                if frame.pathname.endswith('>'):  # *dummy-path* compiled in load_buffer
+                if frame.pathname.endswith('>'):  # *dummy-path*
                     continue
                 ## Compile attributes from index files located in each frame path.
                 savedir = os.path.dirname(frame.pathname)
@@ -1726,8 +1728,8 @@ class Frame(mwx.Frame):
                               append_images=stack[1:])
             d = len(str(n))
             for j, frame in enumerate(frames):
-                frame.pathname = path + f"<{j:0{d}}>"  # *dummy-path* in multi-page tiff
-            ## multi-page tiff: 同名のインデクスファイルに属性を書き出す．
+                frame.pathname = path + f"<{j:0{d}}>"  # *dummy-path*
+            ## Multi-page TIFF 同名のインデクスファイルに属性を書き出す．
             self.write_attributes(path[:-4] + ".index", frames, merge_data=False)
             self.message("\b done.")
             return True
@@ -1786,7 +1788,7 @@ class Frame(mwx.Frame):
                     continue
                 
                 if isinstance(buf, TiffImageFile) and buf.n_frames > 1:
-                    ## multi-page tiff: 同名のインデクスファイルから属性を読み出す．
+                    ## Multi-page TIFF 同名のインデクスファイルから属性を読み出す．
                     res, mis = self.read_attributes(path[:-4] + ".index", check_path=False)
                     items = list({**res, **mis}.items())
                     n = buf.n_frames
@@ -1798,7 +1800,7 @@ class Frame(mwx.Frame):
                             page_name, info = items[j]  # original buffer name and attributes
                         else:
                             page_name = name + f"<{j:0{d}}>"  # default buffer name
-                        info['pathname'] = path + f"<{j:0{d}}>"  # *dummy-path* in multi-page tiff
+                        info['pathname'] = path + f"<{j:0{d}}>"  # *dummy-path*
                         frame = view.load(buf, page_name, show=0, **info)
                         frames.append(frame)
                 else:
