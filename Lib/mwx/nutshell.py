@@ -3248,13 +3248,13 @@ class Nautilus(EditorInterface, Shell):
         if any(x in tokens for x in '`@?$'):
             cmd = self.magic_interpret(tokens)
             if '\n' in cmd:
-                self.Execute(cmd)  # => multi-line commands
+                self.Execute(cmd)  # multi-line commands => processLine => push
             else:
-                self.run(cmd, verbose=0, prompt=0)  # => push(cmd)
-            return
-        
-        self.exec_cmdline()
-        # evt.Skip()  # => processLine
+                self.interp.more = False
+                self.run(cmd, verbose=0, prompt=0)  # => push
+        else:
+            self.exec_cmdline()  # Execute command lines directly.
+            # evt.Skip()  # => processLine => push
 
     def OnEnterDot(self, evt):
         """Called when dot [.] pressed."""
@@ -3487,12 +3487,12 @@ class Nautilus(EditorInterface, Shell):
 
     @property
     def bolc(self):
-        """Beginning of command-line."""
+        """Beginning of command line."""
         return self.promptPosEnd
 
     @property
     def eolc(self):
-        """End of command-line."""
+        """End of command line."""
         return self.TextLength
 
     @property
@@ -3693,7 +3693,7 @@ class Nautilus(EditorInterface, Shell):
     ## input = classmethod(Shell.ask)
 
     def exec_cmdline(self):
-        """Execute command-line directly.
+        """Execute multiple command lines directly.
         
         cf. Execute
         """
