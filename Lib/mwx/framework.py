@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.13rc"
+__version__ = "1.13.0"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -366,20 +366,20 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
         def _N(event):
             return partial(self._event_handler, event)
         
-        def activate(evt):
+        def on_focus_set(evt):
             if self:
                 self.handler('focus_set', evt)
             evt.Skip()
-        self.Bind(wx.EVT_SET_FOCUS, activate)
+        self.Bind(wx.EVT_SET_FOCUS, on_focus_set)
         
-        def inactivate(evt):
+        def on_focus_kill(evt):
             if self:
                 self.__key = ''
                 self.__button = ''
                 self.__isDragging = False
                 self.handler('focus_kill', evt)
             evt.Skip()
-        self.Bind(wx.EVT_KILL_FOCUS, inactivate)
+        self.Bind(wx.EVT_KILL_FOCUS, on_focus_kill)
         
         self.Bind(wx.EVT_CHAR_HOOK, self.on_hotkey_press)
         self.Bind(wx.EVT_KEY_DOWN, self.on_hotkey_down)
@@ -778,7 +778,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.Bind(wx.EVT_TIMER, on_timer)
         
         ## AcceleratorTable mimic
-        def hook_char(evt):
+        def on_char(evt):
             """Called when key down."""
             if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
                 evt.Skip()
@@ -786,7 +786,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
                 key = hotkey(evt)
                 if self.handler(f'{key} pressed', evt) is None:
                     evt.Skip()
-        self.Bind(wx.EVT_CHAR_HOOK, hook_char)
+        self.Bind(wx.EVT_CHAR_HOOK, on_char)
         
         self.__handler = FSM({  # DNA<Frame>
                 None : {},
@@ -829,7 +829,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
         self.SetStatusBar(self.statusbar)
         
         ## AcceleratorTable mimic.
-        def hook_char(evt):
+        def on_char(evt):
             """Called when key down."""
             if isinstance(evt.EventObject, wx.TextEntry):  # prior to handler
                 evt.Skip()
@@ -837,7 +837,7 @@ class MiniFrame(wx.MiniFrame, KeyCtrlInterfaceMixin):
                 key = hotkey(evt)
                 if self.handler(f'{key} pressed', evt) is None:
                     evt.Skip()
-        self.Bind(wx.EVT_CHAR_HOOK, hook_char)
+        self.Bind(wx.EVT_CHAR_HOOK, on_char)
         
         self.__handler = FSM({  # DNA<MiniFrame>
                 None : {},
