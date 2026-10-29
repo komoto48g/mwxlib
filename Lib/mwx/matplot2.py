@@ -407,13 +407,15 @@ class MatplotPanel(wx.Panel):
         """Show a message using the infobar.
         If show is None, toggle the infobar.
         """
+        shown = self.infobar.IsShown()
         if show is None:
-            show = not self.infobar.IsShown()  # toggle Shown.
+            show = not shown  # toggle show.
         if show:
             self.infobar.ShowMessage(message)
         else:
             self.infobar.Dismiss()
-        self.draw(internal_callback=False)
+        if show != shown:
+            self.draw(internal_callback=False)
 
     ## --------------------------------
     ## Property of the current frame.
