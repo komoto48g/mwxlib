@@ -80,6 +80,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                'delete pressed' : (0, self.OnRemoveItems),  # -> frame_removed/shown
                   'C-a pressed' : (0, self.OnSelectAllItems),
                   'M-a pressed' : (0, self.OnEditAnnotation),
+                   'f2 pressed' : (0, self.OnEditAnnotation),
                   'M-u pressed' : (0, self.OnEditUnit),
                  'M-up pressed' : (0, self.target.OnPageUp),
                'M-down pressed' : (0, self.target.OnPageDown),
@@ -193,7 +194,9 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.SetFocus()
 
     def OnShowItems(self, evt):
-        self.target.select(self.FocusedItem)
+        i = self.FocusedItem
+        if i != -1 and i != self.target.frame.index:
+            self.target.select(i)
 
     def OnRemoveItems(self, evt):
         self.target.kill_buffers(list(self.selected_items))
@@ -235,19 +238,21 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
             self.OnShowItems(evt)
 
     def OnShowAttributes(self, evt):
-        if self.FocusedItem == -1:
+        i = self.FocusedItem
+        if i == -1:
             return
-        selected_frames = self.get_selected_frames() or [self.target.frames[self.FocusedItem]]
+        selected_frames = self.get_selected_frames() or [self.target.frames[i]]
         self.info_dlg.Value = '\n\n'.join(f"# {frame.name}\n" + pformat(frame.attributes, sort_dicts=False)
                                           for frame in selected_frames)
         self.info_dlg.ShowModal()
         self.SetFocus()
 
     def OnEditUnit(self, evt):
-        if self.FocusedItem == -1:
+        i = self.FocusedItem
+        if i == -1:
             return
-        selected_frames = self.get_selected_frames() or [self.target.frames[self.FocusedItem]]
-        value = self.edit_item(self.FocusedItem, 5)
+        selected_frames = self.get_selected_frames() or [self.target.frames[i]]
+        value = self.edit_item(i, 5)
         if value is not None:
             try:
                 u = float(value.strip('*'))
@@ -261,11 +266,14 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
                     frame.unit = None
 
     def OnEditAnnotation(self, evt):
-        if self.FocusedItem == -1:
+        i = self.FocusedItem
+        if i == -1:
             return
-        frame = self.target.frames[self.FocusedItem]
-        value = self.edit_item(self.FocusedItem, 7)
+        frame = self.target.frames[i]
+        value = self.edit_item(i, 7)
         if value is not None:
+            if i != self.target.frame.index:
+                self.target.select(i)
             frame.annotation = value
 
     ## --------------------------------
