@@ -1861,8 +1861,9 @@ class Frame(mwx.Frame):
         
         shell = self.shellframe.rootshell
         shell.locals.update({
-            'nan': nan,
-            'inf': inf,
+            'np' : np,
+            'nan': np.nan,
+            'inf': np.inf,
         })
         with open(self.session_file) as i:
             shell.Execute(i.read())
