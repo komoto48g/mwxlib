@@ -124,7 +124,7 @@ class MatplotPanel(wx.Panel):
         self.modeline.Bind(wx.EVT_LEFT_DOWN, lambda v: self.canvas.SetFocus())
         
         self.infobar = wx.InfoBar(self)
-        self.infobar.Size = (0, 0)  # workaround for incorrect wrap sizing
+        self.infobar.Bind(wx.EVT_BUTTON, lambda v: self.show_infobar(show=False))
         
         self.SetSizer(
             pack(self, (
@@ -402,6 +402,18 @@ class MatplotPanel(wx.Panel):
 
     def set_wxcursor(self, c):
         self.canvas.SetCursor(wx.Cursor(c))
+
+    def show_infobar(self, message=None, show=True):
+        """Show a message using the infobar.
+        If show is None, toggle the infobar.
+        """
+        if show is None:
+            show = not self.infobar.IsShown()  # toggle Shown.
+        if show:
+            self.infobar.ShowMessage(message)
+        else:
+            self.infobar.Dismiss()
+        self.draw(internal_callback=False)
 
     ## --------------------------------
     ## Property of the current frame.

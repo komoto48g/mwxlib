@@ -211,7 +211,7 @@ class AxesImagePhantom:
         if 'annotation' in attr:
             self._annotation = attr['annotation']
             if self.parent.frame is self:
-                self.parent.infobar.ShowMessage(self._annotation)
+                self.parent.show_infobar(self._annotation)
             flag |= FLAG_ANNOTATION
         
         if 'center' in attr:
@@ -1086,17 +1086,15 @@ class GraphPlot(MatplotPanel):
             self.draw()
 
     def toggle_infobar(self):
-        """Toggle infobar (frame.annotation)."""
-        if self.infobar.IsShown():
-            self.infobar.Dismiss()
-        elif self.frame:
-            self.infobar.ShowMessage(self.frame.annotation)
-        self.draw(internal_callback=False)
+        """Toggle the infobar (frame.annotation)."""
+        if self.frame:
+            self.show_infobar(self.frame.annotation, show=None)
 
     def update_infobar(self):
-        """Show infobar (frame.annotation)."""
+        """Show the infobar (frame.annotation)."""
         if self.infobar.IsShown():
-            self.infobar.ShowMessage(self.frame.annotation)
+            if self.frame:
+                self.show_infobar(self.frame.annotation)
 
     ## --------------------------------
     ## 外部入出力／複合インターフェース．
