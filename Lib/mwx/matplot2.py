@@ -76,8 +76,11 @@ if 1:
 
 class _MouseEventData:
     def __init__(self, evt):  # <matplotlib.backend_bases.MouseEvent>
+        self.x = evt.x
+        self.y = evt.y
         self.xdata = evt.xdata
         self.ydata = evt.ydata
+        self.inaxes = evt.inaxes
 
 
 class MatplotPanel(wx.Panel):
@@ -320,7 +323,6 @@ class MatplotPanel(wx.Panel):
         
         self.__key = ''
         self._isMenu = None
-        self._isPressed = None
         self._isDragging = False  # True if dragging. (None if dblclicked)
         
         ## Initialize the plot figure.
@@ -378,7 +380,7 @@ class MatplotPanel(wx.Panel):
             ## postcall 時点で削除されている可能性があるため axes の有無をチェックする．
             if art.axes:
                 self.axes.draw_artist(art)
-        self.canvas.blit(self.axes.bbox)
+        self.canvas.blit(self.figure.bbox)
 
     def draw_overlay(self, cursor=True):
         cursor_lines = [self.cursor.linev, self.cursor.lineh] if cursor else []
@@ -389,7 +391,7 @@ class MatplotPanel(wx.Panel):
         """Copy canvas image to clipboard."""
         if background_only:
             self.canvas.restore_region(self.background)
-            self.canvas.blit(self.axes.bbox)
+            self.canvas.blit(self.figure.bbox)
         states = [art.get_animated() for art in self.overlay_artists]
         try:
             for art in self.overlay_artists:
@@ -540,15 +542,6 @@ class MatplotPanel(wx.Panel):
     ## matplotlib interface.
     ## --------------------------------
 
-    @property
-    def p_event(self):
-        """Last `pressed` event <matplotlib.backend_bases.MouseEvent>."""
-        return self._isPressed
-
-    @p_event.setter
-    def p_event(self, v):
-        self._isPressed = _MouseEventData(v) if v else None
-
     def on_menu_lock(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         self._isMenu = 1
 
@@ -628,8 +621,8 @@ class MatplotPanel(wx.Panel):
 
     def on_button_press(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called when the mouse button is pressed."""
-        self.p_event = evt
         key = self._on_mouse_event(evt)
+        self.p_event = _MouseEventData(evt)
         if evt.dblclick:
             self._isDragging = None
             self.handler(f'{key}button dblclick', evt)
@@ -673,10 +666,8 @@ class MatplotPanel(wx.Panel):
 
     def on_scroll(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called when scrolling the mouse wheel."""
-        self.p_event = evt
         key = self._on_mouse_event(evt)
         self.handler(f'{key} pressed', evt)
-        self.p_event = None
 
     ## --------------------------------
     ## Draw and Pan/Zoom actions.
@@ -688,7 +679,7 @@ class MatplotPanel(wx.Panel):
 
     def OnDrawn(self, evt):
         """Called after the canvas is drawn."""
-        self.background = self.canvas.copy_from_bbox(self.axes.bbox)
+        self.background = self.canvas.copy_from_bbox(self.figure.bbox)
 
     def OnMotion(self, evt):
         """Called when mouse moves in axes."""
@@ -788,7 +779,7 @@ class MatplotPanel(wx.Panel):
     #     dc.ResetBoundingBox()
     #     dc.BeginDrawing()
     #     
-    #     height = self.canvas.figure.bbox.height
+    #     height = self.figure.bbox.height
     #     org = self.p_event
     #     x0, y0 = org.x, org.y
     #     x1, y1 = evt.x, evt.y
@@ -809,10 +800,11 @@ class MatplotPanel(wx.Panel):
     #     dc.EndDrawing()
     # 
     # def OnZoomEnd(self, evt):
+    #     org = self.p_event
     #     try:
     #         del self._lastrect
-    #         self.xbound = (self.p_event.xdata, evt.xdata)
-    #         self.ybound = (self.p_event.ydata, evt.ydata)
+    #         self.xbound = (org.xdata, evt.xdata)
+    #         self.ybound = (org.ydata, evt.ydata)
     #     except AttributeError:
     #         pass
     #     self.toolbar.set_cursor(1)
@@ -835,11 +827,7 @@ class MatplotPanel(wx.Panel):
         self.set_wxcursor(wx.CURSOR_ARROW)
 
     def OnAxisDragBegin(self, evt):
-        org = self.p_event
-        w, h = self.canvas.Size
-        p = self.canvas.ScreenToClient(wx.GetMousePosition())
-        org.x, org.y = (p[0], h-p[1])
-        org.xdata, org.ydata = self._mapdisp2xy(org.x, org.y)  # p_event overwrites
+        pass
 
     def OnAxisDragEnd(self, evt):
         self.toolbar.push_current()

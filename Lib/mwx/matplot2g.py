@@ -1319,7 +1319,7 @@ class GraphPlot(MatplotPanel):
 
     def OnDragLock(self, evt):
         if self.frame:
-            org = self.p_event  # the last pressed
+            org = self.p_event
             self._lastpoint = self.calc_point(org.xdata, org.ydata)
             self._orgpoints = self.selector
 
@@ -1380,7 +1380,7 @@ class GraphPlot(MatplotPanel):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
-        org = self.p_event  # the last pressed
+        org = self.p_event
         self._lastpoint = self.calc_point(org.xdata, org.ydata)
         self._orgpoints = self.selector
 
@@ -1739,7 +1739,7 @@ class GraphPlot(MatplotPanel):
         if not self.frame or self._inaxes(evt):
             self.handler('quit', evt)
             return
-        org = self.p_event  # the last pressed
+        org = self.p_event
         self._lastpoint = self.calc_point(org.xdata, org.ydata, centred=False)
         if not self._rectsel:
             x, y = self._lastpoint
