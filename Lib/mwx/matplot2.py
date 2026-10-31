@@ -378,7 +378,7 @@ class MatplotPanel(wx.Panel):
             ## postcall 時点で削除されている可能性があるため axes の有無をチェックする．
             if art.axes:
                 self.axes.draw_artist(art)
-        self.canvas.blit(self.axes.bbox)
+        self.canvas.blit(self.figure.bbox)
 
     def draw_overlay(self, cursor=True):
         cursor_lines = [self.cursor.linev, self.cursor.lineh] if cursor else []
@@ -389,7 +389,7 @@ class MatplotPanel(wx.Panel):
         """Copy canvas image to clipboard."""
         if background_only:
             self.canvas.restore_region(self.background)
-            self.canvas.blit(self.axes.bbox)
+            self.canvas.blit(self.figure.bbox)
         states = [art.get_animated() for art in self.overlay_artists]
         try:
             for art in self.overlay_artists:
@@ -688,7 +688,7 @@ class MatplotPanel(wx.Panel):
 
     def OnDrawn(self, evt):
         """Called after the canvas is drawn."""
-        self.background = self.canvas.copy_from_bbox(self.axes.bbox)
+        self.background = self.canvas.copy_from_bbox(self.figure.bbox)
 
     def OnMotion(self, evt):
         """Called when mouse moves in axes."""
@@ -788,7 +788,7 @@ class MatplotPanel(wx.Panel):
     #     dc.ResetBoundingBox()
     #     dc.BeginDrawing()
     #     
-    #     height = self.canvas.figure.bbox.height
+    #     height = self.figure.bbox.height
     #     org = self.p_event
     #     x0, y0 = org.x, org.y
     #     x1, y1 = evt.x, evt.y
