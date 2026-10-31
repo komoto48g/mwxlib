@@ -521,8 +521,6 @@ class LineProfile(LinePlot):
             sel = frame.selector
             if sel.shape[1] < 2:
                 return
-            if len(frame.buffer.shape) > 2:  # RGB image
-                return
             
             xx, yy = sel[:,-2:]  # Get the last 2-selected line.
             nx, ny = frame.xytopixel(xx, yy)  # Converts to pixel [ny,nx]
@@ -535,13 +533,17 @@ class LineProfile(LinePlot):
                 L = 0
                 nv = (0, 0)
             
+            buffer = frame.buffer
+            if len(buffer.shape) > 2:   # RGB image
+                buffer = buffer[:,:,0]  # Use a single channel.
+            
             ## ピクセル空間：長さ L, サイズ N 分割でラインプロファイルをとる．
             lw = self._linewidth
             N = int(L) + 1
             xs = np.linspace(nx[0], nx[1], N)
             ys = np.linspace(ny[0], ny[1], N)
             zs = np.zeros(N)
-            h, w = frame.buffer.shape[:2]
+            h, w = buffer.shape[:2]
             for k in np.arange(-(lw-1)/2, (lw+1)/2):
                 x = xs + k * nv[0]
                 y = ys + k * nv[1]
@@ -549,8 +551,8 @@ class LineProfile(LinePlot):
                 if any(mask):
                     x = x[mask]
                     y = y[mask]
-                    zi = frame.buffer[y.astype(int), x.astype(int)]  # nearest: 速くてそこそこ正確
-                    # zi = ndimage.map_coordinates(frame.buffer, np.vstack((y, x)))  # spline: 遅いが正確
+                    zi = buffer[y.astype(int), x.astype(int)]  # nearest: 速くてそこそこ正確
+                    # zi = ndimage.map_coordinates(buffer, np.vstack((y, x)))  # spline: 遅いが正確
                     if zi.dtype in (np.complex64, np.complex128):
                         zi = np.log(1 + abs(zi))
                     zs[mask] += zi
