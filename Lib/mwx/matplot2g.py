@@ -412,7 +412,7 @@ class AxesImagePhantom:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
             x, y = x
         x, y = _to_array(x), _to_array(y)
-        l,r,b,t = self.artist.get_extent()
+        l, r, b, t = self.artist.get_extent()
         ux, uy = self.xy_unit
         nx = (x - l) / ux
         ny = (t - y) / uy  # Y ピクセルインデクスは座標と逆
@@ -427,7 +427,7 @@ class AxesImagePhantom:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
             nx, ny = nx
         nx, ny = _to_array(nx), _to_array(ny)
-        l,r,b,t = self.artist.get_extent()
+        l, r, b, t = self.artist.get_extent()
         ux, uy = self.xy_unit
         x = l + (nx + 0.5) * ux
         y = t - (ny + 0.5) * uy  # Y ピクセルインデクスは座標と逆
@@ -1288,15 +1288,12 @@ class GraphPlot(MatplotPanel):
             y = max(b, min(y, t))
         nx, ny = frame.xytopixel(x, y)
         ux, uy = frame.xy_unit
-        if centred:
-            x = l + (nx + 0.5) * ux
-            y = t - (ny + 0.5) * uy
-            if inaxes:
-                if x > r: x -= ux
-                if y < b: x += uy
-        else:
-            x = l + nx * ux
-            y = t - ny * uy
+        offset = 0.5 if centred else 0
+        x = l + (nx + offset) * ux
+        y = t - (ny + offset) * uy
+        if centred and inaxes:
+            if x > r: x -= ux
+            if y < b: x += uy
         return (x, y)
 
     def calc_shiftpoint(self, xo, yo, x, y, centred=True, inaxes=False):
