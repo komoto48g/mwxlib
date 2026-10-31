@@ -1282,29 +1282,24 @@ class GraphPlot(MatplotPanel):
         If inaxes, restrict the points in image area.
         """
         frame = self.frame
-        if isinstance(x, (list, tuple)):
-            x = np.array(x)
-            y = np.array(y)
-        l,r,b,t = frame.get_extent()
+        l, r, b, t = frame.get_extent()
         if inaxes:
-            x[x < l] = l
-            x[x > r] = r
-            y[y < b] = b
-            y[y > t] = t
+            x = max(l, min(x, r))
+            y = max(b, min(y, t))
         nx, ny = frame.xytopixel(x, y)
         ux, uy = frame.xy_unit
         if centred:
             x = l + (nx + 0.5) * ux
             y = t - (ny + 0.5) * uy
             if inaxes:
-                x[x > r] -= ux
-                y[y < b] += uy
+                if x > r: x -= ux
+                if y < b: x += uy
         else:
             x = l + nx * ux
             y = t - ny * uy
         return (x, y)
 
-    def calc_shiftpoint(self, xo, yo, x, y, centred=True):
+    def calc_shiftpoint(self, xo, yo, x, y, centred=True, inaxes=False):
         """Restrict point (x, y) from (xo, yo) in pi/8 step angles.
         If centred, correct the point to the center of the nearest pixel.
         """
@@ -1315,7 +1310,7 @@ class GraphPlot(MatplotPanel):
         k = np.searchsorted(aa, a)
         x = xo + L * np.cos(aa[k] - pi/8)
         y = yo + L * np.sin(aa[k] - pi/8)
-        return self.calc_point(x, y, centred)
+        return self.calc_point(x, y, centred, inaxes)
 
     def OnDragLock(self, evt):
         if self.frame:
@@ -1648,18 +1643,23 @@ class GraphPlot(MatplotPanel):
 
     def set_current_rect(self, x, y):
         if len(x) == 2:
-            (xa,xb), (ya,yb) = x, y
+            (xa, xb), (ya, yb) = x, y
             self._rectsel = [2]
         else:
-            l,r,b,t = self.frame.get_extent()
             xa, xb = min(x), max(x)
             ya, yb = min(y), max(y)
-            ## Restrict the range to the image extent.
-            w, h = xb-xa, yb-ya
-            if xa < l: xa, xb = l, l+w
-            if xb > r: xa, xb = r-w, r
-            if ya < b: ya, yb = b, b+h
-            if yb > t: ya, yb = t-h, t
+        if 1:
+            ## Restrict the range to the image extent without chainging the size..
+            def _restrict_range(start, end, lower, upper):
+                a, b = sorted((start, end))
+                L = min(b-a, upper-lower)
+                a = min(max(a, lower), upper-L)
+                b = a + L
+                return (a, b) if start < end else (b, a)
+            
+            l, r, b, t = self.frame.get_extent()
+            xa, xb = _restrict_range(xa, xb, l, r)
+            ya, yb = _restrict_range(ya, yb, b, t)
         x = [xa, xb, xb, xa, xa]
         y = [ya, ya, yb, yb, ya]
         self.rected.set_data(x, y)
@@ -1709,9 +1709,11 @@ class GraphPlot(MatplotPanel):
             self.handler('line_removed', self.frame)
         if len(xs) > 0 and self.frame:
             ux, uy = self.frame.xy_unit
-            xs = (xs.min()-ux/2, xs.max()+ux/2)
-            ys = (ys.max()+uy/2, ys.min()-uy/2)
-            self.set_current_rect(xs, ys)
+            xa, xb = xs[0], xs[-1]
+            ya, yb = ys[0], ys[-1]
+            dx = (ux if xa < xb else -ux) / 2
+            dy = (uy if ya < yb else -uy) / 2
+            self.set_current_rect((xa-dx, xb+dx), (ya-dy, yb+dy))
             self.handler('region_drawn', self.frame)
         self.update_rect_art()
 
@@ -1740,14 +1742,14 @@ class GraphPlot(MatplotPanel):
             self.handler('quit', evt)
             return
         org = self.p_event
-        self._lastpoint = self.calc_point(org.xdata, org.ydata, centred=False)
+        self._lastpoint = self.calc_point(org.xdata, org.ydata, centred=False, inaxes=True)
         if not self._rectsel:
             x, y = self._lastpoint
             self.set_current_rect((x, x), (y, y))  # start new region
         self._orgpoints = self.get_current_rect()
 
     def OnRegionDragMove(self, evt, shift=False, meta=False):
-        x, y = self.calc_point(evt.xdata, evt.ydata, centred=False)
+        x, y = self.calc_point(evt.xdata, evt.ydata, centred=False, inaxes=True)
         xr, yr = self.get_current_rect()
         j = self._rectsel  # corner-drag[1] or region-drag[4]
         if len(j) == 1:
