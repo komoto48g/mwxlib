@@ -566,7 +566,7 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
             (wx.ID_COPY, "&Copy params", "Copy params",
                 lambda v: self.copy_to_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self._params != [])),
-                
+            
             (wx.ID_PASTE, "&Paste params", "Read params",
                 lambda v: self.paste_from_clipboard(checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(self._params != [])),

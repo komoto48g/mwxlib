@@ -129,7 +129,7 @@ class Plugin(Layer):
         self.menu[0:5] = [
             (1, "&Load file", Icon('open'),
                 lambda v: self.load_media()),
-                
+            
             (2, "&Snapshot", Icon('clip'),
                 lambda v: self.snapshot(),
                 lambda v: v.Enable(self._path is not None)),

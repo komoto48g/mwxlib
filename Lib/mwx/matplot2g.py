@@ -655,7 +655,7 @@ class GraphPlot(MatplotPanel):
             (wx.ID_COPY, "&Copy buffer\tCtrl-c", "Copy buffer to clipboard", _Icon(wx.ART_COPY),
                 lambda v: self.write_buffer_to_clipboard(),
                 lambda v: v.Enable(self.frame is not None)),
-                
+            
             (wx.ID_PASTE, "&Paste buffer\tCtrl-v", "Paste from clipboard", _Icon(wx.ART_PASTE),
                 lambda v: self.read_buffer_from_clipboard()),
             (),
@@ -666,7 +666,7 @@ class GraphPlot(MatplotPanel):
             (wx.ID_CLOSE, "&Kill buffer\tCtrl-k", "Kill buffer", _Icon(wx.ART_DELETE),
                 lambda v: self.kill_buffer(),
                 lambda v: v.Enable(self.frame is not None)),
-                
+            
             (wx.ID_CLOSE_ALL, "&Kill all buffer\tCtrl-Shift-k", "Kill all buffers", _Icon(wx.ART_DELETE),
                 lambda v: self.kill_all_buffers(),
                 lambda v: v.Enable(self.frame is not None)),

@@ -383,7 +383,7 @@ class LayerInterface(CtrlInterface):
             (wx.ID_COPY, "&Copy params\tCtrl-c", "Copy params",
                 lambda v: copy_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
-                
+            
             (wx.ID_PASTE, "&Paste params\tCtrl-v", "Read params",
                 lambda v: paste_params(v, checked_only=wx.GetKeyState(wx.WXK_SHIFT)),
                 lambda v: v.Enable(bool(self.parameters))),
@@ -396,7 +396,7 @@ class LayerInterface(CtrlInterface):
                 lambda v: self.parent.reload_plug(self),
                 lambda v: v.Enable(self.reloadable
                             and not (self.thread and self.thread.active))),
-                
+            
             (mwx.ID_(111), "&Unload module", "Unload", Icon('delete'),
                 lambda v: self.parent.unload_plug(self),
                 lambda v: v.Enable(self.unloadable

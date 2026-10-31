@@ -431,7 +431,7 @@ class LineProfile(LinePlot):
             (mwx.ID_(211), "Logic length", "Set axis-unit in logic base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(1),
                 lambda v: v.Check(self._logicp)),
-                
+            
             (mwx.ID_(212), "Pixel length", "Set axis-unit in pxiel base", wx.ITEM_RADIO,
                 lambda v: self.set_logic(0),
                 lambda v: v.Check(not self._logicp)),
