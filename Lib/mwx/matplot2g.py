@@ -395,8 +395,8 @@ class AxesImagePhantom:
         """
         h, w = self.buffer.shape[:2]
         nx, ny = self.xytopixel(x, y, cast=nearest)
-        ## if np.any((nx<0) | (nx>=w) | (ny<0) | (ny>=h)):
-        if np.any(nx<0) or np.any(nx>=w) or np.any(ny<0) or np.any(ny>=h):
+        ## if np.any((nx < 0) | (nx >= w) | (ny < 0) | (ny >= h)):
+        if np.any(nx < 0) or np.any(nx >= w) or np.any(ny < 0) or np.any(ny >= h):
             return
         if nearest:
             return self.buffer[ny, nx]  # nearest value
@@ -860,7 +860,7 @@ class GraphPlot(MatplotPanel):
             j = self._index
             if j is not None:
                 n = len(self)
-                self._index = None if n==0 else j if j<n else n-1
+                self._index = None if n == 0 else j if j < n else n-1
             self.select(self._index)
 
     ## __len__ は bool() でも呼び出されるため，オブジェクト判定で偽を返すことがある (PY2).

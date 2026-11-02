@@ -682,17 +682,17 @@ class KnobCtrlPanel(scrolled.ScrolledPanel):
         p = wx.EXPAND if expand > 0 else wx.ALIGN_CENTER
         if row > 0:
             oblist = [pack(self, objs[i:i+row], orient=wx.HORIZONTAL,
-                           style=(expand>0, p | wx.LEFT | wx.RIGHT, hspacing))
+                           style=(expand > 0, p | wx.LEFT | wx.RIGHT, hspacing))
                            for i in range(0, len(objs), row)]
         else:
             oblist = objs
         
         p = wx.EXPAND if expand > 0 else align
         sizer = pack(self, oblist, orient=wx.VERTICAL,
-                     style=(expand>1, p | wx.BOTTOM | wx.TOP, vspacing),
+                     style=(expand > 1, p | wx.BOTTOM | wx.TOP, vspacing),
                      label=title)
         
-        self.Sizer.Add(sizer, expand>1, p | wx.ALL, border)
+        self.Sizer.Add(sizer, expand > 1, p | wx.ALL, border)
         
         ## Register objects and parameter groups.
         def _flatiter(objects):

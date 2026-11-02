@@ -745,7 +745,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     }
 
     def get_marker(self, n):
-        return self.MarkerNext(0, 1<<n)
+        return self.MarkerNext(0, 1 << n)
 
     def set_marker(self, line, n):
         if line != -1:
@@ -761,7 +761,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             self.handler(f'{marker}_set', line)
 
     def del_marker(self, n):
-        line = self.MarkerNext(0, 1<<n)
+        line = self.MarkerNext(0, 1 << n)
         if line != -1:
             self.MarkerDeleteAll(n)
             marker = self.marker_names[n]
@@ -3392,7 +3392,7 @@ class Nautilus(EditorInterface, Shell):
                 cc, pred = re.search(r"(\?+)\s*(.*)", c + ''.join(rest)).groups()
                 return ("apropos({0}, {1!r}, ignorecase={2}, alias={0!r}, "
                         "pred={3!r}, locals=locals())".format(
-                        head.strip(), hint.strip(), len(cc)<2, pred or None))
+                        head.strip(), hint.strip(), len(cc) < 2, pred or None))
             
             if c == ';':
                 return lhs + c + self.magic_interpret(rest)

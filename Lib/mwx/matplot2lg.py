@@ -80,10 +80,8 @@ class LinePlot(MatplotPanel):
             b = max(v)
             if self.boundary is not None:
                 l, r = self.boundary
-                if   a < l: a = l
-                elif a > r: a = r
-                if   b < l: b = l
-                elif b > r: b = r
+                a = max(l, min(a, r))
+                b = max(l, min(b, r))
             v = np.array((a, b))
             self._vspan.set_visible(1)
             try:
@@ -176,8 +174,7 @@ class LinePlot(MatplotPanel):
         x = evt.xdata
         if self._selection != 1:
             l, r = self.xbound
-            if   x < l: x = l
-            elif x > r: x = r
+            x = max(l, min(x, r))
             self.region = (self._lastpoint, x)
         elif self.region is not None:
             a, b = self.region
