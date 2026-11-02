@@ -1755,12 +1755,13 @@ class GraphPlot(MatplotPanel):
             if shift:
                 x, y = self.calc_shiftpoint(xo, yo, x, y, centred=False)
             elif meta:
+                # nn = (1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192)
+                nn = 2 ** np.arange(14)
                 ux, uy = self.frame.xy_unit
-                nn = (1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192)
-                n = max(abs(x-xo)/ux, abs(y-yo)/uy)
-                i = np.searchsorted(nn, n)
+                i = np.searchsorted(nn, abs(x-xo) / ux)
+                j = np.searchsorted(nn, abs(y-yo) / uy)
                 x = xo + nn[i] * np.sign(x-xo) * ux
-                y = yo + nn[i] * np.sign(y-yo) * uy
+                y = yo + nn[j] * np.sign(y-yo) * uy
             xs, ys = (xo, x), (yo, y)
         else:
             xc, yc = self._lastpoint
