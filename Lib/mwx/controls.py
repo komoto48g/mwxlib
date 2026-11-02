@@ -349,15 +349,15 @@ class Knob(wx.Panel):
         
         if style == 'chkbox' or style == 'checkbox':
             ## Keep margin for the checkbox: lw += 16
-            self._label = wx.CheckBox(self, label=label, size=(lw,-1))
+            self._label = wx.CheckBox(self, label=label, size=(lw, -1))
             self._label.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         elif style == 'button':
             ## Keep margin for the button: lw += 16
-            self._label = pb.PlateButton(self, label=label, size=(lw,-1),
+            self._label = pb.PlateButton(self, label=label, size=(lw, -1),
                                          style=pb.PB_STYLE_DEFAULT | pb.PB_STYLE_SQUARE)
             self._label.Bind(wx.EVT_BUTTON, self.OnPress)
         elif not style:
-            self._label = wx.StaticText(self, label=label, size=(lw,-1))
+            self._label = wx.StaticText(self, label=label, size=(lw, -1))
         else:
             raise Exception(f"unknown style: {style!r}")
         
@@ -365,7 +365,7 @@ class Knob(wx.Panel):
         self._label.SetToolTip(self._par._tooltip)
         self._label.Enable(lw)  # skip focus
         
-        self._text = wx.TextCtrl(self, size=(tw,h), style=wx.TE_PROCESS_ENTER)
+        self._text = wx.TextCtrl(self, size=(tw, h), style=wx.TE_PROCESS_ENTER)
         self._text.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter)
         self._text.Bind(wx.EVT_KILL_FOCUS, self.OnTextExit)
         self._text.Bind(wx.EVT_KEY_DOWN, self.OnTextKeyDown)
@@ -376,30 +376,30 @@ class Knob(wx.Panel):
         self._text.Enable(tw)  # skip focus
         
         if type == 'slider':
-            self._ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
+            self._ctrl = wx.Slider(self, size=(cw, h), style=wx.SL_HORIZONTAL)
             self._ctrl.Bind(wx.EVT_SCROLL_CHANGED, self.OnScroll)
             self._ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
             self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'slider*':
-            self._ctrl = wx.Slider(self, size=(cw,h), style=wx.SL_HORIZONTAL)
+            self._ctrl = wx.Slider(self, size=(cw, h), style=wx.SL_HORIZONTAL)
             self._ctrl.Bind(wx.EVT_SCROLL, self.OnScroll)  # called while dragging
             self._ctrl.Bind(wx.EVT_SCROLL_CHANGED, lambda v: None)  # pass no action
             self._ctrl.Bind(wx.EVT_KEY_DOWN, self.OnCtrlKeyDown)
             self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'spin' or type == 'hspin':
-            self._ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_HORIZONTAL)
+            self._ctrl = wx.SpinButton(self, size=(cw, h), style=wx.SP_HORIZONTAL)
             self._ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
             self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'vspin':
-            self._ctrl = wx.SpinButton(self, size=(cw,h), style=wx.SP_VERTICAL)
+            self._ctrl = wx.SpinButton(self, size=(cw, h), style=wx.SP_VERTICAL)
             self._ctrl.Bind(wx.EVT_SPIN, self.OnScroll)
             self._ctrl.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
             
         elif type == 'choice':
-            self._ctrl = wx.Choice(self, size=(cw,h))
+            self._ctrl = wx.Choice(self, size=(cw, h))
             self._ctrl.Bind(wx.EVT_CHOICE, self.OnScroll)
             self._ctrl.SetValue = self._ctrl.SetSelection
             self._ctrl.GetValue = self._ctrl.GetSelection
@@ -1105,14 +1105,14 @@ class TextBox(wx.Control):
     control = property(lambda self: self._ctrl)
 
     def __init__(self, parent, label='', handler=None, updater=None,
-                       icon=None, readonly=False, size=(-1,-1), **kwargs):
+                       icon=None, readonly=False, size=(-1, -1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0) | wx.TE_PROCESS_ENTER
                                                   | (wx.TE_READONLY if readonly else 0))
         self._ctrl = wx.TextCtrl(self, **kwargs)
         self._btn = Button(self, label, None, icon,
-                           size=(-1,-1) if label or icon else (0,0))
+                           size=(-1, -1) if label or icon else (0, 0))
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
@@ -1178,14 +1178,14 @@ class Choice(wx.Control):
     control = property(lambda self: self._ctrl)
 
     def __init__(self, parent, label='', handler=None, updater=None,
-                       icon=None, readonly=False, size=(-1,-1), **kwargs):
+                       icon=None, readonly=False, size=(-1, -1), **kwargs):
         wx.Control.__init__(self, parent, size=size, style=wx.BORDER_NONE)
         
         kwargs['style'] = (kwargs.get('style', 0) | wx.TE_PROCESS_ENTER
                                                   | (wx.CB_READONLY if readonly else 0))
         self._ctrl = wx.ComboBox(self, **kwargs)
         self._btn = Button(self, label, None, icon,
-                           size=(-1,-1) if label or icon else (0,0))
+                           size=(-1, -1) if label or icon else (0, 0))
         self.SetSizer(
             pack(self, (
                 (self._btn, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 0),
@@ -1294,7 +1294,7 @@ class Indicator(wx.Control):
             gc.SetPen(gc.CreatePen(wx.TRANSPARENT_PEN))
             path = gc.CreatePath()
             stops = wx.GraphicsGradientStops()
-            stops.Add(wx.GraphicsGradientStop(wx.Colour(255,255,255,128), r/s))
+            stops.Add(wx.GraphicsGradientStop(wx.Colour(255, 255, 255, 128), r/s))
             stops.Add(wx.GraphicsGradientStop(wx.TransparentColour, 1.0))
         
         dc.SetPen(wx.Pen(self.foregroundColour, style=wx.PENSTYLE_TRANSPARENT))

@@ -32,7 +32,7 @@ def _regulate_key(key):
 MPL_VERSION = matplotlib.parse_version(matplotlib.__version__).release
 
 ## Monkey-patch for matplotlib 3.4/WXAgg.
-if MPL_VERSION < (3,8,0):
+if MPL_VERSION < (3, 8, 0):
     from matplotlib.backend_bases import Event
 
     def __init__(self, name, canvas, guiEvent=None):
@@ -45,7 +45,7 @@ if MPL_VERSION < (3,8,0):
 
 
 ## Monkey-patch (local) for matplotlib 3.10/WXAgg.
-# if MPL_VERSION < (3,11,0):
+# if MPL_VERSION < (3, 11, 0):
 if 1:
     class Cursor(Cursor):
         def onmove(self, event):
@@ -100,13 +100,13 @@ class MatplotPanel(wx.Panel):
     """
     handler = property(lambda self: self.__handler)
 
-    def __init__(self, parent, log=None, margin=(.1,.1,.9,.9), **kwargs):
+    def __init__(self, parent, log=None, margin=(.1, .1, .9, .9), **kwargs):
         wx.Panel.__init__(self, parent, **kwargs)
         
         self.message = log or (lambda s: s)
         
         # <matplotlib.figure.Figure>
-        self.figure = Figure(facecolor='white', figsize=(.1,.1))  # inches
+        self.figure = Figure(facecolor='white', figsize=(.1, .1))  # inches
         
         # <matplotlib.backends.backend_wxagg.FigureCanvasWxAgg>
         self.canvas = FigureCanvas(self, -1, self.figure)
@@ -453,7 +453,7 @@ class MatplotPanel(wx.Panel):
     @property
     def ddpu(self):
         """Display-dot resolution (x, y) [dots per arb.unit]."""
-        a, b = self.axes.transData.transform([[0,0], [1,1]])
+        a, b = self.axes.transData.transform([[0, 0], [1, 1]])
         return b - a
 
     def _mapxy2disp(self, x, y):
@@ -611,7 +611,7 @@ class MatplotPanel(wx.Panel):
         
         ## Overwrite evt.key with modifiers.
         key = self.__key
-        if evt.button in (1,2,3):
+        if evt.button in (1, 2, 3):
             key += 'LMR'[evt.button-1]  # {1:L, 2:M, 3:R}
             evt.key = key + 'button'
         elif evt.button in ('up', 'down'):
@@ -646,7 +646,7 @@ class MatplotPanel(wx.Panel):
     def on_motion_notify(self, evt):  # <matplotlib.backend_bases.MouseEvent>
         """Called when the mouse is moved."""
         key = self._on_mouse_event(evt)
-        if evt.button in (1,2,3):
+        if evt.button in (1, 2, 3):
             if not self._isDragging:
                 self._isDragging = True
                 self.handler(f'{key}drag begin', evt)

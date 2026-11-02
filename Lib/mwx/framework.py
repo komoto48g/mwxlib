@@ -466,7 +466,7 @@ class CtrlInterface(KeyCtrlInterfaceMixin):
                 self.handler(f'{kbtn}drag end', evt)
         
         k = evt.GetButton()  # {1:L, 2:M, 3:R, 4:X1, 5:X2}
-        if action == 'pressed' and k in (1,2,3):
+        if action == 'pressed' and k in (1, 2, 3):
             self.__button = 'LMR'[k-1]
         else:
             self.__button = ''
@@ -767,7 +767,7 @@ class Frame(wx.Frame, KeyCtrlInterfaceMixin):
         self.menubar.reset()
         
         self.statusbar = StatusBar(self)
-        self.statusbar.resize((-1,78))
+        self.statusbar.resize((-1, 78))
         self.SetStatusBar(self.statusbar)
         
         self.timer = wx.Timer(self)
@@ -1127,9 +1127,9 @@ class ShellFrame(MiniFrame):
         @filling    : Inspection using ``wx.lib.filling.Filling``.
     """
     def __init__(self, parent, target=None, session=None, **kwargs):
-        MiniFrame.__init__(self, parent, size=(1280,720), style=wx.DEFAULT_FRAME_STYLE)
+        MiniFrame.__init__(self, parent, size=(1280, 720), style=wx.DEFAULT_FRAME_STYLE)
         
-        self.statusbar.resize((-1,120))
+        self.statusbar.resize((-1, 120))
         self.statusbar.Show(1)
         
         from .nutshell import Nautilus, EditorBook, Stylus
@@ -1194,14 +1194,14 @@ class ShellFrame(MiniFrame):
         self.ginfo = LocalsWatcher(self, name="globals")
         self.linfo = LocalsWatcher(self, name="locals")
         
-        self.console = AuiNotebook(self, size=(600,400), name='console')
+        self.console = AuiNotebook(self, size=(600, 400), name='console')
         self.console.AddPage(self.rootshell, "root", bitmap=Icon('core'))
         self.console.TabCtrlHeight = 0
         
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnConsolePageClose)
         self.console.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnConsolePageChanged)
         
-        self.ghost = AuiNotebook(self, size=(600,400), name="ghost")
+        self.ghost = AuiNotebook(self, size=(600, 400), name="ghost")
         self.ghost.AddPage(self.Scratch, "Scratch", bitmap=Icon('ghost'))
         self.ghost.AddPage(self.Log, "Log")
         self.ghost.AddPage(self.Help, "Help")
@@ -1210,7 +1210,7 @@ class ShellFrame(MiniFrame):
         
         self.ghost.SetDropTarget(FileDropLoader(self.ghost))
         
-        self.watcher = AuiNotebook(self, size=(600,400), name="watcher")
+        self.watcher = AuiNotebook(self, size=(600, 400), name="watcher")
         self.watcher.AddPage(self.ginfo, "globals")
         self.watcher.AddPage(self.linfo, "locals")
         self.watcher.AddPage(self.monitor, "Monitor", bitmap=Icon('tv'))

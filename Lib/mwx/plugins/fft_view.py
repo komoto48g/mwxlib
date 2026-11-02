@@ -43,7 +43,7 @@ class Plugin(Layer):
         self.pchk = wx.CheckBox(self, label="logical unit")
         self.pchk.Value = True
         
-        self.ftor = Param("mask", (2,4,8,16,32,64))  # masking area factor of 1/2
+        self.ftor = Param("mask", (2, 4, 8, 16, 32, 64))  # masking area factor of 1/2
         
         self.layout((self.pchk,), title="normal FFT")
         self.layout((self.ftor,), title="inverse FFT", style='chkbox', tw=32)

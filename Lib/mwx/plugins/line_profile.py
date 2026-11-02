@@ -13,7 +13,7 @@ class Plugin(Layer):
     dockable = False
 
     def Init(self):
-        self.plot = LineProfile(self, log=self.message, size=(300,200))
+        self.plot = LineProfile(self, log=self.message, size=(300, 200))
         
         self.layout((self.plot,), expand=2, border=0)
         

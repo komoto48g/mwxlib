@@ -322,7 +322,7 @@ class Plugin(Layer):
         return self.statusline
 
     def Init(self):
-        self.nb = AuiNotebook(self, size=(400,150),
+        self.nb = AuiNotebook(self, size=(400, 150),
                     style=(aui.AUI_NB_DEFAULT_STYLE | aui.AUI_NB_TOP)
                        & ~(aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         )

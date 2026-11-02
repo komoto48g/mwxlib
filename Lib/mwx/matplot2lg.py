@@ -88,7 +88,7 @@ class LinePlot(MatplotPanel):
                 self._vspan.set_x(a)
                 self._vspan.set_width(b-a)
             except AttributeError:
-                self._vspan.set_xy(((a,0), (a,1), (b,1), (b,0)))
+                self._vspan.set_xy(((a, 0), (a, 1), (b, 1), (b, 0)))
             self.handler('region_set', self.frame)
         else:
             self._vspan.set_visible(0)
@@ -116,14 +116,14 @@ class LinePlot(MatplotPanel):
             x = (b + a) / 2
             y = self.ylim[0] + 20/self.ddpu[1]
             if (b - a) > 60/self.ddpu[0]:
-                p = _A(b-a, (x,y), (-20,8), arrowstyle='-')  # wide space
+                p = _A(b-a, (x, y), (-20, 8), arrowstyle='-')  # wide space
             else:
-                p = _A(b-a, (x,y), (16,16), arrowstyle='-',  # narrow space
+                p = _A(b-a, (x, y), (16, 16), arrowstyle='-',  # narrow space
                        connectionstyle="angle,angleA=0,angleB=90,rad=8")
             self._annotations = [
-                _A(a, (a,y), (-54,-3), arrowstyle='->'),
-                _A(b, (b,y), (+16,-3), arrowstyle='->'),
-                _A(None, (a,y), (b,y), textcoords='data', arrowstyle='<->'),
+                _A(a, (a, y), (-54, -3), arrowstyle='->'),
+                _A(b, (b, y), (+16, -3), arrowstyle='->'),
+                _A(None, (a, y), (b, y), textcoords='data', arrowstyle='<->'),
                 p,
             ]
 
@@ -147,7 +147,7 @@ class LinePlot(MatplotPanel):
         v = self._test_region(evt)
         if v == 1:
             self.set_wxcursor(wx.CURSOR_HAND)  # insdie
-        elif v in (2,3):
+        elif v in (2, 3):
             self.set_wxcursor(wx.CURSOR_SIZEWE)  # on-edge
         else:
             self.set_wxcursor(wx.CURSOR_ARROW)  # outside or None
@@ -444,7 +444,7 @@ class LineProfile(LinePlot):
                                      picker=True, pickradius=2)
         
         # <matplotlib.patches.Polygon>
-        self._fill = patches.Polygon([(0,0)], color='c', alpha=0.8)
+        self._fill = patches.Polygon([(0, 0)], color='c', alpha=0.8)
         self.axes.add_patch(self._fill)
         
         # <matplotlib.lines.Line2D>
@@ -502,7 +502,7 @@ class LineProfile(LinePlot):
     def boundary(self):
         x = self._plot.get_xdata(orig=0)
         if x.size:
-            return x[[0,-1]]
+            return x[[0, -1]]
 
     @property
     def plotdata(self):
@@ -694,7 +694,7 @@ class LineProfile(LinePlot):
                 else:
                     self.region = None
             else:
-                self.region = x[[0,-1]]  # all y > yc
+                self.region = x[[0, -1]]  # all y > yc
             self.message(f"yc = {yc:g}")
             self.draw_overlay()  # Callback instead of invisible cursor.
 

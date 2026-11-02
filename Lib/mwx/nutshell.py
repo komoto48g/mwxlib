@@ -1145,7 +1145,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
     def OnMarginRClick(self, evt):  # <wx._stc.StyledTextEvent>
         """Popup context menu."""
         def _Icon(key):
-            return wx.ArtProvider.GetBitmap(key, size=(16,16))
+            return wx.ArtProvider.GetBitmap(key, size=(16, 16))
         
         Menu.Popup(self, [
             (wx.ID_DOWN, "&Fold ALL", _Icon(wx.ART_MINUS),
@@ -1295,7 +1295,7 @@ class EditorInterface(AutoCompInterfaceMixin, CtrlInterface):
             else:
                 self.BraceBadLight(p)
         else:
-            self.BraceHighlight(-1,-1)  # no highlight
+            self.BraceHighlight(-1, -1)  # no highlight
 
     def over(self, mode=1):
         """Set insert or overtype.

@@ -648,7 +648,7 @@ class GraphPlot(MatplotPanel):
         })
         
         def _Icon(key):
-            return wx.ArtProvider.GetBitmap(key, size=(16,16))
+            return wx.ArtProvider.GetBitmap(key, size=(16, 16))
         
         self.menu += [
             (),
@@ -1421,7 +1421,7 @@ class GraphPlot(MatplotPanel):
               'left' : (-ux, 0),
              'right' : (+ux, 0),
             }
-            self.selector += np.resize(du[evt.key], (2,1))
+            self.selector += np.resize(du[evt.key], (2, 1))
             self.handler('line_move', self.frame)
 
     def OnLineShiftEnd(self, evt):
@@ -1507,9 +1507,9 @@ class GraphPlot(MatplotPanel):
             for k, (x, y) in enumerate(zip(xm[:N], ym[:N])):
                 self._markarts.append(
                   self.axes.annotate(k,  # <matplotlib.text.Annotation>
-                    xy=(x,y), xycoords='data',
-                    xytext=(6,6), textcoords='offset points',
-                    bbox=dict(boxstyle="round", fc=(1,1,1,), ec=(1,0,0,)),
+                    xy=(x, y), xycoords='data',
+                    xytext=(6, 6), textcoords='offset points',
+                    bbox=dict(boxstyle="round", fc=(1, 1, 1), ec=(1, 0, 0)),
                     color='red', size=7,  # fontsize=8,
                   )
                 )
@@ -1573,7 +1573,7 @@ class GraphPlot(MatplotPanel):
               'left' : (-ux, 0),
              'right' : (+ux, 0),
             }
-            p = self.get_current_mark() + np.resize(du[evt.key], (2,1))
+            p = self.get_current_mark() + np.resize(du[evt.key], (2, 1))
             self.set_current_mark(*p)
             self.handler('mark_draw', self.frame)
 
@@ -1616,7 +1616,7 @@ class GraphPlot(MatplotPanel):
         if len(x) and len(y):
             l, r = min(x), max(x)
             b, t = min(y), max(y)
-            return np.array(((l,r), (b,t)))
+            return np.array(((l, r), (b, t)))
         return np.resize(0., (2, 0))
 
     @region.setter
@@ -1692,7 +1692,7 @@ class GraphPlot(MatplotPanel):
 
     def OnRegionCenter(self, evt):
         if self.region.size and self.frame:
-            (l,r), (b,t) = self.region
+            (l, r), (b, t) = self.region
             c = np.array(((l+r)/2, (b+t)/2))
             d = self.frame.center - c[:,None]
             if np.any(d):
@@ -1726,7 +1726,7 @@ class GraphPlot(MatplotPanel):
         y = evt.mouseevent.ydata
         xs, ys = evt.artist.get_data(orig=0)
         dots = np.hypot(x-xs[k], y-ys[k]) * self.ddpu[0]
-        self._rectsel = [k] if dots < 8 else [0,1,2,3,4]  # リージョンの全選択
+        self._rectsel = [k] if dots < 8 else [0, 1, 2, 3, 4]  # リージョンの全選択
         self.update_rect_art()
 
     def OnRegionDeselected(self, evt):  # <matplotlib.backend_bases.PickEvent>
@@ -1812,7 +1812,7 @@ class GraphPlot(MatplotPanel):
     def OnRegionMotion(self, evt):
         x, y = evt.xdata, evt.ydata
         if self.region.size:
-            (l,r), (b,t) = self.region
+            (l, r), (b, t) = self.region
             d = self.rected.pickradius / self.ddpu[0]
             x0 = l+d < x < r-d
             y0 = b+d < y < t-d

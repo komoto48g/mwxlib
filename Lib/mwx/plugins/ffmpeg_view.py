@@ -93,7 +93,7 @@ class Plugin(Layer):
 
     def Init(self):
         self.mc = wx.media.MediaCtrl()
-        self.mc.Create(self, size=(300,300),
+        self.mc.Create(self, size=(300, 300),
                        style=wx.SIMPLE_BORDER,
                        szBackend=wx.media.MEDIABACKEND_WMP10
                        # szBackend=wx.media.MEDIABACKEND_DIRECTSHOW
@@ -113,7 +113,7 @@ class Plugin(Layer):
                         handler=self.set_offset,
                         updater=self.get_offset,
                         )
-        self.crop = TextBox(self, icon="cut", size=(140,-1),
+        self.crop = TextBox(self, icon="cut", size=(140, -1),
                         handler=self.set_crop,
                         updater=self.get_crop,
                         )

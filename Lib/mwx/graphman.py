@@ -743,7 +743,7 @@ class Frame(mwx.Frame):
         self.output = Graph(self, log=self.message, margin=None, name="output")
         
         self.histogram = Histogram(self, log=self.message, margin=None,
-                                         size=(130,65), name="histogram")
+                                         size=(130, 65), name="histogram")
         self.histogram.attach(self.graph)
         self.histogram.attach(self.output)
         
@@ -1135,8 +1135,8 @@ class Frame(mwx.Frame):
             if not isinstance(dock, bool):
                 pane.dock_direction = dock
             if not plug.caption:
-                pane.CaptionVisible(False)       # no caption bar
-                pane.Gripper(dock not in (0,5))  # show a grip when docked
+                pane.CaptionVisible(False)        # no caption bar
+                pane.Gripper(dock not in (0, 5))  # show a grip when docked
             pane.Dockable(dock)
         
         if not pane.dock_direction:
@@ -1326,7 +1326,7 @@ class Frame(mwx.Frame):
                 nb = pane.window
                 nb.AddPage(plug, caption)
             else:
-                size = plug.GetSize() + (2,30)  # padding for notebook
+                size = plug.GetSize() + (2, 30)  # padding for notebook
                 nb = AuiNotebook(self, name=title)
                 nb.AddPage(plug, caption)
                 self._mgr.AddPane(nb, aui.AuiPaneInfo()
