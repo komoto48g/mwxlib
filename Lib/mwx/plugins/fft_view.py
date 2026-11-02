@@ -10,12 +10,22 @@ from mwx.controls import Param
 
 
 def fftcrop(src):
-    """Crop src image in 2**N square ROI centered at (x, y)."""
+    """Crop src to a centered square with 2^k dimensions."""
     h, w = src.shape
-    m = min(h, w)
-    n = 1 if m < 2 else 2 ** int(np.log2(m) - 1)  # +-m/2
-    x, y = w//2, h//2
-    return src[y-n:y+n, x-n:x+n]
+    n = 1 << (min(h, w).bit_length() - 1)
+    y = h // 2 - n // 2
+    x = w // 2 - n // 2
+    return src[y:y+n, x:x+n]
+
+
+def fftcrop_rectangle(src):
+    """Crop src to a centered rectangle with 2^k dimensions."""
+    h, w = src.shape
+    nh = 1 << (h.bit_length() - 1)
+    nw = 1 << (w.bit_length() - 1)
+    y = h // 2 - nh // 2
+    x = w // 2 - nw // 2
+    return src[y:y+nh, x:x+nw]
 
 
 class Plugin(Layer):
@@ -51,7 +61,7 @@ class Plugin(Layer):
         frame = self.graph.frame
         if frame:
             self.message("FFT execution...")
-            src = fftcrop(frame.roi_or_buffer)
+            src = fftcrop_rectangle(frame.roi_or_buffer)
             h, w = src.shape
             
             dst = fftshift(fft2(src))
