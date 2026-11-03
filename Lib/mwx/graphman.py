@@ -1927,7 +1927,7 @@ class Frame(mwx.Frame):
             def _save(view):
                 paths = [frame.pathname for frame in view.get_all_frames() if frame.pathname]
                 paths = [fn for fn in paths if not fn.endswith('>')]  # *dummy-path* 除外
-                o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
+                # o.write(f"self.{view.Name}.unit = {view.unit:g}\n")
                 o.write(f"self.load_frame({paths!r}, self.{view.Name})\n")
                 try:
                     if view.frame.pathname in paths:
