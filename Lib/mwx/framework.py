@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.13.3"
+__version__ = "1.13.4"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -512,8 +512,8 @@ def pack(self, items, orient=wx.HORIZONTAL, style=None, label=None):
             - (obj, 1) -> sized with ratio 1 (parallel to `orient`)
             - (obj, 1, wx.EXPAND) -> expanded with ratio 1 (perpendicular to `orient`)
             - (obj, 0, wx.ALIGN_CENTER | wx.LEFT, 4) -> center with 4 pixel at wx.LEFT
-            - ((-1,-1), 1, wx.EXPAND) -> stretched space
-            - (-1,-1) -> padding space
+            - ((-1, -1), 1, wx.EXPAND) -> stretched space
+            - (-1, -1) -> padding space
             - None -> phantom
         
         orient: HORIZONTAL or VERTICAL

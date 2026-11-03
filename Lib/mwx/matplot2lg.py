@@ -20,7 +20,7 @@ from .matplot2 import NORMAL, MARK, LINE, REGION
 class LinePlot(MatplotPanel):
     """Line plot 1D base panel.
     
-    region : selected range (l,r) on the plot
+    region : selected range (l, r) on the plot
     """
     def __init__(self, *args, **kwargs):
         MatplotPanel.__init__(self, *args, **kwargs)
@@ -52,7 +52,7 @@ class LinePlot(MatplotPanel):
         self._region = None
         self._annotations = []
         
-        ## MPL_VERSION >= (3,9,0)
+        ## MPL_VERSION >= (3, 9, 0)
         ## axhspan and axvspan now return Rectangles, not Polygons.
         
         # <matplotlib.patches.Polygon>

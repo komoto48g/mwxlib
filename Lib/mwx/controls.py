@@ -252,7 +252,7 @@ class LParam(Param):
     step = property(lambda self: self.__step)
 
     def __len__(self):
-        return 1 + int(round((self.max - self.min) / self.step))  # includes [min,max]
+        return 1 + int(round((self.max - self.min) / self.step))  # includes [min, max]
 
     @property
     def range(self):
@@ -844,7 +844,7 @@ class Clipboard:
             ## Convert buf --> bmp.
             h, w = buf.shape[:2]
             if buf.ndim < 3:
-                # buf = np.array([buf] * 3).transpose((1,2,0))  # convert to gray bitmap
+                # buf = np.array([buf] * 3).transpose((1, 2, 0))  # convert to gray bitmap
                 buf = buf.repeat(3, axis=1)  # Convert to gray bitmap.
             img = wx.Image(w, h, buf.tobytes())
             bmp = img.ConvertToBitmap()

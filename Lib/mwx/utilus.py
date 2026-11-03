@@ -900,7 +900,7 @@ class FSM(dict):
 class TreeList:
     """Interface class for tree list control.
     
-    >>> list[item:(key,value)]
+    >>> list[item: (key, value)]
         [[key, [item,
                 item, ...]],
          [key, [item,

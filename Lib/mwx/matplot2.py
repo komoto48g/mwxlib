@@ -328,7 +328,7 @@ class MatplotPanel(wx.Panel):
         ## Initialize the plot figure.
         # <matplotlib.axes.Axes>
         self.figure.clear()
-        self.figure.add_subplot(111)  # cf. add_axes(rect=(l,b,w,h))
+        self.figure.add_subplot(111)  # cf. add_axes(rect=(l, b, w, h))
         self.figure.subplots_adjust(*(margin or (0, 0, 1, 1)))
         
         # <matplotlib.lines.Line2D>
@@ -552,7 +552,7 @@ class MatplotPanel(wx.Panel):
         self._isMenu = 0
 
     def on_pick(self, evt):  # <matplotlib.backend_bases.PickEvent>
-        """Find index near (x,y) and set the selector.
+        """Find index near (x, y) and set the selector.
         Called (maybe) after mouse button pressed.
         """
         if evt.mouseevent.button != 1 or not evt.artist.get_visible():

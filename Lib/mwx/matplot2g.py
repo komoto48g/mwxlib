@@ -390,7 +390,7 @@ class AxesImagePhantom:
         return self.roi if self.parent.region.size else self.buffer
 
     def xytoc(self, x, y=None, nearest=True):
-        """Convert xydata (x,y) -> data[(x,y)] value of neaerst pixel.
+        """Convert xydata (x, y) -> data[(x, y)] value of neaerst pixel.
         If `nearest` is False, the return value is interpolated with spline.
         """
         h, w = self.buffer.shape[:2]
@@ -403,7 +403,7 @@ class AxesImagePhantom:
         return ndi.map_coordinates(self.buffer, np.vstack((ny, nx)))  # spline value
 
     def xytopixel(self, x, y=None, cast=True):
-        """Convert xydata (x,y) -> [nx,ny] pixel.
+        """Convert xydata (x, y) -> [nx, ny] pixel.
         If `cast` is True, the return value will be integer pixel values.
         """
         def _cast(n):
@@ -421,7 +421,7 @@ class AxesImagePhantom:
         return np.array((nx-0.5, ny-0.5))
 
     def xyfrompixel(self, nx, ny=None):
-        """Convert pixel [nx,ny] -> (x,y) xydata (float number).
+        """Convert pixel [nx, ny] -> (x, y) xydata (float number).
         """
         if ny is None:
             # warn("Setting xy data with single tuple.", DeprecationWarning)
@@ -1800,7 +1800,7 @@ class GraphPlot(MatplotPanel):
                 i = j[0]         # 選択されている点
                 k = (i + 2) % 4  # 選択された一点の対角点
                 p[i] += dp
-                self.set_current_rect(*p[[k,i]].T)
+                self.set_current_rect(*p[[k, i]].T)
             else:
                 p += dp
                 self.set_current_rect(*p.T)
