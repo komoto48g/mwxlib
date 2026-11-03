@@ -129,15 +129,6 @@ def _get_timestamp(filename):
         return None
 
 
-def _get_uniqname(name, namelist):
-    basename = name
-    i = 1
-    while name in namelist:
-        i += 1
-        name = f"{basename}<{i}>"
-    return name
-
-
 def _Property(name):
     return property(
         lambda self:    getattr(self.parent, name),
@@ -723,8 +714,7 @@ class GraphPlot(MatplotPanel):
     maxnum_markers = 1000
 
     ## Global variables shared between GraphPlot instances. GraphPlot 間共有のグローバル変数．
-    CLIPBOARD_NAME = None
-    CLIPBOARD_DATA = None
+    CLIPBOARD_DATA = [None, {}]
 
     @property
     def overlay_artists(self):
@@ -736,6 +726,15 @@ class GraphPlot(MatplotPanel):
     ## --------------------------------
     ## External I/O support for frames.
     ## --------------------------------
+
+    def _get_uniqname(self, name):
+        names = [art.name for art in self._frames]
+        basename = name
+        i = 1
+        while name in names:
+            i += 1
+            name = f"{basename}<{i}>"
+        return name
 
     def load(self, buf, name=None, pos=None, show=True, **kwargs):
         """Load a buffer with a name.
@@ -770,7 +769,7 @@ class GraphPlot(MatplotPanel):
                 self.select(j)
             return art
         
-        name = _get_uniqname(name or "*temp*", names)
+        name = self._get_uniqname(name or "*temp*")
         
         ## The first load of axes.imshow (=> self.axes.axis 表示を更新する).
         art = AxesImagePhantom(self, buf, name, show, **kwargs)
@@ -1103,33 +1102,20 @@ class GraphPlot(MatplotPanel):
     def write_buffer_to_clipboard(self):
         """Write buffer data to clipboard."""
         frame = self.frame
-        if not frame:
-            self.message("No frame")
-            return
-        
-        name = frame.name
-        data = frame.roi_or_buffer
-        GraphPlot.CLIPBOARD_NAME = name
-        GraphPlot.CLIPBOARD_DATA = data
-        bins, vlim, img = _to_image(data, frame.cuts)
-        Clipboard.imwrite(img)
-        # print("To clipboard: {:.1f} Mb written.".format(data.nbytes/1e6))
-        self.message("Write buffer to clipboard.")
+        if self.frame:
+            data = frame.roi_or_buffer
+            bins, vlim, img = _to_image(data, frame.cuts)
+            GraphPlot.CLIPBOARD_DATA = [data, frame.attributes]
+            Clipboard.imwrite(img)
 
     def read_buffer_from_clipboard(self):
         """Read buffer data from clipboard."""
-        name = GraphPlot.CLIPBOARD_NAME
-        data = GraphPlot.CLIPBOARD_DATA
-        if name:
-            self.message("Read buffer from clipboard.")
-            GraphPlot.CLIPBOARD_NAME = None
-            GraphPlot.CLIPBOARD_DATA = None
-        else:
-            self.message("Read image from clipboard.")
+        data, info = GraphPlot.CLIPBOARD_DATA
+        if data is None:
             data = Clipboard.imread()
-            # print("From clipboard: {:.1f} Mb read.".format(data.nbytes/1e6))
         if data is not None:
-            self.load(data)
+            self.load(data, **dict(info, pathname=None))
+        GraphPlot.CLIPBOARD_DATA = [None, {}]
 
     def update_colorbar(self, frame):
         if self.cbar:
