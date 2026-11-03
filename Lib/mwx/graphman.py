@@ -874,7 +874,7 @@ class Frame(mwx.Frame):
         self.menubar.reset()
         
         def show_frameview(frame):
-            if not frame.parent.IsShown():
+            if not frame.parent.IsShownOnScreen():
                 wx.CallAfter(self.show_pane, frame.parent)
         
         self.graph.handler.append({  # DNA<Graph:Frame>
