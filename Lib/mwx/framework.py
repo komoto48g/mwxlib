@@ -1,7 +1,7 @@
 #! python3
 """mwxlib framework.
 """
-__version__ = "1.13.4"
+__version__ = "1.13.5"
 __author__ = "Kazuya O'moto <komoto@jeol.co.jp>"
 
 from contextlib import contextmanager
@@ -21,40 +21,6 @@ from wx.py import dispatcher
 from .utilus import funcall as _F
 from .utilus import get_rootpath, ignore, warn
 from .utilus import FSM, TreeList, typename, where
-
-
-def deb(target=None, loop=True, locals=None, **kwargs):
-    """Dive into the process.
-    
-    Args:
-        target: Object or module (default None).
-                If None, the target is set to `__main__`.
-        loop:   If True, the app and the mainloop will be created.
-        locals: Additional context of the shell.
-        
-        **kwargs: ShellFrame and Nautilus arguments.
-        
-            - session: file name of the session. Defaults to None.
-            - introText: introductory of the shell
-            - startupScript: startup script file (default None)
-            - execStartupScript: True => Execute the startup script.
-    
-    Note:
-        This will execute the startup script $(PYTHONSTARTUP).
-    """
-    kwargs.setdefault("introText", f"mwx {__version__}\n")
-    kwargs.setdefault("execStartupScript", True)
-    
-    app = wx.GetApp() or wx.App()
-    frame = ShellFrame(None, target, **kwargs)
-    frame.standalone = True
-    frame.Show()
-    frame.rootshell.SetFocus()
-    if locals:
-        frame.rootshell.locals.update(locals)
-    if loop and not app.GetMainLoop():
-        app.MainLoop()
-    return frame
 
 
 def postcall(f):

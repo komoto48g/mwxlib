@@ -4,10 +4,10 @@
 from .framework import __version__, __author__   # noqa
 from .framework import FSM, TreeList             # noqa
 from .framework import Menu, MenuBar, StatusBar  # noqa
-from .framework import Frame, MiniFrame, ShellFrame, deb  # noqa
+from .framework import Frame, MiniFrame, ShellFrame  # noqa
 
 ## Controls
-from .controls import Param, LParam, ControlPanel  # noqa
+from .controls import Param, LParam, ControlPanel, Clipboard, Icon  # noqa
 from .controls import Button, ToggleButton, TextBox, Choice, Gauge, Indicator  # noqa
 
 ## Plugman
@@ -18,3 +18,5 @@ from .controls import Button, ToggleButton, TextBox, Choice, Gauge, Indicator  #
 
 ## Gnuplot
 # from .mgplt import Gnuplot, GnuplotFrame
+
+from .testsuite import deb
