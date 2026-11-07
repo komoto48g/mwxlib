@@ -1,9 +1,11 @@
 #! python3
 """Template of Layer.
 """
+import sys
 import cv2
 import wx
 
+sys.path.append("../Lib")
 from mwx.controls import LParam
 from mwx.graphman import Layer, Frame
 
@@ -43,7 +45,5 @@ class Plugin(Layer):
 if __name__ == "__main__":
     from mwx.testsuite import *
 
-    with testApp():
-        frm = Frame(None)
-        frm.load_plug(Plugin, show=1)
-        frm.Show()
+    with testFrame(Frame) as frm:
+        frm.load_plug(Plugin, show=1, dock=4)

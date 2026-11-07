@@ -52,8 +52,12 @@ class Frame(Frame):
 
 
 if __name__ == "__main__":
+    import builtins
     from mwx.testsuite import *
 
-    with testApp():
-        frm = Frame(None)
-        frm.Show()
+    with testFrame(Frame) as frm:
+        tc = wx.TextCtrl(frm, style=wx.TE_MULTILINE | wx.TE_AUTO_URL,
+                              value="Hello, wxPython!\n"
+                                    "[mwxlib] https://github.com/komoto48g/mwxlib\n"
+                              )
+        print = partial(builtins.print, ">", file=tc)
