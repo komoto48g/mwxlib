@@ -257,7 +257,8 @@ class LParam(Param):
     @property
     def range(self):
         """Index range."""
-        return np.arange(self.min, self.max + self.step, self.step)
+        # return np.arange(self.min, self.max + self.step, self.step)
+        return self.min + np.arange(len(self)) * self.step
 
     @range.setter
     def range(self, v):
