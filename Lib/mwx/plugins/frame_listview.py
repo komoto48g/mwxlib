@@ -158,7 +158,7 @@ class CheckList(wx.ListCtrl, ListCtrlAutoWidthMixin, CtrlInterface):
     def sort_items(self, col):
         def _eval(r):
             try:
-                return eval(r[col].rstrip('*'))  # float(localunit*) 文字列ソート用
+                return float(r[col].rstrip('*'))
             except Exception:
                 return r[col]
         
